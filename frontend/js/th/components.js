@@ -536,7 +536,7 @@ var List = Class.define({
 
         onmousedown: function(e) {
             var item = this.getItemForPosition({ x: e.componentX, y: e.componentY });
-            if (item) {
+            if (item != this.selected) {
                 this.selected = item;
                 this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
                 this.getScene().render();
@@ -557,6 +557,7 @@ var List = Class.define({
             this.renderer.style.font = this.style.font;
             this.renderer.style.color = this.style.color;
             this.renderer.selected = rctx.selected;
+            this.renderer.item = rctx.item;
             return this.renderer;
         },
 
@@ -652,8 +653,17 @@ var HorizontalTree = Class.define({
         },
 
         setData: function(data) {
+            for (var i = 0; i < this.lists.length; i++) {
+                this.remove(this.lists[i]);
+                this.remove(this.splitters[i]);
+                this.bus.unbind(this.lists[i]);
+                this.bus.unbind(this.splitters[i]);
+            }
+            this.lists = [];
+            this.splitters = [];
+
             this.data = data;
-            this.showChildren(data);
+            this.showChildren(null, data);
         },
 
         ondragstart: function(e) {
@@ -672,22 +682,35 @@ var HorizontalTree = Class.define({
             delete this.startSize;
         },
 
+        updateData: function(parent, contents) {
+            parent.contents = contents;
+            if (this.getSelectedItem() == parent) {
+                this.showChildren(parent, parent.contents);
+            }
+        },
+
         showChildren: function(newItem, children) {
             if (this.details) {
                 this.remove(this.details);
                 delete this.details;
             }
 
-//            if (!ArrayUtils.isArray(children)) {
-//                // if it's not an array, assume it's a function that will load the children
-//                return children(newItem, this);
-//            }
+            if (!ArrayUtils.isArray(children)) {
+                // if it's not an array, assume it's a function that will load the children
+                children(this.getSelectedPath(), this);
+                this.getScene().render();
+                return;
+            }
 
             if (!children || children.length == 0) return;
             var list = this.createList(children);
             list.id = "list " + (this.lists.length + 1);
 
             this.bus.bind("click", list, this.itemSelected, this);
+            var tree = this;
+            this.bus.bind("dblclick", list, function(e) {
+                tree.bus.fire("dblclick", e, tree);
+            });
             this.lists.push(list);
             this.add(list);
 
@@ -706,11 +729,12 @@ var HorizontalTree = Class.define({
         showDetails: function(item) {
             if (this.details) this.remove(this.details);
 
-            var panel = new Panel({ style: { backgroundColor: "white" } });
-            var label = new Label({ text: "Some details, please!" });
-            panel.add(label);
-            this.details = panel;
-            this.add(this.details);
+//            var panel = new Panel({ style: { backgroundColor: "white" } });
+//            var label = new Label({ text: "Some details, please!" });
+//            panel.add(label);
+//            this.details = panel;
+//            this.add(this.details);
+
             if (this.parent) this.getScene().render();
         },
 
@@ -724,6 +748,19 @@ var HorizontalTree = Class.define({
                 return label;
             }
             return list;
+        },
+
+        getSelectedItem: function() {
+            var selected = this.getSelectedPath();
+            if (selected.length > 0) return selected[selected.length - 1];
+        },
+
+        getSelectedPath: function() {
+            var path = [];
+
+            for (var i = 0; i < this.lists.length; i++) path.push(this.lists[i].selected);
+
+            return path;
         },
 
         itemSelected: function(e) {

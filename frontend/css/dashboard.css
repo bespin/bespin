@@ -28,6 +28,12 @@ body {
     font-size: 9pt;
 }
 
+#filecanvas {
+    top: -6px;
+    position: relative;
+    z-index: -1;
+}
+
 img {
     border: none;
 }
