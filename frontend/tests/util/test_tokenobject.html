@@ -1,24 +1,15 @@
 <html>
 <head>
 <title>TokenObject Tester</title>
-
-<script type="text/javascript">
-	var djConfig = { isDebug: false }; 
-</script>   
-
-<script type="text/javascript" src="../../js/dojo/dojo.js"></script> 
-
-<script type="text/javascript"> 
-	dojo.require("bespin.util.tokenobject");    
-</script>
-
+<script src="../../js/util/tokenobject.js" type="text/javascript"></script>
 </head>
 
 <body>
 	
 	<script>
+		
 	function calculate() {
-		var test = new bespin.util.TokenObject(document.getElementById("input").value, { 
+		var test = new TokenObject(document.getElementById("input").value, { 
 			splitBy: document.getElementById("regex").value,
 			params: document.getElementById("params").value
 		});

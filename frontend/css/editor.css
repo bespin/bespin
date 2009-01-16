@@ -1,8 +1,10 @@
-body {
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-	background-color: #2A211C;
+img {
+    border: none;
+}
+
+#header {
+    height: 32px;
+    background-image: url("../images/toolbar_main_bg.gif");
 }
 
 #subheader {
@@ -29,47 +31,15 @@ body {
 
 #editor {
     position: absolute;
-    margin: 0;
-    padding: 0;
     top: 63px;
-    bottom: 33px;
+    bottom:37px;
     right: 0px;
     left: 0px;
     z-index: -1;
 }
 
-#filelist {
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    top: 64px;
-    bottom: 33px;
-    right: 0px;
-    left: 0px;
-    display: none;
-}
-
-.popupWindow {
-    position: absolute;
-    margin: 0;
-    display: none;
-    background-color: #8F8D88;
-    background: url("../images/background_white_50.png");
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
-    padding: 10px;    
-    -moz-opaque: true;
-}
-
-#quickopen_text {
-    position: absolute;
-    width: 204px;
-    height: 15px;
-    margin: 0;
-    padding: 0;
-    top: 34px;
-    left: 15px;
-    color: black;
+#logo {
+    margin-right: 30px;
 }
 
 #search {
@@ -88,12 +58,8 @@ body {
     color: #DDDDDD;
 }
 
-#toolbar_collaboration {
+#collaboration {
     float: right;
-    padding-right: 4px;
-}
-
-#toolbar_dashboard {
     padding-right: 4px;
 }
 
@@ -111,7 +77,7 @@ body {
     background-repeat: repeat-x;
     padding: 5px;
     position: absolute;
-    bottom: -1px;
+    bottom:0;
     right: 0;
     left: 0;
 }
@@ -217,14 +183,6 @@ body {
     padding: 3px 0 0 9px;
 }
 
-.collab_text {
-    margin-left: 10px;
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 10pt;
-    color: #dad4ba;
-    padding: 3px 0 0 9px;
-}
-
 .collab_person {
     background-image: url("../images/collab_user_bg.gif");
     margin-left: 10px;
@@ -266,31 +224,49 @@ body {
     width: 30%;
     height: 31px;
     float: left;
-    margin: 5px 0 0 10px;
+    margin: 4px 0 0 10px;
     color: #DDDDDD;
     font-family: Calibri, Arial, sans-serif;
     font-size: 12pt;
-    overflow: hidden;
 }
 
 #status .seperator {
 	color: #999;
 }
 
-#filename {
-    height: 31px;
-    overflow: hidden !important;
+body {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+	background-color: #2A211C;
+}
+
+#prompt {
+    float: left;
+    padding: 9px 5px 0 5px;
+}
+
+#commandline {
+    float: left;
+    padding: 5px 0 0 0;
+    width: 40%;
+}
+
+#command {
+    border: 0;
+    background: none;
+    color: #DDDDDD;
+    font-size: 12pt;
+    font-family: Calibri, Arial, sans-serif;
+    width: 100%;
 }
 
 #message {
-    font-size: 14px;
+    float: right;
+    font-size: 12pt;
     font-family: Calibri, Arial, sans-serif;
     color: #777777;
-}
-
-#message a {
-    color: #777777;
-    text-decoration: none;
+    padding-top: 6px;
 }
 
 #footer_bar {
@@ -312,6 +288,28 @@ body {
     font-family: Calibri, Arial, sans-serif;
     color: #DDDDDD;
     padding-left: 2px;
+}
+
+#info {
+    position: absolute;
+    bottom: 32px;
+    left: 51px;
+    opacity: 0.8;
+    padding: 20px 40px 10px 30px;
+    width: 431px;
+    color: #999;
+    background-image: url("../images/info_popup.png");
+    background-repeat: no-repeat;
+}
+
+#info u {
+    color: #999;
+    text-decoration: none;
+    font-family: Calibri, Arial, sans-serif;
+}
+
+#info b {
+	color: #ddd;
 }
 
 #target_browsers {
@@ -350,10 +348,4 @@ body {
     font-size: 11pt;
     font-family: Calibri, Arial, sans-serif;
     color: #DDDDDD;
-}
-
-.comingsoon {
-    font-size: smaller;
-    color: red;
-    font-style: italic;
 }

@@ -1,0 +1,10 @@
+urlrelay>0.7
+repoze.who
+WebOb
+WebTest
+py
+simplejson
+shove
+Paste
+static
+Spawning

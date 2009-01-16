@@ -1,15 +1,19 @@
 body {
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-	background-color: #3d3b34;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 9pt;
+}
+
+img {
+    border: none;
+}
+
+#header {
+    height: 32px;
+    background-image: url("../images/toolbar_main_bg.gif");
 }
 
 #subheader {
-    height: 32px;
-    margin: 0;
-    padding: 0;
-    border: 0;
+    height: 38px;
     background-image: url("../images/toolbar_sub_bg.png");
 }
 
@@ -28,49 +32,53 @@ body {
     z-index: -1;
 }
 
+#logo {
+    margin-right: 30px;
+}
+
 #projects {
-    float: left;
-    width: 181px;
-    background-color: #3d3b34;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+  float: left;
+  width: 181px;
+  background-color: #3d3b34;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
 }
 
 #project_header {
-    color: #FFF;
-    font-size: 10pt;
-    height: 18px;
-    padding-left: 8px;
-    padding-top: 2px;
-    background-image: url("../images/dash_column_hdr.gif");
-    background-repeat: no-repeat;
+  color: #FFF;
+  font-size: 10pt;
+  height: 18px;
+  padding-left: 8px;
+  padding-top: 2px;
+  background-image: url("../images/dash_column_hdr.gif");
+  background-repeat: no-repeat;
 }
 
 ul#projectlist {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
 ul#projectlist li img {
-    float: right;
-    padding-right: 4px;
-    padding-top: 2px;
+  float: right;
+  padding-right: 4px;
+  padding-top: 2px;
 }
 
 ul#projectlist li:hover {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 ul#projectlist li {
-    padding-left: 8px;
-    color: #eee;
-    font-size: 9pt;
-    padding-top: 2px;
-    height: 18px;
-    font-family: Tahoma;
+  padding-left: 8px;
+  color: #eee;
+  font-size: 9pt;
+  padding-top: 2px;
+  height: 18px;
+  font-family: Tahoma;
 }
 
 li.deselected {
@@ -81,111 +89,112 @@ li.selected {
     background-image: url("../images/dash_proj_bg_on.gif");
 }
 
+
 #team_header {
-    color: #FFF;
-    font-size: 10pt;
-    height: 18px;
-    padding-left: 8px;
-    padding-top: 2px;
-    background-image: url("../images/dash_column_hdr.gif");
-    background-repeat: repeat-x;
+  color: #FFF;
+  font-size: 10pt;
+  height: 18px;
+  padding-left: 8px;
+  padding-top: 2px;
+  background-image: url("../images/dash_column_hdr.gif");
+  background-repeat: repeat-x;
 }
 
 #sessions_header {
-    color: #FFF;
-    font-size: 10pt;
-    height: 18px;
-    margin-top: 30px;
-    padding-left: 8px;
-    padding-top: 2px;
-    background-image: url("../images/dash_column_hdr.gif");
-    background-repeat: no-repeat;          
+  color: #FFF;
+  font-size: 10pt;
+  height: 18px;
+  margin-top: 30px;
+  padding-left: 8px;
+  padding-top: 2px;
+  background-image: url("../images/dash_column_hdr.gif");
+  background-repeat: no-repeat;          
 }
 
 ul#sessionslist {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
 ul#sessionslist > li {
-    padding-left: 8px;
-    color: #eee;
-    font-size: 9pt;
-    padding-top: 2px;
-    font-family: Tahoma;
-    background-repeat: no-repeat;
+  padding-left: 8px;
+  color: #eee;
+  font-size: 9pt;
+  padding-top: 2px;
+  font-family: Tahoma;
+  background-repeat: no-repeat;
 }
 
 ul#sessionslist li ul {
-    list-style-type: none;
-    padding-left: 15px;
-    background-image: none;
+  list-style-type: none;
+  padding-left: 15px;
+  background-image: none;
 }
 
 ul#sessionslist li ul li {
-    list-style-image: url("../images/files_icn_file.png");
-    list-style-position: inside;
-    background-image: none;
-    padding-top: 2px;
+  list-style-image: url("../images/files_icn_file.png");
+  list-style-position: inside;
+  background-image: none;
+  padding-top: 2px;
 }        
 
 #files {
-    position: absolute;
-    top: 64px;
-    bottom: 33px;
-    left: 181px;
-    width: 180px;
-    background-image: url("../images/zebra_files.png");
-    background-repeat: repeat-y;
+  position: absolute;
+  top: 64px;
+  bottom: 33px;
+  left: 181px;
+  width: 180px;
+  background-image: url("../images/zebra_files.png");
+  background-repeat: repeat-y;
 }
 
 #files ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
 #files ul li {
-    list-style-image: url("../images/files_icn_file.png");
-    list-style-position: inside;
-    padding-left: 8px;
-    padding-top: 2px;
+  list-style-image: url("../images/files_icn_file.png");
+  list-style-position: inside;
+  padding-left: 8px;
+  padding-top: 2px;
 }
 
 #files ul li a {
-    color: #eee;
-    font-size: 9pt;
-    font-family: Tahoma;
-    text-decoration: none;
+  color: #eee;
+  font-size: 9pt;
+  font-family: Tahoma;
+  text-decoration: none;
 }
 
 #sessionslist ul li a {
-    color: #eee;
-    font-size: 9pt;
-    font-family: Tahoma;
-    text-decoration: none;
+  color: #eee;
+  font-size: 9pt;
+  font-family: Tahoma;
+  text-decoration: none;
 }
 
 #graphs {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 181px;
-    right: 200px;
-    background-color: #4c4a41;
-    border-left: 1px solid black;
-    border-right: 1px solid #65635d;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 181px;
+  right: 200px;
+  background-color: #4c4a41;
+  border-left: 1px solid black;
+  border-right: 1px solid #65635d;
 }
 
 #team {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    float: right;
-    width: 200px;
-    background-color: #3d3b34;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  float: right;
+  width: 200px;
+  background-color: #3d3b34;
 }
 
 #footer {
@@ -210,23 +219,45 @@ ul#sessionslist li ul li {
 
 #status {
     width: 10%;
-    height: 26px;
+    height: 31px;
     float: left;
-    margin: 6px 0 0 10px;
+    margin: 4px 0 0 10px;
     color: #DDDDDD;
-    font-family: Calibri, Arial, sans-serif;
+    font-family: Calibri;
     font-size: 12pt;
 }
 
-#message {
-    font-size: 14px;
-    font-family: Calibri, Arial, sans-serif;
-    color: #777777;
+body {
+    padding: 0;
+    margin: 0;
 }
 
-#message a {
+#prompt {
+    float: left;
+    padding: 9px 5px 0 5px;
+}
+
+#commandlineParent {
+    float: left;
+    padding: 5px 0 0 0;
+    width: 40%;
+}
+
+#commandline {
+    border: 0;
+    background: none;
+    color: #DDDDDD;
+    font-size: 12pt;
+    font-family: Calibri, Arial, sans-serif;
+    width: 100%;
+}
+
+#message {
+    float: right;
+    font-size: 12pt;
+    font-family: Calibri, Arial, sans-serif;
     color: #777777;
-    text-decoration: none;
+    padding-top: 6px;
 }
 
 #footer_bar {
