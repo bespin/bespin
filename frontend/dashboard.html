@@ -28,140 +28,202 @@
         "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>Bespin &raquo; Dashboard</title>
-	<link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
-
+    <title>gtk test</title>
+    <link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
-    <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
     <script type="text/javascript" src="js/util/path.js"></script>
     <script type="text/javascript" src="js/client/server.js"></script>
 
+    <script type="text/javascript" src="js/external/jstraits.js"></script>
+    <script type="text/javascript" src="js/th/array_utils.js"></script>
+    <script type="text/javascript" src="js/th/traits.js"></script>
+    <script type="text/javascript" src="js/th/gtk.js"></script>
+    <script type="text/javascript" src="js/th/models.js"></script>
+    <script type="text/javascript" src="js/th/borders.js"></script>
+    <script type="text/javascript" src="js/th/components.js"></script>
+    <script type="text/javascript" src="js/client/dashboard.js"></script>
     <script type="text/javascript">
-    var svr = new Server();
-    var currentProject;
-    var oldli;
+        var heightDiff;
+        var projects;
+        var scene;
+        var tree;
 
-    function toggleFiles(li) {
-        if (oldli) {
-            oldli.removeClassName("selected");
-            oldli.addClassName("deselected");
+        function sizeCanvas(canvas) {
+            if (!heightDiff) {
+                heightDiff = $("header").clientHeight + $("subheader").clientHeight + $("footer").clientHeight;
+            }
+            var height = window.innerHeight - heightDiff + 11;
+            canvas.writeAttribute({ width: window.innerWidth, height: height });
         }
-        
-        var project = li.getAttribute("b_project");
-        if (currentProject == project) {
-            currentProject = null;
-            hideFiles(li);
-        } else {
-            li.removeClassName("deselected");
-            li.addClassName("selected");
 
-            currentProject = project;
+        Event.observe(window, "resize", function() {
+            sizeCanvas($("canvas"));
+        });
 
-            var files = $('files');
+        Event.observe(document, "dom:loaded", function() {
+            sizeCanvas($("canvas"));
 
-            // check if files isn't already showing for some other project
-            if (files.style.display == 'none') {
-                showFiles(li);
+            scene = new Scene($("canvas"));
+
+            tree = new HorizontalTree({ style: { backgroundColor: "rgb(76, 74, 65)",
+                                                     backgroundColorOdd: "rgb(82, 80, 71)",
+                                                     font: "9pt Tahoma",
+                                                     color: "white" }});
+            var renderer = new Label({ style: { border: new EmptyBorder({ size: 3 }) } });
+            renderer.old_paint = renderer.paint;
+            renderer.paint = function(ctx) {
+                var d = this.d();
+
+                if (this.selected) {
+                    ctx.fillStyle = "rgb(177, 112, 20)";
+                    ctx.fillRect(0, 0, d.b.w, 1);
+
+                    var gradient = ctx.createLinearGradient(0, 0, 0, d.b.h);
+                    gradient.addColorStop(0, "rgb(172, 102, 1)");
+                    gradient.addColorStop(1, "rgb(219, 129, 1)");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+
+                    ctx.fillStyle = "rgb(160, 95, 1)";
+                    ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+                }
+
+                if (this.item.contents) {
+                    renderer.styleContext(ctx);
+                    var metrics = ctx.measureText(">");
+                    ctx.fillText(">", d.b.w - metrics.width - 5, d.b.h / 2 + (metrics.ascent / 2) - 1);
+                }
+                
+                this.old_paint(ctx);
+            }
+            tree.renderer = renderer;
+
+            projects = new BespinProjectPanel();
+
+            var topPanel = new Panel();
+            topPanel.add([ projects, tree ]);
+            topPanel.layout = function() {
+                var d = this.d();
+                projects.bounds = { x: d.i.l, y: d.i.t, width: projects.getPreferredWidth(d.b.h - d.i.h), height: d.b.h - d.i.h };
+                tree.bounds = { x: projects.bounds.x + projects.bounds.width, y: d.i.t, width: d.b.w - d.i.w - projects.bounds.width, height: d.b.h - d.i.h };
+            }
+            projects.list.renderer = renderer;
+
+            var infoPanel = new ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
+
+            var splitPanel = new SplitPanel({ id: "splitPanel", attributes: {
+                orientation: GTK.VERTICAL,
+                regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
+            } });
+
+            scene.root.add(splitPanel);
+
+            scene.render();
+
+            scene.bus.bind("dblclick", tree, function() {
+                //infoPanel.add(new BespinSessionPanel()); scene.render();
+                var path = tree.getSelectedPath();
+                if (path.length == 0) return;
+                location.href = 'editor.html#project=' + currentProject + '&path=' + getFilePath(path);
+            });
+
+            scene.bus.bind("itemselected", projects.list, function(e) {
+                currentProject = e.item;
+                svr.list(e.item, null, displayFiles )
+            });
+        });
+
+        var svr = new Server();
+        var currentProject;
+
+        function loggedIn(xhr) {
+            svr.list(null, null, displayProjects);  // get projects
+            svr.listOpen(displaySessions);   // get sessions
+        }
+
+        function notLoggedIn(xhr) {
+            location.href = "index.html"; // take me home Scottie!
+        }
+
+        function displayFiles(files) {
+            tree.setData(prepareFilesForTree(files));
+        }
+
+        function prepareFilesForTree(files) {
+            if (files.length == 0) return [];
+
+            var fdata = [];
+            for (var i = 0; i < files.length; i++) {
+                if (files[i].endsWith("/")) {
+                    var name = files[i].substring(0, files[i].length - 1);
+                    var contents = fetchFiles;
+                    fdata.push({ name: name, contents: contents });
+                } else {
+                    fdata.push({ name: files[i] });
+                }
             }
 
-            files.innerHTML = "";
-            svr.list(project, null, displayFiles);  // get projects
+            return fdata;
         }
 
-        oldli = li;
-    }
-    
-    function showFiles(li) {
-        $('files').show();
-        $('graphs').style.left = '361px';
-        $('graphs').style.borderLeft = 'none';
-    }
-    
-    function hideFiles(li) {
-        $('files').hide();
-        $('graphs').style.left = '181px';
-        $('graphs').style.borderLeft = '1px solid black';
-    }
-
-	function loggedIn(xhr) {
-	    svr.list(null, null, displayProjects);  // get projects
-        svr.listOpen(displaySessions);   // get sessions
-	}
-
-	function notLoggedIn(xhr) {
-	    location.href = "index.html"; // take me home Scottie!
-	}
-
-    function displayFiles(files) {
-        if (files.length == 0) return;
-
-        var filesNode = $('files');
-        var ul = new Element("ul");
-        filesNode.appendChild(ul);
-
-        for (var i = 0; i < files.length; i++) {
-            var fileNode = new Element("li");
-            fileNode.appendChild(new Element("a", { 'href' : 'editor.html#project=' + currentProject + '&path=' + files[i] }).update(files[i]));
-            ul.appendChild(fileNode);
+        function getFilePath(treePath) {
+            var filepath = "";
+            for (var i = 0; i < treePath.length; i++) filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
+            return filepath;
         }
-    }
 
-    function displaySessions(sessions) {
-        var sessionsNode = $("sessionslist");
-        sessionsNode.innerHTML = "";
+        function fetchFiles(path, tree) {
+            var filepath = currentProject + "/" + getFilePath(path);
+            
+            svr.list(filepath, null, function(files) {
+                tree.updateData(path[path.length - 1], prepareFilesForTree(files));
+            });
+        }
 
-        for (var project in sessions) {
-            var projectNode = new Element("li").update(project);
-            sessionsNode.appendChild(projectNode);
+        function displaySessions(sessions) {
+//            var sessionsNode = $("sessionslist");
+//            sessionsNode.innerHTML = "";
+//
+//            for (var project in sessions) {
+//                var projectNode = new Element("li").update(project);
+//                sessionsNode.appendChild(projectNode);
+//
+//                var projectContents = new Element("ul");
+//                projectNode.appendChild(projectContents);
+//
+//                for (var file in sessions[project]) {
+//                    var fileNode = new Element("li");
+//                    projectContents.appendChild(fileNode);
+//
+//                    var link = new Element("a", { 'href' : 'editor.html#project=' + project + '&path=' + file }).update(file);
+//                    fileNode.appendChild(link);
+//                }
+//            }
+        }
 
-            var projectContents = new Element("ul");
-            projectNode.appendChild(projectContents);
-
-            for (var file in sessions[project]) {
-                var fileNode = new Element("li");
-                projectContents.appendChild(fileNode);
-
-                var link = new Element("a", { 'href' : 'editor.html#project=' + project + '&path=' + file }).update(file);
-                fileNode.appendChild(link);
+        function displayProjects(projectItems) {
+            for (var i = 0; i < projectItems.length; i++) {
+                projectItems[i] = projectItems[i].substring(0, projectItems[i].length - 1);
             }
+            projects.list.items = projectItems;
+            scene.render();
         }
-    }
 
-    function displayProjects(projects) {
-        var projectNode = $("projectlist");
-        projectNode.innerHTML = ""; // remove children
+        function setupUI() {
 
-        if (projects.length == 0) return;
+            // get logged in name; if not logged in, display an error of some kind
+            svr.currentuser(loggedIn, notLoggedIn);
 
-        for (var i = 0; i < projects.length; i++) {
-            var project = projects[i];
-            if (project.charAt(project.length - 1) != '/') {
-                continue;
-            } else {
-                project = project.substring(0, project.length - 1);
-            }
+            // get the projects for the user
 
-            var li = new Element("li", { 'onClick' : 'toggleFiles(this)', 'class' : 'deselected', 'b_project' : project });
-            li.innerHTML = "<img src='images/dash_icn_more.png'/> " + project;
-            projectNode.appendChild(li);
+            // add the projects to the UI
+
+            // get the list of open sessions
+
+            // add the open sessions to the UI
+
+
         }
-    }
-
-	function setupUI() {
-
-		// get logged in name; if not logged in, display an error of some kind
-		svr.currentuser(loggedIn, notLoggedIn);
-
-		// get the projects for the user
-
-		// add the projects to the UI
-
-		// get the list of open sessions
-
-		// add the open sessions to the UI
-
-
-	}
     </script>
 </head>
 <body onload="setupUI()">
@@ -171,31 +233,13 @@
     <div id="subheader">
         <div id="status">Dashboard</div>
     </div>
-    <div id="content">
-      <div id="projects">
-        <div id="project_header">Projects</div>
-        <ul id="projectlist">
-        </ul>
-        <div id="sessions_header">Open Sessions</div>
-        <ul id="sessionslist">
-        </ul>
-      </div>
-
-      <div id="team">
-        <div id="team_header">Team Members</div>
-        <img src="images/team_mock.png"/>
-      </div>
-      <div id="graphs">
-      </div>
-    </div>
-    <div id="files" style="display: none;">
+    <div id="filecanvas">
+        <canvas id="canvas" moz-opaque="true">
+        </canvas>
     </div>
     <div id="footer">
         <div id="prompt"><img src="images/icn_command.png" alt=">" /></div>
         <div id="commandlineParent"><input id="commandline" /></div>
     </div>
-
-
-
 </body>
 </html>

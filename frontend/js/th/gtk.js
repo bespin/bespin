@@ -198,7 +198,7 @@ var Scene = Class.define({
 
             var self = this;
 
-            Event.observe(canvas, "mousedown", function(e) {
+            Event.observe(window, "mousedown", function(e) {
                 self.wrapEvent(e, self.root);
 
                 self.mouseDownComponent = e.thComponent;
@@ -206,19 +206,19 @@ var Scene = Class.define({
                 gtk_global_event_bus.fire("mousedown", e, e.thComponent);
             });
 
-            Event.observe(canvas, "dblclick", function(e) {
+            Event.observe(window, "dblclick", function(e) {
                 self.wrapEvent(e, self.root);
 
                 gtk_global_event_bus.fire("dblclick", e, e.thComponent);
             });
 
-            Event.observe(canvas, "click", function(e) {
+            Event.observe(window, "click", function(e) {
                 self.wrapEvent(e, self.root);
 
                 gtk_global_event_bus.fire("click", e, e.thComponent);
             });
 
-            Event.observe(canvas, "mousemove", function(e) {
+            Event.observe(window, "mousemove", function(e) {
                 self.wrapEvent(e, self.root);
 
                 gtk_global_event_bus.fire("mousemove", e, e.thComponent);
@@ -229,7 +229,7 @@ var Scene = Class.define({
                 }
             });
 
-            Event.observe(canvas, "mouseup", function(e) {
+            Event.observe(window, "mouseup", function(e) {
                 if (!self.mouseDownComponent) return;
 
                 self.addComponentXY(e, self.root, self.mouseDownComponent);
