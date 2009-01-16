@@ -18,18 +18,20 @@ var CommandLine = Class.create({
 
     executeCommand: function(value) {
         var data = value.split(/\s+/);
-        var command = data.shift();
+        var commandname = data.shift();
 
         var command;
 
-        if (this.commands[command]) {
-            command = this.commands[command];
-        } else if (this.aliases[command]) {
-            command = this.commands[this.aliases[command]];
+        if (this.commands[commandname]) {
+            command = this.commands[commandname];
+        } else if (this.aliases[commandname]) {
+            command = this.commands[this.aliases[commandname]];
         } else {
-            this.showInfo("Sorry, no command '" + command + "'. Maybe try to run &raquo; help", true);
+            this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
+
+		document.fire("bespin:cmdline:execute", { command: command });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -224,9 +226,8 @@ var CommandLineKeyBindings = Class.create({
                 this.commandLineHistory.setPrevious();
                 return false;
             } else if (e.keyCode == Key.ENTER) {
-                var command = $('command').value;
-                this.executeCommand(command);
-                this.commandLineHistory.add(command);
+                this.executeCommand($('command').value);
+				
                 return false;
             } else if (e.keyCode == Key.TAB) {
                 this.complete($('command').value);
@@ -326,6 +327,12 @@ var CommandLineCustomEvents = Class.create({
 		document.observe("bespin:cmdline:showinfo", function(event) {
 			var msg = event.memo.msg;
 			if (msg) commandline.showInfo(msg);
+		});
+		
+		document.observe("bespin:cmdline:execute", function(event) {
+			var commandname = event.memo.command.name;
+			
+	        commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
 		});
 		
 		// -- Files
