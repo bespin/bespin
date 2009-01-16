@@ -4,3 +4,5 @@ backend/python/bin
 *.pyc
 backend/python/.Python
 backend/python/BespinServer.egg-info
+backend/java/out
+*.iws
