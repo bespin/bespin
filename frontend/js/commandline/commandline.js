@@ -24,7 +24,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 var CommandLine = Class.create({
-	initialize: function(commandLine, files, settings, editor) {
+    initialize: function(commandLine, files, settings, editor) {
         this.commandLine = commandLine;
         this.files = files;
         this.settings = settings;
@@ -36,9 +36,9 @@ var CommandLine = Class.create({
 
         this.commandLineKeyBindings = new CommandLineKeyBindings(this);
         this.commandLineHistory = new CommandLineHistory(this);
-		this.customEvents = new CommandLineCustomEvents(this);
-		
-		DefaultCommands.seed(this);
+        this.customEvents = new CommandLineCustomEvents(this);
+
+        DefaultCommands.seed(this);
     },
 
     executeCommand: function(value) {
@@ -56,26 +56,26 @@ var CommandLine = Class.create({
             return;
         }
 
-		document.fire("bespin:cmdline:execute", { command: command });
+        document.fire("bespin:cmdline:execute", { command: command });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
     },
 
     addCommand: function(command) {
-		// -- Allow for the default [ ] takes style by expanding it to something bigger
-		if (command.takes && 
-		    Object.prototype.toString.call(command.takes) === '[object Array]') {
-			command = this.normalizeTakes(command);
-		}
+        // -- Allow for the default [ ] takes style by expanding it to something bigger
+        if (command.takes &&
+            Object.prototype.toString.call(command.takes) === '[object Array]') {
+            command = this.normalizeTakes(command);
+        }
 
-		this.commands[command.name] = command;
+        this.commands[command.name] = command;
 
-		if (command['aliases']) {
-			command['aliases'].each(function(alias) {
-				this.aliases[alias] = command.name;
-			}.bind(this));
-		}
+        if (command['aliases']) {
+            command['aliases'].each(function(alias) {
+                this.aliases[alias] = command.name;
+            }.bind(this));
+        }
     },
 
     showInfo: function(html, autohide) {
@@ -124,7 +124,7 @@ var CommandLine = Class.create({
     complete: function(value) {
         var matches = this.findCompletions(value);
         if (matches.length == 1) {
-			var command = this.commands[matches[0]] || this.commands[this.aliases[matches[0]]];
+            var command = this.commands[matches[0]] || this.commands[this.aliases[matches[0]]];
 
             var commandLineValue = matches[0];
 
@@ -137,49 +137,49 @@ var CommandLine = Class.create({
                 this.showInfo(command['completeText']);
             }
 
-			if (command['complete']) {
-				this.showInfo(command.complete(this, value));
-			}
+            if (command['complete']) {
+                this.showInfo(command.complete(this, value));
+            }
         }
     },
 
-	commandTakesArgs: function(command) {
-		return command.takes != undefined;
-	},
+    commandTakesArgs: function(command) {
+        return command.takes != undefined;
+    },
 
-	/*
-	 * Calculate the args object to be passed into the command. If it only takes one argument just send in that data, but if it wants more, split it all up for the command and send in an object.
-	 */
-	getArgs: function(fromUser, command) {
-		if (!command.takes) return undefined;
+    /*
+     * Calculate the args object to be passed into the command. If it only takes one argument just send in that data, but if it wants more, split it all up for the command and send in an object.
+     */
+    getArgs: function(fromUser, command) {
+        if (!command.takes) return undefined;
 
-		var args;
-		var userString = fromUser.join(' ');
-		
-		if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
-			args = userString;
-		} else {		
-			args = new TokenObject(userString, { params: command.takes.order.join(' ') });
-			args.rawinput = userString;
-		}
-		return args;
-	},
+        var args;
+        var userString = fromUser.join(' ');
 
-	normalizeTakes: function(command) {
-		// TODO: handle shorts that are the same! :)
-		var takes = command.takes;
-		command.takes = {
-			order: takes
-		}
-		
-		takes.each(function(item) {
-			command.takes[item] = {
-				"short": item[0]
-			}
-		});
-		
-		return command;
-	}
+        if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
+            args = userString;
+        } else {
+            args = new TokenObject(userString, { params: command.takes.order.join(' ') });
+            args.rawinput = userString;
+        }
+        return args;
+    },
+
+    normalizeTakes: function(command) {
+        // TODO: handle shorts that are the same! :)
+        var takes = command.takes;
+        command.takes = {
+            order: takes
+        }
+
+        takes.each(function(item) {
+            command.takes[item] = {
+                "short": item[0]
+            }
+        });
+
+        return command;
+    }
 });
 
 /*
@@ -252,7 +252,7 @@ var CommandLineKeyBindings = Class.create({
                 return false;
             } else if (e.keyCode == Key.ENTER) {
                 this.executeCommand($('command').value);
-				
+
                 return false;
             } else if (e.keyCode == Key.TAB) {
                 this.complete($('command').value);
@@ -346,41 +346,41 @@ var SimpleCommandLineHistoryStore = Class.create({
 
 var CommandLineCustomEvents = Class.create({
     initialize: function(commandline) {
-		this.commandline = commandline;
-		
-		// -- My stuff
-		document.observe("bespin:cmdline:showinfo", function(event) {
-			var msg = event.memo.msg;
-			if (msg) commandline.showInfo(msg);
-		});
-		
-		document.observe("bespin:cmdline:execute", function(event) {
-			var commandname = event.memo.command.name;
-			
-	        commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
-		});
-		
-		// -- Files
-		document.observe("bespin:editor:openfile:openfail", function(event) {
-			var filename = event.memo.filename;
+        this.commandline = commandline;
 
-			commandline.showInfo('Could not open file: ' + filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
-		});
+        // -- My stuff
+        document.observe("bespin:cmdline:showinfo", function(event) {
+            var msg = event.memo.msg;
+            if (msg) commandline.showInfo(msg);
+        });
 
-		document.observe("bespin:editor:openfile:opensuccess", function(event) {
-			var file = event.memo.file;
+        document.observe("bespin:cmdline:execute", function(event) {
+            var commandname = event.memo.command.name;
 
-			commandline.showInfo('Loaded file: ' + file.name, true);
-		});
-		
-		// -- Projects
-		document.observe("bespin:editor:project:set", function(event) {
-			var project = event.memo.project;
+            commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
+        });
 
-			_editSession.project = project;
-	        commandline.showInfo('Changed project to ' + project, true);
-		});
-		
-	}
+        // -- Files
+        document.observe("bespin:editor:openfile:openfail", function(event) {
+            var filename = event.memo.filename;
+
+            commandline.showInfo('Could not open file: ' + filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
+        });
+
+        document.observe("bespin:editor:openfile:opensuccess", function(event) {
+            var file = event.memo.file;
+
+            commandline.showInfo('Loaded file: ' + file.name, true);
+        });
+
+        // -- Projects
+        document.observe("bespin:editor:project:set", function(event) {
+            var project = event.memo.project;
+
+            _editSession.project = project;
+            commandline.showInfo('Changed project to ' + project, true);
+        });
+
+    }
 });
 
