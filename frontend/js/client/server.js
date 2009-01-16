@@ -65,6 +65,14 @@ var Server = Class.create({
 		});
     },
 
+	signup: function(user, pass, email, callback, notloggedin) {
+        var url = "/register/new/" + user;
+        this.request('POST', url, 
+			"password=" + escape(pass) + "&email=" + escape(email), { 
+			call: callback, on401: notloggedin, log: 'Login complete.' 
+		});
+	},
+
     logout: function() {
         var url = "/register/logout/";
         this.request('POST', url, null, { log: 'Logout complete.' });
