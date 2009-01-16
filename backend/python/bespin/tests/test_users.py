@@ -12,7 +12,7 @@ def test_create_new_user():
     config.activate_profile()
     user_manager = config.c.user_manager
     assert len(user_manager.store) == 0
-    user = user_manager.create_user("BillBixby", "hulkrulez")
+    user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     assert len(user_manager.store) == 1
     assert 'BillBixby' in config.c.saved_keys
     
@@ -20,9 +20,9 @@ def test_create_duplicate_user():
     config.activate_profile()
     assert not config.c.saved_keys
     user_manager = config.c.user_manager
-    user_manager.create_user("BillBixby", "somepass")
+    user_manager.create_user("BillBixby", "somepass", "bill@bixby.com")
     try:
-        user_manager.create_user("BillBixby", "otherpass")
+        user_manager.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
     except model.ConflictError:
         pass
@@ -46,7 +46,8 @@ def test_login_and_verify_user():
     config.activate_profile()
     app = controllers.make_app()
     app = TestApp(app)
-    resp = app.get('/register/login/BillBixby')
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
     assert 'BillBixby' in config.c.saved_keys
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
@@ -58,7 +59,9 @@ def test_login_and_verify_user():
         assert '.svn' not in key
     
     # should be able to run again without an exception appearing
-    resp = app.get('/register/login/BillBixby')
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"),
+                    status=409)
     
     # with the cookie set, we should be able to retrieve the 
     # logged in name
@@ -71,9 +74,10 @@ def test_login_and_verify_user():
 def test_logout():
     config.activate_profile()
     user_manager = config.c.user_manager
-    user_manager.create_user("BillBixby", "")
+    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
-    resp = app.get("/register/login/BillBixby")
+    resp = app.post("/register/login/BillBixby", 
+        dict(password='hulkrulez'))
     resp = app.get("/register/logout/")
     assert resp.cookies_set['auth_tkt'] == '""'

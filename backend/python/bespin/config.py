@@ -20,7 +20,7 @@ c.status_db_cache = None
 c.edit_db = None
 c.edit_db_cache = None
 c.secret = "This is the phrase that is used for secret stuff."
-c.static_dir = "../../frontend"
+c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 
 def set_profile(profile):
     if profile == "test":

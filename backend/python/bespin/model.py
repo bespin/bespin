@@ -30,7 +30,8 @@ class DB(object):
         file_manager.db = self
     
 class User(object):
-    def __init__(self, password):
+    def __init__(self, password, email):
+        self.email = email
         self.password = password
         self.settings = {}
         self.projects = set()
@@ -59,14 +60,14 @@ class UserManager(object):
         """Take any action required to persist changes."""
         self.store.sync()
         
-    def create_user(self, username, password):
+    def create_user(self, username, password, email):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
         if username in self.store:
             raise ConflictError("There is already a user named %s registered" %
                                 username)
-        user = User(password)
+        user = User(password, email)
         self.store[username] = user
         self.db.file_manager.install_template(username,
                                 username + "_New_Project")
