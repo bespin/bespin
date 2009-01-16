@@ -26,6 +26,7 @@ var dp = {
 		Utils	: {},
 		RegexLib: {},
 		Brushes	: {},
+		BrushCache: {}, // added so we don't create brushes every second!
 		Strings : {
 			AboutDialog : '<html><head><title>About...</title></head><body class="dp-about"><table cellspacing="0"><tr><td class="copy"><p class="title">dp.SyntaxHighlighter</div><div class="para">Version: {V}</p><p><a href="http://www.dreamprojections.com/syntaxhighlighter/?ref=about" target="_blank">http://www.dreamprojections.com/syntaxhighlighter</a></p>&copy;2004-2007 Alex Gorbatchev.</td></tr><tr><td class="footer"><input type="button" class="close" value="OK" onClick="window.close()"/></td></tr></table></body></html>'
 		},
@@ -256,7 +257,7 @@ dp.sh.Highlighter.prototype.GetMatches = function(regex, css)
 	var index = 0;
 	var match = null;
 	var matched;
-
+	
 	while((match = regex.exec(this.code)) != null) {
 		// if the re specified a subgroup, highlight just the subgroup.
 		// otherwise, highlight the entire match.
@@ -268,7 +269,8 @@ dp.sh.Highlighter.prototype.GetMatches = function(regex, css)
 			index = match.index;
 		}
 
-		this.matches[this.matches.length] = new dp.sh.Match(matched, index, css);
+		if (matched)
+			this.matches[this.matches.length] = new dp.sh.Match(matched, index, css);
 	}
 }
 
@@ -343,7 +345,8 @@ dp.sh.Highlighter.prototype.IsInside = function(match)
 
 dp.sh.Highlighter.prototype.ProcessRegexList = function()
 {
-	for(var i = 0; i < this.regexList.length; i++)
+	this.matches = [];
+	for (var i = 0; i < this.regexList.length; i++)
 		this.GetMatches(this.regexList[i].regex, this.regexList[i].css);
 }
 
@@ -492,15 +495,15 @@ dp.sh.Highlighter.prototype.Unindent = function(str)
 
 
 dp.sh.Highlighter.prototype.Annotate = function(code) {
-    if (this.code == null)
-        this.code = this.Chop(code);
+	this.code = this.Chop(code);
     this.matches = new Array();
     var pos = 0;
     var annotations = new Array();
 
     this.ProcessRegexList();
+
     // if no matches found, add entire code as plain text
-	if(this.matches.length == 0) {
+	if (this.matches.length == 0) {
 		annotations[annotations.length] = {text:code,style:'plain'};
 		return annotations;
 	}
@@ -604,8 +607,14 @@ dp.sh.GetBrush = function(language) {
         var aliases = dp.sh.Brushes[b].Aliases;
         if (aliases == null) continue;
         for (var i = 0; i < aliases.length; i++)
-            if (aliases[i] == language)
-                return new dp.sh.Brushes[b];
+            if (aliases[i] == language) {
+//				return new dp.sh.Brushes[b];
+				
+				if (!dp.sh.BrushCache[b]) {
+					dp.sh.BrushCache[b] = new dp.sh.Brushes[b];
+				}
+				return dp.sh.BrushCache[b];
+			}
     }
     return null;
 }
