@@ -1,0 +1,6 @@
+syntax: glob
+backend/python/lib
+backend/python/bin
+*.pyc
+backend/python/.Python
+backend/python/BespinServer.egg-info
