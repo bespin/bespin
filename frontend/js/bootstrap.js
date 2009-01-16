@@ -28,7 +28,6 @@
 		  document.observe("bespin:settings:loaded", function(event) {
 			_settings.loadSession();  // load the last file or what is passed in
           	doResize();
-          	new StatusChecker().start(); // mock statuses
 		  });
 		
           var collab = $("collaboration");
