@@ -1,28 +1,3 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1
- * 
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- * 
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- * 
- * The Original Code is Bespin.
- * 
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- * 
- * Contributor(s):
- *     Bespin Team (bespin@mozilla.com)
- *
- * 
- * ***** END LICENSE BLOCK ***** */
-
 package com.mozilla.bespin.controllers;
 
 import com.mozilla.bespin.UserSession;
@@ -50,15 +25,10 @@ public class Register extends BespinController {
         return auth;
     }
 
-    private void printUserJSON(String username) {
-        print("({ 'username':" + username + ", 'project':" + "'secret'})");
-    }
-
     @RequiresLogin
-    public void userinfo() {
+    public void username() {
         UserSession session = (UserSession) getCtx().getReq().getSession(true).getAttribute("userSession");
-        // TODO do the same sha1 has as the python clent
-        this.printUserJSON(session.username);
+        print(session.username);
     }
 
     public void login() throws IOException {
@@ -76,12 +46,12 @@ public class Register extends BespinController {
         // -- if you are already logged in return
         UserSession session = (UserSession) getCtx().getReq().getSession(true).getAttribute("userSession");
         if (session != null && session.username.equals(username)) {
-            this.printUserJSON(session.username);
+            printStatus();
         } else {
             String result = getAuthenticator().authenticate(getCtx(), username, password);
             if (result != null) {
                 storeLoggedInUser(result);
-                this.printUserJSON(session.username);
+                printStatus();
             }
         }
     }

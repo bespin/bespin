@@ -1,28 +1,3 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1
- * 
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- * 
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- * 
- * The Original Code is Bespin.
- * 
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- * 
- * Contributor(s):
- *     Bespin Team (bespin@mozilla.com)
- *
- * 
- * ***** END LICENSE BLOCK ***** */
-
 var CommandLine = Class.create({
 	initialize: function(commandLine, files, settings, editor) {
         this.commandLine = commandLine;
@@ -43,20 +18,18 @@ var CommandLine = Class.create({
 
     executeCommand: function(value) {
         var data = value.split(/\s+/);
-        var commandname = data.shift();
+        var command = data.shift();
 
         var command;
 
-        if (this.commands[commandname]) {
-            command = this.commands[commandname];
-        } else if (this.aliases[commandname]) {
-            command = this.commands[this.aliases[commandname]];
+        if (this.commands[command]) {
+            command = this.commands[command];
+        } else if (this.aliases[command]) {
+            command = this.commands[this.aliases[command]];
         } else {
-            this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
+            this.showInfo("Sorry, no command '" + command + "'. Maybe try to run &raquo; help", true);
             return;
         }
-
-		document.fire("bespin:cmdline:execute", { command: command });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -251,8 +224,9 @@ var CommandLineKeyBindings = Class.create({
                 this.commandLineHistory.setPrevious();
                 return false;
             } else if (e.keyCode == Key.ENTER) {
-                this.executeCommand($('command').value);
-				
+                var command = $('command').value;
+                this.executeCommand(command);
+                this.commandLineHistory.add(command);
                 return false;
             } else if (e.keyCode == Key.TAB) {
                 this.complete($('command').value);
@@ -352,12 +326,6 @@ var CommandLineCustomEvents = Class.create({
 		document.observe("bespin:cmdline:showinfo", function(event) {
 			var msg = event.memo.msg;
 			if (msg) commandline.showInfo(msg);
-		});
-		
-		document.observe("bespin:cmdline:execute", function(event) {
-			var commandname = event.memo.command.name;
-			
-	        commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
 		});
 		
 		// -- Files

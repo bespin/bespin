@@ -1,78 +1,177 @@
-<!--
-    ***** BEGIN LICENSE BLOCK *****
-    Version: MPL 1.1
-
-    The contents of this file are subject to the Mozilla Public License Version
-    1.1 (the "License"); you may not use this file except in compliance with
-    the License. You may obtain a copy of the License at
-    http://www.mozilla.org/MPL/
-
-    Software distributed under the License is distributed on an "AS IS" basis,
-    WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-    for the specific language governing rights and limitations under the
-    License.
-
-    The Original Code is Bespin.
-
-    The Initial Developer of the Original Code is Mozilla.
-    Portions created by the Initial Developer are Copyright (C) 2009
-    the Initial Developer. All Rights Reserved.
-
-    Contributor(s):
-        Bespin Team (bespin@mozilla.com)
-
-    ***** END LICENSE BLOCK *****
--->
-
-<!doctype html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>Bespin &raquo; Welcome to the Cloud City</title>
-    <link type="text/css" rel="stylesheet" href="css/index.css"/>
+  <title>Bespin &raquo; Welcome to the Cloud City</title>
+  <style type="text/css">
+  body {
+    padding: 0;
+    margin: 0;
+    background-color: #4f4e45;
+    font-family: Calibri, Arial, sans-serif;
+  }
+  
+  #loginpane {
+    height: 34px;
+    background-image: url("images/splash_toolbar_bg.png");
+    background-repeat: repeat-x;
+    color: #4f4e45;
+    font-size: 10pt;
+  }
+  
+  #loginpane a {
+    color: #DAD4BA;
+  }
+  
+  #loginpane input {
+      border: none;
+      background-image: url("images/splash_inputs.png");
+      background-repeat: no-repeat;
+      padding-left: 4px;
+      padding-right: 4px;
+      width: 81px;
+      color: #ddd;
+  }
 
+  #welcome {
+    height: 262px;
+    background-image: url("images/splash_logo_bg.jpg");
+    background-repeat: repeat-x;
+  }
+
+  #toolbar {
+    z-index: 40;
+    height: 24px;
+    margin-top: -6px;
+    padding-top: 12px;
+    background-image: url("images/splash_lowertoolbar_bg.png");
+    background-repeat: repeat-x;
+    border-bottom: 1px solid black;
+    color: #dad4ba;
+    font-size: 12pt;
+  }
+  
+  #footer {
+      font-size: 8pt;
+      color: #7c7b74;
+      padding-bottom: 1em;
+  }
+
+  #main {
+    margin: 20px auto;  
+    height: 181px;
+    width: 610px;
+  }
+  
+  #quickedit {
+      float: left;
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-top: 10px;
+      width: 264px;
+      height: 171px;
+      background-image: url("images/splash_editnow_bg.gif");
+      text-align: left;
+      color: #dad4ba;
+      font-size: 10pt;
+  }
+  
+  #quickedit img {
+      padding-top: 42px;
+      cursor: pointer;
+  }
+
+  #editnow {
+      float: right;
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-top: 10px;
+      width: 264px;
+      height: 171px;
+      background-image: url("images/splash_editnow_bg.gif");
+      text-align: left;
+      color: #dad4ba;
+      font-size: 10pt;
+  }
+  
+  #editnow h2, #quickedit h2 {
+      font-weight: normal;
+      margin: 0;
+      color: #ff9600;
+      font-size: 14pt;
+      font-family: Tahoma, Calibri, Arial, sans-serif;
+      text-align: left;
+  }
+  
+  #editnow input {
+      border: none;
+      background-image: url("images/splash_editnow_input.png");
+      background-repeat: no-repeat;
+      padding-left: 4px;
+      padding-right: 4px;
+      width: 252px;
+      color: #ddd;
+  }
+  
+  #editnow img {
+      padding-right: 4px;
+      padding-top: 12px;
+      cursor: pointer;
+  }
+  
+  #openid {
+      float: left;
+      padding-top: 9px;
+      padding-left: 1em;
+      color: #DDDDDD;
+  }
+
+  #newversion a {
+      color: #ff9600;
+  }
+  </style>
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
     <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
     <script type="text/javascript" src="js/client/server.js"></script>
-    <script type="text/javascript">
-    var svr = new Server();
-
+	<script type="text/javascript">
+	var svr = new Server();
     function processLogin(xhr) {
-        location.href = 'dashboard.html';
+    	location.href = 'dashboard.html';
     }
 
-    function notLoggedIn(xhr) {
-        $("status").innerHTML = "Login didn't work. Try again";
-    }
+	function notLoggedIn(xhr) {
+		$("status").innerHTML = "Login didn't work. Try again";
+	}
 
-    function login() {
-        svr.login($("username").value, null, processLogin, notLoggedIn)
-    }
+	function login() {
+	    svr.login($("username").value, null, processLogin, notLoggedIn)
+	}
 
-    function quickEdit() {
-        location.href = 'editor.html#new=true';
-    }
-
-    function isLoggedIn(userinfo) {
-        $('display_username').innerHTML = userinfo.username;
-        $('logged_in').show();
-    }
-
-    function isNotLoggedIn() {
-        $('not_logged_in').show();
-    }
-
-    function logout() {
-        svr.logout();
-        $('logged_in').hide();
-        $('not_logged_in').show();
-    }
-
-    window.onload = function() {
-        svr.currentuser(isLoggedIn, isNotLoggedIn);
-    }
-    </script>
+	function quickEdit() {
+		location.href = 'editor.html#new=true';
+	}
+	
+	function isLoggedIn(userinfo) {
+	  $('display_username').innerHTML = userinfo.username;
+	  $('logged_in').show();
+	}
+	
+	function isNotLoggedIn() {
+	  $('not_logged_in').show();
+	}
+	
+	function logout() {
+	  svr.logout();
+	  $('logged_in').hide();
+	  $('not_logged_in').show();
+	}
+	
+	function onLoad() {
+	  svr.currentuser(isLoggedIn, isNotLoggedIn);
+	}
+	</script>
 </head>
-<body>
+<body onload="onLoad();">
 
 <div id="loginpane" align="right">
   <div id="not_logged_in" style="display: none;">
