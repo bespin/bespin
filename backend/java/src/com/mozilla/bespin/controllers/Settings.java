@@ -32,6 +32,7 @@ public class Settings extends BespinController {
         for (String param : params) {
             String[] namevalue = param.split("=");
 
+// TODO: can allow an empty?            
 //        if (namevalue.length != 2) {
 //            getCtx().getResp().sendError(400, "Post body should contain a key/value pair delimited with an equals symbol");
 //            return;
