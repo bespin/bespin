@@ -28,19 +28,19 @@
  * a line at a time.
  */
 var SyntaxHighlighter = Class.create({
-	plain: function(line) {
-		return new Array({text:line,style:'plain'});
-	},
-	
+    plain: function(line) {
+        return new Array({text:line,style:'plain'});
+    },
+
     highlight: function(line, language) {
         if (language == 'off') return this.plain(line);
 
-		var highlighter = dp.sh.GetBrush(language);
-		if (highlighter) {
-			return highlighter.Annotate(line);
-		} else {
-			return this.plain(line);
-		}
+        var highlighter = dp.sh.GetBrush(language);
+        if (highlighter) {
+            return highlighter.Annotate(line);
+        } else {
+            return this.plain(line);
+        }
     }
 });
 
