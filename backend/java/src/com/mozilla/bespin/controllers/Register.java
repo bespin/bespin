@@ -25,10 +25,15 @@ public class Register extends BespinController {
         return auth;
     }
 
+    private void printUserJSON(String username) {
+        print("({ 'username':" + username + ", 'project':" + "'secret'})");
+    }
+
     @RequiresLogin
-    public void username() {
+    public void userinfo() {
         UserSession session = (UserSession) getCtx().getReq().getSession(true).getAttribute("userSession");
-        print(session.username);
+        // TODO do the same sha1 has as the python clent
+        this.printUserJSON(session.username);
     }
 
     public void login() throws IOException {
@@ -46,12 +51,12 @@ public class Register extends BespinController {
         // -- if you are already logged in return
         UserSession session = (UserSession) getCtx().getReq().getSession(true).getAttribute("userSession");
         if (session != null && session.username.equals(username)) {
-            printStatus();
+            this.printUserJSON(session.username);
         } else {
             String result = getAuthenticator().authenticate(getCtx(), username, password);
             if (result != null) {
                 storeLoggedInUser(result);
-                printStatus();
+                this.printUserJSON(session.username);
             }
         }
     }
