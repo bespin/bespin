@@ -35,13 +35,16 @@ var Server = Class.create({
 
     request: function(method, url, payload, callbackOptions) {
         var xhr = new XMLHttpRequest();
-        try {
-            if (netscape.security.PrivilegeManager.enablePrivilege) {
-                netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
-            }
-        } catch (ex) {
-        }
-
+		
+		if (document.location.href.startWith("file:")) { // if developing and using this locally only!
+	       try {
+	           if (netscape.security.PrivilegeManager.enablePrivilege) {
+	               netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
+	           }
+	       } catch (ex) {
+	       }
+		}
+		
         if (callbackOptions) { // do it async (best)
             xhr.onreadystatechange = function() {
 	            if (xhr.readyState == 4) {					
