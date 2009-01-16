@@ -27,50 +27,50 @@
 <!doctype html>
 <html>
 <head>
-    <title>Bespin &raquo; Welcome to the Cloud City</title>
-    <link type="text/css" rel="stylesheet" href="css/index.css"/>
+	<title>Bespin &raquo; Welcome to the Cloud City</title>
+	<link type="text/css" rel="stylesheet" href="css/index.css"/>
 
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
     <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
     <script type="text/javascript" src="js/client/server.js"></script>
-    <script type="text/javascript">
-    var svr = new Server();
+	<script type="text/javascript">
+	var svr = new Server();
 
-    function processLogin(xhr) {
-        location.href = 'dashboard.html';
-    }
+	function processLogin(xhr) {
+		location.href = 'dashboard.html';
+	}
 
-    function notLoggedIn(xhr) {
-        $("status").innerHTML = "Login didn't work. Try again";
-    }
+	function notLoggedIn(xhr) {
+		$("status").innerHTML = "Login didn't work. Try again";
+	}
 
-    function login() {
-        svr.login($("username").value, null, processLogin, notLoggedIn)
-    }
+	function login() {
+		svr.login($("username").value, null, processLogin, notLoggedIn)
+	}
 
-    function quickEdit() {
-        location.href = 'editor.html#new=true';
-    }
+	function quickEdit() {
+		location.href = 'editor.html#new=true';
+	}
 
-    function isLoggedIn(userinfo) {
-        $('display_username').innerHTML = userinfo.username;
-        $('logged_in').show();
-    }
+	function isLoggedIn(userinfo) {
+		$('display_username').innerHTML = userinfo.username;
+		$('logged_in').show();
+	}
 
-    function isNotLoggedIn() {
-        $('not_logged_in').show();
-    }
+	function isNotLoggedIn() {
+		$('not_logged_in').show();
+	}
 
-    function logout() {
-        svr.logout();
-        $('logged_in').hide();
-        $('not_logged_in').show();
-    }
+	function logout() {
+		svr.logout();
+		$('logged_in').hide();
+		$('not_logged_in').show();
+	}
 
-    window.onload = function() {
-        svr.currentuser(isLoggedIn, isNotLoggedIn);
-    }
-    </script>
+	window.onload = function() {
+		svr.currentuser(isLoggedIn, isNotLoggedIn);
+	}
+	</script>
 </head>
 <body>
 
