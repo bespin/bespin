@@ -9,7 +9,7 @@ document.observe("bespin:editor:newfile", function(event) {
 	_files.newFile(project, newfilename, function() {
 		document.fire("bespin:editor:openfile:opensuccess", { file: {
 			name: newfilename,
-			contents: " ",
+			content: " ",
 			timestamp: new Date().getTime()
 		}});		
 	});

@@ -306,6 +306,43 @@ var DefaultCommands = {
             }
         });
 
+		commandline.addCommand({
+            name: 'doctype',
+            takes: ['section'], // part on the Wiki
+            preview: 'grab the doctype info for a section',
+			completeText: 'can you give me the Doctype wiki section?',
+            execute: function(self, section) {
+				//TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
+            }
+        });
+        
+        commandline.addCommand({
+            name: 'trim',
+            takes: ['side'], // left, right, both
+            preview: 'trim trailing or leading whitespace',
+			completeText: 'optionally, give a side of left, right, or both (defaults to right)',
+            execute: function(self, side) {
+				self.editor.model.changeEachRow(function(row) {
+					if (!side) side = "right";
+					if (["left", "both"].include(side)) {
+						console.log(row.first);
+						while (row.first() == ' ') {
+							row.shift();
+						}
+					}
+					if (["right", "both"].include(side)) {
+						var i = row.length - 1;
+
+						while (row[i] == ' ') {
+							delete row[i];
+							i--;
+						}						
+					}
+					return row;
+				});
+            }
+        });
+
         commandline.addCommand({
             name: 'bindkey',
             takes: ['modifier', 'key', 'action'],
