@@ -17,6 +17,13 @@ var DocumentModel = Class.create({
         this.dirtyRows[row] = true;
     },
 
+    setRowArray: function(rowIndex, row) {
+		if (!Object.isArray(row)) {
+			row = row.split('');
+		}
+		this.rows[rowIndex] = row;
+    },
+
     // gets the row array for the specified row, creating it and any intermediate rows as necessary
     getRowArray: function(rowIndex) {
         while (this.rows.length <= rowIndex) this.rows.push([]);
@@ -58,6 +65,14 @@ var DocumentModel = Class.create({
         var rows = content.split("\n");
         for (var x = 0; x < rows.length; x++) {
             this.insertCharacters({ row: x, col: 0 }, rows[x]);
+        }
+    },
+
+    changeEachRow: function(changeFunction) {
+        for (var x = 0; x < this.getRowCount(); x++) {
+            var row = this.getRowArray(x);
+			row = changeFunction(row);
+			this.setRowArray(x, row);
         }
     },
 
