@@ -11,10 +11,10 @@ def setup_module(module):
     config.set_profile('test')
     config.activate_profile()
     user_manager = config.c.user_manager
-    user_manager.create_user("BillBixby", "")
+    user_manager.create_user("BillBixby", "", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
-    app.get("/register/login/BillBixby")
+    app.post("/register/login/BillBixby", dict(password=""))
 
 def test_auth_required():
     app = controllers.make_app()
