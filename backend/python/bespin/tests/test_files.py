@@ -15,10 +15,11 @@ def _get_fm():
     config.activate_profile()
     app.reset()
     fm = config.c.file_manager
-    config.c.user_manager.create_user("SomeoneElse", "")
+    config.c.user_manager.create_user("SomeoneElse", "", "someone@else.com")
     fm.save_file('SomeoneElse', 'otherproject', 'foo', 
                  'Just a file to reserve a project')
-    app.get("/register/login/MacGyver")
+    app.post("/register/new/MacGyver", 
+        dict(password="richarddean", email="rich@sg1.com"))
     config.c.saved_keys = set()
     return fm
 
@@ -317,7 +318,7 @@ def test_edit_interface():
     assert data == []
     
 def test_private_project_does_not_appear_in_list():
-    resp = app.get("/register/login/MacGyver")
+    resp = app.get("/register/userinfo/")
     data = simplejson.loads(resp.body)
     project_name = data['project']
     app.put("/file/at/%s/foo" % project_name, "BAR!")

@@ -5,20 +5,42 @@ from bespin.config import c
 from bespin.auth import make_auth_middleware
 from bespin.framework import expose, BadRequest
 
+@expose(r'^/register/new/(?P<username>.*)$', 'POST', auth=False)
+def new_user(request, response):
+    try:
+        username = request.kwargs['username']
+        email = request.POST['email']
+        password = request.POST['password']
+    except KeyError:
+        raise BadRequest("username, email and password are required.")
+    user = request.user_manager.create_user(username, password, email)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(dict(project=user.private_project))
+    request.environ['REMOTE_USER'] = username
+    return response()
+
 @expose(r'^/register/userinfo/$', 'GET')
 def get_registered(request, response):
     response.content_type = "application/json"
+    if request.user:
+        private_project = request.user.private_project
+    else:
+        private_project = None
     response.body=simplejson.dumps(
         dict(username=request.username,
-        project=request.user.private_project)
+        project=private_project)
     )
     return response()
 
-@expose(r'^/register/login/(?P<login_username>.+)', auth=False)
+@expose(r'^/register/login/(?P<login_username>.+)', 'POST', auth=False)
 def login(request, response):
     response.content_type = "application/json"
+    if request.user:
+        private_project = request.user.private_project
+    else:
+        private_project = None
     response.body=simplejson.dumps(
-        dict(project=request.user.private_project)
+        dict(project=private_project)
     )
     return response()
 

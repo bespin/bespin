@@ -136,7 +136,7 @@
 	<script type="text/javascript">
 	var svr = new Server();
     function processLogin(xhr) {
-    	location.href = 'dashboard.html';
+      // location.href = 'dashboard.html';
     }
 
 	function notLoggedIn(xhr) {
@@ -144,7 +144,7 @@
 	}
 
 	function login() {
-	    svr.login($("username").value, null, processLogin, notLoggedIn)
+	    svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
 	}
 
 	function quickEdit() {

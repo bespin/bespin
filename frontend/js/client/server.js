@@ -45,6 +45,7 @@ var Server = Class.create({
 				}
             }
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
+			xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded')
             xhr.send(payload);
         } else {
 			var fullUrl = this.SERVER_BASE_URL + url;
@@ -59,7 +60,7 @@ var Server = Class.create({
 
     login: function(user, pass, callback, notloggedin) {
         var url = "/register/login/" + user;
-        this.request('POST', url, escape("password=" + pass), { 
+        this.request('POST', url, "password=" + escape(pass), { 
 			call: callback, on401: notloggedin, log: 'Login complete.' 
 		});
     },
