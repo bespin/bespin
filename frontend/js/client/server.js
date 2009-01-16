@@ -65,11 +65,12 @@ var Server = Class.create({
 		});
     },
 
-	signup: function(user, pass, email, callback, notloggedin) {
+	signup: function(user, pass, email, callback, notloggedin, userconflict) {
         var url = "/register/new/" + user;
         this.request('POST', url, 
 			"password=" + escape(pass) + "&email=" + escape(email), { 
-			call: callback, on401: notloggedin, log: 'Login complete.' 
+			call: callback, on401: notloggedin, on409: usernameInUse,
+			log: 'Login complete.' 
 		});
 	},
 
