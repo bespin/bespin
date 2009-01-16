@@ -9,18 +9,12 @@ style (anything that could affect painting)
 - defaultSize (used by SplitPanel, HorizontalTree)
 - border
 - backgroundColorOdd (used by List, HorizontalTree)
-- scrollTopImage (used by ScrollBar)
-- scrollMiddleImage (used by ScrollBar)
-- scrollBottomImage (used by ScrollBar)
-- scrollHandleTopImage (used by ScrollBar)
-- scrollHandleMiddleImage (used by ScrollBar)
-- scrollHandleBottomImage (used by ScrollBar)
 
 attributes (not related to painting)
 - regions (used by SplitPanel)
   - size (% or px)
   - contents (component)
-- orientation (TH.HORIZONTAL, TH.VERTICAL; used by SplitPanel, Splitter)
+- orientation (GTK.HORIZONTAL, GTK.VERTICAL; used by SplitPanel, Splitter)
 - text (used by Label)
 
 events

@@ -1,39 +1,4 @@
-#  ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-# 
-# The contents of this file are subject to the Mozilla Public License  
-# Version
-# 1.1 (the "License"); you may not use this file except in compliance  
-# with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-# 
-# Software distributed under the License is distributed on an "AS IS"  
-# basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
-# License
-# for the specific language governing rights and limitations under the
-# License.
-# 
-# The Original Code is Bespin.
-# 
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-# 
-# Contributor(s):
-# 
-# ***** END LICENSE BLOCK *****
-# 
-
 import os
-import logging
-import logging.handlers
-
-from path import path
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 class Bunch(dict):
     def __getattr__(self, attr):
@@ -46,60 +11,55 @@ class Bunch(dict):
         self[attr] = value
 
 c = Bunch()
-c.dburl = None
+c.users_db = None
+c.users_db_cache = None
+c.file_db = None
+c.file_db_cache = None
+c.status_db = None
+c.status_db_cache = None
+c.edit_db = None
+c.edit_db_cache = None
 c.secret = "This is the phrase that is used for secret stuff."
-c.pw_secret = "This phrase encrypts passwords."
-c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
-c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
-c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
-c.sessionmaker = sessionmaker()
-c.default_quota = 15
-c.secure_cookie = True
-
-# if this is true, the user's UUID will be used as their
-# user directory name. If it's false, their username will
-# be used. Generally, you'll only want this to be false
-# in development.
-c.use_uuid_as_dir_identifier = True
-
-c.fslevels = 0
-
-c.max_import_file_size = 20000000
+c.static_dir = "../../frontend"
 
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
-        c.dburl = "sqlite://"
-        c.fsroot = os.path.abspath("%s/../testfiles" 
-                        % os.path.dirname(__file__))
+        import bespin.tests.util
+        c.users_db = "bespin_test://"
+        c.users_db_cache = "simple://"
+        c.file_db = "bespin_test://"
+        c.file_db_cache = "simple://"
+        c.status_db = "bespin_test://"
+        c.status_db_cache = "simple://"
+        c.edit_db = "bespin_test://"
+        c.edit_db_cache = "simple://"
+        c.saved_keys = set()
     elif profile == "dev":
-        c.dburl = "sqlite:///devdata.db"
-        c.fsroot = os.path.abspath("%s/../../../devfiles" 
-                        % os.path.dirname(__file__))
-        root_log = logging.getLogger()
-        root_log.setLevel(logging.DEBUG)
-        handler = logging.handlers.RotatingFileHandler(
-                    c.log_file)
-        root_log.addHandler(handler)
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-        # turn off the secure cookie, because localhost connections
-        # will be HTTP
-        c.secure_cookie = False
-        c.use_uuid_as_dir_identifier = False
-        c.default_quota=10000
+        if not os.path.exists("devdata"):
+            os.mkdir("devdata")
+        c.users_db = "file://devdata/users"
+        c.users_db_cache = "memory://"
+        c.file_db = "file://devdata/files"
+        c.file_db_cache = "memory://"
+        c.status_db = "file://devdata/status"
+        c.status_db_cache = "memory://"
+        c.edit_db = "file://devdata/edits"
+        c.edit_db_cache = "memory://"
     
 def activate_profile():
-    c.dbengine = create_engine(c.dburl)
-    c.fsroot = path(c.fsroot)
-    if not c.fsroot.exists:
-        c.fsroot.makedirs()
+    from shove import Shove
+    from bespin.model import UserManager, FileManager, DB
     
+    c.user_manager = UserManager(Shove(c.users_db, c.users_db_cache))
+    c.file_manager = FileManager(Shove(c.file_db, c.file_db_cache),
+                                 Shove(c.status_db, c.status_db_cache),
+                                 Shove(c.edit_db, c.edit_db_cache))
+    c.db = DB(c.user_manager, c.file_manager)
+
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
     set_profile('dev')
-    here = os.path.dirname(__file__)
-    dbfile = os.path.abspath(os.path.join(here, "..", "devdata.db"))
-    c.dburl = "sqlite:///%s" % (dbfile)
     activate_profile()
     return spawning_config
 
