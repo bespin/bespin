@@ -256,14 +256,14 @@ img {
 }
 
 #status .seperator {
-    color: #999;
+	color: #999;
 }
 
 body {
     padding: 0;
     margin: 0;
     overflow: hidden;
-    background-color: #2A211C;
+	background-color: #2A211C;
 }
 
 #prompt {
@@ -334,7 +334,7 @@ body {
 }
 
 #info b {
-    color: #ddd;
+	color: #ddd;
 }
 
 #target_browsers {

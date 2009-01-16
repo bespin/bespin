@@ -43,10 +43,10 @@ var DocumentModel = Class.create({
     },
 
     setRowArray: function(rowIndex, row) {
-        if (!Object.isArray(row)) {
-            row = row.split('');
-        }
-        this.rows[rowIndex] = row;
+		if (!Object.isArray(row)) {
+			row = row.split('');
+		}
+		this.rows[rowIndex] = row;
     },
 
     // gets the row array for the specified row, creating it and any intermediate rows as necessary
@@ -96,8 +96,8 @@ var DocumentModel = Class.create({
     changeEachRow: function(changeFunction) {
         for (var x = 0; x < this.getRowCount(); x++) {
             var row = this.getRowArray(x);
-            row = changeFunction(row);
-            this.setRowArray(x, row);
+			row = changeFunction(row);
+			this.setRowArray(x, row);
         }
     },
 

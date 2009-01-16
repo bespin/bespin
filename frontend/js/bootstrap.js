@@ -40,7 +40,7 @@
 
       var _showCollabHotCounter = 0;
 
-      Element.observe(window, 'load', function() {    
+      Element.observe(window, 'load', function() {	
           _editor      = new Editor($('editor'));
           _editSession = new EditSession(_editor);
           _server      = new Server();
@@ -50,11 +50,11 @@
 
           _editor.setFocus(true);
 
-          document.observe("bespin:settings:loaded", function(event) {
-            _settings.loadSession();  // load the last file or what is passed in
-              doResize();
-          });
-
+		  document.observe("bespin:settings:loaded", function(event) {
+			_settings.loadSession();  // load the last file or what is passed in
+          	doResize();
+		  });
+		
           var collab = $("collaboration");
           Element.observe(collab, 'click', function() {
               _showCollab = !_showCollab;
@@ -101,7 +101,7 @@
               _editor.ui.actions.redo();
           });
 
-          Element.observe(window, 'resize', doResize);
+	      Element.observe(window, 'resize', doResize);
       });
 
       function recalcLayout() {

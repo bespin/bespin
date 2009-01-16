@@ -60,8 +60,8 @@ var SyncHelper = Class.create({
         this.editor.undoManager.syncHelper = this;
         this.opQueue = [];
         this.lastOp = 0;
-        this.stopped = false;
-
+		this.stopped = false;
+		
         var self = this;
         setTimeout(function() { self.processSendQueue() }, self.SEND_INTERVAL );
     },
@@ -69,31 +69,31 @@ var SyncHelper = Class.create({
     retrieveUpdates: function() {
         var self = this;
 
-        // TODO: fix global references
+		// TODO: fix global references
         _server.editAfterActions(_editSession.project, _editSession.path, this.lastOp, function(json) { 
 
-            self.editor.undoManager.syncHelper = undefined; // TODO: document why I do this
+	        self.editor.undoManager.syncHelper = undefined; // TODO: document why I do this
 
-            var ops = eval(json);
-            this.lastOp += ops.length;
+	        var ops = eval(json);
+	        this.lastOp += ops.length;
 
-            ops.each(function(op) {
-                if (op.username != _editSession.username) { // don't play operations that have been performed by this user
-                    self.playOp(op);
-                    _showCollabHotCounter = 20;
-                }
-            });
+	        ops.each(function(op) {
+	            if (op.username != _editSession.username) { // don't play operations that have been performed by this user
+	                self.playOp(op);
+	                _showCollabHotCounter = 20;
+	            }
+	        });
 
-            if (!_showCollab) {
-                $("collaboration").src = (_showCollabHotCounter > 0) ? "images/icn_collab_watching.png" : "images/icn_collab_off.png";
-            }
+	        if (!_showCollab) {
+	            $("collaboration").src = (_showCollabHotCounter > 0) ? "images/icn_collab_watching.png" : "images/icn_collab_off.png";
+	        }
 
-            if (_showCollabHotCounter > 0) _showCollabHotCounter--;
+	        if (_showCollabHotCounter > 0) _showCollabHotCounter--;
 
-            self.editor.undoManager.syncHelper = self;
+	        self.editor.undoManager.syncHelper = self;
 
-            if (!self.stopped) setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );
-        });
+	        if (!self.stopped) setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );
+		}); 
     },
 
     playOp: function(val) {
@@ -110,25 +110,25 @@ var SyncHelper = Class.create({
     syncWithServer: function() {
         var self = this;
 
-        _server.editActions(_editSession.project, _editSession.path, function(json) {
-            if (json.length > 2) {
-                self.editor.undoManager.syncHelper = undefined;
+		_server.editActions(_editSession.project, _editSession.path, function(json) {
+	        if (json.length > 2) {
+	            self.editor.undoManager.syncHelper = undefined;
 
-                var ops = eval(json);
-                this.lastOp = ops.length;
+	            var ops = eval(json);
+	            this.lastOp = ops.length;
 
-                self.editor.ui.actions.ignoreRepaints = true;
-                ops.each(function(val) {
-                    self.playOp(val);
-                });
-                self.editor.ui.actions.ignoreRepaints = false;
-                self.editor.ui.actions.repaint();
+	            self.editor.ui.actions.ignoreRepaints = true;
+	            ops.each(function(val) {
+	                self.playOp(val);
+	            });
+	            self.editor.ui.actions.ignoreRepaints = false;
+	            self.editor.ui.actions.repaint();
 
-                self.editor.undoManager.syncHelper = self;
-            }
+	            self.editor.undoManager.syncHelper = self;
+	        }
 
-            setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );
-        });
+	        setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );			
+		});
     },
 
     stop: function() {

@@ -65,19 +65,19 @@ var EditorActions = Class.create({
     },
 
     moveCursorUp: function(args) {
-        this.editor.cursorPosition.row = args.pos.row = Math.max(0, args.pos.row - 1);
+		this.editor.cursorPosition.row = args.pos.row = Math.max(0, args.pos.row - 1);
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveCursorDown: function(args) {
-        this.editor.cursorPosition.row = args.pos.row = Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1);
+		this.editor.cursorPosition.row = args.pos.row = Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1);
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveToLineStart: function(args) {
@@ -85,7 +85,7 @@ var EditorActions = Class.create({
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveToLineEnd: function(args) {
@@ -93,7 +93,7 @@ var EditorActions = Class.create({
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveToFileTop: function(args) {
@@ -103,7 +103,7 @@ var EditorActions = Class.create({
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveToFileBottom: function(args) {
@@ -113,27 +113,27 @@ var EditorActions = Class.create({
         this.handleCursorSelection(args);
         this.repaint();
 
-        return args;
+		return args;
     },
 
     moveWordLeft: function(args) {
-        var row = this.editor.model.getRowArray(args.pos.row);
+	    var row = this.editor.model.getRowArray(args.pos.row);
 
-        if (args.pos.col == 0) { // -- at the start to move up and to the end
-            var newargs = this.moveCursorUp(args);
-            this.moveToLineEnd(newargs);
-            return;
-        }
-
-        var newcol = (row.length < args.pos.col) ? row.length : args.pos.col;
-        while (newcol > 0) {
-            newcol--;
-            var c = row[newcol];
-            var charCode = c.charCodeAt(0);
-            if ( (charCode < 66) || (charCode > 122) ) { // if you get to an alpha you are done
-                break;
-            }
-        }
+		if (args.pos.col == 0) { // -- at the start to move up and to the end
+			var newargs = this.moveCursorUp(args);
+			this.moveToLineEnd(newargs);
+			return;
+		}
+	
+		var newcol = (row.length < args.pos.col) ? row.length : args.pos.col;
+		while (newcol > 0) {
+			newcol--;
+			var c = row[newcol];
+			var charCode = c.charCodeAt(0);
+			if ( (charCode < 66) || (charCode > 122) ) { // if you get to an alpha you are done
+				break;
+			}
+		}
     
         this.editor.cursorPosition.col = newcol;
         this.handleCursorSelection(args);
@@ -141,28 +141,28 @@ var EditorActions = Class.create({
     },
 
     moveWordRight: function(args) {
-        var row = this.editor.model.getRowArray(args.pos.row);
-
-        if (row.length <= args.pos.col) { // -- at the edge so go to the next line
-            this.moveCursorDown(this.moveToLineStart(args));
-            return;
-        }
-
-        var newcol = args.pos.col;
-        while (newcol < row.length) {
-            newcol++;
-
-            if (row.length == newcol) { // one more to go
-                this.moveToLineEnd(args);
-                return;
-            }
-
-            var c = row[newcol];
-            var charCode = c.charCodeAt(0);
-            if ( (charCode < 66) || (charCode > 122) ) {
-                break;
-            }
-        }
+	    var row = this.editor.model.getRowArray(args.pos.row);
+	
+		if (row.length <= args.pos.col) { // -- at the edge so go to the next line
+			this.moveCursorDown(this.moveToLineStart(args));
+			return;
+		}
+	
+		var newcol = args.pos.col;
+		while (newcol < row.length) {
+			newcol++;
+			
+			if (row.length == newcol) { // one more to go
+				this.moveToLineEnd(args);
+				return;
+			}
+						
+			var c = row[newcol];
+			var charCode = c.charCodeAt(0);
+			if ( (charCode < 66) || (charCode > 122) ) {
+				break;
+			}
+		}
     
         this.editor.cursorPosition.col = newcol;
         this.handleCursorSelection(args);

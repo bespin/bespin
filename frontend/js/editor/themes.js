@@ -65,10 +65,10 @@ Themes.coffee = {
     "attribute-value": "#039a0a",
     tag: "#46a8ed",
     "tag-name": "#46a8ed",
-    value: "#039a0a",
+	value: "#039a0a",
     important: "#990000",
-    cssclass: "#BF9464",
-    cssid: "#46a8ed"
+	cssclass: "#BF9464",
+	cssid: "#46a8ed"
 }
 Themes.coffeezebra = new Hash(Themes.coffee).toObject();
 Themes.coffeezebra.zebraStripeColor = '#FFFFFF';

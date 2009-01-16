@@ -28,7 +28,7 @@
 <html>
 <head>
     <title>Bespin &raquo; Dashboard</title>
-    <link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
+	<link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
 
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
     <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
@@ -82,14 +82,14 @@
         $('graphs').style.borderLeft = '1px solid black';
     }
 
-    function loggedIn(xhr) {
-        svr.list(null, null, displayProjects);  // get projects
+	function loggedIn(xhr) {
+	    svr.list(null, null, displayProjects);  // get projects
         svr.listOpen(displaySessions);   // get sessions
-    }
+	}
 
-    function notLoggedIn(xhr) {
-        location.href = "index.html"; // take me home Scottie!
-    }
+	function notLoggedIn(xhr) {
+	    location.href = "index.html"; // take me home Scottie!
+	}
 
     function displayFiles(files) {
         if (files.length == 0) return;
@@ -146,21 +146,21 @@
         }
     }
 
-    function setupUI() {
+	function setupUI() {
 
-        // get logged in name; if not logged in, display an error of some kind
-        svr.currentuser(loggedIn, notLoggedIn);
+		// get logged in name; if not logged in, display an error of some kind
+		svr.currentuser(loggedIn, notLoggedIn);
 
-        // get the projects for the user
+		// get the projects for the user
 
-        // add the projects to the UI
+		// add the projects to the UI
 
-        // get the list of open sessions
+		// get the list of open sessions
 
-        // add the open sessions to the UI
+		// add the open sessions to the UI
 
 
-    }
+	}
     </script>
 </head>
 <body onload="setupUI()">
