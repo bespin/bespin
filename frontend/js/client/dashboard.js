@@ -1,241 +1,186 @@
-var BespinBorder = Class.define({
-    type: "BespinBorder",
+var heightDiff;
+var projects;
+var scene;
+var tree;
+var infoPanel;
 
-    superclass: Border,
+function sizeCanvas(canvas) {
+    if (!heightDiff) {
+        heightDiff = $("header").clientHeight + $("subheader").clientHeight + $("footer").clientHeight;
+    }
+    var height = window.innerHeight - heightDiff + 11;
+    canvas.writeAttribute({ width: window.innerWidth, height: height });
+}
 
-    members: {
-        init: function(parms) {
-            this._super(parms);
-        },
+Event.observe(window, "resize", function() {
+    sizeCanvas($("canvas"));
+});
 
-        getInsets: function() {
-            return { left: 1, right: 1, bottom: 1, top: 1 };
-        },
+Event.observe(document, "dom:loaded", function() {
+    sizeCanvas($("canvas"));
 
-        paint: function(ctx) {
-            var d = this.component.d();
+    scene = new Scene($("canvas"));
 
-            ctx.fillStyle = "rgb(93, 91, 84)";
+    tree = new HorizontalTree({ style: { backgroundColor: "rgb(76, 74, 65)",
+                                             backgroundColorOdd: "rgb(82, 80, 71)",
+                                             font: "9pt Tahoma",
+                                             color: "white" }});
+    var renderer = new Label({ style: { border: new EmptyBorder({ size: 3 }) } });
+    renderer.old_paint = renderer.paint;
+    renderer.paint = function(ctx) {
+        var d = this.d();
+
+        if (this.selected) {
+            ctx.fillStyle = "rgb(177, 112, 20)";
             ctx.fillRect(0, 0, d.b.w, 1);
 
-            ctx.fillStyle = "rgb(51, 49, 44)";
+            var gradient = ctx.createLinearGradient(0, 0, 0, d.b.h);
+            gradient.addColorStop(0, "rgb(172, 102, 1)");
+            gradient.addColorStop(1, "rgb(219, 129, 1)");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+
+            ctx.fillStyle = "rgb(160, 95, 1)";
             ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-
-            ctx.fillStyle = "rgb(94, 91, 84)";
-            ctx.fillRect(0, 0, 1, d.b.h);
-
-            ctx.fillStyle = "rgb(54, 52, 46)";
-            ctx.fillRect(d.b.w - 1, 0, 1, d.b.h);
         }
+
+        if (this.item.contents) {
+            renderer.styleContext(ctx);
+            var metrics = ctx.measureText(">");
+            ctx.fillText(">", d.b.w - metrics.width - 5, d.b.h / 2 + (metrics.ascent / 2) - 1);
+        }
+
+        this.old_paint(ctx);
     }
+    tree.renderer = renderer;
+
+    projects = new BespinProjectPanel();
+
+    var topPanel = new Panel();
+    topPanel.add([ projects, tree ]);
+    topPanel.layout = function() {
+        var d = this.d();
+        projects.bounds = { x: d.i.l, y: d.i.t, width: projects.getPreferredWidth(d.b.h - d.i.h), height: d.b.h - d.i.h };
+        tree.bounds = { x: projects.bounds.x + projects.bounds.width, y: d.i.t, width: d.b.w - d.i.w - projects.bounds.width, height: d.b.h - d.i.h };
+    }
+    projects.list.renderer = renderer;
+
+    infoPanel = new ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
+
+    var splitPanel = new SplitPanel({ id: "splitPanel", attributes: {
+        orientation: GTK.VERTICAL,
+        regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
+    } });
+
+    splitPanel.attributes.regions[0].label = new Label({
+            id: "foobar",
+            text: "Open Sessions",
+            style: {
+                color: "white",
+                font: "9pt Tahoma"
+            },
+            border: new EmptyBorder({ size: 4 })
+    });
+
+    scene.root.add(splitPanel);
+
+    scene.render();
+
+    scene.bus.bind("dblclick", tree, function() {
+        var path = tree.getSelectedPath();
+        if (path.length == 0) return;
+        editFile(currentProject, getFilePath(path));
+    });
+
+    scene.bus.bind("itemselected", projects.list, function(e) {
+        currentProject = e.item;
+        svr.list(e.item, null, displayFiles )
+    });
 });
 
-var BespinSessionPanel = Class.define({
-    type: "BespinSessionPanel",
+function editFile(project, path) {
+    location.href = 'editor.html#project=' + project + '&path=' + path;
+}
 
-    superclass: Panel,
+var svr = new Server();
+var currentProject;
 
-    members: {
-        init: function(parms) {
-            this._super(parms);
+function loggedIn(xhr) {
+    svr.list(null, null, displayProjects);  // get projects
+    svr.listOpen(displaySessions);   // get sessions
+}
 
-            this.filename = new Label({ style: { color: "white" } });
-            this.path = new Label({ style: { color: "rgb(210, 210, 210)" } });
-            this.opened = new Label({ style: { color: "rgb(160, 157, 147)" } });
-            this.details = new Label({ style: { color: "rgb(160, 157, 147)" } });
-            this.editTime = new Label({ style: { color: "rgb(160, 157, 147)" } });
+function notLoggedIn(xhr) {
+    location.href = "index.html"; // take me home Scottie!
+}
 
-            var labels = [ this.filename, this.path, this.opened, this.details, this.editTime ];
+function displayFiles(files) {
+    tree.setData(prepareFilesForTree(files));
+}
 
-            this.add(labels);
+function prepareFilesForTree(files) {
+    if (files.length == 0) return [];
 
-            var panel = this;
-            for (var i = 0; i < labels.length; i++) {
-                this.bus.bind("dblclick", labels[i], function(e) {
-                    panel.bus.fire("dblclick", e, panel);
-                });
-            }
-
-            this.style.border = new BespinBorder();
-            this.style.backgroundColor = "rgb(67, 65, 58)";
-
-            this.preferredSizes = [ 13, 9, 8, 8, 8 ];
-            this.minimumSizes = [ 9, 8, 7, 7, 7 ];
-
-            this.filename.attributes.text = parms.filename;
-            this.path.attributes.text = parms.project + ": /" + parms.path;
-
-            // dummy data
-            this.opened.attributes.text = "(opened info)";
-            this.details.attributes.text = "(edit details info)";
-            this.editTime.attributes.text = "(editing time)";
-
-            this.session = { filename: parms.filename, path: parms.path, project: parms.project };
-        },
-
-        layout: function() {
-            var d = this.d();
-            var w = d.b.w - d.i.w;
-            var labels = 5;
-            var sizes = this.preferredSizes.slice();
-
-            while (labels > 0) {
-                var y = d.i.t;
-
-                // set the fonts and clear the bounds
-                for (var i = 0; i < this.children.length; i++) {
-                    var font = sizes[i] + "pt Tahoma";
-                    this.children[i].style.font = font;
-
-                    delete this.children[i].bounds;
-                }
-
-                var current = 0;
-
-                var h = this.filename.getPreferredHeight(w);
-                h = Math.floor(h * 0.95); // pull in the line height a bit
-                this.filename.bounds = { x: d.i.l, y: y, width: w, height: h };
-                y += h;
-
-                if (++current < labels) {
-                    h = this.path.getPreferredHeight(w);
-                    h = Math.floor(h * 1.2); // add a bit of margin to separate from subsequent labels
-                    this.path.bounds = { x: d.i.l, y: y, width: w, height: h };
-                    y += h;
-                }
-
-                if (++current < labels) {
-                    h = this.opened.getPreferredHeight(w);
-                    this.opened.bounds = { x: d.i.l, y: y, width: w, height: h };
-                    y += h;
-                }
-
-                if (++current < labels) {
-                    h = this.details.getPreferredHeight(w);
-                    this.details.bounds = { x: d.i.l, y: y, width: w, height: h };
-                    y += h;
-                }
-
-                if (++current < labels) {
-                    h = this.editTime.getPreferredHeight(w);
-                    this.editTime.bounds = { x: d.i.l, y: y, width: w, height: h };
-                    y += h;
-                }
-
-                y += d.i.b;
-                if (y <= d.b.h) break;
-
-                // we're too tall, make adjustments
-
-                var changeMade = false;
-                for (var z = 2; z < sizes.length; z++) {
-                    if (sizes[z] > this.minimumSizes[z]) {
-                        sizes[z]--;
-                        changeMade = true;
-                    }
-                }
-                if (changeMade) continue;
-
-                if (labels > 2) {
-                    labels--;
-                    continue;
-                }
-
-                var changeMade = false;
-                for (var y = 0; y < 2; y++) {
-                    if (sizes[y] > this.minimumSizes[y]) {
-                        sizes[y]--;
-                        changeMade = true;
-                    }
-                }
-                if (changeMade) continue;
-
-                labels--;
-            }
-        },
-
-        getInsets: function() {
-            return { top: 5, left: 5, bottom: 5, right: 5 };
+    var fdata = [];
+    for (var i = 0; i < files.length; i++) {
+        if (files[i].endsWith("/")) {
+            var name = files[i].substring(0, files[i].length - 1);
+            var contents = fetchFiles;
+            fdata.push({ name: name, contents: contents });
+        } else {
+            fdata.push({ name: files[i] });
         }
     }
-});
 
-var BespinProjectPanel = Class.define({
-    type: "BespinProjectPanel",
+    return fdata;
+}
 
-    superclass: Panel,
+function getFilePath(treePath) {
+    var filepath = "";
+    for (var i = 0; i < treePath.length; i++) filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
+    return filepath;
+}
 
-    members: {
-        init: function(parms) {
-            if (!parms) parms = {};
-            this._super(parms);
+function fetchFiles(path, tree) {
+    var filepath = currentProject + "/" + getFilePath(path);
 
-            this.projectLabel = new Label({ text: "Projects", style: { color: "white", font: "9pt Tahoma" } });
-            this.projectLabel.oldPaint = this.projectLabel.paint;
-            this.projectLabel.paint = function(ctx) {
-                var d = this.d();
+    svr.list(filepath, null, function(files) {
+        tree.updateData(path[path.length - 1], prepareFilesForTree(files));
+    });
+}
 
-                ctx.fillStyle = "rgb(51, 50, 46)";
-                ctx.fillRect(0, 0, d.b.w, 1);
+function displaySessions(sessions) {
+    infoPanel.removeAll();
 
-                ctx.fillStyle = "black";
-                ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+    for (var project in sessions) {
+        for (var file in sessions[project]) {
+            var lastSlash = file.lastIndexOf("/");
+            var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
+            var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-                var gradient = ctx.createLinearGradient(0, 1, 0, d.b.h - 2);
-                gradient.addColorStop(0, "rgb(39, 38, 33)");
-                gradient.addColorStop(1, "rgb(22, 22, 19)");
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
-
-                this.oldPaint(ctx);
-            }
-
-            this.list = new List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "9pt Tahoma" } });
-
-            this.splitter = new Splitter({ orientation: GTK.HORIZONTAL });
-
-            this.add([ this.projectLabel, this.list, this.splitter ]);
-
-            this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
-            this.bus.bind("drag", this.splitter, this.ondrag, this);
-            this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
-
-
-            // this is a closed container
-            delete this.add;
-            delete this.remove;
-        },
-
-        ondragstart: function(e) {
-            this.startWidth = this.bounds.width;
-        },
-
-        ondrag: function(e) {
-            var delta = e.currentPos.x - e.startPos.x;
-            this.prefWidth = this.startWidth + delta;
-            this.getScene().render();
-        },
-
-        ondragstop: function(e) {
-            delete this.startWidth;
-        },
-
-        getPreferredWidth: function(height) {
-            return this.prefWidth || 150;
-        },
-
-        layout: function() {
-            var d = this.d();
-
-            var y = d.i.t;
-            var lh = this.projectLabel.getPreferredHeight(d.b.w);
-            this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
-            y += lh;
-
-            var sw = this.splitter.getPreferredWidth()
-            this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
-
-            this.list.bounds = { x: d.i.l, y: y, width: d.b.w - d.i.w - sw, height: this.splitter.bounds.height };
+            var panel = new BespinSessionPanel({ filename: name, project: project, path: path });
+            infoPanel.add(panel);
+            panel.bus.bind("dblclick", panel, function(e) {
+                editFile(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
+            });
         }
     }
-});
+    scene.render();
+
+    setTimeout(function() {
+        svr.listOpen(displaySessions);   // get sessions
+    }, 3000);
+}
+
+function displayProjects(projectItems) {
+    for (var i = 0; i < projectItems.length; i++) {
+        projectItems[i] = projectItems[i].substring(0, projectItems[i].length - 1);
+    }
+    projects.list.items = projectItems;
+    scene.render();
+}
+
+function setupDashboard() {
+    // get logged in name; if not logged in, display an error of some kind
+    svr.currentuser(loggedIn, notLoggedIn);
+}
