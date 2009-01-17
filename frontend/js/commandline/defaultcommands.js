@@ -240,7 +240,7 @@ var DefaultCommands = {
             execute: function(self, linenumber) {
                 if (linenumber) {
                     var linenumAsInt = parseInt(linenumber) - 1;
-                    // TODO: Cheats and jumps 10 down first so ensureCursorVisable doesn't show as the last line
+                    // Jumps 10 down first so ensureCursorVisable doesn't show as the last line
                     self.editor.moveCursor({ row: linenumAsInt + 10, col: 0 });
                     self.editor.ui.ensureCursorVisible();
                     self.editor.moveCursor({ row: linenumAsInt, col: 0 });
