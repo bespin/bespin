@@ -1,5 +1,6 @@
 syntax: glob
 backend/python/lib
+backend/python/include
 backend/python/bin
 *.pyc
 backend/python/.Python
