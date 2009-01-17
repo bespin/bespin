@@ -36,7 +36,7 @@ var Server = Class.create({
     request: function(method, url, payload, callbackOptions) {
         var xhr = new XMLHttpRequest();
         
-        if (document.location.href.startWith("file:")) { // if developing and using this locally only!
+        if (document.location.href.startsWith("file:")) { // if developing and using this locally only!
            try {
                if (netscape.security.PrivilegeManager.enablePrivilege) {
                    netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
