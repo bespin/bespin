@@ -63,15 +63,9 @@ var Server = Class.create({
 
     login: function(user, pass, callback, notloggedin) {
         var url = "/register/login/" + user;
-<<<<<<< local
-        this.request('POST', url, "password=" + escape(pass), { 
-			call: callback, on401: notloggedin, log: 'Login complete.' 
-		});
-=======
         this.request('POST', url, escape("password=" + pass), { 
             call: callback, on401: notloggedin, log: 'Login complete.' 
         });
->>>>>>> other
     },
 
 	signup: function(user, pass, email, callback, notloggedin, userconflict) {
