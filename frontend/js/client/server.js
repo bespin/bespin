@@ -1,28 +1,3 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1
- * 
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- * 
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- * 
- * The Original Code is Bespin.
- * 
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- * 
- * Contributor(s):
- *     Bespin Team (bespin@mozilla.com)
- *
- * 
- * ***** END LICENSE BLOCK ***** */
-
 /*
  * Implements the client-side portion of the Bespin REST API
  */
@@ -73,6 +48,7 @@ var Server = Class.create({
                 }
             }
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
+			xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded')
             xhr.send(payload);
         } else {
             var fullUrl = this.SERVER_BASE_URL + url;
@@ -87,10 +63,25 @@ var Server = Class.create({
 
     login: function(user, pass, callback, notloggedin) {
         var url = "/register/login/" + user;
+<<<<<<< local
+        this.request('POST', url, "password=" + escape(pass), { 
+			call: callback, on401: notloggedin, log: 'Login complete.' 
+		});
+=======
         this.request('POST', url, escape("password=" + pass), { 
             call: callback, on401: notloggedin, log: 'Login complete.' 
         });
+>>>>>>> other
     },
+
+	signup: function(user, pass, email, callback, notloggedin, userconflict) {
+        var url = "/register/new/" + user;
+        this.request('POST', url, 
+			"password=" + escape(pass) + "&email=" + escape(email), { 
+			call: callback, on401: notloggedin, on409: usernameInUse,
+			log: 'Login complete.' 
+		});
+	},
 
     logout: function() {
         var url = "/register/logout/";

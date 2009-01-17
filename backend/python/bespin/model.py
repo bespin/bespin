@@ -1,27 +1,3 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Bespin.
-#
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#     Bespin Team (bespin@mozilla.com)
-#
-# ***** END LICENSE BLOCK *****
-
 """Data classes for working with files/projects/users."""
 import os
 import hashlib
@@ -54,7 +30,8 @@ class DB(object):
         file_manager.db = self
     
 class User(object):
-    def __init__(self, password):
+    def __init__(self, password, email):
+        self.email = email
         self.password = password
         self.settings = {}
         self.projects = set()
@@ -83,14 +60,14 @@ class UserManager(object):
         """Take any action required to persist changes."""
         self.store.sync()
         
-    def create_user(self, username, password):
+    def create_user(self, username, password, email):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
         if username in self.store:
             raise ConflictError("There is already a user named %s registered" %
                                 username)
-        user = User(password)
+        user = User(password, email)
         self.store[username] = user
         self.db.file_manager.install_template(username,
                                 username + "_New_Project")

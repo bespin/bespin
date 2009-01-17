@@ -38,11 +38,11 @@ dp.sh.Brushes.CSS = function()
 		{ regex: dp.sh.RegexLib.SingleQuotedString,						css: 'string' },	// single quoted strings
 		{ regex: new RegExp('{|}', 'g'),					           	css: 'paren' },		// Parens
 		{ regex: new RegExp('\\.\\w+', 'g'),				            css: 'cssclass' },	// CSS class
-		{ regex: new RegExp('(?:^|[^:]\s+)(#[A-z]+)', 'g'),				css: 'cssid' },		// CSS id
-		{ regex: new RegExp('\:\\s*(\\#[0-9A-Fa-f]{3,6})', 'g'),		css: 'value' },		// html colors
+		{ regex: new RegExp('#[A-z]+', 'g'),				            css: 'cssid' },		// CSS id
+		{ regex: new RegExp('\\#[0-9]{3,6}', 'g'),						css: 'value' },		// html colors
 		{ regex: new RegExp('(-?\\d+)(\.\\d+)?(px|em|pt|\:|\%|)', 'g'),	css: 'value' },		// sizes
 		{ regex: new RegExp('!important', 'g'),							css: 'important' },	// !important
-		{ regex: new RegExp(this.GetKeywords(keywords), 'gm'),			css: 'keyword' },	// keywords
+		{ regex: new RegExp(this.GetKeywordsCSS(keywords), 'gm'),		css: 'keyword' },	// keywords
 		{ regex: new RegExp(this.GetValuesCSS(values), 'g'),			css: 'value' },		// values
 		{ regex: new RegExp(this.GetValuesCSS(fonts), 'g'),				css: 'value' }		// fonts
 		];
@@ -51,7 +51,6 @@ dp.sh.Brushes.CSS = function()
 	this.Style =	'.dp-css .value { color: black; }' +
 					'.dp-css .important { color: red; }'
 					;
-					
 }
 
 dp.sh.Highlighter.prototype.GetKeywordsCSS = function(str)
