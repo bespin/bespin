@@ -164,11 +164,11 @@ var SyncHelper = Class.create({
     },
 
     undo: function(op) {
-        this.opQueue.push(JSON.stringify({ username: _editSession.username, action: 'undo' }));
+        this.opQueue.push(Object.toJSON({ username: _editSession.username, action: 'undo' }));
     },
 
     redo: function(op) {
-        this.opQueue.push(JSON.stringify({ username: _editSession.username, action: 'redo' }));
+        this.opQueue.push(Object.toJSON({ username: _editSession.username, action: 'redo' }));
     },
 
     queueUndoOp: function(undoOp) {
@@ -177,10 +177,10 @@ var SyncHelper = Class.create({
             undoOp: undoOp.undoOp,
             redoOp: undoOp.redoOp
         }
-        this.opQueue.push(JSON.stringify(undoOpJson));
+        this.opQueue.push(Object.toJSON(undoOpJson));
     },
 
     queueSelect: function(selection) {
-        this.opQueue.push(JSON.stringify({ username: _editSession.username, action: "select", args: { startPos: (selection) ? selection.startPos : undefined, endPos: (selection) ? selection.endPos : undefined }}));
+        this.opQueue.push(Object.toJSON({ username: _editSession.username, action: "select", args: { startPos: (selection) ? selection.startPos : undefined, endPos: (selection) ? selection.endPos : undefined }}));
     }
 });
