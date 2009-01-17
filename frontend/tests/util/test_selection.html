@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>Disable Selection</title>
+</head>
+
+<body>
+	
+	<script>
+    function disableSelection(target){
+        if (typeof target.onselectstart!="undefined") // IE
+        	target.onselectstart = function() { return false; }
+        else if (typeof target.style.MozUserSelect!="undefined") // Firefox
+        	target.style.MozUserSelect = "none";
+        else // All other route (ie: Opera)
+        	target.onmousedown = function() { return false; }
+        target.style.cursor = "default";
+    }
+    
+    window.onload = function() {
+        disableSelection(document.getElementById("cannotselect"));
+    }
+	</script>
+	
+	<div id="canselect">here is something you can select</div>
+	
+	<div id="cannotselect">here is something you can NOT select</div>
+	
+</body>
+</html>
