@@ -235,7 +235,7 @@ var DefaultCommands = {
             preview: 'move it! make the editor head to your line number.',
             completeText: 'add the line number to move to',
             execute: function(self, linenumber) {
-                if (linenum) {
+                if (linenumber) {
                     var linenumAsInt = parseInt(linenumber) - 1;
                     // TODO: Cheats and jumps 10 down first so ensureCursorVisable doesn't show as the last line
                     self.editor.moveCursor({ row: linenumAsInt + 10, col: 0 });
