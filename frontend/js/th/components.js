@@ -167,6 +167,9 @@ var Splitter = Class.define({
             this.bottomNib = new ResizeNib({ attributes: { orientation: this.attributes.orientation } });
             this.add(this.topNib, this.bottomNib);
 
+            this.label = parms.label;
+            if (this.label) this.add(this.label);
+
             this.bus.bind("drag", [ this.topNib, this.bottomNib ], this.ondrag, this);
             this.bus.bind("dragstart", [ this.topNib, this.bottomNib ], this.ondragstart, this);
             this.bus.bind("dragstop", [ this.topNib, this.bottomNib ], this.ondragstop, this);
@@ -193,17 +196,21 @@ var Splitter = Class.define({
         },
 
         layout: function() {
+            var d = this.d();
+
             // if the orientation isn't explicitly set, guess it by examining the ratio
             if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? GTK.HORIZONTAL : GTK.VERTICAL;
 
             if (this.attributes.orientation == GTK.HORIZONTAL) {
-                var l = this.bounds.width;
-                this.topNib.bounds = { x: 0, y: 0, height: l, width: l }
-                this.bottomNib.bounds = { x: 0, y: this.bounds.height - l, height: l, width: l }
+                this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
+                this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
             } else {
-                var l = this.bounds.height;
-                this.topNib.bounds = { x: 0, y: 0, height: l, width: l }
-                this.bottomNib.bounds = { x: this.bounds.width - l, y: 0, height: l, width: l }
+                this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h }
+                this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h }
+
+                if (this.label) {
+                    this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) }
+                }
             }
         },
 
@@ -245,7 +252,7 @@ var SplitPanelContainer = Class.define({
         init: function(parms) {
             this._super(parms);
 
-            this.splitter = new Splitter({ attributes: { orientation: this.attributes.orientation } });
+            this.splitter = new Splitter({ attributes: { orientation: this.attributes.orientation }, label: parms.label });
         },
 
         getContents: function() {
@@ -335,7 +342,7 @@ var SplitPanel = Class.define({
             for (var i = 0; i < this.attributes.regions.length; i++) {
                 var region = this.attributes.regions[i];
                 if (!region.container) {
-                    region.container = new SplitPanelContainer({ attributes: { orientation: this.attributes.orientation } });
+                    region.container = new SplitPanelContainer({ attributes: { orientation: this.attributes.orientation }, label: region.label });
 
                     region.container.region = region;   // give the container a reference back to the region
 
@@ -418,7 +425,7 @@ var Label = Class.define({
         init: function(parms) {
             if (!parms) parms = {};
             this._super(parms);
-            this.border = new EmptyBorder({ insets: { left: 5, right: 5, top: 2, bottom: 2 }});
+            if (!this.border) this.border = new EmptyBorder({ insets: { left: 5, right: 5, top: 2, bottom: 2 }});
             this.attributes.text = parms.text || "";
             if (!this.style.font) this.style.font = "12pt Arial";
             if (!this.style.color) this.style.color = "black";

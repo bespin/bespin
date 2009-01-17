@@ -47,6 +47,7 @@
         var projects;
         var scene;
         var tree;
+        var infoPanel;
 
         function sizeCanvas(canvas) {
             if (!heightDiff) {
@@ -109,19 +110,28 @@
             }
             projects.list.renderer = renderer;
 
-            var infoPanel = new ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
+            infoPanel = new ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
 
             var splitPanel = new SplitPanel({ id: "splitPanel", attributes: {
                 orientation: GTK.VERTICAL,
                 regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
             } });
 
+            splitPanel.attributes.regions[0].label = new Label({
+                    id: "foobar",
+                    text: "Open Sessions",
+                    style: {
+                        color: "white",
+                        font: "9pt Tahoma"
+                    },
+                    border: new EmptyBorder({ size: 4 })
+            });
+
             scene.root.add(splitPanel);
 
             scene.render();
 
             scene.bus.bind("dblclick", tree, function() {
-                //infoPanel.add(new BespinSessionPanel()); scene.render();
                 var path = tree.getSelectedPath();
                 if (path.length == 0) return;
                 location.href = 'editor.html#project=' + currentProject + '&path=' + getFilePath(path);
@@ -181,24 +191,21 @@
         }
 
         function displaySessions(sessions) {
-//            var sessionsNode = $("sessionslist");
-//            sessionsNode.innerHTML = "";
-//
-//            for (var project in sessions) {
-//                var projectNode = new Element("li").update(project);
-//                sessionsNode.appendChild(projectNode);
-//
-//                var projectContents = new Element("ul");
-//                projectNode.appendChild(projectContents);
-//
-//                for (var file in sessions[project]) {
-//                    var fileNode = new Element("li");
-//                    projectContents.appendChild(fileNode);
-//
-//                    var link = new Element("a", { 'href' : 'editor.html#project=' + project + '&path=' + file }).update(file);
-//                    fileNode.appendChild(link);
-//                }
-//            }
+            infoPanel.removeAll();
+
+            for (var project in sessions) {
+                for (var file in sessions[project]) {
+                    var lastSlash = file.lastIndexOf("/");
+                    var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
+                    var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
+                    infoPanel.add(new BespinSessionPanel({ filename: name, project: project, path: path }));
+                }
+            }
+            scene.render();
+
+            setTimeout(function() {
+                svr.listOpen(displaySessions);   // get sessions
+            }, 3000);
         }
 
         function displayProjects(projectItems) {
@@ -210,19 +217,8 @@
         }
 
         function setupUI() {
-
             // get logged in name; if not logged in, display an error of some kind
             svr.currentuser(loggedIn, notLoggedIn);
-
-            // get the projects for the user
-
-            // add the projects to the UI
-
-            // get the list of open sessions
-
-            // add the open sessions to the UI
-
-
         }
     </script>
 </head>
