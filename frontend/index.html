@@ -37,40 +37,55 @@
     var svr = new Server();
 
     function processLogin(xhr) {
-        location.href = 'dashboard.html';
+      location.href = 'dashboard.html';
     }
 
-    function notLoggedIn(xhr) {
-        $("status").innerHTML = "Login didn't work. Try again";
-    }
+	function notLoggedIn(xhr) {
+		$("status").innerHTML = "Login didn't work. Try again";
+	}
+	
+	function usernameInUse() {
+	 $("status").innerHTML = "The username is taken. Please choose another."
+	}
+	
 
-    function login() {
-        svr.login($("username").value, null, processLogin, notLoggedIn)
-    }
+	function login() {
+	    if ($('login_label').visible()) {
+  	    svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
+	    } else {
+  	    svr.signup($("username").value, $("password").value, $('email').value,
+  	              processLogin, notLoggedIn);
+	    }
+	}
 
-    function quickEdit() {
-        location.href = 'editor.html#new=true';
-    }
-
-    function isLoggedIn(userinfo) {
-        $('display_username').innerHTML = userinfo.username;
-        $('logged_in').show();
-    }
-
-    function isNotLoggedIn() {
-        $('not_logged_in').show();
-    }
-
-    function logout() {
-        svr.logout();
-        $('logged_in').hide();
-        $('not_logged_in').show();
-    }
-
-    window.onload = function() {
-        svr.currentuser(isLoggedIn, isNotLoggedIn);
-    }
-    </script>
+	function quickEdit() {
+		location.href = 'editor.html#new=true';
+	}
+	
+	function isLoggedIn(userinfo) {
+	  $('display_username').innerHTML = userinfo.username;
+	  $('logged_in').show();
+	}
+	
+	function isNotLoggedIn() {
+	  $('not_logged_in').show();
+	}
+	
+	function logout() {
+	  svr.logout();
+	  $('logged_in').hide();
+	  $('not_logged_in').show();
+	}
+	
+	function showRegisterForm() {
+	  $('login_label').hide();
+	  $('emailField').show();
+	}
+	
+	function onLoad() {
+	  svr.currentuser(isLoggedIn, isNotLoggedIn);
+	}
+	</script>
 </head>
 <body>
 
@@ -78,7 +93,8 @@
   <div id="not_logged_in" style="display: none;">
     <div style="padding: 9px 10px 0 7px; float: right; cursor: pointer"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
     
-    <div style="padding-top: 8px;">Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <div id="status"></div> 
+    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="showRegisterForm()">Sign up</a>, or login:</span>
+    Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <span id="emailField" style="display:none">Email address: <input type="text" id="email" /></span><div id="status"></div> 
     </div> 
   </div>
   <div id="logged_in" style="display: none; padding-top: 8px; padding-right: 8px">

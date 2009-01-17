@@ -1,27 +1,3 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Bespin.
-#
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#     Bespin Team (bespin@mozilla.com)
-#
-# ***** END LICENSE BLOCK *****
-
 import re
 
 from repoze.who.middleware import PluggableAuthenticationMiddleware
@@ -33,6 +9,7 @@ from webob import Request, Response
 from bespin.config import c
 
 _login_path = re.compile(r'^/register/login/(?P<login_username>.*)')
+_new_path = re.compile(r'^/register/new/(?P<username>.*)$')
 
 class UserManagerPlugin(object):
     """repoze.who Authenticator plugin that uses the UserManager 
@@ -41,18 +18,16 @@ class UserManagerPlugin(object):
     def authenticate(self, environ, identity):
         try:
             username = identity['username']
-            password = identity['password']
+            password = identity.get('password')
             user_manager = environ['user_manager']
         except KeyError:
             return None
         
         user = user_manager.get_user(username)
         if not user:
-            if 'bespin.login_in_progress' in environ:
-                user = user_manager.create_user(username, password)
-                environ['bespin.user'] = user
+            if 'bespin.signup_in_progress' in environ:
                 return username
-        if user and user.password == password:
+        if user and ('bespin.got_ticket' in environ or user.password == password):
             environ['bespin.user'] = user
             return username
         else:
@@ -65,14 +40,21 @@ class UrlIdentifierPlugin(AuthTktCookiePlugin):
         """Checks the cookie first, then checks to see if we got a username
         via the URL."""
         result = super(UrlIdentifierPlugin, self).identify(environ)
-        if not result:
+        if result:
+            environ['bespin.got_ticket'] = True
+        else:
             path_match = _login_path.match(environ['PATH_INFO'])
             if path_match:
+                request = Request(environ)
                 username = path_match.group(1)
-                password = ''
-                environ['bespin.login_in_progress'] = True
+                password = request.POST.get('password')
                 return dict(username=username, password=password)
-            return None    
+            path_match = _new_path.match(environ['PATH_INFO'])
+            if path_match:
+                username = path_match.group(1)
+                environ['bespin.signup_in_progress'] = True
+                return dict(username=username, password="")
+            return None
         return result
         
 class Challenger401(object):
