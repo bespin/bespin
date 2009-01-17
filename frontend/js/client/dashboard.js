@@ -47,12 +47,15 @@ Event.observe(window, "resize", function() {
 Event.observe(document, "dom:loaded", function() {
     sizeCanvas($("canvas"));
 
+    $('subheader', 'header', 'footer').invoke('enableTextSelection', false);
+
     scene = new Scene($("canvas"));
 
     tree = new HorizontalTree({ style: { backgroundColor: "rgb(76, 74, 65)",
-                                             backgroundColorOdd: "rgb(82, 80, 71)",
-                                             font: "9pt Tahoma",
-                                             color: "white" }});
+                                         backgroundColorOdd: "rgb(82, 80, 71)",
+                                         font: "9pt Tahoma",
+                                         color: "white" }});
+
     var renderer = new Label({ style: { border: new EmptyBorder({ size: 3 }) } });
     renderer.old_paint = renderer.paint;
     renderer.paint = function(ctx) {
