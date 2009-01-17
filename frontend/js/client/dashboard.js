@@ -70,7 +70,16 @@ var BespinSessionPanel = Class.define({
             this.details = new Label({ style: { color: "rgb(160, 157, 147)" } });
             this.editTime = new Label({ style: { color: "rgb(160, 157, 147)" } });
 
-            this.add([ this.filename, this.path, this.opened, this.details, this.editTime ]);
+            var labels = [ this.filename, this.path, this.opened, this.details, this.editTime ];
+
+            this.add(labels);
+
+            var panel = this;
+            for (var i = 0; i < labels.length; i++) {
+                this.bus.bind("dblclick", labels[i], function(e) {
+                    panel.bus.fire("dblclick", e, panel);
+                });
+            }
 
             this.style.border = new BespinBorder();
             this.style.backgroundColor = "rgb(67, 65, 58)";
@@ -78,12 +87,15 @@ var BespinSessionPanel = Class.define({
             this.preferredSizes = [ 13, 9, 8, 8, 8 ];
             this.minimumSizes = [ 9, 8, 7, 7, 7 ];
 
-            // dummy data
             this.filename.attributes.text = parms.filename;
             this.path.attributes.text = parms.project + ": /" + parms.path;
+
+            // dummy data
             this.opened.attributes.text = "(opened info)";
             this.details.attributes.text = "(edit details info)";
             this.editTime.attributes.text = "(editing time)";
+
+            this.session = { filename: parms.filename, path: parms.path, project: parms.project };
         },
 
         layout: function() {

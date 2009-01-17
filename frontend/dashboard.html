@@ -134,7 +134,7 @@
             scene.bus.bind("dblclick", tree, function() {
                 var path = tree.getSelectedPath();
                 if (path.length == 0) return;
-                location.href = 'editor.html#project=' + currentProject + '&path=' + getFilePath(path);
+                editFile(currentProject, getFilePath(path));
             });
 
             scene.bus.bind("itemselected", projects.list, function(e) {
@@ -142,6 +142,10 @@
                 svr.list(e.item, null, displayFiles )
             });
         });
+
+        function editFile(project, path) {
+            location.href = 'editor.html#project=' + project + '&path=' + path;
+        }
 
         var svr = new Server();
         var currentProject;
@@ -198,7 +202,12 @@
                     var lastSlash = file.lastIndexOf("/");
                     var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
                     var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
-                    infoPanel.add(new BespinSessionPanel({ filename: name, project: project, path: path }));
+
+                    var panel = new BespinSessionPanel({ filename: name, project: project, path: path });
+                    infoPanel.add(panel);
+                    panel.bus.bind("dblclick", panel, function(e) {
+                        editFile(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);    
+                    });
                 }
             }
             scene.render();
