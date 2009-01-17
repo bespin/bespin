@@ -79,11 +79,11 @@ var BespinSessionPanel = Class.define({
             this.minimumSizes = [ 9, 8, 7, 7, 7 ];
 
             // dummy data
-            this.filename.attributes.text = "bespin_stuff.js";
-            this.path.attributes.text = "Project: some/path/to/file";
-            this.opened.attributes.text = "Opened two days ago; last edited 10 minutes ago";
-            this.details.attributes.text = "45 changes, including 20 new lines, 10 deleted lines, and 122 keystrokes";
-            this.editTime.attributes.text = "22 minutes estimated editing time";
+            this.filename.attributes.text = parms.filename;
+            this.path.attributes.text = parms.project + ": /" + parms.path;
+            this.opened.attributes.text = "(opened info)";
+            this.details.attributes.text = "(edit details info)";
+            this.editTime.attributes.text = "(editing time)";
         },
 
         layout: function() {
