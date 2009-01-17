@@ -302,6 +302,7 @@ var Component = Class.define({
             this.style = parms.style || {};
             this.attributes = parms.attributes || {};
             this.id = parms.id;
+            this.border = parms.border;
 
             this.bus = gtk_global_event_bus;
         },

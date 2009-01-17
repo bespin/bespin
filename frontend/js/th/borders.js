@@ -52,10 +52,11 @@ var EmptyBorder = Class.define({
 
     members: {
         init: function(parms) {
+            if (!parms) parms = {};
             this._super(parms);
 
-            if (this.size) {
-                this.insets = { left: this.size, right: this.size, top: this.size, bottom: this.size };
+            if (parms.size) {
+                this.insets = { left: parms.size, right: parms.size, top: parms.size, bottom: parms.size };
             } else {
                 this.insets = parms.insets;
             }
