@@ -1,27 +1,3 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Bespin.
-#
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#     Bespin Team (bespin@mozilla.com)
-#
-# ***** END LICENSE BLOCK *****
-
 from urlrelay import URLRelay, url
 import simplejson
 
@@ -29,20 +5,42 @@ from bespin.config import c
 from bespin.auth import make_auth_middleware
 from bespin.framework import expose, BadRequest
 
+@expose(r'^/register/new/(?P<username>.*)$', 'POST', auth=False)
+def new_user(request, response):
+    try:
+        username = request.kwargs['username']
+        email = request.POST['email']
+        password = request.POST['password']
+    except KeyError:
+        raise BadRequest("username, email and password are required.")
+    user = request.user_manager.create_user(username, password, email)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(dict(project=user.private_project))
+    request.environ['REMOTE_USER'] = username
+    return response()
+
 @expose(r'^/register/userinfo/$', 'GET')
 def get_registered(request, response):
     response.content_type = "application/json"
+    if request.user:
+        private_project = request.user.private_project
+    else:
+        private_project = None
     response.body=simplejson.dumps(
         dict(username=request.username,
-        project=request.user.private_project)
+        project=private_project)
     )
     return response()
 
-@expose(r'^/register/login/(?P<login_username>.+)', auth=False)
+@expose(r'^/register/login/(?P<login_username>.+)', 'POST', auth=False)
 def login(request, response):
     response.content_type = "application/json"
+    if request.user:
+        private_project = request.user.private_project
+    else:
+        private_project = None
     response.body=simplejson.dumps(
-        dict(project=request.user.private_project)
+        dict(project=private_project)
     )
     return response()
 

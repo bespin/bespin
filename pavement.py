@@ -1,31 +1,35 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Bespin.
-#
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#     Bespin Team (bespin@mozilla.com)
-#
-# ***** END LICENSE BLOCK *****
-
 # Top level pavement for putting together the Bespin project.
 import sys
 
 from paver.defaults import *
+
+HEADER = """ ***** BEGIN LICENSE BLOCK *****
+Version: MPL 1.1
+
+The contents of this file are subject to the Mozilla Public License  
+Version
+1.1 (the "License"); you may not use this file except in compliance  
+with
+the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"  
+basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
+License
+for the specific language governing rights and limitations under the
+License.
+
+The Original Code is Bespin.
+
+The Initial Developer of the Original Code is Mozilla.
+Portions created by the Initial Developer are Copyright (C) 2009
+the Initial Developer. All Rights Reserved.
+
+Contributor(s):
+
+***** END LICENSE BLOCK *****
+"""
 
 options(
     build_dir=path("build"),
@@ -35,6 +39,17 @@ options(
         url = lambda: "http://www.julienlecomte.net/yuicompressor/%s" % \
                 zip_name,
         beautiful_soup_url = "http://www.crummy.com/software/BeautifulSoup/download/BeautifulSoup.tar.gz"
+    ),
+    license=Bunch(
+        extensions = set([
+            ("py", "#"), ("js", "//")
+        ]),
+        exclude=set([
+            './backend/python/lib',
+            './frontend/js/external',
+            './backend/python/bin',
+            './backend/python/bootstrap.py'
+        ])
     )
 )
 
@@ -50,6 +65,7 @@ def _get_js_file_list(html_file):
 
 @task
 def compress_js():
+    """Compress the JavaScript using the YUI compressor."""
     current_dir = path.getcwd()
     build_dir = options.build_dir
     externals_dir = path("ext")
@@ -114,3 +130,37 @@ def compress_js():
     del editor_lines[start_marker:end_marker+1]
     editor_lines.insert(start_marker, '<script type="text/javascript" src="js/combined.js"></script>')
     editor_filename.write_bytes("".join(editor_lines))
+
+def _apply_header_if_necessary(f, header, first_line, last_line):
+    data = f.bytes()
+    if data.startswith(header):
+        debug("File is already tagged")
+        return
+    debug("Tagging %s", f)
+    if data.startswith(first_line):
+        pos = data.find(last_line) + len(last_line)
+        data = data[pos:]
+    data = header + data
+    f.write_bytes(data)
+
+@task
+def license():
+    """Tags the appropriate files with the license text."""
+    cwd = path(".")
+    info("Tagging license text")
+    for extension, comment_marker in options.extensions:
+        hlines = [comment_marker + " " + line for line in HEADER.split("\n")]
+        header = "\n".join(hlines) + "\n\n"
+        first_line = hlines[0]
+        last_line = hlines[-1]
+        for f in cwd.walkfiles("*.%s" % extension):
+            exclude = False
+            for pattern in options.exclude:
+                if f.startswith(pattern):
+                    exclude=True
+                    break
+            if exclude:
+                continue
+            debug("Checking %s", f)
+            _apply_header_if_necessary(f, header, first_line, last_line)
+    

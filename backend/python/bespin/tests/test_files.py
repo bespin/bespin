@@ -1,27 +1,3 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Bespin.
-#
-# The Initial Developer of the Original Code is Mozilla.
-# Portions created by the Initial Developer are Copyright (C) 2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#     Bespin Team (bespin@mozilla.com)
-#
-# ***** END LICENSE BLOCK *****
-
 from webtest import TestApp
 import simplejson
 
@@ -39,10 +15,11 @@ def _get_fm():
     config.activate_profile()
     app.reset()
     fm = config.c.file_manager
-    config.c.user_manager.create_user("SomeoneElse", "")
+    config.c.user_manager.create_user("SomeoneElse", "", "someone@else.com")
     fm.save_file('SomeoneElse', 'otherproject', 'foo', 
                  'Just a file to reserve a project')
-    app.get("/register/login/MacGyver")
+    app.post("/register/new/MacGyver", 
+        dict(password="richarddean", email="rich@sg1.com"))
     config.c.saved_keys = set()
     return fm
 
@@ -341,7 +318,7 @@ def test_edit_interface():
     assert data == []
     
 def test_private_project_does_not_appear_in_list():
-    resp = app.get("/register/login/MacGyver")
+    resp = app.get("/register/userinfo/")
     data = simplejson.loads(resp.body)
     project_name = data['project']
     app.put("/file/at/%s/foo" % project_name, "BAR!")
