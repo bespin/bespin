@@ -107,7 +107,7 @@ var Bus = Class.define({
                 listeners = [];
                 this.events[event] = listeners;
             }
-            selector = ArrayUtils.array(selector);
+            selector = $A(selector);
             for (var z = 0; z < selector.length; z++) {
                 for (var i = 0; i < listeners.length; i++) {
                     if (listeners[i].selector == selector[z] && listeners[i].listenerFn == listenerFn) return;
@@ -123,7 +123,7 @@ var Bus = Class.define({
 
                 for (var i = 0; i < listeners.length; i++) {
                     if (listeners[i].selector === selector) {
-                        this.events[event] = ArrayUtils.remove(listeners, listeners[i]);
+                        this.events[event] = listeners.without(listeners[i]);
                         listeners = this.events[event];
                         i--;
                     }
@@ -347,7 +347,7 @@ var Container = Class.define({
 
         add: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = ArrayUtils.array(arguments[z]); // wrap as array if necessary
+                component = $A(arguments[z]); // wrap as array if necessary
                 this.children = this.children.concat(component);
                 for (var i = 0; i < component.length; i++) {
                     component[i].parent = this;
@@ -357,10 +357,10 @@ var Container = Class.define({
 
         remove: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = ArrayUtils.array(arguments[z]); // wrap as array if necessary
+                component = $A(arguments[z]); // wrap as array if necessary
                 for (var i = 0; i < component.length; i++) {
                     var old_length = this.children.length;
-                    this.children = ArrayUtils.remove(this.children, component[i]);
+                    this.children = this.children.without(component[i]);
 
                     // if the length of the array has changed since I tried to remove the current component, assume it was removed and clear the parent
                     if (old_length != this.children.length) delete component[i].parent;
