@@ -259,12 +259,12 @@ var SplitPanelContainer = Class.define({
         },
 
         getContents: function() {
-            var childrenWithoutSplitter = ArrayUtils.remove(this.children, this.splitter);
+            var childrenWithoutSplitter = this.children.without(this.splitter);
             if (childrenWithoutSplitter.length > 0) return childrenWithoutSplitter[0];
         },
 
         layout: function() {
-            var childrenWithoutSplitter = ArrayUtils.remove(this.children, this.splitter);
+            var childrenWithoutSplitter = this.children.without(this.splitter);
             if (this.children.length == childrenWithoutSplitter.length) this.add(this.splitter);
 
             var slength = (this.attributes.orientation == GTK.HORIZONTAL) ?
@@ -705,7 +705,7 @@ var HorizontalTree = Class.define({
                 delete this.details;
             }
 
-            if (!ArrayUtils.isArray(children)) {
+            if (!Object.isArray(children)) {
                 // if it's not an array, assume it's a function that will load the children
                 children(this.getSelectedPath(), this);
                 this.getScene().render();
