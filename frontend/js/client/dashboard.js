@@ -127,6 +127,9 @@ Event.observe(document, "dom:loaded", function() {
         currentProject = e.item;
         svr.list(e.item, null, displayFiles )
     });
+    
+    // get logged in name; if not logged in, display an error of some kind
+    svr.currentuser(loggedIn, notLoggedIn);
 });
 
 function editFile(project, path) {
@@ -209,9 +212,4 @@ function displayProjects(projectItems) {
     }
     projects.list.items = projectItems;
     scene.render();
-}
-
-function setupDashboard() {
-    // get logged in name; if not logged in, display an error of some kind
-    svr.currentuser(loggedIn, notLoggedIn);
 }
