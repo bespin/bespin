@@ -136,7 +136,7 @@ function editFile(project, path) {
 var svr = new Server();
 var currentProject;
 
-function loggedIn(xhr) {
+function loggedIn(user) {
     svr.list(null, null, displayProjects);  // get projects
     svr.listOpen(displaySessions);   // get sessions
 }
