@@ -29,6 +29,11 @@
 // install a console if not present
 if (!console) var console = { log: function(textToLog) {} };
 
+// force back an array
+Array.asArray = function(object) {
+    return Object.isArray(object) ? object : [ object ];
+};
+
 /*
     Upgrades canvas implementation in non-conforming browsers
  */
@@ -107,7 +112,7 @@ var Bus = Class.define({
                 listeners = [];
                 this.events[event] = listeners;
             }
-            selector = $A(selector);
+            selector = Array.asArray(selector);
             for (var z = 0; z < selector.length; z++) {
                 for (var i = 0; i < listeners.length; i++) {
                     if (listeners[i].selector == selector[z] && listeners[i].listenerFn == listenerFn) return;
@@ -347,7 +352,7 @@ var Container = Class.define({
 
         add: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = $A(arguments[z]); // wrap as array if necessary
+                component = Array.asArray(arguments[z]); // wrap as array if necessary
                 this.children = this.children.concat(component);
                 for (var i = 0; i < component.length; i++) {
                     component[i].parent = this;
@@ -357,7 +362,7 @@ var Container = Class.define({
 
         remove: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = $A(arguments[z]); // wrap as array if necessary
+                component = Array.asArray(arguments[z]); // wrap as array if necessary
                 for (var i = 0; i < component.length; i++) {
                     var old_length = this.children.length;
                     this.children = this.children.without(component[i]);
