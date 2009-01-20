@@ -62,10 +62,11 @@ document.observe("bespin:editor:openfile", function(event) {
 
 document.observe("bespin:editor:savefile", function(event) {
     var filename = event.memo.filename;
+    
+    filename = filename || _editSession.path; // default to what you have
 
     document.fire("bespin:editor:openfile:savebefore", { filename: filename });
 
-    filename = filename || _editSession.path; // default to what you have
     var file = {
         name: filename,
         content: _editor.model.getDocument(),
