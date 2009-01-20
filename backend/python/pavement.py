@@ -59,15 +59,12 @@ def required():
 @task
 def start():
     """Starts the BespinServer on localhost port 8080 for development."""
-    sh("bin/spawn -f bespin.config.dev_spawning_factory -s 1 -t 4 -i 127.0.0.1 -p 8080 bespin.config.dev_factory")
+    from bespin import config, controllers
+    from wsgiref.simple_server import make_server
     
-    # from bespin import config, controllers
-    # from wsgiref.simple_server import make_server
-    # 
-    # config.set_profile('dev')
-    # config.activate_profile()
-    # make_server('localhost', 8080, controllers.make_app()).serve_forever()
-    pass
+    config.set_profile('dev')
+    config.activate_profile()
+    make_server('localhost', 8080, controllers.make_app()).serve_forever()
     
 @task
 def clean_data():
