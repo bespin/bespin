@@ -291,7 +291,7 @@ var DBSettings = Class.create({
 
 var URLSettings = Class.create({
     initialize: function(queryString) {
-        this.queryString = queryString || this.fromHash();
+        this.queryString = this.stripHash(queryString || window.location.hash);
         this.results = this.queryString.toQueryParams();
     },
 
@@ -302,10 +302,9 @@ var URLSettings = Class.create({
     set: function(key, value) {
         this.results[key] = value;
     },
-
-    fromHash: function(hash) {
-        hash = hash || window.location.hash;
-        var tobe = hash.split('');
+    
+    stripHash: function(url) {
+        var tobe = url.split('');
         tobe.shift();
         return tobe.join('');
     }
@@ -327,38 +326,53 @@ var SettingsCustomEvents = Class.create({
         document.observe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.memo.file;
 
-            settings.set('_project', _editSession.project);
-            settings.set('_path', file.name);
+            _editSession.path = file.name;
+
+            settings.set('_project',  _editSession.project);
+            settings.set('_path',     _editSession.path);
             settings.set('_username', _editSession.username);
 
             if (_editSession.syncHelper) _editSession.syncHelper.syncWithServer();
         });
 
-        // -- Change the syntax highlighter when a new file is opened
+        // Change the syntax highlighter when a new file is opened
         document.observe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.memo.file;
             var type = file.name.split('.').last();
 
             if (type)
-                document.fire("bespin:settings:set", { key: 'syntax', value: type });
+                document.fire("bespin:settings:syntax", { language: type });
         });
 
+        // When the syntax setting is changed, tell the syntax system to change
         document.observe("bespin:settings:set:syntax", function(event) {
             var value = event.memo.value;
+            
+            document.fire("bespin:settings:syntax", { language: value });
+        });
+        
+        // Given a new syntax command, change the editor.language
+        document.observe("bespin:settings:syntax", function(event) {
+            var language = event.memo.language;
+            var syntaxSetting = settings.get('syntax') || "off";
 
-            if (settings.isOff(value)) {
-              _editor.language = 'off';
-            } else {
-              _editor.language = value;
+            if (language == _editor.language) return; // already set to be that language
+            
+            if (['auto', 'on'].include(syntaxSetting)) {
+              _editor.language = language;
+            } else if (!['auto', 'on', 'off'].include(language) && syntaxSetting == 'off') {
+                _editor.language = 'off';
             }
         });
 
+        // Turn on the collaboration system if set to be on
         document.observe("bespin:settings:set:collaborate", function(event) {
             var value = event.memo.value;
 
             _editSession.collaborate = settings.isOn(value);
         });
 
+        // Change the font size for the editor
         document.observe("bespin:settings:set:fontsize", function(event) {
             var value = event.memo.value;
 
@@ -366,6 +380,7 @@ var SettingsCustomEvents = Class.create({
             _editor.theme.lineNumberFont = fontsize + "pt Monaco";
         });
 
+        // Change the Theme object used by the editor
         document.observe("bespin:settings:set:theme", function(event) {
             var theme = event.memo.value;
 
@@ -384,6 +399,7 @@ var SettingsCustomEvents = Class.create({
             }
         });
 
+        // Add in emacs key bindings
         document.observe("bespin:settings:set:keybindings", function(event) {
             var value = event.memo.value;
 
