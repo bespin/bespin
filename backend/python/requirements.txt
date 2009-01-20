@@ -7,4 +7,3 @@ simplejson
 shove
 Paste
 static
-Spawning
