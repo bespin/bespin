@@ -203,6 +203,7 @@ var DefaultCommands = {
             takes: ['filename'],
             preview: 'create a new buffer for file',
             completeText: 'optionally, name the new filename',
+            withKey: "CTRL SHIFT N",            
             execute: function(self, filename) {
                 var opts = (filename) ? { newfilename: filename } : {};
                 document.fire("bespin:editor:newfile", opts);

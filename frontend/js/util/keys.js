@@ -70,3 +70,28 @@ var Key = {
   DELETE: 46
 
 };
+
+/*
+ * Fill out the arguments for action, key, modifiers
+ */
+Key.fillArguments = function(string, args) {
+    var keys = string.split(' ');
+    args = args || {};
+    
+    var modifiers = [];
+    keys.each(function(key) {
+       if (key.length > 1) { // more than just an alpha/numeric
+           modifiers.push(key);
+       } else {
+           args.key = key;
+       }
+    });
+
+    if (modifiers.length == 0) { // none if that is true
+        args.modifiers = "none";
+    } else {
+        args.modifiers = modifiers.join(',');
+    }
+    
+    return args;
+}
