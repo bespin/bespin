@@ -26,6 +26,11 @@
 # ***** END LICENSE BLOCK *****
 # 
 
+import subprocess
+import os
+import re
+import signal
+
 import paver.virtual
 
 options(
@@ -54,8 +59,8 @@ def required():
 @task
 def start():
     """Starts the BespinServer on localhost port 8080 for development."""
-    # Spawning is not quite working yet
-    sh("bin/spawn -f bespin.config.dev_spawning_factory -s 1 -t 4 -i 127.0.0.1 -p 8080 bespin.config.dev_factory")
+    os.execv("bin/spawn", "-f bespin.config.dev_spawning_factory -s 1 -t 4 -i 127.0.0.1 -p 8080 bespin.config.dev_factory".split())
+    
     # from bespin import config, controllers
     # from wsgiref.simple_server import make_server
     # 
