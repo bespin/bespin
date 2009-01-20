@@ -59,7 +59,7 @@ var CommandLine = Class.create({
             return;
         }
 
-        document.fire("bespin:cmdline:execute", { command: command });
+        document.fire("bespin:cmdline:executed", { command: command });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -70,6 +70,15 @@ var CommandLine = Class.create({
         if (command.takes &&
             Object.prototype.toString.call(command.takes) === '[object Array]') {
             command = this.normalizeTakes(command);
+        }
+        
+        // -- Add bindings
+        if (command.withKey) {
+            var args = Key.fillArguments(command.withKey);
+            
+            args.action = "bespin:cmdline:execute;name=" + command.name;
+
+            document.fire("bespin:editor:bindkey", args);
         }
 
         this.commands[command.name] = command;
@@ -357,11 +366,18 @@ var CommandLineCustomEvents = Class.create({
             if (msg) commandline.showInfo(msg);
         });
 
-        document.observe("bespin:cmdline:execute", function(event) {
+        document.observe("bespin:cmdline:executed", function(event) {
             var commandname = event.memo.command.name;
 
             commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
         });
+        
+        document.observe("bespin:cmdline:execute", function(event) {
+            var commandname = event.memo.name;
+
+            if (commandname) commandline.executeCommand(commandname);
+        });
+
 
         // -- Files
         document.observe("bespin:editor:openfile:openfail", function(event) {
