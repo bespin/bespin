@@ -206,8 +206,10 @@ var DefaultEditorKeyListener = Class.create({
     bindKey: function(keyCode, metaKey, ctrlKey, altKey, shiftKey, action) {
         this.defaultKeyMap[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = 
             (typeof action == "string") ?
-                function() { document.fire(action); } :
-                action.bind(this.actions);
+                function() { 
+                    var toFire = Events.toFire(action);
+                    document.fire(toFire.name, toFire.args);
+                } : action.bind(this.actions);
     },
 
     bindKeyString: function(modifiers, keyCode, action) {
@@ -605,8 +607,11 @@ var EditorUI = Class.create({
 
         listener.bindKeyString("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyString("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
-
-        listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        
+        // Other key bindings can be found in commands themselves.
+        // For example, this:
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        // has been moved to the 'newfile' command withKey
     },
 
     getWidth: function() {

@@ -109,13 +109,32 @@ document.observe("bespin:editor:titlechange", function(event) {
 
 document.observe("bespin:editor:urlchange", function(event) {
     var project = event.memo.project;
-    var path = event.memo.path;
+    var path    = event.memo.path;
 
     document.location.hash = "project=" + project + "&path=" + path;
 });
 
-document.observe("bespin:cmdline:execute", function(event) {
+document.observe("bespin:cmdline:executed", function(event) {
     var commandname = event.memo.command.name;
 
     $('message').innerHTML = "last cmd: " + commandname; // set the status message area
 });
+
+/*
+ * Events subsystem and helpers
+ */
+var Events = {
+    // bespin:cmdline:execute;foo=bar,baz=aps
+    // bespin:cmdline:execute
+    toFire: function(eventString) {
+        var event = {};
+        if (!eventString.indexOf(';')) { // just a plain command with no args
+            event.name = eventString;
+        } else { // split up the args
+            var pieces = eventString.split(';');
+            event.name = pieces[0];
+            event.args = pieces[1].toQueryParams(',');
+        }
+        return event;
+    }
+};
