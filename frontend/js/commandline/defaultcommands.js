@@ -220,6 +220,8 @@ var DefaultCommands = {
                 self.files.removeFile(_editSession.project, filename, function() {
                     self.editor.model.clear();
                     self.showInfo('Removed file: ' + filename, true);
+                }, function(xhr) {
+                    self.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
                 });
             }
         });

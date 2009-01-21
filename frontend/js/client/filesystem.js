@@ -72,8 +72,8 @@ var FileSystem = Class.create({
         _server.saveFile(project, file.name, file.content, file.lastOp);
     },
 
-    removeFile: function(project, path, callback) {
-        _server.removeFile(project, path, callback);
+    removeFile: function(project, path, onSuccess, onFailure) {
+        _server.removeFile(project, path, onSuccess, onFailure);
     },
     
     closeFile: function(project, path, callback) {
