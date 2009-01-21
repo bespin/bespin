@@ -27,10 +27,10 @@
 # 
 
 from urlrelay import URLRelay, url
+from paste.auth import auth_tkt
 import simplejson
 
 from bespin.config import c
-from bespin.auth import make_auth_middleware
 from bespin.framework import expose, BadRequest
 
 @expose(r'^/register/new/(?P<username>.*)$', 'POST', auth=False)
@@ -44,7 +44,7 @@ def new_user(request, response):
     user = request.user_manager.create_user(username, password, email)
     response.content_type = "application/json"
     response.body = simplejson.dumps(dict(project=user.private_project))
-    request.environ['REMOTE_USER'] = username
+    request.environ['paste.auth_tkt.set_user'](username)
     return response()
 
 @expose(r'^/register/userinfo/$', 'GET')
@@ -62,13 +62,17 @@ def get_registered(request, response):
 
 @expose(r'^/register/login/(?P<login_username>.+)', 'POST', auth=False)
 def login(request, response):
-    # on login, we need to double check that the user was found
-    # via authentication
-    remote_user = request.environ.get("REMOTE_USER")
-    if not remote_user:
-        response.status = "401 Authentication Required"
-        response.body = ""
+    username = request.kwargs['login_username']
+    password = request.POST.get('password')
+    user = request.user_manager.get_user(username)
+    print "U (%s): %s PW: %s %s" % (username, user, user.password, password)
+    if not user or (user and user.password != password):
+        response.status = "401 Not Authorized"
+        response.body = "Invalid login"
         return response()
+    
+    request.environ['paste.auth_tkt.set_user'](username)
+    
     response.content_type = "application/json"
     if request.user:
         private_project = request.user.private_project
@@ -81,8 +85,9 @@ def login(request, response):
 
 @expose(r'^/register/logout/$')
 def logout(request, response):
-    request.environ['bespin.logout'] = True
-    response.status='401 Unauthorized'
+    request.environ['paste.auth_tkt.logout_user']()
+    response.status = "200 OK"
+    response.body = "Logged out"
     return response()
 
 @expose(r'^/settings/$', 'POST')
@@ -252,7 +257,7 @@ def make_app():
     
     from paste.cascade import Cascade
     app = URLRelay()
-    app = make_auth_middleware(app)
+    app = auth_tkt.AuthTKTMiddleware(app, c.secret, include_ip=False)
     app = db_middleware(app)
     
     app = Cascade([app, static_app])

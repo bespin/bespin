@@ -70,7 +70,7 @@ def test_register_returns_empty_when_not_logged_in():
     resp = app.get('/register/userinfo/', status=401)
     assert resp.body == ""
     
-def test_login_and_verify_user():
+def test_register_and_verify_user():
     config.activate_profile()
     app = controllers.make_app()
     app = TestApp(app)
@@ -119,3 +119,22 @@ def test_bad_login_yields_401():
     resp = app.post("/register/login/BillBixby",
         dict(password="NOTHULK"), status=401)
     
+def test_login_without_cookie():
+    config.activate_profile()
+    user_manager = config.c.user_manager
+    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.post("/register/login/BillBixby",
+        dict(password="hulkrulez"))
+    assert resp.cookies_set['auth_tkt']
+    
+def test_static_files_with_auth():
+    config.activate_profile()
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.get('/editor.html', status=302)
+    assert resp.location == "http://localhost/"
+    resp = app.post('/register/new/Aldus', dict(password="foo", 
+                                                email="a@b.com"))
+    resp = app.get('/editor.html')
