@@ -132,10 +132,6 @@ Event.observe(document, "dom:loaded", function() {
     svr.currentuser(loggedIn, notLoggedIn);
 });
 
-function editFile(project, path) {
-    location.href = 'editor.html#project=' + project + '&path=' + path;
-}
-
 var svr = new Server();
 var currentProject;
 
@@ -145,7 +141,7 @@ function loggedIn(user) {
 }
 
 function notLoggedIn(xhr) {
-    location.href = "index.html"; // take me home Scottie!
+    Navigate.home();
 }
 
 function displayFiles(files) {
@@ -195,7 +191,7 @@ function displaySessions(sessions) {
             var panel = new BespinSessionPanel({ filename: name, project: project, path: path });
             infoPanel.add(panel);
             panel.bus.bind("dblclick", panel, function(e) {
-                editFile(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
+                Navigate.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
             });
         }
     }
