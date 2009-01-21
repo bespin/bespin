@@ -149,7 +149,7 @@ var Server = Class.create({
     removeFile: function(project, path, callback) {
         var project = project || '';
         var path = path || '';
-        var url = Path.combine('/file', project, path);
+        var url = Path.combine('/file/at', project, path);
         
         this.request('DELETE', url, null, { call: callback });
     },
