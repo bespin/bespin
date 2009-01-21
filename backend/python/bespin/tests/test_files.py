@@ -157,15 +157,63 @@ def test_delete_raises_file_not_found():
     except model.FSException:
         pass
     
-def test_cannot_delete_open_file():
+def test_authorize_other_user():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.commit()
+    config.c.saved_keys.clear()
+    fm.authorize_user("MacGyver", "bigmac", "SomeoneElse")
+    fm.commit()
+    assert "bigmac" in config.c.saved_keys
+    data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
+    assert data == "biz"
+    fm.close("SomeoneElse", "bigmac", "foo/bar/baz")
+    
+    config.c.saved_keys.clear()
+    fm.unauthorize_user("MacGyver", "bigmac", "SomeoneElse")
+    fm.commit()
+    assert "bigmac" in config.c.saved_keys
+    try:
+        data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
+        assert False, "Should have not been authorized any more"
+    except model.NotAuthorized:
+        pass
+    
+    
+def test_only_owner_can_authorize_user():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.authorize_user("MacGyver", "bigmac", "SomeoneElse")
+    try:
+        fm.authorize_user("SomeoneElse", "bigmac", "YetAnother")
+        assert False, "Should not have been allowed to authorize with non-owner"
+    except model.NotAuthorized:
+        pass
+    
+    try:
+        fm.unauthorize_user("SomeoneElse", "bigmac", "MacGyver")
+        assert False, "Should not have been allowed to unauthorize with non-owner"
+    except model.NotAuthorized:
+        pass
+    
+def test_cannot_delete_file_open_by_someone_else():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.authorize_user("MacGyver", "bigmac", "SomeoneElse")
     fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
     try:
-        fm.delete("MacGyver", "bigmac", "foo/bar/baz")
+        fm.delete("SomeoneElse", "bigmac", "foo/bar/baz")
         assert False, "Expected FileConflict exception for deleting open file"
     except model.FileConflict:
         pass
+        
+def test_can_delete_file_open_by_me():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
+    fm.delete("MacGyver", "bigmac", "foo/bar/baz")
+    fs = model.FileStatus.get(fm.status_store, "bigmac/foo/bar/baz")
+    assert not fs.users
     
 def test_successful_deletion():
     fm = _get_fm()
@@ -179,6 +227,17 @@ def test_successful_deletion():
     files = fm.list_files("MacGyver", "bigmac", "foo/bar/")
     assert not files
     
+def test_top_level_deletion():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo", "data")
+    fm.commit()
+    saved_keys = config.c.saved_keys
+    saved_keys.clear()
+    fm.delete("MacGyver", "bigmac", "foo")
+    fm.commit()
+    assert "bigmac/" in saved_keys
+    flist = fm.list_files("MacGyver", "bigmac")
+    assert 'foo' not in flist
 
 def test_basic_edit_functions():
     fm = _get_fm()
@@ -310,7 +369,6 @@ def test_error_conditions_from_web():
     app.put("/file/at/bigmac/bar/baz", "A file in bar")
     app.put("/file/at/bigmac/bar", "A file to replace bar", status=409)
     app.get("/file/at/bigmac/bar/baz")
-    app.delete("/file/at/bigmac/bar/baz", status=409)
     app.get("/file/at/bigmac", status=400)
     app.get("/file/at/bigmac/", status=400)
     app.get("/file/at/", status=400)
