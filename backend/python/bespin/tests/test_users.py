@@ -138,3 +138,18 @@ def test_static_files_with_auth():
     resp = app.post('/register/new/Aldus', dict(password="foo", 
                                                 email="a@b.com"))
     resp = app.get('/editor.html')
+
+def test_register_existing_user_should_not_authenticate():
+    config.activate_profile()
+    app_orig = controllers.make_app()
+    app = TestApp(app_orig)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    app = TestApp(app_orig)
+    resp = app.post("/register/new/BillBixby", dict(email="bill@bixby.com",
+                                                    password="somethingelse"),
+                    status=409)
+    assert not resp.cookies_set
+    user = config.c.user_manager.get_user("BillBixby")
+    assert user.password == 'notangry'
+    
