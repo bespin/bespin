@@ -29,6 +29,10 @@
 // - Global Constants
 var COMMAND_LINE_HEIGHT = 95;
 
+var Bespin = {
+   version: '0.1a'
+};
+
 // -- Globals
 var _editor;
 var _editSession;
