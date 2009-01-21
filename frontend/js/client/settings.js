@@ -67,7 +67,8 @@ var Settings = Class.create({
             'tabsize': '2',
             'fontsize': '10',
             'autocomplete': 'off',
-            'collaborate': 'off'
+            'collaborate': 'off',
+            'syntax': 'auto'
         };
     },
 

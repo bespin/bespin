@@ -36,24 +36,23 @@
     var svr = new Server();
 
     function processLogin(xhr) {
-      location.href = 'dashboard.html';
+        location.href = 'dashboard.html';
     }
 
 	function notLoggedIn(xhr) {
-		$("status").innerHTML = "Login didn't work. Try again";
+        $("status").innerHTML = "Login didn't work. Try again";
 	}
 	
 	function usernameInUse() {
-	 $("status").innerHTML = "The username is taken. Please choose another."
+        $("status").innerHTML = "The username is taken. Please choose another."
 	}
-	
 
 	function login() {
-	    if ($('login_label').visible()) {
-  	    svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
+        if ($('login_label').visible()) {
+            svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
 	    } else {
-  	    svr.signup($("username").value, $("password").value, $('email').value,
-  	              processLogin, notLoggedIn);
+            svr.signup($("username").value, $("password").value, $('email').value,
+                processLogin, notLoggedIn);
 	    }
 	}
 
@@ -62,31 +61,31 @@
 	}
 	
 	function isLoggedIn(userinfo) {
-	  $('display_username').innerHTML = userinfo.username;
-	  $('logged_in').show();
+        $('display_username').innerHTML = userinfo.username;
+        $('logged_in').show();
 	}
 	
 	function isNotLoggedIn() {
-	  $('not_logged_in').show();
+        $('not_logged_in').show();
 	}
 	
 	function logout() {
-	  svr.logout();
-	  $('logged_in').hide();
-	  $('not_logged_in').show();
+        svr.logout();
+        $('logged_in').hide();
+        $('not_logged_in').show();
 	}
 	
 	function showRegisterForm() {
-	  $('login_label').hide();
-	  $('emailField').show();
+        $('login_label').hide();
+        $('emailField').show();
 	}
 	
-	function onLoad() {
-	  svr.currentuser(isLoggedIn, isNotLoggedIn);
+	Event.observe(document, "dom:loaded", function() {
+        svr.currentuser(isLoggedIn, isNotLoggedIn);
 	}
 	</script>
 </head>
-<body onload="onLoad()">
+<body>
 
 <div id="loginpane" align="right">
   <div id="not_logged_in" style="display: none;">
