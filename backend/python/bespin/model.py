@@ -119,10 +119,28 @@ class Project(Directory):
     def __init__(self, owner):
         super(Project, self).__init__()
         self.owner = owner
+        self.members = set()
     
     def authorize(self, user):
+        if user != self.owner and user not in self.members:
+            raise NotAuthorized("You are not authorized to access that project.")
+            
+    def authorize_user(self, user, auth_user):
+        """user is requesting to allow auth_user to access this
+        project. user must be this project's owner."""
         if user != self.owner:
-            raise NotAuthorized("Only the project owner can access at this time.")
+            raise NotAuthorized("Only the project owner can authorize users.")
+        self.members.add(auth_user)
+        
+    def unauthorize_user(self, user, auth_user):
+        """user wants auth_user to no longer be able to access this
+        project. user must be the project owner."""
+        if user != self.owner:
+            raise NotAuthorized("Only the project owner can unauthorize users.")
+        try:
+            self.members.remove(auth_user)
+        except KeyError:
+            pass
     
 class FileStatus(object):
     @classmethod
@@ -327,8 +345,13 @@ class FileManager(object):
             raise FileNotFound("%s not found" % full_path)
             
         file_status = FileStatus.get(self.status_store, full_path)
-        if file_status.users:
-            raise FileConflict("Cannot delete %s because it is in use" % full_path)
+        open_users = file_status.users
+        if open_users:
+            open_by_me = len(open_users) == 1 and user in open_users
+            if not open_by_me:
+                raise FileConflict("Cannot delete %s because it is in use" % full_path)
+            if open_by_me:
+                self.close(user, project_name, path)
             
         # everything looks good to delete
         del fs[full_path]
@@ -337,6 +360,8 @@ class FileManager(object):
         dir_name = "/".join(segments[:-1]) + "/"
         d = fs[dir_name]
         d.files.remove(segments[-1])
+        # make sure we save the changes
+        fs[dir_name] = d
         
     def commit(self):
         self.file_store.sync()
@@ -407,3 +432,15 @@ class FileManager(object):
                 contents = open(os.path.join(dirpath, f)).read()
                 self.save_file(user, project_name, destpath, contents)
                 
+    def authorize_user(self, user, project_name, auth_user):
+        """Allow auth_user to access project_name which is owned by user."""
+        project = self.get_project(user, project_name)
+        project.authorize_user(user, auth_user)
+        self.file_store[project_name] = project
+        
+    def unauthorize_user(self, user, project_name, auth_user):
+        """Disallow auth_user from accessing project_name which is owned
+        by user."""
+        project = self.get_project(user, project_name)
+        project.unauthorize_user(user, auth_user)
+        self.file_store[project_name] = project
