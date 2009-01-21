@@ -36,7 +36,7 @@
     var svr = new Server();
 
     function processLogin(xhr) {
-        location.href = 'dashboard.html';
+        Navigate.dashboard();
     }
 
 	function notLoggedIn(xhr) {
@@ -54,10 +54,6 @@
             svr.signup($("username").value, $("password").value, $('email').value,
                 processLogin, notLoggedIn);
 	    }
-	}
-
-	function quickEdit() {
-		location.href = 'editor.html#new=true';
 	}
 	
 	function isLoggedIn(userinfo) {
@@ -120,7 +116,7 @@
     <div id="quickedit">
         <h2>Quick Edit</h2>
         <p>Open a new, blank document and begin editing right away.</p>
-        <img src="images/splash_btn_begin.gif" align="right" onclick="quickEdit()"/>
+        <img src="images/splash_btn_begin.gif" align="right" onclick="Navigate.quickEdit()"/>
     </div>
 </div>
 
