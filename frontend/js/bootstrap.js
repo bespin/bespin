@@ -58,7 +58,7 @@ Element.observe(window, 'load', function() {
         _editSession.userproject = userinfo.project; // the special user project
     }
     function isNotLoggedIn() {
-        location.href = "index.html"; // go back
+        Navigate.home(); // go back
     }    
     _server.currentuser(isLoggedIn, isNotLoggedIn);
 

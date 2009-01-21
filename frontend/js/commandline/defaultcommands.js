@@ -243,7 +243,7 @@ var DefaultCommands = {
             name: 'dashboard',
             preview: 'navigate to the file',
             execute: function(self) {
-                location.href = "dashboard.html";
+                Navigate.dashboard();
             }
         });
 
