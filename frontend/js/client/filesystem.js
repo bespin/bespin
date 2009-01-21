@@ -75,6 +75,10 @@ var FileSystem = Class.create({
     removeFile: function(project, path, callback) {
         _server.removeFile(project, path, callback);
     },
+    
+    closeFile: function(project, path, callback) {
+        _server.closeFile(project, path, callback);
+    },
 
     whenFileExists: function(project, path, callbacks) {
         _server.list(project, Path.directory(path), function(files) {

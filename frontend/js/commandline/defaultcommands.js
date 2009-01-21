@@ -225,6 +225,29 @@ var DefaultCommands = {
         });
 
         commandline.addCommand({
+            name: 'closefile',
+            takes: ['filename'],
+            preview: 'close the file (may lose edits)',
+            completeText: 'add the filename to close',
+            execute: function(self, filename) {
+                self.files.closeFile(_editSession.project, filename, function() {
+                    document.fire("bespin:editor:closedfile", { filename: filename });
+                    if (filename == _editSession.path) document.fire("bespin:editor:newfile");
+
+                    self.showInfo('Closed file: ' + filename, true);
+                });
+            }
+        });
+
+        commandline.addCommand({
+            name: 'dashboard',
+            preview: 'navigate to the file',
+            execute: function(self) {
+                location.href = "dashboard.html";
+            }
+        });
+
+        commandline.addCommand({
             name: 'clear',
             aliases: ['cls'],
             preview: 'clear the file',
