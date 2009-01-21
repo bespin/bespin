@@ -62,6 +62,13 @@ def get_registered(request, response):
 
 @expose(r'^/register/login/(?P<login_username>.+)', 'POST', auth=False)
 def login(request, response):
+    # on login, we need to double check that the user was found
+    # via authentication
+    remote_user = request.environ.get("REMOTE_USER")
+    if not remote_user:
+        response.status = "401 Authentication Required"
+        response.body = ""
+        return response()
     response.content_type = "application/json"
     if request.user:
         private_project = request.user.private_project

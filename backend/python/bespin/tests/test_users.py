@@ -109,3 +109,13 @@ def test_logout():
         dict(password='hulkrulez'))
     resp = app.get("/register/logout/")
     assert resp.cookies_set['auth_tkt'] == '""'
+    
+def test_bad_login_yields_401():
+    config.activate_profile()
+    user_manager = config.c.user_manager
+    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.post("/register/login/BillBixby",
+        dict(password="NOTHULK"), status=401)
+    
