@@ -42,6 +42,8 @@ def new_user(request, response):
     except KeyError:
         raise BadRequest("username, email and password are required.")
     user = request.user_manager.create_user(username, password, email)
+    request.file_manager.install_template(username, user.private_project,
+                                          'usertemplate')
     response.content_type = "application/json"
     response.body = simplejson.dumps(dict(project=user.private_project))
     request.environ['paste.auth_tkt.set_user'](username)
