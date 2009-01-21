@@ -99,6 +99,10 @@ def test_register_and_verify_user():
     assert 'project' in data
     assert data['username'] == 'BillBixby'
     
+    project_id = data['project']
+    resp = app.get("/file/at/%s/config.js" % project_id)
+    app.post("/file/close/%s/config.js" % project_id)
+    
 def test_logout():
     config.activate_profile()
     user_manager = config.c.user_manager

@@ -416,9 +416,9 @@ class FileManager(object):
                 del user_status.files[project_name]
             user_status.save(self.status_store, user)
             
-    def install_template(self, user, project_name):
+    def install_template(self, user, project_name, template="template"):
         project = self.get_project(user, project_name, create=True)
-        source_dir = pkg_resources.resource_filename("bespin", "template")
+        source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
             destdir = dirpath[common_path_len:]
