@@ -71,6 +71,8 @@ var Server = Class.create({
                         var onStatus = 'on' + xhr.status;
                         if (callbackOptions[onStatus]) {
                             callbackOptions[onStatus](xhr);
+                        } else if (callbackOptions['onFailure']) {
+                            callbackOptions['onFailure'](xhr);
                         }
                     }
                 }
@@ -146,12 +148,14 @@ var Server = Class.create({
         this.request('GET', url, null, { call: callback });
     },
 
-    removeFile: function(project, path, callback) {
+    removeFile: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var path = path || '';
         var url = Path.combine('/file/at', project, path);
+        var opts = { call: onSuccess };
+        if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
         
-        this.request('DELETE', url, null, { call: callback });
+        this.request('DELETE', url, null, opts);
     },
 
     /*
