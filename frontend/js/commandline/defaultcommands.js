@@ -248,6 +248,30 @@ var DefaultCommands = {
         });
 
         commandline.addCommand({
+            name: 'version',
+            takes: ['command'],
+            preview: 'show the version for Bespin or a command',
+            completeText: 'optionally, a command name',
+            execute: function(self, command) {
+                var bespinVersion = 'Your Bespin is at version ' + Bespin.version;
+                var version;
+                if (command) {
+                    var theCommand = self.commands[command];
+                    if (!theCommand) {
+                        version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
+                    } else {
+                        version = (theCommand.version)
+                            ? "The command named '" + command + "' is at version " + theCommand.version 
+                            : "The command named '" + command + "' is a core command in Bespin version " + Bespin.version;
+                    }
+                } else {
+                    version = bespinVersion;
+                }
+                self.showInfo(version);
+            }
+        });
+
+        commandline.addCommand({
             name: 'clear',
             aliases: ['cls'],
             preview: 'clear the file',
