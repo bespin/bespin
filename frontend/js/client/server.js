@@ -164,10 +164,10 @@ var Server = Class.create({
         });
     },
 
-    closeFile: function(project, path) {
+    closeFile: function(project, path, callback) {
         var path = path || '';
         var url = Path.combine('/file/close', project, path);
-        this.request('POST', url, null, { log: 'Closed file: ' + project + path });
+        this.request('POST', url, null, { call: callback });
     },
 
     // -- EDIT
