@@ -314,7 +314,9 @@ var DefaultCommands = {
             preview: 'log out',
             execute: function(self) {
                 delete _editSession.username;
-                _server.logout();
+                _server.logout(function() {
+					window.location.href="/";
+				});
             }
         });
 

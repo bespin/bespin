@@ -105,9 +105,9 @@ var Server = Class.create({
 		});
 	},
 
-    logout: function() {
+    logout: function(callback) {
         var url = "/register/logout/";
-        this.request('POST', url, null, { log: 'Logout complete.' });
+        this.request('POST', url, null, { log: 'Logout complete.', call: callback });
     },
 
     currentuser: function(callback, notloggedin) {
