@@ -330,18 +330,16 @@ class FileManager(object):
         file_status.save(ss, full_path)
         self.reset_edits(user, project, path)
     
-    def delete(self, user, project_name, path):
+    def delete(self, user, project_name, path=""):
         """Deletes a file, as long as it is not opened. If the file is
         open, a FileConflict is raised. If the path is a directory,
-        an exception will be raised."""
+        the directory and everything underneath it will be deleted.
+        If the path is empty, the project will be deleted."""
         project = self.get_project(user, project_name)
         full_path = project_name + "/" + path
         segments = full_path.split("/")
         fs = self.file_store
         
-        if path.endswith("/"):
-            raise FSException("Directory deletion is not supported.")
-            
         if not full_path in fs:
             raise FileNotFound("%s not found" % full_path)
             
@@ -353,14 +351,33 @@ class FileManager(object):
                 raise FileConflict("Cannot delete %s because it is in use" % full_path)
             if open_by_me:
                 self.close(user, project_name, path)
-            
+        
+        obj = fs[full_path]
+        if full_path.endswith("/"):
+            del segments[-1]
+            dir_name = "/".join(segments[:-1]) + "/"
+            myname = segments[-1] + "/"
+            for sub_path in list(obj.files):
+                sub_path = path + sub_path
+                self.delete(user, project_name, sub_path)
+        else:
+            dir_name = "/".join(segments[:-1]) + "/"
+            myname = segments[-1]
+        
         # everything looks good to delete
         del fs[full_path]
         
+        # check to see if we're deleting a project
+        if not path:
+            user_manager = self.db.user_manager
+            user_obj = user_manager.get_user(user)
+            user_obj.projects.remove(project_name)
+            user_manager.save_user(user, user_obj)
+            return
+            
         # remove the directory entry
-        dir_name = "/".join(segments[:-1]) + "/"
         d = fs[dir_name]
-        d.files.remove(segments[-1])
+        d.files.remove(myname)
         # make sure we save the changes
         fs[dir_name] = d
         
