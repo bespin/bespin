@@ -26,7 +26,7 @@
 // ***** END LICENSE BLOCK *****
 //
 
-var Navigate = ( new function() {
+var Navigate = new function() {
     
     // Private
     var go = function(url) {
@@ -60,4 +60,4 @@ var Navigate = ( new function() {
         }
     };
     
-}());
+}();
