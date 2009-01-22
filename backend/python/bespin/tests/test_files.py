@@ -353,21 +353,31 @@ def test_secondary_objects_are_saved_when_creating_new_file():
     bigmac_obj = sk['bigmac/']
     assert "foo/" in bigmac_obj.files
     
-def test_import_tarball():
-    fm = _get_fm()
-    fm.import_tarball("MacGyver", "bigmac", tarfile)
-    fm.commit()
-    config.c.user_manager.commit()
-    sk = config.c.saved_keys
-    user_obj = sk['MacGyver']
-    assert 'bigmac' in user_obj.projects
-    project = sk['bigmac/']
-    assert 'usertemplate/' in project.files
-    ut = sk['bigmac/usertemplate/']
-    assert 'config.js' in ut.files
-    assert 'commands/' in ut.files
-    commands = sk['bigmac/usertemplate/commands/']
-    assert 'yourcommands.js' in commands.files
+def test_import():
+    tests = [
+        ("import_tarball", tarfile),
+        ("import_zipfile", zipfile)
+    ]
+    
+    def run_one(func, f):
+        print "Testing %s" % (func)
+        fm = _get_fm()
+        getattr(fm, func)("MacGyver", "bigmac", f)
+        fm.commit()
+        config.c.user_manager.commit()
+        sk = config.c.saved_keys
+        user_obj = sk['MacGyver']
+        assert 'bigmac' in user_obj.projects
+        project = sk['bigmac/']
+        assert 'usertemplate/' in project.files
+        ut = sk['bigmac/usertemplate/']
+        assert 'config.js' in ut.files
+        assert 'commands/' in ut.files
+        commands = sk['bigmac/usertemplate/commands/']
+        assert 'yourcommands.js' in commands.files
+    
+    for test in tests:
+        yield run_one, test[0], test[1]
     
     
 # -------
