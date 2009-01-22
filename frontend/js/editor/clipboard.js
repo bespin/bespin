@@ -36,7 +36,10 @@ var Clipboard = {
       } else {
         return;
       }
-    } catch (ex) {}
+    } catch (ex) {
+        console.log(ex);
+        return;
+    }
 
     var str = Components.classes["@mozilla.org/supports-string;1"].
                               createInstance(Components.interfaces.nsISupportsString);
@@ -82,7 +85,10 @@ var Clipboard = {
       } else {
         return;
       }
-    } catch (ex) {}
+    } catch (ex) {
+        console.log(ex);
+        return;
+    }
 
     var clip = Components.classes["@mozilla.org/widget/clipboard;1"].getService(Components.interfaces.nsIClipboard);
     if (!clip) return false;
