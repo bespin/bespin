@@ -67,7 +67,7 @@ var Server = Class.create({
                         } else if (callbackOptions['log']) {
                             console.log(callbackOptions['log']);
                         }
-                    } else {
+                    } else {                        
                         var onStatus = 'on' + xhr.status;
                         if (callbackOptions[onStatus]) {
                             callbackOptions[onStatus](xhr);
