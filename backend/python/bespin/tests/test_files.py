@@ -146,16 +146,15 @@ def test_delete_raises_file_not_found():
     except model.FileNotFound:
         pass
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.commit()
     try:
         fm.delete("MacGyver", "bigmac", "STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
     except model.FileNotFound:
         pass
-    try:
-        fm.delete("MacGyver", "bigmac", "foo/bar/")
-        assert False, "Expected exception for deleting directory"
-    except model.FSException:
-        pass
+    flist = fm.list_files("MacGyver", "bigmac")
+    assert "foo/" in flist
+    fm.delete("MacGyver", "bigmac", "foo/bar/")
     
 def test_authorize_other_user():
     fm = _get_fm()
@@ -238,6 +237,28 @@ def test_top_level_deletion():
     assert "bigmac/" in saved_keys
     flist = fm.list_files("MacGyver", "bigmac")
     assert 'foo' not in flist
+    
+def test_directory_deletion():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar", "data")
+    fm.commit()
+    fm.delete("MacGyver", "bigmac", "foo/")
+    fm.commit()
+    flist = fm.list_files("MacGyver", "bigmac")
+    assert 'foo/' not in flist
+    assert 'bigmac/foo/bar' not in fm.file_store
+    
+def test_project_deletion():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    fm.commit()
+    fm.delete("MacGyver", "bigmac")
+    fm.commit()
+    config.c.user_manager.commit()
+    flist = fm.list_files("MacGyver")
+    assert "bigmac" not in flist
+    user_obj = config.c.saved_keys['MacGyver']
+    assert 'bigmac' not in user_obj.projects
 
 def test_basic_edit_functions():
     fm = _get_fm()
