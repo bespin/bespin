@@ -267,6 +267,7 @@ var EditorActions = Class.create({
 
     pasteFromClipboard: function(args) {
         var clipboard = (args.clipboard) ? args.clipboard : Clipboard.data();
+        if (clipboard == undefined) return; // darn it clipboard!
         args.chunk = clipboard;
         this.insertChunk(args);
     },
