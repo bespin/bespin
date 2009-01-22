@@ -50,6 +50,8 @@ c.edit_db_cache = None
 c.secret = "This is the phrase that is used for secret stuff."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 
+c.max_import_file_size = 20000000
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
