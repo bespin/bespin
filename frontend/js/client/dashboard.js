@@ -120,7 +120,7 @@ Event.observe(document, "dom:loaded", function() {
     scene.bus.bind("dblclick", tree, function() {
         var path = tree.getSelectedPath();
         if (path.length == 0) return;
-        editFile(currentProject, getFilePath(path));
+        Navigate.editor(currentProject, getFilePath(path));
     });
 
     scene.bus.bind("itemselected", projects.list, function(e) {
