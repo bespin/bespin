@@ -26,10 +26,15 @@
 # ***** END LICENSE BLOCK *****
 # 
 
+import os
+
 from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
+
+tarfile = os.path.join(os.path.dirname(__file__), "ut.tgz")
+zipfile = os.path.join(os.path.dirname(__file__), "ut.zip")
 
 app = None
 
@@ -347,6 +352,23 @@ def test_secondary_objects_are_saved_when_creating_new_file():
     assert "bigmac" in user_obj.projects
     bigmac_obj = sk['bigmac/']
     assert "foo/" in bigmac_obj.files
+    
+def test_import_tarball():
+    fm = _get_fm()
+    fm.import_tarball("MacGyver", "bigmac", tarfile)
+    fm.commit()
+    config.c.user_manager.commit()
+    sk = config.c.saved_keys
+    user_obj = sk['MacGyver']
+    assert 'bigmac' in user_obj.projects
+    project = sk['bigmac/']
+    assert 'usertemplate/' in project.files
+    ut = sk['bigmac/usertemplate/']
+    assert 'config.js' in ut.files
+    assert 'commands/' in ut.files
+    commands = sk['bigmac/usertemplate/commands/']
+    assert 'yourcommands.js' in commands.files
+    
     
 # -------
 # Web tests

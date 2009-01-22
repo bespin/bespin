@@ -29,6 +29,7 @@
 """Data classes for working with files/projects/users."""
 import os
 import hashlib
+import tarfile
 
 import pkg_resources
 
@@ -462,3 +463,21 @@ class FileManager(object):
         project = self.get_project(user, project_name)
         project.unauthorize_user(user, auth_user)
         self.file_store[project_name] = project
+        
+    def import_tarball(self, user, project_name, file_path):
+        """Imports the tarball at file_path into the project
+        project_name owned by user. If the project already exists,
+        IT WILL BE WIPED OUT AND REPLACED."""
+        project = self.get_project(user, project_name, create=True)
+        pfile = tarfile.open(file_path)
+        max_import_file_size = config.c.max_import_file_size
+        for member in pfile:
+            # save the files, directories are created automatically
+            # note that this does not currently support empty directories.
+            if member.isreg():
+                if member.size > max_import_file_size:
+                    raise FSException("File %s too large (max is %s bytes)" 
+                        % (member.name, max_import_file_size))
+                self.save_file(user, project_name, member.name, 
+                    pfile.extractfile(member).read())
+        
