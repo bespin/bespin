@@ -25,6 +25,7 @@
 # 
 # ***** END LICENSE BLOCK *****
 # 
+import copy
 
 import shove
 
@@ -37,6 +38,8 @@ class TestStore(shove.SimpleBase, shove.BaseStore):
         
     def __setitem__(self, key, value):
         super(TestStore, self).__setitem__(key, value)
-        config.c.saved_keys.add(key)
+        sk = config.c.saved_keys
+        sk[key] = copy.deepcopy(value)
+        
         
 shove.stores['bespin_test'] = 'bespin.tests.util:TestStore'
