@@ -48,7 +48,7 @@ def _get_fm():
                  'Just a file to reserve a project')
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
-    config.c.saved_keys = set()
+    config.c.saved_keys.clear()
     return fm
 
 def test_basic_file_creation():
@@ -316,6 +316,17 @@ def test_list_top_level():
     assert result == ["MacGyver_New_Project/", "bigmac/"]
     
     
+def test_secondary_objects_are_saved_when_creating_new_file():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar", "Data")
+    config.c.user_manager.commit()
+    config.c.file_manager.commit()
+    sk = config.c.saved_keys
+    user_obj = sk['MacGyver']
+    assert "bigmac" in user_obj.projects
+    bigmac_obj = sk['bigmac/']
+    assert "foo/" in bigmac_obj.files
+    
 # -------
 # Web tests
 # -------
@@ -412,4 +423,3 @@ def test_private_project_does_not_appear_in_list():
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
     assert data == ["MacGyver_New_Project/", "bigmac/"]
-    
