@@ -289,6 +289,7 @@ class FileManager(object):
                 fs[segment] = d
                 if last_d:
                     last_d.files.add(segments[i-1] + "/")
+                    fs[last_d_key] = last_d
             last_d = d
             last_d_key = segment
         if not last_d:
