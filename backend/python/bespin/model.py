@@ -30,6 +30,7 @@
 import os
 import hashlib
 import tarfile
+import zipfile
 
 import pkg_resources
 
@@ -480,4 +481,20 @@ class FileManager(object):
                         % (member.name, max_import_file_size))
                 self.save_file(user, project_name, member.name, 
                     pfile.extractfile(member).read())
+        
+    def import_zipfile(self, user, project_name, file_path):
+        """Imports the tarball at file_path into the project
+        project_name owned by user. If the project already exists,
+        IT WILL BE WIPED OUT AND REPLACED."""
+        project = self.get_project(user, project_name, create=True)
+        max_import_file_size = config.c.max_import_file_size
+        pfile = zipfile.ZipFile(file_path)
+        for member in pfile.infolist():
+            if member.filename.endswith("/"):
+                continue
+            if member.file_size > max_import_file_size:
+                raise FSException("File %s too large (max is %s bytes)" 
+                    % (member.filename, max_import_file_size))
+            self.save_file(user, project_name, member.filename,
+                pfile.read(member.filename))
         
