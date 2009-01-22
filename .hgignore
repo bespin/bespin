@@ -2,6 +2,7 @@ syntax: glob
 backend/python/lib
 backend/python/include
 backend/python/bin
+backend/python/devdata
 *.pyc
 backend/python/.Python
 backend/python/BespinServer.egg-info
