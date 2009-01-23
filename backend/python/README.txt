@@ -20,7 +20,7 @@ to enter the virtualenv. Alternatively, you can just prefix the commands you
 run with "bin/". If you wish to restore your command line environment,
 you can type "deactivate".
 
-You can start up the development server by running::
+You can start up the development server (runs on localhost:8080) by running::
 
   paver start
   
