@@ -76,15 +76,6 @@ var fixCanvas = function(ctx) {
     if (!ctx.measureText) {
         ctx.measureText = function() { return 10; }
     }
-
-    // temporary debugging crap
-//    if (ctx.fillRect && !ctx.fillRectOriginal) {
-//        ctx.fillRectOriginal = ctx.fillRect;
-//        ctx.fillRect = function(x, y, w, h) {
-//            console.log(x + ", " + y + ", " + w + ", " + h);
-//            ctx.fillRectOriginal(x, y, w, h);
-//        }
-//    }
 };
 
 /*
