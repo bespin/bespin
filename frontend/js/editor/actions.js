@@ -218,6 +218,11 @@ var EditorActions = Class.create({
         this.repaint();
     },
 
+    cutSelection: function(args) {
+        this.copySelection(args);
+        this.deleteSelection(args);
+    },
+    
     copySelection: function(args) {
         var selectionObject = this.editor.getSelection();
         if (selectionObject) {

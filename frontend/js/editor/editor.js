@@ -605,6 +605,9 @@ var EditorUI = Class.create({
         listener.bindKeyString("APPLE", Key.V, this.actions.pasteFromClipboard);
         listener.bindKeyString("CTRL", Key.V, this.actions.pasteFromClipboard);
 
+        listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
+        listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
+
         listener.bindKeyString("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyString("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
