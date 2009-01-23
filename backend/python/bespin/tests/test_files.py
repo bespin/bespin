@@ -361,8 +361,11 @@ def test_import():
     
     def run_one(func, f):
         print "Testing %s" % (func)
+        handle = open(f)
         fm = _get_fm()
-        getattr(fm, func)("MacGyver", "bigmac", f)
+        getattr(fm, func)("MacGyver", "bigmac", 
+            os.path.basename(f), handle)
+        handle.close()
         fm.commit()
         config.c.user_manager.commit()
         sk = config.c.saved_keys
@@ -476,3 +479,27 @@ def test_private_project_does_not_appear_in_list():
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
     assert data == ["MacGyver_New_Project/", "bigmac/"]
+
+def test_import_from_the_web():
+    tests = [tarfile, zipfile]
+    
+    def run_one(f):
+        fm = _get_fm()
+        filename = os.path.basename(f)
+        print "Trying %s" % filename
+        app.post("/project/import/newproj", upload_files=[
+            ("filedata", filename, open(f).read())
+        ])
+        resp = app.get("/file/at/newproj/usertemplate/config.js")
+        assert resp.body == ""
+        app.post("/file/close/newproj/usertemplate/config.js")
+    
+    for test in tests:
+        yield run_one, test
+    
+def test_import_unknown_file_type():
+    fm = _get_fm()
+    app.post("/project/import/newproj", upload_files=[
+        ("filedata", "foo.bar", "Some dummy text")
+    ], status=400)
+    
