@@ -312,7 +312,8 @@ var EditorUI = Class.create({
 
         this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         this.charWidth;         // set first time a paint occurs
-        this.cheight;           // last time the
+        this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
+        this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
         this.nibup;             // rect
         this.nibdown;           // rect
         this.nibleft;           // rect
@@ -611,6 +612,9 @@ var EditorUI = Class.create({
         listener.bindKeyString("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyString("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
+        listener.bindKeyString("", Key.PAGE_UP, this.actions.movePageUp);
+        listener.bindKeyString("", Key.PAGE_DOWN, this.actions.movePageDown);
+
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
@@ -660,7 +664,6 @@ var EditorUI = Class.create({
         var x, y;
         var cy;
         var currentLine;
-        var firstLineToRender;
         var lastLineToRender;
 
         var refreshCanvas = (this.lastLineCount != ed.model.getRowCount());
@@ -741,14 +744,15 @@ var EditorUI = Class.create({
         ctx.translate(0, this.yoffset);
 
         // only paint those lines that can be visible
-        firstLineToRender = Math.floor(Math.abs(this.yoffset / lineHeight));
-        lastLineToRender = Math.ceil(firstLineToRender + (cheight / lineHeight));
+        this.visibleRows = Math.ceil(cheight / lineHeight);
+        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / lineHeight));
+        lastLineToRender = this.firstVisibleRow + this.visibleRows;
         if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
 
         // paint the line numbers
         if (refreshCanvas) {
-            y = (lineHeight * firstLineToRender);
-            for (currentLine = firstLineToRender; currentLine <= lastLineToRender; currentLine++) {
+            y = (lineHeight * this.firstVisibleRow);
+            for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
                 x = this.GUTTER_INSETS.left;
                 cy = y + (lineHeight - this.LINE_INSETS.bottom);
 
@@ -771,13 +775,13 @@ var EditorUI = Class.create({
         var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
 
         // paint the line content and zebra stripes (kept in separate loop to simplify scroll translation and clipping)
-        y = (lineHeight * firstLineToRender);
+        y = (lineHeight * this.firstVisibleRow);
         var cc; // the starting column of the current region in the region render loop below
         var ce; // the ending column in the same loop
         var ri; // counter variable used for the same loop
         var regionlen;  // length of the text in the region; used in the same loop
         var tx, tw;
-        for (currentLine = firstLineToRender; currentLine <= lastLineToRender; currentLine++) {
+        for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
             x = this.GUTTER_WIDTH;
 
             if (!refreshCanvas) {

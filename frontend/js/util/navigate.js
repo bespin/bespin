@@ -36,19 +36,19 @@ var Navigate = new function() {
     // Public
     return {
         dashboard: function() {
-            go("/dashboard.html");
+            go("dashboard.html");
         },
         
         home: function() {
-            go("/");
+            go("index.html");
         },
         
         quickEdit: function() {
-    		go("/editor.html#new=true");
+    		go("editor.html#new=true");
     	},
     	
         editor: function(project, path) {
-            var url = "/editor.html#";
+            var url = "editor.html#";
             var args = [];
             
             if (project) args.push("project=" + project);
