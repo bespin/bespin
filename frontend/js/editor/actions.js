@@ -146,16 +146,39 @@ var EditorActions = Class.create({
             return;
         }
 
-        var newcol = (row.length < args.pos.col) ? row.length : args.pos.col;
+        // Short circuit if cursor is ahead of actual spaces in model
+        if (row.length < args.pos.col) {
+            args = this.moveToLineEnd(args);
+        }
+        var newcol = args.pos.col;
+
+        // This slurps up trailing spaces
+        var wasSpaces = false;
         while (newcol > 0) {
             newcol--;
+
             var c = row[newcol];
             var charCode = c.charCodeAt(0);
-            if ( (charCode < 66) || (charCode > 122) ) { // if you get to an alpha you are done
+            if (charCode == 32) {
+                wasSpaces = true;
+            } else {
+                newcol++;
                 break;
             }
         }
-    
+
+        // This jumps to stop words        
+        if (!wasSpaces) {
+            while (newcol > 0) {
+                newcol--;
+                var c = row[newcol];
+                var charCode = c.charCodeAt(0);
+                if ( (charCode < 66) || (charCode > 122) ) { // if you get to an alpha you are done
+                    break;
+                }
+            }
+        }
+        
         this.editor.cursorPosition.col = newcol;
         this.handleCursorSelection(args);
         this.repaint();
@@ -170,18 +193,36 @@ var EditorActions = Class.create({
         }
 
         var newcol = args.pos.col;
+
+        // This slurps up leading spaces
+        var wasSpaces = false;
         while (newcol < row.length) {
-            newcol++;
-
-            if (row.length == newcol) { // one more to go
-                this.moveToLineEnd(args);
-                return;
-            }
-
             var c = row[newcol];
             var charCode = c.charCodeAt(0);
-            if ( (charCode < 66) || (charCode > 122) ) {
+            if (charCode == 32) {
+                wasSpaces = true;
+                newcol++;
+            } else {
                 break;
+            }
+        }
+
+        // This jumps to stop words        
+        if (!wasSpaces) {        
+            while (newcol < row.length) {
+                newcol++;
+
+                if (row.length == newcol) { // one more to go
+                    this.moveToLineEnd(args);
+                    return;
+                }
+
+                var c = row[newcol];
+                var charCode = c.charCodeAt(0);
+            
+                if ( (charCode < 66) || (charCode > 122) ) {
+                    break;
+                }
             }
         }
     
