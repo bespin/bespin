@@ -119,6 +119,24 @@ var EditorActions = Class.create({
         return args;
     },
 
+    movePageUp: function(args) {
+        this.editor.cursorPosition.row = Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0);;
+
+        this.handleCursorSelection(args);
+        this.repaint();
+
+        return args;
+    },
+
+    movePageDown: function(args) {
+        this.editor.cursorPosition.row = Math.min(this.editor.cursorPosition.row + this.editor.ui.visibleRows, this.editor.model.getRowCount() - 1);
+
+        this.handleCursorSelection(args);
+        this.repaint();
+
+        return args;
+    },
+
     moveWordLeft: function(args) {
         var row = this.editor.model.getRowArray(args.pos.row);
 
