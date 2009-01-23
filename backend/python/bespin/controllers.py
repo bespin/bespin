@@ -241,6 +241,23 @@ def static_with_login(request, response):
         response.status = "404 Not found"
     response.body = ""
     return response()
+
+@expose(r'^/project/import/(?P<project_name>[^/]+)', "POST")
+def import_project(request, response):
+    project_name = request.kwargs['project_name']
+    input_file = request.POST['filedata']
+    filename = input_file.filename
+    if filename.endswith(".tgz") or filename.endswith(".tar.gz"):
+        func = request.file_manager.import_tarball
+    elif filename.endswith(".zip"):
+        func = request.file_manager.import_zipfile
+    else:
+        raise BadRequest(
+            "Import only supports .tar.gz, .tgz and .zip at this time.")
+        
+    func(request.username,
+        project_name, filename, input_file.file)
+    return response()
     
 def db_middleware(app):
     def wrapped(environ, start_response):

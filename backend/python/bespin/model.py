@@ -465,12 +465,12 @@ class FileManager(object):
         project.unauthorize_user(user, auth_user)
         self.file_store[project_name] = project
         
-    def import_tarball(self, user, project_name, file_path):
-        """Imports the tarball at file_path into the project
+    def import_tarball(self, user, project_name, filename, file_obj):
+        """Imports the tarball in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
         project = self.get_project(user, project_name, create=True)
-        pfile = tarfile.open(file_path)
+        pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
         for member in pfile:
             # save the files, directories are created automatically
@@ -482,13 +482,13 @@ class FileManager(object):
                 self.save_file(user, project_name, member.name, 
                     pfile.extractfile(member).read())
         
-    def import_zipfile(self, user, project_name, file_path):
-        """Imports the tarball at file_path into the project
+    def import_zipfile(self, user, project_name, filename, file_obj):
+        """Imports the zip file in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
         project = self.get_project(user, project_name, create=True)
         max_import_file_size = config.c.max_import_file_size
-        pfile = zipfile.ZipFile(file_path)
+        pfile = zipfile.ZipFile(file_obj)
         for member in pfile.infolist():
             if member.filename.endswith("/"):
                 continue
