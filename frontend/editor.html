@@ -27,7 +27,7 @@
 <html>
 <head>
     <title>Bespin &raquo; Your Community Editor</title>
-  	<link type="text/css" rel="stylesheet" href="css/editor.css"/>
+  	<link type="text/css" rel="stylesheet" href="css/editor.css">
     
     <!-- begin script tags -->
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
@@ -52,6 +52,7 @@
     <script type="text/javascript" src="js/editor/editor.js"></script>
     <script type="text/javascript" src="js/editor/model.js"></script>
     <script type="text/javascript" src="js/editor/syntaxhighlighter.js"></script>
+    <script type="text/javascript" src="js/editor/toolbar.js"></script>
     <script type="text/javascript" src="js/editor/themes.js"></script>
     <script type="text/javascript" src="js/editor/undo.js"></script>
 
@@ -70,33 +71,33 @@
 </head>
 <body>
     <div id="header">
-        <img id="collaboration" src="images/icn_collab_dim.png" alt="Collaboration"/>
+        <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
         <div id="collab_line"></div>
-        <a href="dashboard.html" title="Visit the Dashboard"><img id="logo" src="images/logo.png" alt="Bespin" border="0"/></a>
-        <img id="btn_files" src="images/icn_files_off.png" alt="Files"/>
-        <img id="btn_browser" src="images/icn_target_off.png" alt="Target Browsers" />
+        <a href="dashboard.html" title="Visit the Dashboard"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
+        <img id="toolbar_files" src="images/icn_files_off.png" alt="Files">
+        <img id="browser_preview" src="images/icn_target_off.png" alt="Target Browsers" >
         <span id="selected_browsers"></span>
     </div>
     <div id="subheader">
         <div id="search">
-            <div style="float: left"><input id="searchquery" type="text"/></div>
-            <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"/></div>
+            <div style="float: left"><input id="searchquery" type="text"></div>
+            <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"></div>
         </div>
 
         <div id="status"></div>
         <div id="bar"></div>
-        <img id="undo" src="images/icn_undo.png" alt="Undo" />
-        <img id="redo" src="images/icn_redo.png" alt="Redo" />
-        <img id="history" src="images/icn_history.png" alt="History" />
-        <img id="view_in_browser" src="images/icn_preview.png" alt="View in Browser" />
-        <img id="fontsize" src="images/icn_fontsize.png" alt="Font Size" />
+        <img id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
+        <img id="toolbar_redo" src="images/icn_redo.png" alt="Redo" title="Redo">
+        <img id="toolbar_history" src="images/icn_history.png" alt="History" title="History">
+        <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser">
+        <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
     </div>
     <div id="editor" width="500" height="500"></div>
     <div id="footer">
-        <div id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" /></div>
-        <div id="commandline"><input id="command" /></div>
+        <div id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></div>
+        <div id="commandline"><input id="command" ></div>
         <div id="error_bar">
-            <div style="float: left"><img src="images/icn_error.png" alt="Errors"/></div>
+            <div style="float: left"><img src="images/icn_error.png" alt="Errors"></div>
             <div id="error_bar_text" style="float: right">3</div>
         </div>
         <div id="footer_bar"></div>
@@ -106,12 +107,12 @@
     <div id="files">
         <div id="files_find">
             <div id="files_find_text">Quick Find</div>
-            <div id="files_find_input"><input id="quickfind" type="text"/></div>
-            <div id="files_find_icon"><img src="images/icn_findincode.png" alt="Quick Find"/></div>
+            <div id="files_find_input"><input id="quickfind" type="text"></div>
+            <div id="files_find_icon"><img src="images/icn_findincode.png" alt="Quick Find"></div>
         </div>
         <div id="files_project">
             <div id="files_project_name">Project Name</div>
-            <div id="files_project_pulldown"><img src="images/files_icn_projectdropdown.png" alt="Change Project"/></div>
+            <div id="files_project_pulldown"><img src="images/files_icn_projectdropdown.png" alt="Change Project"></div>
         </div>
     </div>
     <div id="collab">
@@ -133,10 +134,10 @@
                     Specify Target Browsers:
                 </td>
                 <td class="spacer">
-                    <img src="images/icn_browser_div.png" alt=""/>
+                    <img src="images/icn_browser_div.png" alt="">
                 </td>
                 <td class="icon">
-                    <img src="images/icn_browser_ie.png" alt="Internet Explorer"/>
+                    <img src="images/icn_browser_ie.png" alt="Internet Explorer">
                 </td>
                 <td>
                     <select name="target_ie">
@@ -146,7 +147,7 @@
                     </select>
                 </td>
                 <td class="icon">
-                    <img src="images/icn_browser_ff.png" alt="Firefox"/>
+                    <img src="images/icn_browser_ff.png" alt="Firefox">
                 </td>
                 <td>
                     <select name="target_ff">
@@ -156,7 +157,7 @@
                     </select>
                 </td>
                 <td class="icon">
-                    <img src="images/icn_browser_safari.png" alt="Safari"/>
+                    <img src="images/icn_browser_safari.png" alt="Safari">
                 </td>
                 <td>
                     <select name="target_safari">
@@ -166,7 +167,7 @@
                     </select>
                 </td>
                 <td class="icon">
-                    <img src="images/icn_browser_opera.png" alt="Opera"/>
+                    <img src="images/icn_browser_opera.png" alt="Opera">
                 </td>
                 <td>
                     <select name="target_opera">
@@ -177,7 +178,7 @@
                     </select>
                 </td>
                 <td class="icon">
-                    <img src="images/icn_browser_w3c.png" alt="W3C"/>
+                    <img src="images/icn_browser_w3c.png" alt="W3C">
                 </td>
                 <td>
                     <select name="target_w3c">
