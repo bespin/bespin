@@ -1187,11 +1187,16 @@ var EditorCustomEvents = Class.create({
         // -- fire an event here and you can run any editor action
         document.observe("bespin:editor:doaction", function(event) {
             var action = event.memo.action;
-            var args   = event.memo.args || {
-                pos: EditorUtils.copyPos(_editor.cursorPosition)
-            }
+            var args   = event.memo.args || EditorUtils.argsWithPos();
 
             if (action) editor.ui.actions[action](args);
+        });
+
+        // -- fire an event to setup any new or replace actions
+        document.observe("bespin:editor:setaction", function(event) {
+            var action = event.memo.action;
+            var code   = event.memo.code;
+            if (action && Object.isFunction(code)) editor.ui.actions[action] = code;
         });
 
         // -- add key listeners
