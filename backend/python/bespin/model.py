@@ -28,8 +28,11 @@
 
 """Data classes for working with files/projects/users."""
 import os
+import time
+from cStringIO import StringIO
 import hashlib
 import tarfile
+import tempfile
 import zipfile
 
 import pkg_resources
@@ -497,4 +500,38 @@ class FileManager(object):
                     % (member.filename, max_import_file_size))
             self.save_file(user, project_name, member.filename,
                 pfile.read(member.filename))
+        
+    def export(self, user, project_name, filetype):
+        """Exports the project with the given filetype. Filetype can be
+        zip or tgz. Returns a NamedTemporaryFile object."""
+        project = self.get_project(user, project_name)
+        fs = self.file_store
+        temporaryfile = tempfile.NamedTemporaryFile()
+        mtime = time.time()
+        tfile = tarfile.open(temporaryfile.name, "w:gz")
+        def add_to_tarfile(item, path=project_name + "/"):
+            next_path = "%s%s" % (path, item)
+            obj = fs[next_path]
+            if isinstance(obj, Directory):
+                tarinfo = tarfile.TarInfo(next_path[:-1])
+                tarinfo.type = tarfile.DIRTYPE
+                # we don't know the original permissions.
+                # we'll default to read/execute for all, write only by user
+                tarinfo.mode = 493
+                tarinfo.mtime = mtime
+                tfile.addfile(tarinfo)
+                for f in obj.files:
+                    add_to_tarfile(f, next_path)
+            else:
+                tarinfo = tarfile.TarInfo(next_path)
+                tarinfo.mtime = mtime
+                # we don't know the original permissions.
+                # we'll default to read for all, write only by user
+                tarinfo.mode = 420
+                tarinfo.size = len(obj)
+                fileobj = StringIO(obj)
+                tfile.addfile(tarinfo, fileobj)
+        add_to_tarfile("")
+        tfile.close()
+        return temporaryfile
         
