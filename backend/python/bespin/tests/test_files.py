@@ -27,6 +27,7 @@
 # 
 
 import os
+from cStringIO import StringIO
 import tarfile
 import zipfile
 
@@ -543,3 +544,30 @@ def test_import_unknown_file_type():
         ("filedata", "foo.bar", "Some dummy text")
     ], status=400)
     
+def test_export_unknown_file_type():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
+    app.get("/project/export/bigmac.foo", status=404)
+    
+def test_export_tarball_from_the_web():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
+    fm.commit()
+    resp = app.get("/project/export/bigmac.tgz")
+    assert resp.content_type == "application/x-tar-gz"
+    tfile = tarfile.open("bigmac.tgz", "r:gz", StringIO(resp.body))
+    members = tfile.getmembers()
+    assert len(members) == 3
+    membersnames = [member.name for member in members]
+    assert "bigmac/foo/bar" in membersnames
+
+def test_export_zipfile_from_the_web():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
+    fm.commit()
+    resp = app.get("/project/export/bigmac.zip")
+    assert resp.content_type == "application/zip"
+    zfile = zipfile.ZipFile(StringIO(resp.body))
+    members = zfile.infolist()
+    assert len(members) == 1
+    assert "bigmac/foo/bar" == members[0].filename
