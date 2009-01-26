@@ -27,14 +27,16 @@
 # 
 
 import os
+import tarfile
+import zipfile
 
 from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
 
-tarfile = os.path.join(os.path.dirname(__file__), "ut.tgz")
-zipfile = os.path.join(os.path.dirname(__file__), "ut.zip")
+tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
+zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
 
 app = None
 
@@ -355,8 +357,8 @@ def test_secondary_objects_are_saved_when_creating_new_file():
     
 def test_import():
     tests = [
-        ("import_tarball", tarfile),
-        ("import_zipfile", zipfile)
+        ("import_tarball", tarfilename),
+        ("import_zipfile", zipfilename)
     ]
     
     def run_one(func, f):
@@ -382,7 +384,21 @@ def test_import():
     for test in tests:
         yield run_one, test[0], test[1]
     
-    
+def test_export_tarfilename():
+    fm = _get_fm()
+    handle = open(tarfilename)
+    fm.import_tarball("MacGyver", "bigmac",
+        os.path.basename(tarfilename), handle)
+    fm.commit()
+    handle.close()
+    tempfilename = fm.export("MacGyver", "bigmac", "tgz")
+    tfile = tarfile.open(tempfilename.name)
+    members = tfile.getmembers()
+    assert len(members) == 7
+    names = set(member.name for member in members)
+    # the extra slash shows up in this context, but does not seem to be a problem
+    assert 'bigmac//' in names
+
 # -------
 # Web tests
 # -------
@@ -481,7 +497,7 @@ def test_private_project_does_not_appear_in_list():
     assert data == ["MacGyver_New_Project/", "bigmac/"]
 
 def test_import_from_the_web():
-    tests = [tarfile, zipfile]
+    tests = [tarfilename, zipfilename]
     
     def run_one(f):
         fm = _get_fm()
