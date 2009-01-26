@@ -26,6 +26,7 @@
 # ***** END LICENSE BLOCK *****
 # 
 
+import os
 from urlrelay import URLRelay, url
 from paste.auth import auth_tkt
 import simplejson
@@ -257,6 +258,27 @@ def import_project(request, response):
         
     func(request.username,
         project_name, filename, input_file.file)
+    return response()
+
+@expose(r'^/project/export/(?P<project_name>.*(\.zip|\.tgz))')
+def export_project(request, response):
+    project_name = request.kwargs['project_name']
+    project_name, extension = os.path.splitext(project_name)
+    if extension == ".zip":
+        func = request.file_manager.export_zipfile
+        response.content_type = "application/zip"
+    else:
+        response.content_type = "application/x-tar-gz"
+        func = request.file_manager.export_tarball
+    output = func(request.username, 
+                                                 project_name)
+    def filegen():
+        data = output.read(8192)
+        while data:
+            yield data
+            data = output.read(8192)
+        raise StopIteration
+    response.app_iter = filegen()
     return response()
     
 def db_middleware(app):
