@@ -27,11 +27,12 @@
 // 
 
 // - Global Constants
-var COMMAND_LINE_HEIGHT = 95;
-
 var Bespin = {
-   version: '0.1a'
+   version: '0.1a',
+   commandlineHeight: 95
 };
+
+var _ = Bespin; // alias away!
 
 // -- Globals
 var _editor;
@@ -40,11 +41,9 @@ var _commandLine;
 var _files;
 var _settings;
 var _server;
+var _toolbar;
 
-var _showCollab = false;
-var _showFiles = false;
-var _showTarget = false;
-
+var _showCollab = _showFiles = _showTarget = false; // for layout
 var _showCollabHotCounter = 0;
 
 Element.observe(window, 'load', function() {    
@@ -54,16 +53,12 @@ Element.observe(window, 'load', function() {
     _settings    = new Settings();
     _files       = new FileSystem();
     _commandLine = new CommandLine($('command'), _files, _settings, _editor);
+    _toolbar     = new EditorToolbar();
+
+    _toolbar.setupDefault();
 
     _editor.setFocus(true);
     
-    // Handle Login
-    function isLoggedIn(userinfo) {
-        _editSession.userproject = userinfo.project; // the special user project
-    }
-    function isNotLoggedIn() {
-        Navigate.home(); // go back
-    }    
     _server.currentuser(isLoggedIn, isNotLoggedIn);
 
     // Get going when settings are loaded
@@ -72,54 +67,16 @@ Element.observe(window, 'load', function() {
         doResize();
     });
 
-    var collab = $("collaboration");
-    Element.observe(collab, 'click', function() {
-        _showCollab = !_showCollab;
-        collab.src = "images/" + ( (_showCollab) ? "icn_collab_on.png" : (_showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
-        recalcLayout();
-    });
-
-    var files = $("btn_files");
-    Element.observe(files, 'click', function() {
-        _showFiles = !_showFiles;
-        files.src = "images/" + ( (_showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
-        recalcLayout();
-    });
-
-    var target = $("btn_browser");
-    Element.observe(target, 'click', function() {
-        _showTarget = !_showTarget;
-        target.src = "images/" + ( (_showTarget) ? "icn_target_on.png" : "icn_target_off.png" );
-        recalcLayout();
-    });
-
-    // -- Track the under and redo button clicks
-    Element.observe($("undo"), 'mousedown', function() {
-        $("undo").src = "images/icn_undo_on.png";
-    });
-
-    Element.observe($("undo"), 'mouseup', function() {
-        $("undo").src = "images/icn_undo.png";
-    });
-
-    Element.observe($("undo"), 'click', function() {
-        _editor.ui.actions.undo();
-    });
-
-    Element.observe($("redo"), 'mousedown', function() {
-        $("redo").src = "images/icn_redo_on.png";
-    });
-
-    Element.observe($("redo"), 'mouseup', function() {
-        $("redo").src = "images/icn_redo.png";
-    });
-
-    Element.observe($("redo"), 'click', function() {
-        _editor.ui.actions.redo();
-    });
-
     Element.observe(window, 'resize', doResize);
 });
+
+// Handle Login
+function isLoggedIn(userinfo) {
+    _editSession.userproject = userinfo.project; // the special user project
+}
+function isNotLoggedIn() {
+    Navigate.home(); // go back
+}    
 
 function recalcLayout() {
     var subheader = $("subheader");
@@ -166,7 +123,7 @@ function doResize() {
 
     Element.writeAttribute($('editor'), {
         width: window.innerWidth - left - right,
-        height: window.innerHeight - COMMAND_LINE_HEIGHT
+        height: window.innerHeight - Bespin.commandlineHeight
     });
 
     _editor.paint();
