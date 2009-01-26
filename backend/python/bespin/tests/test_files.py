@@ -384,20 +384,36 @@ def test_import():
     for test in tests:
         yield run_one, test[0], test[1]
     
-def test_export_tarfilename():
+def test_export_tarfile():
     fm = _get_fm()
     handle = open(tarfilename)
     fm.import_tarball("MacGyver", "bigmac",
         os.path.basename(tarfilename), handle)
     fm.commit()
     handle.close()
-    tempfilename = fm.export("MacGyver", "bigmac", "tgz")
+    tempfilename = fm.export_tarball("MacGyver", "bigmac")
     tfile = tarfile.open(tempfilename.name)
     members = tfile.getmembers()
     assert len(members) == 7
     names = set(member.name for member in members)
     # the extra slash shows up in this context, but does not seem to be a problem
     assert 'bigmac//' in names
+
+def test_export_zipfile():
+    fm = _get_fm()
+    handle = open(tarfilename)
+    fm.import_tarball("MacGyver", "bigmac",
+        os.path.basename(tarfilename), handle)
+    fm.commit()
+    handle.close()
+    tempfilename = fm.export_zipfile("MacGyver", "bigmac")
+    zfile = zipfile.ZipFile(tempfilename.name)
+    members = zfile.infolist()
+    assert len(members) == 3
+    names = set(member.filename for member in members)
+    # the extra slash shows up in this context, but does not seem to be a problem
+    assert 'bigmac/usertemplate/commands/yourcommands.js' in names
+
 
 # -------
 # Web tests
