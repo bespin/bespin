@@ -27,7 +27,7 @@
 //
 
 var EditorToolbar = Class.create({
-    DEFAULT_TOOLBAR: ["collaboration", "files", "target_browsers", "undo", "redo", "history", "preview", "fontsize"],
+    DEFAULT_TOOLBAR: ["collaboration", "files", "target_browsers", "undo", "redo", "cut", "copy", "paste", "history", "preview", "fontsize"],
     FONT_SIZES: {
         1: 8,  // small
         2: 10, // medium
@@ -114,6 +114,54 @@ var EditorToolbar = Class.create({
             });
         },
         
+        cut: function(toolbar, el) {
+            var cut = $(el) || $("toolbar_cut");
+
+            Element.observe(cut, 'mousedown', function() {
+                cut.src = "images/icn_cut_on.png";
+            });
+
+            Element.observe(cut, 'mouseup', function() {
+                cut.src = "images/icn_cut.png";
+            });
+
+            Element.observe(cut, 'click', function() {
+                toolbar.editor.ui.actions.cutSelection(EditorUtils.argsWithPos());
+            });
+        },
+
+        copy: function(toolbar, el) {
+            var copy = $(el) || $("toolbar_copy");
+
+            Element.observe(copy, 'mousedown', function() {
+                copy.src = "images/icn_copy_on.png";
+            });
+
+            Element.observe(copy, 'mouseup', function() {
+                copy.src = "images/icn_copy.png";
+            });
+
+            Element.observe(copy, 'click', function() {
+                toolbar.editor.ui.actions.copySelection(EditorUtils.argsWithPos());
+            });
+        },
+
+        paste: function(toolbar, el) {
+            var paste = $(el) || $("toolbar_paste");
+
+            Element.observe(paste, 'mousedown', function() {
+                paste.src = "images/icn_paste_on.png";
+            });
+
+            Element.observe(paste, 'mouseup', function() {
+                paste.src = "images/icn_paste.png";
+            });
+
+            Element.observe(paste, 'click', function() {
+                toolbar.editor.ui.actions.pasteFromClipboard(EditorUtils.argsWithPos());
+            });
+        },
+
         history: function(toolbar, el) {
             var history = $(el) || $("toolbar_history");
             

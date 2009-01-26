@@ -19,10 +19,7 @@
  *   -  empty() function only deletes the cookies set by CookieJar
  */
 
-var CookieJar = Class.create();
-
-CookieJar.prototype = {
-
+var CookieJar = Class.create({
 	/**
 	 * Append before all cookie names to differntiate them.
 	 */
@@ -152,4 +149,4 @@ CookieJar.prototype = {
 		}
 		return keys;
 	}
-};
+});
