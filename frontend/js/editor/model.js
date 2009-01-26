@@ -263,5 +263,49 @@ var DocumentModel = Class.create({
             }
         }
         return cpos;
+    },
+    
+    findBefore: function(row, col, comparator) {
+        var line = this.getRowArray(row);
+        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+            if (letter.charAt(0) == ' ') return true;
+            var letterCode = letter.charCodeAt(0);
+            return (letterCode < 48) || (letterCode > 122); // alpha only
+        };
+        
+        while (col > 0) {
+            var letter = line[col];
+            if (!letter) continue;
+            
+            if (comparator(letter)) {
+                col++; // move it back
+                break;
+            }
+            
+            col--;
+        }
+        
+        return { row: row, col: col };
+    },
+
+    findAfter: function(row, col, comparator) {
+        var line = this.getRowArray(row);
+        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+            if (letter.charAt(0) == ' ') return true;
+            var letterCode = letter.charCodeAt(0);
+            return (letterCode < 48) || (letterCode > 122); // alpha only
+        };
+        
+        while (col < line.length) {
+            col++;
+            
+            var letter = line[col];
+            if (!letter) continue;
+
+            if (comparator(letter)) break;
+        }
+        
+        return { row: row, col: col };
     }
+
 });
