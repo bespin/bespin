@@ -84,7 +84,15 @@ def test_can_only_access_own_projects():
         (fm.list_edits, ("Murdoc", "bigmac", "foo"),
         "Murdoc can't view the sekret edits"),
         (fm.close, ("Murdoc", "bigmac", "foo"),
-        "Murdoc can't close files either")
+        "Murdoc can't close files either"),
+        (fm.export_tarball, ("Murdoc", "bigmac"),
+        "Murdoc can't export Mac's tarballs"),
+        (fm.export_zipfile, ("Murdoc", "bigmac"),
+        "Murdoc can't export Mac's zipfiles"),
+        (fm.import_tarball, ("Murdoc", "bigmac", "foo.tgz", "foo"),
+        "Murdoc can't reimport projects"),
+        (fm.import_zipfile, ("Murdoc", "bigmac", "foo.zip", "foo"),
+        "Murdoc can't reimport projects")
     ]
     def run_one(t):
         try:
