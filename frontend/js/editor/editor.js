@@ -452,17 +452,7 @@ var EditorUI = Class.create({
             if (e.detail == 1) {
                 this.editor.setSelection(undefined);
             } else if (e.detail == 2) {
-                var row = this.editor.model.rows[down.row];
-                var cursorAt = row[down.col];
-                if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
-                    // For now, don't select anything, but think about copying Textmate and grabbing around it
-                } else {
-                    var startPos = up = this.editor.model.findBefore(down.row, down.col);
-                    
-                    var endPos = this.editor.model.findAfter(down.row, down.col);
-                    
-                    this.editor.setSelection({ startPos: startPos, endPos: endPos });
-                }
+                // select the word
             } else if (e.detail > 2) {
                 // select the line
                 this.editor.setSelection({ startPos: { row: down.row, col: 0 }, endPos: { row: down.row + 1, col: 0 } });
@@ -474,7 +464,7 @@ var EditorUI = Class.create({
     },
 
     toggleCursor: function(ui) {
-        ui.showCursor = !ui.showCursor;
+        ui.showCursor = !(ui.showCursor);
         ui.editor.paint();
         setTimeout(function() { ui.toggleCursor(ui) }, 250);
     },
@@ -505,7 +495,7 @@ var EditorUI = Class.create({
         this.editor.model.clear();
         this.editor.model.insertCharacters({ row: 0, col: 0}, e.type);
     },
-    
+
     handleScrollBars: function(e) {
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
