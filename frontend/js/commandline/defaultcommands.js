@@ -52,8 +52,17 @@ var DefaultCommands = {
                         commands.push("<em>(starting with</em> " + extra + " <em>)</em><br/>");
                     }
 
+                    var tobesorted = [];
                     for (name in self.commands) {
+                        tobesorted.push(name);
+                    }
+
+                    var sorted = tobesorted.sort();
+                    
+                    for (var i = 0; i < sorted.length; i++) {
+                        var name = sorted[i];
                         var command = self.commands[name];
+
                         if (!showHidden && command.hidden) continue;
                         if (extra && name.indexOf(extra) != 0) continue;
 
@@ -383,6 +392,29 @@ var DefaultCommands = {
                 buffer.sort();
                 if (direction && direction.toLowerCase().startsWith("desc")) buffer.reverse();
                 self.editor.model.insertDocument(buffer.join("\n"));
+            }
+        });
+
+        commandline.addCommand({
+            name: 'export',
+            takes: ['project', 'archivetype'],
+            preview: 'export the given project with an archivetype of zip or tgz',
+            completeText: 'project name, archivetype (zip|tgz, defaults to zip)',
+            execute: function(self, args) {
+                var project = args.project || _editSession.project;
+                
+                var type = args.archivetype;
+                if (!['zip','tgz','tar.gz'].include(type)) {
+                    type = 'zip';
+                }
+
+                _server.exportProject(project, type, { call: function(xhr) {
+                        console.log("Exporting file.");
+                    }, 
+                    onFailure: function(xhr) {
+                        self.showInfo("Couldn't export file: " + xhr.status);
+                    }
+                });
             }
         });
 

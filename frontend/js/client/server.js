@@ -199,6 +199,15 @@ var Server = Class.create({
         this.request('PUT', url, sp, { call: function(){} });
     },
 
+    // -- PROJECTS
+    // needed: importProject, owners, authorize, deauthorize
+    exportProject: function(project, archivetype, opts) {
+        opts = opts || {};
+        if (['zip','tgz','tar.gz'].include(archivetype)) {
+            this.request('GET', Path.combine('/project/export', project + "." + archivetype), null, opts);
+        }
+    },
+
     // -- SETTINGS
 
     /*
