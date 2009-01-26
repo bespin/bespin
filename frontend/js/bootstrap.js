@@ -27,11 +27,12 @@
 // 
 
 // - Global Constants
-var COMMAND_LINE_HEIGHT = 95;
-
 var Bespin = {
-   version: '0.1a'
+   version: '0.1a',
+   commandlineHeight: 95
 };
+
+var _ = Bespin; // alias away!
 
 // -- Globals
 var _editor;
@@ -40,10 +41,10 @@ var _commandLine;
 var _files;
 var _settings;
 var _server;
+var _toolbar;
 
 var _showCollab = _showFiles = _showTarget = false; // for layout
 var _showCollabHotCounter = 0;
-
 
 Element.observe(window, 'load', function() {    
     _editor      = new Editor($('editor'));
@@ -58,13 +59,6 @@ Element.observe(window, 'load', function() {
 
     _editor.setFocus(true);
     
-    // Handle Login
-    function isLoggedIn(userinfo) {
-        _editSession.userproject = userinfo.project; // the special user project
-    }
-    function isNotLoggedIn() {
-        Navigate.home(); // go back
-    }    
     _server.currentuser(isLoggedIn, isNotLoggedIn);
 
     // Get going when settings are loaded
@@ -75,6 +69,14 @@ Element.observe(window, 'load', function() {
 
     Element.observe(window, 'resize', doResize);
 });
+
+// Handle Login
+function isLoggedIn(userinfo) {
+    _editSession.userproject = userinfo.project; // the special user project
+}
+function isNotLoggedIn() {
+    Navigate.home(); // go back
+}    
 
 function recalcLayout() {
     var subheader = $("subheader");
@@ -121,7 +123,7 @@ function doResize() {
 
     Element.writeAttribute($('editor'), {
         width: window.innerWidth - left - right,
-        height: window.innerHeight - COMMAND_LINE_HEIGHT
+        height: window.innerHeight - Bespin.commandlineHeight
     });
 
     _editor.paint();

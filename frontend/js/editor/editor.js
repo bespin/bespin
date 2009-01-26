@@ -156,6 +156,10 @@ var SelectionHelper = Class.create({
 
 // Utils
 var EditorUtils = {
+    argsWithPos: function(oldPos) {
+        return { pos: EditorUtils.copyPos(oldPos || _editor.cursorPosition) };    
+    },
+    
     copyPos: function(oldPos) {
         return { row: oldPos.row, col: oldPos.col };
     },
