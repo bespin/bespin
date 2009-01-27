@@ -346,7 +346,7 @@ class FileManager(object):
         file_status.save(ss, full_path)
         self.reset_edits(user, project, path)
     
-    def delete(self, user, project_name, path=""):
+    def delete(self, user, project_name, path="", _recursing=False):
         """Deletes a file, as long as it is not opened. If the file is
         open, a FileConflict is raised. If the path is a directory,
         the directory and everything underneath it will be deleted.
@@ -356,7 +356,7 @@ class FileManager(object):
         segments = full_path.split("/")
         fs = self.file_store
         
-        if not full_path in fs:
+        if not full_path in fs and not _recursing:
             raise FileNotFound("%s not found" % full_path)
             
         file_status = FileStatus.get(self.status_store, full_path)
@@ -375,13 +375,17 @@ class FileManager(object):
             myname = segments[-1] + "/"
             for sub_path in list(obj.files):
                 sub_path = path + sub_path
-                self.delete(user, project_name, sub_path)
+                self.delete(user, project_name, sub_path, _recursing=True)
         else:
             dir_name = "/".join(segments[:-1]) + "/"
             myname = segments[-1]
         
         # everything looks good to delete
-        del fs[full_path]
+        try:
+            del fs[full_path]
+        except KeyError:
+            # we check for the file not found case above
+            pass
         
         # check to see if we're deleting a project
         if not path:

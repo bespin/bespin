@@ -71,7 +71,6 @@ def login(request, response):
     username = request.kwargs['login_username']
     password = request.POST.get('password')
     user = request.user_manager.get_user(username)
-    print "U (%s): %s PW: %s %s" % (username, user, user.password, password)
     if not user or (user and user.password != password):
         response.status = "401 Not Authorized"
         response.body = "Invalid login"
