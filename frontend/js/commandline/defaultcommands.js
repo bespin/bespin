@@ -408,13 +408,7 @@ var DefaultCommands = {
                     type = 'zip';
                 }
 
-                _server.exportProject(project, type, { call: function(xhr) {
-                        console.log("Exporting file.");
-                    }, 
-                    onFailure: function(xhr) {
-                        self.showInfo("Couldn't export file: " + xhr.status);
-                    }
-                });
+                _server.exportProject(project, type); // try to do it via the iframe
             }
         });
 

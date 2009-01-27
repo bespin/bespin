@@ -201,10 +201,13 @@ var Server = Class.create({
 
     // -- PROJECTS
     // needed: importProject, owners, authorize, deauthorize
-    exportProject: function(project, archivetype, opts) {
-        opts = opts || {};
+    exportProject: function(project, archivetype) {
         if (['zip','tgz','tar.gz'].include(archivetype)) {
-            this.request('GET', Path.combine('/project/export', project + "." + archivetype), null, opts);
+            var iframe = document.createElement("iframe");
+            iframe.src = Path.combine('/project/export', project + "." + archivetype);
+            iframe.style.display = 'none';
+            iframe.style.height = iframe.style.width = "0";
+            document.getElementsByTagName("body")[0].appendChild(iframe);
         }
     },
 
