@@ -27,9 +27,12 @@
 # 
 
 import os
+import urllib2
+from urlparse import urlparse
 from urlrelay import URLRelay, url
 from paste.auth import auth_tkt
 import simplejson
+import tempfile
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
@@ -248,16 +251,41 @@ def import_project(request, response):
     project_name = request.kwargs['project_name']
     input_file = request.POST['filedata']
     filename = input_file.filename
+    _perform_import(request.file_manager, 
+                    request.username, project_name, filename,
+                    input_file.file)
+    return response()
+    
+def _perform_import(file_manager, username, project_name, filename, fileobj):
     if filename.endswith(".tgz") or filename.endswith(".tar.gz"):
-        func = request.file_manager.import_tarball
+        func = file_manager.import_tarball
     elif filename.endswith(".zip"):
-        func = request.file_manager.import_zipfile
+        func = file_manager.import_zipfile
     else:
         raise BadRequest(
             "Import only supports .tar.gz, .tgz and .zip at this time.")
         
-    func(request.username,
-        project_name, filename, input_file.file)
+    func(username,
+        project_name, filename, fileobj)
+    return
+    
+@expose(r'^/project/fromurl/(?P<project_name>[^/]+)', "POST")
+def import_from_url(request, response):
+    project_name = request.kwargs['project_name']
+    url = request.body
+    try:
+        datafile = urllib2.urlopen(url)
+    except urllib2.URLError, e:
+        raise BadRequest(str(e))
+    tempdatafile = tempfile.NamedTemporaryFile()
+    tempdatafile.write(datafile.read())
+    datafile.close()
+    tempdatafile.seek(0)
+    url_parts = urlparse(url)
+    filename = os.path.basename(url_parts[2])
+    _perform_import(request.file_manager, request.username,
+                    project_name, filename, tempdatafile)
+    tempdatafile.close()
     return response()
 
 @expose(r'^/project/export/(?P<project_name>.*(\.zip|\.tgz))')
