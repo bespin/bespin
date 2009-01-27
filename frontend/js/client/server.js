@@ -212,7 +212,7 @@ var Server = Class.create({
     },
 
     importProject: function(project, url, opts) {
-        this.request('POST', '/project/fromurl/' + project, escape(url), opts || {});
+        this.request('POST', '/project/fromurl/' + project, url, opts || {});
     },
 
 
