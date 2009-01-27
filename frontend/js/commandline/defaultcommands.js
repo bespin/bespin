@@ -416,7 +416,7 @@ var DefaultCommands = {
             name: 'import',
             takes: ['project', 'url'],
             preview: 'import the given url as a project',
-            completeText: 'project name, url (to an archive zip | tgz, defaults to zip)',
+            completeText: 'project name, url (to an archive zip | tgz)',
             execute: function(self, args) {
                 var project = args.project;
                 if (!project) {
