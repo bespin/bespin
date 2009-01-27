@@ -26,3 +26,4 @@
 # ***** END LICENSE BLOCK *****
 # 
 
+import bespin.backend
