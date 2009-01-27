@@ -38,6 +38,7 @@ from bespin import config, controllers, model
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
+otherfilename = os.path.join(os.path.dirname(__file__), "other_import.tgz")
 
 app = None
 
@@ -401,6 +402,36 @@ def test_import():
         commands = sk['bigmac/commands/']
         assert 'yourcommands.js' in commands.files
     
+    for test in tests:
+        yield run_one, test[0], test[1]
+    
+def test_reimport_wipes_out_the_project():
+    tests = [
+        ("import_tarball", tarfilename),
+        ("import_zipfile", zipfilename)
+    ]
+    
+    def run_one(func, f):
+        print "Testing %s" % (func)
+        handle = open(f)
+        fm = _get_fm()
+        getattr(fm, func)("MacGyver", "bigmac", 
+            os.path.basename(f), handle)
+        handle.close()
+        fm.commit()
+        config.c.user_manager.commit()
+        flist = fm.list_files("MacGyver", "bigmac")
+        assert flist == ["commands/", "config.js", "scratchpad/"]
+        
+        handle = open(otherfilename)
+        fm.import_tarball("MacGyver", "bigmac", 
+            os.path.basename(f), handle)
+        handle.close()
+        fm.commit()
+        config.c.user_manager.commit()
+        flist = fm.list_files("MacGyver", "bigmac")
+        assert flist == ["README"]
+        
     for test in tests:
         yield run_one, test[0], test[1]
     
