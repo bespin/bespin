@@ -399,7 +399,7 @@ var DefaultCommands = {
             name: 'export',
             takes: ['project', 'archivetype'],
             preview: 'export the given project with an archivetype of zip or tgz',
-            completeText: 'project name, archivetype (zip|tgz, defaults to zip)',
+            completeText: 'project name, archivetype (zip | tgz, defaults to zip)',
             execute: function(self, args) {
                 var project = args.project || _editSession.project;
                 
@@ -409,6 +409,32 @@ var DefaultCommands = {
                 }
 
                 _server.exportProject(project, type); // try to do it via the iframe
+            }
+        });
+
+        commandline.addCommand({
+            name: 'import',
+            takes: ['project', 'url'],
+            preview: 'import the given url as a project',
+            completeText: 'project name, url (to an archive zip|tgz, defaults to zip)',
+            execute: function(self, args) {
+                var project = args.project;
+                if (!project) {
+                    self.showInfo("Please run: import [projectname] [url of archive]");
+                    return;
+                }
+                
+                var url = args.url;
+                if (!url || !(url.endsWith('.tgz') || url.endsWith('.tar.gz') || url.endsWith('.zip'))) {
+                    self.showInfo("Please run: import [projectname] [url of archive]<br>(make sure the archive is a zip, or tgz)");
+                    return;
+                }
+
+                _server.importProject(project, url, { call: function(xhr) {
+                    self.showInfo("Project '" + project + "'imported from " + url);
+                }, onFailure: function(xhr) {
+                    self.showInfo("Unable to import '" + project + "' from " + url + ".<br> Maybe due to: " + xhr.responseText);
+                }});
             }
         });
 

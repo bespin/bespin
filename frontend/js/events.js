@@ -90,8 +90,13 @@ document.observe("bespin:editor:savefile", function(event) {
 
 document.observe("bespin:editor:openfile:opensuccess", function(event) {
     var file = event.memo.file;
+    
+    var filename = file.name;
+    if (filename.length > 40) {
+        filename = filename.split('').reverse().join('').truncate(40).split('').reverse().join(''); // heh sorry!
+    }
 
-    $('status').innerHTML = '<span id="project" title="Current project">' + _editSession.project + '</span> <span class="seperator" style="">&rsaquo;</span> <span id="filename" title="Current file">' + file.name + '</span>';
+    $('status').innerHTML = '<span id="project" title="Current project">' + _editSession.project + '</span> <span class="seperator" style="">&rsaquo;</span> <span id="filename" title="Current file">' + filename + '</span>';
 
     document.fire("bespin:editor:titlechange", { filename: file.name });
 
