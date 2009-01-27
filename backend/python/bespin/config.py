@@ -68,13 +68,13 @@ def set_profile(profile):
     elif profile == "dev":
         if not os.path.exists("devdata"):
             os.mkdir("devdata")
-        c.users_db = "file://devdata/users"
+        c.users_db = "jsonbase://devdata/users"
         c.users_db_cache = "memory://"
-        c.file_db = "file://devdata/files"
+        c.file_db = "jsonfiles://devdata/files"
         c.file_db_cache = "memory://"
-        c.status_db = "file://devdata/status"
+        c.status_db = "jsonbase://devdata/status"
         c.status_db_cache = "memory://"
-        c.edit_db = "file://devdata/edits"
+        c.edit_db = "jsonbase://devdata/edits"
         c.edit_db_cache = "memory://"
     
 def activate_profile():
