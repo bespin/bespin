@@ -244,27 +244,35 @@ class FileManager(object):
             raise FileNotFound(full_path)
         return sorted(d.files)
         
-    def get_project(self, user, project_name, create=False):
+    def get_project(self, user, project_name, create=False, clean=False):
         """Retrieves the project object, optionally creating it if it
         doesn't exist. Additionally, this will verify that the
         user is authorized for the project."""
         try:
             project = self.file_store[project_name+"/"]
             project.authorize(user)
+            if not clean:
+                return project
+                
+            # a clean project has been requested, so we will delete it and
+            # recreate it.
+            self.delete(user, project_name)
         except KeyError:
-            if not create:
-                raise FileNotFound("Project %s not found" % project_name)
-            project = Project(user)
-            
-            user_manager = self.db.user_manager
-            user_obj = user_manager.get_user(user)
-            if project_name != user_obj.private_project:
-                user_obj.projects.add(project_name)
-            user_manager.save_user(user, user_obj)
-            
-            # no need to authorize, since we're creating the project now
-            # with this user as the owner
-            self.file_store[project_name+"/"] = project
+            pass
+
+        if not create and not clean:
+            raise FileNotFound("Project %s not found" % project_name)
+        project = Project(user)
+        
+        user_manager = self.db.user_manager
+        user_obj = user_manager.get_user(user)
+        if project_name != user_obj.private_project:
+            user_obj.projects.add(project_name)
+        user_manager.save_user(user, user_obj)
+        
+        # no need to authorize, since we're creating the project now
+        # with this user as the owner
+        self.file_store[project_name+"/"] = project
         return project
         
     def save_file(self, user, project_name, path, contents, last_edit=None):
@@ -472,7 +480,7 @@ class FileManager(object):
         """Imports the tarball in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project_name, create=True)
+        project = self.get_project(user, project_name, clean=True)
         pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
         info = list(pfile)
@@ -494,7 +502,7 @@ class FileManager(object):
         """Imports the zip file in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project_name, create=True)
+        project = self.get_project(user, project_name, clean=True)
         max_import_file_size = config.c.max_import_file_size
         
         pfile = zipfile.ZipFile(file_obj)
