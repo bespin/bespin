@@ -248,31 +248,34 @@ class FileManager(object):
         """Retrieves the project object, optionally creating it if it
         doesn't exist. Additionally, this will verify that the
         user is authorized for the project."""
+        
+        # a request for a clean project also implies that creating it
+        # is okay
+        if clean:
+            create = True
+        
         try:
             project = self.file_store[project_name+"/"]
             project.authorize(user)
-            if not clean:
-                return project
-                
-            # a clean project has been requested, so we will delete it and
-            # recreate it.
-            self.delete(user, project_name)
+            if clean:
+                # a clean project has been requested, so we will delete its
+                # contents
+                for f in list(project.files):
+                    self.delete(user, project_name, f)
         except KeyError:
-            pass
-
-        if not create and not clean:
-            raise FileNotFound("Project %s not found" % project_name)
-        project = Project(user)
+            if not create:
+                raise FileNotFound("Project %s not found" % project_name)
+            project = Project(user)
         
-        user_manager = self.db.user_manager
-        user_obj = user_manager.get_user(user)
-        if project_name != user_obj.private_project:
-            user_obj.projects.add(project_name)
-        user_manager.save_user(user, user_obj)
+            user_manager = self.db.user_manager
+            user_obj = user_manager.get_user(user)
+            if project_name != user_obj.private_project:
+                user_obj.projects.add(project_name)
+            user_manager.save_user(user, user_obj)
         
-        # no need to authorize, since we're creating the project now
-        # with this user as the owner
-        self.file_store[project_name+"/"] = project
+            # no need to authorize, since we're creating the project now
+            # with this user as the owner
+            self.file_store[project_name+"/"] = project
         return project
         
     def save_file(self, user, project_name, path, contents, last_edit=None):

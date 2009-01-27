@@ -417,6 +417,9 @@ def test_reimport_wipes_out_the_project():
         fm = _get_fm()
         getattr(fm, func)("MacGyver", "bigmac", 
             os.path.basename(f), handle)
+        proj = fm.file_store['bigmac/']
+        proj.members.add("SomeoneElse")
+        fm.file_store['bigmac/'] = proj
         handle.close()
         fm.commit()
         config.c.user_manager.commit()
@@ -431,6 +434,8 @@ def test_reimport_wipes_out_the_project():
         config.c.user_manager.commit()
         flist = fm.list_files("MacGyver", "bigmac")
         assert flist == ["README"]
+        proj = fm.file_store['bigmac/']
+        assert 'SomeoneElse' in proj.members
         
     for test in tests:
         yield run_one, test[0], test[1]
