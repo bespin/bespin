@@ -416,7 +416,7 @@ var DefaultCommands = {
             name: 'import',
             takes: ['project', 'url'],
             preview: 'import the given url as a project',
-            completeText: 'project name, url (to an archive zip|tgz, defaults to zip)',
+            completeText: 'project name, url (to an archive zip | tgz, defaults to zip)',
             execute: function(self, args) {
                 var project = args.project;
                 if (!project) {
@@ -431,7 +431,7 @@ var DefaultCommands = {
                 }
 
                 _server.importProject(project, url, { call: function(xhr) {
-                    self.showInfo("Project '" + project + "'imported from " + url);
+                    self.showInfo("Project '" + project + "' imported from " + url);
                 }, onFailure: function(xhr) {
                     self.showInfo("Unable to import '" + project + "' from " + url + ".<br> Maybe due to: " + xhr.responseText);
                 }});
