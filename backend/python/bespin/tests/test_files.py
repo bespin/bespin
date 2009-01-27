@@ -364,6 +364,18 @@ def test_secondary_objects_are_saved_when_creating_new_file():
     bigmac_obj = sk['bigmac/']
     assert "foo/" in bigmac_obj.files
     
+def test_common_base_selection():
+    tests = [
+        (["foo.js", "bar.js"], ""),
+        (["usertemplate/", "usertemplate/foo.js", "usertemplate/bar.js"], "usertemplate/")
+    ]
+    def run_one(input, output):
+        print "Testing %s" % (input)
+        actual = model._find_common_base(input)
+        assert actual == output
+    for input, output in tests:
+        yield run_one, input, output
+    
 def test_import():
     tests = [
         ("import_tarball", tarfilename),
@@ -383,11 +395,10 @@ def test_import():
         user_obj = sk['MacGyver']
         assert 'bigmac' in user_obj.projects
         project = sk['bigmac/']
-        assert 'usertemplate/' in project.files
-        ut = sk['bigmac/usertemplate/']
+        ut = sk['bigmac/']
         assert 'config.js' in ut.files
         assert 'commands/' in ut.files
-        commands = sk['bigmac/usertemplate/commands/']
+        commands = sk['bigmac/commands/']
         assert 'yourcommands.js' in commands.files
     
     for test in tests:
@@ -403,7 +414,7 @@ def test_export_tarfile():
     tempfilename = fm.export_tarball("MacGyver", "bigmac")
     tfile = tarfile.open(tempfilename.name)
     members = tfile.getmembers()
-    assert len(members) == 7
+    assert len(members) == 6
     names = set(member.name for member in members)
     # the extra slash shows up in this context, but does not seem to be a problem
     assert 'bigmac//' in names
@@ -421,7 +432,7 @@ def test_export_zipfile():
     assert len(members) == 3
     names = set(member.filename for member in members)
     # the extra slash shows up in this context, but does not seem to be a problem
-    assert 'bigmac/usertemplate/commands/yourcommands.js' in names
+    assert 'bigmac/commands/yourcommands.js' in names
 
 
 # -------
@@ -531,9 +542,9 @@ def test_import_from_the_web():
         app.post("/project/import/newproj", upload_files=[
             ("filedata", filename, open(f).read())
         ])
-        resp = app.get("/file/at/newproj/usertemplate/config.js")
+        resp = app.get("/file/at/newproj/config.js")
         assert resp.body == ""
-        app.post("/file/close/newproj/usertemplate/config.js")
+        app.post("/file/close/newproj/config.js")
     
     for test in tests:
         yield run_one, test

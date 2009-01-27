@@ -475,14 +475,19 @@ class FileManager(object):
         project = self.get_project(user, project_name, create=True)
         pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
-        for member in pfile:
+        info = list(pfile)
+        
+        base = _find_common_base(member.name for member in info)
+        base_len = len(base)
+        
+        for member in info:
             # save the files, directories are created automatically
             # note that this does not currently support empty directories.
             if member.isreg():
                 if member.size > max_import_file_size:
                     raise FSException("File %s too large (max is %s bytes)" 
                         % (member.name, max_import_file_size))
-                self.save_file(user, project_name, member.name, 
+                self.save_file(user, project_name, member.name[base_len:], 
                     pfile.extractfile(member).read())
         
     def import_zipfile(self, user, project_name, filename, file_obj):
@@ -491,14 +496,20 @@ class FileManager(object):
         IT WILL BE WIPED OUT AND REPLACED."""
         project = self.get_project(user, project_name, create=True)
         max_import_file_size = config.c.max_import_file_size
+        
         pfile = zipfile.ZipFile(file_obj)
+        info = pfile.infolist()
+        
+        base = _find_common_base(member.filename for member in info)
+        base_len = len(base)
+        
         for member in pfile.infolist():
             if member.filename.endswith("/"):
                 continue
             if member.file_size > max_import_file_size:
                 raise FSException("File %s too large (max is %s bytes)" 
                     % (member.filename, max_import_file_size))
-            self.save_file(user, project_name, member.filename,
+            self.save_file(user, project_name, member.filename[base_len:],
                 pfile.read(member.filename))
         
     def export_tarball(self, user, project_name):
@@ -566,3 +577,18 @@ class FileManager(object):
         zfile.close()
         temporaryfile.seek(0)
         return temporaryfile
+        
+def _find_common_base(member_names):
+    base = None
+    base_len = None
+    for name in member_names:
+        if base is None:
+            slash = name.find("/")
+            base = name[:slash+1]
+            base_len = len(base)
+            continue
+        if name[:base_len] != base:
+            base = ""
+            break
+    return base
+    
