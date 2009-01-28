@@ -378,7 +378,7 @@ var SettingsCustomEvents = Class.create({
             var value = event.memo.value;
 
             var fontsize = parseInt(value);
-            _editor.theme.lineNumberFont = fontsize + "pt Monaco";
+            _editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
         // Change the Theme object used by the editor
