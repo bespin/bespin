@@ -127,8 +127,8 @@ document.observe("bespin:cmdline:executed", function(event) {
 
 /*
  * Events subsystem and helpers
- */
-var Events = {
+ */ 
+Bespin.Events = {
     // bespin:cmdline:execute;foo=bar,baz=aps
     // bespin:cmdline:execute
     toFire: function(eventString) {

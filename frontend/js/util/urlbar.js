@@ -26,12 +26,15 @@
 // ***** END LICENSE BLOCK *****
 //
 
+if (typeof Bespin == "undefined") Bespin = {};
+
 /*
  * URLBar watches the browser URL navigation bar for changes. 
  * If it sees a change it tries to open the file
  * The common case is using the back/forward buttons
  */
-var URLBar = {
+
+Bespin.URLBar = {
         last: document.location.hash,
         check: function() {
                 var hash = document.location.hash;
@@ -44,5 +47,5 @@ var URLBar = {
 };
 
 setInterval(function() {
-        URLBar.check.apply(URLBar);
+        Bespin.URLBar.check.apply(Bespin.URLBar);
 }, 200);

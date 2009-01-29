@@ -30,7 +30,9 @@
  * TokenObject: Given a string, make a token object that holds positions and has name access
  */
 
-var TokenObject = function(input, options) {
+if (typeof Bespin == "undefined") Bespin = {};
+
+Bespin.TokenObject = function(input, options) {
     this._input = input;
     this._options = options;
     this._splitterRegex = new RegExp(this._options.splitBy || '\\s+');
@@ -50,10 +52,10 @@ var TokenObject = function(input, options) {
     }
 }
 
-TokenObject.prototype.param = function(index) {
+Bespin.TokenObject.prototype.param = function(index) {
     return (typeof index == "number") ? this._pieces[index] : this._pieces[this._nametoindex[index]];
 }
 
-TokenObject.prototype.length = function() {
+Bespin.TokenObject.prototype.length = function() {
     return this._pieces.length;
 }

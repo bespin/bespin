@@ -70,7 +70,7 @@ function isLoggedIn(userinfo) {
     _editSession.userproject = userinfo.project; // the special user project
 }
 function isNotLoggedIn() {
-    Navigate.home(); // go back
+    _.Navigate.home(); // go back
 }    
 
 function recalcLayout() {

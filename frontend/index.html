@@ -31,13 +31,17 @@
 
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
     <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
+
+    <script type="text/javascript" src="js/bespin.js"></script>
+
     <script type="text/javascript" src="js/client/server.js"></script>
     <script type="text/javascript" src="js/util/navigate.js"></script>
     <script type="text/javascript">
     var svr = new Server();
+    var go = Bespin.Navigate;
 
     function processLogin(xhr) {
-        Navigate.dashboard();
+        go.dashboard();
     }
 
 	function notLoggedIn(xhr) {
@@ -117,7 +121,7 @@
     <div id="quickedit">
         <h2>Quick Edit</h2>
         <p>Open a new, blank document and begin editing right away.</p>
-        <img src="images/splash_btn_begin.gif" align="right" onclick="Navigate.quickEdit()"/>
+        <img src="images/splash_btn_begin.gif" align="right" onclick="go.quickEdit()"/>
     </div>
 </div>
 

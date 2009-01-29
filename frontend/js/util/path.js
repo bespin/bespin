@@ -26,7 +26,10 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-var Path = {
+if (typeof Bespin == "undefined") Bespin = {};
+if (!Bespin.Path) Bespin.Path = {};
+
+Bespin.Path = {
     combine: function() {
         var args = Array.prototype.slice.call(arguments); // clone to a true array
 
@@ -48,6 +51,6 @@ var Path = {
     },
 
     escape: function() {
-        return escape(Path.combine.apply(this, arguments));
+        return escape(this.combine.apply(this, arguments));
     }
 }

@@ -26,7 +26,9 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-var Key = {
+if (typeof Bespin == "undefined") Bespin = {};
+
+Bespin.Key = {
 
 // -- Alphabet
   A: 65,
@@ -75,7 +77,7 @@ var Key = {
 /*
  * Fill out the arguments for action, key, modifiers
  */
-Key.fillArguments = function(string, args) {
+Bespin.Key.fillArguments = function(string, args) {
     var keys = string.split(' ');
     args = args || {};
     

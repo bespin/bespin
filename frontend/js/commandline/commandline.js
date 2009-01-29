@@ -26,6 +26,7 @@
 // ***** END LICENSE BLOCK *****
 // 
 
+if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.CommandLine) Bespin.CommandLine = {};
 
 Bespin.CommandLine.Interface = Class.create({
@@ -77,7 +78,7 @@ Bespin.CommandLine.Interface = Class.create({
         
         // -- Add bindings
         if (command.withKey) {
-            var args = Key.fillArguments(command.withKey);
+            var args = Bespin.Key.fillArguments(command.withKey);
             
             args.action = "bespin:cmdline:execute;name=" + command.name;
 
@@ -180,7 +181,7 @@ Bespin.CommandLine.Interface = Class.create({
         if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
             args = userString;
         } else {
-            args = new TokenObject(userString, { params: command.takes.order.join(' ') });
+            args = new Bespin.TokenObject(userString, { params: command.takes.order.join(' ') });
             args.rawinput = userString;
         }
         return args;
@@ -207,7 +208,7 @@ Bespin.CommandLine.Interface = Class.create({
  * Handle key bindings for the command line
  */ 
 Bespin.CommandLine.KeyBindings = Class.create({
-    initialize: function(cl) {
+    initialize: function(cl) {        
         // -- Tie to the commandLine element itself
         cl.commandLine.onfocus = function() {
             if (window['_editor']) _editor.setFocus(false);
@@ -221,6 +222,8 @@ Bespin.CommandLine.KeyBindings = Class.create({
         }.bind(cl);
 
         cl.commandLine.onkeyup = function(e) {
+           var Key = Bespin.Key;
+            
            if (e.keyCode >= Key.A && e.keyCode < Key.Z) { // only real letters
                 var completions = this.findCompletions($('command').value);
                 var commandString = completions[0];
@@ -257,6 +260,7 @@ Bespin.CommandLine.KeyBindings = Class.create({
         }.bind(cl);
 
         cl.commandLine.onkeydown = function(e) {
+            var Key = Bespin.Key; // alias
             if (e.keyCode == Key.J && e.ctrlKey) { // send back
                 Event.stop(e);
 

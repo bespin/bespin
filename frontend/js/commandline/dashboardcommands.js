@@ -26,6 +26,7 @@
 // ***** END LICENSE BLOCK *****
 // 
 
+if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.Commands) Bespin.Commands = {};
 
 Bespin.Commands.Dashboard = [
