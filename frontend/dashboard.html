@@ -29,12 +29,19 @@
     <title>Bespin &raquo; Dashboard</title>
     <link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
-        
+
+    <script type="text/javascript" src="js/bespin.js"></script>
+            
     <script type="text/javascript" src="js/util/path.js"></script>
     <script type="text/javascript" src="js/util/textselection.js"></script>
     <script type="text/javascript" src="js/util/navigate.js"></script>
+    <script type="text/javascript" src="js/util/keys.js"></script>
     
+    <script type="text/javascript" src="js/client/settings.js"></script>
     <script type="text/javascript" src="js/client/server.js"></script>
+    
+    <script type="text/javascript" src="js/commandline/commandline.js"></script>
+    <script type="text/javascript" src="js/commandline/dashboardcommands.js"></script>
 
     <script type="text/javascript" src="js/external/jstraits.js"></script>
     <script type="text/javascript" src="js/th/traits.js"></script>
@@ -58,8 +65,9 @@
         </canvas>
     </div>
     <div id="footer">
-        <div id="prompt"><img src="images/icn_command.png" alt=">" /></div>
-        <div id="commandlineParent"><input id="commandline" /></div>
+        <div id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></div>
+        <div id="commandline"><input id="command"></div>
     </div>
+    <div id="info" style="display: none;"></div>
 </body>
 </html>

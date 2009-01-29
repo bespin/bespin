@@ -37,7 +37,6 @@ var Settings = Class.create({
         this.customEvents = new SettingsCustomEvents(this);
 
         this.loadStore();    // Load up the correct settings store
-        // this.initSettings(); // setup the hooks for settings
     },
 
     loadSession: function() {

@@ -26,22 +26,25 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-var CommandLine = Class.create({
-    initialize: function(commandLine, files, settings, editor) {
+if (!Bespin.CommandLine) Bespin.CommandLine = {};
+
+Bespin.CommandLine.Interface = Class.create({
+    initialize: function(commandLine, initCommands) {
         this.commandLine = commandLine;
-        this.files = files;
-        this.settings = settings;
-        this.editor = editor;
+
+        if (window['_files']) this.files = _files;        
+        if (window['_settings']) this.settings = _settings;
+        if (window['_editor']) this.editor = _editor;
 
         this.inCommandLine = false;
         this.commands = {};
         this.aliases = {};
 
-        this.commandLineKeyBindings = new CommandLineKeyBindings(this);
-        this.commandLineHistory = new CommandLineHistory(this);
-        this.customEvents = new CommandLineCustomEvents(this);
+        this.commandLineKeyBindings = new Bespin.CommandLine.KeyBindings(this);
+        this.commandLineHistory = new Bespin.CommandLine.History(this);
+        this.customEvents = new Bespin.CommandLine.Events(this);
 
-        DefaultCommands.seed(this);
+        if (initCommands) this.addCommands(initCommands); // initialize the commands for the cli
     },
 
     executeCommand: function(value) {
@@ -88,6 +91,12 @@ var CommandLine = Class.create({
                 this.aliases[alias] = command.name;
             }.bind(this));
         }
+    },
+    
+    addCommands: function(commands) {
+        commands.each(function(command) {
+            this.addCommand(command);
+        }.bind(this));
     },
 
     showInfo: function(html, autohide) {
@@ -196,13 +205,12 @@ var CommandLine = Class.create({
 
 /*
  * Handle key bindings for the command line
- */
-var CommandLineKeyBindings = Class.create({
+ */ 
+Bespin.CommandLine.KeyBindings = Class.create({
     initialize: function(cl) {
         // -- Tie to the commandLine element itself
-
         cl.commandLine.onfocus = function() {
-            _editor.setFocus(false);
+            if (window['_editor']) _editor.setFocus(false);
             this.inCommandLine = true;
             $('promptimg').src = 'images/icn_command_on.png';
         }.bind(cl);
@@ -253,7 +261,7 @@ var CommandLineKeyBindings = Class.create({
                 Event.stop(e);
 
                 $('command').blur();
-                _editor.setFocus(true);
+                if (window['_editor']) _editor.setFocus(true);
 
                 return false;
             } else if ((e.keyCode == Key.N && e.ctrlKey) || e.keyCode == Key.ARROW_DOWN) {
@@ -276,12 +284,12 @@ var CommandLineKeyBindings = Class.create({
     }
 });
 
-var CommandLineHistory = Class.create({
+Bespin.CommandLine.History = Class.create({
     initialize: function(cl) {
         this.commandLine = cl;
         this.history = [];
         this.pointer = 0;
-        this.store = new SimpleCommandLineHistoryStore();
+        this.store = new Bespin.CommandLine.SimpleHistoryStore();
         this.seed();
     },
 
@@ -338,7 +346,7 @@ var CommandLineHistory = Class.create({
     }
 });
 
-var SimpleCommandLineHistoryStore = Class.create({
+Bespin.CommandLine.SimpleHistoryStore = Class.create({
     initialize: function() {
         this.commands = [];
     },
@@ -356,7 +364,7 @@ var SimpleCommandLineHistoryStore = Class.create({
     }
 });
 
-var CommandLineCustomEvents = Class.create({
+Bespin.CommandLine.Events = Class.create({
     initialize: function(commandline) {
         this.commandline = commandline;
 
@@ -402,4 +410,3 @@ var CommandLineCustomEvents = Class.create({
 
     }
 });
-
