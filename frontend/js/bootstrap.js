@@ -27,11 +27,6 @@
 // 
 
 // - Global Constants
-var Bespin = {
-   version: '0.1a',
-   commandlineHeight: 95
-};
-
 var _ = Bespin; // alias away!
 
 // -- Globals
@@ -52,7 +47,7 @@ Element.observe(window, 'load', function() {
     _server      = new Server();
     _settings    = new Settings();
     _files       = new FileSystem();
-    _commandLine = new CommandLine($('command'), _files, _settings, _editor);
+    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Default);
     _toolbar     = new EditorToolbar();
 
     _toolbar.setupDefault();

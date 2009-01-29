@@ -47,7 +47,7 @@ Event.observe(window, "resize", function() {
 Event.observe(document, "dom:loaded", function() {
     sizeCanvas($("canvas"));
 
-    $('subheader', 'header', 'footer').invoke('enableTextSelection', false);
+    $('subheader', 'header').invoke('enableTextSelection', false);
 
     scene = new Scene($("canvas"));
 
@@ -125,19 +125,23 @@ Event.observe(document, "dom:loaded", function() {
 
     scene.bus.bind("itemselected", projects.list, function(e) {
         currentProject = e.item;
-        svr.list(e.item, null, displayFiles )
+        _server.list(e.item, null, displayFiles);
     });
     
+    // setup the command line
+    _server      = new Server();
+    _settings    = new Settings();
+    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Dashboard);
+
     // get logged in name; if not logged in, display an error of some kind
-    svr.currentuser(loggedIn, notLoggedIn);
+    _server.currentuser(loggedIn, notLoggedIn);
 });
 
-var svr = new Server();
 var currentProject;
 
 function loggedIn(user) {
-    svr.list(null, null, displayProjects);  // get projects
-    svr.listOpen(displaySessions);   // get sessions
+    _server.list(null, null, displayProjects);  // get projects
+    _server.listOpen(displaySessions);   // get sessions
 }
 
 function notLoggedIn(xhr) {
@@ -174,7 +178,7 @@ function getFilePath(treePath) {
 function fetchFiles(path, tree) {
     var filepath = currentProject + "/" + getFilePath(path);
 
-    svr.list(filepath, null, function(files) {
+    _server.list(filepath, null, function(files) {
         tree.updateData(path[path.length - 1], prepareFilesForTree(files));
     });
 }
@@ -198,7 +202,7 @@ function displaySessions(sessions) {
     scene.render();
 
     setTimeout(function() {
-        svr.listOpen(displaySessions);   // get sessions
+        _server.listOpen(displaySessions);   // get sessions
     }, 3000);
 }
 

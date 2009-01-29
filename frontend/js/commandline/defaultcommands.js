@@ -26,9 +26,10 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-var DefaultCommands = {
-    seed: function(commandline) {
-        commandline.addCommand({
+if (!Bespin.Commands) Bespin.Commands = {};
+
+Bespin.Commands.Default = [
+{
             name: 'help',
             takes: ['search'],
             preview: 'show commands',
@@ -72,11 +73,7 @@ var DefaultCommands = {
                 }
                 self.showInfo(commands.join("<br/>"));
             }
-        });
-
-        // -- SETTINGS
-
-        commandline.addCommand({
+}, { // -- SETTINGS
             name: 'set',
             takes: ['key', 'value'],
             preview: 'define and show settings',
@@ -110,12 +107,8 @@ var DefaultCommands = {
                     }
                 }
                 self.showInfo(output);
-            },
-        });
-
-        // -- FILES
-
-        commandline.addCommand({
+            }
+}, { // -- FILES
             name: 'files',
             aliases: ['ls', 'list'],
             takes: ['project'],
@@ -131,18 +124,14 @@ var DefaultCommands = {
                     self.showInfo(files);
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'status',
             preview: 'get info on the current project and file',
             execute: function(self) {
               var file = _editSession.path || 'a new scratch file';
               self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.project);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'project',
             takes: ['projectname'],
             preview: 'show the current project, or set to a new one',
@@ -154,9 +143,7 @@ var DefaultCommands = {
                     self.executeCommand('status');
                 }
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'projects',
             preview: 'show projects',
             execute: function(self, extra) {
@@ -168,9 +155,7 @@ var DefaultCommands = {
                   self.showInfo(projects);
               });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'clipboard',
             version: 0.1,
             preview: 'export the contents to the clipboard',
@@ -179,9 +164,7 @@ var DefaultCommands = {
 
                 self.showInfo('Saved file contents to clipboard');
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'save',
             takes: ['filename'],
             preview: 'save the current contents',
@@ -191,9 +174,7 @@ var DefaultCommands = {
                     filename: filename
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'load',
             aliases: ['open'],
             takes: ['filename'],
@@ -204,9 +185,7 @@ var DefaultCommands = {
                     filename: filename
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'newfile',
             //aliases: ['new'],
             takes: ['filename'],
@@ -217,9 +196,7 @@ var DefaultCommands = {
                 var opts = (filename) ? { newfilename: filename } : {};
                 document.fire("bespin:editor:newfile", opts);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'rm',
             aliases: ['remove', 'del'],
             takes: ['filename'],
@@ -233,9 +210,7 @@ var DefaultCommands = {
                     self.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'closefile',
             takes: ['filename'],
             preview: 'close the file (may lose edits)',
@@ -248,17 +223,13 @@ var DefaultCommands = {
                     self.showInfo('Closed file: ' + filename, true);
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'dashboard',
             preview: 'navigate to the file',
             execute: function(self) {
                 Navigate.dashboard();
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'version',
             takes: ['command'],
             preview: 'show the version for Bespin or a command',
@@ -280,18 +251,14 @@ var DefaultCommands = {
                 }
                 self.showInfo(version);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'clear',
             aliases: ['cls'],
             preview: 'clear the file',
             execute: function(self) {
                 self.editor.model.clear();
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'goto',
             takes: ['linenumber'],
             preview: 'move it! make the editor head to your line number.',
@@ -305,9 +272,7 @@ var DefaultCommands = {
                     self.editor.moveCursor({ row: linenumAsInt, col: 0 });
                 }
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'replace',
             takes: ['search', 'replace'],
             preview: 's/foo/bar/g',
@@ -315,9 +280,7 @@ var DefaultCommands = {
             execute: function(self, args) {
                 self.editor.model.replace(args.search, args.replace);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'login',
             // aliases: ['user'],
             //            takes: ['username', 'password'],
@@ -342,9 +305,7 @@ var DefaultCommands = {
                 _editSession.username = args.user; // TODO: normalize syncing
                 _server.login(args.user, args.pass);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'logout',
             preview: 'log out',
             execute: function(self) {
@@ -353,9 +314,7 @@ var DefaultCommands = {
 					window.location.href="/";
 				});
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'bespin',
             preview: 'has',
             hidden: true,
@@ -368,9 +327,7 @@ var DefaultCommands = {
             execute: function(self) {
                 self.showInfo("Bespin " + this.messages[Math.floor(Math.random() * this.messages.length)]);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'action',
             takes: ['actionname'],
             preview: 'execute any editor action',
@@ -380,9 +337,7 @@ var DefaultCommands = {
                     action: actionname
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'sort',
             takes: ['direction'],
             preview: 'sort the current buffer',
@@ -393,9 +348,7 @@ var DefaultCommands = {
                 if (direction && direction.toLowerCase().startsWith("desc")) buffer.reverse();
                 self.editor.model.insertDocument(buffer.join("\n"));
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'export',
             takes: ['project', 'archivetype'],
             preview: 'export the given project with an archivetype of zip or tgz',
@@ -410,9 +363,7 @@ var DefaultCommands = {
 
                 _server.exportProject(project, type); // try to do it via the iframe
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'import',
             takes: ['project', 'url'],
             preview: 'import the given url as a project',
@@ -436,9 +387,7 @@ var DefaultCommands = {
                     self.showInfo("Unable to import '" + project + "' from " + url + ".<br> Maybe due to: " + xhr.responseText);
                 }});
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'doctype',
             takes: ['section'], // part on the Wiki
             preview: 'grab the doctype info for a section',
@@ -446,9 +395,7 @@ var DefaultCommands = {
             execute: function(self, section) {
                 //TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
             }
-        });
-        
-        commandline.addCommand({
+}, {
             name: 'trim',
             takes: ['side'], // left, right, both
             preview: 'trim trailing or leading whitespace',
@@ -473,9 +420,7 @@ var DefaultCommands = {
                     return row;
                 });
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'bindkey',
             takes: ['modifier', 'key', 'action'],
             preview: 'Bind a key to an action',
@@ -486,9 +431,7 @@ var DefaultCommands = {
 
                 document.fire("bespin:editor:bindkey", args);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'insert',
             takes: ['text'],
             preview: 'insert the given text at this point.',
@@ -496,9 +439,7 @@ var DefaultCommands = {
             execute: function(self, text) {
                 self.editor.model.insertChunk(self.editor.cursorPosition, text);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'template',
             takes: ['type'],
             preview: 'insert templates',
@@ -507,9 +448,7 @@ var DefaultCommands = {
             execute: function(cmdline, type) {
                 cmdline.editor.model.insertChunk(cmdline.editor.cursorPosition, this.templates[type]);
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'alias',
             takes: ['alias', 'command'],
             preview: 'define and show aliases for commands',
@@ -542,17 +481,13 @@ var DefaultCommands = {
               }
               self.showInfo(output);
             },
-        });
-
-        commandline.addCommand({
+}, {
             name: 'history',
             preview: 'show history of the commands',
             execute: function(self) {
                 self.showInfo('<u>Command History</u><br/><br/>' + self.commandLineHistory.history.join('<br/>'));
             }
-        });
-
-        commandline.addCommand({
+}, {
             name: 'use',
             preview: 'use patterns to bring in code',
             completeText: '"sound" will add sound support',
@@ -571,6 +506,4 @@ var DefaultCommands = {
                     self.editor.model.insertChunk({ row: 3, col: 0 }, script);
                 }
             }
-        });
-    }
-};
+}];

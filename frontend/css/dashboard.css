@@ -1,6 +1,6 @@
 body {
     font-family: Calibri, Arial, sans-serif;
-    font-size: 9pt;
+    font-size: 10pt;
 }
 
 img {
@@ -239,13 +239,13 @@ body {
     padding: 9px 5px 0 5px;
 }
 
-#commandlineParent {
+#commandline {
     float: left;
     padding: 5px 0 0 0;
     width: 40%;
 }
 
-#commandline {
+#command {
     border: 0;
     background: none;
     color: #DDDDDD;
@@ -253,6 +253,40 @@ body {
     font-family: Calibri, Arial, sans-serif;
     width: 100%;
 }
+
+#info {
+    position: absolute;
+    bottom: 32px;
+    left: 51px;
+    opacity: 0.8;
+    padding: 20px 40px 10px 30px;
+    width: 431px;
+    color: #999;
+    background-image: url("../images/info_popup.png");
+    background-repeat: no-repeat;
+}
+
+/*
+#prompt {
+    float: left;
+    padding: 9px 5px 0 5px;
+}
+
+#commandline {
+    float: left;
+    padding: 5px 0 0 0;
+    width: 40%;
+}
+
+#command {
+    border: 0;
+    background: none;
+    color: #DDDDDD;
+    font-size: 12pt;
+    font-family: Calibri, Arial, sans-serif;
+    width: 100%;
+}
+*/
 
 #message {
     float: right;
