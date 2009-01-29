@@ -211,7 +211,7 @@ var DefaultEditorKeyListener = Class.create({
         this.defaultKeyMap[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = 
             (typeof action == "string") ?
                 function() { 
-                    var toFire = Events.toFire(action);
+                    var toFire = Bespin.Events.toFire(action);
                     document.fire(toFire.name, toFire.args);
                 } : action.bind(this.actions);
     },
@@ -228,7 +228,7 @@ var DefaultEditorKeyListener = Class.create({
         // TODO: global to factor out
         if (_commandLine.inCommandLine) return; // in the command line!
 
-        if (e.keyCode == Key.J && e.ctrlKey) { // send to command line
+        if (e.keyCode == Bespin.Key.J && e.ctrlKey) { // send to command line
             $('command').focus();
 
             Event.stop(e);
@@ -574,6 +574,8 @@ var EditorUI = Class.create({
     },
 
     installKeyListener: function(listener) {
+        var Key = Bespin.Key; // alias
+
         if (this.oldkeydown) Event.stopObserving(document, "keydown", this.oldkeydown);
         if (this.oldkeypress) Event.stopObserving(document, "keypress", this.oldkeypress);
 
@@ -1205,7 +1207,7 @@ var EditorCustomEvents = Class.create({
             var modifiers = event.memo.modifiers || '';
             if (!event.memo.key) return;
 
-            var keyCode = Key[event.memo.key.toUpperCase()];
+            var keyCode = Bespin.Key[event.memo.key.toUpperCase()];
 
             // -- try an editor action first, else fire away at the event bus
             var action = editor.ui.actions[event.memo.action] || event.memo.action;

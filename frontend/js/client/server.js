@@ -122,7 +122,7 @@ var Server = Class.create({
 
     list: function(project, path, callback) {
         var project = project || '';
-        var url = Path.combine('/file/list/', project, path || '/');
+        var url = Bespin.Path.combine('/file/list/', project, path || '/');
 
         this.request('GET', url, null, { call: callback, evalJSON: true, log: "Listing files in: " + url });
     },
@@ -143,7 +143,7 @@ var Server = Class.create({
     loadFile: function(project, path, callback) {
         var project = project || '';
         var path = path || '';
-        var url = Path.combine('/file/at', project, path);
+        var url = Bespin.Path.combine('/file/at', project, path);
 
         this.request('GET', url, null, { call: callback });
     },
@@ -151,7 +151,7 @@ var Server = Class.create({
     removeFile: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var path = path || '';
-        var url = Path.combine('/file/at', project, path);
+        var url = Bespin.Path.combine('/file/at', project, path);
         var opts = { call: onSuccess };
         if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
         
@@ -170,7 +170,7 @@ var Server = Class.create({
 
     closeFile: function(project, path, callback) {
         var path = path || '';
-        var url = Path.combine('/file/close', project, path);
+        var url = Bespin.Path.combine('/file/close', project, path);
         this.request('POST', url, null, { call: callback });
     },
 
@@ -178,19 +178,19 @@ var Server = Class.create({
 
     editActions: function(project, path, callback) {
         var path = path || '';
-        var url = Path.combine('/edit/list', project, path);
+        var url = Bespin.Path.combine('/edit/list', project, path);
         this.request('GET', url, null, { call: callback, log: "Edit Actions Complete." });
     },
 
     editAfterActions: function(project, path, index, callback) {
         var path = path || '';
-        var url = Path.combine('/edit/recent', index, project, path);
+        var url = Bespin.Path.combine('/edit/recent', index, project, path);
         this.request('GET', url, null, { call: callback, log: "Edit After Actions Complete." });
     },
 
     doAction: function(project, path, actions) {
         var path = path || '';
-        var url = Path.combine('/edit', project, path);
+        var url = Bespin.Path.combine('/edit', project, path);
 
         var sp = "[";
         sp += actions.join(",");
@@ -204,7 +204,7 @@ var Server = Class.create({
     exportProject: function(project, archivetype) {
         if (['zip','tgz','tar.gz'].include(archivetype)) {
             var iframe = document.createElement("iframe");
-            iframe.src = Path.combine('/project/export', project + "." + archivetype);
+            iframe.src = Bespin.Path.combine('/project/export', project + "." + archivetype);
             iframe.style.display = 'none';
             iframe.style.height = iframe.style.width = "0";
             document.getElementsByTagName("body")[0].appendChild(iframe);

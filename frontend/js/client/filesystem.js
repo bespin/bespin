@@ -81,7 +81,7 @@ var FileSystem = Class.create({
     },
 
     whenFileExists: function(project, path, callbacks) {
-        _server.list(project, Path.directory(path), function(files) {
+        _server.list(project, Bespin.Path.directory(path), function(files) {
             if (files && files.include(path)) {
                 callbacks['execute']();
             } else {
@@ -91,7 +91,7 @@ var FileSystem = Class.create({
     },
 
     whenFileDoesNotExist: function(project, path, callbacks) {
-        _server.list(project, Path.directory(path), function(files) {
+        _server.list(project, Bespin.Path.directory(path), function(files) {
             if (!files || !files.include(path)) {
                 callbacks['execute']();
             } else {

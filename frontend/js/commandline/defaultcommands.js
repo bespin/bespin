@@ -227,7 +227,7 @@ Bespin.Commands.Default = [
             name: 'dashboard',
             preview: 'navigate to the file',
             execute: function(self) {
-                Navigate.dashboard();
+                Bespin.Navigate.dashboard();
             }
 }, {
             name: 'version',

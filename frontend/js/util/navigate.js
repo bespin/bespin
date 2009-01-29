@@ -26,8 +26,10 @@
 // ***** END LICENSE BLOCK *****
 //
 
-var Navigate = new function() {
-    
+if (typeof Bespin == "undefined") Bespin = {};
+
+Bespin.Navigate = new function() {
+
     // Private
     var go = function(url) {
         location.href = url;

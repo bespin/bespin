@@ -31,6 +31,7 @@ var projects;
 var scene;
 var tree;
 var infoPanel;
+var go = Bespin.Navigate;
 
 function sizeCanvas(canvas) {
     if (!heightDiff) {
@@ -120,7 +121,7 @@ Event.observe(document, "dom:loaded", function() {
     scene.bus.bind("dblclick", tree, function() {
         var path = tree.getSelectedPath();
         if (path.length == 0) return;
-        Navigate.editor(currentProject, getFilePath(path));
+        go.editor(currentProject, getFilePath(path));
     });
 
     scene.bus.bind("itemselected", projects.list, function(e) {
@@ -145,7 +146,7 @@ function loggedIn(user) {
 }
 
 function notLoggedIn(xhr) {
-    Navigate.home();
+    go.home();
 }
 
 function displayFiles(files) {
@@ -195,7 +196,7 @@ function displaySessions(sessions) {
             var panel = new BespinSessionPanel({ filename: name, project: project, path: path });
             infoPanel.add(panel);
             panel.bus.bind("dblclick", panel, function(e) {
-                Navigate.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
+                go.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
             });
         }
     }
