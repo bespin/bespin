@@ -1,0 +1,17 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Fractional Canvas Drawing</title>
+    <script type="text/javascript">
+        function draw() {
+            var ctx = document.getElementById("canvas").getContext("2d");
+            ctx.fillStyle = "red";
+            ctx.fillRect(0, 0, 40.25, 40.25);
+        }
+    </script>
+</head>
+<body onload="draw()">
+    <canvas id="canvas" width="500" height="500"></canvas>
+</body>
+</html>
