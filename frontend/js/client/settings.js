@@ -348,19 +348,24 @@ var SettingsCustomEvents = Class.create({
         document.observe("bespin:settings:set:syntax", function(event) {
             var value = event.memo.value;
             
-            document.fire("bespin:settings:syntax", { language: value });
+            document.fire("bespin:settings:syntax", { language: value, fromCommand: true });
         });
         
         // Given a new syntax command, change the editor.language
+        // TODO: When you set back to auto, grab the file name and set the language on that
         document.observe("bespin:settings:syntax", function(event) {
             var language = event.memo.language;
+            var fromCommand = event.memo.fromCommand;
             var syntaxSetting = settings.get('syntax') || "off";
 
             if (language == _editor.language) return; // already set to be that language
             
-            if (['auto', 'on'].include(syntaxSetting)) {
-              _editor.language = language;
-            } else if (!['auto', 'on', 'off'].include(language) && syntaxSetting == 'off') {
+            if (['auto', 'on'].include(language)) {
+                var type = location.hash.split('.').last();
+                if (type) _editor.language = type;
+            } else if (['auto', 'on'].include(syntaxSetting) || fromCommand) {
+                _editor.language = language;
+            } else if (syntaxSetting == 'off') {
                 _editor.language = 'off';
             }
         });
