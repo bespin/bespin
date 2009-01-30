@@ -187,7 +187,7 @@ var Scene = Class.define({
             });
 
             this.root = new Panel({ id: "root", style: {
-                backgroundColor: "pink" // for debugging         
+//                backgroundColor: "pink" // for debugging         
             } });
             this.root.scene = this;
 
