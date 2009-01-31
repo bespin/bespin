@@ -36,8 +36,13 @@ import tempfile
 import zipfile
 
 import pkg_resources
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, PickleType, String, Integer
+from sqlalchemy.exc import DBAPIError
 
 from bespin import config
+
+Base = declarative_base()
 
 class ConflictError(Exception):
     pass
@@ -62,46 +67,46 @@ class DB(object):
         user_manager.db = self
         file_manager.db = self
     
-class User(object):
-    def __init__(self, password, email):
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True)
+    username = Column(String(20), unique=True)
+    email = Column(String(128))
+    password = Column(String(20))
+    settings = Column(PickleType())
+    private_project = Column(String(50))
+    
+    def __init__(self, username, password, email):
+        self.username = username
         self.email = email
         self.password = password
         self.settings = {}
         self.projects = set()
-        self._private_project = None
-    
-    @property
-    def private_project(self):
-        """The private project name is going to be saved so that
-        it does not change even if the method for computing it
-        changes."""
-        if not self._private_project:
-            hashobj = hashlib.sha1(config.c.secret + " " + self.password)
-            # the NUMBER- at the beginning is the version number of the
-            # key. every time we change how we compute the hash, we should
-            # increment this number. This will avoid the unlikely
-            # collisions.
-            self._private_project = "1-" + hashobj.hexdigest()
-        return self._private_project
+        
+        hashobj = hashlib.sha1(config.c.secret + " " + self.password)
+        # the NUMBER- at the beginning is the version number of the
+        # key. every time we change how we compute the hash, we should
+        # increment this number. This will avoid the unlikely
+        # collisions.
+        self.private_project = "1-" + hashobj.hexdigest()
     
 
 class UserManager(object):
-    def __init__(self, store):
-        self.store = store
-        
-    def commit(self):
-        """Take any action required to persist changes."""
-        self.store.sync()
+    def __init__(self, session):
+        self.session = session
         
     def create_user(self, username, password, email):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
-        if username in self.store:
-            raise ConflictError("There is already a user named %s registered" %
-                                username)
-        user = User(password, email)
-        self.store[username] = user
+        user = User(username, password, email)
+        self.session.add(user)
+        # flush to ensure that the user is unique
+        try:
+            self.session.flush()
+        except DBAPIError:
+            raise ConflictError("Username %s is already in use" % username)
         self.db.file_manager.install_template(username,
                                 username + "_New_Project")
         return user
@@ -109,7 +114,7 @@ class UserManager(object):
     def get_user(self, username):
         """Looks up a user by username. Returns None if the user is not
         found."""
-        return self.store.get(username)
+        return self.session.query(User).filter_by(username=username).first()
             
     def save_user(self, username, user):
         """Saves the user object, replacing any prexisting data.
@@ -271,7 +276,6 @@ class FileManager(object):
             user_obj = user_manager.get_user(user)
             if project_name != user_obj.private_project:
                 user_obj.projects.add(project_name)
-            user_manager.save_user(user, user_obj)
         
             # no need to authorize, since we're creating the project now
             # with this user as the owner
