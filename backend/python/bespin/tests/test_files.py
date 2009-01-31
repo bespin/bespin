@@ -50,9 +50,14 @@ def setup_module(module):
 
 def _get_fm():
     config.activate_profile()
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
+    s = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = model.UserManager(s)
     app.reset()
     fm = config.c.file_manager
-    config.c.user_manager.create_user("SomeoneElse", "", "someone@else.com")
+    db = model.DB(user_manager, fm)
+    user_manager.create_user("SomeoneElse", "", "someone@else.com")
     fm.save_file('SomeoneElse', 'otherproject', 'foo', 
                  'Just a file to reserve a project')
     app.post("/register/new/MacGyver", 

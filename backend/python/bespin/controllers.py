@@ -310,10 +310,16 @@ def export_project(request, response):
     
 def db_middleware(app):
     def wrapped(environ, start_response):
-        environ['user_manager'] = c.user_manager
+        from bespin import model
+        session = c.sessionmaker(bind=c.dbengine)
+        environ['bespin.dbsession'] = session
+        environ['bespin.docommit'] = True
+        environ['user_manager'] = model.UserManager(session)
         environ['file_manager'] = c.file_manager
+        environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
         result = app(environ, start_response)
-        c.user_manager.commit()
+        if environ['bespin.docommit']:
+            session.commit()
         c.file_manager.commit()
         return result
     return wrapped

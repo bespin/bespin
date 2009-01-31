@@ -30,35 +30,50 @@ from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
+from bespin.model import User, UserManager
 
 def setup_module(module):
     config.set_profile("test")
     config.activate_profile()
-
+    
+def _clear_db():
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
+    
+def _get_user_manager(clear=False):
+    if clear:
+        _clear_db()
+    s = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = UserManager(s)
+    file_manager = config.c.file_manager
+    db = model.DB(user_manager, file_manager)
+    return s, user_manager
+    
 # Model tests    
 def test_create_new_user():
-    config.activate_profile()
-    user_manager = config.c.user_manager
-    assert len(user_manager.store) == 0
+    s, user_manager = _get_user_manager(True)
+    num_users = s.query(User).count()
+    assert num_users == 0
     user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
-    assert len(user_manager.store) == 1
-    assert 'BillBixby' in config.c.saved_keys
+    num_users = s.query(User).count()
+    assert num_users == 1
     
 def test_create_duplicate_user():
-    config.activate_profile()
-    assert not config.c.saved_keys
-    user_manager = config.c.user_manager
+    s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "somepass", "bill@bixby.com")
+    s.commit()
     try:
         user_manager.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
     except model.ConflictError:
         pass
+    s, user_manager = _get_user_manager(False)
     user = user_manager.get_user("BillBixby")
     assert user.password == "somepass", "Password should not have changed"
     
 def test_get_user_returns_none_for_nonexistent():
-    user = config.c.user_manager.get_user("NOT THERE. NO REALLY!")
+    s, user_manager = _get_user_manager(True)
+    user = user_manager.get_user("NOT THERE. NO REALLY!")
     assert user is None
     
 
@@ -76,7 +91,6 @@ def test_register_and_verify_user():
     app = TestApp(app)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
                                                     password="notangry"))
-    assert 'BillBixby' in config.c.saved_keys
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
     assert data['project']
@@ -104,8 +118,7 @@ def test_register_and_verify_user():
     app.post("/file/close/%s/config.js" % project_id)
     
 def test_logout():
-    config.activate_profile()
-    user_manager = config.c.user_manager
+    s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
@@ -115,8 +128,7 @@ def test_logout():
     assert resp.cookies_set['auth_tkt'] == '""'
     
 def test_bad_login_yields_401():
-    config.activate_profile()
-    user_manager = config.c.user_manager
+    s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
@@ -124,8 +136,7 @@ def test_bad_login_yields_401():
         dict(password="NOTHULK"), status=401)
     
 def test_login_without_cookie():
-    config.activate_profile()
-    user_manager = config.c.user_manager
+    s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
@@ -134,7 +145,7 @@ def test_login_without_cookie():
     assert resp.cookies_set['auth_tkt']
     
 def test_static_files_with_auth():
-    config.activate_profile()
+    _clear_db()
     app = controllers.make_app()
     app = TestApp(app)
     resp = app.get('/editor.html', status=302)
@@ -144,7 +155,7 @@ def test_static_files_with_auth():
     resp = app.get('/editor.html')
 
 def test_register_existing_user_should_not_authenticate():
-    config.activate_profile()
+    s, user_manager = _get_user_manager(True)
     app_orig = controllers.make_app()
     app = TestApp(app_orig)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
@@ -154,6 +165,6 @@ def test_register_existing_user_should_not_authenticate():
                                                     password="somethingelse"),
                     status=409)
     assert not resp.cookies_set
-    user = config.c.user_manager.get_user("BillBixby")
+    user = user_manager.get_user("BillBixby")
     assert user.password == 'notangry'
     
