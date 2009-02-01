@@ -1,0 +1,75 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: palatino, palatino linotype, georgia, serif;
+    font-size: 10pt;
+}
+
+.popup-enabled {
+    cursor: pointer;
+    border-bottom: dotted 1px black;
+}
+
+.popup {
+    position: absolute;
+    z-index: 100;
+}
+
+.popup .item {
+    cursor: pointer;
+    font-family: helvetica neue, arial, sans-serif;
+    background-color: #f0f0f0;
+    color: black;
+    padding: 3px;
+    border: black dotted;
+    border-width: 1px 1px 0 1px;
+}
+
+.popup .selected {
+    background-color: black;
+    color: white;
+}
+
+.popup .bottom {
+    border-bottom: 1px black dotted;
+}
+
+#content {
+    min-width: 1024px;
+}
+
+.documentation {
+    background: white;
+    float: left;
+    line-height: 1.4em;
+}
+
+.documentation h1, .documentation h2 {
+    font-weight: normal;
+    line-height: 1.4em;
+}
+
+.documentation, .code {
+    -moz-box-sizing: padding-box;
+    width: 50%;
+    padding: 0 10px;
+    border-top: 1px dashed black;
+    margin-top: -1px; /* hides first top border */
+}
+
+.code {
+    font-family: monaco, consolas, andale mono, lucidatypewriter, monospace;
+    white-space: pre;
+    font-size: 6pt;
+    background-color: #f0f0f0;
+    margin-left: 50%;
+}
+
+.divider {
+    clear: both;
+    height: 0;
+    line-height: 0;
+}
