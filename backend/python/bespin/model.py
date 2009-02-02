@@ -222,7 +222,7 @@ class FileManager(object):
             if status_obj.mode != mode:
                 status_obj.read_only = readonly
         except NoResultFound:
-            status_obj = FileStatus(user_id = user_obj.id, file_id=file_obj.id,
+            status_obj = FileStatus(user_id = user_obj.id, file=file_obj,
                                     read_only=readonly)
             s.add(status_obj)
         contents = str(file_obj.data)
@@ -380,12 +380,17 @@ class FileManager(object):
             except NoResultFound:
                 raise FileNotFound("File %s not found in project %s" %
                                     (path, project_name))
-            open_users = set(file_obj.users)
+            open_users = set(s.user for s in file_obj.users)
             open_users.difference_update(set([user_obj]))
+            print open_users
             if open_users:
                 raise FileConflict(
                     "File %s in project %s is in use by another user"
                     % (path, project_name))
+            # make sure we delete the open status if the current
+            # user has it open
+            for fs in file_obj.users:
+                s.delete(fs)
             s.delete(file_obj)
         
     def save_edit(self, user, project_name, path, edit):
