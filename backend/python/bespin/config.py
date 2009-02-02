@@ -80,13 +80,8 @@ def set_profile(profile):
     c.dbengine = create_engine(c.dburl)
     
 def activate_profile():
-    from shove import Shove
-    from bespin.model import UserManager, FileManager, DB
+    pass
     
-    c.file_manager = FileManager(Shove(c.file_db, c.file_db_cache),
-                                 Shove(c.status_db, c.status_db_cache),
-                                 Shove(c.edit_db, c.edit_db_cache))
-
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
     set_profile('dev')
