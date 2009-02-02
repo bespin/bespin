@@ -284,10 +284,17 @@ def test_project_deletion():
 
 def test_basic_edit_functions():
     fm = _get_fm()
+    s = fm.session
     fm.save_edit("MacGyver", "bigmac", "foo/bar/baz", "['edit', 'thinger']")
-    assert len(fm.edit_store['bigmac/foo/bar/baz']) == 1
-    assert 'bigmac/foo/bar/baz' not in fm.file_store, \
-        "Files are not created until a save"
+    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz").one()
+    assert len(file_obj.edits) == 1
+    
+    try:
+        content = fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
+        assert False, "Files are not retrievable until the edits are saved"
+    except model.FileNotFound:
+        pass
+        
     files = fm.list_open("MacGyver")
     assert files == {'bigmac' : {'foo/bar/baz' : 'rw'}}
     

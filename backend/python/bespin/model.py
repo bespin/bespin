@@ -138,6 +138,7 @@ class File(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     data = deferred(Column(Binary))
+    edits = Column(PickleType)
     dir_id = Column(Integer, ForeignKey('directories.id'))
     dir = relation('Directory', backref="files")
     
@@ -146,7 +147,7 @@ class File(Base):
                      
     def __repr__(self):
         return "File: %s" % (self.name)
-
+        
 project_members = Table('members', Base.metadata,
                         Column('project_id', Integer, ForeignKey('projects.id')),
                         Column('user_id', Integer, ForeignKey('users.id')))
@@ -213,20 +214,31 @@ class FileManager(object):
         try:
             file_obj = s.query(File).filter_by(name=full_path).one()
         except NoResultFound:
-            raise FileNotFound("Path %s does not exist" % full_path)
+            raise FileNotFound("File %s in project %s does not exist" 
+                                % (path, project_name))
+        
+        if file_obj.data == None:
+            raise FileNotFound("File %s in project %s does not exist" 
+                                % (path, project_name))
+        
+        self._save_status(file_obj, user_obj, mode)
+        contents = str(file_obj.data)
+        return contents
+    
+    def _save_status(self, file_obj, user_obj, mode="rw"):
+        s = self.session
         
         readonly = mode != "rw"
         try:
             status_obj = s.query(FileStatus).filter_by(file_id=file_obj.id) \
                             .filter_by(user_id=user_obj.id).one()
-            if status_obj.mode != mode:
+            if status_obj.read_only != readonly:
                 status_obj.read_only = readonly
         except NoResultFound:
             status_obj = FileStatus(user_id = user_obj.id, file=file_obj,
                                     read_only=readonly)
             s.add(status_obj)
-        contents = str(file_obj.data)
-        return contents
+        
         
     def list_files(self, user, project_name=None, path=""):
         """Retrieve a list of files at the path. Directories will have
@@ -314,6 +326,7 @@ class FileManager(object):
             file = File(name=full_path, dir=last_d, data=contents)
             s.add(file)
         # self.reset_edits(user, project_name, path)
+        return file
         
     def list_open(self, user):
         """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": "rw" } }"""
@@ -398,22 +411,28 @@ class FileManager(object):
     def save_edit(self, user, project_name, path, edit):
         project, user_obj = self.get_project(user, project_name, create=True)
         full_path = project_name + "/" + path
+        s = self.session
         try:
-            edits = self.edit_store[full_path]
-        except KeyError:
-            edits = []
-            self.edit_store[full_path] = edits
-        edits.append(edit)
-        user_status = UserStatus.get(self.status_store, user)
-        project_files = user_status.files.setdefault(project_name, {})
-        if path not in project_files:
-            project_files[path] = 'rw'
-            user_status.save(self.status_store, user)
+            file_obj = s.query(File).filter_by(name=full_path).one()
+        except NoResultFound:
+            file_obj = self.save_file(user, project_name, path, None)
+        
+        if file_obj.edits is None:
+            file_obj.edits = []
+        
+        file_obj.edits.append(edit)
+        
+        self._save_status(file_obj, user_obj, "rw")
         
     def list_edits(self, user, project_name, path, start_at=0):
         project, user_obj = self.get_project(user, project_name)
         full_path = project_name + "/" + path
-        edits = self.edit_store.get(full_path, [])
+        try:
+            file_obj = self.session.query(File).filter_by(name=full_path).one()
+        except NoResultFound:
+            raise FileNotFound("File %s in project %s does not exist"
+                    % (path, project_name))
+        edits = file_obj.edits
         if start_at:
             if start_at >= len(edits):
                 raise FSException("%s only has %s edits (after %s requested)"
