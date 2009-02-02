@@ -65,7 +65,6 @@ def set_profile(profile):
         c.status_db_cache = "simple://"
         c.edit_db = "bespin_test://"
         c.edit_db_cache = "simple://"
-        c.saved_keys = dict()
         c.dburl = "sqlite://"
     elif profile == "dev":
         if not os.path.exists("devdata"):

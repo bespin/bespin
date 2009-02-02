@@ -195,19 +195,12 @@ def test_delete_raises_file_not_found():
 def test_authorize_other_user():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
-    config.c.saved_keys.clear()
     fm.authorize_user("MacGyver", "bigmac", "SomeoneElse")
-    fm.commit()
-    assert "bigmac" in config.c.saved_keys
     data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
     assert data == "biz"
     fm.close("SomeoneElse", "bigmac", "foo/bar/baz")
     
-    config.c.saved_keys.clear()
     fm.unauthorize_user("MacGyver", "bigmac", "SomeoneElse")
-    fm.commit()
-    assert "bigmac" in config.c.saved_keys
     try:
         data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
         assert False, "Should have not been authorized any more"
