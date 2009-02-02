@@ -36,6 +36,8 @@ import simplejson
 
 from bespin import config, controllers, model
 
+from bespin.model import File, Project, User, FileStatus, Directory
+
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
 otherfilename = os.path.join(os.path.dirname(__file__), "other_import.tgz")
@@ -132,11 +134,17 @@ def test_error_if_you_try_to_replace_dir_with_file():
     
 def test_get_file_opens_the_file():
     fm = _get_fm()
+    fm.session.connection().engine.echo=True
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
     contents = fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
     assert contents == "biz"
-    status = fm.status_store['fbigmac/foo/bar/baz']
-    assert status.users == set(['MacGyver'])
+    
+    s = fm.session
+    user = s.query(User).filter_by(username="MacGyver").one()
+    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz").one()
+    files = [f.file for f in user.files]
+    assert file_obj in files
+    
     open_files = fm.list_open("MacGyver")
     assert open_files == {'bigmac' : {"foo/bar/baz" : "rw"}}
     
@@ -148,9 +156,6 @@ def test_get_file_opens_the_file():
     fm.close("MacGyver", "bigmac", "foo/bar/baz")
     open_files = fm.list_open("MacGyver")
     assert open_files == {}
-    # should remove the status entirely
-    assert 'uMacGyver' not in fm.status_store
-    assert 'fbigmac/foo/bar/baz' not in fm.status_store
 
 def test_get_file_raises_exception_if_its_a_directory():
     fm = _get_fm()
