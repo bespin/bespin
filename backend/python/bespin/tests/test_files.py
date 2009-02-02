@@ -237,11 +237,13 @@ def test_cannot_delete_file_open_by_someone_else():
         
 def test_can_delete_file_open_by_me():
     fm = _get_fm()
+    s = fm.session
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
     fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
+    file_obj_id = s.query(File).filter_by(name="bigmac/foo/bar/baz").one().id
     fm.delete("MacGyver", "bigmac", "foo/bar/baz")
-    fs = model.FileStatus.get(fm.status_store, "bigmac/foo/bar/baz")
-    assert not fs.users
+    fs = fm.session.query(FileStatus).filter_by(file_id=file_obj_id).first()
+    assert fs is None
     
 def test_successful_deletion():
     fm = _get_fm()
