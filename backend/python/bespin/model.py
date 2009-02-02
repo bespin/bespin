@@ -37,8 +37,11 @@ import zipfile
 
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, PickleType, String, Integer
+from sqlalchemy import Column, PickleType, String, Integer, \
+                    Boolean, Binary, Table, ForeignKey
+from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm.exc import NoResultFound
 
 from bespin import config
 
@@ -76,13 +79,13 @@ class User(Base):
     password = Column(String(20))
     settings = Column(PickleType())
     private_project = Column(String(50))
+    projects = relation('Project', backref='owner')
     
     def __init__(self, username, password, email):
         self.username = username
         self.email = email
         self.password = password
         self.settings = {}
-        self.projects = set()
         
         hashobj = hashlib.sha1(config.c.secret + " " + self.password)
         # the NUMBER- at the beginning is the version number of the
@@ -121,15 +124,50 @@ class UserManager(object):
         create_user should be used for a new user."""
         self.store[username] = user
         
-class Directory(object):
-    def __init__(self):
-        self.files = set()
+class FileStatus(Base):
+    __tablename__ = "filestatus"
+    
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id'), primary_key=True)
+    read_only = Column(Boolean)
+    
+class File(Base):
+    __tablename__ = "files"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    data = deferred(Column(Binary))
+    dir_id = Column(Integer, ForeignKey('directories.id'))
+    dir = relation('Directory', backref="files")
+    
+    users = relation('User', secondary=FileStatus.__table__, 
+                     backref="files")
 
-class Project(Directory):
-    def __init__(self, owner):
-        super(Project, self).__init__()
-        self.owner = owner
-        self.members = set()
+project_members = Table('members', Base.metadata,
+                        Column('project_id', Integer, ForeignKey('projects.id')),
+                        Column('user_id', Integer, ForeignKey('users.id')))
+    
+class Directory(Base):
+    __tablename__ = "directories"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    parent_id = Column(Integer, ForeignKey('directories.id'))
+    subdirs = relation('Directory', backref=backref("parentdir", 
+                                        remote_side=[parent_id]))
+    
+    def __str__(self):
+        return "Dir: %s" % (self.name)
+    
+    __repr__ = __str__
+    
+class Project(Base):
+    __tablename__ = "projects"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    members = relation("User", secondary=project_members, lazy=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
     
     def authorize(self, user):
         if user != self.owner and user not in self.members:
@@ -151,56 +189,14 @@ class Project(Directory):
             self.members.remove(auth_user)
         except KeyError:
             pass
+            
+    def __repr__(self):
+        return "Project(name=%s)" % (self.name)
     
-class FileStatus(object):
-    @classmethod
-    def get(self, store, path):
-        try:
-            file_status = store["f" + path]
-        except KeyError:
-            file_status = FileStatus()
-        return file_status
-    
-    def save(self, store, path):
-        # garbage collect if this is now empty
-        if not self.users:
-            try:
-                del store['f' + path]
-            except KeyError:
-                pass
-        else:
-            store["f" + path] = self
-    
-    def __init__(self):
-        self.users = set()
 
-class UserStatus(object):
-    @classmethod
-    def get(self, store, user):
-        try:
-            user_status = store["u" + user]
-        except KeyError:
-            user_status = UserStatus()
-        return user_status
-    
-    def save(self, store, user):
-        # if this object has emptied, delete it
-        if not self.files:
-            try:
-                del store['u' + user]
-            except KeyError:
-                pass
-        else:
-            store["u" + user] = self
-
-    def __init__(self):
-        self.files = dict()
-    
 class FileManager(object):
-    def __init__(self, file_store, status_store, edit_store):
-        self.file_store = file_store
-        self.status_store = status_store
-        self.edit_store = edit_store
+    def __init__(self, session):
+        self.session = session
         
     def get_file(self, user, project_name, path, mode="rw"):
         """Gets the contents of the file as a string. Raises
@@ -242,17 +238,19 @@ class FileManager(object):
             return sorted(project + '/' for project in user_obj.projects)
         self.get_project(user, project_name)
         full_path = project_name + "/" + path
-        fs = self.file_store
         try:
-            d = fs[full_path]
-        except KeyError:
+            dir = self.session.query(Directory).filter_by(name=full_path).one()
+        except NoResultFound:
             raise FileNotFound(full_path)
-        return sorted(d.files)
+        return sorted(dir.files)
         
-    def get_project(self, user, project_name, create=False, clean=False):
+    def get_project(self, username, project_name, create=False, clean=False):
         """Retrieves the project object, optionally creating it if it
         doesn't exist. Additionally, this will verify that the
         user is authorized for the project."""
+        
+        s = self.session
+        user = self.db.user_manager.get_user(username)
         
         # a request for a clean project also implies that creating it
         # is okay
@@ -260,26 +258,17 @@ class FileManager(object):
             create = True
         
         try:
-            project = self.file_store[project_name+"/"]
+            project = s.query(Project).filter_by(name=project_name).one()
             project.authorize(user)
             if clean:
                 # a clean project has been requested, so we will delete its
                 # contents
-                for f in list(project.files):
-                    self.delete(user, project_name, f)
-        except KeyError:
+                self.delete(username, project_name)
+        except NoResultFound:
             if not create:
                 raise FileNotFound("Project %s not found" % project_name)
-            project = Project(user)
-        
-            user_manager = self.db.user_manager
-            user_obj = user_manager.get_user(user)
-            if project_name != user_obj.private_project:
-                user_obj.projects.add(project_name)
-        
-            # no need to authorize, since we're creating the project now
-            # with this user as the owner
-            self.file_store[project_name+"/"] = project
+            project = Project(name=project_name, owner=user)
+            s.add(project)
         return project
         
     def save_file(self, user, project_name, path, contents, last_edit=None):
@@ -289,37 +278,33 @@ class FileManager(object):
         last_edit parameter should include the last edit ID received by
         the user."""
         project = self.get_project(user, project_name, create=True)
-        fs = self.file_store
+        s = self.session
         full_path = project_name + "/" + path
         segments = full_path.split("/")
         fn = segments[-1]
-        last_d = project
-        last_d_key = project_name + "/"
+        last_d = None
         # The project object is the root directory of the paths
         # but its name appears in the filename keys. So, the
         # filenames will all have the project name which is
         # why it's in full_path, but we can skip the first part
         # of the path
-        for i in range(2, len(segments)):
+        for i in range(1, len(segments)):
             segment = "/".join(segments[0:i]) + "/"
             try:
-                d = fs[segment]
-            except KeyError:
-                d = Directory()
-                fs[segment] = d
+                d = s.query(Directory).filter_by(name=segment).one()
+            except NoResultFound:
+                d = Directory(name=segment)
+                s.add(d)
                 if last_d:
-                    last_d.files.add(segments[i-1] + "/")
-                    fs[last_d_key] = last_d
+                    d.parent = last_d
             last_d = d
-            last_d_key = segment
         if not last_d:
             raise FSException("Unable to get to path %s from the root" % full_path)
-        if (fn + "/") in last_d.files:
+        subdir_names = [item.name for item in last_d.subdirs]
+        if (full_path + "/") in subdir_names:
             raise FileConflict("Cannot save a file at %s because there is a directory there." % full_path)
-        last_d.files.add(fn)
-        fs[last_d_key] = last_d
-        fs[full_path] = contents
-        self.reset_edits(user, project_name, path)
+        file = File(name=full_path, dir=last_d, data=contents)
+        # self.reset_edits(user, project_name, path)
         
     def list_open(self, user):
         """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": "rw" } }"""
@@ -400,11 +385,6 @@ class FileManager(object):
         d.files.remove(myname)
         # make sure we save the changes
         fs[dir_name] = d
-        
-    def commit(self):
-        self.file_store.sync()
-        self.status_store.sync()
-        self.edit_store.sync()
         
     def save_edit(self, user, project_name, path, edit):
         project = self.get_project(user, project_name, create=True)
