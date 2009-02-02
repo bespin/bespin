@@ -134,7 +134,6 @@ def test_error_if_you_try_to_replace_dir_with_file():
     
 def test_get_file_opens_the_file():
     fm = _get_fm()
-    fm.session.connection().engine.echo=True
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
     contents = fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
     assert contents == "biz"
