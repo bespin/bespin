@@ -372,6 +372,7 @@ class FileManager(object):
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project_name))
                                     
+            s.expire(dir_obj.parent)
             s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
             s.query(File).filter(File.name.like(full_path + "%")).delete()
         else:
