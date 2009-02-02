@@ -303,7 +303,12 @@ class FileManager(object):
         subdir_names = [item.name for item in last_d.subdirs]
         if (full_path + "/") in subdir_names:
             raise FileConflict("Cannot save a file at %s because there is a directory there." % full_path)
-        file = File(name=full_path, dir=last_d, data=contents)
+        try:
+            file = s.query(File).filter_by(name=full_path).one()
+            file.data = contents
+        except NoResultFound:
+            file = File(name=full_path, dir=last_d, data=contents)
+            s.add(file)
         # self.reset_edits(user, project_name, path)
         
     def list_open(self, user):
@@ -311,12 +316,13 @@ class FileManager(object):
         user_status = UserStatus.get(self.status_store, user)
         return user_status.files
         
-    def close(self, user, project, path):
+    def close(self, user, project_name, path):
         """Close the file for the given user"""
+        project = self.get_project(user, project_name)
         ss = self.status_store
         user_status = UserStatus.get(ss, user)
         files = user_status.files
-        project_files = files.get(project)
+        project_files = files.get(project_name)
         if project_files:
             try:
                 del project_files[path]
@@ -326,14 +332,14 @@ class FileManager(object):
                 del files[project]
         user_status.save(ss, user)
         
-        full_path = project + "/" + path
+        full_path = project_name + "/" + path
         file_status = FileStatus.get(ss, full_path)
         try:
             file_status.users.remove(user)
         except KeyError:
             pass
         file_status.save(ss, full_path)
-        self.reset_edits(user, project, path)
+        self.reset_edits(user, project_name, path)
     
     def delete(self, user, project_name, path=""):
         """Deletes a file, as long as it is not opened. If the file is

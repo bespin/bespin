@@ -66,12 +66,10 @@ def _get_fm():
 
 def test_basic_file_creation():
     fm = _get_fm()
-    print "SAVE FILE STEP"
     fm.save_file("MacGyver", "bigmac", "reqs", "Chewing gum wrapper")
-    print "BACK AND SEARCHING"
     file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
-    assert file_obj.data == 'Chewing gum wrapper'
-    print "LIST STEP"
+    data = str(file_obj.data)
+    assert data == 'Chewing gum wrapper'
     files = fm.list_files("MacGyver", "bigmac", "")
     assert len(files) == 1
     assert files[0].name == 'bigmac/reqs'
@@ -79,37 +77,43 @@ def test_basic_file_creation():
     proj_names = set([proj.name for proj in user.projects])
     assert proj_names == set(['bigmac', "MacGyver_New_Project", 
                               user.private_project])
+    # let's update the contents
+    fm.save_file("MacGyver", "bigmac", "reqs", "New content")
+    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    assert file_obj.data == 'New content'
+    fm.session.rollback()
     
 def test_can_only_access_own_projects():
-    fm = _get_fm()
-    fm.save_file("MacGyver", "bigmac", "foo", "Bar!")
     tests = [
-        (fm.get_file, ("Murdoc", "bigmac", "foo"), 
+        ("get_file", ("Murdoc", "bigmac", "foo"), 
         "Murdoc should *not* be viewing Mac's stuff!"),
-        (fm.list_files, ("Murdoc", "bigmac", ""),
+        ("list_files", ("Murdoc", "bigmac", ""),
         "Murdoc should not be listing Mac's files!"),
-        (fm.delete, ("Murdoc", "bigmac", "foo"),
+        ("delete", ("Murdoc", "bigmac", "foo"),
         "Murdoc should not be deleting Mac's files!"),
-        (fm.save_edit, ("Murdoc", "bigmac", "foo", "bar"),
+        ("save_edit", ("Murdoc", "bigmac", "foo", "bar"),
         "Murdoc can't even edit Mac's files"),
-        (fm.reset_edits, ("Murdoc", "bigmac", "foo"),
+        ("reset_edits", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't reset them"),
-        (fm.list_edits, ("Murdoc", "bigmac", "foo"),
+        ("list_edits", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't view the sekret edits"),
-        (fm.close, ("Murdoc", "bigmac", "foo"),
+        ("close", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't close files either"),
-        (fm.export_tarball, ("Murdoc", "bigmac"),
+        ("export_tarball", ("Murdoc", "bigmac"),
         "Murdoc can't export Mac's tarballs"),
-        (fm.export_zipfile, ("Murdoc", "bigmac"),
+        ("export_zipfile", ("Murdoc", "bigmac"),
         "Murdoc can't export Mac's zipfiles"),
-        (fm.import_tarball, ("Murdoc", "bigmac", "foo.tgz", "foo"),
+        ("import_tarball", ("Murdoc", "bigmac", "foo.tgz", "foo"),
         "Murdoc can't reimport projects"),
-        (fm.import_zipfile, ("Murdoc", "bigmac", "foo.zip", "foo"),
+        ("import_zipfile", ("Murdoc", "bigmac", "foo.zip", "foo"),
         "Murdoc can't reimport projects")
     ]
     def run_one(t):
+        fm = _get_fm()
+        fm.save_file("MacGyver", "bigmac", "foo", "Bar!")
+
         try:
-            t[0](*t[1])
+            getattr(fm, t[0])(*t[1])
             assert False, t[2]
         except model.NotAuthorized:
             pass
