@@ -260,24 +260,18 @@ def test_successful_deletion():
 def test_top_level_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo", "data")
-    fm.commit()
-    saved_keys = config.c.saved_keys
-    saved_keys.clear()
     fm.delete("MacGyver", "bigmac", "foo")
-    fm.commit()
-    assert "bigmac/" in saved_keys
     flist = fm.list_files("MacGyver", "bigmac")
-    assert 'foo' not in flist
+    assert flist == []
     
 def test_directory_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "data")
-    fm.commit()
     fm.delete("MacGyver", "bigmac", "foo/")
-    fm.commit()
     flist = fm.list_files("MacGyver", "bigmac")
-    assert 'foo/' not in flist
-    assert 'bigmac/foo/bar' not in fm.file_store
+    assert flist == []
+    file = fm.session.query(File).filter_by(name="bigmac/foo/bar").first()
+    assert file is None
     
 def test_project_deletion():
     fm = _get_fm()
