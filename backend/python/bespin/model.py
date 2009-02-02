@@ -130,6 +130,7 @@ class FileStatus(Base):
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     file_id = Column(Integer, ForeignKey('files.id'), primary_key=True)
     read_only = Column(Boolean)
+    user = relation(User, backref="files")
     
 class File(Base):
     __tablename__ = "files"
@@ -140,8 +141,11 @@ class File(Base):
     dir_id = Column(Integer, ForeignKey('directories.id'))
     dir = relation('Directory', backref="files")
     
-    users = relation('User', secondary=FileStatus.__table__, 
-                     backref="files")
+    users = relation(FileStatus,
+                     backref="file")
+                     
+    def __repr__(self):
+        return "File: %s" % (self.name)
 
 project_members = Table('members', Base.metadata,
                         Column('project_id', Integer, ForeignKey('projects.id')),
@@ -203,29 +207,26 @@ class FileManager(object):
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
         self.get_project(user, project_name)
+        user_obj = self.db.user_manager.get_user(user)
+        s = self.session
         full_path = project_name + "/" + path
-        fs = self.file_store
-        ss = self.status_store
         try:
-            obj = fs[full_path]
-        except KeyError:
+            file_obj = s.query(File).filter_by(name=full_path).one()
+        except NoResultFound:
             raise FileNotFound("Path %s does not exist" % full_path)
-        if isinstance(obj, Directory):
-            raise FSException("Path %s is a directory, not file" % full_path)
-            
-        file_status = FileStatus.get(ss, full_path)
-        file_status.users.add(user)
-        file_status.save(ss, full_path)
         
-        user_status = UserStatus.get(ss, user)
+        readonly = mode != "rw"
         try:
-            project_files = user_status.files[project_name]
-        except KeyError:
-            project_files = {}
-            user_status.files[project_name] = project_files
-        project_files[path] = mode
-        user_status.save(ss, user)
-        return obj
+            status_obj = s.query(FileStatus).filter_by(file_id=file_obj.id) \
+                            .filter_by(user_id=user_obj.id).one()
+            if status_obj.mode != mode:
+                status_obj.read_only = readonly
+        except NoResultFound:
+            status_obj = FileStatus(user_id = user_obj.id, file_id=file_obj.id,
+                                    read_only=readonly)
+            s.add(status_obj)
+        contents = str(file_obj.data)
+        return contents
         
     def list_files(self, user, project_name=None, path=""):
         """Retrieve a list of files at the path. Directories will have
@@ -313,33 +314,47 @@ class FileManager(object):
         
     def list_open(self, user):
         """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": "rw" } }"""
-        user_status = UserStatus.get(self.status_store, user)
-        return user_status.files
+        user = self.db.user_manager.get_user(user)
+        output = {}
+        current_files = None
+        last_proj = None
+        for fs in sorted(user.files, key=lambda item: item.file.name):
+            project, path = fs.file.name.split("/", 1)
+            if project != last_proj:
+                last_proj = project
+                current_files = {}
+                output[project] = current_files
+            mode = "rw" if not fs.read_only else "r"
+            current_files[path] = mode
+            
+        return output
         
     def close(self, user, project_name, path):
         """Close the file for the given user"""
         project = self.get_project(user, project_name)
-        ss = self.status_store
-        user_status = UserStatus.get(ss, user)
-        files = user_status.files
-        project_files = files.get(project_name)
-        if project_files:
-            try:
-                del project_files[path]
-            except KeyError:
-                pass
-            if not project_files:
-                del files[project]
-        user_status.save(ss, user)
-        
+        s = self.session
         full_path = project_name + "/" + path
-        file_status = FileStatus.get(ss, full_path)
+        print "Closing ", full_path
         try:
-            file_status.users.remove(user)
-        except KeyError:
-            pass
-        file_status.save(ss, full_path)
-        self.reset_edits(user, project_name, path)
+            file_obj = s.query(File).filter_by(name=full_path).one()
+        except NoResultFound:
+            print "No file"
+            return
+            
+        user_obj = self.db.user_manager.get_user(user)
+        
+        try:
+            fs = s.query(FileStatus).filter_by(user_id=user_obj.id) \
+                    .filter_by(file_id=file_obj.id).one()
+        except NoResultFound:
+            print "No FS"
+            return
+        
+        print "Deleting"
+        s.delete(fs)
+        s.expire(user_obj)
+        s.expire(file_obj)
+        # self.reset_edits(user, project_name, path)
     
     def delete(self, user, project_name, path=""):
         """Deletes a file, as long as it is not opened. If the file is
