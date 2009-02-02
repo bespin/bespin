@@ -276,13 +276,10 @@ def test_directory_deletion():
 def test_project_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
     fm.delete("MacGyver", "bigmac")
-    fm.commit()
-    config.c.user_manager.commit()
     flist = fm.list_files("MacGyver")
     assert "bigmac" not in flist
-    user_obj = config.c.saved_keys['MacGyver']
+    user_obj = fm.session.query(User).filter_by(username="MacGyver").one()
     assert 'bigmac' not in user_obj.projects
 
 def test_basic_edit_functions():

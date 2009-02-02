@@ -236,7 +236,7 @@ class FileManager(object):
         owned by the user."""
         if not project_name:
             user_obj = self.db.user_manager.get_user(user)
-            return sorted(project + '/' for project in user_obj.projects)
+            return sorted(project.name + '/' for project in user_obj.projects)
         self.get_project(user, project_name)
         full_path = project_name + "/" + path
         try:
@@ -365,14 +365,15 @@ class FileManager(object):
         project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
-        if path.endswith("/"):
+        if full_path.endswith("/"):
             try:
                 dir_obj = s.query(Directory).filter_by(name=full_path).one()
             except NoResultFound:
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project_name))
-                                    
-            s.expire(dir_obj.parent)
+                
+            if dir_obj.parent:                    
+                s.expire(dir_obj.parent)
             s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
             s.query(File).filter(File.name.like(full_path + "%")).delete()
         else:
