@@ -315,12 +315,11 @@ def db_middleware(app):
         environ['bespin.dbsession'] = session
         environ['bespin.docommit'] = True
         environ['user_manager'] = model.UserManager(session)
-        environ['file_manager'] = c.file_manager
+        environ['file_manager'] = model.FileManager(session)
         environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
         result = app(environ, start_response)
         if environ['bespin.docommit']:
             session.commit()
-        c.file_manager.commit()
         return result
     return wrapped
 

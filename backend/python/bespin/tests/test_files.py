@@ -50,29 +50,35 @@ def setup_module(module):
 
 def _get_fm():
     config.activate_profile()
+    app.reset()
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = model.UserManager(s)
-    app.reset()
-    fm = config.c.file_manager
-    db = model.DB(user_manager, fm)
+    file_manager = model.FileManager(s)
+    db = model.DB(user_manager, file_manager)
     user_manager.create_user("SomeoneElse", "", "someone@else.com")
-    fm.save_file('SomeoneElse', 'otherproject', 'foo', 
+    file_manager.save_file('SomeoneElse', 'otherproject', 'foo', 
                  'Just a file to reserve a project')
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
-    config.c.saved_keys.clear()
-    return fm
+    return file_manager
 
 def test_basic_file_creation():
     fm = _get_fm()
+    print "SAVE FILE STEP"
     fm.save_file("MacGyver", "bigmac", "reqs", "Chewing gum wrapper")
-    assert fm.file_store['bigmac/reqs'] == 'Chewing gum wrapper'
+    print "BACK AND SEARCHING"
+    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    assert file_obj.data == 'Chewing gum wrapper'
+    print "LIST STEP"
     files = fm.list_files("MacGyver", "bigmac", "")
-    assert files == ['reqs']
-    user = config.c.user_manager.get_user("MacGyver")
-    assert user.projects == set(['bigmac', "MacGyver_New_Project"])
+    assert len(files) == 1
+    assert files[0].name == 'bigmac/reqs'
+    user = fm.db.user_manager.get_user("MacGyver")
+    proj_names = set([proj.name for proj in user.projects])
+    assert proj_names == set(['bigmac', "MacGyver_New_Project", 
+                              user.private_project])
     
 def test_can_only_access_own_projects():
     fm = _get_fm()
