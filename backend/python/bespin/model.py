@@ -238,6 +238,10 @@ class FileManager(object):
             status_obj = FileStatus(user_id = user_obj.id, file=file_obj,
                                     read_only=readonly)
             s.add(status_obj)
+            if status_obj not in user_obj.files:
+                user_obj.files.append(status_obj)
+            if status_obj not in file_obj.users:
+                file_obj.users.append(status_obj)
         
         
     def list_files(self, user, project_name=None, path=""):
@@ -325,7 +329,7 @@ class FileManager(object):
         except NoResultFound:
             file = File(name=full_path, dir=last_d, data=contents)
             s.add(file)
-        # self.reset_edits(user, project_name, path)
+        self.reset_edits(user, project_name, path)
         return file
         
     def list_open(self, user):
@@ -364,10 +368,11 @@ class FileManager(object):
             print "No FS"
             return
         
-        print "Deleting"
+        print "Deleting UFS1: ", user_obj.files
+        user_obj.files.remove(fs)
+        file_obj.users.remove(fs)
+        print "FS: ", fs, " UFS: ", user_obj.files
         s.delete(fs)
-        s.expire(user_obj)
-        s.expire(file_obj)
         # self.reset_edits(user, project_name, path)
     
     def delete(self, user, project_name, path=""):
@@ -385,8 +390,8 @@ class FileManager(object):
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project_name))
                 
-            if dir_obj.parent:                    
-                s.expire(dir_obj.parent)
+            if dir_obj.parent:
+                dir_obj.parent.subdirs.remove(dir_obj)
             s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
             s.query(File).filter(File.name.like(full_path + "%")).delete()
         else:
@@ -442,25 +447,26 @@ class FileManager(object):
         
     def reset_edits(self, user, project_name=None, path=None):
         if not project_name or not path:
-            user_status = UserStatus.get(self.status_store, user)
-            for project_name, project_files in list(user_status.files.items()):
-                for path in list(project_files):
-                    self.reset_edits(user, project_name, path)
+            user_obj = self.db.user_manager.get_user(user)
+            for fs in user_obj.files[:]:
+                file_obj = fs.file
+                project_name, path = file_obj.name.split("/", 1)
+                self.reset_edits(user, project_name, path)
             return
-            
         project, user_obj = self.get_project(user, project_name)
         full_path = project_name + "/" + path
+        s = self.session
         try:
-            del self.edit_store[full_path]
-        except KeyError:
-            pass
-        user_status = UserStatus.get(self.status_store, user)
-        project_files = user_status.files.get(project_name)
-        if project_files and path in project_files:
-            del project_files[path]
-            if not project_files:
-                del user_status.files[project_name]
-            user_status.save(self.status_store, user)
+            file_obj = s.query(File).filter_by(name=full_path).one()
+        except NoResultFound:
+            return
+        file_obj.edits = []
+        for fs in file_obj.users:
+            if fs.user == user_obj:
+                file_obj.users.remove(fs)
+                user_obj.files.remove(fs)
+                s.delete(fs)
+                break
             
     def install_template(self, user, project_name, template="template"):
         project, user_obj = self.get_project(user, project_name, create=True)
