@@ -182,7 +182,8 @@ class Project(Base):
         project. user must be this project's owner."""
         if user != self.owner:
             raise NotAuthorized("Only the project owner can authorize users.")
-        self.members.add(auth_user)
+        if auth_user not in self.members:
+            self.members.append(auth_user)
         
     def unauthorize_user(self, user, auth_user):
         """user wants auth_user to no longer be able to access this
@@ -206,8 +207,7 @@ class FileManager(object):
         """Gets the contents of the file as a string. Raises
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
-        self.get_project(user, project_name)
-        user_obj = self.db.user_manager.get_user(user)
+        project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         try:
@@ -273,7 +273,7 @@ class FileManager(object):
                 raise FileNotFound("Project %s not found" % project_name)
             project = Project(name=project_name, owner=user)
             s.add(project)
-        return project
+        return project, user
         
     def save_file(self, user, project_name, path, contents, last_edit=None):
         """Saves the contents to the file path provided, creating
@@ -281,7 +281,7 @@ class FileManager(object):
         the file must not be opened for editing. Otherwise, the
         last_edit parameter should include the last edit ID received by
         the user."""
-        project = self.get_project(user, project_name, create=True)
+        project, user_obj = self.get_project(user, project_name, create=True)
         s = self.session
         full_path = project_name + "/" + path
         segments = full_path.split("/")
@@ -334,7 +334,7 @@ class FileManager(object):
         
     def close(self, user, project_name, path):
         """Close the file for the given user"""
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         print "Closing ", full_path
@@ -344,8 +344,6 @@ class FileManager(object):
             print "No file"
             return
             
-        user_obj = self.db.user_manager.get_user(user)
-        
         try:
             fs = s.query(FileStatus).filter_by(user_id=user_obj.id) \
                     .filter_by(file_id=file_obj.id).one()
@@ -364,7 +362,7 @@ class FileManager(object):
         open, a FileConflict is raised. If the path is a directory,
         the directory and everything underneath it will be deleted.
         If the path is empty, the project will be deleted."""
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         if path.endswith("/"):
@@ -385,7 +383,7 @@ class FileManager(object):
             s.delete(file_obj)
         
     def save_edit(self, user, project_name, path, edit):
-        project = self.get_project(user, project_name, create=True)
+        project, user_obj = self.get_project(user, project_name, create=True)
         full_path = project_name + "/" + path
         try:
             edits = self.edit_store[full_path]
@@ -400,7 +398,7 @@ class FileManager(object):
             user_status.save(self.status_store, user)
         
     def list_edits(self, user, project_name, path, start_at=0):
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         full_path = project_name + "/" + path
         edits = self.edit_store.get(full_path, [])
         if start_at:
@@ -418,7 +416,7 @@ class FileManager(object):
                     self.reset_edits(user, project_name, path)
             return
             
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         full_path = project_name + "/" + path
         try:
             del self.edit_store[full_path]
@@ -433,7 +431,7 @@ class FileManager(object):
             user_status.save(self.status_store, user)
             
     def install_template(self, user, project_name, template="template"):
-        project = self.get_project(user, project_name, create=True)
+        project, user_obj = self.get_project(user, project_name, create=True)
         source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -450,22 +448,22 @@ class FileManager(object):
                 
     def authorize_user(self, user, project_name, auth_user):
         """Allow auth_user to access project_name which is owned by user."""
-        project = self.get_project(user, project_name)
-        project.authorize_user(user, auth_user)
-        self.file_store[project_name] = project
+        project, user_obj = self.get_project(user, project_name)
+        auth_user_obj = self.db.user_manager.get_user(auth_user)
+        project.authorize_user(user_obj, auth_user_obj)
         
     def unauthorize_user(self, user, project_name, auth_user):
         """Disallow auth_user from accessing project_name which is owned
         by user."""
-        project = self.get_project(user, project_name)
-        project.unauthorize_user(user, auth_user)
-        self.file_store[project_name] = project
+        project, user_obj = self.get_project(user, project_name)
+        auth_user_obj = self.db.user_manager.get_user(auth_user)
+        project.unauthorize_user(user_obj, auth_user_obj)
         
     def import_tarball(self, user, project_name, filename, file_obj):
         """Imports the tarball in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project_name, clean=True)
+        project, user_obj = self.get_project(user, project_name, clean=True)
         pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
         info = list(pfile)
@@ -487,7 +485,7 @@ class FileManager(object):
         """Imports the zip file in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project_name, clean=True)
+        project, user_obj = self.get_project(user, project_name, clean=True)
         max_import_file_size = config.c.max_import_file_size
         
         pfile = zipfile.ZipFile(file_obj)
@@ -510,7 +508,7 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         fs = self.file_store
         temporaryfile = tempfile.NamedTemporaryFile()
         mtime = time.time()
@@ -547,7 +545,7 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project = self.get_project(user, project_name)
+        project, user_obj = self.get_project(user, project_name)
         fs = self.file_store
         temporaryfile = tempfile.NamedTemporaryFile()
         zfile = zipfile.ZipFile(temporaryfile, "w", zipfile.ZIP_DEFLATED)
