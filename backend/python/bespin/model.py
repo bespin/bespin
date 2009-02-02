@@ -153,8 +153,8 @@ class Directory(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     parent_id = Column(Integer, ForeignKey('directories.id'))
-    subdirs = relation('Directory', backref=backref("parentdir", 
-                                        remote_side=[parent_id]))
+    subdirs = relation('Directory', backref=backref("parent", 
+                                        remote_side=[id]))
     
     def __str__(self):
         return "Dir: %s" % (self.name)
@@ -296,7 +296,7 @@ class FileManager(object):
                 d = Directory(name=segment)
                 s.add(d)
                 if last_d:
-                    d.parent = last_d
+                    last_d.subdirs.append(d)
             last_d = d
         if not last_d:
             raise FSException("Unable to get to path %s from the root" % full_path)
