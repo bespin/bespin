@@ -183,14 +183,13 @@ def test_delete_raises_file_not_found():
     except model.FileNotFound:
         pass
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
     try:
         fm.delete("MacGyver", "bigmac", "STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
     except model.FileNotFound:
         pass
     flist = fm.list_files("MacGyver", "bigmac")
-    assert "foo/" in flist
+    assert flist[0].name == "bigmac/foo/"
     fm.delete("MacGyver", "bigmac", "foo/bar/")
     
 def test_authorize_other_user():
