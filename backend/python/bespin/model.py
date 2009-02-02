@@ -380,6 +380,12 @@ class FileManager(object):
             except NoResultFound:
                 raise FileNotFound("File %s not found in project %s" %
                                     (path, project_name))
+            open_users = set(file_obj.users)
+            open_users.difference_update(set([user_obj]))
+            if open_users:
+                raise FileConflict(
+                    "File %s in project %s is in use by another user"
+                    % (path, project_name))
             s.delete(file_obj)
         
     def save_edit(self, user, project_name, path, edit):
