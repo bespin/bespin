@@ -354,26 +354,18 @@ class FileManager(object):
         project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
-        print "Closing ", full_path
         try:
             file_obj = s.query(File).filter_by(name=full_path).one()
         except NoResultFound:
-            print "No file"
             return
             
         try:
             fs = s.query(FileStatus).filter_by(user_id=user_obj.id) \
                     .filter_by(file_id=file_obj.id).one()
         except NoResultFound:
-            print "No FS"
             return
         
-        print "Deleting UFS1: ", user_obj.files
-        user_obj.files.remove(fs)
-        file_obj.users.remove(fs)
-        print "FS: ", fs, " UFS: ", user_obj.files
-        s.delete(fs)
-        # self.reset_edits(user, project_name, path)
+        self.reset_edits(user, project_name, path)
     
     def delete(self, user, project_name, path=""):
         """Deletes a file, as long as it is not opened. If the file is
@@ -463,9 +455,10 @@ class FileManager(object):
         file_obj.edits = []
         for fs in file_obj.users:
             if fs.user == user_obj:
-                file_obj.users.remove(fs)
-                user_obj.files.remove(fs)
                 s.delete(fs)
+                file_obj.users.remove(fs)
+                if fs in user_obj.files:
+                    user_obj.files.remove(fs)
                 break
             
     def install_template(self, user, project_name, template="template"):
