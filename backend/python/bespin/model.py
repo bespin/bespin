@@ -243,7 +243,10 @@ class FileManager(object):
             dir = self.session.query(Directory).filter_by(name=full_path).one()
         except NoResultFound:
             raise FileNotFound(full_path)
-        return sorted(dir.files)
+        
+        result = set(dir.subdirs)
+        result.update(set(dir.files))
+        return sorted(result, key=lambda item: item.name)
         
     def get_project(self, username, project_name, create=False, clean=False):
         """Retrieves the project object, optionally creating it if it
@@ -362,50 +365,24 @@ class FileManager(object):
         the directory and everything underneath it will be deleted.
         If the path is empty, the project will be deleted."""
         project = self.get_project(user, project_name)
+        s = self.session
         full_path = project_name + "/" + path
-        segments = full_path.split("/")
-        fs = self.file_store
-        
-        if not full_path in fs:
-            raise FileNotFound("%s not found" % full_path)
-            
-        file_status = FileStatus.get(self.status_store, full_path)
-        open_users = file_status.users
-        if open_users:
-            open_by_me = len(open_users) == 1 and user in open_users
-            if not open_by_me:
-                raise FileConflict("Cannot delete %s because it is in use" % full_path)
-            if open_by_me:
-                self.close(user, project_name, path)
-        
-        obj = fs[full_path]
-        if full_path.endswith("/"):
-            del segments[-1]
-            dir_name = "/".join(segments[:-1]) + "/"
-            myname = segments[-1] + "/"
-            for sub_path in list(obj.files):
-                sub_path = path + sub_path
-                self.delete(user, project_name, sub_path)
+        if path.endswith("/"):
+            try:
+                dir_obj = s.query(Directory).filter_by(name=full_path).one()
+            except NoResultFound:
+                raise FileNotFound("Directory %s not found in project %s" %
+                                    (path, project_name))
+                                    
+            s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
+            s.query(File).filter(File.name.like(full_path + "%")).delete()
         else:
-            dir_name = "/".join(segments[:-1]) + "/"
-            myname = segments[-1]
-        
-        # everything looks good to delete
-        del fs[full_path]
-        
-        # check to see if we're deleting a project
-        if not path:
-            user_manager = self.db.user_manager
-            user_obj = user_manager.get_user(user)
-            user_obj.projects.remove(project_name)
-            user_manager.save_user(user, user_obj)
-            return
-            
-        # remove the directory entry
-        d = fs[dir_name]
-        d.files.remove(myname)
-        # make sure we save the changes
-        fs[dir_name] = d
+            try:
+                file_obj = s.query(File).filter_by(name=full_path).one()
+            except NoResultFound:
+                raise FileNotFound("File %s not found in project %s" %
+                                    (path, project_name))
+            s.delete(file_obj)
         
     def save_edit(self, user, project_name, path, edit):
         project = self.get_project(user, project_name, create=True)
