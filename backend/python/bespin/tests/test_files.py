@@ -490,8 +490,11 @@ def test_export_zipfile():
     
 def test_good_file_operations_from_web():
     fm = _get_fm()
+    s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
-    assert 'bigmac/reqs' in config.c.saved_keys
+    fileobj = s.query(File).filter_by(name="bigmac/reqs").one()
+    contents = str(fileobj.data)
+    assert contents == "Chewing gum wrapper"
     resp = app.get("/file/at/bigmac/reqs")
     assert resp.body == "Chewing gum wrapper"
     resp = app.get("/file/listopen/")
@@ -512,7 +515,7 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == ['MacGyver_New_Project/', 'bigmac/']
+    assert data[1:] == ['MacGyver_New_Project/', 'bigmac/']
     
     resp = app.get("/file/list/MacGyver_New_Project/")
     data = simplejson.loads(resp.body)
