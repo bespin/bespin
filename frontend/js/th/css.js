@@ -49,84 +49,83 @@
 // OTHER DEALINGS IN THE SOFTWARE.
  * ***** END LICENSE BLOCK ***** */
 
+var CSSParser = Class.define({
+    members: {
+        init: function() {},
 
-dojo.provide("th.css"); 
+        parse: function(str, ret) {
+            // parses the passed stylesheet into an object with properties containing objects with the attribute names and values
+            if (!ret) ret = {};
 
-dojo.declare("th.css.CSSParser", null, {
-    parse: function(str, ret) {
-        // parses the passed stylesheet into an object with properties containing objects with the attribute names and values
-        if (!ret) ret = {};          
-        
-        dojo.forEach(this.munge(str, false).split('`b%'), function(css){              
-            css = css.split('%b`'); // css[0] is the selector; css[1] is the index in munged for the cssText  
-            if (css.length < 2) return; // invalid css
-            css[0] = this.restore(css[0]);
-            var obj = ret[css[0]] || {};
-            ret[css[0]] = dojo.mixin(obj, this.parsedeclarations(css[1]));
-        }, this);  
-         
-        return ret;
-    },
+            var self = this;
 
-    // replace strings and brace-surrounded blocks with %s`number`s% and %b`number`b%. By successively taking out the innermost
-    // blocks, we ensure that we're matching braces. No way to do this with just regular expressions. Obviously, this assumes no one
-    // would use %s` in the real world.
-    // Turns out this is similar to the method that Dean Edwards used for his CSS parser in IE7.js (http://code.google.com/p/ie7-js/)
-    REbraces: /{[^{}]*}/,
-    
-    REfull: /\[[^\[\]]*\]|{[^{}]*}|\([^()]*\)|function(\s+\w+)?(\s*%b`\d+`b%){2}/, // match pairs of parentheses, brackets, and braces and function definitions.
-    
-    REatcomment: /\/\*@((?:[^\*]|\*[^\/])*)\*\//g, // comments of the form /*@ text */ have text parsed
-    // we have to combine the comments and the strings because comments can contain string delimiters and strings can contain comment delimiters
-    // var REcomment = /\/\*(?:[^\*]|\*[^\/])*\*\/|<!--|-->/g; // other comments are stripped. (this is a simplification of real SGML comments (see http://htmlhelp.com/reference/wilbur/misc/comment.html) , but it's what real browsers use)
-    // var REstring = /\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*'/g; // match escaped characters and strings
-    
-    REcomment_string:
-      /(?:\/\*(?:[^\*]|\*[^\/])*\*\/)|(\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*')/g,
-    
-    REmunged: /%\w`(\d+)`\w%/,
-    
-    uid: 0, // unique id number
-    
-    munged: {}, // strings that were removed by the parser so they don't mess up searching for specific characters
+            str.split('`b%').each(function(css, i) {
+                css = css.split('%b`'); // css[0] is the selector; css[1] is the index in munged for the cssText
+                if (css.length < 2) return; // invalid css
+                css[0] = self.restore(css[0]);
 
-    munge: function(str, full) {
-        str = str
-            .replace(this.REatcomment, '$1') // strip /*@ comments but leave the text (to let invalid CSS through)
-            .replace(this.REcomment_string, dojo.hitch(this, function (s, string) { // strip strings and escaped characters, leaving munged markers, and strip comments
-                if (!string) return '';
-                var replacement = '%s`'+(++this.uid)+'`s%';
-                this.munged[this.uid] = string.replace(/^\\/, ''); // strip the backslash now
-                return replacement;
-            }));
-       
-        // need a loop here rather than .replace since we need to replace nested braces
-        var RE = full ? this.REfull : this.REbraces;
-        while (match = RE.exec(str)) {
-            replacement = '%b`'+(++this.uid)+'`b%';
-            this.munged[this.uid] = match[0];
-            str = str.replace(RE, replacement);
-        }           
-        return str;
-    },
+                ret[css[0]] = Object.extend(ret[css[0]] || {}, self.parsedeclarations(css[1]));
+            });
 
-    restore: function(str) {
-        if (str === undefined) return str;
-        while (match = this.REmunged.exec(str)) {
-            str = str.replace(this.REmunged, this.munged[match[1]]);
+            return ret;
+        },
+
+        // replace strings and brace-surrounded blocks with %s`number`s% and %b`number`b%. By successively taking out the innermost
+        // blocks, we ensure that we're matching braces. No way to do this with just regular expressions. Obviously, this assumes no one
+        // would use %s` in the real world.
+        // Turns out this is similar to the method that Dean Edwards used for his CSS parser in IE7.js (http://code.google.com/p/ie7-js/)
+        REbraces: /{[^{}]*}/,
+        REfull: /\[[^\[\]]*\]|{[^{}]*}|\([^()]*\)|function(\s+\w+)?(\s*%b`\d+`b%){2}/, // match pairs of parentheses, brackets, and braces and function definitions.
+        REatcomment: /\/\*@((?:[^\*]|\*[^\/])*)\*\//g, // comments of the form /*@ text */ have text parsed
+        // we have to combine the comments and the strings because comments can contain string delimiters and strings can contain comment delimiters
+        // var REcomment = /\/\*(?:[^\*]|\*[^\/])*\*\/|<!--|-->/g; // other comments are stripped. (this is a simplification of real SGML comments (see http://htmlhelp.com/reference/wilbur/misc/comment.html) , but it's what real browsers use)
+        // var REstring = /\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*'/g; // match escaped characters and strings
+        REcomment_string:
+          /(?:\/\*(?:[^\*]|\*[^\/])*\*\/)|(\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*')/g,
+        REmunged: /%\w`(\d+)`\w%/,
+        uid: 0, // unique id number
+        munged: {}, // strings that were removed by the parser so they don't mess up searching for specific characters
+
+        munge: function(str, full) {
+            var self = this;
+            str = str
+                .replace(this.REatcomment, '$1') // strip /*@ comments but leave the text (to let invalid CSS through)
+                .replace(this.REcomment_string, function (s, string) { // strip strings and escaped characters, leaving munged markers, and strip comments
+                    if (!string) return '';
+                    var replacement = '%s`'+(++self.uid)+'`s%';
+                    self.munged[self.uid] = string.replace(/^\\/, ''); // strip the backslash now
+                    return replacement;
+                });
+
+            // need a loop here rather than .replace since we need to replace nested braces
+            var RE = full ? this.REfull : this.REbraces;
+            while (match = RE.exec(str)) {
+                replacement = '%b`'+(++this.uid)+'`b%';
+                this.munged[this.uid] = match[0];
+                str = str.replace(RE, replacement);
+            }
+            return str;
+        },
+
+        restore: function(str) {
+            if (str === undefined) return str;
+            while (match = this.REmunged.exec(str)) {
+                str = str.replace(this.REmunged, this.munged[match[1]]);
+            }
+            return str.strip();
+        },
+
+        parsedeclarations: function(index){ // take a string from the munged array and parse it into an object of property: value pairs
+            var self = this;
+            var str = self.munged[index].replace(/(?:^\s*[{'"]\s*)|(?:\s*([^\\])[}'"]\s*$)/g, '$1'); // find the string and remove the surrounding braces or quotes
+            str = self.munge(str); // make sure any internal braces or strings are escaped
+            var parsed = {};
+            str.split(';').each(function (decl, i) {
+                decl = decl.split(':');
+                if (decl.length < 2) return;
+                parsed[self.restore(decl[0])] = self.restore(decl[1]);
+            });
+            return parsed;
         }
-        return dojo.trim(str);
-    },
-
-    parsedeclarations: function(index){ // take a string from the munged array and parse it into an object of property: value pairs
-        var str = this.munged[index].replace(/(?:^\s*[{'"]\s*)|(?:\s*([^\\])[}'"]\s*$)/g, '$1'); // find the string and remove the surrounding braces or quotes
-        str = this.munge(str); // make sure any internal braces or strings are escaped
-        var parsed = {};   
-        dojo.forEach(str.split(';'), function (decl) {
-            decl = decl.split(':');
-            if (decl.length < 2) return;
-            parsed[this.restore(decl[0])] = this.restore(decl[1]);
-        }, this);
-        return parsed;
     }
 });

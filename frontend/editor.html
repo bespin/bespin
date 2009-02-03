@@ -28,7 +28,11 @@
 <head>
     <title>Bespin &raquo; Your Community Editor</title>
   	<link type="text/css" rel="stylesheet" href="css/editor.css">
-    
+
+    <style type="text/css">
+        #status { overflow: hidden;}
+    </style>
+
     <!-- begin script tags -->
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
     <script type="text/javascript" src="js/external/scriptaculous-1.8.2/effects.js"></script>
@@ -42,7 +46,6 @@
     <script type="text/javascript" src="js/external/dp.SyntaxHighlighter/shBrushXml.js"></script>
     <script type="text/javascript" src="js/external/dp.SyntaxHighlighter/shBrushCss.js"></script>
 
-    <script type="text/javascript" src="js/external/json2.js"></script>
     <script type="text/javascript" src="js/external/cookiejar-0.4.js"></script>
 
     <script type="text/javascript" src="js/util/clipboard.js"></script>
@@ -69,7 +72,14 @@
     <script type="text/javascript" src="js/client/server.js"></script>
     <script type="text/javascript" src="js/client/status.js"></script>
     <script type="text/javascript" src="js/client/session.js"></script>
-	<!-- end script tags -->
+
+    <script type="text/javascript" src="js/external/jstraits.js"></script>
+    <script type="text/javascript" src="js/th/traits.js"></script>
+    <script type="text/javascript" src="js/th/gtk.js"></script>
+    <script type="text/javascript" src="js/th/models.js"></script>
+    <script type="text/javascript" src="js/th/borders.js"></script>
+    <script type="text/javascript" src="js/th/components.js"></script>
+    <!-- end script tags -->
 </head>
 <body>
     <div id="header">
@@ -86,7 +96,7 @@
             <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"></div>
         </div>
 
-        <div id="status"></div>
+        <div id="status"><canvas id="projectLabel"></canvas></div>
         <div id="bar"></div>
         <img id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
         <img id="toolbar_redo" src="images/icn_redo.png" alt="Redo" title="Redo">
