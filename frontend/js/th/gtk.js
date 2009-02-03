@@ -35,50 +35,6 @@ Array.asArray = function(object) {
 };
 
 /*
-    Upgrades canvas implementation in non-conforming browsers
- */
-var fixCanvas = function(ctx) {
-    // upgrade Firefox 3.0.x text rendering to HTML 5 standard
-    if (!ctx.fillText && ctx.mozDrawText) {
-        ctx.fillText = function(textToDraw, x, y, maxWidth) {
-            ctx.translate(x, y);
-            ctx.mozTextStyle = ctx.font;
-            ctx.mozDrawText(textToDraw);
-            ctx.translate(-x, -y);
-        }
-    }
-
-    if (!ctx.measureText && ctx.mozMeasureText) {
-        ctx.measureText = function(text) {
-            ctx.mozTextStyle = ctx.font;
-            var width = ctx.mozMeasureText(text);
-            return { width: width };
-        }
-    }
-
-    if (ctx.measureText && !ctx.html5MeasureText) {
-        ctx.html5MeasureText = ctx.measureText;
-        ctx.measureText = function(text) {
-            var textMetrics = ctx.html5MeasureText(text);
-
-            // fake it 'til you make it
-            textMetrics.ascent = ctx.html5MeasureText("m").width;
-
-            return textMetrics;
-        }
-    }
-
-    // for other browsers
-    if (!ctx.fillText) {
-        ctx.fillText = function() {}
-    }
-
-    if (!ctx.measureText) {
-        ctx.measureText = function() { return 10; }
-    }
-};
-
-/*
     Constants
  */
 var GTK = {
@@ -193,7 +149,7 @@ var Scene = Class.define({
 
             var testCanvas = document.createElement("canvas");
             this.scratchContext = testCanvas.getContext("2d");
-            fixCanvas(this.scratchContext);
+            Bespin.Canvas.Fix(this.scratchContext);
 
             var self = this;
 
@@ -256,7 +212,7 @@ var Scene = Class.define({
             if (this.root) {
                 var ctx = this.canvas.getContext("2d");
                 ctx.save();
-                fixCanvas(ctx);
+                Bespin.Canvas.Fix(ctx);
                 this.root.paint(ctx);
                 ctx.restore();
             }
