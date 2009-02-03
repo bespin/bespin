@@ -1,0 +1,9 @@
+urlrelay>0.7
+WebOb
+WebTest
+py
+simplejson
+shove
+Paste
+static
+jsonpickle

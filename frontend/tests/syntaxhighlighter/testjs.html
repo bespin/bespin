@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>Testing the HTML syntax highlighter</title>
+</head>
+
+<body>
+
+<textarea name="code" class="javascript">
+function foo() {
+ var bar = 'baz';
+}
+</textarea>
+
+<textarea>
+function foo() {
+ var bar = 'baz';
+}
+</textarea>
+
+<link type="text/css" rel="stylesheet" href="../../css/SyntaxHighlighter.css"></link>
+<script src="../../js/external/dp.SyntaxHighlighter/shCore.js"></script>
+<script src="../../js/external/dp.SyntaxHighlighter/shBrushJScript.js"></script>
+<script>
+dp.SyntaxHighlighter.HighlightAll('code');
+</script>
+
+
+</body>
+</html>
