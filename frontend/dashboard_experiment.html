@@ -27,37 +27,26 @@
 <html>
 <head>
     <title>Bespin &raquo; Dashboard</title>
+
     <link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
-    <link type="text/css" rel="thstylesheet" href="css/dashboard_th.css"/>
+    <link type="text/css" rel="componentstylesheet" href="css/dashboard_th.css"/>
+    <link type="text/layout" rel="layout" href="layout/test.layout"/>
 
     <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
-
-    <script type="text/javascript" src="js/bespin.js"></script>
-            
     <script type="text/javascript" src="js/util/path.js"></script>
     <script type="text/javascript" src="js/util/textselection.js"></script>
-    <script type="text/javascript" src="js/util/navigate.js"></script>
-    <script type="text/javascript" src="js/util/keys.js"></script>
-    <script type="text/javascript" src="js/util/fixcanvas.js"></script>
-    
-    <script type="text/javascript" src="js/client/settings.js"></script>
     <script type="text/javascript" src="js/client/server.js"></script>
-    
-    <script type="text/javascript" src="js/commandline/commandline.js"></script>
-    <script type="text/javascript" src="js/commandline/dashboardcommands.js"></script>
 
     <script type="text/javascript" src="js/external/jstraits.js"></script>
     <script type="text/javascript" src="js/th/traits.js"></script>
-    <script type="text/javascript" src="js/th/css.js"></script>
     <script type="text/javascript" src="js/th/gtk.js"></script>
     <script type="text/javascript" src="js/th/models.js"></script>
     <script type="text/javascript" src="js/th/borders.js"></script>
     <script type="text/javascript" src="js/th/components.js"></script>
-
     <script type="text/javascript" src="js/client/dashboard_components.js"></script>
     <script type="text/javascript" src="js/client/dashboard.js"></script>
 </head>
-<body>
+<body onload="setupDashboard()">
     <div id="header">
         <img id="logo" src="images/logo.png" alt="Bespin" />
     </div>
@@ -66,12 +55,18 @@
     </div>
     <div id="filecanvas">
         <canvas id="canvas" moz-opaque="true">
+            <splitpanel>
+                <panel>
+                    <bespinprojectpanel/>
+                    <horizontaltree/>
+                </panel>
+                <expandingInfoPanel/>
+            </splitpanel>
         </canvas>
     </div>
     <div id="footer">
-        <div id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></div>
-        <div id="commandline"><input id="command"></div>
+        <div id="prompt"><img src="images/icn_command.png" alt=">" /></div>
+        <div id="commandlineParent"><input id="commandline" /></div>
     </div>
-    <div id="info" style="display: none;"></div>
 </body>
 </html>
