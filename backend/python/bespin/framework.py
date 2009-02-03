@@ -29,7 +29,7 @@
 from urlrelay import url
 from webob import Request, Response
 
-from bespin import model
+from bespin import model, config
 
 class BadRequest(Exception):
     pass
@@ -41,6 +41,8 @@ class BespinRequest(Request):
     logged in user, among other features."""
     def __init__(self, environ):
         super(BespinRequest, self).__init__(environ)
+        self.session = self.environ['bespin.dbsession']
+        
         if 'bespin.user' in environ:
             self._user = environ['bespin.user']
         else:
@@ -59,11 +61,6 @@ class BespinRequest(Request):
             return self._user
         return None
         
-    def save_user(self):
-        """Saves the current user object."""
-        user = self.user
-        self.user_manager.save_user(self.username, user)
-        
 class BespinResponse(Response):
     def __init__(self, environ, start_request, **kw):
         super(BespinResponse, self).__init__(**kw)
@@ -72,6 +69,11 @@ class BespinResponse(Response):
     
     def __call__(self):
         return super(BespinResponse, self).__call__(self.environ, self.start_request)
+        
+    def error(self, status, e):
+        self.status = status
+        self.body = str(e)
+        self.environ['bespin.docommit'] = False
 
 def expose(url_pattern, method=None, auth=True):
     """Expose this function to the world, matching the given URL pattern
@@ -89,23 +91,17 @@ def expose(url_pattern, method=None, auth=True):
             try:
                 return func(request, response)
             except model.NotAuthorized, e:
-                response.status = "401 Not Authorized"
-                response.body = str(e)
+                response.error("401 Not Authorized", e)
             except model.FileNotFound, e:
-                response.status = "404 Not Found"
-                response.body = str(e)
+                response.error("404 Not Found", e)
             except model.FileConflict, e:
-                response.status = "409 Conflict"
-                response.body = str(e)
+                response.error("409 Conflict", e)
             except model.ConflictError, e:
-                response.status = "409 Conflict"
-                response.body = str(e)
+                response.error("409 Conflict", e)
             except model.FSException, e:
-                response.status = "400 Bad Request"
-                response.body = str(e)
+                response.error("400 Bad Request", e)
             except BadRequest, e:
-                response.status = "400 Bad Request"
-                response.body = str(e)
+                response.error("400 Bad Request", e)
             return response()
     return entangle
 
