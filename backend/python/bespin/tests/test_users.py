@@ -30,7 +30,7 @@ from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
-from bespin.model import User, UserManager
+from bespin.model import User, UserManager, FileManager, File
 
 def setup_module(module):
     config.set_profile("test")
@@ -45,7 +45,7 @@ def _get_user_manager(clear=False):
         _clear_db()
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = UserManager(s)
-    file_manager = config.c.file_manager
+    file_manager = FileManager(s)
     db = model.DB(user_manager, file_manager)
     return s, user_manager
     
@@ -87,6 +87,7 @@ def test_register_returns_empty_when_not_logged_in():
     
 def test_register_and_verify_user():
     config.activate_profile()
+    s, user_manager = _get_user_manager()
     app = controllers.make_app()
     app = TestApp(app)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
@@ -96,9 +97,9 @@ def test_register_and_verify_user():
     assert data['project']
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    assert 'BillBixby_New_Project/readme.txt' in config.c.file_manager.file_store
-    for key in config.c.file_manager.file_store.keys():
-        assert '.svn' not in key
+    file = s.query(File).filter_by(name="BillBixby_New_Project/readme.txt").one()
+    svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
+    assert not svnfiles
     
     # should be able to run again without an exception appearing
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
