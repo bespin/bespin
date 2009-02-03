@@ -18,13 +18,47 @@
   <ul>
     <li><a href="#code/frontend/js/bespin.js">Bespin Core</a></li>
     <li><a href="#code/frontend/js/bootstrap.js">Editor Bootstrap Code</a></li>
+    <li><a href="#code/frontend/js/events.js">Core Editor Events and <code>Bespin.Events</code> Helper</a></li>
   </ul>
 
   <b>Client Code</b>
   <ul>
-    <li><a href="#code/frontend/js/client/filesystem.js">FileSystem: Remote File System</a></li>
-    <li><a href="#code/frontend/js/client/server.js">Server: Implementation of the Bespin Server API</a></li>
+    <li><a href="#code/frontend/js/client/filesystem.js">FileSystem</a>: Remote File System=</li>
+    <li><a href="#code/frontend/js/client/server.js">Server</a>: Implementation of the Bespin Server API</li>
+    <li><a href="#code/frontend/js/client/session.js">Session Module</a>: EditSession and SyncHelper</li>
+    <li><a href="#code/frontend/js/client/settings.js">Settings Module</a>: Settings core, and various stores</li>
   </ul>
+
+  <b>Command Line</b>
+  <ul>
+    <li><a href="#code/frontend/js/commandline/commandline.js">CommandLine: The core command line module</a></li>
+    <li><a href="#code/frontend/js/commandline/dashboardcommands.js">Dashboard Commands</a></li>
+    <li><a href="#code/frontend/js/commandline/defaultcommands.js">Default Commands (Editor)</a></li>
+  </ul>
+
+  <b>Editor</b>
+  <ul>
+    <li><a href="#code/frontend/js/editor/actions.js">Editor Actions</a>: what the editor can do</li>
+    <li><a href="#code/frontend/js/editor/editor.js">Editor</a>: The meat. The Core. paint()</li>
+    <li><a href="#code/frontend/js/editor/model.js">Model</a>: the document model the editor uses</li>
+    <li><a href="#code/frontend/js/editor/syntaxhighlighter.js">Syntax Highlighter</a>: shim over to whatever highlighter is used</li>
+    <li><a href="#code/frontend/js/editor/themes.js">Themes</a>: Current theming</li>
+    <li><a href="#code/frontend/js/editor/toolbar.js">Toolbar</a>: link external toolbar to the editor itself</li>
+    <li><a href="#code/frontend/js/editor/undo.js">Undo</a>: Manage the undo / redo queue</li>
+  </ul>
+
+  <b>Utilities</b>
+  <ul>
+    <li><a href="#code/frontend/js/util/clipboard.js">Clipboard</a>: Handle the clipboard to copy and paste</li>
+    <li><a href="#code/frontend/js/util/fixcanvas.js">Canvas</a>: shim it up, have the standard work all over</li>
+    <li><a href="#code/frontend/js/util/keys.js">Key</a>: Key codes and simple handling</li>
+    <li><a href="#code/frontend/js/util/navigate.js">Navigate</a>: Shoot people around the Bespin URLs (a.k.a. location.href wrapper)</li>
+    <li><a href="#code/frontend/js/util/path.js">Path</a>: combine paths, get directories, and escape away</li>
+    <li><a href="#code/frontend/js/util/textselection.js">TextSelection</a>: The ability to call $(elements).enableTextSelection to disable it</li>
+    <li><a href="#code/frontend/js/util/tokenobject.js">TokenObject</a>: split up a string into pieces</li>
+    <li><a href="#code/frontend/js/util/urlbar.js">URLBar</a> will watch the hash location and fire an event when it changes</li>
+  </ul>
+
 </div>
 </div>
 </body>

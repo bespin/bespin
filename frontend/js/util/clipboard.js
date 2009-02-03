@@ -22,9 +22,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// -- Firefox only for true clipboard
+if (typeof Bespin == "undefined") Bespin = {};
 
-var Clipboard = new function() {
+// = Clipboard =
+//
+// Handle clipboard operations
+
+// ** {{{ Bespin.Clipboard }}} **
+//
+// Wrap clipboard access to do the right thing if you have access to native clipboard
+// Else, just store to a local clipboard. Lame I know.
+Bespin.Clipboard = new function() {
     var clipdata;
     
     return {
