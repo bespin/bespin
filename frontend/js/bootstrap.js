@@ -58,7 +58,7 @@ Element.observe(window, 'load', function() {
     _server      = new Bespin.Server();
     _settings    = new Bespin.Settings.Core();
     _files       = new Bespin.FileSystem();
-    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Default);
+    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Editor);
     _toolbar     = new Bespin.Editor.Toolbar();
 
     _toolbar.setupDefault();
