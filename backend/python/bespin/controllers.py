@@ -100,7 +100,8 @@ def save_settings(request, response):
     """Saves one or more settings for the currently logged in user."""
     user = request.user
     user.settings.update(request.POST)
-    request.save_user()
+    # make it so that the user obj appears dirty to SQLAlchemy
+    user.settings = user.settings
     return response()
 
 @expose(r'^/settings/(?P<setting_name>.*)$', 'GET')
@@ -128,7 +129,8 @@ def delete_setting(request, response):
     setting_name = kwargs['setting_name']
     try:
         del user.settings[setting_name]
-        request.save_user()
+        # get the user to appear dirty
+        user.settings = user.settings
     except KeyError:
         response.status = "404 Not Found"
     return response()
@@ -193,7 +195,10 @@ def listfiles(request, response):
             project = path
             path = ''
         
-    result = fm.list_files(request.username, project, path)
+    files = fm.list_files(request.username, project, path)
+    pp = request.user.private_project
+    result = [item.short_name for item in files
+                if item.name != pp]
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
@@ -310,11 +315,16 @@ def export_project(request, response):
     
 def db_middleware(app):
     def wrapped(environ, start_response):
-        environ['user_manager'] = c.user_manager
-        environ['file_manager'] = c.file_manager
+        from bespin import model
+        session = c.sessionmaker(bind=c.dbengine)
+        environ['bespin.dbsession'] = session
+        environ['bespin.docommit'] = True
+        environ['user_manager'] = model.UserManager(session)
+        environ['file_manager'] = model.FileManager(session)
+        environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
         result = app(environ, start_response)
-        c.user_manager.commit()
-        c.file_manager.commit()
+        if environ['bespin.docommit']:
+            session.commit()
         return result
     return wrapped
 
