@@ -23,7 +23,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 // some state mgmt. for scrollbars; not a true component
-var Scrollbar = Class.create({
+var EditorScrollbar = Class.create({
     HORIZONTAL: "horizontal",
     VERTICAL: "vertical",
     MINIMUM_HANDLE_SIZE: 20,
@@ -346,7 +346,7 @@ var EditorUI = Class.create({
         this.lastxoffset = 0;
         this.lastyoffset = 0;
 
-        this.xscrollbar = new Scrollbar(this, "horizontal");
+        this.xscrollbar = new EditorScrollbar(this, "horizontal");
         this.xscrollbar.valueChanged = function() {
             this.xoffset = -this.xscrollbar.value;
             this.editor.paint();
@@ -358,7 +358,7 @@ var EditorUI = Class.create({
             this.xscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
 
-        this.yscrollbar = new Scrollbar(this, "vertical");
+        this.yscrollbar = new EditorScrollbar(this, "vertical");
         this.yscrollbar.valueChanged = function() {
             this.yoffset = -this.yscrollbar.value;
             this.editor.paint();
