@@ -73,6 +73,7 @@ def test_basic_file_creation():
     file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
+    assert file_obj.saved_size == 19
     
     now = datetime.now()
     assert now - file_obj.created < timedelta(seconds=2)
@@ -528,16 +529,17 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == ['MacGyver_New_Project/', 'bigmac/']
+    assert data == [{'name' : 'MacGyver_New_Project/'}, 
+                    {'name' : 'bigmac/'}]
     
     resp = app.get("/file/list/MacGyver_New_Project/")
     data = simplejson.loads(resp.body)
-    assert 'readme.txt' in data
+    assert data[1]['name'] == 'readme.txt'
     
     resp = app.get("/file/list/bigmac/")
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
-    assert data == ['reqs']
+    assert data == [{'name' : 'reqs'}]
     
     app.delete("/file/at/bigmac/reqs")
     resp = app.get("/file/list/bigmac/")
@@ -596,7 +598,8 @@ def test_private_project_does_not_appear_in_list():
     app.post("/file/close/%s/foo" % project_name)
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == ["MacGyver_New_Project/"]
+    assert len(data) == 1
+    assert data[0]['name'] == "MacGyver_New_Project/"
 
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
