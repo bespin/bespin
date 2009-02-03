@@ -252,7 +252,7 @@ class FileManager(object):
         owned by the user."""
         if not project_name:
             user_obj = self.db.user_manager.get_user(user)
-            return sorted(project.name + '/' for project in user_obj.projects)
+            return sorted(user_obj.projects, key=lambda proj: proj.name)
         self.get_project(user, project_name)
         full_path = project_name + "/" + path
         try:
