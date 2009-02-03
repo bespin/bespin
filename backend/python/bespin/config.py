@@ -43,12 +43,6 @@ class Bunch(dict):
 
 c = Bunch()
 c.dburl = None
-c.file_db = None
-c.file_db_cache = None
-c.status_db = None
-c.status_db_cache = None
-c.edit_db = None
-c.edit_db_cache = None
 c.secret = "This is the phrase that is used for secret stuff."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
@@ -58,23 +52,10 @@ c.max_import_file_size = 20000000
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
-        import bespin.tests.util
-        c.file_db = "bespin_test://"
-        c.file_db_cache = "simple://"
-        c.status_db = "bespin_test://"
-        c.status_db_cache = "simple://"
-        c.edit_db = "bespin_test://"
-        c.edit_db_cache = "simple://"
         c.dburl = "sqlite://"
     elif profile == "dev":
         if not os.path.exists("devdata"):
             os.mkdir("devdata")
-        c.file_db = "jsonfiles://devdata/files"
-        c.file_db_cache = "memory://"
-        c.status_db = "jsonbase://devdata/status"
-        c.status_db_cache = "memory://"
-        c.edit_db = "jsonbase://devdata/edits"
-        c.edit_db_cache = "memory://"
         c.dburl = "sqlite:///devdata.db"
     c.dbengine = create_engine(c.dburl)
     
