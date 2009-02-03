@@ -29,7 +29,9 @@
 // 
 // It ties into the {{{Server}}} object for remote access
 
-var FileSystem = Class.create({
+if (typeof Bespin == "undefined") Bespin = {};
+
+Bespin.FileSystem = Class.create({
 
     // ** {{{ FileSystem.newFile(project, path, callback) }}}
     //

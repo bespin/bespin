@@ -22,12 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+if (typeof Bespin == "undefined") Bespin = {};
+
 // = Server =
 //
 // The Server object implements the [[https://wiki.mozilla.org/BespinServerAPI|Bespin Server API]]
 // giving the client access to the backend store. The {{{FileSystem}}} object uses this to talk back.
 
-var Server = Class.create({
+Bespin.Server = Class.create({
     // ** {{{ initialize(base) }}}
     //
     // Object creation initialization

@@ -23,25 +23,34 @@
  * ***** END LICENSE BLOCK ***** */
 
 if (typeof Bespin == "undefined") Bespin = {};
+if (!Bespin.Canvas) Bespin.Canvas = {};
 
-// = URLBar =
+// = Canvas Shim =
 //
-// URLBar watches the browser URL navigation bar for changes. 
-// If it sees a change it tries to open the file
-// The common case is using the back/forward buttons
+// Make canvas work the same on the different browsers and their quirks
 
-Bespin.URLBar = {
-    last: document.location.hash,
-    check: function() {
-        var hash = document.location.hash;
-        if (this.last != hash) {
-            var urlchange = new URLSettings(hash);
-            document.fire("bespin:editor:openfile", { filename: urlchange.get('path') });
-            this.last = hash;
-        }
+// ** {{{ Bespin.Canvas.Shim }}} **
+//
+// A shim for all version
+Bespin.Canvas.Shim = Class.create({
+    fillText: function(ctx, text, x, y, maxWidth) {
+      ctx.fillStyle = ctx.font;
+      ctx.fillText(text, x, y, maxWidth);
     }
-};
+});
 
-setInterval(function() {
-    Bespin.URLBar.check.apply(Bespin.URLBar);
-}, 200);
+// ** {{{ Bespin.Canvas.ShimFF3 }}} **
+//
+// Map the FF3 style "mozTestStyle" to the standard ctx.font
+Bespin.Canvas.ShimFF3 = Class.create({
+    fillText: function(ctx, text, x, y, maxWidth) {
+        // copy ff3 text style property to w3c standard property
+        ctx.mozTextStyle = ctx.font;
+
+        // translate to the specified position
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.mozDrawText(text);
+        ctx.restore();
+    }
+});
