@@ -875,3 +875,27 @@ var HorizontalTree = Class.define({
         }
     }
 });
+
+var Button = Class.define({
+    type: "Button",
+
+    superclass: Component,
+
+    members: {
+        init: function(parms) {
+            this._super(parms);
+        }
+    }
+});
+
+var Scrollbar = Class.define({
+    type: "Scrollbar",
+
+    superclass: Container,
+
+    members: {
+        init: function(parms) {
+            this._super(parms);
+        }
+    }
+});
