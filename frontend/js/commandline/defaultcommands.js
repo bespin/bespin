@@ -382,10 +382,12 @@ Bespin.Commands.Default = [
                     return;
                 }
 
+                self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
+                
                 _server.importProject(project, url, { call: function(xhr) {
-                    self.showInfo("Project '" + project + "' imported from " + url);
+                    self.showInfo("Project " + project + " imported from:<br><br>" + url);
                 }, onFailure: function(xhr) {
-                    self.showInfo("Unable to import '" + project + "' from " + url + ".<br> Maybe due to: " + xhr.responseText);
+                    self.showInfo("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
                 }});
             }
 }, {
