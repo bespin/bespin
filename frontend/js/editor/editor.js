@@ -249,15 +249,8 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
     },
 
     onkeydown: function(e) {
-        // TODO: global to factor out
-        if (_commandLine.inCommandLine) return; // in the command line!
-
-        if (e.keyCode == Bespin.Key.J && e.ctrlKey) { // send to command line
-            $('command').focus();
-
-            Event.stop(e);
-            return false;
-        }
+        var handled = _commandLine.handleCommandLineFocus(e);
+        if (handled) return false;
 
         var self = this;
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) }
