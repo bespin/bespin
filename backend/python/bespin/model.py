@@ -141,6 +141,7 @@ class File(Base):
     name = Column(String, unique=True)
     created = Column(DateTime, default=datetime.now)
     modified = Column(DateTime, onupdate=datetime.now)
+    saved_size = Column(Integer)
     data = deferred(Column(Binary))
     edits = deferred(Column(PickleType))
     dir_id = Column(Integer, ForeignKey('directories.id'))
@@ -314,16 +315,14 @@ class FileManager(object):
         last_edit parameter should include the last edit ID received by
         the user."""
         project, user_obj = self.get_project(user, project_name, create=True)
+        
         s = self.session
         full_path = project_name + "/" + path
         segments = full_path.split("/")
         fn = segments[-1]
+        
         last_d = None
-        # The project object is the root directory of the paths
-        # but its name appears in the filename keys. So, the
-        # filenames will all have the project name which is
-        # why it's in full_path, but we can skip the first part
-        # of the path
+        
         for i in range(1, len(segments)):
             segment = "/".join(segments[0:i]) + "/"
             try:
@@ -339,12 +338,18 @@ class FileManager(object):
         subdir_names = [item.name for item in last_d.subdirs]
         if (full_path + "/") in subdir_names:
             raise FileConflict("Cannot save a file at %s because there is a directory there." % full_path)
+        
+        saved_size = len(contents) if contents is not None else 0    
+        
         try:
             file = s.query(File).filter_by(name=full_path).one()
             file.data = contents
+            file.saved_size = saved_size
         except NoResultFound:
-            file = File(name=full_path, dir=last_d, data=contents)
+            file = File(name=full_path, dir=last_d, data=contents,
+                        saved_size=saved_size)
             s.add(file)
+            
         self.reset_edits(user, project_name, path)
         return file
         
