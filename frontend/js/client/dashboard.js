@@ -129,6 +129,12 @@ Event.observe(document, "dom:loaded", function() {
     _server      = new Bespin.Server();
     _settings    = new Bespin.Settings.Core();
     _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Dashboard);
+    
+    // Handle jumping to the command line
+    Event.observe(document, "keydown", function(e) {
+        var handled = _commandLine.handleCommandLineFocus(e);
+        if (handled) return false;
+    });
 
     // get logged in name; if not logged in, display an error of some kind
     _server.currentuser(loggedIn, notLoggedIn);

@@ -215,7 +215,19 @@ Bespin.CommandLine.Interface = Class.create({
         });
 
         return command;
+    },
+    
+    handleCommandLineFocus: function(e) {
+        if (this.inCommandLine) return true; // in the command line!
+
+        if (e.keyCode == Bespin.Key.J && e.ctrlKey) { // send to command line
+            this.commandLine.focus();
+
+            Event.stop(e);
+            return true;
+        }
     }
+
 });
 
 // ** {{{ Bespin.CommandLine.KeyBindings }}} **
