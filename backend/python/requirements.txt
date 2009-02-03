@@ -3,7 +3,8 @@ WebOb
 WebTest
 py
 simplejson
-shove
+SQLAlchemy
+sqlalchemy-migrate
 Paste
 static
 jsonpickle
