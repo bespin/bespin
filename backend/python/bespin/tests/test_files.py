@@ -30,6 +30,7 @@ import os
 from cStringIO import StringIO
 import tarfile
 import zipfile
+from datetime import datetime, timedelta
 
 from webtest import TestApp
 import simplejson
@@ -72,6 +73,13 @@ def test_basic_file_creation():
     file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
+    
+    now = datetime.now()
+    assert now - file_obj.created < timedelta(seconds=2)
+    
+    file_obj.created = file_obj.created - timedelta(days=1)
+    fm.session.flush()
+    
     files = fm.list_files("MacGyver", "bigmac", "")
     assert len(files) == 1
     assert files[0].name == 'bigmac/reqs'
@@ -79,9 +87,14 @@ def test_basic_file_creation():
     proj_names = set([proj.name for proj in user.projects])
     assert proj_names == set(['bigmac', "MacGyver_New_Project", 
                               user.private_project])
+    
     # let's update the contents
     fm.save_file("MacGyver", "bigmac", "reqs", "New content")
     file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    
+    assert now - file_obj.created < timedelta(days=1, seconds=2)
+    assert now - file_obj.modified < timedelta(seconds=2)
+    
     assert file_obj.data == 'New content'
     fm.session.rollback()
     
