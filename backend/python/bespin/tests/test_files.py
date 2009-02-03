@@ -159,12 +159,14 @@ def test_get_file_opens_the_file():
     assert file_obj in files
     
     open_files = fm.list_open("MacGyver")
-    assert open_files == {'bigmac' : {"foo/bar/baz" : "rw"}}
+    info = open_files['bigmac']['foo/bar/baz']
+    assert info['mode'] == "rw"
     
     fm.close("MacGyver", "bigmac", "foo")
     # does nothing, because we don't have that one open
     open_files = fm.list_open("MacGyver")
-    assert open_files == {'bigmac' : {"foo/bar/baz" : "rw"}}
+    info = open_files['bigmac']['foo/bar/baz']
+    assert info['mode'] == "rw"
     
     fm.close("MacGyver", "bigmac", "foo/bar/baz")
     open_files = fm.list_open("MacGyver")
@@ -309,7 +311,8 @@ def test_basic_edit_functions():
         pass
         
     files = fm.list_open("MacGyver")
-    assert files == {'bigmac' : {'foo/bar/baz' : 'rw'}}
+    info = files['bigmac']['foo/bar/baz']
+    assert info['mode'] == "rw"
     
     edits = fm.list_edits("MacGyver", "bigmac", "foo/bar/baz")
     assert edits == ["['edit', 'thinger']"]
@@ -338,7 +341,8 @@ def test_reset_edits():
     fm.save_edit("MacGyver", "bigmac", "foo/bar/baz", "['edit', 'thinger']")
     fm.save_edit("MacGyver", "bigmac", "foo/bar/blork", "['edit', 'thinger']")
     files = fm.list_open("MacGyver")
-    assert files == {'bigmac': {'foo/bar/baz': 'rw', 'foo/bar/blork': 'rw'}}
+    bigmac_files = files['bigmac']
+    assert len(bigmac_files) == 2
     fm.reset_edits("MacGyver")
     files = fm.list_open("MacGyver")
     assert files == {}
@@ -514,14 +518,18 @@ def test_good_file_operations_from_web():
     resp = app.get("/file/listopen/")
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
-    assert data == {'bigmac' : {'reqs' : 'rw'}}
+    bigmac_data = data['bigmac']
+    assert len(bigmac_data) == 1
+    assert bigmac_data['reqs']['mode'] == "rw"
     app.post("/file/close/bigmac/reqs")
     
     resp = app.get("/file/at/bigmac/reqs?mode=r")
     assert resp.body == "Chewing gum wrapper"
     resp = app.get("/file/listopen/")
     data = simplejson.loads(resp.body)
-    assert data == {'bigmac' : {'reqs' : 'r'}}
+    bigmac_data = data['bigmac']
+    assert len(bigmac_data) == 1
+    assert bigmac_data['reqs']['mode'] == "r"
     app.post("/file/close/bigmac/reqs")
     resp = app.get("/file/listopen/")
     data = simplejson.loads(resp.body)
@@ -576,7 +584,9 @@ def test_edit_interface():
     
     resp = app.get("/file/listopen/")
     data = simplejson.loads(resp.body)
-    assert data == {'bigmac' : {'bar/baz' : 'rw'}}
+    bigmac_data = data['bigmac']
+    assert len(bigmac_data) == 1
+    assert bigmac_data['bar/baz']['mode'] == 'rw'
     
     app.post("/edit/reset/")
     resp = app.get("/edit/list/bigmac/bar/baz")
