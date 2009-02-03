@@ -29,16 +29,22 @@
 from webtest import TestApp
 import simplejson
 
-from bespin import config, controllers
+from bespin import config, controllers, model
 
 user_manager = None
 app = None
+session = None
 
 def setup_module(module):
-    global user_manager, app
+    global user_manager, app, session
     config.set_profile('test')
     config.activate_profile()
-    user_manager = config.c.user_manager
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
+    session = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = model.UserManager(session)
+    file_manager = model.FileManager(session)
+    db = model.DB(user_manager, file_manager)
     user_manager.create_user("BillBixby", "", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
@@ -52,10 +58,10 @@ def test_auth_required():
     app.get('/settings/foo', status=401)
 
 def test_set_settings():
-    config.c.saved_keys.clear()
     resp = app.post('/settings/', {'antigravity' : 'on', 'write_my_code' : 'on'})
     assert not resp.body
-    assert 'BillBixby' in config.c.saved_keys
+    user = user_manager.get_user('BillBixby')
+    session.expunge(user)
     user = user_manager.get_user('BillBixby')
     assert user.settings['antigravity'] == 'on'
     assert user.settings['write_my_code'] == 'on'
@@ -74,9 +80,9 @@ def test_non_existent_setting_sends_404():
     
 def test_delete_setting():
     resp = app.post('/settings/', {'newone' : 'hi there'})
-    config.c.saved_keys.clear()
     resp = app.delete('/settings/newone')
-    assert 'BillBixby' in config.c.saved_keys
-    user = user_manager.get_user("BillBixby")
+    user = user_manager.get_user('BillBixby')
+    session.expunge(user)
+    user = user_manager.get_user('BillBixby')
     assert 'newone' not in user.settings
     

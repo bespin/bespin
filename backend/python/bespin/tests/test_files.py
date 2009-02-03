@@ -36,6 +36,8 @@ import simplejson
 
 from bespin import config, controllers, model
 
+from bespin.model import File, Project, User, FileStatus, Directory
+
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
 otherfilename = os.path.join(os.path.dirname(__file__), "other_import.tgz")
@@ -51,54 +53,69 @@ def setup_module(module):
 def _get_fm():
     config.activate_profile()
     app.reset()
-    fm = config.c.file_manager
-    config.c.user_manager.create_user("SomeoneElse", "", "someone@else.com")
-    fm.save_file('SomeoneElse', 'otherproject', 'foo', 
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
+    s = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = model.UserManager(s)
+    file_manager = model.FileManager(s)
+    db = model.DB(user_manager, file_manager)
+    user_manager.create_user("SomeoneElse", "", "someone@else.com")
+    file_manager.save_file('SomeoneElse', 'otherproject', 'foo', 
                  'Just a file to reserve a project')
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
-    config.c.saved_keys.clear()
-    return fm
+    return file_manager
 
 def test_basic_file_creation():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "reqs", "Chewing gum wrapper")
-    assert fm.file_store['bigmac/reqs'] == 'Chewing gum wrapper'
+    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    data = str(file_obj.data)
+    assert data == 'Chewing gum wrapper'
     files = fm.list_files("MacGyver", "bigmac", "")
-    assert files == ['reqs']
-    user = config.c.user_manager.get_user("MacGyver")
-    assert user.projects == set(['bigmac', "MacGyver_New_Project"])
+    assert len(files) == 1
+    assert files[0].name == 'bigmac/reqs'
+    user = fm.db.user_manager.get_user("MacGyver")
+    proj_names = set([proj.name for proj in user.projects])
+    assert proj_names == set(['bigmac', "MacGyver_New_Project", 
+                              user.private_project])
+    # let's update the contents
+    fm.save_file("MacGyver", "bigmac", "reqs", "New content")
+    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    assert file_obj.data == 'New content'
+    fm.session.rollback()
     
 def test_can_only_access_own_projects():
-    fm = _get_fm()
-    fm.save_file("MacGyver", "bigmac", "foo", "Bar!")
     tests = [
-        (fm.get_file, ("Murdoc", "bigmac", "foo"), 
+        ("get_file", ("Murdoc", "bigmac", "foo"), 
         "Murdoc should *not* be viewing Mac's stuff!"),
-        (fm.list_files, ("Murdoc", "bigmac", ""),
+        ("list_files", ("Murdoc", "bigmac", ""),
         "Murdoc should not be listing Mac's files!"),
-        (fm.delete, ("Murdoc", "bigmac", "foo"),
+        ("delete", ("Murdoc", "bigmac", "foo"),
         "Murdoc should not be deleting Mac's files!"),
-        (fm.save_edit, ("Murdoc", "bigmac", "foo", "bar"),
+        ("save_edit", ("Murdoc", "bigmac", "foo", "bar"),
         "Murdoc can't even edit Mac's files"),
-        (fm.reset_edits, ("Murdoc", "bigmac", "foo"),
+        ("reset_edits", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't reset them"),
-        (fm.list_edits, ("Murdoc", "bigmac", "foo"),
+        ("list_edits", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't view the sekret edits"),
-        (fm.close, ("Murdoc", "bigmac", "foo"),
+        ("close", ("Murdoc", "bigmac", "foo"),
         "Murdoc can't close files either"),
-        (fm.export_tarball, ("Murdoc", "bigmac"),
+        ("export_tarball", ("Murdoc", "bigmac"),
         "Murdoc can't export Mac's tarballs"),
-        (fm.export_zipfile, ("Murdoc", "bigmac"),
+        ("export_zipfile", ("Murdoc", "bigmac"),
         "Murdoc can't export Mac's zipfiles"),
-        (fm.import_tarball, ("Murdoc", "bigmac", "foo.tgz", "foo"),
+        ("import_tarball", ("Murdoc", "bigmac", "foo.tgz", "foo"),
         "Murdoc can't reimport projects"),
-        (fm.import_zipfile, ("Murdoc", "bigmac", "foo.zip", "foo"),
+        ("import_zipfile", ("Murdoc", "bigmac", "foo.zip", "foo"),
         "Murdoc can't reimport projects")
     ]
     def run_one(t):
+        fm = _get_fm()
+        fm.save_file("MacGyver", "bigmac", "foo", "Bar!")
+
         try:
-            t[0](*t[1])
+            getattr(fm, t[0])(*t[1])
             assert False, t[2]
         except model.NotAuthorized:
             pass
@@ -120,8 +137,13 @@ def test_get_file_opens_the_file():
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
     contents = fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
     assert contents == "biz"
-    status = fm.status_store['fbigmac/foo/bar/baz']
-    assert status.users == set(['MacGyver'])
+    
+    s = fm.session
+    user = s.query(User).filter_by(username="MacGyver").one()
+    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz").one()
+    files = [f.file for f in user.files]
+    assert file_obj in files
+    
     open_files = fm.list_open("MacGyver")
     assert open_files == {'bigmac' : {"foo/bar/baz" : "rw"}}
     
@@ -133,9 +155,6 @@ def test_get_file_opens_the_file():
     fm.close("MacGyver", "bigmac", "foo/bar/baz")
     open_files = fm.list_open("MacGyver")
     assert open_files == {}
-    # should remove the status entirely
-    assert 'uMacGyver' not in fm.status_store
-    assert 'fbigmac/foo/bar/baz' not in fm.status_store
 
 def test_get_file_raises_exception_if_its_a_directory():
     fm = _get_fm()
@@ -163,32 +182,24 @@ def test_delete_raises_file_not_found():
     except model.FileNotFound:
         pass
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
     try:
         fm.delete("MacGyver", "bigmac", "STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
     except model.FileNotFound:
         pass
     flist = fm.list_files("MacGyver", "bigmac")
-    assert "foo/" in flist
+    assert flist[0].name == "bigmac/foo/"
     fm.delete("MacGyver", "bigmac", "foo/bar/")
     
 def test_authorize_other_user():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
-    config.c.saved_keys.clear()
     fm.authorize_user("MacGyver", "bigmac", "SomeoneElse")
-    fm.commit()
-    assert "bigmac" in config.c.saved_keys
     data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
     assert data == "biz"
     fm.close("SomeoneElse", "bigmac", "foo/bar/baz")
     
-    config.c.saved_keys.clear()
     fm.unauthorize_user("MacGyver", "bigmac", "SomeoneElse")
-    fm.commit()
-    assert "bigmac" in config.c.saved_keys
     try:
         data = fm.get_file("SomeoneElse", "bigmac", "foo/bar/baz")
         assert False, "Should have not been authorized any more"
@@ -225,11 +236,13 @@ def test_cannot_delete_file_open_by_someone_else():
         
 def test_can_delete_file_open_by_me():
     fm = _get_fm()
+    s = fm.session
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
     fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
+    file_obj_id = s.query(File).filter_by(name="bigmac/foo/bar/baz").one().id
     fm.delete("MacGyver", "bigmac", "foo/bar/baz")
-    fs = model.FileStatus.get(fm.status_store, "bigmac/foo/bar/baz")
-    assert not fs.users
+    fs = fm.session.query(FileStatus).filter_by(file_id=file_obj_id).first()
+    assert fs is None
     
 def test_successful_deletion():
     fm = _get_fm()
@@ -246,43 +259,41 @@ def test_successful_deletion():
 def test_top_level_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo", "data")
-    fm.commit()
-    saved_keys = config.c.saved_keys
-    saved_keys.clear()
     fm.delete("MacGyver", "bigmac", "foo")
-    fm.commit()
-    assert "bigmac/" in saved_keys
     flist = fm.list_files("MacGyver", "bigmac")
-    assert 'foo' not in flist
+    assert flist == []
     
 def test_directory_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "data")
-    fm.commit()
     fm.delete("MacGyver", "bigmac", "foo/")
-    fm.commit()
     flist = fm.list_files("MacGyver", "bigmac")
-    assert 'foo/' not in flist
-    assert 'bigmac/foo/bar' not in fm.file_store
+    assert flist == []
+    file = fm.session.query(File).filter_by(name="bigmac/foo/bar").first()
+    assert file is None
     
 def test_project_deletion():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
-    fm.commit()
     fm.delete("MacGyver", "bigmac")
-    fm.commit()
-    config.c.user_manager.commit()
     flist = fm.list_files("MacGyver")
     assert "bigmac" not in flist
-    user_obj = config.c.saved_keys['MacGyver']
+    user_obj = fm.session.query(User).filter_by(username="MacGyver").one()
     assert 'bigmac' not in user_obj.projects
 
 def test_basic_edit_functions():
     fm = _get_fm()
+    s = fm.session
     fm.save_edit("MacGyver", "bigmac", "foo/bar/baz", "['edit', 'thinger']")
-    assert len(fm.edit_store['bigmac/foo/bar/baz']) == 1
-    assert 'bigmac/foo/bar/baz' not in fm.file_store, \
-        "Files are not created until a save"
+    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz").one()
+    assert len(file_obj.edits) == 1
+    
+    try:
+        content = fm.get_file("MacGyver", "bigmac", "foo/bar/baz")
+        assert False, "Files are not retrievable until the edits are saved"
+    except model.FileNotFound:
+        pass
+        
     files = fm.list_open("MacGyver")
     assert files == {'bigmac' : {'foo/bar/baz' : 'rw'}}
     
@@ -343,27 +354,30 @@ def test_template_installation():
     fm.close("MacGyver", "bigmac", "readme.txt")
     assert "Welcome to Bespin" in data
     result = fm.list_files("MacGyver", "bigmac")
-    assert 'readme.txt' in result
+    result_names = [file.name for file in result]
+    assert 'bigmac/readme.txt' in result_names
     
 def test_list_top_level():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "readme.txt", "Hi there!")
     result = fm.list_files("MacGyver", "bigmac")
-    assert result == ["readme.txt"]
+    result_names = [file.name for file in result]
+    assert result_names == ["bigmac/readme.txt"]
     result = fm.list_files("MacGyver")
-    assert result == ["MacGyver_New_Project/", "bigmac/"]
+    result_names = [proj.name for proj in result]
+    user_obj = fm.db.user_manager.get_user("MacGyver")
+    assert result_names == [user_obj.private_project,
+                            "MacGyver_New_Project", "bigmac"]
     
     
 def test_secondary_objects_are_saved_when_creating_new_file():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "Data")
-    config.c.user_manager.commit()
-    config.c.file_manager.commit()
-    sk = config.c.saved_keys
-    user_obj = sk['MacGyver']
-    assert "bigmac" in user_obj.projects
-    bigmac_obj = sk['bigmac/']
-    assert "foo/" in bigmac_obj.files
+    user_obj = fm.db.user_manager.get_user("MacGyver")
+    project_names = [proj.name for proj in user_obj.projects]
+    assert "bigmac" in project_names
+    bigmac_obj = fm.session.query(Directory).filter_by(name="bigmac/").one()
+    assert bigmac_obj.subdirs[0].name == "bigmac/foo/"
     
 def test_common_base_selection():
     tests = [
@@ -390,17 +404,18 @@ def test_import():
         getattr(fm, func)("MacGyver", "bigmac", 
             os.path.basename(f), handle)
         handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
-        sk = config.c.saved_keys
-        user_obj = sk['MacGyver']
-        assert 'bigmac' in user_obj.projects
-        project = sk['bigmac/']
-        ut = sk['bigmac/']
-        assert 'config.js' in ut.files
-        assert 'commands/' in ut.files
-        commands = sk['bigmac/commands/']
-        assert 'yourcommands.js' in commands.files
+        user_obj = fm.db.user_manager.get_user("MacGyver")
+        proj_names = [proj.name for proj in user_obj.projects]
+        assert 'bigmac' in proj_names
+        s = fm.session
+        dir = s.query(Directory).filter_by(name="bigmac/").one()
+        filenames = [file.name for file in dir.files]
+        assert "bigmac/config.js" in filenames
+        dirnames = [d.name for d in dir.subdirs]
+        assert 'bigmac/commands/' in dirnames
+        dir = s.query(Directory).filter_by(name="bigmac/commands/").one()
+        filenames = [file.name for file in dir.files]
+        assert 'bigmac/commands/yourcommands.js' in filenames
     
     for test in tests:
         yield run_one, test[0], test[1]
@@ -417,25 +432,25 @@ def test_reimport_wipes_out_the_project():
         fm = _get_fm()
         getattr(fm, func)("MacGyver", "bigmac", 
             os.path.basename(f), handle)
-        proj = fm.file_store['bigmac/']
-        proj.members.add("SomeoneElse")
-        fm.file_store['bigmac/'] = proj
         handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
+        proj, user_obj = fm.get_project("MacGyver", "bigmac")
+        someone_else = fm.db.user_manager.get_user("SomeoneElse")
+        proj.members.append(someone_else)
         flist = fm.list_files("MacGyver", "bigmac")
-        assert flist == ["commands/", "config.js", "scratchpad/"]
+        flist = [item.name for item in flist]
+        assert flist == ["bigmac/commands/", "bigmac/config.js", "bigmac/scratchpad/"]
+        
+        fm.session.clear()
         
         handle = open(otherfilename)
         fm.import_tarball("MacGyver", "bigmac", 
             os.path.basename(f), handle)
-        handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
         flist = fm.list_files("MacGyver", "bigmac")
-        assert flist == ["README"]
-        proj = fm.file_store['bigmac/']
-        assert 'SomeoneElse' in proj.members
+        flist = [item.name for item in flist]
+        assert flist == ["bigmac/README"]
+        proj, user_obj = fm.get_project("MacGyver", "bigmac")
+        usernames = [user.username for user in proj.members]
+        assert 'SomeoneElse' in usernames
         
     for test in tests:
         yield run_one, test[0], test[1]
@@ -445,7 +460,6 @@ def test_export_tarfile():
     handle = open(tarfilename)
     fm.import_tarball("MacGyver", "bigmac",
         os.path.basename(tarfilename), handle)
-    fm.commit()
     handle.close()
     tempfilename = fm.export_tarball("MacGyver", "bigmac")
     tfile = tarfile.open(tempfilename.name)
@@ -460,7 +474,6 @@ def test_export_zipfile():
     handle = open(tarfilename)
     fm.import_tarball("MacGyver", "bigmac",
         os.path.basename(tarfilename), handle)
-    fm.commit()
     handle.close()
     tempfilename = fm.export_zipfile("MacGyver", "bigmac")
     zfile = zipfile.ZipFile(tempfilename.name)
@@ -477,8 +490,11 @@ def test_export_zipfile():
     
 def test_good_file_operations_from_web():
     fm = _get_fm()
+    s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
-    assert 'bigmac/reqs' in config.c.saved_keys
+    fileobj = s.query(File).filter_by(name="bigmac/reqs").one()
+    contents = str(fileobj.data)
+    assert contents == "Chewing gum wrapper"
     resp = app.get("/file/at/bigmac/reqs")
     assert resp.body == "Chewing gum wrapper"
     resp = app.get("/file/listopen/")
@@ -525,7 +541,7 @@ def test_error_conditions_from_web():
     app.put("/file/at/bigmac/bar", "A file to replace bar", status=409)
     app.get("/file/at/bigmac/bar/baz")
     app.get("/file/at/bigmac", status=400)
-    app.get("/file/at/bigmac/", status=400)
+    app.get("/file/at/bigmac/", status=404)
     app.get("/file/at/", status=400)
 
 def test_edit_interface():
@@ -559,6 +575,7 @@ def test_edit_interface():
     assert data == []
     
 def test_private_project_does_not_appear_in_list():
+    fm = _get_fm()
     resp = app.get("/register/userinfo/")
     data = simplejson.loads(resp.body)
     project_name = data['project']
@@ -566,7 +583,7 @@ def test_private_project_does_not_appear_in_list():
     app.post("/file/close/%s/foo" % project_name)
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == ["MacGyver_New_Project/", "bigmac/"]
+    assert data == ["MacGyver_New_Project/"]
 
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
@@ -599,7 +616,6 @@ def test_export_unknown_file_type():
 def test_export_tarball_from_the_web():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
-    fm.commit()
     resp = app.get("/project/export/bigmac.tgz")
     assert resp.content_type == "application/x-tar-gz"
     tfile = tarfile.open("bigmac.tgz", "r:gz", StringIO(resp.body))
@@ -611,7 +627,6 @@ def test_export_tarball_from_the_web():
 def test_export_zipfile_from_the_web():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
-    fm.commit()
     resp = app.get("/project/export/bigmac.zip")
     assert resp.content_type == "application/zip"
     zfile = zipfile.ZipFile(StringIO(resp.body))
