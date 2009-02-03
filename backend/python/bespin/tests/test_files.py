@@ -541,7 +541,7 @@ def test_error_conditions_from_web():
     app.put("/file/at/bigmac/bar", "A file to replace bar", status=409)
     app.get("/file/at/bigmac/bar/baz")
     app.get("/file/at/bigmac", status=400)
-    app.get("/file/at/bigmac/", status=400)
+    app.get("/file/at/bigmac/", status=404)
     app.get("/file/at/", status=400)
 
 def test_edit_interface():
