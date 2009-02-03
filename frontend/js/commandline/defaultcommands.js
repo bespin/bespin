@@ -151,7 +151,7 @@ Bespin.Commands.Default = [
               self.files.projects(function(projectNames) {
                   var projects = "<u>Your projects</u><br/><br/>";
                   for (var x = 0; x < projectNames.length; x++) {
-                    projects += projectNames[x] + "<br/>";
+                    projects += projectNames[x].name + "<br/>";
                   }
                   self.showInfo(projects);
               });
