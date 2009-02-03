@@ -540,33 +540,40 @@ class FileManager(object):
         open file handle or use the .name property to get
         at the file."""
         project, user_obj = self.get_project(user, project_name)
-        fs = self.file_store
         temporaryfile = tempfile.NamedTemporaryFile()
+        s = self.session
+        
         mtime = time.time()
         tfile = tarfile.open(temporaryfile.name, "w:gz")
-        def add_to_tarfile(item, path=project_name + "/"):
-            next_path = "%s%s" % (path, item)
-            obj = fs[next_path]
-            if isinstance(obj, Directory):
-                tarinfo = tarfile.TarInfo(next_path[:-1])
-                tarinfo.type = tarfile.DIRTYPE
-                # we don't know the original permissions.
-                # we'll default to read/execute for all, write only by user
-                tarinfo.mode = 493
-                tarinfo.mtime = mtime
-                tfile.addfile(tarinfo)
-                for f in obj.files:
-                    add_to_tarfile(f, next_path)
-            else:
-                tarinfo = tarfile.TarInfo(next_path)
+        
+        dirs = s.query(Directory).filter(Directory.name.like(project_name + "/%")) \
+                        .order_by(Directory.name).all()
+                        
+        for dir in dirs:
+            tarinfo = tarfile.TarInfo(str(dir.name))
+            tarinfo.type = tarfile.DIRTYPE
+            # we don't know the original permissions.
+            # we'll default to read/execute for all, write only by user
+            tarinfo.mode = 493
+            tarinfo.mtime = mtime
+            tfile.addfile(tarinfo)
+            for file in dir.files:
+                tarinfo = tarfile.TarInfo(str(file.name))
+                print "fname: ", file.name
                 tarinfo.mtime = mtime
                 # we don't know the original permissions.
                 # we'll default to read for all, write only by user
                 tarinfo.mode = 420
-                tarinfo.size = len(obj)
-                fileobj = StringIO(obj)
+                data = str(file.data)
+                tarinfo.size = len(data)
+                fileobj = StringIO(data)
                 tfile.addfile(tarinfo, fileobj)
-        add_to_tarfile("")
+                
+                # ditch the file, because these objects can get big
+                s.expunge(file)
+                
+            s.expunge(dir)
+        
         tfile.close()
         temporaryfile.seek(0)
         return temporaryfile
@@ -577,25 +584,24 @@ class FileManager(object):
         open file handle or use the .name property to get
         at the file."""
         project, user_obj = self.get_project(user, project_name)
-        fs = self.file_store
         temporaryfile = tempfile.NamedTemporaryFile()
+        s = self.session
+        
         zfile = zipfile.ZipFile(temporaryfile, "w", zipfile.ZIP_DEFLATED)
         ztime = time.gmtime()[:6]
-        def add_to_zipfile(item, path=project_name + "/"):
-            next_path = "%s%s" % (path, item)
-            obj = fs[next_path]
-            if isinstance(obj, Directory):
-                for f in obj.files:
-                    add_to_zipfile(f, next_path)
-                return
-            zipinfo = zipfile.ZipInfo(next_path)
+        
+        files = s.query(File).filter(File.name.like(project_name + "/%")) \
+                    .order_by(File.name).all()
+        for file in files:
+            zipinfo = zipfile.ZipInfo(str(file.name))
             # we don't know the original permissions.
             # we'll default to read for all, write only by user
             zipinfo.external_attr = 420 << 16L
             zipinfo.date_time = ztime
             zipinfo.compress_type = zipfile.ZIP_DEFLATED
-            zfile.writestr(zipinfo, obj)
-        add_to_zipfile("")
+            zfile.writestr(zipinfo, str(file.data))
+            s.expunge(file)
+            
         zfile.close()
         temporaryfile.seek(0)
         return temporaryfile
