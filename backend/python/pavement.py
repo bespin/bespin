@@ -69,7 +69,21 @@ def start():
 @task
 def clean_data():
     """Deletes the development data"""
-    data_path = path("devdata")
-    data_path.rmtree()
-    data_path.mkdir()
+    data_path = path("devdata.db")
+    data_path.unlink()
     
+@task
+def create_db():
+    """Creates the development database"""
+    from bespin import config, model, db_versions
+    from migrate.versioning.shell import main
+    
+    if path("devdata.db").exists():
+        raise BuildFailure("Development database already exists")
+    config.set_profile('dev')
+    config.activate_profile()
+    dry("Create database tables", model.Base.metadata.create_all, bind=config.c.dbengine)
+    
+    repository = str(path(db_versions.__file__).dirname())
+    dburl = config.c.dburl
+    dry("Turn on migrate versioning", main, ["version_control", dburl, repository])
