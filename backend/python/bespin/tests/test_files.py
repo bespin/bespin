@@ -515,7 +515,7 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data[1:] == ['MacGyver_New_Project/', 'bigmac/']
+    assert data == ['MacGyver_New_Project/', 'bigmac/']
     
     resp = app.get("/file/list/MacGyver_New_Project/")
     data = simplejson.loads(resp.body)
@@ -575,6 +575,7 @@ def test_edit_interface():
     assert data == []
     
 def test_private_project_does_not_appear_in_list():
+    fm = _get_fm()
     resp = app.get("/register/userinfo/")
     data = simplejson.loads(resp.body)
     project_name = data['project']
@@ -582,7 +583,7 @@ def test_private_project_does_not_appear_in_list():
     app.post("/file/close/%s/foo" % project_name)
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == ["MacGyver_New_Project/", "bigmac/"]
+    assert data == ["MacGyver_New_Project/"]
 
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
