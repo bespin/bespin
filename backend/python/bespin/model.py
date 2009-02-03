@@ -34,11 +34,13 @@ import hashlib
 import tarfile
 import tempfile
 import zipfile
+from datetime import datetime
 
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, PickleType, String, Integer, \
-                    Boolean, Binary, Table, ForeignKey
+from sqlalchemy import (Column, PickleType, String, Integer,
+                    Boolean, Binary, Table, ForeignKey,
+                    DateTime)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -137,8 +139,10 @@ class File(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, onupdate=datetime.now)
     data = deferred(Column(Binary))
-    edits = Column(PickleType)
+    edits = deferred(Column(PickleType))
     dir_id = Column(Integer, ForeignKey('directories.id'))
     dir = relation('Directory', backref="files")
     
