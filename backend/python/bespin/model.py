@@ -144,6 +144,10 @@ class File(Base):
     
     users = relation(FileStatus,
                      backref="file")
+    
+    @property
+    def short_name(self):
+        return self.name.rsplit("/", 1)[1]
                      
     def __repr__(self):
         return "File: %s" % (self.name)
@@ -161,6 +165,10 @@ class Directory(Base):
     subdirs = relation('Directory', backref=backref("parent", 
                                         remote_side=[id]))
     
+    @property
+    def short_name(self):
+        return self.name.rsplit("/", 1)[1] + "/"
+        
     def __str__(self):
         return "Dir: %s" % (self.name)
     
@@ -195,6 +203,10 @@ class Project(Base):
             self.members.remove(auth_user)
         except KeyError:
             pass
+    
+    @property
+    def short_name(self):
+        return self.name + "/"
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
