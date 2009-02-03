@@ -178,6 +178,13 @@ var Scene = Class.define({
     members: {
         bus: gtk_global_event_bus,
 
+        css: {},
+
+        sheetCount: 0,
+        currentSheet: 0,
+        cssLoaded: false,
+        renderRequested: false,
+
         init: function(canvas) {
             this.canvas = canvas;
 
@@ -237,10 +244,16 @@ var Scene = Class.define({
                 delete self.mouseDownComponent;
             });
 
-            this.layout();
+            this.parseCSS();
         },
 
         render: function() {
+            if (!this.cssLoaded) {
+                console.log("short-circuited render");
+                this.renderRequested = true;
+                return;
+            }
+
             this.layout();
             this.paint();
         },
@@ -257,8 +270,34 @@ var Scene = Class.define({
                 var ctx = this.canvas.getContext("2d");
                 ctx.save();
                 fixCanvas(ctx);
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 this.root.paint(ctx);
                 ctx.restore();
+            }
+        },
+
+        parseCSS: function() {
+            var self = this;
+            var links = $$("link[rel='thstylesheet']");
+            this.sheetCount = links.length;
+            links.each(function(link) {
+                new Ajax.Request(link.href, {
+                    onSuccess: function(xhr) {
+                        self.processCSS(xhr.responseText);
+                    }
+                });
+            });
+        },
+
+        processCSS: function(stylesheet) {
+            this.css = new CSSParser().parse(stylesheet, this.css);
+
+            if (++this.currentSheet == this.sheetCount) {
+                this.cssLoaded = true;
+                if (this.renderRequested) {
+                    this.render();
+                    this.renderRequested = false;
+                }
             }
         }
     }

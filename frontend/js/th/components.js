@@ -456,13 +456,31 @@ var Label = Class.define({
         },
 
         paint: function(ctx) {
+            var d = this.d();
+
             if (this.style.backgroundColor) this._super(ctx);
 
             this.styleContext(ctx);
 
             var textMetrics = ctx.measureText(this.attributes.text);
 
-            ctx.fillText(this.attributes.text, this.getInsets().left, this.getInsets().top + textMetrics.ascent);
+            var textToRender = this.attributes.text;
+            var lastLength = textToRender.length - 2;
+            while (textMetrics.width > (d.b.w - d.i.w)) {
+                if (lastLength == 0) {
+                    textToRender = "...";
+                    break;
+                }
+
+                var left = Math.floor(lastLength / 2);
+                var right = left + (lastLength % 2);
+                textToRender = this.attributes.text.substring(0, left) + "..." + this.attributes.text.substring(this.attributes.text.length - right);
+                textMetrics = ctx.measureText(textToRender);
+
+                lastLength -= 1;
+            }
+
+            ctx.fillText(textToRender, this.getInsets().left, this.getInsets().top + textMetrics.ascent);
         }
     }
 });
