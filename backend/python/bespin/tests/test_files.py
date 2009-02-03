@@ -460,7 +460,6 @@ def test_export_tarfile():
     handle = open(tarfilename)
     fm.import_tarball("MacGyver", "bigmac",
         os.path.basename(tarfilename), handle)
-    fm.commit()
     handle.close()
     tempfilename = fm.export_tarball("MacGyver", "bigmac")
     tfile = tarfile.open(tempfilename.name)
@@ -475,7 +474,6 @@ def test_export_zipfile():
     handle = open(tarfilename)
     fm.import_tarball("MacGyver", "bigmac",
         os.path.basename(tarfilename), handle)
-    fm.commit()
     handle.close()
     tempfilename = fm.export_zipfile("MacGyver", "bigmac")
     zfile = zipfile.ZipFile(tempfilename.name)
@@ -614,7 +612,6 @@ def test_export_unknown_file_type():
 def test_export_tarball_from_the_web():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
-    fm.commit()
     resp = app.get("/project/export/bigmac.tgz")
     assert resp.content_type == "application/x-tar-gz"
     tfile = tarfile.open("bigmac.tgz", "r:gz", StringIO(resp.body))
@@ -626,7 +623,6 @@ def test_export_tarball_from_the_web():
 def test_export_zipfile_from_the_web():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "INFO!")
-    fm.commit()
     resp = app.get("/project/export/bigmac.zip")
     assert resp.content_type == "application/zip"
     zfile = zipfile.ZipFile(StringIO(resp.body))
