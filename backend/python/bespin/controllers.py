@@ -193,7 +193,8 @@ def listfiles(request, response):
             project = path
             path = ''
         
-    result = fm.list_files(request.username, project, path)
+    files = fm.list_files(request.username, project, path)
+    result = [item.short_name for item in files]
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
