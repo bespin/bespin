@@ -100,7 +100,8 @@ def save_settings(request, response):
     """Saves one or more settings for the currently logged in user."""
     user = request.user
     user.settings.update(request.POST)
-    request.save_user()
+    # make it so that the user obj appears dirty to SQLAlchemy
+    user.settings = user.settings
     return response()
 
 @expose(r'^/settings/(?P<setting_name>.*)$', 'GET')
@@ -128,7 +129,8 @@ def delete_setting(request, response):
     setting_name = kwargs['setting_name']
     try:
         del user.settings[setting_name]
-        request.save_user()
+        # get the user to appear dirty
+        user.settings = user.settings
     except KeyError:
         response.status = "404 Not Found"
     return response()
