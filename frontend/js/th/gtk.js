@@ -235,9 +235,14 @@ var Scene = Class.define({
         parseCSS: function() {
             var self = this;
             var links = $$("link[rel='thstylesheet']");
+            if (links.length == 0) {
+                this.cssLoaded = true;
+                return;
+            }
             this.sheetCount = links.length;
             links.each(function(link) {
                 new Ajax.Request(link.href, {
+                    method: 'GET',
                     onSuccess: function(xhr) {
                         self.processCSS(xhr.responseText);
                     }
