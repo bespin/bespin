@@ -354,27 +354,30 @@ def test_template_installation():
     fm.close("MacGyver", "bigmac", "readme.txt")
     assert "Welcome to Bespin" in data
     result = fm.list_files("MacGyver", "bigmac")
-    assert 'readme.txt' in result
+    result_names = [file.name for file in result]
+    assert 'bigmac/readme.txt' in result_names
     
 def test_list_top_level():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "readme.txt", "Hi there!")
     result = fm.list_files("MacGyver", "bigmac")
-    assert result == ["readme.txt"]
+    result_names = [file.name for file in result]
+    assert result_names == ["bigmac/readme.txt"]
     result = fm.list_files("MacGyver")
-    assert result == ["MacGyver_New_Project/", "bigmac/"]
+    result_names = [proj.name for proj in result]
+    user_obj = fm.db.user_manager.get_user("MacGyver")
+    assert result_names == [user_obj.private_project,
+                            "MacGyver_New_Project", "bigmac"]
     
     
 def test_secondary_objects_are_saved_when_creating_new_file():
     fm = _get_fm()
     fm.save_file("MacGyver", "bigmac", "foo/bar", "Data")
-    config.c.user_manager.commit()
-    config.c.file_manager.commit()
-    sk = config.c.saved_keys
-    user_obj = sk['MacGyver']
-    assert "bigmac" in user_obj.projects
-    bigmac_obj = sk['bigmac/']
-    assert "foo/" in bigmac_obj.files
+    user_obj = fm.db.user_manager.get_user("MacGyver")
+    project_names = [proj.name for proj in user_obj.projects]
+    assert "bigmac" in project_names
+    bigmac_obj = fm.session.query(Directory).filter_by(name="bigmac/").one()
+    assert bigmac_obj.subdirs[0].name == "bigmac/foo/"
     
 def test_common_base_selection():
     tests = [
@@ -401,17 +404,18 @@ def test_import():
         getattr(fm, func)("MacGyver", "bigmac", 
             os.path.basename(f), handle)
         handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
-        sk = config.c.saved_keys
-        user_obj = sk['MacGyver']
-        assert 'bigmac' in user_obj.projects
-        project = sk['bigmac/']
-        ut = sk['bigmac/']
-        assert 'config.js' in ut.files
-        assert 'commands/' in ut.files
-        commands = sk['bigmac/commands/']
-        assert 'yourcommands.js' in commands.files
+        user_obj = fm.db.user_manager.get_user("MacGyver")
+        proj_names = [proj.name for proj in user_obj.projects]
+        assert 'bigmac' in proj_names
+        s = fm.session
+        dir = s.query(Directory).filter_by(name="bigmac/").one()
+        filenames = [file.name for file in dir.files]
+        assert "bigmac/config.js" in filenames
+        dirnames = [d.name for d in dir.subdirs]
+        assert 'bigmac/commands/' in dirnames
+        dir = s.query(Directory).filter_by(name="bigmac/commands/").one()
+        filenames = [file.name for file in dir.files]
+        assert 'bigmac/commands/yourcommands.js' in filenames
     
     for test in tests:
         yield run_one, test[0], test[1]
@@ -428,25 +432,25 @@ def test_reimport_wipes_out_the_project():
         fm = _get_fm()
         getattr(fm, func)("MacGyver", "bigmac", 
             os.path.basename(f), handle)
-        proj = fm.file_store['bigmac/']
-        proj.members.add("SomeoneElse")
-        fm.file_store['bigmac/'] = proj
         handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
+        proj, user_obj = fm.get_project("MacGyver", "bigmac")
+        someone_else = fm.db.user_manager.get_user("SomeoneElse")
+        proj.members.append(someone_else)
         flist = fm.list_files("MacGyver", "bigmac")
-        assert flist == ["commands/", "config.js", "scratchpad/"]
+        flist = [item.name for item in flist]
+        assert flist == ["bigmac/commands/", "bigmac/config.js", "bigmac/scratchpad/"]
+        
+        fm.session.clear()
         
         handle = open(otherfilename)
         fm.import_tarball("MacGyver", "bigmac", 
             os.path.basename(f), handle)
-        handle.close()
-        fm.commit()
-        config.c.user_manager.commit()
         flist = fm.list_files("MacGyver", "bigmac")
-        assert flist == ["README"]
-        proj = fm.file_store['bigmac/']
-        assert 'SomeoneElse' in proj.members
+        flist = [item.name for item in flist]
+        assert flist == ["bigmac/README"]
+        proj, user_obj = fm.get_project("MacGyver", "bigmac")
+        usernames = [user.username for user in proj.members]
+        assert 'SomeoneElse' in usernames
         
     for test in tests:
         yield run_one, test[0], test[1]
