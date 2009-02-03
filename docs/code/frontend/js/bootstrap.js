@@ -50,13 +50,13 @@ var _showCollabHotCounter = 0;
 //
 // Loads and configures the objects that the editor needs
 Element.observe(window, 'load', function() {    
-    _editor      = new Editor($('editor'));
-    _editSession = new EditSession(_editor);
-    _server      = new Server();
-    _settings    = new Settings();
-    _files       = new FileSystem();
+    _editor      = new Bespin.Editor.API($('editor'));
+    _editSession = new Bespin.Session.EditSession(_editor);
+    _server      = new Bespin.Server();
+    _settings    = new Bespin.Settings.Core();
+    _files       = new Bespin.FileSystem();
     _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Default);
-    _toolbar     = new EditorToolbar();
+    _toolbar     = new Bespin.Editor.Toolbar();
 
     _toolbar.setupDefault();
 
