@@ -25,13 +25,8 @@
 if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.Commands) Bespin.Commands = {};
 
-// = Bespin.Commands.Dashboard =
+// = Bespin.Commands.Editor =
 //
-// This array stores all of the dashboard commands.
+// This array stores all of the editor commands.
 
-Bespin.Commands.Dashboard = ['help', {
-    name: 'test',
-    execute: function(self) {
-        self.showInfo("test");
-    }
-}];
+Bespin.Commands.Editor = $H(Bespin.Commands.Store).keys();
