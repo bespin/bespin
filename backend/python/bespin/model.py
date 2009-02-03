@@ -354,7 +354,7 @@ class FileManager(object):
         return file
         
     def list_open(self, user):
-        """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": "rw" } }"""
+        """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": {"mode" : "rw"} } }"""
         user = self.db.user_manager.get_user(user)
         output = {}
         current_files = None
@@ -366,7 +366,7 @@ class FileManager(object):
                 current_files = {}
                 output[project] = current_files
             mode = "rw" if not fs.read_only else "r"
-            current_files[path] = mode
+            current_files[path] = dict(mode=mode)
             
         return output
         
