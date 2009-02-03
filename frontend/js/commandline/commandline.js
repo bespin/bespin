@@ -107,7 +107,8 @@ Bespin.CommandLine.Interface = Class.create({
     
     addCommands: function(commands) {
         commands.each(function(command) {
-            this.addCommand(command);
+            if (Object.isString(command)) command = Bespin.Commands.get(command);
+            this.addCommand(command);                
         }.bind(this));
     },
 
