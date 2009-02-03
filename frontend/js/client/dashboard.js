@@ -154,12 +154,13 @@ function prepareFilesForTree(files) {
 
     var fdata = [];
     for (var i = 0; i < files.length; i++) {
-        if (files[i].endsWith("/")) {
-            var name = files[i].substring(0, files[i].length - 1);
+		var name = files[i].name;
+        if (name.endsWith("/")) {
+            var name = name.substring(0, name.length - 1);
             var contents = fetchFiles;
             fdata.push({ name: name, contents: contents });
         } else {
-            fdata.push({ name: files[i] });
+            fdata.push({ name: name });
         }
     }
 
@@ -205,7 +206,7 @@ function displaySessions(sessions) {
 
 function displayProjects(projectItems) {
     for (var i = 0; i < projectItems.length; i++) {
-        projectItems[i] = projectItems[i].substring(0, projectItems[i].length - 1);
+        projectItems[i] = projectItems[i].name.substring(0, projectItems[i].name.length - 1);
     }
     projects.list.items = projectItems;
     scene.render();
