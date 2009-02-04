@@ -1,7 +1,8 @@
-import os
-if os.path.exists("paver-minilib.zip"):
-    import sys
-    sys.path.insert(0, "paver-minilib.zip")
+# Don't run this. This is just for pip.
 
-import paver.command
-paver.command.main()
+import pavement
+from setuptools import setup
+
+kw = pavement.options.setup
+
+setup(**kw)
