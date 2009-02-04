@@ -8,3 +8,4 @@ backend/python/.Python
 backend/python/BespinServer.egg-info
 .DS_Store
 *.iws
+*.db
