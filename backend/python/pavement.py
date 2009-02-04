@@ -99,12 +99,6 @@ def production():
     production = path("production")
     production_requirements = production / "requirements.txt"
     
-    libs_dest = production / "libs"
-    libs_dest.rmtree()
-    libs_dest.mkdir()
-    
-    sdist_file = path("dist/BespinServer-%s.tar.gz" % options.version)
-    sdist_file.move(libs_dest)
     sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
@@ -126,12 +120,11 @@ def production():
                 continue
         i+=1
     
-    lines.append("libs/BespinServer-%s.tar.gz" % options.version)
+    lines.append("../dist/BespinServer-%s.tar.gz" % options.version)
     production_requirements.write_lines(lines)
     
     production.chdir()
     sh("../bin/paver bootstrap")
-    sh("../bin/pip bundle -r requirements.txt BespinServer-%s.pybundle" %
-        options.version)
+    sh("../bin/pip bundle -r requirements.txt BespinServer.pybundle")
     current_directory.chdir()
     
