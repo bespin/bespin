@@ -3,6 +3,10 @@ backend/python/lib
 backend/python/include
 backend/python/bin
 backend/python/devdata
+backend/python/dist
+backend/python/production/libs
+backend/python/production/requirements.txt
+backend/python/production/bootstrap.py
 *.pyc
 backend/python/.Python
 backend/python/BespinServer.egg-info
