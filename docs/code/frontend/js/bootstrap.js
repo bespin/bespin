@@ -42,6 +42,9 @@ var _files;
 var _settings;
 var _server;
 var _toolbar;
+var _projectLabel;
+var _fileLabel;
+var _scene;
 
 var _showCollab = _showFiles = _showTarget = false; // for layout
 var _showCollabHotCounter = 0;
@@ -55,7 +58,7 @@ Element.observe(window, 'load', function() {
     _server      = new Bespin.Server();
     _settings    = new Bespin.Settings.Core();
     _files       = new Bespin.FileSystem();
-    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Default);
+    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Editor);
     _toolbar     = new Bespin.Editor.Toolbar();
 
     _toolbar.setupDefault();
@@ -72,6 +75,35 @@ Element.observe(window, 'load', function() {
     });
 
     Element.observe(window, 'resize', doResize);
+
+    _scene = new Scene($("projectLabel"));
+
+    var panel = new Panel();
+    _scene.root.add(panel);
+
+    _projectLabel = new Label({ style: {
+        color: "white"
+    }});
+    var symbolThingie = new Label({ text: " ", style: {
+        color: "white"
+    }});
+    _fileLabel = new Label({ style: {
+        color: "white"
+    }});
+
+    panel.add([ _projectLabel, symbolThingie, _fileLabel ]);
+    panel.layout = function() {
+        var d = this.d();
+        var x = 0;
+        for (var i = 0; i < 2; i++) {
+            var width = this.children[i].getPreferredWidth(d.b.h);
+            this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
+            x += width;
+        }
+        this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - width, height: d.b.h };
+    }
+
+    _scene.render();
 });
 
 // ** {{{ isLoggedIn(userinfo) }}} **
