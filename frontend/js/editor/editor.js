@@ -1111,7 +1111,7 @@ Bespin.Editor.API = Class.create({
         this.canvas = $(container).childElements()[0];
 
         this.ui = new Bespin.Editor.UI(this);
-        this.theme = Bespin.Themes.default; // set the default which is in themes.js (Coffee)
+        this.theme = Bespin.Themes['default']; // set the default which is in themes.js (Coffee)
         this.cursorPosition = { row: 0, col: 0 }
         this.selection;
         this.editorKeyListener = new Bespin.Editor.DefaultEditorKeyListener(this);

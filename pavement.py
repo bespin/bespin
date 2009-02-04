@@ -28,6 +28,7 @@
 
 # Top level pavement for putting together the Bespin project.
 import sys
+import tarfile
 
 from paver.defaults import *
 
@@ -35,18 +36,14 @@ HEADER = """ ***** BEGIN LICENSE BLOCK *****
 Version: MPL 1.1
 
 The contents of this file are subject to the Mozilla Public License  
-Version
-1.1 (the "License"); you may not use this file except in compliance  
-with
-the License. You may obtain a copy of the License at
+Version 1.1 (the "License"); you may not use this file except in 
+compliance  with the License. You may obtain a copy of the License at
 http://www.mozilla.org/MPL/
 
 Software distributed under the License is distributed on an "AS IS"  
-basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
-License
-for the specific language governing rights and limitations under the
-License.
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. 
+See the License for the specific language governing rights and
+limitations under the License.
 
 The Original Code is Bespin.
 
@@ -55,17 +52,19 @@ Portions created by the Initial Developer are Copyright (C) 2009
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+  Bespin Team (bespin@mozilla.com)
 
 ***** END LICENSE BLOCK *****
 """
 
 options(
-    build_dir=path("build"),
+    build_top=path("build"),
+    build_dir=lambda: options.build_top / "BespinServer",
     compress_js=Bunch(
         compressor_version = "2.4.2",
         zip_name = lambda: "yuicompressor-%s.zip" % options.compressor_version,
         url = lambda: "http://www.julienlecomte.net/yuicompressor/%s" % \
-                zip_name,
+                options.zip_name,
         beautiful_soup_url = "http://www.crummy.com/software/BeautifulSoup/download/BeautifulSoup.tar.gz"
     ),
     license=Bunch(
@@ -135,6 +134,7 @@ def compress_js():
     for f in file_list:
         js_file = front_end_target / f
         output_file.write(js_file.bytes())
+        output_file.write("\n")
     output_file.close()
     
     info("Running YUI Compressor")
@@ -158,6 +158,33 @@ def compress_js():
     del editor_lines[start_marker:end_marker+1]
     editor_lines.insert(start_marker, '<script type="text/javascript" src="js/combined.js"></script>')
     editor_filename.write_bytes("".join(editor_lines))
+    
+@task
+def prod_server():
+    """Creates the production server code."""
+    current_directory = path.getcwd()
+    path("backend/python").chdir()
+    sh("bin/paver production")
+    current_directory.chdir()
+    
+@task
+@needs(['prod_server'])
+def dist():
+    """Generate a tarball that is ready for deployment to the server."""
+    options.build_dir.rmtree()
+    backend = path("backend/python/production")
+    backend.copytree(options.build_dir)
+    compress_js()
+    
+    current_directory = path.getcwd()
+    
+    options.build_top.chdir()
+    tf = tarfile.open("BespinServer.tar.gz", mode="w:gz")
+    tf.add("BespinServer")
+    tf.close()
+    current_directory.chdir()
+    
+    info("Output file is in build/BespinServer.tar.gz")
 
 def _apply_header_if_necessary(f, header, first_line, last_line):
     data = f.bytes()

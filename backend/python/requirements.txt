@@ -7,4 +7,4 @@ SQLAlchemy
 sqlalchemy-migrate
 Paste
 static
-jsonpickle
+virtualenv
