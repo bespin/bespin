@@ -155,10 +155,36 @@ document.observe("bespin:editor:urlchange", function(event) {
     document.location.hash = "project=" + project + "&path=" + path;
 });
 
+// ** {{{ Event: bespin:cmdline:executed }}} **
+// 
+// Set the last command in the status window
 document.observe("bespin:cmdline:executed", function(event) {
     var commandname = event.memo.command.name;
 
     $('message').innerHTML = "last cmd: " + commandname; // set the status message area
+});
+
+// ** {{{ Event: bespin:editor:config:run }}} **
+// 
+// Load the users config file
+document.observe("bespin:editor:config:run", function(event) {
+    // 1. load the file
+    //   project: _editSession.userproject,
+    //   filename: "config.js"
+    // 2. Take the contents and run each line as a command 
+    _files.loadFile(_editSession.userproject, "config.js", function(file) {
+        var contents = file.content.split(/\n/);
+
+        contents.each(function(line) {
+            if (line.startsWith('/') || line.startsWith('#')) return;
+            line = line.replace(/#.*$/, ''); // nuke inline comment (e.g. "version    # get the current version")
+            var command = line.split(' ');
+            var commandname = command.first();
+            if (_commandLine.hasCommand(commandname)) {
+                _commandLine.executeCommand(line);
+            }
+        });
+    });
 });
 
 
