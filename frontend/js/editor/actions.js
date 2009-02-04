@@ -175,7 +175,8 @@ Bespin.Editor.Actions = Class.create({
                 newcol--;
                 var c = row[newcol];
                 var charCode = c.charCodeAt(0);
-                if ( (charCode < 66) || (charCode > 122) ) { // if you get to an alpha you are done
+                if ( (charCode < 65) || (charCode > 122) ) { // if you get to an alpha you are done
+                    if (newcol != args.pos.col - 1) newcol++; // right next to a stop char, move back one
                     break;
                 }
             }
@@ -222,7 +223,7 @@ Bespin.Editor.Actions = Class.create({
                 var c = row[newcol];
                 var charCode = c.charCodeAt(0);
             
-                if ( (charCode < 66) || (charCode > 122) ) {
+                if ( (charCode < 65) || (charCode > 122) ) {
                     break;
                 }
             }
