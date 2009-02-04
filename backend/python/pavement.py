@@ -92,8 +92,10 @@ def create_db():
 @needs(['sdist'])
 def production():
     """Gets things ready for production."""
+    current_directory = path.getcwd()
     
-    non_production_packages = set(["py", "WebTest", "boto", "virtualenv"])
+    non_production_packages = set(["py", "WebTest", "boto", "virtualenv", 
+                                  "Paver", "BespinServer"])
     production = path("production")
     production_requirements = production / "requirements.txt"
     
@@ -106,7 +108,6 @@ def production():
     sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
-    lines.insert(0, "-f libs")
     
     requirement_pattern = re.compile(r'^(.*)==')
     
@@ -125,8 +126,12 @@ def production():
                 continue
         i+=1
     
+    lines.append("libs/BespinServer-%s.tar.gz" % options.version)
     production_requirements.write_lines(lines)
     
     production.chdir()
     sh("../bin/paver bootstrap")
+    sh("../bin/pip bundle -r requirements.txt BespinServer-%s.pybundle" %
+        options.version)
+    current_directory.chdir()
     
