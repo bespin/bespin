@@ -99,10 +99,25 @@ def test_basic_file_creation():
     assert file_obj.data == 'New content'
     fm.session.rollback()
     
+def test_retrieve_file_obj():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "reqs", "tenletters")
+    try:
+        fm.get_file_object("MacGyver", "bigmac", "foo/bar")
+        assert False, "expected file not found for missing file"
+    except model.FileNotFound:
+        pass
+        
+    file_obj = fm.get_file_object("MacGyver", "bigmac", "reqs")
+    assert file_obj.saved_size == 10
+        
+    
 def test_can_only_access_own_projects():
     tests = [
         ("get_file", ("Murdoc", "bigmac", "foo"), 
         "Murdoc should *not* be viewing Mac's stuff!"),
+        ("get_file_object", ("Murdoc", "bigmac", "foo"),
+        "Murdoc can't even see stats"),
         ("list_files", ("Murdoc", "bigmac", ""),
         "Murdoc should not be listing Mac's files!"),
         ("delete", ("Murdoc", "bigmac", "foo"),
@@ -683,3 +698,12 @@ def test_export_zipfile_from_the_web():
     members = zfile.infolist()
     assert len(members) == 1
     assert "bigmac/foo/bar" == members[0].filename
+    
+def test_get_file_stats_from_web():
+    fm = _get_fm()
+    s = fm.session
+    app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
+    resp = app.get("/file/stats/bigmac/reqs")
+    assert resp.content_type == "application/json"
+    data = simplejson.loads(resp.body)
+    assert data['size'] == 19
