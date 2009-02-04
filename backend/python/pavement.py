@@ -121,6 +121,7 @@ def production():
         i+=1
     
     lines.append("../dist/BespinServer-%s.tar.gz" % options.version)
+    lines.append("MySQL-python")
     production_requirements.write_lines(lines)
     
     production.chdir()
