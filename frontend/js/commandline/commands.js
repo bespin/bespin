@@ -124,8 +124,13 @@ Bespin.Commands.add({
             } else {
                 var key = setting.key;
                 if (setting.value == undefined) { // show it
-                    output = "<u>Your setting</u><br/><br/>";
-                    output += key + ": " + self.settings.get(key);
+                    var value = self.settings.get(key);
+                    if (value) {
+                        output = "<u>Your setting</u><br/><br/>";
+                        output += key + ": " + value;                        
+                    } else {
+                        output = "You do not have a setting for <em>" + key + "</em>";
+                    }
                 } else {
                     output = "<u>Saving setting</u><br/><br/>";
                     output += key + ": " + setting.value;
