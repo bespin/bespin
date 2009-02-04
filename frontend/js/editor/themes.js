@@ -178,4 +178,4 @@ Bespin.Themes.blackzebra = new Hash(Bespin.Themes.black).toObject();
 Bespin.Themes.blackzebra.zebraStripeColor = '#111111';
 
 // ** Setup the default **
-Bespin.Themes.default = Bespin.Themes.coffee;
+Bespin.Themes['default'] = Bespin.Themes.coffee;
