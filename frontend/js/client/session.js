@@ -47,6 +47,10 @@ Bespin.Session.EditSession = Class.create({
         this.project = 'SomeAjaxApp'; // TODO: default
         this.collaborate = false;
     },
+    
+    projectForDisplay: function() {
+        return (this.project == this.userproject) ? "* Your Special Project *" : this.project;
+    },
 
     startSession: function(project, path, username) {
         this.project = project;

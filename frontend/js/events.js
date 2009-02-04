@@ -56,12 +56,13 @@ document.observe("bespin:editor:newfile", function(event) {
 // * If the file fails to load, send an openfail event
 document.observe("bespin:editor:openfile", function(event) {
     var filename = event.memo.filename;
+    var project  = event.memo.project || _editSession.project;
 
     if (_editSession.path == filename) return; // short circuit
 
     document.fire("bespin:editor:openfile:openbefore", { filename: filename });
 
-    _files.loadFile(_editSession.project, filename, function(file) {
+    _files.loadFile(project, filename, function(file) {
         if (!file) {
             document.fire("bespin:editor:openfile:openfail", { filename: filename });
         } else {
@@ -122,8 +123,8 @@ document.observe("bespin:editor:openfile:opensuccess", function(event) {
         filename = filename.split('').reverse().join('').truncate(40).split('').reverse().join(''); // heh sorry!
     }
 
-//    $('status').innerHTML = '<span id="project" title="Current project">' + _editSession.project + '</span> <span class="seperator" style="">&rsaquo;</span> <span id="filename" title="Current file">' + filename + '</span>';
-    _projectLabel.attributes.text = _editSession.project;
+//    $('status').innerHTML = '<span id="project" title="Current project">' + _editSession.projectForDisplay() + '</span> <span class="seperator" style="">&rsaquo;</span> <span id="filename" title="Current file">' + filename + '</span>';
+    _projectLabel.attributes.text = _editSession.projectForDisplay();
     _fileLabel.attributes.text = filename;
     _scene.render();
 
