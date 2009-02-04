@@ -161,7 +161,7 @@ Bespin.Commands.add({
     preview: 'get info on the current project and file',
     execute: function(self) {
       var file = _editSession.path || 'a new scratch file';
-      self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.project);
+      self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
     }
 });
 
@@ -230,6 +230,20 @@ Bespin.Commands.add({
     execute: function(self, filename) {
         document.fire("bespin:editor:openfile", {
             filename: filename
+        });
+    }
+});
+
+// ** {{{Command: load (open)}}} **
+Bespin.Commands.add({
+    name: 'editconfig',
+    aliases: ['config'],
+    preview: 'load up the config file',
+    completeText: 'load up the config file',
+    execute: function(self) {
+        document.fire("bespin:editor:openfile", {
+            project: _editSession.userproject,
+            filename: "config.js"
         });
     }
 });
