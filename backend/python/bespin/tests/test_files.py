@@ -521,8 +521,12 @@ def test_good_file_operations_from_web():
     s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
     fileobj = s.query(File).filter_by(name="bigmac/reqs").one()
+    fileobj.created = datetime(2009, 2, 3, 10, 0, 0)
+    fileobj.modified = datetime(2009, 2, 4, 11, 30, 30)
+    s.commit()
     contents = str(fileobj.data)
     assert contents == "Chewing gum wrapper"
+    
     resp = app.get("/file/at/bigmac/reqs")
     assert resp.body == "Chewing gum wrapper"
     resp = app.get("/file/listopen/")
@@ -535,6 +539,11 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/at/bigmac/reqs?mode=r")
     assert resp.body == "Chewing gum wrapper"
+    
+    resp = app.get("/file/list/bigmac/")
+    data = simplejson.loads(resp.body)
+    assert data[0]['openedBy'] == ['MacGyver']
+    
     resp = app.get("/file/listopen/")
     data = simplejson.loads(resp.body)
     bigmac_data = data['bigmac']
@@ -557,7 +566,12 @@ def test_good_file_operations_from_web():
     resp = app.get("/file/list/bigmac/")
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
-    assert data == [{'name' : 'reqs'}]
+    assert len(data) == 1
+    data = data[0]
+    assert data['name'] == 'reqs'
+    assert data['size'] == 19
+    assert data['created'] == "20090203T100000"
+    assert data['modified'] == '20090204T113030'
     
     app.delete("/file/at/bigmac/reqs")
     resp = app.get("/file/list/bigmac/")

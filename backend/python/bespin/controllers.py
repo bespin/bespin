@@ -36,6 +36,7 @@ import tempfile
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
+from bespin import model
 
 @expose(r'^/register/new/(?P<username>.*)$', 'POST', auth=False)
 def new_user(request, response):
@@ -201,9 +202,19 @@ def listfiles(request, response):
     for item in files:
         if item.name == pp:
             continue
-        result.append({'name' : item.short_name})
+        f = {'name' : item.short_name}
+        if isinstance(item, model.File):
+            f['size'] = item.saved_size
+            f['created'] = item.created.strftime("%Y%m%dT%H%M%S")
+            f['modified'] = item.modified.strftime("%Y%m%dT%H%M%S")
+            f['openedBy'] = [fs.user.username for fs in item.users]
+        result.append(f)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
+    return response()
+    
+@expose(r'^/file/stats/(?P<path>.*)$', 'GET')
+def filestats(request, response):
     return response()
     
 @expose(r'^/edit/at/(?P<path>.*)$', 'PUT')
