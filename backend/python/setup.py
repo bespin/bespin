@@ -1,10 +1,7 @@
-# Don't run this. This is just for pip.
+import os
+if os.path.exists("paver-minilib.zip"):
+    import sys
+    sys.path.insert(0, "paver-minilib.zip")
 
-from paver import tasks
-tasks.environment = tasks.Environment()
-import pavement
-from setuptools import setup
-
-kw = pavement.options.setup
-
-setup(**kw)
+import paver.command
+paver.command.main()
