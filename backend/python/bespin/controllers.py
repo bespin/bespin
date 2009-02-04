@@ -203,18 +203,28 @@ def listfiles(request, response):
         if item.name == pp:
             continue
         f = {'name' : item.short_name}
-        if isinstance(item, model.File):
-            f['size'] = item.saved_size
-            f['created'] = item.created.strftime("%Y%m%dT%H%M%S")
-            f['modified'] = item.modified.strftime("%Y%m%dT%H%M%S")
-            f['openedBy'] = [fs.user.username for fs in item.users]
+        _populate_stats(item, f)
         result.append(f)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
     
-@expose(r'^/file/stats/(?P<path>.*)$', 'GET')
+def _populate_stats(item, result):
+    if isinstance(item, model.File):
+        result['size'] = item.saved_size
+        result['created'] = item.created.strftime("%Y%m%dT%H%M%S")
+        result['modified'] = item.modified.strftime("%Y%m%dT%H%M%S")
+        result['openedBy'] = [fs.user.username for fs in item.users]
+    
+@expose(r'^/file/stats/(?P<path>.+)$', 'GET')
 def filestats(request, response):
+    fm = request.file_manager
+    project, path = _split_path(request)
+    file_obj = fm.get_file_object(request.username, project, path)
+    result = {}
+    _populate_stats(file_obj, result)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(result)
     return response()
     
 @expose(r'^/edit/at/(?P<path>.*)$', 'PUT')
