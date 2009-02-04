@@ -144,7 +144,7 @@ Bespin.Commands.add({
     preview: 'show files',
     completeText: 'optionally, add the project name of your choice',
     execute: function(self, project) {
-        var project = project || _editSession.project;
+        var project = project || _editSession.projectForDisplay();
         self.files.fileNames(project, function(fileNames) {
             var files = "<u>Files in project: " + project + "</u><br/><br/>";
             for (var x = 0; x < fileNames.length; x++) {
@@ -234,17 +234,25 @@ Bespin.Commands.add({
     }
 });
 
-// ** {{{Command: load (open)}}} **
+// ** {{{Command: editconfig}}} **
 Bespin.Commands.add({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
-    completeText: 'load up the config file',
     execute: function(self) {
         document.fire("bespin:editor:openfile", {
             project: _editSession.userproject,
             filename: "config.js"
         });
+    }
+});
+
+// ** {{{Command: runconfig}}} **
+Bespin.Commands.add({
+    name: 'runconfig',
+    preview: 'run your config file',
+    execute: function(self) {
+        document.fire("bespin:editor:config:run");
     }
 });
 
