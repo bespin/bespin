@@ -111,6 +111,23 @@ Bespin.CommandLine.Interface = Class.create({
             this.addCommand(command);                
         }.bind(this));
     },
+    
+    hasCommand: function(commandname) {
+        if (this.commands[commandname]) { // yup, there she blows. shortcut
+            return true;
+        }
+
+        for (command in this.commands) { // try the aliases
+            if (this.commands[command]['aliases']) {
+                this.commands[command]['aliases'].each(function(alias) {
+                    if (alias == commandname) {
+                      return true;
+                    }
+                });
+            }
+        }
+        return false;
+    },
 
     showInfo: function(html, autohide) {
         this.hideInfo();
