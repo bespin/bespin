@@ -26,17 +26,16 @@
 # ***** END LICENSE BLOCK *****
 # 
 
-import subprocess
-import os
 import re
-import signal
+
+from paver.defaults import *
 
 import paver.virtual
 
 options(
     setup=Bunch(
         name="BespinServer",
-        version="0.1",
+        version="0.1a1",
         packages=['bespin']
     ),
     virtualenv=Bunch(
@@ -50,7 +49,7 @@ def required():
     """Install the required packages.
     
     Installs the requirements set in requirements.txt."""
-    sh("bin/pip install -r requirements.txt")
+    sh("bin/pip install -U -r requirements.txt")
     call_task('develop')
     # clean up after urlrelay's installation
     path("README").unlink()
@@ -88,3 +87,45 @@ def create_db():
     repository = str(path(db_versions.__file__).dirname())
     dburl = config.c.dburl
     dry("Turn on migrate versioning", main, ["version_control", dburl, repository])
+
+@task
+@needs(['sdist'])
+def production():
+    """Gets things ready for production."""
+    
+    non_production_packages = set(["py", "WebTest", "boto", "virtualenv"])
+    production = path("production")
+    production_requirements = production / "requirements.txt"
+    
+    libs_dest = production / "libs"
+    libs_dest.rmtree()
+    libs_dest.mkdir()
+    
+    sdist_file = path("dist/BespinServer-%s.tar.gz" % options.version)
+    sdist_file.move(libs_dest)
+    sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
+    
+    lines = production_requirements.lines()
+    
+    requirement_pattern = re.compile(r'^(.*)==')
+    
+    i = 0
+    while i < len(lines):
+        rmatch = requirement_pattern.match(lines[i])
+        if rmatch:
+            name = rmatch.group(1)
+            deleted = False
+            for npp in non_production_packages:
+                if name == npp:
+                    del lines[i]
+                    deleted = True
+                    break
+            if deleted:
+                continue
+        i+=1
+    
+    production_requirements.write_lines(lines)
+    
+    production.chdir()
+    sh("../bin/paver bootstrap")
+    
