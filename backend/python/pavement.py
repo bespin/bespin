@@ -68,9 +68,10 @@ def start():
     
 @task
 def clean_data():
-    """Deletes the development data"""
+    """Deletes the development data and recreates the database."""
     data_path = path("devdata.db")
     data_path.unlink()
+    create_db()
     
 @task
 def create_db():
