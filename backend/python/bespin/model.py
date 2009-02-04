@@ -225,9 +225,20 @@ class FileManager(object):
         """Gets the contents of the file as a string. Raises
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
+        
+        project, user_obj, file_obj = \
+            self._check_and_get_file(user, project_name, path)
+        self._save_status(file_obj, user_obj, mode)
+        
+        contents = str(file_obj.data)
+        return contents
+        
+    def _check_and_get_file(self, user, project_name, path):
+        """Returns the project, user object, file object."""
         project, user_obj = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
+        
         try:
             file_obj = s.query(File).filter_by(name=full_path).one()
         except NoResultFound:
@@ -238,9 +249,14 @@ class FileManager(object):
             raise FileNotFound("File %s in project %s does not exist" 
                                 % (path, project_name))
         
-        self._save_status(file_obj, user_obj, mode)
-        contents = str(file_obj.data)
-        return contents
+        return project, user_obj, file_obj
+        
+    def get_file_object(self, user, project_name, path):
+        """Retrieves the File instance from the project at the
+        path provided."""
+        project, user_obj, file_obj = \
+            self._check_and_get_file(user, project_name, path)
+        return file_obj
     
     def _save_status(self, file_obj, user_obj, mode="rw"):
         s = self.session
