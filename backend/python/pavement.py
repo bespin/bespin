@@ -106,6 +106,7 @@ def production():
     sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
+    lines.insert(0, "-f libs")
     
     requirement_pattern = re.compile(r'^(.*)==')
     
