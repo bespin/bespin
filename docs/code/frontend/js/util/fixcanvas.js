@@ -29,28 +29,50 @@ if (!Bespin.Canvas) Bespin.Canvas = {};
 //
 // Make canvas work the same on the different browsers and their quirks
 
-// ** {{{ Bespin.Canvas.Shim }}} **
+// ** {{{ Bespin.Canvas.Fix }}} **
 //
-// A shim for all version
-Bespin.Canvas.Shim = Class.create({
-    fillText: function(ctx, text, x, y, maxWidth) {
-      ctx.fillStyle = ctx.font;
-      ctx.fillText(text, x, y, maxWidth);
+// Take the context and clean it up
+Bespin.Canvas.Fix = function(ctx) {
+    // * upgrade Firefox 3.0.x text rendering to HTML 5 standard
+    if (!ctx.fillText && ctx.mozDrawText) {
+        ctx.fillText = function(textToDraw, x, y, maxWidth) {
+            ctx.translate(x, y);
+            ctx.mozTextStyle = ctx.font;
+            ctx.mozDrawText(textToDraw);
+            ctx.translate(-x, -y);
+        }
     }
-});
 
-// ** {{{ Bespin.Canvas.ShimFF3 }}} **
-//
-// Map the FF3 style "mozTestStyle" to the standard ctx.font
-Bespin.Canvas.ShimFF3 = Class.create({
-    fillText: function(ctx, text, x, y, maxWidth) {
-        // copy ff3 text style property to w3c standard property
-        ctx.mozTextStyle = ctx.font;
-
-        // translate to the specified position
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.mozDrawText(text);
-        ctx.restore();
+    // * Setup measureText
+    if (!ctx.measureText && ctx.mozMeasureText) {
+        ctx.measureText = function(text) {
+            ctx.mozTextStyle = ctx.font;
+            var width = ctx.mozMeasureText(text);
+            return { width: width };
+        }
     }
-});
+
+    // * Setup html5MeasureText
+    if (ctx.measureText && !ctx.html5MeasureText) {
+        ctx.html5MeasureText = ctx.measureText;
+        ctx.measureText = function(text) {
+            var textMetrics = ctx.html5MeasureText(text);
+
+            // fake it 'til you make it
+            textMetrics.ascent = ctx.html5MeasureText("m").width;
+
+            return textMetrics;
+        }
+    }
+
+    // * for other browsers, no-op away
+    if (!ctx.fillText) {
+        ctx.fillText = function() {}
+    }
+
+    if (!ctx.measureText) {
+        ctx.measureText = function() { return 10; }
+    }
+    
+    return ctx;
+};

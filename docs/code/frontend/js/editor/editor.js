@@ -249,15 +249,8 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
     },
 
     onkeydown: function(e) {
-        // TODO: global to factor out
-        if (_commandLine.inCommandLine) return; // in the command line!
-
-        if (e.keyCode == Bespin.Key.J && e.ctrlKey) { // send to command line
-            $('command').focus();
-
-            Event.stop(e);
-            return false;
-        }
+        var handled = _commandLine.handleCommandLineFocus(e);
+        if (handled) return false;
 
         var self = this;
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) }
@@ -673,14 +666,6 @@ Bespin.Editor.UI = Class.create({
     },
 
     paint: function(ctx) {
-        if (!this.canvasShim) {
-            if (ctx.mozDrawText) { // FF3
-                this.canvasShim = new Bespin.Canvas.ShimFF3();
-            } else {
-                this.canvasShim = new Bespin.Canvas.Shim(); // native support
-            }
-        }
-
         var c = $(this.editor.canvas);
         var theme = this.editor.theme;
         var ed = this.editor;
@@ -781,7 +766,7 @@ Bespin.Editor.UI = Class.create({
                 cy = y + (lineHeight - this.LINE_INSETS.bottom);
 
                 ctx.fillStyle = theme.lineNumberColor;
-                this.canvasShim.fillText(ctx, currentLine + 1, x, cy);
+                ctx.fillText(currentLine + 1, x, cy);
 
                 y += lineHeight;
             }
@@ -848,7 +833,7 @@ Bespin.Editor.UI = Class.create({
                 ce = cc + regionlen;
                 if (ce >= firstColumn) {
                     ctx.fillStyle = regions[ri].style;
-                    this.canvasShim.fillText(ctx, regions[ri].text, x, cy);
+                    ctx.fillText(regions[ri].text, x, cy);
                 }
 
                 x += regionlen * this.charWidth;
@@ -1171,7 +1156,7 @@ Bespin.Editor.API = Class.create({
     },
 
     paint: function() {
-        var ctx = this.canvas.getContext("2d");
+        var ctx = Bespin.Canvas.Fix(this.canvas.getContext("2d"));
         this.ui.paint(ctx);
     },
 
