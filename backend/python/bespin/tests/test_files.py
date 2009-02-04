@@ -190,6 +190,16 @@ def test_get_file_raises_not_found_exception():
     except model.FileNotFound:
         pass
     
+def test_directory_shortname_computed_to_have_last_dir():
+    fm = _get_fm()
+    fm.save_file("MacGyver", "bigmac", "foo/bar/baz", "biz")
+    res = fm.list_files("MacGyver", "bigmac", "foo/")
+    assert len(res) == 1
+    d = res[0]
+    shortname = d.short_name
+    assert shortname == "bar/"
+    
+    
 def test_delete_raises_file_not_found():
     fm = _get_fm()
     try:

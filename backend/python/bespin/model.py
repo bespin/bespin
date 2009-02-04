@@ -172,7 +172,7 @@ class Directory(Base):
     
     @property
     def short_name(self):
-        return self.name.rsplit("/", 1)[1] + "/"
+        return self.name.rsplit("/", 2)[-2] + "/"
         
     def __str__(self):
         return "Dir: %s" % (self.name)
