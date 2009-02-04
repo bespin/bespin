@@ -59,8 +59,9 @@ Bespin.FileSystem = Class.create({
     // * {{{project}}} is the name of the project that houses the file
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
-    loadFile: function(project, path, onSuccess) {
-        _editSession.startSession(project, path);
+    // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
+    loadFile: function(project, path, onSuccess, dontStartSession) {
+        if (!dontStartSession) _editSession.startSession(project, path);
 
         _server.loadFile(project, path, function(content) {
             if (content.endsWith("\n")) content = content.substr(0, content.length - 1);

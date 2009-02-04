@@ -184,7 +184,7 @@ document.observe("bespin:editor:config:run", function(event) {
                 _commandLine.executeCommand(line);
             }
         });
-    });
+    }, true);
 });
 
 

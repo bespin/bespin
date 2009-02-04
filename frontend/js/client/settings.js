@@ -53,24 +53,13 @@ Bespin.Settings.Core = Class.create({
     },
 
     loadSession: function() {
-        var newfile = this.fromURL.get('new');
         var path    = this.fromURL.get('path') || this.get('_path');
         var project = this.fromURL.get('project') || this.get('_project');
 
-        document.fire("bespin:settings:set:theme", { // -- setup the theme
-            value: this.get('theme')
+        document.fire("bespin:settings:init", { // -- time to init my friends
+            path: path,
+            project: project
         });
-
-        // TODO: use the action and don't run a command itself
-        if (!newfile) { // scratch file
-            if (project && (_editSession.project != project)) {
-                document.fire("bespin:editor:project:set", { project: project });
-            }
-
-            if (path) {
-                document.fire("bespin:editor:openfile", { filename: path });
-            }
-        }
     },
 
     defaultSettings: function() {
@@ -507,6 +496,44 @@ Bespin.Settings.Events = Class.create({
                     key: "e",
                     action: "moveToLineEnd"
                 });
+            }
+        });
+        
+        // ** {{{ Event: bespin:settings:init }}} **
+        // 
+        // If we are opening up a new file
+        document.observe("bespin:settings:init", function(event) {
+            var path    = event.memo.path;
+            var project = event.memo.project;
+
+            // TODO: use the action and don't run a command itself
+            var newfile = settings.fromURL.get('new');
+            if (!newfile) { // scratch file
+                if (project && (_editSession.project != project)) {
+                    document.fire("bespin:editor:project:set", { project: project });
+                }
+
+                if (path) {
+                    document.fire("bespin:editor:openfile", { filename: path });
+                }
+            }
+        });
+
+        // ** {{{ Event: bespin:settings:init }}} **
+        // 
+        // Setup the theme
+        document.observe("bespin:settings:init", function(event) {
+            document.fire("bespin:settings:set:theme", {
+                value: this.get('theme')
+            });
+        });
+
+        // ** {{{ Event: bespin:settings:init }}} **
+        // 
+        // Check for auto load
+        document.observe("bespin:settings:init", function(event) {
+            if (settings.isOn(settings.get('autoconfig'))) {
+                document.fire("bespin:editor:config:run");
             }
         });
 
