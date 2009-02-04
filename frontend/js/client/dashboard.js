@@ -161,6 +161,7 @@ function prepareFilesForTree(files) {
     var fdata = [];
     for (var i = 0; i < files.length; i++) {
 		var name = files[i].name;
+		console.log("pFFT name: " + name);
         if (name.endsWith("/")) {
             var name = name.substring(0, name.length - 1);
             var contents = fetchFiles;
