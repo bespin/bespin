@@ -57,10 +57,9 @@ def set_profile(profile):
         if not os.path.exists("devdata"):
             os.mkdir("devdata")
         c.dburl = "sqlite:///devdata.db"
-    c.dbengine = create_engine(c.dburl)
     
 def activate_profile():
-    pass
+    c.dbengine = create_engine(c.dburl)
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

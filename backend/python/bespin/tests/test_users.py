@@ -87,6 +87,7 @@ def test_register_returns_empty_when_not_logged_in():
     
 def test_register_and_verify_user():
     config.activate_profile()
+    _clear_db()
     s, user_manager = _get_user_manager()
     app = controllers.make_app()
     app = TestApp(app)
