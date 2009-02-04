@@ -129,6 +129,12 @@ Event.observe(document, "dom:loaded", function() {
     _server      = new Bespin.Server();
     _settings    = new Bespin.Settings.Core();
     _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Dashboard);
+    
+    // Handle jumping to the command line
+    Event.observe(document, "keydown", function(e) {
+        var handled = _commandLine.handleCommandLineFocus(e);
+        if (handled) return false;
+    });
 
     // get logged in name; if not logged in, display an error of some kind
     _server.currentuser(loggedIn, notLoggedIn);
@@ -154,12 +160,14 @@ function prepareFilesForTree(files) {
 
     var fdata = [];
     for (var i = 0; i < files.length; i++) {
-        if (files[i].endsWith("/")) {
-            var name = files[i].substring(0, files[i].length - 1);
+		var name = files[i].name;
+		console.log("pFFT name: " + name);
+        if (name.endsWith("/")) {
+            var name = name.substring(0, name.length - 1);
             var contents = fetchFiles;
             fdata.push({ name: name, contents: contents });
         } else {
-            fdata.push({ name: files[i] });
+            fdata.push({ name: name });
         }
     }
 
@@ -205,7 +213,7 @@ function displaySessions(sessions) {
 
 function displayProjects(projectItems) {
     for (var i = 0; i < projectItems.length; i++) {
-        projectItems[i] = projectItems[i].substring(0, projectItems[i].length - 1);
+        projectItems[i] = projectItems[i].name.substring(0, projectItems[i].name.length - 1);
     }
     projects.list.items = projectItems;
     scene.render();
