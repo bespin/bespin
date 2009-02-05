@@ -28,6 +28,9 @@
 
 import re
 
+from setuptools import find_packages
+from paver.setuputils import find_package_data
+
 from paver.defaults import *
 
 import paver.virtual
@@ -36,7 +39,9 @@ options(
     setup=Bunch(
         name="BespinServer",
         version="0.1a1",
-        packages=['bespin']
+        packages=find_packages(),
+        package_data=find_package_data('bespin', 'bespin', 
+                                only_in_packages=False)
     ),
     virtualenv=Bunch(
         packages_to_install=['pip'],
@@ -99,6 +104,12 @@ def production():
     production = path("production")
     production_requirements = production / "requirements.txt"
     
+    libs_dest = production / "libs"
+    libs_dest.rmtree()
+    libs_dest.mkdir()
+    
+    sdist_file = path("dist/BespinServer-%s.tar.gz" % options.version)
+    sdist_file.move(libs_dest)
     sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
@@ -120,12 +131,11 @@ def production():
                 continue
         i+=1
     
-    lines.append("../dist/BespinServer-%s.tar.gz" % options.version)
+    lines.append("libs/BespinServer-%s.tar.gz" % options.version)
     lines.append("MySQL-python")
     production_requirements.write_lines(lines)
     
     production.chdir()
     sh("../bin/paver bootstrap")
-    sh("../bin/pip bundle -r requirements.txt BespinServer.pybundle")
     current_directory.chdir()
     
