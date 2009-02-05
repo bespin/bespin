@@ -1,4 +1,3 @@
 include setup.py
 include pavement.py
 recursive-include bespin *
-recursive-exclude bespin *.pyc
