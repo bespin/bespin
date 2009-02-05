@@ -138,7 +138,7 @@ class File(Base):
     __tablename__ = "files"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
+    name = Column(String(700), unique=True)
     created = Column(DateTime, default=datetime.now)
     modified = Column(DateTime, onupdate=datetime.now)
     saved_size = Column(Integer)
@@ -165,7 +165,7 @@ class Directory(Base):
     __tablename__ = "directories"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
+    name = Column(String(700), unique=True)
     parent_id = Column(Integer, ForeignKey('directories.id'))
     subdirs = relation('Directory', backref=backref("parent", 
                                         remote_side=[id]))
@@ -183,7 +183,7 @@ class Project(Base):
     __tablename__ = "projects"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
+    name = Column(String(30), unique=True)
     members = relation("User", secondary=project_members, lazy=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     

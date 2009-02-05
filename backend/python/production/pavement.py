@@ -12,4 +12,4 @@ options(
 @task
 def setup():
     """Get this production environment setup."""
-    sh("bin/pip install BespinServer.pybundle")
+    sh("bin/pip install -r requirements.txt")
