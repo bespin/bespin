@@ -48,8 +48,9 @@ Bespin.Session.EditSession = Class.create({
         this.collaborate = false;
     },
     
-    projectForDisplay: function() {
-        return (this.project == this.userproject) ? "* Your Special Project *" : this.project;
+    projectForDisplay: function(testProject) {
+        var project = testProject || this.project;
+        return (project == this.userproject) ? "* Your Special Project *" : project;
     },
 
     startSession: function(project, path, username) {
