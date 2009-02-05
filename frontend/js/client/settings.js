@@ -524,7 +524,7 @@ Bespin.Settings.Events = Class.create({
         // Setup the theme
         document.observe("bespin:settings:init", function(event) {
             document.fire("bespin:settings:set:theme", {
-                value: this.get('theme')
+                value: settings.get('theme')
             });
         });
 
