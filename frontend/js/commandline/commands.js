@@ -94,7 +94,7 @@ Bespin.Commands.add({
                 commands.push('<b>' + name + arguments + '</b>: ' + command.preview);
             }
         }
-        self.showInfo(commands.join("<br/>"));
+        self.showInfo("<div style='font-size: 0.92em'>" + commands.join("<br/>") + "</div>");
     }
 }); 
 
@@ -516,6 +516,7 @@ Bespin.Commands.add({
     takes: ['section'], // part on the Wiki
     preview: 'grab the doctype info for a section',
     completeText: 'can you give me the Doctype wiki section?',
+    hidden: true,
     execute: function(self, section) {
         //TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
     }
