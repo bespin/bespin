@@ -1141,7 +1141,9 @@ Bespin.Editor.API = Class.create({
     },
 
     moveCursor: function(newpos) {
-        this.cursorPosition = { row: newpos.row, col: newpos.col };
+        var row = Math.min(newpos.row, this.model.getRowCount() - 1); // last row if you go over
+        if (row < 0) row = 0; // can't move negative off screen
+        this.cursorPosition = { row: row, col: newpos.col };
     },
 
     // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee
