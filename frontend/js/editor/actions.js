@@ -400,6 +400,12 @@ Bespin.Editor.Actions = Class.create({
         this.repaint();
     },
 
+    killLine: function(args) {
+        // select the current row
+        this.editor.setSelection({ startPos: { row: args.pos.row, col: 0 }, endPos: { row: args.pos.row + 1, col: 0 } });
+        this.cutSelection(args); // cut (will save and redo will work)
+    },
+    
     deleteSelection: function(args) {
         if (!this.editor.selection) return;
         var selection = this.editor.getSelection();
@@ -409,7 +415,7 @@ Bespin.Editor.Actions = Class.create({
 
         // undo/redo
         args.action = "deleteSelection";
-        var redoOperation = args
+        var redoOperation = args;
         var undoArgs = { action: "insertChunkAndSelect", pos: Bespin.Editor.Utils.copyPos(startPos), queued: args.queued, chunk: chunk }
         var undoOperation = undoArgs
         this.editor.undoManager.addUndoOperation(new Bespin.Editor.UndoItem(undoOperation, redoOperation));
