@@ -74,7 +74,7 @@ Bespin.CommandLine.Interface = Class.create({
             return;
         }
 
-        document.fire("bespin:cmdline:executed", { command: command });
+        document.fire("bespin:cmdline:executed", { command: command, args: data });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -443,17 +443,22 @@ Bespin.CommandLine.Events = Class.create({
         // In this case, save it for the history
         document.observe("bespin:cmdline:executed", function(event) {
             var commandname = event.memo.command.name;
+            var args        = event.memo.args;
 
-            commandline.commandLineHistory.add(commandname); // only add to the history when a valid command
+            commandline.commandLineHistory.add(commandname + " " + args); // only add to the history when a valid command
         });
         
         // ** {{{ Event: bespin:cmdline:executed }}} **
         // 
         // Once the command has been executed, do something.        
         document.observe("bespin:cmdline:execute", function(event) {
-            var commandname = event.memo.name;
+            var command = event.memo.name;
+            var args    = event.memo.args;
+            if (command && args) { // if we have a command and some args
+                command += " " + args;
+            }
 
-            if (commandname) commandline.executeCommand(commandname);
+            if (command) commandline.executeCommand(commandname);
         });
 
 

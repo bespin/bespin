@@ -338,6 +338,13 @@ Bespin.Server = Class.create({
     // * {{{url}}} is the URL to the file to import
     // * {{{archivetype}}} is either zip | tgz
     importProject: function(project, url, opts) {
+        if (opts) { // wrap the import success call in an event to say that the import is complete
+            opts.call = function() {
+                console.log("import complete");
+                opts.call();
+            }
+        }
+        
         this.request('POST', '/project/fromurl/' + project, url, opts || {});
     },
 
