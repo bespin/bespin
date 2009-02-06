@@ -149,7 +149,15 @@ Bespin.Commands.add({
     preview: 'show files',
     completeText: 'optionally, add the project name of your choice',
     execute: function(self, project) {
-        var project = project || _editSession.projectForDisplay();
+        if (!project && (typeof _editSession != "undefined") ) {
+            project = _editSession.projectForDisplay();
+        }
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+
         self.files.fileNames(project, function(fileNames) {
             var files = "<u>Files in project: " + project + "</u><br/><br/>";
             for (var x = 0; x < fileNames.length; x++) {
