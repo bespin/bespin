@@ -378,7 +378,7 @@ var Container = Class.define({
                 if (!this.children[i].shouldPaint()) continue;
 
                 if (!this.children[i].bounds) {
-                    console.log("WARNING: child " + i + " (type: " + this.children[i].type + ", id: " + this.children[i].id + ") of parent with id " + this.id + " of type " + this.type + " has no bounds and could not be painted");
+                    //console.log("WARNING: child " + i + " (type: " + this.children[i].type + ", id: " + this.children[i].id + ") of parent with id " + this.id + " of type " + this.type + " has no bounds and could not be painted");
                     continue;
                 }
 
