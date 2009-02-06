@@ -377,8 +377,7 @@ Bespin.Editor.UI = Class.create({
             this.yscrollbar.onmousewheel(e);
         }.bindAsEventListener(this));
 
-        var self = this;
-        setTimeout(function() { self.toggleCursor(self) }, 250);
+        setTimeout(function() { this.toggleCursor(this) }.bind(this), 250);
     },
 
     // col is -1 if user clicked in gutter; clicking below last line maps to last line
@@ -607,6 +606,7 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("SHIFT", Key.END, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
+        listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
 
         listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
@@ -684,7 +684,6 @@ Bespin.Editor.UI = Class.create({
         this.lastLineCount = ed.model.getRowCount();
 
         // character width
-
         var charWidth = this.getCharWidth(ctx);
         this.charWidth = charWidth;
         var lineHeight = this.LINE_HEIGHT; // temporarily reading from constant; should be calc'd at some point
@@ -827,7 +826,6 @@ Bespin.Editor.UI = Class.create({
                 ctx.fillRect(tx, y, tw, lineHeight);
             }
 
-
             cc = 0;
             ce = 0;
             var regions = this.colorHelper.getLineRegions(currentLine);
@@ -866,6 +864,8 @@ Bespin.Editor.UI = Class.create({
         } else {
             x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
             y = (ed.cursorPosition.row * lineHeight);
+
+            ctx.translate(0.5, 0.5); // make the cursor crisp
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
             ctx.fillRect(x, y, charWidth, lineHeight);
@@ -1127,9 +1127,8 @@ Bespin.Editor.API = Class.create({
 
         this.model.insertCharacters({row: 0, col: 0}, " ");
 
-        var self = this;
-        Event.observe(this.canvas, "blur", function(e) { self.setFocus(false); });
-        Event.observe(this.canvas, "focus", function(e) { self.setFocus(true); });
+        Event.observe(this.canvas, "blur",  function(e) { this.setFocus(false); }.bindAsEventListener(this));
+        Event.observe(this.canvas, "focus", function(e) { this.setFocus(true);  }.bindAsEventListener(this));
 
         this.paint();
     },
