@@ -339,9 +339,13 @@ Bespin.Server = Class.create({
     // * {{{archivetype}}} is either zip | tgz
     importProject: function(project, url, opts) {
         if (opts) { // wrap the import success call in an event to say that the import is complete
-            opts.call = function() {
-                console.log("import complete");
-                opts.call();
+            var userCall = opts.call;
+            opts.call = function(text, xhr) {
+                userCall(text, xhr);
+                document.fire("bespin:project:imported", {
+                    project: project,
+                    url: url
+                });
             }
         }
         
