@@ -595,19 +595,20 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("SHIFT", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         listener.bindKeyString("SHIFT", Key.ARROW_UP, this.actions.moveCursorUp);
         listener.bindKeyString("SHIFT", Key.ARROW_DOWN, this.actions.moveCursorDown);
-        listener.bindKeyString("APPLE", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyString("APPLE", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
-        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
+        listener.bindKeyString("APPLE", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyString("SHIFT APPLE", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyString("APPLE", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyString("SHIFT APPLE", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyString("", Key.HOME, this.actions.moveToLineStart);
         listener.bindKeyString("", Key.END, this.actions.moveToLineEnd);
         listener.bindKeyString("SHIFT", Key.HOME, this.actions.moveToLineStart);
         listener.bindKeyString("SHIFT", Key.END, this.actions.moveToLineEnd);
 
+        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
         listener.bindKeyString("", Key.ENTER, this.actions.newline);
-
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
 
         listener.bindKeyString("APPLE", Key.A, this.actions.selectAll);
@@ -626,7 +627,9 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
 
         listener.bindKeyString("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
+        listener.bindKeyString("SHIFT APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyString("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
+        listener.bindKeyString("SHIFT APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
         listener.bindKeyString("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyString("", Key.PAGE_DOWN, this.actions.movePageDown);
