@@ -205,7 +205,7 @@ var Scene = Class.define({
 
         render: function() {
             if (!this.cssLoaded) {
-                console.log("short-circuited render");
+                //console.log("short-circuited render as CSS is not loaded");
                 this.renderRequested = true;
                 return;
             }
