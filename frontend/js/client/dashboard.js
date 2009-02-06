@@ -128,6 +128,7 @@ Event.observe(document, "dom:loaded", function() {
     // setup the command line
     _server      = new Bespin.Server();
     _settings    = new Bespin.Settings.Core();
+    _files       = new Bespin.FileSystem();
     _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Dashboard);
     
     // Handle jumping to the command line
