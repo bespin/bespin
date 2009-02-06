@@ -369,14 +369,12 @@ Bespin.Commands.add({
     execute: function(self, linenumber) {
         if (linenumber) {
             var linenumAsInt = parseInt(linenumber) - 1;
-            // Jumps 10 down first so ensureCursorVisable doesn't show as the last line
-            if (linenumAsInt > 10) {
-                self.editor.moveCursor({ row: linenumAsInt + 10, col: 0 });
-            } else {
-                self.editor.moveCursor({ row: 0, col: 0 });
-            }
-            self.editor.ui.ensureCursorVisible();
+            
             self.editor.moveCursor({ row: linenumAsInt, col: 0 });
+            
+            document.fire("bespin:editor:doaction", {
+                action: 'moveCursorRowToCenter'
+            });
         }
     }
 });
