@@ -55,33 +55,31 @@ Bespin.Editor.Actions = Class.create({
 
     moveCursorLeft: function(args) {
         this.editor.cursorPosition.col = Math.max(0, args.pos.col - 1);
-
         this.handleCursorSelection(args);
-
         this.repaint();
     },
 
     moveCursorRight: function(args) {
         this.editor.cursorPosition.col = args.pos.col + 1;
-
         this.handleCursorSelection(args);
-
         this.repaint();
     },
 
     moveCursorUp: function(args) {
-        this.editor.cursorPosition.row = args.pos.row = Math.max(0, args.pos.row - 1);
+        this.editor.cursorPosition.row = Math.max(0, args.pos.row - 1);
         this.handleCursorSelection(args);
         this.repaint();
 
+        args.pos.row = this.editor.cursorPosition.row;
         return args;
     },
 
     moveCursorDown: function(args) {
-        this.editor.cursorPosition.row = args.pos.row = Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1);
+        this.editor.cursorPosition.row = Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1);
         this.handleCursorSelection(args);
         this.repaint();
 
+        args.pos.row = this.editor.cursorPosition.row;
         return args;
     },
 
@@ -122,7 +120,7 @@ Bespin.Editor.Actions = Class.create({
     },
 
     movePageUp: function(args) {
-        this.editor.cursorPosition.row = Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0);;
+        this.editor.cursorPosition.row = Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0);
 
         this.handleCursorSelection(args);
         this.repaint();
@@ -553,6 +551,18 @@ Bespin.Editor.Actions = Class.create({
             var undoOperation = undoArgs
             this.editor.undoManager.addUndoOperation(new Bespin.Editor.UndoItem(undoOperation, redoOperation));
         }
+    },
+    
+    moveCursorRowToCenter: function(args) {
+        var saveCursorRow = this.editor.cursorPosition.row;
+        var halfRows = Math.floor(this.editor.ui.visibleRows / 2);
+        if (saveCursorRow > (this.editor.ui.firstVisibleRow + halfRows)) { // bottom half, so move down
+            this.editor.cursorPosition.row = this.editor.cursorPosition.row + halfRows;
+        } else { // top half, so move up
+            this.editor.cursorPosition.row = this.editor.cursorPosition.row - halfRows;
+        }
+        this.editor.ui.ensureCursorVisible();
+        this.editor.cursorPosition.row = saveCursorRow;
     },
 
     repaint: function() {
