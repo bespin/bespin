@@ -252,10 +252,9 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
 
-        var self = this;
-        var args = { event: e, pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) }
-        self.skipKeypress = false;
-        self.returnValue = false;
+        var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) }
+        this.skipKeypress = false;
+        this.returnValue = false;
 
         var action = this.keyMap[[e.keyCode, e.metaKey, e.ctrlKey, e.altKey, e.shiftKey]];
 
@@ -264,30 +263,38 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         if (typeof action == "function") {
             hasAction = true;
             action(args);
+            this.lastAction = action;
         }
 
         if (e.metaKey || e.ctrlKey || e.altKey) {
-            self.skipKeypress = true;
-            self.returnValue = true;
+            this.skipKeypress = true;
+            this.returnValue = true;
             if (hasAction) Event.stop(e); // stop going, but allow special strokes to get to the browser
         }
 
     },
 
     onkeypress: function(e) {
-        // TODO: global to factor out
-        if (_commandLine.inCommandLine) return false; // in the command line!
+        var handled = _commandLine.handleCommandLineFocus(e);
+        if (handled) return false;
         
-        var self = this;
-        if (self.skipKeypress) return self.returnValue;
+        if (this.skipKeypress) return this.returnValue;
 
-        var args = { event: e, pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) }
-        var actions = self.editor.ui.actions;
+        var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
+        var actions = this.editor.ui.actions;
 
         // Only allow ascii through
         if ((e.charCode >= 32) && (e.charCode <= 126)) {
-          args.newchar = String.fromCharCode(e.charCode);
-          actions.insertCharacter(args);
+            args.newchar = String.fromCharCode(e.charCode);
+            actions.insertCharacter(args);
+        } else { // Allow user to move with the arrow continuously
+            var action = this.keyMap[[e.keyCode, e.metaKey, e.ctrlKey, e.altKey, e.shiftKey]];
+
+            if (this.lastAction == action) {
+                delete this.lastAction;
+            } else if (typeof action == "function") {
+               action(args);
+            }
         }
 
         Event.stop(e);
@@ -857,6 +864,7 @@ Bespin.Editor.UI = Class.create({
                 } else {
                     x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
                     y = (ed.cursorPosition.row * lineHeight);
+                    ctx.translate(0.5, 0.5); // make the cursor crisp
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, lineHeight);
                 }
@@ -865,7 +873,6 @@ Bespin.Editor.UI = Class.create({
             x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
             y = (ed.cursorPosition.row * lineHeight);
 
-            ctx.translate(0.5, 0.5); // make the cursor crisp
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
             ctx.fillRect(x, y, charWidth, lineHeight);
