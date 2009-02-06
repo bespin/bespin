@@ -160,8 +160,9 @@ document.observe("bespin:editor:urlchange", function(event) {
 // Set the last command in the status window
 document.observe("bespin:cmdline:executed", function(event) {
     var commandname = event.memo.command.name;
+    var args        = event.memo.args;
 
-    $('message').innerHTML = "last cmd: " + commandname; // set the status message area
+    $('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
 });
 
 // ** {{{ Event: bespin:editor:config:run }}} **
