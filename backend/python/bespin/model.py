@@ -183,7 +183,7 @@ class Project(Base):
     __tablename__ = "projects"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(30), unique=True)
+    name = Column(String(60), unique=True)
     members = relation("User", secondary=project_members, lazy=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     
