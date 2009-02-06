@@ -36,7 +36,7 @@ Bespin.Server = Class.create({
     //
     // * {{{base}}} is the base server URL to access
     initialize: function(base) {
-        this.SERVER_BASE_URL = base || 'http://localhost:8080';
+        this.SERVER_BASE_URL = base || '';
     },
 
     // == Helpers ==
