@@ -586,7 +586,7 @@ Bespin.Editor.UI = Class.create({
         Event.observe(document, "keypress", this.oldkeypress);
 
         // Keycode, Meta, Control, Action
-        // TODO: forward/backwards a word, kill entire line, kill to end of line
+        // TODO: kill entire line, kill to end of line
         listener.bindKeyString("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
         listener.bindKeyString("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         listener.bindKeyString("", Key.ARROW_UP, this.actions.moveCursorUp);
@@ -605,6 +605,8 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("", Key.END, this.actions.moveToLineEnd);
         listener.bindKeyString("SHIFT", Key.HOME, this.actions.moveToLineStart);
         listener.bindKeyString("SHIFT", Key.END, this.actions.moveToLineEnd);
+
+        listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
 
         listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
