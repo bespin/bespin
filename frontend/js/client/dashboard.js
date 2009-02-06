@@ -27,7 +27,7 @@ var projects;
 var scene;
 var tree;
 var infoPanel;
-var go = Bespin.Navigate;
+var go = Bespin.Navigate; // short cut static method
 
 function sizeCanvas(canvas) {
     if (!heightDiff) {
@@ -116,7 +116,7 @@ Event.observe(document, "dom:loaded", function() {
 
     scene.bus.bind("dblclick", tree, function() {
         var path = tree.getSelectedPath();
-        if (path.length == 0) return;
+        if (path.length == 0 || path.first().contents) return; // don't allow directories either
         go.editor(currentProject, getFilePath(path));
     });
 
@@ -144,8 +144,8 @@ Event.observe(document, "dom:loaded", function() {
 var currentProject;
 
 function loggedIn(user) {
-    _server.list(null, null, displayProjects);  // get projects
-    _server.listOpen(displaySessions);   // get sessions
+    _server.list(null, null, displayProjects); // get projects
+    _server.listOpen(displaySessions); // get sessions
 }
 
 function notLoggedIn(xhr) {
@@ -176,7 +176,10 @@ function prepareFilesForTree(files) {
 
 function getFilePath(treePath) {
     var filepath = "";
-    for (var i = 0; i < treePath.length; i++) filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
+    for (var i = 0; i < treePath.length; i++) {
+        if (treePath[i] && treePath[i].name)
+            filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
+    }
     return filepath;
 }
 
