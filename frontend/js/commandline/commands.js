@@ -372,9 +372,12 @@ Bespin.Commands.add({
             
             self.editor.moveCursor({ row: linenumAsInt, col: 0 });
             
-            document.fire("bespin:editor:doaction", {
-                action: 'moveCursorRowToCenter'
-            });
+            // If the line that we are moving to is off screen, center it, else just move in place
+            if ( (linenumAsInt < self.editor.ui.firstVisibleRow) || (linenumAsInt >= self.editor.ui.firstVisibleRow+self.editor.ui.visibleRows) ) {
+                document.fire("bespin:editor:doaction", {
+                    action: 'moveCursorRowToCenter'
+                });
+            }
         }
     }
 });
