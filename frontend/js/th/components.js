@@ -72,10 +72,19 @@ var Scrollbar = Class.define({
 
             this.bus.bind("click", this.up, this.scrollup, this);
             this.bus.bind("click", this.down, this.scrolldown, this);
+            this.bus.bind("mousedrag", this.bar, this.onmousedrag, this);
+            this.bus.bind("mouseup", this.bar, this.onmouseup, this);
+        },
+
+        onmousedrag: function(e) {
+            console.log("drag start");
+        },
+
+        onmouseup: function(e) {
+            console.log("drag stop / mouse up");
         },
 
         scrollup: function(e) {
-            console.log("up!");
             if (this.value > this.min) {
                 this.value = Math.max(this.min, this.value - this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
@@ -84,7 +93,6 @@ var Scrollbar = Class.define({
         },
 
         scrolldown: function(e) {
-            console.log("down!");
             if (this.value < this.max) {
                 this.value = Math.min(this.max, this.value + this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
@@ -122,7 +130,7 @@ var Scrollbar = Class.define({
                 var scroll_track_height = d.b.ih - this.up.bounds.height - this.down.bounds.height;
 
                 var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
-                var extent_top = this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * scroll_track_height );
+                var extent_top = this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) );
                 this.bar.bounds = { x: d.i.l, y: extent_top, width: d.b.iw, height: extent_length }
             } else {
 
@@ -931,7 +939,13 @@ var HorizontalTree = Class.define({
         getSelectedPath: function() {
             var path = [];
 
-            for (var i = 0; i < this.lists.length; i++) path.push(this.lists[i].selected);
+            for (var i = 0; i < this.lists.length; i++) {
+                if (this.lists[i].selected) {
+                    path.push(this.lists[i].selected);
+                } else {
+                    break;
+                }
+            }
 
             return path;
         },
