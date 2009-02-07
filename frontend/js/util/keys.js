@@ -41,6 +41,18 @@ if (typeof Bespin == "undefined") Bespin = {};
 
 Bespin.Key = {
 
+// -- Numbers
+  ZERO: 48,
+  ONE: 49,
+  TWO: 50,
+  THREE: 51,
+  FOUR: 52,
+  FIVE: 53,
+  SIX: 54,
+  SEVEN: 55,
+  EIGHT: 56,
+  NINE: 57,
+  
 // -- Alphabet
   A: 65,
   B: 66,
@@ -112,4 +124,24 @@ Bespin.Key.fillArguments = function(string, args) {
     }
     
     return args;
+}
+
+// ** {{{ Bespin.Key.passThroughToBrowser }}} **
+//
+// Given the event, return true if you want to allow the event to pass through to the browser.
+// For example, allow Apple-L to go to location, Apple-K for search. Apple-# for a tab.
+//
+// {{{e}}} Event that came into an {{{onkeydown}}} handler
+
+Bespin.Key.passThroughToBrowser = function(e) {
+    var Key = Bespin.Key;
+    
+    if (e.metaKey || e.altKey) { // Apple or Alt key
+        if ([Key.K, Key.L, Key.N, Key.O, Key.T, Key.W,
+             Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE].include(e.keyCode)) {
+            return true;
+        }
+    }
+
+    return false;
 }
