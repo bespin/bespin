@@ -26,6 +26,116 @@
 // ***** END LICENSE BLOCK *****
 // 
 
+
+var Button = Class.define({
+    type: "Button",
+
+    superclass: Component,
+
+    members: {
+        init: function(parms) {
+            this._super(parms);
+        },
+
+        paint: function(ctx) {
+            var d = this.d();
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(0, 0, d.b.w, d.b.h);
+
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(0, 0, d.b.w, d.b.h);
+        }
+    }
+});
+
+var Scrollbar = Class.define({
+    type: "Scrollbar",
+
+    superclass: Container,
+
+    members: {
+        init: function(parms) {
+            if (!parms) parms = {};
+            this._super(parms);
+            this.orientation = parms.orientation || GTK.VERTICAL;
+            this.value = parms.value || 0;
+            this.min = parms.min || 0;
+            this.max = parms.max || 100;
+            this.extent = parms.extent || 0.1;
+            this.increment = parms.increment || 2;
+
+            this.up = new Button();
+            this.down = new Button();
+            this.bar = new Button();
+            this.add([ this.up, this.down, this.bar ]);
+
+            this.bus.bind("click", this.up, this.scrollup, this);
+            this.bus.bind("click", this.down, this.scrolldown, this);
+        },
+
+        scrollup: function(e) {
+            console.log("up!");
+            if (this.value > this.min) {
+                this.value = Math.max(this.min, this.value - this.increment);
+                if (this.scrollable) this.scrollable.scrollTop = this.value;
+                this.getScene().render();
+            }
+        },
+
+        scrolldown: function(e) {
+            console.log("down!");
+            if (this.value < this.max) {
+                this.value = Math.min(this.max, this.value + this.increment);
+                if (this.scrollable) this.scrollable.scrollTop = this.value;
+
+                console.log("value: " + this.value + "; max: " + this.max);
+
+                this.getScene().render();
+            }
+        },
+
+        layout: function() {
+            var d = this.d();
+
+            // check if there's a scrollable attached; if so, refresh state
+            if (this.scrollable) {
+                var view_height = this.scrollable.bounds.height;
+                var scrollable_info = this.scrollable.getScrollInfo();
+                this.min = 0;
+                this.max = scrollable_info.scrollHeight - view_height;
+                this.value = scrollable_info.scrollTop;
+                this.extent = (scrollable_info.scrollHeight - view_height) / scrollable_info.scrollHeight;
+            }
+
+            // if the maximum value is less than the minimum, we're in an invalid state and won't paint anything
+            if (this.max < this.min) {
+                for (var i = 0; i < this.children.length; i++) delete this.children[i].bounds;
+                return;
+            }
+
+            if (this.orientation == GTK.VERTICAL) {
+                this.up.bounds = { x: d.i.l, y: d.i.t, width: d.b.iw, height: d.b.iw };
+                var h = d.b.iw;
+                this.down.bounds = { x: d.i.l, y: d.b.ih - h, width: d.b.iw, height: h };
+
+                var scroll_track_height = d.b.ih - this.up.bounds.height - this.down.bounds.height;
+
+                var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
+                var extent_top = this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * scroll_track_height );
+                this.bar.bounds = { x: d.i.l, y: extent_top, width: d.b.iw, height: extent_length }
+            } else {
+
+            }
+        },
+
+        paint: function(ctx) {
+            if (this.max < 0) return;
+            this._super(ctx);
+        }
+    }
+});
+
 var Panel = Class.define({
     type: "Panel",
 
@@ -173,6 +283,9 @@ var Splitter = Class.define({
             this.label = parms.label;
             if (this.label) this.add(this.label);
 
+            this.scrollbar = parms.scrollbar;
+            if (this.scrollbar) this.add(this.scrollbar);
+
             this.bus.bind("drag", [ this.topNib, this.bottomNib ], this.ondrag, this);
             this.bus.bind("dragstart", [ this.topNib, this.bottomNib ], this.ondragstart, this);
             this.bus.bind("dragstop", [ this.topNib, this.bottomNib ], this.ondragstop, this);
@@ -207,6 +320,10 @@ var Splitter = Class.define({
             if (this.attributes.orientation == GTK.HORIZONTAL) {
                 this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
                 this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
+
+                if (this.scrollbar && this.scrollbar.shouldLayout()) {
+                    this.scrollbar.bounds = { x: 0, y: this.topNib.bounds.height, height: d.b.h - (this.topNib.bounds.height * 2), width: d.b.w };
+                }
             } else {
                 this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h }
                 this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h }
@@ -559,6 +676,8 @@ var List = Class.define({
 
             this.items = parms.items || [];
 
+            this.scrollTop = 0;
+
             this.bus.bind("mousedown", this, this.onmousedown, this);
         },
 
@@ -595,69 +714,95 @@ var List = Class.define({
             return { item: item, even: row % 2 == 0, selected: this.selected == item };
         },
 
+        getRowHeight: function() {
+            if (!this.rowHeight) {
+                var d = this.d();
+                var firstItem = (this.items.length > 0) ? this.items[0] : undefined;
+                if (firstItem) {
+                    var renderer = this.getRenderer(this.getRenderContext(firstItem, 0));
+                    this.add(renderer);
+                    this.rowHeight = renderer.getPreferredHeight(d.b.w - d.i.w);
+                    this.remove(renderer);
+                }
+            }
+            return this.rowHeight || 0;
+        },
+
+        getScrollInfo: function() {
+            return { scrollTop: this.scrollTop, scrollHeight: this.getRowHeight() * this.items.length }
+        },
+
         paint: function(ctx) {
             var d = this.d();
 
-            if (this.style.backgroundColor) {
-                ctx.fillStyle = this.style.backgroundColor;
-                ctx.fillRect(0, 0, d.b.w, d.b.h);
-            }
+            ctx.save();
+            ctx.translate(0, -this.scrollTop);
 
-            if (this.style.backgroundColorOdd) {
-                var rowHeight = this.rowHeight;
-                if (!rowHeight) {
-                    var firstItem = (this.items.length > 0) ? this.items[0] : undefined;
-                    if (firstItem) {
-                        var renderer = this.getRenderer(this.getRenderContext(firstItem, 0));
-                        this.add(renderer);
-                        rowHeight = renderer.getPreferredHeight(d.b.w - d.i.w);
-                        this.remove(renderer);
+            try {
+                if (this.style.backgroundColor) {
+                    ctx.fillStyle = this.style.backgroundColor;
+                    ctx.fillRect(0, 0, d.b.w, d.b.h);
+                }
+
+                if (this.style.backgroundColorOdd) {
+                    var rowHeight = this.rowHeight;
+                    if (!rowHeight) {
+                        var firstItem = (this.items.length > 0) ? this.items[0] : undefined;
+                        if (firstItem) {
+                            var renderer = this.getRenderer(this.getRenderContext(firstItem, 0));
+                            this.add(renderer);
+                            rowHeight = renderer.getPreferredHeight(d.b.w - d.i.w);
+                            this.remove(renderer);
+                        }
+                    }
+                    if (rowHeight) {
+                        var y = d.i.t + rowHeight;
+                        ctx.fillStyle = this.style.backgroundColorOdd;
+                        while (y < d.b.h) {
+                            ctx.fillRect(d.i.l, y, d.b.w - d.i.w, rowHeight);
+                            y += rowHeight * 2;
+                        }
                     }
                 }
-                if (rowHeight) {
-                    var y = d.i.t + rowHeight;
-                    ctx.fillStyle = this.style.backgroundColorOdd;
-                    while (y < d.b.h) {
-                        ctx.fillRect(d.i.l, y, d.b.w - d.i.w, rowHeight);
-                        y += rowHeight * 2;
-                    }
+
+                if (this.items.length == 0) return;
+
+                if (!this.renderer) {
+                    console.log("No renderer for List of type " + this.type + " with id " + this.id + "; cannot paint contents");
+                    return;
                 }
-            }
 
-            if (this.items.length == 0) return;
 
-            if (!this.renderer) {
-                console.log("No renderer for List of type " + this.type + " with id " + this.id + "; cannot paint contents");
-                return;
-            }
+                this.heights = [];
+                var y = d.i.t;
+                for (var i = 0; i < this.items.length; i++) {
+                    var stamp = this.getRenderer(this.getRenderContext(this.items[i], i));
+                    if (!stamp) break;
 
-            this.heights = [];
-            var y = d.i.t;
-            for (var i = 0; i < this.items.length; i++) {
-                var stamp = this.getRenderer(this.getRenderContext(this.items[i], i));
-                if (!stamp) break;
+                    this.add(stamp);
 
-                this.add(stamp);
+                    var w = d.b.w - d.i.w;
+                    var h = (this.rowHeight) ? this.rowHeight : stamp.getPreferredHeight(w);
+                    this.heights.push(h);
+                    stamp.bounds = { x: 0, y: 0, height: h, width: w };
 
-                var w = d.b.w - d.i.w;
-                var h = (this.rowHeight) ? this.rowHeight : stamp.getPreferredHeight(w);
-                this.heights.push(h);
-                stamp.bounds = { x: 0, y: 0, height: h, width: w };
+                    ctx.save();
+                    ctx.translate(d.i.l, y);
+                    ctx.beginPath();
+                    ctx.rect(0, 0, w, h);
+                    ctx.closePath();
+                    ctx.clip();
 
-                ctx.save();
-                ctx.translate(d.i.l, y);
-                ctx.beginPath();
-                ctx.rect(0, 0, w, h);
-                ctx.closePath();
-                ctx.clip();
+                    stamp.paint(ctx);
 
-                stamp.paint(ctx);
+                    ctx.restore();
 
+                    this.remove(stamp);
+
+                    y+= h;
+                }
+            } finally {
                 ctx.restore();
-
-                this.remove(stamp);
-
-                y+= h;
             }
         }
     }
@@ -742,8 +887,8 @@ var HorizontalTree = Class.define({
             this.lists.push(list);
             this.add(list);
 
-            var splitter = new Splitter({ attributes: { orientation: GTK.HORIZONTAL } });
-            splitter.id = "splitter " + (this.splitters.length + 1);
+            var splitter = new Splitter({ attributes: { orientation: GTK.HORIZONTAL }, scrollbar: new Scrollbar() });
+            splitter.scrollbar.scrollable = list;
             this.bus.bind("dragstart", splitter, this.ondragstart, this);
             this.bus.bind("drag", splitter, this.ondrag, this);
             this.bus.bind("dragstop", splitter, this.ondragstop, this);
@@ -872,30 +1017,6 @@ var HorizontalTree = Class.define({
                 ctx.fillStyle = this.style.backgroundColor;
                 ctx.fillRect(0, 0, d.b.w, d.b.h);
             }
-        }
-    }
-});
-
-var Button = Class.define({
-    type: "Button",
-
-    superclass: Component,
-
-    members: {
-        init: function(parms) {
-            this._super(parms);
-        }
-    }
-});
-
-var Scrollbar = Class.define({
-    type: "Scrollbar",
-
-    superclass: Container,
-
-    members: {
-        init: function(parms) {
-            this._super(parms);
         }
     }
 });
