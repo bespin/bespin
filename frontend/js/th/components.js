@@ -77,11 +77,30 @@ var Scrollbar = Class.define({
         },
 
         onmousedrag: function(e) {
-            console.log("drag start");
+            var currentPosition = (this.orientation == GTK.VERTICAL) ? e.clientY : e.clientX;
+
+            if (this.dragstart_value == undefined) {
+                this.dragstart_value = this.value;
+                this.dragstart_mouse = currentPosition;
+                return;
+            }
+
+            var diff = currentPosition - this.dragstart_mouse;  // difference in pixels; needs to be translated to a difference in value
+
+            var pixel_range = this.bounds.height - this.up.bounds.height - this.down.bounds.height - this.bar.bounds.height; // total number of pixels that map to the value range
+
+            var pixel_to_value_ratio = (this.max - this.min) / pixel_range;
+
+            this.value = this.dragstart_value + Math.floor(diff * pixel_to_value_ratio);
+            if (this.value < this.min) this.value = this.min;
+            if (this.value > this.max) this.value = this.max;
+            if (this.scrollable) this.scrollable.scrollTop = this.value;
+            this.getScene().render();
         },
 
         onmouseup: function(e) {
-            console.log("drag stop / mouse up");
+            delete this.dragstart_value;
+            delete this.dragstart_mouse;
         },
 
         scrollup: function(e) {
