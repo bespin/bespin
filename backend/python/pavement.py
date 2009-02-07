@@ -46,6 +46,11 @@ options(
     virtualenv=Bunch(
         packages_to_install=['pip'],
         paver_command_line="required"
+    ),
+    server=Bunch(
+        # set to true to allow connections from other machines
+        open=False,
+        port=8080
     )
 )
 
@@ -62,13 +67,30 @@ def required():
 
 @task
 def start():
-    """Starts the BespinServer on localhost port 8080 for development."""
+    """Starts the BespinServer on localhost port 8080 for development.
+    
+    You can change the port and allow remote connections by setting
+    server.port or server.open on the command line.
+    
+    paver server.open=1 server.port=8000 start
+    
+    will allow remote connections (assuming you don't have a firewall
+    blocking the connection) and start the server on port 8000.
+    """
     from bespin import config, controllers
     from wsgiref.simple_server import make_server
     
+    options.order('server')
+    
     config.set_profile('dev')
     config.activate_profile()
-    make_server('localhost', 8080, controllers.make_app()).serve_forever()
+    port = int(options.port)
+    if options.open in ["True", "true", "yes", "1"]:
+        listen_on = ""
+    else:
+        listen_on = "localhost"
+    info("Server starting on %s:%s" % (listen_on, port))
+    make_server(listen_on, port, controllers.make_app()).serve_forever()
     
 @task
 def clean_data():
