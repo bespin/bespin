@@ -247,6 +247,11 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         var shiftKey = (modifiers.toUpperCase().indexOf("SHIFT") != -1);
         return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
     },
+    
+    bindKeyStringSelectable: function(modifiers, keyCode, action) {
+        this.bindKeyString(modifiers, keyCode, action);
+        this.bindKeyString("SHIFT " + modifiers, keyCode, action);
+    },
 
     onkeydown: function(e) {
         var handled = _commandLine.handleCommandLineFocus(e);
@@ -591,28 +596,20 @@ Bespin.Editor.UI = Class.create({
         Event.observe(document, "keydown", this.oldkeydown);
         Event.observe(document, "keypress", this.oldkeypress);
 
-        // Keycode, Meta, Control, Action
-        // TODO: kill entire line, kill to end of line
-        listener.bindKeyString("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
-        listener.bindKeyString("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
-        listener.bindKeyString("", Key.ARROW_UP, this.actions.moveCursorUp);
-        listener.bindKeyString("", Key.ARROW_DOWN, this.actions.moveCursorDown);
-        listener.bindKeyString("SHIFT", Key.ARROW_LEFT, this.actions.moveCursorLeft);
-        listener.bindKeyString("SHIFT", Key.ARROW_RIGHT, this.actions.moveCursorRight);
-        listener.bindKeyString("SHIFT", Key.ARROW_UP, this.actions.moveCursorUp);
-        listener.bindKeyString("SHIFT", Key.ARROW_DOWN, this.actions.moveCursorDown);
+        // Modifiers, Key, Action
+        
+        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
+        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
+        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
+        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
 
-        listener.bindKeyString("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyString("SHIFT ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyString("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
-        listener.bindKeyString("SHIFT ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
-        listener.bindKeyString("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyString("SHIFT", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyString("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
-        listener.bindKeyString("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyString("SHIFT", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyString("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
@@ -637,13 +634,11 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
         listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
 
-        listener.bindKeyString("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyString("SHIFT APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyString("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
-        listener.bindKeyString("SHIFT APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
-        listener.bindKeyString("", Key.PAGE_UP, this.actions.movePageUp);
-        listener.bindKeyString("", Key.PAGE_DOWN, this.actions.movePageDown);
+        listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
+        listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
 
         // Other key bindings can be found in commands themselves.
         // For example, this:
