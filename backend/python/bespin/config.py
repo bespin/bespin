@@ -54,8 +54,6 @@ def set_profile(profile):
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
     elif profile == "dev":
-        if not os.path.exists("devdata"):
-            os.mkdir("devdata")
         c.dburl = "sqlite:///devdata.db"
     
 def activate_profile():
@@ -64,6 +62,9 @@ def activate_profile():
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
     set_profile('dev')
+    here = os.path.dirname(__file__)
+    dbfile = os.path.abspath(os.path.join(here, "..", "devdata.db"))
+    c.dburl = "sqlite:///%s" % (dbfile)
     activate_profile()
     return spawning_config
 
