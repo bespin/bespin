@@ -202,7 +202,7 @@ Bespin.Events = {
     //
     // Example events:
     //
-    // * {{{bespin:cmdline:execute;foo=bar,baz=aps}}}
+    // * {{{bespin:cmdline:execute;name=ls,args=bespin}}}
     // * {{{bespin:cmdline:execute}}}
     toFire: function(eventString) {
         var event = {};
