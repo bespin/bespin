@@ -602,15 +602,17 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("SHIFT", Key.ARROW_UP, this.actions.moveCursorUp);
         listener.bindKeyString("SHIFT", Key.ARROW_DOWN, this.actions.moveCursorDown);
 
-        listener.bindKeyString("APPLE", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyString("SHIFT APPLE", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyString("APPLE", Key.ARROW_RIGHT, this.actions.moveWordRight);
-        listener.bindKeyString("SHIFT APPLE", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyString("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyString("SHIFT ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyString("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyString("SHIFT ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyString("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyString("", Key.END, this.actions.moveToLineEnd);
         listener.bindKeyString("SHIFT", Key.HOME, this.actions.moveToLineStart);
+        listener.bindKeyString("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
+        listener.bindKeyString("", Key.END, this.actions.moveToLineEnd);
         listener.bindKeyString("SHIFT", Key.END, this.actions.moveToLineEnd);
+        listener.bindKeyString("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
