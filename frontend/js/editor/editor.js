@@ -269,7 +269,7 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         if (e.metaKey || e.ctrlKey || e.altKey) {
             this.skipKeypress = true;
             this.returnValue = true;
-            if (hasAction) Event.stop(e); // stop going, but allow special strokes to get to the browser
+            if (hasAction || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e); // stop going, but allow special strokes to get to the browser
         }
 
     },
