@@ -116,7 +116,7 @@ Event.observe(document, "dom:loaded", function() {
 
     scene.bus.bind("dblclick", tree, function() {
         var path = tree.getSelectedPath();
-        if (path.length == 0 || path.first().contents) return; // don't allow directories either
+        if (path.length == 0 || path.last().contents) return; // don't allow directories either
         go.editor(currentProject, getFilePath(path));
     });
 
