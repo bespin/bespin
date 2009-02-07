@@ -291,6 +291,11 @@ Bespin.Commands.add({
     preview: 'remove the file',
     completeText: 'add the filename to remove',
     execute: function(self, filename) {
+        if (!filename) {
+            self.showInfo("give me a filename or directory to delete");
+            return;
+        }
+        
         self.files.removeFile(_editSession.project, filename, function() {
             self.editor.model.clear();
             self.showInfo('Removed file: ' + filename, true);
