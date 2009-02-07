@@ -84,7 +84,9 @@ var ComponentHelpers = new Trait({
         // returns hash with some handy short-cuts for painting
         d: function() {
             return {
-               b: (this.bounds) ? { x: this.bounds.x, y: this.bounds.y, w: this.bounds.width, h: this.bounds.height } : {},
+               b: (this.bounds) ? { x: this.bounds.x, y: this.bounds.y, w: this.bounds.width, h: this.bounds.height,
+                                    iw: this.bounds.width - this.getInsets().left - this.getInsets().right,
+                                    ih: this.bounds.height - this.getInsets().top - this.getInsets().bottom } : {},
                i: { l: this.getInsets().left, r: this.getInsets().right, t: this.getInsets().top, b: this.getInsets().bottom,
                     w: this.getInsets().left + this.getInsets().right, h: this.getInsets().top + this.getInsets().bottom }
             }
