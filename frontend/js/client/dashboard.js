@@ -143,6 +143,13 @@ Event.observe(document, "dom:loaded", function() {
 
 var currentProject;
 
+document.observe("bespin:project:imported", function(event) {
+    var project = event.memo.project;
+    var url     = event.memo.url;
+    
+    _server.list(null, null, displayProjects); // get projects
+});
+
 function loggedIn(user) {
     _server.list(null, null, displayProjects); // get projects
     _server.listOpen(displaySessions); // get sessions
