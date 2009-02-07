@@ -100,22 +100,25 @@ Bespin.Editor.Actions = Class.create({
     },
 
     moveToFileTop: function(args) {
-        this.editor.cursorPosition.col = args.pos.col = 0;
-        this.editor.cursorPosition.row = args.pos.row = 0;
+        this.editor.cursorPosition.col = this.editor.cursorPosition.row = 0;
 
         this.handleCursorSelection(args);
         this.repaint();
+
+        args.pos.col = args.pos.row = 0;
 
         return args;
     },
 
     moveToFileBottom: function(args) {
-        this.editor.cursorPosition.row = args.pos.row = this.editor.model.getRowCount() - 1;
-        this.editor.cursorPosition.col = args.pos.col = this.editor.model.getRowLength(args.pos.row);
+        this.editor.cursorPosition.row = this.editor.model.getRowCount() - 1;
+        this.editor.cursorPosition.col = this.editor.model.getRowLength(args.pos.row);
 
         this.handleCursorSelection(args);
         this.repaint();
 
+        args.pos.row = this.editor.cursorPosition.row;
+        args.pos.col = this.editor.cursorPosition.col;
         return args;
     },
 
