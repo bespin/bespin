@@ -58,7 +58,7 @@ var Scrollbar = Class.define({
         init: function(parms) {
             if (!parms) parms = {};
             this._super(parms);
-            this.orientation = parms.orientation || GTK.VERTICAL;
+            this.orientation = parms.orientation || TH.VERTICAL;
             this.value = parms.value || 0;
             this.min = parms.min || 0;
             this.max = parms.max || 100;
@@ -77,7 +77,7 @@ var Scrollbar = Class.define({
         },
 
         onmousedrag: function(e) {
-            var currentPosition = (this.orientation == GTK.VERTICAL) ? e.clientY : e.clientX;
+            var currentPosition = (this.orientation == TH.VERTICAL) ? e.clientY : e.clientX;
 
             if (this.dragstart_value == undefined) {
                 this.dragstart_value = this.value;
@@ -141,7 +141,7 @@ var Scrollbar = Class.define({
                 return;
             }
 
-            if (this.orientation == GTK.VERTICAL) {
+            if (this.orientation == TH.VERTICAL) {
                 this.up.bounds = { x: d.i.l, y: d.i.t, width: d.b.iw, height: d.b.iw };
                 var h = d.b.iw;
                 this.down.bounds = { x: d.i.l, y: d.b.ih - h, width: d.b.iw, height: h };
@@ -224,7 +224,7 @@ var ResizeNib = Class.define({
         paint: function(ctx) {
             var d = this.d();
 
-            if (this.attributes.orientation == GTK.VERTICAL) {
+            if (this.attributes.orientation == TH.VERTICAL) {
                 var bw = 7;
                 var x = Math.floor((d.b.w / 2) - (bw / 2));
                 var y = 7;
@@ -342,9 +342,9 @@ var Splitter = Class.define({
             var d = this.d();
 
             // if the orientation isn't explicitly set, guess it by examining the ratio
-            if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? GTK.HORIZONTAL : GTK.VERTICAL;
+            if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? TH.HORIZONTAL : TH.VERTICAL;
 
-            if (this.attributes.orientation == GTK.HORIZONTAL) {
+            if (this.attributes.orientation == TH.HORIZONTAL) {
                 this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
                 this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
 
@@ -363,7 +363,7 @@ var Splitter = Class.define({
 
         paintSelf: function(ctx) {
             var d = this.d();
-            if (this.attributes.orientation == GTK.VERTICAL) {
+            if (this.attributes.orientation == TH.VERTICAL) {
                 ctx.fillStyle = "rgb(73, 72, 66)";
                 ctx.fillRect(0, 0, d.b.w, 1);
                 ctx.fillStyle = "black";
@@ -411,11 +411,11 @@ var SplitPanelContainer = Class.define({
             var childrenWithoutSplitter = this.children.without(this.splitter);
             if (this.children.length == childrenWithoutSplitter.length) this.add(this.splitter);
 
-            var slength = (this.attributes.orientation == GTK.HORIZONTAL) ?
+            var slength = (this.attributes.orientation == TH.HORIZONTAL) ?
                           this.splitter.getPreferredWidth(this.bounds.height) :
                           this.splitter.getPreferredHeight(this.bounds.width);
             if (this.splitter.shouldLayout()) {
-                if (this.attributes.orientation == GTK.HORIZONTAL) {
+                if (this.attributes.orientation == TH.HORIZONTAL) {
                     this.splitter.bounds = { x: this.bounds.width - slength, y: 0, height: this.bounds.height, width: slength };
                 } else {
                     this.splitter.bounds = { x: 0, y: this.bounds.height - slength, height: slength, width: this.bounds.width };
@@ -426,7 +426,7 @@ var SplitPanelContainer = Class.define({
 
             // only the first non-splitter child is laid out
             if (childrenWithoutSplitter.length > 0) {
-                if (this.attributes.orientation == GTK.HORIZONTAL) {
+                if (this.attributes.orientation == TH.HORIZONTAL) {
                     childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength }
                 } else {
                     childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width }
@@ -452,7 +452,7 @@ var SplitPanel = Class.define({
         init: function(parms) {
             this._super(parms);
 
-            if (!this.attributes.orientation) this.attributes.orientation = GTK.HORIZONTAL; 
+            if (!this.attributes.orientation) this.attributes.orientation = TH.HORIZONTAL;
 
             if (!this.attributes.regions) this.attributes.regions = [{},{}];
         },
@@ -466,7 +466,7 @@ var SplitPanel = Class.define({
         ondrag: function(e) {
             var container = e.thComponent.parent; // splitter -> splitpanecontainer
 
-            var delta = (this.attributes.orientation == GTK.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
+            var delta = (this.attributes.orientation == TH.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
 
             container.region.size = container.region.startSize + delta;
             this.getScene().render();
@@ -511,7 +511,7 @@ var SplitPanel = Class.define({
                 this.add(region.container);
             }
 
-            var containerSize = (this.attributes.orientation == GTK.HORIZONTAL) ? this.bounds.width : this.bounds.height;
+            var containerSize = (this.attributes.orientation == TH.HORIZONTAL) ? this.bounds.width : this.bounds.height;
 
             // size the regions
             var totalSize = 0;
@@ -551,7 +551,7 @@ var SplitPanel = Class.define({
             var startPx = 0;
             for (var i = 0; i < this.attributes.regions.length; i++) {
                 var region = this.attributes.regions[i];
-                if (this.attributes.orientation == GTK.HORIZONTAL) {
+                if (this.attributes.orientation == TH.HORIZONTAL) {
                     region.container.bounds = { x: startPx, y: 0, width: region.size, height: this.bounds.height };
                 } else {
                     region.container.bounds = { x: 0, y: startPx, width: this.bounds.width, height: region.size };
@@ -846,7 +846,7 @@ var HorizontalTree = Class.define({
             this._super(parms);
             if (!this.style.defaultSize) this.style.defaultSize = 150;
 
-            this.attributes.orientation = GTK.HORIZONTAL;
+            this.attributes.orientation = TH.HORIZONTAL;
 
             this.lists = [];
             this.splitters = [];
@@ -873,7 +873,7 @@ var HorizontalTree = Class.define({
 
         ondrag: function(e) {
             var splitterIndex = this.splitters.indexOf(e.thComponent);
-            var delta = (this.attributes.orientation == GTK.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
+            var delta = (this.attributes.orientation == TH.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
             this.listWidths[splitterIndex] = this.startSize + delta;
             this.getScene().render();
         },
@@ -914,7 +914,7 @@ var HorizontalTree = Class.define({
             this.lists.push(list);
             this.add(list);
 
-            var splitter = new Splitter({ attributes: { orientation: GTK.HORIZONTAL }, scrollbar: new Scrollbar() });
+            var splitter = new Splitter({ attributes: { orientation: TH.HORIZONTAL }, scrollbar: new Scrollbar() });
             splitter.scrollbar.scrollable = list;
             this.bus.bind("dragstart", splitter, this.ondragstart, this);
             this.bus.bind("drag", splitter, this.ondrag, this);

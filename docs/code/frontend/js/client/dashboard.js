@@ -96,7 +96,7 @@ Event.observe(document, "dom:loaded", function() {
     infoPanel = new ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
 
     var splitPanel = new SplitPanel({ id: "splitPanel", attributes: {
-        orientation: GTK.VERTICAL,
+        orientation: TH.VERTICAL,
         regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
     } });
 
