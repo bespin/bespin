@@ -205,7 +205,6 @@ var Scene = Class.define({
 
         render: function() {
             if (!this.cssLoaded) {
-                //console.log("short-circuited render as CSS is not loaded");
                 this.renderRequested = true;
                 return;
             }
@@ -221,13 +220,41 @@ var Scene = Class.define({
             }
         },
 
-        paint: function() {
-            if (this.root) {
+        paint: function(component) {
+            if (!this.cssLoaded) {
+                this.renderRequested = true;
+                return;
+            }
+
+            if (!component) component = this.root;
+
+            if (component === this.root) console.log("root paint");
+
+            if (component) {
+                if (!component.opaque && component.parent) {
+                    return this.paint(component.parent);
+                }
+
                 var ctx = this.canvas.getContext("2d");
-                ctx.save();
                 Bespin.Canvas.Fix(ctx);
-                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.root.paint(ctx);
+
+                ctx.save();
+
+                var parent = component.parent;
+                var child = component;
+                while (parent) {
+                    ctx.translate(child.bounds.x, child.bounds.y);
+                    child = parent;
+                    parent = parent.parent;
+                }
+
+                ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
+                ctx.beginPath();
+                ctx.rect(0, 0, component.bounds.width, component.bounds.height);
+                ctx.closePath();
+                ctx.clip();
+                component.paint(ctx);
+
                 ctx.restore();
             }
         },
@@ -302,6 +329,7 @@ var Component = Class.define({
             this.attributes = parms.attributes || {};
             this.id = parms.id;
             this.border = parms.border;
+            this.opaque = parms.opaque || true;
 
             this.bus = th_global_event_bus;
         },
@@ -322,6 +350,10 @@ var Component = Class.define({
 
         paint: function(ctx) {
             console.log("default component paint");
+        },
+
+        repaint: function() {
+            this.getScene().paint(this);
         }
     }
 });
@@ -437,6 +469,11 @@ var Container = Class.define({
                     this.children[i].bounds = { x: (i * individualWidth) + d.i.l, y: d.i.t, width: individualWidth, height: this.bounds.height - d.i.h };
                 }
             }
+        },
+
+        render: function() {
+            this.layoutTree();
+            this.repaint();
         }
     }
 });
