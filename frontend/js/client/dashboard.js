@@ -161,6 +161,7 @@ function notLoggedIn(xhr) {
 
 function displayFiles(files) {
     tree.setData(prepareFilesForTree(files));
+    tree.render();
 }
 
 function prepareFilesForTree(files) {
@@ -195,6 +196,7 @@ function fetchFiles(path, tree) {
 
     _server.list(filepath, null, function(files) {
         tree.updateData(path[path.length - 1], prepareFilesForTree(files));
+        tree.render();
     });
 }
 
@@ -214,7 +216,7 @@ function displaySessions(sessions) {
             });
         }
     }
-    scene.render();
+    infoPanel.render();
 
     setTimeout(function() {
         _server.listOpen(displaySessions);   // get sessions
