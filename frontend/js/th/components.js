@@ -95,7 +95,8 @@ var Scrollbar = Class.define({
             if (this.value < this.min) this.value = this.min;
             if (this.value > this.max) this.value = this.max;
             if (this.scrollable) this.scrollable.scrollTop = this.value;
-            this.getScene().render();
+            this.render();
+            if (this.scrollable) this.scrollable.repaint();
         },
 
         onmouseup: function(e) {
@@ -107,7 +108,8 @@ var Scrollbar = Class.define({
             if (this.value > this.min) {
                 this.value = Math.max(this.min, this.value - this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
-                this.getScene().render();
+                this.render();
+                if (this.scrollable) this.scrollable.repaint();
             }
         },
 
@@ -115,10 +117,8 @@ var Scrollbar = Class.define({
             if (this.value < this.max) {
                 this.value = Math.min(this.max, this.value + this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
-
-                console.log("value: " + this.value + "; max: " + this.max);
-
-                this.getScene().render();
+                this.render();
+                if (this.scrollable) this.scrollable.repaint();
             }
         },
 
@@ -380,6 +380,9 @@ var Splitter = Class.define({
                 ctx.fillStyle = "black";
                 ctx.fillRect(d.b.w - 1, 0, 1, d.b.h);
 
+                console.log("right before gradient: " + (d.b.w - 2));
+                console.log("bounds: ");
+                console.log(d.b);
                 var gradient = ctx.createLinearGradient(1, 0, d.b.w - 2, 0);
                 gradient.addColorStop(0, "rgb(56, 55, 49)");
                 gradient.addColorStop(1, "rgb(62, 61, 55)");
@@ -469,7 +472,7 @@ var SplitPanel = Class.define({
             var delta = (this.attributes.orientation == TH.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
 
             container.region.size = container.region.startSize + delta;
-            this.getScene().render();
+            this.render();
         },
 
         ondragstop: function(e) {
@@ -713,7 +716,7 @@ var List = Class.define({
             if (item != this.selected) {
                 this.selected = item;
                 this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
-                this.getScene().render();
+                this.repaint();
             }
         },
 
@@ -761,6 +764,8 @@ var List = Class.define({
 
         paint: function(ctx) {
             var d = this.d();
+            var paintHeight = Math.max(this.getScrollInfo().scrollHeight, d.b.h);
+            var scrollInfo = this.getScrollInfo();
 
             ctx.save();
             ctx.translate(0, -this.scrollTop);
@@ -768,7 +773,7 @@ var List = Class.define({
             try {
                 if (this.style.backgroundColor) {
                     ctx.fillStyle = this.style.backgroundColor;
-                    ctx.fillRect(0, 0, d.b.w, d.b.h);
+                    ctx.fillRect(0, 0, d.b.w, paintHeight);
                 }
 
                 if (this.style.backgroundColorOdd) {
@@ -785,7 +790,7 @@ var List = Class.define({
                     if (rowHeight) {
                         var y = d.i.t + rowHeight;
                         ctx.fillStyle = this.style.backgroundColorOdd;
-                        while (y < d.b.h) {
+                        while (y < paintHeight) {
                             ctx.fillRect(d.i.l, y, d.b.w - d.i.w, rowHeight);
                             y += rowHeight * 2;
                         }
@@ -875,7 +880,7 @@ var HorizontalTree = Class.define({
             var splitterIndex = this.splitters.indexOf(e.thComponent);
             var delta = (this.attributes.orientation == TH.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
             this.listWidths[splitterIndex] = this.startSize + delta;
-            this.getScene().render();
+            this.render();
         },
 
         ondragstop: function(e) {
@@ -898,7 +903,7 @@ var HorizontalTree = Class.define({
             if (!Object.isArray(children)) {
                 // if it's not an array, assume it's a function that will load the children
                 children(this.getSelectedPath(), this);
-                this.getScene().render();
+                this.render();
                 return;
             }
 
@@ -916,6 +921,7 @@ var HorizontalTree = Class.define({
 
             var splitter = new Splitter({ attributes: { orientation: TH.HORIZONTAL }, scrollbar: new Scrollbar() });
             splitter.scrollbar.scrollable = list;
+            splitter.scrollbar.opaque = false;
             this.bus.bind("dragstart", splitter, this.ondragstart, this);
             this.bus.bind("drag", splitter, this.ondrag, this);
             this.bus.bind("dragstop", splitter, this.ondragstop, this);
@@ -923,7 +929,7 @@ var HorizontalTree = Class.define({
             this.splitters.push(splitter);
             this.add(splitter);
 
-            if (this.parent) this.getScene().render();
+            if (this.parent) this.render();
         },
 
         showDetails: function(item) {
@@ -935,7 +941,7 @@ var HorizontalTree = Class.define({
 //            this.details = panel;
 //            this.add(this.details);
 
-            if (this.parent) this.getScene().render();
+            if (this.parent) this.repaint();
         },
 
         createList: function(items) {
