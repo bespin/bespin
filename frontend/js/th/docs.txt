@@ -14,7 +14,7 @@ attributes (not related to painting)
 - regions (used by SplitPanel)
   - size (% or px)
   - contents (component)
-- orientation (GTK.HORIZONTAL, GTK.VERTICAL; used by SplitPanel, Splitter)
+- orientation (TH.HORIZONTAL, TH.VERTICAL; used by SplitPanel, Splitter)
 - text (used by Label)
 
 events

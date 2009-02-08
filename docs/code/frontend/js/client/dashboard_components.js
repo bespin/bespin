@@ -216,7 +216,7 @@ var BespinProjectPanel = Class.define({
 
             this.list = new List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "9pt Tahoma" } });
 
-            this.splitter = new Splitter({ orientation: GTK.HORIZONTAL });
+            this.splitter = new Splitter({ orientation: TH.HORIZONTAL });
 
             this.add([ this.projectLabel, this.list, this.splitter ]);
 
