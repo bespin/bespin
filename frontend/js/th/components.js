@@ -721,6 +721,7 @@ var List = Class.define({
         },
 
         getItemForPosition: function(pos) {
+            pos.y += this.scrollTop;
             var y = this.getInsets().top;
             for (var i = 0; i < this.items.length; i++) {
                 var h = this.heights[i];
