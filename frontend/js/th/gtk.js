@@ -37,7 +37,7 @@ Array.asArray = function(object) {
 /*
     Constants
  */
-var GTK = {
+var TH = {
     VERTICAL: "v",
     HORIZONTAL: "h"
 }
