@@ -124,7 +124,7 @@ var Bus = Class.define({
 });
 
 // create the global event bus
-var gtk_global_event_bus = new Bus();
+var th_global_event_bus = new Bus();
 
 var Scene = Class.define({
     uses: [
@@ -132,7 +132,7 @@ var Scene = Class.define({
     ],
 
     members: {
-        bus: gtk_global_event_bus,
+        bus: th_global_event_bus,
 
         css: {},
 
@@ -165,29 +165,29 @@ var Scene = Class.define({
 
                 self.mouseDownComponent = e.thComponent;
 
-                gtk_global_event_bus.fire("mousedown", e, e.thComponent);
+                th_global_event_bus.fire("mousedown", e, e.thComponent);
             });
 
             Event.observe(window, "dblclick", function(e) {
                 self.wrapEvent(e, self.root);
 
-                gtk_global_event_bus.fire("dblclick", e, e.thComponent);
+                th_global_event_bus.fire("dblclick", e, e.thComponent);
             });
 
             Event.observe(window, "click", function(e) {
                 self.wrapEvent(e, self.root);
 
-                gtk_global_event_bus.fire("click", e, e.thComponent);
+                th_global_event_bus.fire("click", e, e.thComponent);
             });
 
             Event.observe(window, "mousemove", function(e) {
                 self.wrapEvent(e, self.root);
 
-                gtk_global_event_bus.fire("mousemove", e, e.thComponent);
+                th_global_event_bus.fire("mousemove", e, e.thComponent);
 
                 if (self.mouseDownComponent) {
                     self.addComponentXY(e, self.root, self.mouseDownComponent);
-                    gtk_global_event_bus.fire("mousedrag", e, self.mouseDownComponent);
+                    th_global_event_bus.fire("mousedrag", e, self.mouseDownComponent);
                 }
             });
 
@@ -195,7 +195,7 @@ var Scene = Class.define({
                 if (!self.mouseDownComponent) return;
 
                 self.addComponentXY(e, self.root, self.mouseDownComponent);
-                gtk_global_event_bus.fire("mouseup", e, self.mouseDownComponent);
+                th_global_event_bus.fire("mouseup", e, self.mouseDownComponent);
 
                 delete self.mouseDownComponent;
             });
@@ -303,7 +303,7 @@ var Component = Class.define({
             this.id = parms.id;
             this.border = parms.border;
 
-            this.bus = gtk_global_event_bus;
+            this.bus = th_global_event_bus;
         },
 
         // used to obtain a throw-away canvas context for performing measurements, etc.; may or may not be the same canvas as that used to draw the component
