@@ -15,10 +15,10 @@ dp.sh.Brushes.JScript = function()
 		{ regex: new RegExp(this.GetKeywords(keywords), 'gm'),		css: 'keyword' },
 		{ regex: /\(/g, css: 'paren'},
 		{ regex: /\)/g, css: 'paren'},
-	     	{ regex: /\.(\w+)/g, css: 'attribute'},
-		];
+	    { regex: /\.(\w+)/g, css: 'attribute'},
+	];
 
-	this.CssClass = 'dp-c';
+	//this.CssClass = 'dp-c';
 }
 
 dp.sh.Brushes.JScript.prototype	= new dp.sh.Highlighter();

@@ -17,13 +17,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-dp.sh.Brushes.Xml = function()
-{
-        this.CssClass = 'dp-xml';
-        this.Style =    '.dp-xml .cdata { color: #ff1493; }' +
-                                        '.dp-xml .tag, .dp-xml .tag-name { color: #069; font-weight: bold; }' +
-                                        '.dp-xml .attribute { color: red; }' +
-                                        '.dp-xml .attribute-value { color: blue; }';
+dp.sh.Brushes.Xml = function() {
+        // this.CssClass = 'dp-xml';
+        // this.Style =    '.dp-xml .cdata { color: #ff1493; }' +
+        //                                 '.dp-xml .tag, .dp-xml .tag-name { color: #069; font-weight: bold; }' +
+        //                                 '.dp-xml .attribute { color: red; }' +
+        //                                 '.dp-xml .attribute-value { color: blue; }';
 };
 
 dp.sh.Brushes.Xml.prototype     = new dp.sh.Highlighter();
