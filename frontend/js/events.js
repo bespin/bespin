@@ -140,7 +140,7 @@ document.observe("bespin:editor:titlechange", function(event) {
     var title;
     if (event.memo.filename) title = event.memo.filename + ' - editing with Bespin';
     else if (event.memo.title) title = event.memo.title;
-    else title = 'Bespin &raquo; Welcome to the Cloud City';
+    else title = 'Bespin &raquo; Code in the Cloud';
 
     document.title = title;
 });
