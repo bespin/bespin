@@ -47,7 +47,7 @@ def new_user(request, response):
     except KeyError:
         raise BadRequest("username, email and password are required.")
     user = request.user_manager.create_user(username, password, email)
-    request.file_manager.install_template(username, user.private_project,
+    request.file_manager.install_template(user, user.private_project,
                                           'usertemplate')
     response.content_type = "application/json"
     response.body = simplejson.dumps(dict(project=user.private_project))
@@ -146,7 +146,7 @@ def _split_path(request):
 @expose(r'^/file/listopen/$', 'GET')
 def listopen(request, response):
     fm = request.file_manager
-    result = fm.list_open(request.username)
+    result = fm.list_open(request.user)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
@@ -155,7 +155,7 @@ def listopen(request, response):
 def putfile(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    fm.save_file(request.username, project, path,
+    fm.save_file(request.user, project, path,
                  request.body)
     return response()
 
@@ -164,7 +164,7 @@ def getfile(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
     mode = request.GET.get('mode', 'rw')
-    contents = fm.get_file(request.username, project, path, mode)
+    contents = fm.get_file(request.user, project, path, mode)
     response.body = contents
     return response()
     
@@ -172,14 +172,14 @@ def getfile(request, response):
 def postfile(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    fm.close(request.username, project, path)
+    fm.close(request.user, project, path)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'DELETE')
 def deletefile(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    fm.delete(request.username, project, path)
+    fm.delete(request.user, project, path)
     return response()
 
 @expose(r'^/file/list/(?P<path>.*)$', 'GET')
@@ -196,7 +196,7 @@ def listfiles(request, response):
             project = path
             path = ''
         
-    files = fm.list_files(request.username, project, path)
+    files = fm.list_files(request.user, project, path)
     pp = request.user.private_project
     result = []
     for item in files:
@@ -220,7 +220,7 @@ def _populate_stats(item, result):
 def filestats(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    file_obj = fm.get_file_object(request.username, project, path)
+    file_obj = fm.get_file_object(request.user, project, path)
     result = {}
     _populate_stats(file_obj, result)
     response.content_type = "application/json"
@@ -231,14 +231,14 @@ def filestats(request, response):
 def save_edit(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    fm.save_edit(request.username, project, path, 
+    fm.save_edit(request.user, project, path, 
                  request.body)
     return response()
 
 def _get_edit_list(request, response, start_at=0):
     fm = request.file_manager
     project, path = _split_path(request)
-    edits = fm.list_edits(request.username, project, path, start_at)
+    edits = fm.list_edits(request.user, project, path, start_at)
     response.content_type = "application/json"
     response.body = simplejson.dumps(edits)
     return response()
@@ -254,14 +254,14 @@ def list_recent(request, response):
     
 @expose(r'^/edit/reset/$', 'POST')
 def reset_all(request, response):
-    request.file_manager.reset_edits(request.username)
+    request.file_manager.reset_edits(request.user)
     return response()
     
 @expose(r'^/edit/reset/(?P<path>.+)$', 'POST')
 def reset(request, response):
     fm = request.file_manager
     project, path = _split_path(request)
-    fm.reset_edits(request.username, project, path)
+    fm.reset_edits(request.user, project, path)
     return response()
 
 @expose(r'^/(editor|dashboard)\.html', 'GET', auth=False)
@@ -280,7 +280,7 @@ def import_project(request, response):
     input_file = request.POST['filedata']
     filename = input_file.filename
     _perform_import(request.file_manager, 
-                    request.username, project_name, filename,
+                    request.user, project_name, filename,
                     input_file.file)
     return response()
     
@@ -311,7 +311,7 @@ def import_from_url(request, response):
     tempdatafile.seek(0)
     url_parts = urlparse(url)
     filename = os.path.basename(url_parts[2])
-    _perform_import(request.file_manager, request.username,
+    _perform_import(request.file_manager, request.user,
                     project_name, filename, tempdatafile)
     tempdatafile.close()
     return response()
@@ -326,7 +326,7 @@ def export_project(request, response):
     else:
         response.content_type = "application/x-tar-gz"
         func = request.file_manager.export_tarball
-    output = func(request.username, 
+    output = func(request.user, 
                                                  project_name)
     def filegen():
         data = output.read(8192)
