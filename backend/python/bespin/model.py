@@ -95,6 +95,9 @@ class User(Base):
         # increment this number. This will avoid the unlikely
         # collisions.
         self.private_project = "1-" + hashobj.hexdigest()
+        
+    def __str__(self):
+        return "%s (%s-%s)" % (self.username, self.id, id(self))
     
 
 class UserManager(object):
@@ -112,7 +115,7 @@ class UserManager(object):
             self.session.flush()
         except DBAPIError:
             raise ConflictError("Username %s is already in use" % username)
-        self.db.file_manager.install_template(username,
+        self.db.file_manager.install_template(user,
                                 username + "_New_Project")
         return user
         
@@ -121,11 +124,6 @@ class UserManager(object):
         found."""
         return self.session.query(User).filter_by(username=username).first()
             
-    def save_user(self, username, user):
-        """Saves the user object, replacing any prexisting data.
-        create_user should be used for a new user."""
-        self.store[username] = user
-        
 class FileStatus(Base):
     __tablename__ = "filestatus"
     
@@ -226,16 +224,16 @@ class FileManager(object):
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
         
-        project, user_obj, file_obj = \
+        project, file_obj = \
             self._check_and_get_file(user, project_name, path)
-        self._save_status(file_obj, user_obj, mode)
+        self._save_status(file_obj, user, mode)
         
         contents = str(file_obj.data)
         return contents
         
     def _check_and_get_file(self, user, project_name, path):
         """Returns the project, user object, file object."""
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         
@@ -249,12 +247,12 @@ class FileManager(object):
             raise FileNotFound("File %s in project %s does not exist" 
                                 % (path, project_name))
         
-        return project, user_obj, file_obj
+        return project, file_obj
         
     def get_file_object(self, user, project_name, path):
         """Retrieves the File instance from the project at the
         path provided."""
-        project, user_obj, file_obj = \
+        project, file_obj = \
             self._check_and_get_file(user, project_name, path)
         return file_obj
     
@@ -284,8 +282,7 @@ class FileManager(object):
         If project_name is None, this will return the projects
         owned by the user."""
         if not project_name:
-            user_obj = self.db.user_manager.get_user(user)
-            return sorted(user_obj.projects, key=lambda proj: proj.name)
+            return sorted(user.projects, key=lambda proj: proj.name)
         self.get_project(user, project_name)
         full_path = project_name + "/" + path
         try:
@@ -297,13 +294,12 @@ class FileManager(object):
         result.update(set(dir.files))
         return sorted(result, key=lambda item: item.name)
         
-    def get_project(self, username, project_name, create=False, clean=False):
+    def get_project(self, user, project_name, create=False, clean=False):
         """Retrieves the project object, optionally creating it if it
         doesn't exist. Additionally, this will verify that the
         user is authorized for the project."""
         
         s = self.session
-        user = self.db.user_manager.get_user(username)
         
         # a request for a clean project also implies that creating it
         # is okay
@@ -316,13 +312,13 @@ class FileManager(object):
             if clean:
                 # a clean project has been requested, so we will delete its
                 # contents
-                self.delete(username, project_name)
+                self.delete(user, project_name)
         except NoResultFound:
             if not create:
                 raise FileNotFound("Project %s not found" % project_name)
             project = Project(name=project_name, owner=user)
             s.add(project)
-        return project, user
+        return project
         
     def save_file(self, user, project_name, path, contents, last_edit=None):
         """Saves the contents to the file path provided, creating
@@ -330,7 +326,7 @@ class FileManager(object):
         the file must not be opened for editing. Otherwise, the
         last_edit parameter should include the last edit ID received by
         the user."""
-        project, user_obj = self.get_project(user, project_name, create=True)
+        project = self.get_project(user, project_name, create=True)
         
         s = self.session
         full_path = project_name + "/" + path
@@ -371,7 +367,6 @@ class FileManager(object):
         
     def list_open(self, user):
         """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": {"mode" : "rw"} } }"""
-        user = self.db.user_manager.get_user(user)
         output = {}
         current_files = None
         last_proj = None
@@ -388,7 +383,7 @@ class FileManager(object):
         
     def close(self, user, project_name, path):
         """Close the file for the given user"""
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         try:
@@ -397,7 +392,7 @@ class FileManager(object):
             return
             
         try:
-            fs = s.query(FileStatus).filter_by(user_id=user_obj.id) \
+            fs = s.query(FileStatus).filter_by(user_id=user.id) \
                     .filter_by(file_id=file_obj.id).one()
         except NoResultFound:
             return
@@ -409,7 +404,7 @@ class FileManager(object):
         open, a FileConflict is raised. If the path is a directory,
         the directory and everything underneath it will be deleted.
         If the path is empty, the project will be deleted."""
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         s = self.session
         full_path = project_name + "/" + path
         if full_path.endswith("/"):
@@ -430,8 +425,7 @@ class FileManager(object):
                 raise FileNotFound("File %s not found in project %s" %
                                     (path, project_name))
             open_users = set(s.user for s in file_obj.users)
-            open_users.difference_update(set([user_obj]))
-            print open_users
+            open_users.difference_update(set([user]))
             if open_users:
                 raise FileConflict(
                     "File %s in project %s is in use by another user"
@@ -443,7 +437,7 @@ class FileManager(object):
             s.delete(file_obj)
         
     def save_edit(self, user, project_name, path, edit):
-        project, user_obj = self.get_project(user, project_name, create=True)
+        project = self.get_project(user, project_name, create=True)
         full_path = project_name + "/" + path
         s = self.session
         try:
@@ -456,10 +450,10 @@ class FileManager(object):
         
         file_obj.edits.append(edit)
         
-        self._save_status(file_obj, user_obj, "rw")
+        self._save_status(file_obj, user, "rw")
         
     def list_edits(self, user, project_name, path, start_at=0):
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         full_path = project_name + "/" + path
         try:
             file_obj = self.session.query(File).filter_by(name=full_path).one()
@@ -476,13 +470,12 @@ class FileManager(object):
         
     def reset_edits(self, user, project_name=None, path=None):
         if not project_name or not path:
-            user_obj = self.db.user_manager.get_user(user)
-            for fs in user_obj.files[:]:
+            for fs in user.files[:]:
                 file_obj = fs.file
                 project_name, path = file_obj.name.split("/", 1)
                 self.reset_edits(user, project_name, path)
             return
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         full_path = project_name + "/" + path
         s = self.session
         try:
@@ -491,15 +484,15 @@ class FileManager(object):
             return
         file_obj.edits = []
         for fs in file_obj.users:
-            if fs.user == user_obj:
+            if fs.user == user:
                 s.delete(fs)
                 file_obj.users.remove(fs)
-                if fs in user_obj.files:
-                    user_obj.files.remove(fs)
+                if fs in user.files:
+                    user.files.remove(fs)
                 break
             
     def install_template(self, user, project_name, template="template"):
-        project, user_obj = self.get_project(user, project_name, create=True)
+        project = self.get_project(user, project_name, create=True)
         source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -516,22 +509,20 @@ class FileManager(object):
                 
     def authorize_user(self, user, project_name, auth_user):
         """Allow auth_user to access project_name which is owned by user."""
-        project, user_obj = self.get_project(user, project_name)
-        auth_user_obj = self.db.user_manager.get_user(auth_user)
-        project.authorize_user(user_obj, auth_user_obj)
+        project = self.get_project(user, project_name)
+        project.authorize_user(user, auth_user)
         
     def unauthorize_user(self, user, project_name, auth_user):
         """Disallow auth_user from accessing project_name which is owned
         by user."""
-        project, user_obj = self.get_project(user, project_name)
-        auth_user_obj = self.db.user_manager.get_user(auth_user)
-        project.unauthorize_user(user_obj, auth_user_obj)
+        project = self.get_project(user, project_name)
+        project.unauthorize_user(user, auth_user)
         
     def import_tarball(self, user, project_name, filename, file_obj):
         """Imports the tarball in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project, user_obj = self.get_project(user, project_name, clean=True)
+        project = self.get_project(user, project_name, clean=True)
         pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
         info = list(pfile)
@@ -553,7 +544,7 @@ class FileManager(object):
         """Imports the zip file in the file_obj into the project
         project_name owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project, user_obj = self.get_project(user, project_name, clean=True)
+        project = self.get_project(user, project_name, clean=True)
         max_import_file_size = config.c.max_import_file_size
         
         pfile = zipfile.ZipFile(file_obj)
@@ -576,7 +567,7 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         temporaryfile = tempfile.NamedTemporaryFile()
         s = self.session
         
@@ -596,7 +587,6 @@ class FileManager(object):
             tfile.addfile(tarinfo)
             for file in dir.files:
                 tarinfo = tarfile.TarInfo(str(file.name))
-                print "fname: ", file.name
                 tarinfo.mtime = mtime
                 # we don't know the original permissions.
                 # we'll default to read for all, write only by user
@@ -620,7 +610,7 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project, user_obj = self.get_project(user, project_name)
+        project = self.get_project(user, project_name)
         temporaryfile = tempfile.NamedTemporaryFile()
         s = self.session
         
