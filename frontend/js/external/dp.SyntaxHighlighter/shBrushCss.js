@@ -47,20 +47,16 @@ dp.sh.Brushes.CSS = function()
 		{ regex: new RegExp(this.GetValuesCSS(fonts), 'g'),				css: 'value' }		// fonts
 		];
 
-	this.CssClass = 'dp-css';
-	this.Style =	'.dp-css .value { color: black; }' +
-					'.dp-css .important { color: red; }'
-					;
+    // this.CssClass = 'dp-css';
+    // this.Style = '.dp-css .value { color: black; }' + '.dp-css .important { color: red; }';
 }
 
-dp.sh.Highlighter.prototype.GetKeywordsCSS = function(str)
-{
-	return '\\b([a-z_]|)' + str.replace(/ /g, '(?=:)\\b|\\b([a-z_\\*]|\\*|)') + '(?=:)\\b';
+dp.sh.Highlighter.prototype.GetKeywordsCSS = function(str) {
+	return '(' + str.replace(/ /g, '|') + ')\\s*:';
 }
 
-dp.sh.Highlighter.prototype.GetValuesCSS = function(str)
-{
-	return '\\b' + str.replace(/ /g, '(?!-)(?!:)\\b|\\b()') + '\:\\b';
+dp.sh.Highlighter.prototype.GetValuesCSS = function(str) {
+    return ':\\s*(' + str.replace(/ /g, '|') + ')';
 }
 
 dp.sh.Brushes.CSS.prototype	= new dp.sh.Highlighter();
