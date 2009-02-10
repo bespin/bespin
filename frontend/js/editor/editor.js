@@ -313,10 +313,10 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
 Bespin.Editor.UI = Class.create({
     initialize: function(editor) {
         this.editor = editor;
-        this.syntaxModel = new Bespin.Editor.SyntaxModel(editor);
+        this.syntaxModel = new Bespin.Syntax.Model(editor);
         //this.colorHelper = new Bespin.Editor.DocumentColorHelper(editor);
         this.selectionHelper = new Bespin.Editor.SelectionHelper(editor);
-        this.actions = new Bespin.Editor.Actions(this.editor);
+        this.actions = new Bespin.Editor.Actions(editor);
 
         this.GUTTER_WIDTH = 54;
         this.LINE_HEIGHT = 23;
@@ -834,27 +834,36 @@ Bespin.Editor.UI = Class.create({
             // the following three chunks of code all do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
-//            ctx.fillStyle = "white";
-//            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
+           // ctx.fillStyle = "white";
+           // ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
-            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine);
+            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
+            if (!lineInfo.regions) return; // naught when we don't get a real model
+
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
-                var thisLine = "";
 
-                var currentColumn = 0;  // current column, inclusive
-                for (var si = 0; si < styleInfo.ranges.length; si++) {
-                    var range = styleInfo.ranges[si];
-                    for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
-                    thisLine += lineInfo.text.substring(range.start, range.stop);
-                    currentColumn = range.stop;
+                for (var style in styleInfo) {
+                    if (!styleInfo.hasOwnProperty(style)) continue;
+                    
+                    var thisLine = "";
+
+                    var styleArray = styleInfo[style];
+                    var currentColumn = 0; // current column, inclusive
+                    for (var si = 0; si < styleArray.length; si++) {
+                        var range = styleArray[si];
+                        for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
+                        thisLine += lineInfo.text.substring(range.start, range.stop);
+                        currentColumn = range.stop;
+                    }
+
+                    ctx.fillStyle = this.editor.theme[style] || "white"; //"white"; //styleInfo.style;
+//                    ctx.fillStyle = "white";
+                    ctx.fillText(thisLine, x, cy);
                 }
-
-                ctx.fillStyle = styleInfo.style;
-                ctx.fillText(thisLine, x, cy);
             }
-                                                                                                                                       
+
             // CHUNK 3: this code is the "legacy" color helper syntax highlighting API which is now obsolete
 //            cc = 0;
 //            ce = 0;
@@ -1148,7 +1157,6 @@ Bespin.Editor.API = Class.create({
         this.ui = new Bespin.Editor.UI(this);
         this.theme = Bespin.Themes['default']; // set the default which is in themes.js (Coffee)
         this.cursorPosition = { row: 0, col: 0 }
-        this.selection;
         this.editorKeyListener = new Bespin.Editor.DefaultEditorKeyListener(this);
         this.undoManager = new Bespin.Editor.UndoManager(this);
         this.customEvents = new Bespin.Editor.Events(this);
