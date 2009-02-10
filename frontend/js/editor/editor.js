@@ -313,7 +313,8 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
 Bespin.Editor.UI = Class.create({
     initialize: function(editor) {
         this.editor = editor;
-        this.colorHelper = new Bespin.Editor.DocumentColorHelper(editor);
+        this.syntaxModel = new Bespin.Editor.SyntaxModel(editor);
+        //this.colorHelper = new Bespin.Editor.DocumentColorHelper(editor);
         this.selectionHelper = new Bespin.Editor.SelectionHelper(editor);
         this.actions = new Bespin.Editor.Actions(this.editor);
 
@@ -830,22 +831,47 @@ Bespin.Editor.UI = Class.create({
                 ctx.fillRect(tx, y, tw, lineHeight);
             }
 
-            cc = 0;
-            ce = 0;
-            var regions = this.colorHelper.getLineRegions(currentLine);
-            for (ri = 0; ri < regions.length; ri++) {
-                if (cc > lastColumn) break;
+            // the following three chunks of code all do the same thing; only one should be uncommented at a time
 
-                regionlen = regions[ri].text.length;
-                ce = cc + regionlen;
-                if (ce >= firstColumn) {
-                    ctx.fillStyle = regions[ri].style;
-                    ctx.fillText(regions[ri].text, x, cy);
+            // CHUNK 1: this code just renders the line with white text and is for testing
+//            ctx.fillStyle = "white";
+//            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
+
+            // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
+            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine);
+            for (ri = 0; ri < lineInfo.regions.length; ri++) {
+                var styleInfo = lineInfo.regions[ri];
+                var thisLine = "";
+
+                var currentColumn = 0;  // current column, inclusive
+                for (var si = 0; si < styleInfo.ranges.length; si++) {
+                    var range = styleInfo.ranges[si];
+                    for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
+                    thisLine += lineInfo.text.substring(range.start, range.stop);
+                    currentColumn = range.stop;
                 }
 
-                x += regionlen * this.charWidth;
-                cc = ce;
+                ctx.fillStyle = styleInfo.style;
+                ctx.fillText(thisLine, x, cy);
             }
+
+            // CHUNK 3: this code is the "legacy" color helper syntax highlighting API which is now obsolete
+//            cc = 0;
+//            ce = 0;
+//            var regions = this.colorHelper.getLineRegions(currentLine);
+//            for (ri = 0; ri < regions.length; ri++) {
+//                if (cc > lastColumn) break;
+//
+//                regionlen = regions[ri].text.length;
+//                ce = cc + regionlen;
+//                if (ce >= firstColumn) {
+//                    ctx.fillStyle = regions[ri].style;
+//                    ctx.fillText(regions[ri].text, x, cy);
+//                }
+//
+//                x += regionlen * this.charWidth;
+//                cc = ce;
+//            }
 
             y += lineHeight;
         }
