@@ -35,6 +35,10 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
 // lumped into one last bucket.
 
+// #foo {
+//     foo: bar;
+// }
+
 Bespin.Syntax.CSSSyntaxEngine = Class.create({
     punctuation: '{ } . , ; ( ) ? : = " \''.split(" "),
 
