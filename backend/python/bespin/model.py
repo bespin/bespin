@@ -36,6 +36,7 @@ import tempfile
 import mimetypes
 import zipfile
 from datetime import datetime
+import logging
 
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
@@ -47,6 +48,8 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
 
 from bespin import config
+
+log = logging.getLogger("bespin.model")
 
 Base = declarative_base()
 
@@ -109,6 +112,7 @@ class UserManager(object):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
+        log.debug("Creating user %s", username)
         user = User(username, password, email)
         self.session.add(user)
         # flush to ensure that the user is unique
@@ -330,6 +334,7 @@ class FileManager(object):
         except NoResultFound:
             if not create:
                 raise FileNotFound("Project %s not found" % project_name)
+            log.debug("Creating new project %s", project_name)
             project = Project(name=project_name, owner=user)
             s.add(project)
         return project
@@ -506,6 +511,9 @@ class FileManager(object):
                 break
             
     def install_template(self, user, project, template="template"):
+        """Installs a set of template files into a new project."""
+        log.debug("Installing template %s for user %s as project %s",
+                template, user, project)
         project = self.get_project(user, project, create=True)
         source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
