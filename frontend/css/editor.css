@@ -70,6 +70,10 @@ img {
     padding-right: 4px;
 }
 
+#toolbar_dashboard {
+    padding-right: 4px;
+}
+
 #collab_line {
     float: right;
     height: 24px;
@@ -235,6 +239,7 @@ img {
     color: #DDDDDD;
     font-family: Calibri, Arial, sans-serif;
     font-size: 12pt;
+    overflow: hidden;
 }
 
 #status .seperator {

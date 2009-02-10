@@ -60,11 +60,11 @@ Bespin.Themes.coffee = {
 
     // syntax definitions
     plain: "#bdae9d",
-    preprocessor: "rgb(100,100,100)",
     keyword: "#42a8ed",
     string: "#039a0a",
     comment: "#666666",
-    paren: "#888888",
+    'c-comment': "#666666",
+    punctuation: "#888888",
     attribute: "#BF9464",
     test: "rgb(255,0,0)",
     cdata: "#bdae9d",
@@ -110,11 +110,11 @@ Bespin.Themes.white = {
 
     // syntax definitions
     plain: "#bdae9d",
-    preprocessor: "rgb(100,100,100)",
     keyword: "#0000ff",
     string: "#036907",
     comment: "#0066ff",
-    paren: "#888888",
+    'c-comment': "#0066ff",
+    punctuation: "#888888",
     attribute: "#BF9464",
     test: "rgb(255,0,0)",
     cdata: "#bdae9d",
@@ -163,7 +163,8 @@ Bespin.Themes.black = {
     keyword: "#42a8ed",
     string: "#039a0a",
     comment: "#666666",
-    paren: "#888888",
+    'c-comment': "#666666",
+    punctuation: "#888888",
     attribute: "#BF9464",
     test: "rgb(255,0,0)",
     cdata: "#bdae9d",

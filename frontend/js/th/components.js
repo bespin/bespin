@@ -714,7 +714,7 @@ var List = Class.define({
         onmousedown: function(e) {
             var item = this.getItemForPosition({ x: e.componentX, y: e.componentY });
             if (item != this.selected) {
-                this.selected = item;
+                if (item) this.selected = item; else delete this.selected;
                 this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
                 this.repaint();
             }
@@ -978,6 +978,9 @@ var HorizontalTree = Class.define({
 
         itemSelected: function(e) {
             var list = e.thComponent;
+
+            // add check to ensure that list has an item selected; otherwise, bail
+            if (!list.selected) return; 
 
             var path = [];
 
