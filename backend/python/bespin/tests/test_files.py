@@ -42,6 +42,7 @@ from bespin.model import File, Project, User, FileStatus, Directory
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
 otherfilename = os.path.join(os.path.dirname(__file__), "other_import.tgz")
+with_tabs = os.path.join(os.path.dirname(__file__), "ProjectWithTabs.tgz")
 
 app = None
 macgyver = None
@@ -500,6 +501,18 @@ def test_reimport_wipes_out_the_project():
         
     for test in tests:
         yield run_one, test[0], test[1]
+        
+def test_import_converts_tabs_to_spaces():
+    # at the moment, the Bespin editor has a hard time with spaces. This
+    # behavior will be fixed in the near future.
+    fm = _get_fm()
+    handle = open(with_tabs)
+    fm.import_tarball(macgyver, "bigmac",
+        os.path.basename(with_tabs), handle)
+    handle.close()
+    file_obj = fm.get_file_object(macgyver, "bigmac", "FileWithTabs.txt")
+    data = str(file_obj.data)
+    assert '\t' not in data
     
 def test_export_tarfile():
     fm = _get_fm()
@@ -579,7 +592,7 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/MacGyver_New_Project/")
     data = simplejson.loads(resp.body)
-    assert data[1]['name'] == 'readme.txt'
+    assert data[1]['name'] == 'index.html'
     
     resp = app.get("/file/list/bigmac/")
     assert resp.content_type == "application/json"
