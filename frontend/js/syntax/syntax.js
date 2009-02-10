@@ -38,17 +38,17 @@ Bespin.Syntax.Model = Class.create({
     initialize: function(editor) {
         this.editor = editor;
         this.lineCache = [];
-        this.multiLineComment = [];
+        this.lineMetaInfo = [];
         this.syntaxType = "";
     },
     
-    // -- Multiline comment
-    flagMultiLineComment: function(lineNumber, bool) {
-        this.multiLineComment[lineNumber] = bool;
+    // -- Meta Info
+    setLineMetaInfo: function(lineNumber, meta) {
+        this.lineMetaInfo[lineNumber] = meta;
     },
     
-    inMultiLineComment: function(lineNumber) {
-        return this.multiLineComment[lineNumber];
+    getLineMetaInfo: function(lineNumber) {
+        return this.lineMetaInfo[lineNumber];
     },
     
     // -- Caching
@@ -111,7 +111,9 @@ Bespin.Syntax.Model = Class.create({
             }
             syntaxResult.regions.push(this.mergeSyntaxResults(pieceRegions));
         } else {
-            syntaxResult.regions.push(this.engine.highlight(line, { inMultiLineComment: this.inMultiLineComment() }));
+            var result = this.engine.highlight(line, this.getLineMetaInfo(lineNumber));
+            this.setLineMetaInfo(lineNumber, result.meta);
+            syntaxResult.regions.push(result.regions);
         }
         
         this.addToCache(lineNumber, syntaxResult);
@@ -149,7 +151,3 @@ Bespin.Syntax.EngineResolver = new function() {
       }      
   }  
 }();
-
-// Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript']);
-// Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);
-// Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.HTMLSyntaxEngine(), ['html', 'xml']);
