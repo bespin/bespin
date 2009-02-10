@@ -346,9 +346,15 @@ def db_middleware(app):
         environ['user_manager'] = model.UserManager(session)
         environ['file_manager'] = model.FileManager(session)
         environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
-        result = app(environ, start_response)
-        if environ['bespin.docommit']:
-            session.commit()
+        try:
+            result = app(environ, start_response)
+            if environ['bespin.docommit']:
+                session.commit()
+            else:
+                session.rollback()
+        except:
+            session.rollback()
+            raise
         return result
     return wrapped
 
