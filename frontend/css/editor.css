@@ -70,6 +70,10 @@ img {
     padding-right: 4px;
 }
 
+#toolbar_dashboard {
+    padding-right: 4px;
+}
+
 #collab_line {
     float: right;
     height: 24px;
