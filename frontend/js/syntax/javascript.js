@@ -87,14 +87,6 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                 continue;
             }
 
-            // check for a line comment; this ends the parsing for the rest of the line
-            if ((c == '/') && (buffer.endsWith('/')) && (currentStyle != jsc.STRING)) {
-                currentRegion = { start: i - 1, stop: line.length };
-                currentStyle = jsc.LINE_COMMENT;
-                this.addRegion(regions, currentStyle, currentRegion);
-                break;      // once we get a line comment, we're done!
-            }
-
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
                 if (currentStyle == jsc.STRING) {
@@ -136,6 +128,14 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                         currentRegion = { start: i - 1 };
                         buffer = "/*";
                         continue;
+                    }
+
+                    // check for a line comment; this ends the parsing for the rest of the line
+                    if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
+                        currentRegion = { start: i - 1, stop: line.length };
+                        currentStyle = jsc.LINE_COMMENT;
+                        this.addRegion(regions, currentStyle, currentRegion);
+                        break;      // once we get a line comment, we're done!
                     }
 
                     // add an ad-hoc region for just this one punctuation character
