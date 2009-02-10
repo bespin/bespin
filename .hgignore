@@ -7,11 +7,15 @@ backend/python/dist
 backend/python/production/libs
 backend/python/production/requirements.txt
 backend/python/production/bootstrap.py
+backend/python/error.txt
+backend/python/pip-log.txt
+backend/java/out
 *.pyc
 backend/python/.Python
 backend/python/BespinServer.egg-info
 .DS_Store
 *.iws
 *.db
+*.swp
 ext/
 build/
