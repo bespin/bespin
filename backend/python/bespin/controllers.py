@@ -326,8 +326,7 @@ def export_project(request, response):
     else:
         response.content_type = "application/x-tar-gz"
         func = request.file_manager.export_tarball
-    output = func(request.user, 
-                                                 project_name)
+    output = func(request.user, project_name)
     def filegen():
         data = output.read(8192)
         while data:
@@ -335,6 +334,15 @@ def export_project(request, response):
             data = output.read(8192)
         raise StopIteration
     response.app_iter = filegen()
+    return response()
+    
+@expose(r'^/preview/at/(?P<path>.+)$')
+def preview_file(request, response):
+    fm = request.file_manager
+    project, path = _split_path(request)
+    file_obj = fm.get_file_object(request.user, project, path)
+    response.body = str(file_obj.data)
+    response.content_type = file_obj.mimetype
     return response()
     
 def db_middleware(app):

@@ -33,6 +33,7 @@ from cStringIO import StringIO
 import hashlib
 import tarfile
 import tempfile
+import mimetypes
 import zipfile
 from datetime import datetime
 
@@ -151,6 +152,15 @@ class File(Base):
     @property
     def short_name(self):
         return self.name.rsplit("/", 1)[1]
+        
+    @property
+    def mimetype(self):
+        """Returns the mimetype of the file, or application/octet-stream 
+        if it cannot be guessed."""
+        t = mimetypes.guess_type(self.name)
+        if t:
+            return t[0]
+        return "application/octet-stream"
                      
     def __repr__(self):
         return "File: %s" % (self.name)
