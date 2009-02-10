@@ -93,12 +93,13 @@ class User(Base):
         self.password = password
         self.settings = {}
         
-        hashobj = hashlib.sha1(config.c.secret + " " + self.password)
+        hashobj = hashlib.sha1(self.username + " " 
+                + config.c.secret + " " + self.password)
         # the NUMBER- at the beginning is the version number of the
         # key. every time we change how we compute the hash, we should
         # increment this number. This will avoid the unlikely
         # collisions.
-        self.private_project = "1-" + hashobj.hexdigest()
+        self.private_project = "2-" + hashobj.hexdigest()
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
