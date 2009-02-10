@@ -72,7 +72,7 @@ Bespin.Editor.Scrollbar = Class.create({
 
         sx += (sw - asw) * (this.value / (this.max - this.min));
 
-        return (this.isH()) ? new Bespin.Editor.Rect(sx, this.rect.y, asw, this.rect.h) : new Bespin.Editor.Rect(this.rect.x, sx, this.rect.w, asw);
+        return (this.isH()) ? new Bespin.Editor.Rect(Math.floor(sx), this.rect.y, asw, this.rect.h) : new Bespin.Editor.Rect(this.rect.x, sx, this.rect.w, asw);
     },
 
     isH: function() {
@@ -120,7 +120,7 @@ Bespin.Editor.Scrollbar = Class.create({
         if (this.mousedownScreenPoint) {
             var diff = ((this.isH()) ? e.screenX : e.screenY) - this.mousedownScreenPoint;
             var multiplier = diff / (this.isH() ? this.rect.w : this.rect.h);
-            this.setValue(this.mousedownValue + (((this.max + this.extent) - this.min) * multiplier));
+            this.setValue(this.mousedownValue + Math.floor(((this.max + this.extent) - this.min) * multiplier));
         }
     },
 
@@ -318,13 +318,24 @@ Bespin.Editor.UI = Class.create({
         this.selectionHelper = new Bespin.Editor.SelectionHelper(editor);
         this.actions = new Bespin.Editor.Actions(editor);
 
+        this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
+
+        // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
+        // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
+        // combining them like sane people, but... meh
+        this.horizontalScrollCanvas = new Element("canvas");
+        this.verticalScrollCanvas = new Element("canvas");
+
         this.GUTTER_WIDTH = 54;
         this.LINE_HEIGHT = 23;
         this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 }
         this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 }
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
-        this.NIB_INSETS = { top: this.NIB_WIDTH / 2, left: this.NIB_WIDTH / 2, right: this.NIB_WIDTH / 2, bottom: this.NIB_WIDTH / 2 }
+        this.NIB_INSETS = { top: Math.floor(this.NIB_WIDTH / 2),
+                            left: Math.floor(this.NIB_WIDTH / 2),
+                            right: Math.floor(this.NIB_WIDTH / 2),
+                            bottom: Math.floor(this.NIB_WIDTH / 2) }
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 }
 
         this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
@@ -487,7 +498,14 @@ Bespin.Editor.UI = Class.create({
 
     toggleCursor: function(ui) {
         ui.showCursor = !ui.showCursor;
-        ui.editor.paint();
+
+        if (++this.toggleCursorFullRepaintCounter > 0) {
+            this.toggleCursorFullRepaintCounter = 0;
+            ui.editor.paint(true);
+        } else {
+            ui.editor.paint();
+        }
+
         setTimeout(function() { ui.toggleCursor(ui) }, 250);
     },
 
@@ -675,7 +693,11 @@ Bespin.Editor.UI = Class.create({
         }
     },
 
-    paint: function(ctx) {
+    // ** {{{ paint }}} **
+    //
+    // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
+    // of the editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
+    paint: function(ctx, fullRefresh) {
         var c = $(this.editor.canvas);
         var theme = this.editor.theme;
         var ed = this.editor;
@@ -685,7 +707,7 @@ Bespin.Editor.UI = Class.create({
         var lastLineToRender;
         var Rect = Bespin.Editor.Rect;
 
-        var refreshCanvas = (this.lastLineCount != ed.model.getRowCount());
+        var refreshCanvas = fullRefresh || (this.lastLineCount != ed.model.getRowCount());
         this.lastLineCount = ed.model.getRowCount();
 
         // character width
@@ -722,10 +744,14 @@ Bespin.Editor.UI = Class.create({
         var xscroll = ((cwidth - this.GUTTER_WIDTH) < virtualwidth);
         var yscroll = (cheight < virtualheight);
 
+        var verticalx = cwidth - this.NIB_WIDTH - this.NIB_INSETS.right - 2;
+        var horizontaly = cheight - this.NIB_WIDTH - this.NIB_INSETS.bottom - 2;
+
         var showLeftScrollNib = (xscroll && (this.xoffset != 0));
         var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.GUTTER_WIDTH) - virtualwidth)));
         var showUpScrollNib = (yscroll && (this.yoffset != 0));
         var showDownScrollNib = (yscroll && (this.yoffset > (cheight - virtualheight)));
+
 
         if (((c.readAttribute("width")) != cwidth) || (c.readAttribute("height") != cheight)) {
             refreshCanvas = true;
@@ -733,7 +759,7 @@ Bespin.Editor.UI = Class.create({
         }
 
         // temporary forced redraw until scrollbars are optimized
-        refreshCanvas = true;
+        //refreshCanvas = true;
 
         if (!refreshCanvas) {
             var dirty = ed.model.getDirtyRows();
@@ -808,6 +834,13 @@ Bespin.Editor.UI = Class.create({
                     continue;
                 }
 
+                // setup a clip
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, cwidth, lineHeight);
+                ctx.closePath();
+                ctx.clip();
+
                 if ((currentLine % 2) == 1) { // only repaint the line if the zebra stripe won't beat us to it
                     ctx.fillStyle = theme.backgroundStyle;
                     ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, lineHeight);
@@ -879,6 +912,11 @@ Bespin.Editor.UI = Class.create({
 //                cc = ce;
 //            }
 
+            if (!refreshCanvas) {
+                ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
+                    ctx.restore();
+            }
+
             y += lineHeight;
         }
 
@@ -893,7 +931,6 @@ Bespin.Editor.UI = Class.create({
                 } else {
                     x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
                     y = (ed.cursorPosition.row * lineHeight);
-                    ctx.translate(0.5, 0.5); // make the cursor crisp
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, lineHeight);
                 }
@@ -914,10 +951,25 @@ Bespin.Editor.UI = Class.create({
         // scrollbars - y axis
         ctx.restore();
 
-        // paint scroll bars
+        // paint scroll bars unless we don't need to :-)
+        if (!refreshCanvas) return;
 
         // temporary disable of scrollbars
         //if (this.xscrollbar.rect) return;
+
+        if (this.horizontalScrollCanvas.width != cwidth) this.horizontalScrollCanvas.width = cwidth;
+        if (this.horizontalScrollCanvas.height != this.NIB_WIDTH + 4) this.horizontalScrollCanvas.height = this.NIB_WIDTH + 4;
+
+        if (this.verticalScrollCanvas.height != cheight) this.verticalScrollCanvas.height = cheight;
+        if (this.verticalScrollCanvas.width != this.NIB_WIDTH + 4) this.verticalScrollCanvas.width = this.NIB_WIDTH + 4;
+
+        var hctx = this.horizontalScrollCanvas.getContext("2d");
+        hctx.clearRect(0, 0, this.horizontalScrollCanvas.width, this.horizontalScrollCanvas.height);
+        hctx.save();
+
+        var vctx = this.verticalScrollCanvas.getContext("2d");
+        vctx.clearRect(0, 0, this.verticalScrollCanvas.width, this.verticalScrollCanvas.height);
+        vctx.save();
 
         var ythemes = (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null) ?
                       { n: ed.theme.fullNibStyle, a: ed.theme.fullNibArrowStyle, s: ed.theme.fullNibStrokeStyle } :
@@ -943,76 +995,79 @@ Bespin.Editor.UI = Class.create({
                 cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
                 this.NIB_WIDTH, this.NIB_WIDTH);
 
+        vctx.translate(-verticalx, 0);
+        hctx.translate(0, -horizontaly);
+
         if (xscroll && ((this.overXScrollBar) || (this.xscrollbar.mousedownValue != null))) {
-            ctx.save();
+            hctx.save();
 
-            ctx.beginPath();
-            ctx.rect(this.nibleft.x + midpoint + 2, 0, this.nibright.x - this.nibleft.x - 1, cheight); // y points don't matter
-            ctx.closePath();
-            ctx.clip();
+            hctx.beginPath();
+            hctx.rect(this.nibleft.x + midpoint + 2, 0, this.nibright.x - this.nibleft.x - 1, cheight); // y points don't matter
+            hctx.closePath();
+            hctx.clip();
 
-            ctx.fillStyle = ed.theme.scrollTrackFillStyle;
-            ctx.fillRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
+            hctx.fillStyle = ed.theme.scrollTrackFillStyle;
+            hctx.fillRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
 
-            ctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
-            ctx.strokeRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
+            hctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
+            hctx.strokeRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
 
-            ctx.restore();
+            hctx.restore();
         }
 
         if (yscroll && ((this.overYScrollBar) || (this.yscrollbar.mousedownValue != null))) {
-            ctx.save();
+            vctx.save();
 
-            ctx.beginPath();
-            ctx.rect(0, this.nibup.y + midpoint + 2, cwidth, this.nibdown.y - this.nibup.y - 1); // x points don't matter
-            ctx.closePath();
-            ctx.clip();
+            vctx.beginPath();
+            vctx.rect(0, this.nibup.y + midpoint + 2, cwidth, this.nibdown.y - this.nibup.y - 1); // x points don't matter
+            vctx.closePath();
+            vctx.clip();
 
-            ctx.fillStyle = ed.theme.scrollTrackFillStyle;
-            ctx.fillRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
+            vctx.fillStyle = ed.theme.scrollTrackFillStyle;
+            vctx.fillRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
 
-            ctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
-            ctx.strokeRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
+            vctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
+            vctx.strokeRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
 
-            ctx.restore();
+            vctx.restore();
         }
 
         if (yscroll) {
             // up arrow
             if ((showUpScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
-                ctx.save();
-                ctx.translate(this.nibup.x + midpoint, this.nibup.y + midpoint);
-                this.paintNib(ctx, ythemes.n, ythemes.a, ythemes.s);
-                ctx.restore();
+                vctx.save();
+                vctx.translate(this.nibup.x + midpoint, this.nibup.y + midpoint);
+                this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
+                vctx.restore();
             }
 
             // down arrow
             if ((showDownScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
-                ctx.save();
-                ctx.translate(this.nibdown.x + midpoint, this.nibdown.y + midpoint);
-                ctx.rotate(Math.PI);
-                this.paintNib(ctx, ythemes.n, ythemes.a, ythemes.s);
-                ctx.restore();
+                vctx.save();
+                vctx.translate(this.nibdown.x + midpoint, this.nibdown.y + midpoint);
+                vctx.rotate(Math.PI);
+                this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
+                vctx.restore();
             }
         }
 
         if (xscroll) {
             // left arrow
             if ((showLeftScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
-                ctx.save();
-                ctx.translate(this.nibleft.x + midpoint, this.nibleft.y + midpoint);
-                ctx.rotate(Math.PI * 1.5);
-                this.paintNib(ctx, xthemes.n, xthemes.a, xthemes.s);
-                ctx.restore();
+                hctx.save();
+                hctx.translate(this.nibleft.x + midpoint, this.nibleft.y + midpoint);
+                hctx.rotate(Math.PI * 1.5);
+                this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
+                hctx.restore();
             }
 
             // right arrow
             if ((showRightScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
-                ctx.save();
-                ctx.translate(this.nibright.x + midpoint, this.nibright.y + midpoint);
-                ctx.rotate(Math.PI * 0.5);
-                this.paintNib(ctx, xthemes.n, xthemes.a, xthemes.s);
-                ctx.restore();
+                hctx.save();
+                hctx.translate(this.nibright.x + midpoint, this.nibright.y + midpoint);
+                hctx.rotate(Math.PI * 0.5);
+                this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
+                hctx.restore();
             }
         }
 
@@ -1027,9 +1082,9 @@ Bespin.Editor.UI = Class.create({
 
         if (xscroll) {
             var fullonxbar = (((this.overXScrollBar) && (virtualwidth > cwidth)) || ((this.xscrollbar) && (this.xscrollbar.mousedownValue != null)));
-            if (!fullonxbar) ctx.globalAlpha = 0.3;
-            this.paintScrollbar(ctx, this.xscrollbar);
-            ctx.globalAlpha = 1.0;
+            if (!fullonxbar) hctx.globalAlpha = 0.3;
+            this.paintScrollbar(hctx, this.xscrollbar);
+            hctx.globalAlpha = 1.0;
         }
 
         var sy = this.nibup.y2 + 4;
@@ -1042,10 +1097,16 @@ Bespin.Editor.UI = Class.create({
 
         if (yscroll) {
             var fullonybar = ((this.overYScrollBar) && (virtualheight > cheight)) || ((this.yscrollbar) && (this.yscrollbar.mousedownValue != null));
-            if (!fullonybar) ctx.globalAlpha = 0.3;
-            this.paintScrollbar(ctx, this.yscrollbar);
-            ctx.globalAlpha = 1;
+            if (!fullonybar) vctx.globalAlpha = 0.3;
+            this.paintScrollbar(vctx, this.yscrollbar);
+            vctx.globalAlpha = 1;
         }
+
+        // composite the scrollbars
+        ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
+        ctx.drawImage(this.horizontalScrollCanvas, 0, horizontaly);
+        hctx.restore();
+        vctx.restore();
 
         // clear the unusued nibs
         if (!showUpScrollNib) this.nibup = new Rect();
@@ -1060,12 +1121,13 @@ Bespin.Editor.UI = Class.create({
 
         if (!scrollbar.isH()) {
             ctx.save();
-            ctx.translate(bar.x + (bar.w / 2), bar.y + (bar.h / 2));
+            ctx.translate(bar.x + Math.floor(bar.w / 2), bar.y + Math.floor(bar.h / 2));
             ctx.rotate(Math.PI * 1.5);
-            ctx.translate(-(bar.x + (bar.w / 2)), -(bar.y + (bar.h / 2)));
+            ctx.translate(-(bar.x + Math.floor(bar.w / 2)), -(bar.y + Math.floor(bar.h / 2)));
 
             // if we're vertical, the bar needs to be re-worked a bit
-            bar = new Bespin.Editor.Rect(bar.x - (bar.h / 2) + (bar.w / 2), bar.y + (bar.h / 2) - (bar.w / 2), bar.h, bar.w);
+            bar = new Bespin.Editor.Rect(bar.x - Math.floor(bar.h / 2) + Math.floor(bar.w / 2),
+                    bar.y + Math.floor(bar.h / 2) - Math.floor(bar.w / 2), bar.h, bar.w);
         }
 
         var halfheight = bar.h / 2;
@@ -1123,7 +1185,7 @@ Bespin.Editor.UI = Class.create({
 
         ctx.fillStyle = nibStyle;
         ctx.beginPath();
-        ctx.arc(0, 0, this.NIB_WIDTH / 2, 0, Math.PI * 2, true);
+        ctx.arc(0, 0, Math.floor(this.NIB_WIDTH / 2), 0, Math.PI * 2, true);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = strokeStyle;
@@ -1148,7 +1210,7 @@ Bespin.Editor.API = Class.create({
         this.container = container;
         this.model = new Bespin.Editor.DocumentModel();
 
-        $(container).innerHTML = "<canvas id='canvas' tabindex='-1'></canvas>";
+        $(container).innerHTML = "<canvas id='canvas' moz-opaque='true' tabindex='-1'></canvas>";
         this.canvas = $(container).childElements()[0];
 
         this.ui = new Bespin.Editor.UI(this);
@@ -1196,9 +1258,9 @@ Bespin.Editor.API = Class.create({
         if (this.undoManager.syncHelper) this.undoManager.syncHelper.queueSelect(selection);
     },
 
-    paint: function() {
+    paint: function(fullRefresh) {
         var ctx = Bespin.Canvas.Fix(this.canvas.getContext("2d"));
-        this.ui.paint(ctx);
+        this.ui.paint(ctx, fullRefresh);
     },
 
     changeKeyListener: function(newKeyListener) {
