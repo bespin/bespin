@@ -70,9 +70,11 @@ Bespin.Themes.coffee = {
     cdata: "#bdae9d",
     "attribute-value": "#039a0a",
     tag: "#46a8ed",
+    color: "#c4646b",
     "tag-name": "#46a8ed",
     value: "#039a0a",
     important: "#990000",
+    sizes: "#990000",
     cssclass: "#BF9464",
     cssid: "#46a8ed"
 }
