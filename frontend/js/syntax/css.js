@@ -39,7 +39,7 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 //     foo: bar;
 // }
 
-Bespin.Syntax.CSSConstants = {
+Bespin.Syntax.Konstants = {
     C_STYLE_COMMENT: "c-comment",
     STRING: "string",
     KEYWORD: "keyword",
@@ -88,12 +88,12 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
     punctuation: '{ } / + % * . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
-        var cssc = Bespin.Syntax.CSSConstants;    // aliasing the constants for shorter reference ;-)
+        var K = Bespin.Syntax.Konstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
-        var currentStyle = (meta.inMultilineComment) ? cssc.C_STYLE_COMMENT : undefined;
+        var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
         var currentRegion = {}; // should always have a start property for a non-blank buffer
         var buffer = "";
 
@@ -105,7 +105,7 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
-            if (currentStyle == cssc.C_STYLE_COMMENT) {
+            if (currentStyle == K.C_STYLE_COMMENT) {
                 if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
                     currentRegion.stop = i;
                     this.addRegion(regions, currentStyle, currentRegion);
@@ -123,7 +123,7 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
 
             // check if we have a hash character
             // if (this.isHashChar(c)) {
-            //     currentStyle = cssc.ID;
+            //     currentStyle = K.ID;
             // 
             //     if (buffer == "") currentRegion = { start: i };
             //     buffer += c;
@@ -134,7 +134,7 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
 
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
-                if (currentStyle == cssc.STRING) {
+                if (currentStyle == K.STRING) {
                     // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
                     if ( ! (c == stringChar && !buffer.endsWith("\\"))) {
                         if (buffer == "") currentRegion = { start: i };
@@ -148,16 +148,16 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
                     currentRegion.stop = i;
 
                     // if this is a string, we're all set to add it; if not, figure out if its a keyword, value, or important
-                    if (currentStyle != cssc.STRING) { 
+                    if (currentStyle != K.STRING) { 
                         if (this.keywords.indexOf(buffer) != -1) {
                             // the buffer contains a keyword
-                            currentStyle = cssc.KEYWORD;
+                            currentStyle = K.KEYWORD;
                         } else if (this.values.indexOf(buffer.toLowerCase()) != -1) {
-                            currentStyle = cssc.VALUE;
+                            currentStyle = K.VALUE;
                         } else if (this.important.indexOf(buffer) != -1) {
-                            currentStyle = cssc.IMPORTANT;
+                            currentStyle = K.IMPORTANT;
                         } else {
-                            currentStyle = cssc.OTHER;
+                            currentStyle = K.OTHER;
                         }
                     }
                     this.addRegion(regions, currentStyle, currentRegion);
@@ -170,23 +170,23 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
                 if (this.isPunctuation(c)) {
                     if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
                         // remove the previous region in the punctuation bucket, which is a forward slash
-                        regions[cssc.PUNCTUATION].pop();
+                        regions[K.PUNCTUATION].pop();
 
                         // we are in a c-style comment
                         multiline = true;
-                        currentStyle = cssc.C_STYLE_COMMENT;
+                        currentStyle = K.C_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
                         buffer = "/*";
                         continue;
                     }
 
                     // add an ad-hoc region for just this one punctuation character
-                    this.addRegion(regions, cssc.PUNCTUATION, { start: i, stop: i + 1 });
+                    this.addRegion(regions, K.PUNCTUATION, { start: i, stop: i + 1 });
                 }
 
                 // find out if the current quote is the end or the beginning of the string
-                if ((c == "'" || c == '"') && (currentStyle != cssc.STRING)) {
-                    currentStyle = cssc.STRING;
+                if ((c == "'" || c == '"') && (currentStyle != K.STRING)) {
+                    currentStyle = K.STRING;
                     stringChar = c;
                 } else {
                     currentStyle = undefined;
@@ -201,7 +201,7 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
 
         // check for a trailing character inside of a string or a comment
         if (buffer != "") {
-            if (!currentStyle) currentStyle = cssc.OTHER;
+            if (!currentStyle) currentStyle = K.OTHER;
             currentRegion.stop = line.length;
             this.addRegion(regions, currentStyle, currentRegion);
         }
