@@ -230,7 +230,9 @@ class Project(Base):
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
-    
+
+
+_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])    
 
 class FileManager(object):
     def __init__(self, session):
@@ -354,6 +356,11 @@ class FileManager(object):
         full_path = project.name + "/" + path
         segments = full_path.split("/")
         fn = segments[-1]
+        
+        # temporary step to replace tabs with 4 spaces.
+        file_type = os.path.splitext(path)[1]
+        if file_type in _text_types:
+            contents = contents.replace("\t", "    ")
         
         last_d = None
         
