@@ -200,6 +200,8 @@ class Project(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     
     def authorize(self, user):
+        log.debug("Checking user %s access to project %s owned by %s with members %s",
+            user, self.name, self.owner, self.members)
         if user != self.owner and user not in self.members:
             raise NotAuthorized("You are not authorized to access that project.")
             
