@@ -31,7 +31,9 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 
 // ** {{{ Bespin.Editor.SyntaxModel }}} **
 //
-// Tracks syntax highlighting data on a per-line basis.
+// Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
+// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
+// lumped into one last bucket.
 
 Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
     keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
