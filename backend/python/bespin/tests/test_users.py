@@ -170,3 +170,13 @@ def test_register_existing_user_should_not_authenticate():
     user = user_manager.get_user("BillBixby")
     assert user.password == 'notangry'
     
+def test_bad_ticket_gets_reset():
+    _clear_db()
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.post("/register/new/Aldus", dict(password="foo", 
+                                        email="a@b.com"))
+    app.cookies['auth_tkt'] = app.cookies['auth_tkt'][:-1]
+    resp = app.get("/preview/at/Aldus_New_Project/index.html", status=302)
+    assert app.cookies['auth_tkt'] == '""'
+    
