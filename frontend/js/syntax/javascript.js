@@ -41,7 +41,7 @@ Bespin.Syntax.JavaScriptConstants = {
     STRING: "string",
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
-    OTHER: "other"
+    OTHER: "plain"
 }
 
 Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
@@ -103,7 +103,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     currentRegion.stop = i;
 
                     if (currentStyle != jsc.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (this.keywords.indexOf(buffer.toLowerCase()) != -1) {
+                        if (this.keywords.indexOf(buffer) != -1) {
                             // the buffer contains a keyword
                             currentStyle = jsc.KEYWORD;
                         } else {
@@ -135,6 +135,9 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                         currentRegion = { start: i - 1, stop: line.length };
                         currentStyle = jsc.LINE_COMMENT;
                         this.addRegion(regions, currentStyle, currentRegion);
+                        buffer = "";
+                        currentStyle = undefined;
+                        currentRegion = {};
                         break;      // once we get a line comment, we're done!
                     }
 
@@ -155,6 +158,15 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
             if (buffer == "") currentRegion = { start: i };
             buffer += c;
+        }
+
+        console.log(buffer + " - " + currentStyle + " - " + currentRegion.start);
+
+        // check for a trailing character inside of a string or a comment
+        if (buffer != "" && currentRegion.start) {
+            if (!currentStyle) currentStyle = jsc.OTHER;
+            currentRegion.stop = line.length;
+            this.addRegion(regions, currentStyle, currentRegion);
         }
 
         return regions;
