@@ -35,6 +35,15 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
 // lumped into one last bucket.
 
+Bespin.Syntax.JavaScriptConstants = {
+    C_STYLE_COMMENT: "c-comment",
+    LINE_COMMENT: "comment",
+    STRING: "string",
+    KEYWORD: "keyword",
+    PUNCTUATION: "punctuation",
+    OTHER: "other"
+}
+
 Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
     keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
                     'default delete do double else enum export extends false final finally float ' +
@@ -42,83 +51,109 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     'new null package private protected public return short static super switch ' +
                     'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
 
-    punctuation: '{ } . , ; ( ) ? : = " \''.split(" "),
+    punctuation: '{ } / + - % * . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
-        var regions = {};
-        var currentStyle = (meta.inMultilineComment) ? "c-comment" : undefined;
-        var currentRegion = {};
+        var jsc = Bespin.Syntax.JavaScriptConstants;    // aliasing the constants for shorter reference ;-)
+
+        var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
+
+        // current state, maintained as we parse through each character in the line; values at any time should be consistent
+        var currentStyle = (meta.inMultilineComment) ? jsc.C_STYLE_COMMENT : undefined;
+        var currentRegion = {}; // should always have a start property for a non-blank buffer
         var buffer = "";
-        var stringChar = "";
-        var multiline = false;  // this line contains an unterminated multi-line comment
+
+        // these properties are related to the parser state above but are special cases
+        var stringChar = "";    // the character used to start the current string
+        var multiline = meta.inMultilineComment;  // this line contains an unterminated multi-line comment
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
-            if (currentStyle == "c-comment") {
-                if (c == "/" && buffer.endsWith("*")) {
+            if (currentStyle == jsc.C_STYLE_COMMENT) {
+                if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
                     currentRegion.stop = i;
                     this.addRegion(regions, currentStyle, currentRegion);
+                    currentRegion = {};
+                    currentStyle = undefined;
+                    multiline = false;
                     buffer = "";
+                } else {
+                    if (buffer == "") currentRegion = { start: i };
+                    buffer += c;
                 }
-                buffer += c;
+
                 continue;
             }
 
-            if ((c == '/') && (buffer.endsWith('/'))) {
+            // check for a line comment; this ends the parsing for the rest of the line
+            if ((c == '/') && (buffer.endsWith('/')) && (currentStyle != jsc.STRING)) {
                 currentRegion = { start: i - 1, stop: line.length };
-                currentStyle = "comment";
+                currentStyle = jsc.LINE_COMMENT;
                 this.addRegion(regions, currentStyle, currentRegion);
-                buffer = "";
                 break;      // once we get a line comment, we're done!
             }
 
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
-                if (currentStyle == "string") {
+                if (currentStyle == jsc.STRING) {
+                    // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
                     if ( ! (c == stringChar && !buffer.endsWith("\\"))) {
+                        if (buffer == "") currentRegion = { start: i };
                         buffer += c;
                         continue;
                     }
                 }
 
+                // if the buffer is full, add it to the regions
                 if (buffer != "") {
                     currentRegion.stop = i;
 
-                    if (currentStyle != "string") {
+                    if (currentStyle != jsc.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
                         if (this.keywords.indexOf(buffer.toLowerCase()) != -1) {
                             // the buffer contains a keyword
-                            currentStyle = "keyword";
+                            currentStyle = jsc.KEYWORD;
                         } else {
-                            currentStyle = "other";
+                            currentStyle = jsc.OTHER;
                         }
                     }
                     this.addRegion(regions, currentStyle, currentRegion);
+                    currentRegion = {};
+                    stringChar = "";
                     buffer = "";
+                    // i don't clear the current style here so I can check if it was a string below
                 }
 
                 if (this.isPunctuation(c)) {
-                    // add an ad-hoc region for just this thing
-                    this.addRegion(regions, "punctuation", { start: i, stop: i + 1 });
+                    if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
+                        // remove the previous region in the punctuation bucket, which is a forward slash
+                        regions[jsc.PUNCTUATION].pop();
+
+                        // we are in a c-style comment
+                        multiline = true;
+                        currentStyle = jsc.C_STYLE_COMMENT;
+                        currentRegion = { start: i - 1 };
+                        buffer = "/*";
+                        continue;
+                    }
+
+                    // add an ad-hoc region for just this one punctuation character
+                    this.addRegion(regions, jsc.PUNCTUATION, { start: i, stop: i + 1 });
                 }
 
-                if (currentStyle == "string") {
-                    currentStyle = "";
+                // find out if the current quote is the end or the beginning of the string
+                if ((c == "'" || c == '"') && (currentStyle != jsc.STRING)) {
+                    currentStyle = jsc.STRING;
+                    stringChar = c;
                 } else {
-                    if (c == "'" || c == '"') {
-                        currentStyle = "string";
-                        stringChar = c;
-                        currentRegion = { start: i + 1 };
-                    }
+                    currentStyle = undefined;
                 }
 
                 continue;
             }
 
-            if (buffer == "") {
-                currentRegion = { start: i };
-            }
+            if (buffer == "") currentRegion = { start: i };
             buffer += c;
         }
 
@@ -142,7 +177,5 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
         return char == " ";
     }
 });
-
-
 
 // TODO: register this puppy
