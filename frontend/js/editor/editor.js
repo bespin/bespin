@@ -834,19 +834,17 @@ Bespin.Editor.UI = Class.create({
             // the following three chunks of code all do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
-           // ctx.fillStyle = "white";
-           // ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
+//            ctx.fillStyle = "white";
+//            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
             var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
-            if (!lineInfo.regions) return; // naught when we don't get a real model
-
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
 
                 for (var style in styleInfo) {
                     if (!styleInfo.hasOwnProperty(style)) continue;
-                    
+
                     var thisLine = "";
 
                     var styleArray = styleInfo[style];
@@ -858,8 +856,7 @@ Bespin.Editor.UI = Class.create({
                         currentColumn = range.stop;
                     }
 
-                    ctx.fillStyle = this.editor.theme[style] || "white"; //"white"; //styleInfo.style;
-//                    ctx.fillStyle = "white";
+                    ctx.fillStyle = this.editor.theme[style] || "white";
                     ctx.fillText(thisLine, x, cy);
                 }
             }
