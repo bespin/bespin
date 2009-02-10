@@ -239,6 +239,7 @@ img {
     color: #DDDDDD;
     font-family: Calibri, Arial, sans-serif;
     font-size: 12pt;
+    overflow: hidden;
 }
 
 #status .seperator {
