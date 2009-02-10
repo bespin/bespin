@@ -854,7 +854,7 @@ Bespin.Editor.UI = Class.create({
                 ctx.fillStyle = styleInfo.style;
                 ctx.fillText(thisLine, x, cy);
             }
-
+                                                                                                                                       
             // CHUNK 3: this code is the "legacy" color helper syntax highlighting API which is now obsolete
 //            cc = 0;
 //            ce = 0;
