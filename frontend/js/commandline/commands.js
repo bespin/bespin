@@ -607,6 +607,30 @@ Bespin.Commands.add({
     }
 });
 
+// ** {{{Command: typingtest}}} **
+Bespin.Commands.add({
+    name: 'typingtest',
+    preview: 'type in the alphabet a few times',
+    hidden: true,
+    execute: function(self) {
+        var start = Date.now();
+
+        for (var i = 0; i < 3; i++) {
+            $R('a', 'z').each(function(c) {
+                var args = { pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) };
+                args.newchar = c;
+                self.editor.ui.actions.insertCharacter(args);            
+            });
+        }
+        
+        var stop = Date.now();
+        
+        self.showInfo("It took " + (stop - start) + " milliseconds to do this");
+        
+    }
+});
+
+
 // ** {{{Command: template}}} **
 Bespin.Commands.add({
     name: 'template',
