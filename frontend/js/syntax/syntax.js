@@ -104,8 +104,8 @@ Bespin.Syntax.Model = Class.create({
                 var meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
                 var pieceRegions = [];
                 var fromResolver = Bespin.Syntax.EngineResolver.highlight(type.type, line.substring(type.start, type.stop), meta);
-                if (fromResolver['inMultiLineComment'] && (i == syntaxTypes.length - 1) ){
-                    this.inMultiLineComment[lineNumber] = true;
+                if (fromResolver.meta && (i == syntaxTypes.length - 1) ){
+                    this.setLineMetaInfo(lineNumber, fromResolver.meta);
                 }
                 pieceRegions.push(fromResolver);
             }
