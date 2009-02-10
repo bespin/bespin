@@ -40,6 +40,12 @@ Bespin.Editor.UndoManager = Class.create({
         this.syncHelper = undefined;
     },
 
+    maxUndoLength: 20,
+
+    canUndo: function() {
+        return this.undoStack.length > 0;
+    },
+
     undo: function() {
         if (this.undoStack.length == 0) return;
         var item = this.undoStack.pop();
@@ -66,6 +72,10 @@ Bespin.Editor.UndoManager = Class.create({
         if (item.undoOp.queued) return;
 
         if (this.redoStack.length > 0) this.redoStack = [];
+
+        while (this.undoStack.length + 1 > this.maxUndoLength) {
+            this.undoStack.shift();
+        }
         this.undoStack.push(item);
         item.editor = this.editor;
 
