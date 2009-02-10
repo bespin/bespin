@@ -29,10 +29,12 @@
 import os
 import urllib2
 from urlparse import urlparse
+
 from urlrelay import URLRelay, url
 from paste.auth import auth_tkt
 import simplejson
 import tempfile
+from webob import Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
@@ -360,11 +362,26 @@ def db_middleware(app):
                 session.commit()
             else:
                 session.rollback()
+        except auth_tkt.BadTicket:
+            # if the ticket is invalid for some reason, get rid of the
+            # ticket and send them back to the top
+            headers = [('Location', '/'),
+                       ('Content-Type', 'text/plain')]
+            headers.extend(environ['bespin.auth_tkt'].logout_user_cookie(environ))
+            start_response("302 Moved", headers)
+            return [""]
         except:
             session.rollback()
             raise
         return result
     return wrapped
+
+class TktMiddleware(auth_tkt.AuthTKTMiddleware):
+    def __call__(self, environ, start_response):
+        # add self to the environ so that the logout cookies can
+        # be set from anywhere
+        environ['bespin.auth_tkt'] = self
+        return super(TktMiddleware, self).__call__(environ, start_response)
 
 def make_app():
     from webob import Response
@@ -373,7 +390,7 @@ def make_app():
     
     from paste.cascade import Cascade
     app = URLRelay()
-    app = auth_tkt.AuthTKTMiddleware(app, c.secret, include_ip=False)
+    app = TktMiddleware(app, c.secret, include_ip=False)
     app = db_middleware(app)
     
     app = Cascade([app, static_app])
