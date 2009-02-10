@@ -9,6 +9,7 @@ backend/python/production/requirements.txt
 backend/python/production/bootstrap.py
 backend/python/error.txt
 backend/python/pip-log.txt
+backend/python/devserver.log*
 backend/java/out
 *.pyc
 backend/python/.Python
