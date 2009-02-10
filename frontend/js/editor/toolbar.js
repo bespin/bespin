@@ -204,7 +204,7 @@ Bespin.Editor.Toolbar = Class.create({
             });
             
             Element.observe(preview, 'click', function() {
-                document.fire("bespin:editor:preview"); // use default file                
+                console.log("clicked on preview toolbar icon");
             });
         },
 

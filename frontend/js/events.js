@@ -188,15 +188,6 @@ document.observe("bespin:editor:config:run", function(event) {
     }, true);
 });
 
-// ** {{{ Event: bespin:editor:preview }}} **
-// 
-// Load the users config file
-document.observe("bespin:editor:preview", function(event) {
-    var filename = event.memo.filename || _editSession.path; // default to current page
-    var project  = event.memo.project  || _editSession.project;
-    if (filename)
-        window.open(Bespin.Path.combine("preview/at", project, filename));
-});
 
 // == Events
 // 

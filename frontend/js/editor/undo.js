@@ -40,7 +40,7 @@ Bespin.Editor.UndoManager = Class.create({
         this.syncHelper = undefined;
     },
 
-    maxUndoLength: 100,
+    maxUndoLength: 20,
 
     canUndo: function() {
         return this.undoStack.length > 0;
