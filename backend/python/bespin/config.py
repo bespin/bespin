@@ -27,6 +27,8 @@
 # 
 
 import os
+import logging
+import logging.handlers
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -45,6 +47,7 @@ c = Bunch()
 c.dburl = None
 c.secret = "This is the phrase that is used for secret stuff."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
+c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
 
 c.max_import_file_size = 20000000
@@ -55,6 +58,12 @@ def set_profile(profile):
         c.dburl = "sqlite://"
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
+        root_log = logging.getLogger()
+        root_log.setLevel(logging.DEBUG)
+        handler = logging.handlers.RotatingFileHandler(
+                    c.log_file)
+        root_log.addHandler(handler)
+        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)

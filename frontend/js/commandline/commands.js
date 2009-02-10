@@ -254,9 +254,8 @@ Bespin.Commands.add({
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
     execute: function(self, filename) {
-        document.fire("bespin:editor:preview", {
-            filename: filename 
-        });
+	    filename = filename || _editSession.path; // default to what you have
+	    window.open("preview/at/" + _editSession.project + "/" + filename);
     }
 });
 
