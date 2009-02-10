@@ -314,7 +314,6 @@ Bespin.Editor.UI = Class.create({
     initialize: function(editor) {
         this.editor = editor;
         this.syntaxModel = new Bespin.Syntax.Model(editor);
-        //this.colorHelper = new Bespin.Editor.DocumentColorHelper(editor);
         this.selectionHelper = new Bespin.Editor.SelectionHelper(editor);
         this.actions = new Bespin.Editor.Actions(editor);
 
@@ -686,11 +685,19 @@ Bespin.Editor.UI = Class.create({
     getCharWidth: function(ctx) {
         if (ctx.measureText) {
             return ctx.measureText("M").width;
-        } else if (ctx.mozMeasureText) {
-            return ctx.mozMeasureText("M");
         } else {
             return this.FALLBACK_CHARACTER_WIDTH;
         }
+    },
+
+    getLineHeight: function(ctx) {
+        var lh = -1;
+        if (ctx.measureText) {
+            var t = ctx.measureText("M");
+            if (t.ascent) lh = Math.floor(t.ascent * 2.8);
+        }
+        if (lh == -1) lh = this.LINE_HEIGHT;
+        return lh;
     },
 
     // ** {{{ paint }}} **
@@ -698,112 +705,143 @@ Bespin.Editor.UI = Class.create({
     // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
     // of the editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
     paint: function(ctx, fullRefresh) {
+        // DECLARE VARIABLES
+        // ====
+
+        // these are convenience references so we don't have to type so much
         var c = $(this.editor.canvas);
         var theme = this.editor.theme;
         var ed = this.editor;
+
+        // these are commonly used throughout the rendering process so are defined up here to make it clear they are shared
         var x, y;
         var cy;
         var currentLine;
         var lastLineToRender;
+
         var Rect = Bespin.Editor.Rect;
 
-        var refreshCanvas = fullRefresh || (this.lastLineCount != ed.model.getRowCount());
-        this.lastLineCount = ed.model.getRowCount();
 
-        // character width
-        var charWidth = this.getCharWidth(ctx);
-        this.charWidth = charWidth;
-        var lineHeight = this.LINE_HEIGHT; // temporarily reading from constant; should be calc'd at some point
-        this.lineHeight = lineHeight;
+        // SETUP STATE
+        // ====
+        var refreshCanvas = fullRefresh;        // if the user explicitly requests a full refresh, give it to 'em
 
-        // ensure the canvas is the right size
+        if (!refreshCanvas) refreshCanvas = (this.lastLineCount != ed.model.getRowCount());  // if the line count has changed, full refresh
+
+        this.lastLineCount = ed.model.getRowCount();        // save the number of lines for the next time paint
+
+        // get the line and character metrics; calculated for each paint because this value can change at run-time
+        ctx.font = theme.lineNumberFont;
+        this.charWidth = this.getCharWidth(ctx);
+        this.lineHeight = this.getLineHeight(ctx);
+
+        // cwidth and cheight are set to the dimensions of the parent node of the canvas element; we'll resize the canvas element
+        // itself a little bit later in this function
         var cwidth = this.getWidth();
         var cheight = this.getHeight();
 
-        var virtualheight = lineHeight * ed.model.getRowCount();    // full height based on content
-        var virtualwidth = charWidth * (Math.max(ed.model.getMaxCols(), ed.cursorPosition.col) + 2);       // full width based on content plus a little padding
+        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
+        var virtualwidth = this.charWidth * (Math.max(ed.model.getMaxCols(), ed.cursorPosition.col) + 2);       // full width based on content plus a little padding
 
-        // adjust the scrolling offsets if necessary
-        if (this.xoffset > 0) this.xoffset = 0; // no need to ever scroll into negative margins
+        // adjust the scrolling offsets if necessary; negative values are good, indicate scrolling down or to the right (we look for overflows on these later on)
+        // positive values are bad; they indicate scrolling up past the first line or to the left past the first column
+        if (this.xoffset > 0) this.xoffset = 0;
         if (this.yoffset > 0) this.yoffset = 0;
 
+        // these next two blocks make sure we don't scroll too far in either the x or y axis
+        if (this.xoffset < 0) {
+            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.GUTTER_WIDTH))) this.xoffset = (cwidth - this.GUTTER_WIDTH) - virtualwidth;
+        }
+        if (this.yoffset < 0) {
+            if ((Math.abs(this.yoffset)) > (virtualheight - cheight)) this.yoffset = cheight - virtualheight;
+        }
+
+        // if the current scrolled positions are different than the scroll positions we used for the last paint, refresh the entire canvas
         if ((this.xoffset != this.lastxoffset) || (this.yoffset != this.lastyoffset)) {
             refreshCanvas = true;
             this.lastxoffset = this.xoffset;
             this.lastyoffset = this.yoffset;
         }
 
-        if (this.xoffset < 0) {
-            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.GUTTER_WIDTH))) this.xoffset = (cwidth - this.GUTTER_WIDTH) - virtualwidth;       // make sure we don't scroll too far
-        }
-
-        if (this.yoffset < 0) {
-            if ((Math.abs(this.yoffset)) > (virtualheight - cheight)) this.yoffset = cheight - virtualheight;
-        }
-
+        // these are boolean values indicating whether the x and y (i.e., horizontal or vertical) scroll bars are visible
         var xscroll = ((cwidth - this.GUTTER_WIDTH) < virtualwidth);
         var yscroll = (cheight < virtualheight);
 
+        // the scroll bars are rendered off-screen into their own canvas instances; these values are used in two ways as part of
+        // this process:
+        //   1. the x position of the vertical scroll bar image when painted onto the canvas and the y position of the horizontal
+        //      scroll bar image (both images span 100% of the width/height in the other dimension)
+        //   2. the amount * -1 to translate the off-screen canvases used by the scrollbars; this lets us flip back to rendering
+        //      the scroll bars directly on the canvas with relative ease (by omitted the translations and passing in the main context
+        //      reference instead of the off-screen canvas context)
         var verticalx = cwidth - this.NIB_WIDTH - this.NIB_INSETS.right - 2;
         var horizontaly = cheight - this.NIB_WIDTH - this.NIB_INSETS.bottom - 2;
 
+        // these are boolean values that indicate whether special little "nibs" should be displayed indicating more content to the
+        // left, right, top, or bottom
         var showLeftScrollNib = (xscroll && (this.xoffset != 0));
         var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.GUTTER_WIDTH) - virtualwidth)));
         var showUpScrollNib = (yscroll && (this.yoffset != 0));
         var showDownScrollNib = (yscroll && (this.yoffset > (cheight - virtualheight)));
 
-
+        // check and see if the canvas is the same size as its immediate parent in the DOM; if not, resize the canvas
         if (((c.readAttribute("width")) != cwidth) || (c.readAttribute("height") != cheight)) {
-            refreshCanvas = true;
+            refreshCanvas = true;   // if the canvas changes size, we'll need a full repaint
             c.writeAttribute({ width: cwidth, height: cheight });
         }
 
-        // temporary forced redraw until scrollbars are optimized
+        // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
         //refreshCanvas = true;
 
+        // START RENDERING
+        // ====
+
+        // if we're not doing a full repaint, work out which rows are "dirty" and need to be repainted
         if (!refreshCanvas) {
             var dirty = ed.model.getDirtyRows();
 
-            if (this.lastCursorPos) {
-                if (this.lastCursorPos.row != ed.cursorPosition.row) dirty[this.lastCursorPos.row] = true;
-            }
-            dirty[ed.cursorPosition.row] = true;    // we always repaint the current line
+            // if the cursor has changed rows since the last paint, consider the previous row dirty
+            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorPosition.row)) dirty[this.lastCursorPos.row] = true;
+
+            // we always repaint the current line
+            dirty[ed.cursorPosition.row] = true;
         }
+
+        // save this state for the next paint attempt (see above for usage)
         this.lastCursorPos = Bespin.Editor.Utils.copyPos(ed.cursorPosition);
 
+        // if we're doing a full repaint...
         if (refreshCanvas) {
-            // paint the background
+            // ...paint the background color over the whole canvas and...
             ctx.fillStyle = theme.backgroundStyle;
             ctx.fillRect(0, 0, c.width, c.height);
 
-            // paint the gutter
+            // ...paint the gutter 
             ctx.fillStyle = theme.gutterStyle;
             ctx.fillRect(0, 0, this.GUTTER_WIDTH, c.height);
         }
 
-        ctx.font = theme.lineNumberFont;
-
-        // scrollbars - y axis
+        // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save();
         ctx.translate(0, this.yoffset);
 
         // only paint those lines that can be visible
-        this.visibleRows = Math.ceil(cheight / lineHeight);
-        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / lineHeight));
+        this.visibleRows = Math.ceil(cheight / this.lineHeight);
+        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
         lastLineToRender = this.firstVisibleRow + this.visibleRows;
         if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
 
         // paint the line numbers
         if (refreshCanvas) {
-            y = (lineHeight * this.firstVisibleRow);
+            y = (this.lineHeight * this.firstVisibleRow);
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
                 x = this.GUTTER_INSETS.left;
-                cy = y + (lineHeight - this.LINE_INSETS.bottom);
+                cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
                 ctx.fillStyle = theme.lineNumberColor;
                 ctx.fillText(currentLine + 1, x, cy);
 
-                y += lineHeight;
+                y += this.lineHeight;
             }
         }
 
@@ -819,7 +857,7 @@ Bespin.Editor.UI = Class.create({
         var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
 
         // paint the line content and zebra stripes (kept in separate loop to simplify scroll translation and clipping)
-        y = (lineHeight * this.firstVisibleRow);
+        y = (this.lineHeight * this.firstVisibleRow);
         var cc; // the starting column of the current region in the region render loop below
         var ce; // the ending column in the same loop
         var ri; // counter variable used for the same loop
@@ -830,30 +868,30 @@ Bespin.Editor.UI = Class.create({
 
             if (!refreshCanvas) {
                 if (!dirty[currentLine]) {
-                    y += lineHeight;
+                    y += this.lineHeight;
                     continue;
                 }
 
                 // setup a clip
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(x, y, cwidth, lineHeight);
+                ctx.rect(x, y, cwidth, this.lineHeight);
                 ctx.closePath();
                 ctx.clip();
 
                 if ((currentLine % 2) == 1) { // only repaint the line if the zebra stripe won't beat us to it
                     ctx.fillStyle = theme.backgroundStyle;
-                    ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, lineHeight);
+                    ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
                 }
             }
 
             if ((currentLine % 2) == 0) {
                 ctx.fillStyle = theme.zebraStripeColor;
-                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, lineHeight);
+                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
             }
 
             x += this.LINE_INSETS.left;
-            cy = y + (lineHeight - this.LINE_INSETS.bottom);
+            cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
             // paint the selection bar if necessary
             var selections = this.selectionHelper.getRowSelectionPositions(currentLine);
@@ -861,7 +899,7 @@ Bespin.Editor.UI = Class.create({
                 tx = x + (selections.startCol * this.charWidth);
                 tw = (selections.endCol == -1) ? (lastColumn - firstColumn) * this.charWidth : (selections.endCol - selections.startCol) * this.charWidth;
                 ctx.fillStyle = theme.editorSelectedTextBackground;
-                ctx.fillRect(tx, y, tw, lineHeight);
+                ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
             // the following three chunks of code all do the same thing; only one should be uncommented at a time
@@ -917,32 +955,32 @@ Bespin.Editor.UI = Class.create({
                     ctx.restore();
             }
 
-            y += lineHeight;
+            y += this.lineHeight;
         }
 
         // paint the cursor
         if (this.editor.focus) {
             if (this.showCursor) {
                 if (ed.theme.cursorType == "underline") {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
-                    y = (ed.cursorPosition.row * lineHeight) + (lineHeight - 5);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+                    y = (ed.cursorPosition.row * this.lineHeight) + (this.lineHeight - 5);
                     ctx.fillStyle = ed.theme.cursorStyle;
-                    ctx.fillRect(x, y, charWidth, 3);
+                    ctx.fillRect(x, y, this.charWidth, 3);
                 } else {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
-                    y = (ed.cursorPosition.row * lineHeight);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+                    y = (ed.cursorPosition.row * this.lineHeight);
                     ctx.fillStyle = ed.theme.cursorStyle;
-                    ctx.fillRect(x, y, 1, lineHeight);
+                    ctx.fillRect(x, y, 1, this.lineHeight);
                 }
             }
         } else {
-            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * charWidth;
-            y = (ed.cursorPosition.row * lineHeight);
+            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+            y = (ed.cursorPosition.row * this.lineHeight);
 
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
-            ctx.fillRect(x, y, charWidth, lineHeight);
-            ctx.strokeRect(x, y, charWidth, lineHeight);
+            ctx.fillRect(x, y, this.charWidth, this.lineHeight);
+            ctx.strokeRect(x, y, this.charWidth, this.lineHeight);
         }
 
         // scroll bars - x axis
