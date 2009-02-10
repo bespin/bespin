@@ -22,14 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Syntax Highlighting =
+// = JavaScript Syntax Highlighting Implementation =
 //
-// Module for dealing with the syntax highlighting.
+// Module for syntax highlighting JavaScript.
 
 if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.Syntax) Bespin.Syntax = {};
 
-// ** {{{ Bespin.Editor.SyntaxModel }}} **
+// ** {{{ Bespin.Syntax.JavaScriptSyntaxEngine }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
@@ -42,7 +42,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     'new null package private protected public return short static super switch ' +
                     'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
 
-    punctuation: '. , ; ( ) ? : = " \''.split(" "),
+    punctuation: '{ } . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
         var regions = {};
