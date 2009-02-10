@@ -625,11 +625,9 @@ Bespin.Commands.add({
         
         var stop = Date.now();
         
-        self.showInfo("It took " + (stop - start) + " milliseconds to do this");
-        
+        self.showInfo("It took " + (stop - start) + " milliseconds to do this");        
     }
 });
-
 
 // ** {{{Command: template}}} **
 Bespin.Commands.add({
