@@ -151,5 +151,5 @@ Bespin.Syntax.EngineResolver = new function() {
 }();
 
 Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript']);
-// Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);
+//Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);
 // Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.HTMLSyntaxEngine(), ['html', 'xml']);
