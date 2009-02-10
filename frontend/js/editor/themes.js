@@ -60,7 +60,6 @@ Bespin.Themes.coffee = {
 
     // syntax definitions
     plain: "#bdae9d",
-    other: "#bdae9d",
     keyword: "#42a8ed",
     string: "#039a0a",
     comment: "#666666",
