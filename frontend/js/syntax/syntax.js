@@ -123,16 +123,14 @@ Bespin.Syntax.EngineResolver = new function() {
   var engines = {};
   var NoopSyntaxEngine = {
       highlight: function(line, meta) {
-          return [ 
-                    {
-                        white: [ {
-                            start: 0,
-                            stop: line.length
-                        } ]
-                    }
-                 ]
+          return {
+              plain: [{
+                  start: 0,
+                  stop: line.length
+              }]
+          }
       }
-//      innersyntax: function() {},
+      //innersyntax: function() {},
   }
   
   return {
