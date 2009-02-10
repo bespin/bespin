@@ -22,44 +22,39 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = JavaScript Syntax Highlighting Implementation =
+// = HTML Syntax Highlighting Implementation =
 //
-// Module for syntax highlighting JavaScript.
+// Module for syntax highlighting HTML.
 
 if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.Syntax) Bespin.Syntax = {};
 
-// ** {{{ Bespin.Syntax.JavaScriptSyntaxEngine }}} **
+// ** {{{ Bespin.Syntax.HTMLSyntaxEngine }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
 // lumped into one last bucket.
 
-Bespin.Syntax.JavaScriptConstants = {
-    C_STYLE_COMMENT: "c-comment",
-    LINE_COMMENT: "comment",
+Bespin.Syntax.HTMLConstants = {
+    HTML_STYLE_COMMENT: "comment",
     STRING: "string",
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
 }
 
-Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
-    keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
-                    'default delete do double else enum export extends false final finally float ' +
-                    'for function goto if implements import in instanceof int interface long native ' +
-                    'new null package private protected public return short static super switch ' +
-                    'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
+Bespin.Syntax.HTMLSyntaxEngine = Class.create({
+    keywordRegex: "/*(html|head|body|doctype|link|script|div|span|img|h1|h2|h3|h4|h5|h6|ul|li|ol|blockquote)",
 
-    punctuation: '{ } / + - % * . , ; ( ) ? : = " \''.split(" "),
+    punctuation: '< > = " \'',
 
-    highlight: function(line, meta) {
-        var K = Bespin.Syntax.JavaScriptConstants;    // aliasing the constants for shorter reference ;-)
+    highlight: function(line, meta) {        
+        var K = Bespin.Syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
-        var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
+        var currentStyle = (meta.inMultilineComment) ? K.HTML_STYLE_COMMENT : undefined;
         var currentRegion = {}; // should always have a start property for a non-blank buffer
         var buffer = "";
 
@@ -71,7 +66,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
-            if (currentStyle == K.C_STYLE_COMMENT) {
+            if (currentStyle == K.HTML_STYLE_COMMENT) {
                 if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
                     currentRegion.stop = i;
                     this.addRegion(regions, currentStyle, currentRegion);
@@ -103,7 +98,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (this.keywords.indexOf(buffer) != -1) {
+                        if (buffer.match(this.keywordRegex)) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
                         } else {
@@ -124,7 +119,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
                         // we are in a c-style comment
                         multiline = true;
-                        currentStyle = K.C_STYLE_COMMENT;
+                        currentStyle = K.HTML_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
                         buffer = "/*";
                         continue;
@@ -189,4 +184,4 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 });
 
 // Register
-Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript']);
+Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.HTMLSyntaxEngine(), ['html', 'xml', 'xhtml']);
