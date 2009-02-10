@@ -710,3 +710,22 @@ def test_get_file_stats_from_web():
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
     assert data['size'] == 19
+    
+def test_preview_mode():
+    fm = _get_fm()
+    fm.save_file(macgyver, "bigmac", "README.txt", 
+        "This is the readme file.")
+    fm.session.commit()
+    
+    resp = app.get("/preview/at/bigmac/", status=404)
+    resp = app.get("/preview/at/bigmac/README.txt")
+    assert resp.body == "This is the readme file."
+    assert resp.content_type == "text/plain"
+    
+    fm.save_file(macgyver, "bigmac", "index.html",
+        "<html><body>Simple HTML file</body></html>")
+    fm.session.commit()
+    resp = app.get("/preview/at/bigmac/index.html")
+    assert resp.body == "<html><body>Simple HTML file</body></html>"
+    assert resp.content_type == "text/html"
+    
