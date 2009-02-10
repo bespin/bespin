@@ -111,7 +111,8 @@ Bespin.Syntax.Model = Class.create({
             }
             syntaxResult.regions.push(this.mergeSyntaxResults(pieceRegions));
         } else {
-            var result = this.engine.highlight(line, this.getLineMetaInfo(lineNumber));
+            var meta = (lineNumber > 0) ? this.getLineMetaInfo(lineNumber - 1) : {};
+            var result = this.engine.highlight(line, meta);
             this.setLineMetaInfo(lineNumber, result.meta);
             syntaxResult.regions.push(result.regions);
         }

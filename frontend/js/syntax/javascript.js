@@ -54,6 +54,8 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
     punctuation: '{ } / + - % * . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
+        if (!meta) meta = {};
+
         var K = Bespin.Syntax.JavaScriptConstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
@@ -65,7 +67,6 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
         // these properties are related to the parser state above but are special cases
         var stringChar = "";    // the character used to start the current string
-        var multiline = meta.inMultilineComment;  // this line contains an unterminated multi-line comment
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
@@ -77,7 +78,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
                     currentStyle = undefined;
-                    multiline = false;
+                    meta.inMultilineComment = false;
                     buffer = "";
                 } else {
                     if (buffer == "") currentRegion = { start: i };
@@ -123,7 +124,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                         regions[K.PUNCTUATION].pop();
 
                         // we are in a c-style comment
-                        multiline = true;
+                        meta.inMultilineComment = true;
                         currentStyle = K.C_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
                         buffer = "/*";
@@ -167,7 +168,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: { inMultilineComment: multiline } };
+        return { regions: regions, meta: meta };
     },
 
     addRegion: function(regions, type, data) {
