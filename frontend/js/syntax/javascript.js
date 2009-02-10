@@ -188,4 +188,5 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
     }
 });
 
-// TODO: register this puppy
+// Register
+Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript']);
