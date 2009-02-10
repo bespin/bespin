@@ -160,8 +160,10 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
             buffer += c;
         }
 
+        console.log(buffer + " - " + currentStyle + " - " + currentRegion.start);
+
         // check for a trailing character inside of a string or a comment
-        if (buffer != "" && currentRegion.start) {
+        if (buffer != "") {
             if (!currentStyle) currentStyle = jsc.OTHER;
             currentRegion.stop = line.length;
             this.addRegion(regions, currentStyle, currentRegion);
