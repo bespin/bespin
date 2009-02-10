@@ -29,6 +29,7 @@
 import os
 import urllib2
 from urlparse import urlparse
+import logging
 
 from urlrelay import URLRelay, url
 from paste.auth import auth_tkt
@@ -39,6 +40,8 @@ from webob import Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model
+
+log = logging.getLogger("bespin.controllers")
 
 @expose(r'^/register/new/(?P<username>.*)$', 'POST', auth=False)
 def new_user(request, response):
@@ -372,6 +375,7 @@ def db_middleware(app):
             return [""]
         except:
             session.rollback()
+            log.exception("Error raised during request: %s", environ)
             raise
         return result
     return wrapped
@@ -390,7 +394,7 @@ def make_app():
     
     from paste.cascade import Cascade
     app = URLRelay()
-    app = TktMiddleware(app, c.secret, include_ip=False)
+    app = TktMiddleware(app, c.secret, secure=True, include_ip=False)
     app = db_middleware(app)
     
     app = Cascade([app, static_app])
