@@ -53,12 +53,7 @@
 	}
 
 	function login() {
-        if ($('login_label').visible()) {
-            svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
-	    } else {
-            svr.signup($("username").value, $("password").value, $('email').value,
-                processLogin, notLoggedIn);
-	    }
+        svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
 	}
 	
 	function isLoggedIn(userinfo) {
@@ -76,14 +71,46 @@
         $('not_logged_in').show();
 	}
 	
-	function showRegisterForm() {
-        $('login_label').hide();
-        $('emailField').show();
-	}
-	
 	Event.observe(document, "dom:loaded", function() {
         svr.currentuser(isLoggedIn, isNotLoggedIn);
 	});
+
+    var register = {
+        checkUsername:function() {
+            $('register_username_error').innerHTML = ($F('register_username').length < 4) ? "Usernames must be at least 4 characters long" : "";
+        },
+        checkPassword:function() {
+            $('register_password_error').innerHTML = ($F('register_password').length < 6) ? "Passwords must be at least 6 characters long" : "";
+        },
+        checkConfirm:function() {
+            $('register_confirm_error').innerHTML = ($F('register_password') != $F('register_confirm')) ? "Passwords do not match" : "";
+        },
+        checkEmail:function() {
+            $('register_email_error').innerHTML = (!validateEmail($F('register_email'))) ? "Invalid email address" : "";
+        },
+        showForm:function() {
+            $('logged_in').hide();
+            $('not_logged_in').hide();
+            $('register_border').show();
+        },
+        hideForm:function() {
+            $('register_border').hide();
+            svr.currentuser(isLoggedIn, isNotLoggedIn);
+        },
+        send:function() {
+            register.hideForm();
+            svr.signup($("register_username").value, $("register_password").value, $('register_email').value, processLogin, notLoggedIn);
+
+        },
+        cancel:function() {
+            register.hideForm();
+        }
+    };
+
+    function validateEmail(str) {
+        var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i
+        return filter.test(str);
+    }
 	</script>
 </head>
 <body>
@@ -92,8 +119,8 @@
   <div id="not_logged_in" style="display: none;">
     <div style="padding: 9px 10px 0 7px; float: right; cursor: pointer"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
     
-    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="showRegisterForm()">Sign up</a>, or login:</span>
-    Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <span id="emailField" style="display:none">Email address: <input type="text" id="email" /></span><div id="status"></div> 
+    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a>, or login:</span>
+    Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <div id="status"></div> 
     </div> 
   </div>
   <div id="logged_in" style="display: none; padding-top: 8px; padding-right: 8px">
@@ -103,6 +130,62 @@
       You can also <a href="#" onclick="logout()">logout</a>.
     </div>
   </div>
+</div>
+
+<div id="register_border" style="display:none;">
+<div id="register_form">
+  <div id="register_title">
+    <p>Register for Bespin</p>
+  </div>
+  <table>
+    <tbody>
+      <tr>
+        <th>Username:</th>
+        <td><input type="text" id="register_username" onchange="register.checkUsername();"/></td>
+      </tr>
+      <tr>
+        <td class="register_error" colspan="2">
+          <div id="register_username_error"></div>
+        </td>
+      </tr>
+      <tr>
+        <th>Password:</th>
+        <td><input type="text" id="register_password" onchange="register.checkPassword();"/></td>
+      </tr>
+      <tr>
+        <td class="register_error" colspan="2">
+          <div id="register_password_error"></div>
+        </td>
+      </tr>
+      <tr>
+        <th>Confirm Password:</th>
+        <td><input type="text" id="register_confirm" onchange="register.checkConfirm();"/></td>
+      </tr>
+      <tr>
+        <td class="register_error" colspan="2">
+          <div id="register_confirm_error"></div>
+        </td>
+      </tr>
+      <tr>
+        <th>Email:</th>
+        <td><input type="text" id="register_email" onchange="register.checkEmail();"/></td>
+      </tr>
+      <tr>
+        <td class="register_error" colspan="2">
+          <div id="register_email_error"></div>
+        </td>
+      </tr>
+      <tr>
+        <th>&nbsp;</th>
+        <th>
+          <input type="button" class="darkButton" value="Cancel >" onclick="register.cancel();"/>
+          <input type="button" class="darkButton" value="Register >" onclick="register.send();"/>
+        </th>
+        <td><div id="register_register_error"></div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 </div>
 
 <div id="welcome" align="center">
@@ -121,7 +204,9 @@
     <div id="quickedit">
         <h2>Quick Edit</h2>
         <p>Open a new, blank document and begin editing right away.</p>
-        <img src="images/splash_btn_begin.gif" align="right" onclick="go.quickEdit()"/>
+        <p style="text-align:center;">
+          <input type="button" class="darkButton" value="Begin >" onclick="go.quickEdit();"/>
+        </p>
     </div>
 </div>
 
