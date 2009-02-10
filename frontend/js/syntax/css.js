@@ -39,7 +39,7 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 //     foo: bar;
 // }
 
-Bespin.Syntax.Konstants = {
+Bespin.Syntax.Constants = {
     C_STYLE_COMMENT: "c-comment",
     STRING: "string",
     KEYWORD: "keyword",
@@ -48,7 +48,10 @@ Bespin.Syntax.Konstants = {
     NAME: "attribute-name",
     VALUE: "attribute-value",
     IMPORTANT: "important",
+    COLOR: "color",
+    SIZES: "sizes",
     ID: "cssid",
+    COLOR_OR_ID: "color_or_id"
 }
 
 Bespin.Syntax.CSSSyntaxEngine = Class.create({
@@ -82,13 +85,15 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
 			'text-bottom text-top thick thin top transparent tty tv ultra-condensed ultra-expanded underline upper-alpha uppercase upper-latin '+
 			'upper-roman url visible wait white wider w-resize x-fast x-high x-large x-loud x-low x-slow x-small x-soft xx-large xx-small yellow' +
 			'monospace tahoma verdana arial helvetica sans-serif serif'.split(" "),	
+			
+	sizeRegex: "(?:em|pt|px|%)",
 
     important: '!important',
 
     punctuation: '{ } / + % * . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
-        var K = Bespin.Syntax.Konstants;    // aliasing the constants for shorter reference ;-)
+        var K = Bespin.Syntax.Constants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
 
@@ -122,14 +127,14 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
             }
 
             // check if we have a hash character
-            // if (this.isHashChar(c)) {
-            //     currentStyle = K.ID;
-            // 
-            //     if (buffer == "") currentRegion = { start: i };
-            //     buffer += c;
-            // 
-            //     continue;
-            // }
+            if (this.isHashChar(c)) {
+                 currentStyle = K.COLOR_OR_ID;
+             
+                 if (buffer == "") currentRegion = { start: i };
+                 buffer += c;
+             
+                 continue;
+            }
             
 
             if (this.isWhiteSpaceOrPunctuation(c)) {
@@ -143,6 +148,26 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
                     }
                 }
 
+                if (currentStyle == K.COLOR_OR_ID) {
+                    // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
+                    if (buffer.match(/#[0-9AaBbCcDdEeFf]{3,6}/)) {
+                        currentStyle = K.COLOR;
+                    } else {
+                        currentStyle = K.OTHER;
+                    }
+                    currentRegion.stop = i;
+                    
+                    this.addRegion(regions, currentStyle, currentRegion);
+
+                    currentRegion = { start: i }; // clear
+                    stringChar = "";
+                    buffer = c;
+                    
+                    currentStyle = undefined;
+
+                    continue;
+                }
+
                 // if the buffer is full, add it to the regions
                 if (buffer != "") {
                     currentRegion.stop = i;
@@ -154,6 +179,8 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
                             currentStyle = K.KEYWORD;
                         } else if (this.values.indexOf(buffer.toLowerCase()) != -1) {
                             currentStyle = K.VALUE;
+                        } else if (buffer.match(this.sizeRegex)) {
+                            currentStyle = K.SIZE;
                         } else if (this.important.indexOf(buffer) != -1) {
                             currentStyle = K.IMPORTANT;
                         } else {
@@ -214,9 +241,9 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
         regions[type].push(data);
     },
 
-    // isHashChar: function(char) {
-    //     return char == "#";
-    // },
+    isHashChar: function(char) {
+        return char == "#";
+    },
 
     isWhiteSpaceOrPunctuation: function(char) {
         return this.isPunctuation(char) || this.isWhiteSpace(char);
