@@ -35,10 +35,6 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
 // lumped into one last bucket.
 
-// #foo {
-//     foo: bar;
-// }
-
 Bespin.Syntax.Constants = {
     C_STYLE_COMMENT: "c-comment",
     STRING: "string",
@@ -54,7 +50,7 @@ Bespin.Syntax.Constants = {
     COLOR_OR_ID: "color_or_id"
 }
 
-Bespin.Syntax.CSSSyntaxEngine = Class.create({
+Bespin.Syntax.CSSSyntaxEngine = Class.create({    
 	keywords: ['ascent', 'azimuth', 'background-attachment', 'background-color', 'background-image', 'background-position', 
 	    'background-repeat', 'background', 'baseline', 'bbox', 'border-collapse', 'border-color', 'border-spacing', 'border-style',
 	    'border-top', 'border-right', 'border-bottom', 'border-left', 'border-top-color', 'border-right-color', 'border-bottom-color',
@@ -121,7 +117,7 @@ Bespin.Syntax.CSSSyntaxEngine = Class.create({
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.C_STYLE_COMMENT) {
                 if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
-                    currentRegion.stop = i;
+                    currentRegion.stop = i + 1; // get the final / too
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
                     currentStyle = undefined;
