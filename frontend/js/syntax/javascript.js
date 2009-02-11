@@ -74,7 +74,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.C_STYLE_COMMENT) {
                 if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
-                    currentRegion.stop = i;
+                    currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
                     currentStyle = undefined;
@@ -101,7 +101,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
                 // if the buffer is full, add it to the regions
                 if (buffer != "") {
-                    currentRegion.stop = i;
+                    currentRegion.stop = i + 1;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
                         if (this.keywords.indexOf(buffer) != -1) {

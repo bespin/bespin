@@ -4,28 +4,17 @@
 <head>
     <title>Check both syntax engines</title>
     <script type="text/javascript" src="../../js/external/prototype-1.6.0.3.js"></script>
+    <script type="text/javascript" src="../../js/syntax/syntax.js"></script>
     <script type="text/javascript" src="../../js/syntax/javascript.js"></script>
-
-    <script src="../../research/syntaxhighlighting/dp.SyntaxHighlighter/shCore.js"></script>
-    <script src="../../research/syntaxhighlighter/shBrushJScript.js"></script>
-    <script src="../../research/syntaxhighlighter/syntaxhighlighter.js"></script>
 
     <script type="text/javascript">
         function go() {
-            //var line = 'var currentStyle = (meta.inMultilineComment) ? "c-comment" : undefined;';
+            var line = 'var currentStyle = (meta.inMultilineComment) ? "c-comment" : undefined;';
             //var line = '/* hello world */ var foo = "bar"; // this is a more complex line';
-            var line = "*";
-
-            var start = Date.now();
-            for (var i = 0; i < 1000; i++) {
-                new Bespin.Editor.SyntaxHighlighter().highlight(line, "js");
-            }
-            var stop = Date.now();
-
-            document.getElementById("first").innerHTML = "Old highlighter: " + (stop - start);
+            //var line = "*";
 
             var start2 = Date.now();
-            for (var i = 0; i < 1000; i++) {
+            for (var i = 0; i < 10000; i++) {
                 new Bespin.Syntax.JavaScriptSyntaxEngine().highlight(line, {});
             }
             var stop2 = Date.now();
@@ -35,7 +24,6 @@
     </script>
 </head>
 <body onload="go()">
-    <p id="first"></p>
     <p id="second"></p>
 
 </body>
