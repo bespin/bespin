@@ -38,7 +38,7 @@ import paver.virtual
 options(
     setup=Bunch(
         name="BespinServer",
-        version="0.1a9",
+        version="0.1a10",
         packages=find_packages(),
         package_data=find_package_data('bespin', 'bespin', 
                                 only_in_packages=False)
