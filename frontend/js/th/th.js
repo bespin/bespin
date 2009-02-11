@@ -1,30 +1,26 @@
-//  ***** BEGIN LICENSE BLOCK *****
-// Version: MPL 1.1
-// 
-// The contents of this file are subject to the Mozilla Public License  
-// Version
-// 1.1 (the "License"); you may not use this file except in compliance  
-// with
-// the License. You may obtain a copy of the License at
-// http://www.mozilla.org/MPL/
-// 
-// Software distributed under the License is distributed on an "AS IS"  
-// basis,
-// WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
-// License
-// for the specific language governing rights and limitations under the
-// License.
-// 
-// The Original Code is Bespin.
-// 
-// The Initial Developer of the Original Code is Mozilla.
-// Portions created by the Initial Developer are Copyright (C) 2009
-// the Initial Developer. All Rights Reserved.
-// 
-// Contributor(s):
-// 
-// ***** END LICENSE BLOCK *****
-// 
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ * See the License for the specific language governing rights and
+ * limitations under the License.
+ *
+ * The Original Code is Bespin.
+ *
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bespin Team (bespin@mozilla.com)
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 // install a console if not present
 if (!console) var console = { log: function(textToLog) {} };
@@ -228,7 +224,7 @@ var Scene = Class.define({
 
             if (!component) component = this.root;
 
-            if (component === this.root) console.log("root paint");
+            //if (component === this.root) console.log("root paint");
 
             if (component) {
                 if (!component.opaque && component.parent) {
@@ -349,7 +345,7 @@ var Component = Class.define({
         },
 
         paint: function(ctx) {
-            console.log("default component paint");
+            //console.log("default component paint");
         },
 
         repaint: function() {
@@ -418,8 +414,8 @@ var Container = Class.define({
                 try {
                     ctx.translate(this.children[i].bounds.x, this.children[i].bounds.y);
                 } catch (error) {
-                    console.log("WARNING: child " + i + " (type: " + this.children[i].type + ", id: " + this.children[i].id + ") of parent with id " + this.id + " of type " + this.type + " has malformed bounds and could not be painted");
-                    console.log(this.children[i].bounds);
+                    //console.log("WARNING: child " + i + " (type: " + this.children[i].type + ", id: " + this.children[i].id + ") of parent with id " + this.id + " of type " + this.type + " has malformed bounds and could not be painted");
+                    //console.log(this.children[i].bounds);
                     ctx.restore();
                     continue;
                 }
@@ -432,9 +428,9 @@ var Container = Class.define({
                         ctx.clip();
                     }
                 } catch(ex) {
-                    console.log("Bounds problem");
-                    console.log(this.children[i].type);
-                    console.log(this.children[i].bounds);
+                    // console.log("Bounds problem");
+                    // console.log(this.children[i].type);
+                    // console.log(this.children[i].bounds);
                 }
 
                 ctx.save();
