@@ -167,6 +167,9 @@ def compress_js():
     dashboard_filename = front_end_target / "dashboard.html"
     _install_compressed(front_end_target, yui_dir, dashboard_filename, "dashboard_all_uncompressed.js")
     
+    index_filename = front_end_target / "index.html"
+    _install_compressed(front_end_target, yui_dir, index_filename, "index_all_uncompressed.js")
+    
 @task
 def prod_server():
     """Creates the production server code."""
