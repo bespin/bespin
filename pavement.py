@@ -175,6 +175,8 @@ def dist():
     backend = path("backend/python/production")
     backend.copytree(options.build_dir)
     compress_js()
+    docs = path("docs")
+    docs.copytree(options.build_dir / "docs")
     
     current_directory = path.getcwd()
     
