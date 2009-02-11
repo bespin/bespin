@@ -64,11 +64,13 @@ def get_registered(request, response):
     response.content_type = "application/json"
     if request.user:
         private_project = request.user.private_project
+        quota, amount_used = request.user.quota_info()
     else:
         private_project = None
     response.body=simplejson.dumps(
         dict(username=request.username,
-        project=private_project)
+        project=private_project,
+        quota=quota, amountUsed=amount_used)
     )
     return response()
 
