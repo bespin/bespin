@@ -689,6 +689,16 @@ class FileManager(object):
         temporaryfile.seek(0)
         return temporaryfile
         
+    def recompute_used(self, user):
+        """Recomputes how much space the user has used."""
+        s = self.session
+        
+        total = 0
+        for project in user.projects:
+            total += s.query(func.sum(File.saved_size)) \
+                            .filter(File.name.like(project.name + "/%")).one()[0]
+        user.amount_used = total
+        
 def _find_common_base(member_names):
     base = None
     base_len = None

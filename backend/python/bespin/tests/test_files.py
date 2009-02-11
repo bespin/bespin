@@ -128,6 +128,13 @@ def test_cannot_save_beyond_quota():
         pass
     finally:
         model.QUOTA_UNITS = old_units
+        
+def test_amount_used_can_be_recomputed():
+    fm = _get_fm()
+    starting_point = macgyver.amount_used
+    macgyver.amount_used = 0
+    fm.recompute_used(macgyver)
+    assert macgyver.amount_used == starting_point
     
     
 def test_retrieve_file_obj():
