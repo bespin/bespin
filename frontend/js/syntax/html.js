@@ -170,16 +170,16 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
         regions[type].push(data);
     },
 
-    isWhiteSpaceOrPunctuation: function(char) {
-        return this.isPunctuation(char) || this.isWhiteSpace(char);
+    isWhiteSpaceOrPunctuation: function(ch) {
+        return this.isPunctuation(ch) || this.isWhiteSpace(ch);
     },
 
-    isPunctuation: function(char) {
-        return this.punctuation.indexOf(char) != -1;
+    isPunctuation: function(ch) {
+        return this.punctuation.indexOf(ch) != -1;
     },
 
-    isWhiteSpace: function(char) {
-        return char == " ";
+    isWhiteSpace: function(ch) {
+        return ch == " ";
     }
 });
 
