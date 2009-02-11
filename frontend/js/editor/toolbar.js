@@ -31,7 +31,7 @@ if (!Bespin.Editor) Bespin.Editor = {};
 // Such examples are collaboration views, file browser, undo/redo, cut/copy/paste and more.
 
 Bespin.Editor.Toolbar = Class.create({
-    DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "undo", "redo", "cut", "copy", "paste", "history", "preview", "fontsize"],
+    DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "undo", "redo", "cut", "copy", "paste", "preview", "fontsize"],
     FONT_SIZES: {
         1: 8,  // small
         2: 10, // medium
@@ -67,6 +67,14 @@ Bespin.Editor.Toolbar = Class.create({
                 collab.src = "images/" + ( (_showCollab) ? "icn_collab_on.png" : (_showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
                 if (Object.isFunction(recalcLayout)) recalcLayout(); // todo fix
             });
+            Element.observe(collab, 'mouseover', function() {
+                collab.style.cursor = "pointer";
+                collab.src = "images/icn_collab_on.png";
+            });
+            Element.observe(collab, 'mouseout', function() {
+                collab.style.cursor = "default";
+                collab.src = "images/icn_collab_off.png";
+            });
         },
         
         files: function(toolbar, el) {
@@ -76,14 +84,24 @@ Bespin.Editor.Toolbar = Class.create({
                 files.src = "images/" + ( (_showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
                 if (Object.isFunction(recalcLayout)) recalcLayout(); // todo fix
             });
+            Element.observe(files, 'mouseover', function() {
+                files.style.cursor = "pointer";
+                files.src = "images/icn_files_on.png";
+            });
+            Element.observe(files, 'mouseout', function() {
+                files.style.cursor = "default";
+                files.src = "images/icn_files_off.png";
+            });
         },
 
         dashboard: function(toolbar, el) {
             var dashboard = $(el) || $("toolbar_dashboard");
             Element.observe(dashboard, 'mouseover', function() {
+                dashboard.style.cursor = "pointer";
                 dashboard.src = "images/icn_dashboard_on.png";
             });
             Element.observe(dashboard, 'mouseout', function() {
+                dashboard.style.cursor = "default";
                 dashboard.src = "images/icn_dashboard_off.png";
             });
         },
@@ -94,6 +112,14 @@ Bespin.Editor.Toolbar = Class.create({
                 _showTarget = !_showTarget;
                 target.src = "images/" + ( (_showTarget) ? "icn_target_on.png" : "icn_target_off.png" );
                 if (Object.isFunction(recalcLayout)) recalcLayout(); // todo fix
+            });
+            Element.observe(target, 'mouseover', function() {
+                target.style.cursor = "pointer";
+                target.src = "images/icn_target_on.png";
+            });
+            Element.observe(target, 'mouseout', function() {
+                target.style.cursor = "default";
+                target.src = "images/icn_target_off.png";
             });
         },
 
@@ -176,21 +202,21 @@ Bespin.Editor.Toolbar = Class.create({
             });
         },
 
-        history: function(toolbar, el) {
-            var history = $(el) || $("toolbar_history");
-            
-            Element.observe(history, 'mousedown', function() {
-                history.src = "images/icn_history_on.png";
-            });
-
-            Element.observe(history, 'mouseup', function() {
-                history.src = "images/icn_history.png";
-            });
-            
-            Element.observe(history, 'click', function() {
-                console.log("clicked on history toolbar icon");
-            });
-        },
+        // history: function(toolbar, el) {
+        //     var history = $(el) || $("toolbar_history");
+        //     
+        //     Element.observe(history, 'mousedown', function() {
+        //         history.src = "images/icn_history_on.png";
+        //     });
+        // 
+        //     Element.observe(history, 'mouseup', function() {
+        //         history.src = "images/icn_history.png";
+        //     });
+        //     
+        //     Element.observe(history, 'click', function() {
+        //         console.log("clicked on history toolbar icon");
+        //     });
+        // },
 
         preview: function(toolbar, el) {
             var preview = $(el) || $("toolbar_preview");

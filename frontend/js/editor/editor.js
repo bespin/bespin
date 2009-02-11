@@ -917,6 +917,7 @@ Bespin.Editor.UI = Class.create({
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
             var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
+            
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
 
