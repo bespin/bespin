@@ -90,6 +90,41 @@ def _get_js_file_list(html_file):
         result.append(tag['src'])
     return result
 
+def _install_compressed(front_end_target, yui_dir, html_file, output_file):
+    # concatenate the files
+    file_list = _get_js_file_list(html_file)
+    output_filename = front_end_target / "js" / output_file
+    compressed_filename = path(output_filename.replace("_uncompressed", ""))
+    output_file = open(output_filename, "w")
+    for f in file_list:
+        js_file = front_end_target / f
+        output_file.write(js_file.bytes())
+        output_file.write("\n")
+    output_file.close()
+    
+    info("Running YUI Compressor")
+    jars = (yui_dir / "lib").glob("*.jar")
+    cp = ":".join(jars)
+    sh("env CLASSPATH=%s java -jar %s -o %s %s" % (
+        cp,
+        yui_dir / "build" / ("yuicompressor-%s.jar" % options.compressor_version),
+        compressed_filename,
+        output_filename
+        ))
+    
+    html_lines = html_file.lines()
+    start_marker = None
+    end_marker = None
+    for i in range(0, len(html_lines)):
+        if "<!-- begin script tags -->" in html_lines[i]:
+            start_marker = i
+        elif "<!-- end script tags -->" in html_lines[i]:
+            end_marker = i
+    del html_lines[start_marker:end_marker+1]
+    html_lines.insert(start_marker, '<script type="text/javascript" src="js/%s"></script>'
+                                    % compressed_filename.basename())
+    html_file.write_bytes("".join(html_lines))
+
 @task
 def compress_js():
     """Compress the JavaScript using the YUI compressor."""
@@ -126,38 +161,11 @@ def compress_js():
     front_end_source = path("frontend")
     front_end_source.copytree(front_end_target)
     
-    # concatenate the files
     editor_filename = front_end_target / "editor.html"
-    file_list = _get_js_file_list(editor_filename)
-    output_filename = front_end_target / "js/combined_uncompressed.js"
-    output_file = open(output_filename, "w")
-    for f in file_list:
-        js_file = front_end_target / f
-        output_file.write(js_file.bytes())
-        output_file.write("\n")
-    output_file.close()
+    _install_compressed(front_end_target, yui_dir, editor_filename, "editor_all_uncompressed.js")
     
-    info("Running YUI Compressor")
-    jars = (yui_dir / "lib").glob("*.jar")
-    cp = ":".join(jars)
-    sh("env CLASSPATH=%s java -jar %s -o %s %s" % (
-        cp,
-        yui_dir / "build" / ("yuicompressor-%s.jar" % options.compressor_version),
-        front_end_target / "js/combined.js",
-        front_end_target / "js/combined_uncompressed.js"
-        ))
-    
-    editor_lines = editor_filename.lines()
-    start_marker = None
-    end_marker = None
-    for i in range(0, len(editor_lines)):
-        if "<!-- begin script tags -->" in editor_lines[i]:
-            start_marker = i
-        elif "<!-- end script tags -->" in editor_lines[i]:
-            end_marker = i
-    del editor_lines[start_marker:end_marker+1]
-    editor_lines.insert(start_marker, '<script type="text/javascript" src="js/combined.js"></script>')
-    editor_filename.write_bytes("".join(editor_lines))
+    dashboard_filename = front_end_target / "dashboard.html"
+    _install_compressed(front_end_target, yui_dir, dashboard_filename, "dashboard_all_uncompressed.js")
     
 @task
 def prod_server():
