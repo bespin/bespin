@@ -42,7 +42,7 @@ import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
-                    DateTime)
+                    DateTime, func)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -52,6 +52,9 @@ from bespin import config
 log = logging.getLogger("bespin.model")
 
 Base = declarative_base()
+
+# quotas are expressed in 1 million byte increments
+QUOTA_UNITS = 1000000
 
 class ConflictError(Exception):
     pass
@@ -86,12 +89,15 @@ class User(Base):
     settings = Column(PickleType())
     private_project = Column(String(50))
     projects = relation('Project', backref='owner')
+    quota = Column(Integer, default=10)
+    amount_used = Column(Integer, default=0)
     
     def __init__(self, username, password, email):
         self.username = username
         self.email = email
         self.password = password
         self.settings = {}
+        self.quota = config.c.default_quota
         
         hashobj = hashlib.sha1(self.username + " " 
                 + config.c.secret + " " + self.password)
@@ -385,10 +391,13 @@ class FileManager(object):
         try:
             file = s.query(File).filter_by(name=full_path).one()
             file.data = contents
+            size_change = saved_size - file.saved_size
+            user.amount_used += size_change
             file.saved_size = saved_size
         except NoResultFound:
             file = File(name=full_path, dir=last_d, data=contents,
                         saved_size=saved_size)
+            user.amount_used += saved_size
             s.add(file)
             
         self.reset_edits(user, project, path)
@@ -446,6 +455,9 @@ class FileManager(object):
             if dir_obj.parent:
                 dir_obj.parent.subdirs.remove(dir_obj)
             s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
+            file_space = s.query(func.sum(File.saved_size)) \
+                            .filter(File.name.like(full_path + "%")).one()[0]
+            user.amount_used -= file_space
             s.query(File).filter(File.name.like(full_path + "%")).delete()
         else:
             try:
@@ -463,6 +475,7 @@ class FileManager(object):
             # user has it open
             for fs in file_obj.users:
                 s.delete(fs)
+            user.amount_used -= file_obj.saved_size
             s.delete(file_obj)
         
     def save_edit(self, user, project, path, edit):
