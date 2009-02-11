@@ -116,6 +116,18 @@ def create_db():
     dry("Turn on migrate versioning", main, ["version_control", dburl, repository])
 
 @task
+def upgrade():
+    """Upgrade your database."""
+    from bespin import config, model, db_versions
+    from migrate.versioning.shell import main
+    config.set_profile('dev')
+    config.activate_profile()
+    repository = str(path(db_versions.__file__).dirname())
+    dburl = config.c.dburl
+    dry("Run the database upgrade", main, ["upgrade", dburl, repository])
+    
+
+@task
 @needs(['sdist'])
 def production():
     """Gets things ready for production."""
