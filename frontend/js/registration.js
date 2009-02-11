@@ -38,6 +38,24 @@ Event.observe(document, "dom:loaded", function() {
     svr.currentuser(isLoggedIn, isNotLoggedIn);
 });
 
+function centerOnScreen(el) {
+    // retrieve required dimensions
+    var elDims = el.getDimensions();
+    var browserDims = document.body.getDimensions();
+
+    // calculate the center of the page using the browser and element dimensions
+    var y = (browserDims.height - elDims.height) / 2;
+    var x = (browserDims.width - elDims.width) / 2;
+
+    // set the style of the element so it is centered
+    var styles = { 
+        position: 'absolute',
+        top: y + 'px',
+        left : x + 'px' 
+    };
+    el.setStyle(styles);
+}
+
 var register = {
     checkUsername:function() {
         $('register_username_error').innerHTML = ($F('register_username').length < 4) ? "Usernames must be at least 4 characters long" : "";
@@ -54,9 +72,12 @@ var register = {
     showForm:function() {
         $('logged_in').hide();
         $('not_logged_in').hide();
+        centerOnScreen($('register_border'));
         $('register_border').show();
+        $('opaque').show();
     },
     hideForm:function() {
+        $('opaque').hide();
         $('register_border').hide();
         svr.currentuser(isLoggedIn, isNotLoggedIn);
     },
