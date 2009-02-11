@@ -54,7 +54,7 @@ def setup_module(module):
     config.set_profile('test')
     app = controllers.make_app()
     app = TestApp(app)
-
+    
 def _get_fm():
     global macgyver, someone_else, murdoc
     config.activate_profile()
@@ -108,6 +108,27 @@ def test_basic_file_creation():
     
     assert file_obj.data == 'New content'
     fm.session.rollback()
+    
+def test_changing_file_contents_changes_amount_used():
+    fm = _get_fm()
+    starting_point = macgyver.amount_used
+    fm.save_file(macgyver, "bigmac", "foo", "step 1")
+    assert macgyver.amount_used == starting_point + 6
+    fm.save_file(macgyver, "bigmac", "foo", "step two")
+    assert macgyver.amount_used == starting_point + 8
+    
+def test_cannot_save_beyond_quota():
+    fm = _get_fm()
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
+    try:
+        fm.save_file(macgyver, "bigmac", "foo", "x" * 11)
+        assert False, "Expected an OverQuota exception"
+    except model.OverQuota:
+        pass
+    finally:
+        model.QUOTA_UNITS = old_units
+    
     
 def test_retrieve_file_obj():
     fm = _get_fm()
