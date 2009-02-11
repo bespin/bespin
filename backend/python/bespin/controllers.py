@@ -31,11 +31,11 @@ import urllib2
 from urlparse import urlparse
 import logging
 
-from urlrelay import URLRelay, url
+from urlrelay import URLRelay, url, register
 from paste.auth import auth_tkt
 import simplejson
 import tempfile
-from webob import Response
+from webob import Request, Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
@@ -387,10 +387,25 @@ class TktMiddleware(auth_tkt.AuthTKTMiddleware):
         environ['bespin.auth_tkt'] = self
         return super(TktMiddleware, self).__call__(environ, start_response)
 
+def pathpopper_middleware(app, num_to_pop=1):
+    def new_app(environ, start_response):
+        req = Request(environ)
+        for i in range(0, num_to_pop):
+            req.path_info_pop()
+        return app(environ, start_response)
+    return new_app
+    
+
 def make_app():
     from webob import Response
     import static
     static_app = static.Cling(c.static_dir)
+    
+    docs_app = pathpopper_middleware(static.Cling(c.docs_dir))
+    code_app = pathpopper_middleware(static.Cling(c.static_dir + "/js"), 2)
+    
+    register("^/docs/code/", code_app)
+    register("^/docs/", docs_app)
     
     from paste.cascade import Cascade
     app = URLRelay()
