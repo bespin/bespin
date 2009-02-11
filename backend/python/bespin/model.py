@@ -118,6 +118,10 @@ class User(Base):
         if the user has enough available in their quota, False otherwise.
         """
         return (self.quota * QUOTA_UNITS - self.amount_used - amount) > 0
+        
+    def quota_info(self):
+        """Returns the tuple of quota and amount_used"""
+        return (self.quota * QUOTA_UNITS, self.amount_used)
     
 
 class UserManager(object):
