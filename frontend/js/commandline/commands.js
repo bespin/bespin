@@ -564,7 +564,6 @@ Bespin.Commands.add({
         self.editor.model.changeEachRow(function(row) {
             if (!side) side = "right";
             if (["left", "both"].include(side)) {
-                console.log(row.first);
                 while (row.first() == ' ') {
                     row.shift();
                 }

@@ -152,12 +152,12 @@ Bespin.Syntax.EngineResolver = new function() {
   // Return a plain region that is the entire line
   var NoopSyntaxEngine = {
       highlight: function(line, meta) {
-          return {
+          return { regions: {
               plain: [{
                   start: 0,
                   stop: line.length
               }]
-          }
+          } }
       }
       //innersyntax: function() {},
   }

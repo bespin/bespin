@@ -70,7 +70,7 @@
 
     <script type="text/javascript" src="js/external/jstraits.js"></script>
     <script type="text/javascript" src="js/th/traits.js"></script>
-    <script type="text/javascript" src="js/th/gtk.js"></script>
+    <script type="text/javascript" src="js/th/th.js"></script>
     <script type="text/javascript" src="js/th/models.js"></script>
     <script type="text/javascript" src="js/th/borders.js"></script>
     <script type="text/javascript" src="js/th/components.js"></script>
@@ -99,7 +99,7 @@
         <img id="toolbar_cut" src="images/icn_cut.png" alt="Cut" title="Cut">
         <img id="toolbar_copy" src="images/icn_copy.png" alt="Copy" title="Copy">
         <img id="toolbar_paste" src="images/icn_paste.png" alt="Paste" title="Paste">
-        <img id="toolbar_history" src="images/icn_history.png" alt="History" title="History">
+        <!-- img id="toolbar_history" src="images/icn_history.png" alt="History" title="History" -->
         <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser">
         <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
     </div>
@@ -125,10 +125,11 @@
             <div id="files_project_name">Project Name</div>
             <div id="files_project_pulldown"><img src="images/files_icn_projectdropdown.png" alt="Change Project"></div>
         </div>
+        <div class="comingsoon" style="padding: 10px 0 0 10px;">COMING SOON!</div>
     </div>
     <div id="collab">
         <div id="collab_header"><div>Collaboration</div></div>
-        <div class="collab_subheader"><div>Collaborating with You</div></div>
+        <div class="collab_subheader"><div class="comingsoon">COMING SOON!</div></div>
         <div class="collab_person">
             <div class="collab_icon"></div><div class="collab_name">Dion Almaer</div><div class="collab_description">Editing</div>
         </div>
@@ -142,7 +143,7 @@
         <table id="target_browsers_table">
             <tr>
                 <td>
-                    Specify Target Browsers:
+                    Specify Target Browsers<br><span class="comingsoon">COMING SOON!</span>
                 </td>
                 <td class="spacer">
                     <img src="images/icn_browser_div.png" alt="">
@@ -151,7 +152,7 @@
                     <img src="images/icn_browser_ie.png" alt="Internet Explorer">
                 </td>
                 <td>
-                    <select name="target_ie">
+                    <select name="target_ie" disabled>
                         <option></option>
                         <option>6+</option>
                         <option>7+</option>
@@ -161,7 +162,7 @@
                     <img src="images/icn_browser_ff.png" alt="Firefox">
                 </td>
                 <td>
-                    <select name="target_ff">
+                    <select name="target_ff" disabled>
                         <option></option>
                         <option>2+</option>
                         <option>3+</option>
@@ -171,7 +172,7 @@
                     <img src="images/icn_browser_safari.png" alt="Safari">
                 </td>
                 <td>
-                    <select name="target_safari">
+                    <select name="target_safari" disabled>
                         <option></option>
                         <option>2+</option>
                         <option>3+</option>
@@ -181,7 +182,7 @@
                     <img src="images/icn_browser_opera.png" alt="Opera">
                 </td>
                 <td>
-                    <select name="target_opera">
+                    <select name="target_opera" disabled>
                         <option></option>
                         <option>8+</option>
                         <option>9+</option>
@@ -192,7 +193,7 @@
                     <img src="images/icn_browser_w3c.png" alt="W3C">
                 </td>
                 <td>
-                    <select name="target_w3c">
+                    <select name="target_w3c" disabled>
                         <option></option>
                         <option>HTML 4</option>
                         <option>HTML 5</option>

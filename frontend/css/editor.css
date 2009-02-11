@@ -358,3 +358,9 @@ img {
     font-family: Calibri, Arial, sans-serif;
     color: #DDDDDD;
 }
+
+.comingsoon {
+    font-size: smaller;
+    color: red;
+    font-style: italic;
+}
