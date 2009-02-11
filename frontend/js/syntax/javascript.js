@@ -67,6 +67,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
         // these properties are related to the parser state above but are special cases
         var stringChar = "";    // the character used to start the current string
+        var multiline = meta.inMultilineComment;
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
@@ -78,7 +79,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
                     currentStyle = undefined;
-                    meta.inMultilineComment = false;
+                    multiline = false;
                     buffer = "";
                 } else {
                     if (buffer == "") currentRegion = { start: i };
@@ -124,7 +125,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                         regions[K.PUNCTUATION].pop();
 
                         // we are in a c-style comment
-                        meta.inMultilineComment = true;
+                        multiline = true;
                         currentStyle = K.C_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
                         buffer = "/*";
@@ -168,7 +169,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: meta };
+        return { regions: regions, meta: { inMultilineComment: multiline } };
     },
 
     addRegion: function(regions, type, data) {
