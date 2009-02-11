@@ -32,8 +32,8 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 // ** {{{ Bespin.Syntax.CSSSyntaxEngine }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
-// lumped into one last bucket.
+// does the right thing for key/value pairs, #000000, and the like.
+// Doesn't actually grok the zones of "propertykey: propertyvalue" as it should.
 
 Bespin.Syntax.Constants = {
     C_STYLE_COMMENT: "c-comment",
