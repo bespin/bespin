@@ -113,6 +113,16 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
         ))
     
     html_lines = html_file.lines()
+    
+    # strip out the MPL
+    if html_lines[0].startswith("<!--"):
+        end_marker = None
+        for i in range(0, len(html_lines)):
+            if "-->" in html_lines[i]:
+                end_marker = i
+                break
+        del html_lines[0:end_marker+1]
+    
     start_marker = None
     end_marker = None
     for i in range(0, len(html_lines)):
