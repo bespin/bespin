@@ -781,3 +781,14 @@ def test_preview_mode():
     assert resp.body == "<html><body>Simple HTML file</body></html>"
     assert resp.content_type == "text/html"
     
+def test_quota_limits_on_the_web():
+    fm = _get_fm()
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
+    try:
+        resp = app.put("/file/at/bigmac/foo", "x" * 11, status=400)
+        assert resp.body == "Over quota"
+    finally:
+        model.QUOTA_UNITS = old_units
+    
+    
