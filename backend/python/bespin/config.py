@@ -46,6 +46,7 @@ class Bunch(dict):
 c = Bunch()
 c.dburl = None
 c.secret = "This is the phrase that is used for secret stuff."
+c.pw_secret = "This phrase encrypts passwords."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
