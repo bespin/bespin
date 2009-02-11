@@ -726,6 +726,8 @@ Bespin.Editor.UI = Class.create({
         // ====
         var refreshCanvas = fullRefresh;        // if the user explicitly requests a full refresh, give it to 'em
 
+        if (!refreshCanvas) refreshCanvas = (this.selectMouseDownPos);
+
         if (!refreshCanvas) refreshCanvas = (this.lastLineCount != ed.model.getRowCount());  // if the line count has changed, full refresh
 
         this.lastLineCount = ed.model.getRowCount();        // save the number of lines for the next time paint
@@ -822,7 +824,7 @@ Bespin.Editor.UI = Class.create({
         }
 
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
-        ctx.save();
+        ctx.save(); // take snapshot of current context state so we can roll back later on
         ctx.translate(0, this.yoffset);
 
         // only paint those lines that can be visible
@@ -845,7 +847,8 @@ Bespin.Editor.UI = Class.create({
             }
         }
 
-        // scroll bars - x axis
+        // and now we're ready to translate the horizontal axis; while we're at it, we'll setup a clip to prevent any drawing outside
+        // of code editor region itself (protecting the gutter). this clip is important to prevent text from bleeding into the gutter.
         ctx.save();
         ctx.beginPath();
         ctx.rect(this.GUTTER_WIDTH, -this.yoffset, cwidth - this.GUTTER_WIDTH, cheight);
@@ -853,10 +856,12 @@ Bespin.Editor.UI = Class.create({
         ctx.translate(this.xoffset, 0);
         ctx.clip();
 
+        // calculate the first and last visible columns on the screen; these values will be used to try and avoid painting text
+        // that the user can't actually see
         var firstColumn = Math.floor(Math.abs(this.xoffset / this.charWidth));
         var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
 
-        // paint the line content and zebra stripes (kept in separate loop to simplify scroll translation and clipping)
+        // paint the line content and zebra stripes
         y = (this.lineHeight * this.firstVisibleRow);
         var cc; // the starting column of the current region in the region render loop below
         var ce; // the ending column in the same loop
@@ -866,20 +871,22 @@ Bespin.Editor.UI = Class.create({
         for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
             x = this.GUTTER_WIDTH;
 
+            // if we aren't repainting the entire canvas...
             if (!refreshCanvas) {
+                // ...don't bother painting the line unless it is "dirty" (see above for dirty checking)
                 if (!dirty[currentLine]) {
                     y += this.lineHeight;
                     continue;
                 }
 
-                // setup a clip
+                // setup a clip for the current line only; this makes drawing just that piece of the scrollbar easy
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(x, y, cwidth, this.lineHeight);
                 ctx.closePath();
                 ctx.clip();
 
-                if ((currentLine % 2) == 1) { // only repaint the line if the zebra stripe won't beat us to it
+                if ((currentLine % 2) == 1) { // only repaint the line background if the zebra stripe won't be painted into it
                     ctx.fillStyle = theme.backgroundStyle;
                     ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
                 }
@@ -893,7 +900,7 @@ Bespin.Editor.UI = Class.create({
             x += this.LINE_INSETS.left;
             cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
-            // paint the selection bar if necessary
+            // paint the selection bar if the line has selections
             var selections = this.selectionHelper.getRowSelectionPositions(currentLine);
             if (selections) {
                 tx = x + (selections.startCol * this.charWidth);
@@ -902,7 +909,7 @@ Bespin.Editor.UI = Class.create({
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
-            // the following three chunks of code all do the same thing; only one should be uncommented at a time
+            // the following two chunks of code do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
 //            ctx.fillStyle = "white";
@@ -932,27 +939,9 @@ Bespin.Editor.UI = Class.create({
                 }
             }
 
-            // CHUNK 3: this code is the "legacy" color helper syntax highlighting API which is now obsolete
-//            cc = 0;
-//            ce = 0;
-//            var regions = this.colorHelper.getLineRegions(currentLine);
-//            for (ri = 0; ri < regions.length; ri++) {
-//                if (cc > lastColumn) break;
-//
-//                regionlen = regions[ri].text.length;
-//                ce = cc + regionlen;
-//                if (ce >= firstColumn) {
-//                    ctx.fillStyle = regions[ri].style;
-//                    ctx.fillText(regions[ri].text, x, cy);
-//                }
-//
-//                x += regionlen * this.charWidth;
-//                cc = ce;
-//            }
-
             if (!refreshCanvas) {
                 ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
-                    ctx.restore();
+                ctx.restore();
             }
 
             y += this.lineHeight;
