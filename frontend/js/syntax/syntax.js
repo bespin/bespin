@@ -25,6 +25,8 @@
 // = Syntax Highlighting =
 //
 // Module for dealing with the syntax highlighting.
+//
+// The core model talks to specific engines to do the work and then packages it up to send to the editor. 
 
 if (typeof Bespin == "undefined") Bespin = {};
 if (!Bespin.Syntax) Bespin.Syntax = {};
@@ -42,7 +44,9 @@ Bespin.Syntax.Model = Class.create({
         this.syntaxType = "";
     },
     
-    // -- Meta Info
+    // ** {{{ Meta Info }}} **
+    //
+    // We store meta info on the lines, such as the fact that it is in a multiline comment
     setLineMetaInfo: function(lineNumber, meta) {
         this.lineMetaInfo[lineNumber] = meta;
     },
@@ -50,8 +54,10 @@ Bespin.Syntax.Model = Class.create({
     getLineMetaInfo: function(lineNumber) {
         return this.lineMetaInfo[lineNumber];
     },
-    
-    // -- Caching
+
+    // ** {{{ Caching }}} **
+    //
+    // Optionally, keep a cache of the highlighted model
     invalidateCache: function(lineNumber) {
         delete this.lineCache[lineNumber];
     },
@@ -69,6 +75,10 @@ Bespin.Syntax.Model = Class.create({
     },
     
     mergeSyntaxResults: function(regions) {
+        // TO BE COMPLETED
+        // This function has to take the regions and take sub pieces and tie them into the full line
+        // For example, imagine an HTML engine that sees <script>....</script>
+        // It will pass .... into the JavaScript engine and take those results with a base of 0 and return the real location
         var base = 0;
         for (var i = 0; i < regions.length; i++) {
             var region = region[i];
@@ -77,6 +87,11 @@ Bespin.Syntax.Model = Class.create({
     },
 
     // -- Main API
+    // ** {{{ getSyntaxStyles }}} **
+    //
+    // This is the main API.
+    //
+    // Given the line number and syntax type (e.g. css, js, html) hunt down the engine, ask it to syntax highlight, and return the regions
     getSyntaxStyles: function(lineNumber, syntaxType) {
         if (this.syntaxType != syntaxType) {
             this.invalidateEntireCache();
@@ -87,6 +102,7 @@ Bespin.Syntax.Model = Class.create({
             // if (cached) return cached;            
         }
 
+        // Get the row contents as one string
         var line = this.editor.model.getRowArray(lineNumber).join("");
 
         var syntaxResult = { // setup the result
@@ -122,8 +138,18 @@ Bespin.Syntax.Model = Class.create({
     }
 });
 
+// ** {{{ Bespin.Syntax.EngineResolver }}} **
+//
+// The resolver holds the engines that are available to do the actual syntax highlighting
+//
+// It holds a default engine that returns the line back in the clear
+
 Bespin.Syntax.EngineResolver = new function() {
   var engines = {};
+  
+  // ** {{{ NoopSyntaxEngine }}} **
+  //
+  // Return a plain region that is the entire line
   var NoopSyntaxEngine = {
       highlight: function(line, meta) {
           return {
@@ -137,16 +163,26 @@ Bespin.Syntax.EngineResolver = new function() {
   }
   
   return {
+      // ** {{{ highlight }}} **
+      //
+      // A high level highlight function that uses the {{{type}}} to get the engine, and asks it to highlight
       highlight: function(type, line, meta) {
           this.resolve(type).highlight(line, meta);
       },
-      
+
+      // ** {{{ register }}} **
+      //
+      // Engines register themselves, 
+      // e.g. {{{Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);}}}
       register: function(syntaxEngine, types) {
           for (var i = 0; i < types.length; i++) {
               engines[types[i]] = syntaxEngine;
           }
       },
 
+      // ** {{{ resolve }}} **
+      //
+      // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(type) {
           return engines[type] || NoopSyntaxEngine;
       }      

@@ -32,8 +32,7 @@ if (!Bespin.Syntax) Bespin.Syntax = {};
 // ** {{{ Bespin.Syntax.HTMLSyntaxEngine }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
-// lumped into one last bucket.
+// supports keywords and the like, but doesn't actually understand HTML as it should.
 
 Bespin.Syntax.HTMLConstants = {
     HTML_STYLE_COMMENT: "comment",
