@@ -71,6 +71,9 @@ class FileConflict(FSException):
 class NotAuthorized(FSException):
     pass
     
+class OverQuota(FSException):
+    pass
+    
 class DB(object):
     def __init__(self, user_manager, file_manager):
         self.user_manager = user_manager
@@ -109,6 +112,12 @@ class User(Base):
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
+        
+    def check_save(self, amount):
+        """Confirms that the user can save this amount. Returns True
+        if the user has enough available in their quota, False otherwise.
+        """
+        return (self.quota * QUOTA_UNITS - self.amount_used - amount) > 0
     
 
 class UserManager(object):
@@ -358,6 +367,10 @@ class FileManager(object):
         the user."""
         project = self.get_project(user, project, create=True)
         
+        saved_size = len(contents) if contents is not None else 0
+        if not user.check_save(saved_size):
+            raise OverQuota()
+        
         s = self.session
         full_path = project.name + "/" + path
         segments = full_path.split("/")
@@ -385,8 +398,6 @@ class FileManager(object):
         subdir_names = [item.name for item in last_d.subdirs]
         if (full_path + "/") in subdir_names:
             raise FileConflict("Cannot save a file at %s because there is a directory there." % full_path)
-        
-        saved_size = len(contents) if contents is not None else 0    
         
         try:
             file = s.query(File).filter_by(name=full_path).one()
