@@ -47,7 +47,9 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
 
     punctuation: '< > = " \'',
 
-    highlight: function(line, meta) {        
+    highlight: function(line, meta) {
+        if (!meta) meta = {};
+        
         var K = Bespin.Syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
