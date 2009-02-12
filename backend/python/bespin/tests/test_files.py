@@ -96,7 +96,7 @@ def test_basic_file_creation():
     assert len(files) == 1
     assert files[0].name == 'bigmac/reqs'
     proj_names = set([proj.name for proj in macgyver.projects])
-    assert proj_names == set(['bigmac', "MacGyver_New_Project", 
+    assert proj_names == set(['bigmac', "SampleProjectFor:MacGyver", 
                               macgyver.private_project])
     
     # let's update the contents
@@ -453,7 +453,7 @@ def test_list_top_level():
     result = fm.list_files(macgyver)
     result_names = [proj.name for proj in result]
     assert result_names == [macgyver.private_project,
-                            "MacGyver_New_Project", "bigmac"]
+                            "SampleProjectFor:MacGyver", "bigmac"]
     
     
 def test_secondary_objects_are_saved_when_creating_new_file():
@@ -626,10 +626,10 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == [{'name' : 'MacGyver_New_Project/'}, 
+    assert data == [{'name' : 'SampleProjectFor:MacGyver/'}, 
                     {'name' : 'bigmac/'}]
     
-    resp = app.get("/file/list/MacGyver_New_Project/")
+    resp = app.get("/file/list/SampleProjectFor:MacGyver/")
     data = simplejson.loads(resp.body)
     assert data[1]['name'] == 'index.html'
     
@@ -703,7 +703,7 @@ def test_private_project_does_not_appear_in_list():
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
     assert len(data) == 1
-    assert data[0]['name'] == "MacGyver_New_Project/"
+    assert data[0]['name'] == "SampleProjectFor:MacGyver/"
 
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
