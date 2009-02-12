@@ -51,7 +51,7 @@ c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__
 c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
-c.default_quota = 10
+c.default_quota = 15
 
 c.max_import_file_size = 20000000
 
