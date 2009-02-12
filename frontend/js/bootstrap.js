@@ -106,8 +106,6 @@ Element.observe(window, 'load', function() {
         }
 
         this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - x, height: d.b.h };
-
-        console.log(this.children[2].attributes.text);
     }
 
     _scene.render();
