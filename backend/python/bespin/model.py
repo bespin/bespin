@@ -141,7 +141,7 @@ class UserManager(object):
         except DBAPIError:
             raise ConflictError("Username %s is already in use" % username)
         self.db.file_manager.install_template(user,
-                                username + "_New_Project")
+                                "SampleProjectFor:%s" % username)
         return user
         
     def get_user(self, username):
