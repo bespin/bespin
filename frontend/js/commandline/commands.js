@@ -311,7 +311,7 @@ Bespin.Commands.add({
         }
         
         self.files.removeFile(_editSession.project, filename, function() {
-            self.editor.model.clear();
+            if (_editSession.path == filename) self.editor.model.clear(); // only clear if deleting the same file
             self.showInfo('Removed file: ' + filename, true);
         }, function(xhr) {
             self.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
