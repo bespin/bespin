@@ -173,4 +173,4 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
 });
 
 // Register
-Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.HTMLSyntaxEngine(), ['html', 'xml', 'xhtml']);
+Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.HTMLSyntaxEngine(), ['html', 'htm', 'xml', 'xhtml']);
