@@ -17,7 +17,7 @@ function usernameInUse() {
 
 function showStatus(msg) {
     $("status").innerHTML = msg;
-    $("status").show();    
+    $("status").show();
 }
 
 function login() {
