@@ -16,6 +16,7 @@ function usernameInUse() {
 }
 
 function login() {
+    if (showingBrowserCompatScreen()) return;
     svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
 }
 
@@ -56,6 +57,40 @@ function centerOnScreen(el) {
     el.setStyle(styles);
 }
 
+// make sure that the browser can do our wicked shizzle
+function checkBrowserAbility() {
+    if (typeof $('testcanvas').getContext != "function") return false; // no canvas
+    
+    var ctx = $('testcanvas').getContext("2d");
+    
+    if (ctx.fillText || ctx.mozDrawText) 
+        return true; // you need text support my friend
+    else
+        return false;
+}
+
+function showingBrowserCompatScreen() {
+    if (!checkBrowserAbility()) { // if you don't have the ability
+        centerOnScreen($('browser_not_compat'));
+        $('browser_not_compat').show();
+        $('opaque').show();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function hideBrowserCompatScreen() {
+    $('browser_not_compat').hide();
+    $('opaque').hide();
+}
+
+function validateEmail(str) {
+    var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i
+    return filter.test(str);
+}
+
+
 var register = {
     checkUsername:function() {
         $('register_username_error').innerHTML = ($F('register_username').length < 4) ? "Usernames must be at least 4 characters long" : "";
@@ -70,6 +105,7 @@ var register = {
         $('register_email_error').innerHTML = (!validateEmail($F('register_email'))) ? "Invalid email address" : "";
     },
     showForm:function() {
+        if (showingBrowserCompatScreen()) return;
         $('logged_in').hide();
         $('not_logged_in').hide();
         centerOnScreen($('register_border'));
@@ -90,8 +126,3 @@ var register = {
         register.hideForm();
     }
 };
-
-function validateEmail(str) {
-    var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i
-    return filter.test(str);
-}
