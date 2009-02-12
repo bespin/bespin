@@ -53,7 +53,7 @@ def upgrade():
     # named 'migrate_engine' imported from migrate.
     quota.create(user_table)
     amount_used.create(user_table)
-    user_table.update().execute(quota=10)
+    user_table.update().execute(quota=15)
     query = select([utc.id, func.sum(ftc.saved_size)])
     query = query.where(ptc.user_id==utc.id)
     query = query.where("files.name like projects.name || '/%'")
