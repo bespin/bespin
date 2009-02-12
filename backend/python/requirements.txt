@@ -4,7 +4,8 @@ WebTest
 py
 simplejson
 SQLAlchemy
-sqlalchemy-migrate
+sqlalchemy-migrate>0.5.1
 Paste
 static
 virtualenv
+httplib2

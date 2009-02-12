@@ -114,6 +114,9 @@ def test_register_and_verify_user():
     data = simplejson.loads(resp.body)
     assert 'project' in data
     assert data['username'] == 'BillBixby'
+    assert 'quota' in data
+    assert data['quota'] == 10000000
+    assert 'amountUsed' in data
     
     project_id = data['project']
     resp = app.get("/file/at/%s/config.js" % project_id)
