@@ -94,7 +94,7 @@ Bespin.Commands.add({
                 commands.push('<b>' + name + arguments + '</b>: ' + command.preview);
             }
         }
-        self.showInfo("<div style='font-size: 0.92em'>" + commands.join("<br/>") + "</div>");
+        self.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
     }
 }); 
 
