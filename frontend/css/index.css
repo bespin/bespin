@@ -306,7 +306,6 @@ body {
 }
 
 #vcsurl {
-    width: 220px;
     background-image: url("images/splash_editnow_input.png");
     background-repeat: no-repeat;
 }
