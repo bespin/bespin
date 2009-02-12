@@ -102,7 +102,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
 
                 // if the buffer is full, add it to the regions
                 if (buffer != "") {
-                    currentRegion.stop = i + 1;
+                    currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
                         if (this.keywords.indexOf(buffer) != -1) {

@@ -44,19 +44,33 @@
 
 <div id="loginpane" align="right">
   <div id="not_logged_in" style="display: none;">
-    <div style="padding: 9px 10px 0 7px; float: right; cursor: pointer"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
+    <div id="loginbutton"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
     
-    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a>, or login:</span>
+    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a> or login:</span>
     Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <div id="status"></div> 
     </div> 
   </div>
-  <div id="logged_in" style="display: none; padding-top: 8px; padding-right: 8px">
+  <div id="logged_in" style="display: none;">
     <div style="float: right">
       Welcome back, <span id="display_username"></span>!
       Go to the <a href="dashboard.html">dashboard</a> to start coding.
       You can also <a href="#" onclick="logout()">logout</a>.
     </div>
   </div>
+</div>
+
+<div id="browser_not_compat" style="display:none;">
+    <div id="inner_browser_not_compat">
+        <h3>Browser compatibility</h3>
+        <div id="sorry_browser_text">
+        <img src="images/splash_browser_compat.png" style="float: left; padding: 6px; margin-top: 4px">
+        <p><em>We would love to have you try Bespin</em></p>
+        <p>Unfortunately, we are using exciting new technology in HTML 5 that only leading browsers have implemented.</p>
+        <p>We want to push the Open Web forward, so for this tech preview you will have to use a new browser.</p> 
+        <p>We have successfully tested Bespin on <a href="http://getfirefox.com/">Firefox 3</a> and <a href="http://nightly.webkit.org/">WebKit Nightly</a>, so try one of them!</p>
+        <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="hideBrowserCompatScreen()"></center>
+        </div>
+    </div>
 </div>
 
 <div id="register_border" style="display:none;">
@@ -116,23 +130,49 @@
 </div>
 
 <div id="welcome" align="center">
-    <img src="images/splash_logo.jpg"/>
+    <div id="logo"></div>
 </div>
 
 <div id="toolbar" align="center">Login above to work on your projects, or select an option below.</div>
 
 <div id="main" align="center">
-    <div id="editnow">
-        <h2>Edit Now</h2>
-        <p>Give us an open source project name or a publicly accessible Subversion repository URL and we will create a project for you.</p>
-        <div style="text-align: center; padding-top: 14px">COMING SOON</div>
+    <div id="usebespin">
+        <h2>Use Bespin</h2>
+        
+        <img src="images/splash_icn_editnow.png" style="float: left; padding: 4px;">
+        
+        <h3>Edit Now</h3>
+        
+        <p>
+            Give us an open-source project name or a publicly accessible repository URL and we'll create a project for you.
+        </p>
+        <p>
+            <input type="text" size="10" id="vcsurl" style="width: 220px;" value="coming soon!" disabled>
+            <br>
+            <img src="images/splash_btn_editnow.png" align="right" style="padding-right: 16px">
+            <br clear="all">
+        </p>
+        
+        <img src="images/splash_icn_register.png" style="float: left; padding: 4px;">
+
+        <h3>Register for Bespin</h3>
+        
+        <p>
+            No account? No problem! Click below to create an account. Registration is free.
+            
+            <img src="images/splash_btn_register.png" align="right" onclick="register.showForm();" style="padding-right: 16px">
+        </p>
     </div>
 
-    <div id="quickedit">
-        <h2>Quick Edit</h2>
-        <p>Open a new, blank document and begin editing right away.</p>
-        <p style="text-align:center;">
-          <input type="button" class="darkButton" value="Begin >" onclick="go.quickEdit();"/>
+    <div id="learnbespin">
+        <h2>Learn about Bespin</h2>
+        <h3>What is Bespin?</h3>
+        <p>Bespin is a Mozilla Labs experiment on how to build an extensible Web code editor using HTML 5 technology.</p>
+        <img src="images/splash_video.png">
+        
+        <p>
+            <a href="http://labs.mozilla.com/projects/bespin/" style="padding-right: 10px;">Read more &gt;</a>
+            <a href="http://groups.google.com/group/bespin">Participate &gt;</a>
         </p>
     </div>
 </div>
@@ -141,5 +181,8 @@
 
 <div id="footer" align="center">&copy; 2008 Mozilla. All rights reserved.</div>
 
+<div id="opaque" style="display: none"></div>
+
+<canvas id="testcanvas" style="display: none"></canvas>
 </body>
 </html>

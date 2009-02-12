@@ -82,25 +82,32 @@ Element.observe(window, 'load', function() {
     _scene.root.add(panel);
 
     _projectLabel = new Label({ style: {
-        color: "white"
+        color: "white",
+        font: "12pt Calibri, Arial, sans-serif"
     }});
-    var symbolThingie = new Label({ text: " ", style: {
-        color: "white"
+    var symbolThingie = new Label({ text: ":", style: {
+        color: "gray",
+        font: "12pt Calibri, Arial, sans-serif"
     }});
     _fileLabel = new Label({ style: {
-        color: "white"
+        color: "white",
+        font: "12pt Calibri, Arial, sans-serif"
     }});
 
     panel.add([ _projectLabel, symbolThingie, _fileLabel ]);
     panel.layout = function() {
         var d = this.d();
+
         var x = 0;
         for (var i = 0; i < 2; i++) {
             var width = this.children[i].getPreferredWidth(d.b.h);
             this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
             x += width;
         }
-        this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - width, height: d.b.h };
+
+        this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - x, height: d.b.h };
+
+        console.log(this.children[2].attributes.text);
     }
 
     _scene.render();
@@ -177,6 +184,12 @@ function doResize() {
     Element.writeAttribute($('editor'), {
         width: window.innerWidth - left - right,
         height: window.innerHeight - Bespin.commandlineHeight
+    });
+
+    var d = $('status').getDimensions();
+    Element.writeAttribute($('projectLabel'), {
+        width: d.width,
+        height: d.height
     });
 
     _editor.paint();

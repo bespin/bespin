@@ -30,8 +30,14 @@ body {
     font-family: Calibri, Arial, sans-serif;
 }
 
+#loginbutton {
+    float: right;
+    padding: 9px 10px 0 7px;
+    cursor: pointer;
+}
+
 #loginpane {
-    height: 34px;
+    height: 32px;
     background-image: url("../images/splash_toolbar_bg.png");
     background-repeat: repeat-x;
     color: #4f4e45;
@@ -52,8 +58,15 @@ body {
     color: #ddd;
 }
 
+#logo {
+    background-image: url("../images/splash_logo.jpg");
+    background-position: center;
+    height: 269px;
+}
+
 #welcome {
-    height: 262px;
+    z-index: 30;
+    height: 269px;
     background-image: url("../images/splash_logo_bg.jpg");
     background-repeat: repeat-x;
 }
@@ -61,13 +74,14 @@ body {
 #toolbar {
     z-index: 40;
     height: 24px;
-    margin-top: -6px;
+    margin-top: -9px;
     padding-top: 12px;
     background-image: url("../images/splash_lowertoolbar_bg.png");
     background-repeat: repeat-x;
     border-bottom: 1px solid black;
     color: #dad4ba;
     font-size: 12pt;
+    text-shadow: 1px 1px 1px #000;
 }
 
 #footer {
@@ -77,52 +91,72 @@ body {
 }
 
 #main {
-    margin: 20px auto;  
+    margin: 20px auto;
     height: 181px;
-    width: 610px;
+    width: 800px;
 }
 
-#quickedit {
+#main h3 {
+    font-size: 14px;
+    font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
+    text-shadow: 1px 1px 1px #000;
+}
+
+#main p {
+    font-size: 12px;
+    font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
+}
+
+#learnbespin {
     float: left;
     padding-left: 16px;
-    padding-right: 16px;
+    padding-right: 0;
     padding-top: 10px;
-    width: 264px;
-    height: 171px;
-    background-image: url("../images/splash_editnow_bg.gif");
+    width: 370px;
+    height: 356px;
+    background-image: url("../images/splash_contentarea_bg.png");
+    background-repeat: no-repeat;
     text-align: left;
     color: #dad4ba;
     font-size: 10pt;
 }
 
-#quickedit img {
-    padding-top: 42px;
+#learnbespin img {
     cursor: pointer;
 }
 
-#editnow {
+#main a {
+    font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
+    font-size: 12px;
+    color: #ff9600;
+}
+
+#usebespin {
     float: right;
+    margin-left: 0;
     padding-left: 16px;
     padding-right: 16px;
     padding-top: 10px;
-    width: 264px;
-    height: 171px;
-    background-image: url("../images/splash_editnow_bg.gif");
+    width: 353px;
+    height: 356px;
+    background-image: url("../images/splash_contentarea_bg.png");
+    background-repeat: no-repeat;
     text-align: left;
     color: #dad4ba;
     font-size: 10pt;
 }
 
-#editnow h2, #quickedit h2 {
+#usebespin h2, #learnbespin h2 {
     font-weight: normal;
     margin: 0;
     color: #ff9600;
-    font-size: 14pt;
-    font-family: Tahoma, Calibri, Arial, sans-serif;
+    font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
+    font-size: 20px;
     text-align: left;
+    text-shadow: 1px 1px 1px #000;
 }
 
-#editnow input {
+#usebespin input {
     border: none;
     background-image: url("../images/splash_editnow_input.png");
     background-repeat: no-repeat;
@@ -132,7 +166,7 @@ body {
     color: #ddd;
 }
 
-#editnow img {
+#usebespin img {
     padding-right: 4px;
     padding-top: 12px;
     cursor: pointer;
@@ -149,79 +183,137 @@ body {
     color: #ff9600;
 }
 
+#opaque {
+    z-index: 10;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: #000000;
+    opacity: 0.6;
+}
+
+#browser_not_compat {
+    z-index: 20;
+    background: url("/images/background_white_50.png");
+    position: absolute;
+    padding: 10px;
+    width: 400px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;    
+}
+
+#inner_browser_not_compat {
+    border: 1px solid #000;
+    background: #d1cfc1;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+}
+
+#browser_not_compat h3 {
+    background-color: #22211e;
+    background-image: url("/images/register_toolbar_background.png");
+    background-repeat: repeat-x;
+    margin: 0;
+    padding: 5px;
+    border: 0;
+    color: #eee;
+    height: 16px;
+    font-size: small;
+}
+
+#sorry_browser_text {
+    font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
+    font-size: 14px;
+    padding: 5px;
+}
+
+#sorry_browser_cancel {
+    cursor: pointer;
+}
+
 #register_border {
-    top:30px;
-    right:10px;
-    background:url(/images/background_white_50.png);
-    position:absolute;
-    padding:10px;
-    -moz-border-radius:10px;
-    -webkit-border-radius:10px;
+    z-index: 20;
+    background: url("/images/background_white_50.png");
+    position: absolute;
+    padding: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
 }
 
 #register_title {
-    background-color:#000;
-    background-image:url(/images/register_toolbar_background.png);
-    background-repeat:repeat-x;
-    padding:5px;
-    border:0;
-    color:#fff;
-    height:16px;
+    background-color: #000;
+    background-image: url("/images/register_toolbar_background.png");
+    background-repeat: repeat-x;
+    padding: 5px;
+    border: 0;
+    color: #fff;
+    height: 16px;
 }
 
 #register_title p {
-    margin:0;
+    margin: 0;
 }
 
 #register_form {
-    border:1px solid #000;
-    background:#F4F4EA;
-    -moz-border-radius:3px;
-    -webkit-border-radius:3px;
+    border: 1px solid #000;
+    background: #d1cfc1;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
 }
 
 #register_form table {
-    padding:20px;
+    padding: 20px;
 }
 
 #register_form th {
-    text-align:right;
+    text-align: right;
 }
 
 #register_form input[type="text"]:focus {
-    border:1px solid orange;
+    border: 1px solid orange;
 }
 
 #register_form input[type="text"] {
-    border:1px solid #aaa;
-    -moz-border-radius:3px;
-    -webkit-border-radius:3px;
-    background:#fff;
-    padding:2px;
-    color:#000;
+    border: 1px solid #aaa;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    background: #fff;
+    padding: 2px;
+    color: #000;
 }
 
 #register_form .darkButton {
-    border:1px solid #DAD4BA;
+    border: 1px solid #DAD4BA;
+}
+
+#logged_in {
+    padding-top: 8px;
+    padding-right: 8px;
 }
 
 .register_error {
-    color:#f00;
-    font-size:80%;
-    font-weight:bold;
-    text-align:right;
+    color: #f00;
+    font-size: 80%;
+    font-weight: bold;
+    text-align: right;
 }
 
-#quickedit .darkButton {
-    font-size:110%;
-    border:1px solid #7c7b74;
+#learnbespin .darkButton {
+    font-size: 110%;
+    border: 1px solid #7c7b74;
+}
+
+#vcsurl {
+    background-image: url("images/splash_editnow_input.png");
+    background-repeat: no-repeat;
 }
 
 .darkButton {
-    -moz-border-radius:3px;
-    -webkit-border-radius:3px;
-    background:#111 repeat-x url(/images/button_background.png);
-    padding:5px;
-    color:#FAF4DA;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    background: #111 repeat-x url("/images/button_background.png");
+    padding: 5px;
+    color: #FAF4DA;
 }
-

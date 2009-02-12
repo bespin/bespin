@@ -1,11 +1,7 @@
-html, body {
-    margin: 0;
-    padding: 0;
-}
-
 body {
     font-family: palatino, palatino linotype, georgia, serif;
     font-size: 10pt;
+    text-align: center;
 }
 
 .popup-enabled {
@@ -38,11 +34,11 @@ body {
 }
 
 #content {
-    min-width: 1024px;
+    text-align: left;
+    margin: 0 auto;
 }
 
 .documentation {
-    background: white;
     float: left;
     line-height: 1.4em;
 }
@@ -52,20 +48,12 @@ body {
     line-height: 1.4em;
 }
 
-.documentation, .code {
-    -moz-box-sizing: padding-box;
-    width: 50%;
-    padding: 0 10px;
-    border-top: 1px dashed black;
-    margin-top: -1px; /* hides first top border */
-}
-
 .code {
     font-family: monaco, consolas, andale mono, lucidatypewriter, monospace;
+    float: left;
     white-space: pre;
     font-size: 6pt;
     background-color: #f0f0f0;
-    margin-left: 50%;
 }
 
 .divider {
