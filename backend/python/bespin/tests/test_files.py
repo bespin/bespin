@@ -54,7 +54,7 @@ def setup_module(module):
     config.set_profile('test')
     app = controllers.make_app()
     app = TestApp(app)
-
+    
 def _get_fm():
     global macgyver, someone_else, murdoc
     config.activate_profile()
@@ -76,11 +76,15 @@ def _get_fm():
 
 def test_basic_file_creation():
     fm = _get_fm()
+    starting_point = macgyver.amount_used
     fm.save_file(macgyver, "bigmac", "reqs", "Chewing gum wrapper")
     file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
     assert file_obj.saved_size == 19
+    ending_point = macgyver.amount_used
+    difference = ending_point - starting_point
+    assert difference == 19
     
     now = datetime.now()
     assert now - file_obj.created < timedelta(seconds=2)
@@ -104,6 +108,34 @@ def test_basic_file_creation():
     
     assert file_obj.data == 'New content'
     fm.session.rollback()
+    
+def test_changing_file_contents_changes_amount_used():
+    fm = _get_fm()
+    starting_point = macgyver.amount_used
+    fm.save_file(macgyver, "bigmac", "foo", "step 1")
+    assert macgyver.amount_used == starting_point + 6
+    fm.save_file(macgyver, "bigmac", "foo", "step two")
+    assert macgyver.amount_used == starting_point + 8
+    
+def test_cannot_save_beyond_quota():
+    fm = _get_fm()
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
+    try:
+        fm.save_file(macgyver, "bigmac", "foo", "x" * 11)
+        assert False, "Expected an OverQuota exception"
+    except model.OverQuota:
+        pass
+    finally:
+        model.QUOTA_UNITS = old_units
+        
+def test_amount_used_can_be_recomputed():
+    fm = _get_fm()
+    starting_point = macgyver.amount_used
+    macgyver.amount_used = 0
+    fm.recompute_used(macgyver)
+    assert macgyver.amount_used == starting_point
+    
     
 def test_retrieve_file_obj():
     fm = _get_fm()
@@ -293,8 +325,10 @@ def test_can_delete_file_open_by_me():
     
 def test_successful_deletion():
     fm = _get_fm()
+    starting_used = macgyver.amount_used
     fm.save_file(macgyver, "bigmac", "foo/bar/baz", "biz")
     fm.delete(macgyver, "bigmac", "foo/bar/baz")
+    assert macgyver.amount_used == starting_used
     try:
         fm.get_file(macgyver, "bigmac", "foo/bar/baz")
         assert False, "Expected FileNotFound because the file is gone"
@@ -312,12 +346,17 @@ def test_top_level_deletion():
     
 def test_directory_deletion():
     fm = _get_fm()
+    fm.save_file(macgyver, "bigmac", "whiz/bang", "stillmore")
+    starting_used = macgyver.amount_used
     fm.save_file(macgyver, "bigmac", "foo/bar", "data")
+    fm.save_file(macgyver, "bigmac", "foo/blorg", "moredata")
     fm.delete(macgyver, "bigmac", "foo/")
     flist = fm.list_files(macgyver, "bigmac")
-    assert flist == []
+    assert len(flist) == 1
+    assert flist[0].name == 'bigmac/whiz/'
     file = fm.session.query(File).filter_by(name="bigmac/foo/bar").first()
     assert file is None
+    assert macgyver.amount_used == starting_used
     
 def test_project_deletion():
     fm = _get_fm()
@@ -741,4 +780,15 @@ def test_preview_mode():
     resp = app.get("/preview/at/bigmac/index.html")
     assert resp.body == "<html><body>Simple HTML file</body></html>"
     assert resp.content_type == "text/html"
+    
+def test_quota_limits_on_the_web():
+    fm = _get_fm()
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
+    try:
+        resp = app.put("/file/at/bigmac/foo", "x" * 11, status=400)
+        assert resp.body == "Over quota"
+    finally:
+        model.QUOTA_UNITS = old_units
+    
     
