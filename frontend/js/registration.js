@@ -8,16 +8,26 @@ function processLogin(xhr) {
 }
 
 function notLoggedIn(xhr) {
-    $("status").innerHTML = "Login didn't work. Try again";
+    showStatus("Sorry, login didn't work. Try again? Caps lock on?");
 }
 
 function usernameInUse() {
-    $("status").innerHTML = "The username is taken. Please choose another."
+    showStatus("The username is taken. Please choose another.");
+}
+
+function showStatus(msg) {
+    $("status").innerHTML = msg;
+    $("status").show();    
 }
 
 function login() {
     if (showingBrowserCompatScreen()) return;
-    svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
+    
+    if ($("username").value && $("password").value) {
+        svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
+    } else {
+        showStatus("Please give me both a username and a password");
+    }
 }
 
 function isLoggedIn(userinfo) {
