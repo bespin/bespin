@@ -309,12 +309,12 @@ img {
     color: #999;
     background-image: url("../images/info_popup.png");
     background-repeat: no-repeat;
+    font-family: Calibri, Arial, sans-serif;
 }
 
 #info u {
     color: #999;
     text-decoration: none;
-    font-family: Calibri, Arial, sans-serif;
 }
 
 #info b {
