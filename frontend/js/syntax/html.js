@@ -161,7 +161,7 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: { inMultilineComment: multiline } };
+        return regions;
     },
 
     addRegion: function(regions, type, data) {

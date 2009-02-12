@@ -98,6 +98,8 @@ def expose(url_pattern, method=None, auth=True):
                 response.error("409 Conflict", e)
             except model.ConflictError, e:
                 response.error("409 Conflict", e)
+            except model.OverQuota, e:
+                response.error("400 Bad Request", "Over quota")
             except model.FSException, e:
                 response.error("400 Bad Request", e)
             except BadRequest, e:
