@@ -190,6 +190,12 @@ document.observe("bespin:editor:config:run", function(event) {
 document.observe("bespin:editor:preview", function(event) {
     var filename = event.memo.filename || _editSession.path; // default to current page
     var project  = event.memo.project  || _editSession.project;
+
+    // Make sure to save the file first
+    document.fire("bespin:editor:savefile", {
+        filename: filename
+    });
+
     if (filename)
         window.open(Bespin.Path.combine("preview/at", project, filename));
 });
