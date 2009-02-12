@@ -382,27 +382,12 @@ def db_middleware(app):
                 session.commit()
             else:
                 session.rollback()
-        except auth_tkt.BadTicket:
-            # if the ticket is invalid for some reason, get rid of the
-            # ticket and send them back to the top
-            headers = [('Location', '/'),
-                       ('Content-Type', 'text/plain')]
-            headers.extend(environ['bespin.auth_tkt'].logout_user_cookie(environ))
-            start_response("302 Moved", headers)
-            return [""]
         except:
             session.rollback()
             log.exception("Error raised during request: %s", environ)
             raise
         return result
     return wrapped
-
-class TktMiddleware(auth_tkt.AuthTKTMiddleware):
-    def __call__(self, environ, start_response):
-        # add self to the environ so that the logout cookies can
-        # be set from anywhere
-        environ['bespin.auth_tkt'] = self
-        return super(TktMiddleware, self).__call__(environ, start_response)
 
 def pathpopper_middleware(app, num_to_pop=1):
     def new_app(environ, start_response):
@@ -426,7 +411,9 @@ def make_app():
     
     from paste.cascade import Cascade
     app = URLRelay()
-    app = TktMiddleware(app, c.secret, secure=True, include_ip=False)
+    app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
+                include_ip=False, httponly=True,
+                current_domain_cookie=False, wildcard_cookie=False)
     app = db_middleware(app)
     
     app = Cascade([app, static_app])
