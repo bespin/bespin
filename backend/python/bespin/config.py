@@ -52,6 +52,7 @@ c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
 c.default_quota = 15
+c.secure_cookie = True
 
 c.max_import_file_size = 20000000
 
@@ -67,6 +68,9 @@ def set_profile(profile):
                     c.log_file)
         root_log.addHandler(handler)
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        # turn off the secure cookie, because localhost connections
+        # will be HTTP
+        c.secure_cookie = False
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)

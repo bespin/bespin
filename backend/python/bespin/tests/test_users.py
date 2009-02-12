@@ -98,7 +98,7 @@ def test_register_and_verify_user():
     assert data['project']
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    file = s.query(File).filter_by(name="BillBixby_New_Project/readme.txt").one()
+    file = s.query(File).filter_by(name="SampleProjectFor:BillBixby/readme.txt").one()
     svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
     assert not svnfiles
     
@@ -115,7 +115,7 @@ def test_register_and_verify_user():
     assert 'project' in data
     assert data['username'] == 'BillBixby'
     assert 'quota' in data
-    assert data['quota'] == 10000000
+    assert data['quota'] == 15000000
     assert 'amountUsed' in data
     
     project_id = data['project']
@@ -173,13 +173,12 @@ def test_register_existing_user_should_not_authenticate():
     user = user_manager.get_user("BillBixby")
     assert user.password == 'notangry'
     
-def test_bad_ticket_gets_reset():
+def test_bad_ticket_is_ignored():
     _clear_db()
     app = controllers.make_app()
     app = TestApp(app)
     resp = app.post("/register/new/Aldus", dict(password="foo", 
                                         email="a@b.com"))
     app.cookies['auth_tkt'] = app.cookies['auth_tkt'][:-1]
-    resp = app.get("/preview/at/Aldus_New_Project/index.html", status=302)
-    assert app.cookies['auth_tkt'] == '""'
+    resp = app.get("/preview/at/SampleProjectFor%3AAldus/index.html", status=401)
     
