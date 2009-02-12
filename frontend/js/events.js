@@ -119,11 +119,7 @@ document.observe("bespin:editor:openfile:opensuccess", function(event) {
     var file = event.memo.file;
     
     var filename = file.name;
-    if (filename.length > 40) {
-        filename = filename.split('').reverse().join('').truncate(40).split('').reverse().join(''); // heh sorry!
-    }
 
-//    $('status').innerHTML = '<span id="project" title="Current project">' + _editSession.projectForDisplay() + '</span> <span class="seperator" style="">&rsaquo;</span> <span id="filename" title="Current file">' + filename + '</span>';
     _projectLabel.attributes.text = _editSession.projectForDisplay();
     _fileLabel.attributes.text = filename;
     _scene.render();
