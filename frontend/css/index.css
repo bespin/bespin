@@ -317,3 +317,18 @@ body {
     padding: 5px;
     color: #FAF4DA;
 }
+
+#status {
+    color: #DDDDDD;
+    padding-top: 12px;
+    text-align: center;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 12pt;
+    overflow: hidden;
+    position: absolute;
+    top: 32px;
+    right: 0px;
+    height: 41px;
+    background-image: url("../images/targ-browser_bg.png");
+    width: 711px;
+}
