@@ -66,8 +66,11 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
 
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.HTML_STYLE_COMMENT) {
-                if (c == "/" && buffer.endsWith("*")) { // has the c-style comment just ended?
-                    currentRegion.stop = i;
+                if (c == ">" && buffer.endsWith("--") &&
+                        ! ((buffer.endsWith("<!--")) && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
+                        ! ((buffer.endsWith("<!---")) && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
+                        ) { // has the multiline comment just ended?
+                    currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
                     currentStyle = undefined;
@@ -112,27 +115,14 @@ Bespin.Syntax.HTMLSyntaxEngine = Class.create({
                 }
 
                 if (this.isPunctuation(c)) {
-                    if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
-                        // remove the previous region in the punctuation bucket, which is a forward slash
-                        regions[K.PUNCTUATION].pop();
-
-                        // we are in a c-style comment
+                    if (c == "<" && (line.length > i + 3) && (line.substring(i, i + 4) == "<!--")) {
+                        // we are in a multiline comment
                         multiline = true;
                         currentStyle = K.HTML_STYLE_COMMENT;
-                        currentRegion = { start: i - 1 };
-                        buffer = "/*";
+                        currentRegion = { start: i };
+                        buffer = "<!--";
+                        i += 3;
                         continue;
-                    }
-
-                    // check for a line comment; this ends the parsing for the rest of the line
-                    if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
-                        currentRegion = { start: i - 1, stop: line.length };
-                        currentStyle = K.LINE_COMMENT;
-                        this.addRegion(regions, currentStyle, currentRegion);
-                        buffer = "";
-                        currentStyle = undefined;
-                        currentRegion = {};
-                        break;      // once we get a line comment, we're done!
                     }
 
                     // add an ad-hoc region for just this one punctuation character

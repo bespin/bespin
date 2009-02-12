@@ -227,9 +227,9 @@ function displaySessions(sessions) {
     }
     infoPanel.render();
 
-    setTimeout(function() {
-        _server.listOpen(displaySessions);   // get sessions
-    }, 3000);
+//    setTimeout(function() {
+//        _server.listOpen(displaySessions);   // get sessions
+//    }, 3000);
 }
 
 function displayProjects(projectItems) {
