@@ -40,11 +40,20 @@ var Button = Class.define({
         paint: function(ctx) {
             var d = this.d();
 
-            ctx.fillStyle = "red";
-            ctx.fillRect(0, 0, d.b.w, d.b.h);
-
-            ctx.strokeStyle = "black";
-            ctx.strokeRect(0, 0, d.b.w, d.b.h);
+            if (this.style.topImage && this.style.middleImage && this.style.bottomImage) {
+                if (d.b.h >= this.style.topImage.height + this.style.bottomImage.height) {
+                    ctx.drawImage(this.style.topImage, 0, 0);
+                    if (d.b.h > this.style.topImage.height + this.style.bottomImage.height) {
+                        ctx.drawImage(this.style.middleImage, 0, this.style.topImage.height, this.style.middleImage.width, d.b.h - this.style.topImage.height - this.style.bottomImage.height);
+                    }
+                    ctx.drawImage(this.style.bottomImage, 0, d.b.h - this.style.bottomImage.height);
+                }
+            } else if (this.style.backgroundImage) {
+                ctx.drawImage(this.style.backgroundImage, 0, 0);
+            } else {
+                ctx.fillStyle = "red";
+                ctx.fillRect(0, 0, d.b.w, d.b.h);
+            }
         }
     }
 });
@@ -142,15 +151,16 @@ var Scrollbar = Class.define({
             }
 
             if (this.orientation == TH.VERTICAL) {
-                this.up.bounds = { x: d.i.l, y: d.i.t, width: d.b.iw, height: d.b.iw };
-                var h = d.b.iw;
-                this.down.bounds = { x: d.i.l, y: d.b.ih - h, width: d.b.iw, height: h };
+                var w = d.b.iw;
+                var h = 12;
+                this.up.bounds = { x: d.i.l + 1, y: d.i.t, width: w, height: h };
+                this.down.bounds = { x: d.i.l + 1, y: d.b.ih - h, width: w, height: h };
 
                 var scroll_track_height = d.b.ih - this.up.bounds.height - this.down.bounds.height;
 
                 var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
-                var extent_top = this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) );
-                this.bar.bounds = { x: d.i.l, y: extent_top, width: d.b.iw, height: extent_length }
+                var extent_top = Math.floor(this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) ));
+                this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length }
             } else {
 
             }
@@ -158,6 +168,21 @@ var Scrollbar = Class.define({
 
         paint: function(ctx) {
             if (this.max < 0) return;
+
+            // paint the track
+            if (this.style.scrollTopImage) ctx.drawImage(this.style.scrollTopImage, 1, this.up.bounds.height);
+            if (this.style.scrollMiddleImage) ctx.drawImage(this.style.scrollMiddleImage, 1, this.up.bounds.height + this.style.scrollTopImage.height, this.style.scrollMiddleImage.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
+            if (this.style.scrollBottomImage) ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
+
+            // propagate the styles to the children if not already there
+            if (this.style.scrollHandleTopImage && !this.bar.style.topImage) {
+                this.bar.style.topImage = this.style.scrollHandleTopImage;
+                this.bar.style.middleImage = this.style.scrollHandleMiddleImage;
+                this.bar.style.bottomImage = this.style.scrollHandleBottomImage;
+                this.up.style.backgroundImage = this.style.scrollUpArrow;
+                this.down.style.backgroundImage = this.style.scrollDownArrow;
+            }
+
             this._super(ctx);
         }
     }
@@ -380,9 +405,6 @@ var Splitter = Class.define({
                 ctx.fillStyle = "black";
                 ctx.fillRect(d.b.w - 1, 0, 1, d.b.h);
 
-                console.log("right before gradient: " + (d.b.w - 2));
-                console.log("bounds: ");
-                console.log(d.b);
                 var gradient = ctx.createLinearGradient(1, 0, d.b.w - 2, 0);
                 gradient.addColorStop(0, "rgb(56, 55, 49)");
                 gradient.addColorStop(1, "rgb(62, 61, 55)");
@@ -462,7 +484,6 @@ var SplitPanel = Class.define({
 
         ondragstart: function(e) {
             var container = e.thComponent.parent; // splitter -> splitpanecontainer
-            if (!container.region) console.log(container);
             container.region.startSize = container.region.size;
         },
 
@@ -921,6 +942,7 @@ var HorizontalTree = Class.define({
             this.add(list);
 
             var splitter = new Splitter({ attributes: { orientation: TH.HORIZONTAL }, scrollbar: new Scrollbar() });
+            splitter.scrollbar.style = this.style;
             splitter.scrollbar.scrollable = list;
             splitter.scrollbar.opaque = false;
             this.bus.bind("dragstart", splitter, this.ondragstart, this);
