@@ -144,6 +144,16 @@ def production():
     
     sdist_file = path("dist/BespinServer-%s.tar.gz" % options.version)
     sdist_file.move(libs_dest)
+    
+    ext_dir = path("ext")
+    external_libs = []
+    for f in ext_dir.glob("*"):
+        f.copy(libs_dest)
+        name = f.basename()
+        name = name[:name.index("-")]
+        non_production_packages.add(name)
+        external_libs.append("libs/%s" % (f.basename()))
+        
     sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
@@ -167,6 +177,7 @@ def production():
     
     lines.append("libs/BespinServer-%s.tar.gz" % options.version)
     lines.append("MySQL-python")
+    lines.extend(external_libs)
     production_requirements.write_lines(lines)
     
     production.chdir()

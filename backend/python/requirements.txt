@@ -5,7 +5,7 @@ py
 simplejson
 SQLAlchemy
 sqlalchemy-migrate>0.5.1
-Paste
+ext/Paste-1.7.3dev-r7791.tar.gz
 static
 virtualenv
 httplib2
