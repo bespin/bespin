@@ -94,7 +94,8 @@ Bespin.Key = {
   ARROW_DOWN: 40,
   DELETE: 46,
   PAGE_UP: 33,
-  PAGE_DOWN: 34
+  PAGE_DOWN: 34,
+  TILDE: 192
 };
 
 // ** {{{ Bespin.Key.fillArguments }}} **
@@ -137,7 +138,7 @@ Bespin.Key.passThroughToBrowser = function(e) {
     var Key = Bespin.Key;
     
     if (e.metaKey || e.altKey) { // Apple or Alt key
-        if ([Key.K, Key.L, Key.N, Key.O, Key.T, Key.W,
+        if ([Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.TILDE,
              Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE].include(e.keyCode)) {
             return true;
         }
