@@ -28,6 +28,7 @@
 
 import os
 import urllib2
+import httplib2
 from urlparse import urlparse
 import logging
 
@@ -307,7 +308,21 @@ def _perform_import(file_manager, username, project_name, filename, fileobj):
 @expose(r'^/project/fromurl/(?P<project_name>[^/]+)', "POST")
 def import_from_url(request, response):
     project_name = request.kwargs['project_name']
+    
     url = request.body
+    try:
+        resp = httplib2.Http().request(url, method="HEAD")
+    except httplib2.HttpLib2Error, e:
+        raise BadRequest(str(e))
+        
+    # chech the content length to see if the user has enough quota
+    # available before we download the whole file
+    content_length = resp[0].get("content-length")
+    if content_length:
+        content_length = int(content_length)
+        if not request.user.check_save(content_length):
+            raise model.OverQuota()
+    
     try:
         datafile = urllib2.urlopen(url)
     except urllib2.URLError, e:
