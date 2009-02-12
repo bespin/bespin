@@ -51,7 +51,16 @@ Event.observe(document, "dom:loaded", function() {
     tree = new HorizontalTree({ style: { backgroundColor: "rgb(76, 74, 65)",
                                          backgroundColorOdd: "rgb(82, 80, 71)",
                                          font: "9pt Tahoma",
-                                         color: "white" }});
+                                         color: "white",
+                                         scrollTopImage: $("vscroll_track_top"),
+                                         scrollMiddleImage: $("vscroll_track_middle"),
+                                         scrollBottomImage: $("vscroll_track_bottom"),
+                                         scrollHandleTopImage: $("vscroll_top"),
+                                         scrollHandleMiddleImage: $("vscroll_middle"),
+                                         scrollHandleBottomImage: $("vscroll_bottom"),
+                                         scrollUpArrow: $("vscroll_up_arrow"),
+                                         scrollDownArrow: $("vscroll_down_arrow")
+                                         }});
 
     var renderer = new Label({ style: { border: new EmptyBorder({ size: 3 }) } });
     renderer.old_paint = renderer.paint;
