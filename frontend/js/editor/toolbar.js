@@ -31,7 +31,8 @@ if (!Bespin.Editor) Bespin.Editor = {};
 // Such examples are collaboration views, file browser, undo/redo, cut/copy/paste and more.
 
 Bespin.Editor.Toolbar = Class.create({
-    DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "undo", "redo", "cut", "copy", "paste", "preview", "fontsize"],
+    DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", 
+                      "save", "undo", "redo", "cut", "copy", "paste", "preview", "fontsize"],
     FONT_SIZES: {
         1: 8,  // small
         2: 10, // medium
@@ -120,6 +121,21 @@ Bespin.Editor.Toolbar = Class.create({
             Element.observe(target, 'mouseout', function() {
                 target.style.cursor = "default";
                 target.src = "images/icn_target_off.png";
+            });
+        },
+
+        save: function(toolbar, el) {
+            var save = $(el) || $("toolbar_save");
+            Element.observe(save, 'mousedown', function() {
+                save.src = "images/icn_save_on.png";
+            });
+
+            Element.observe(save, 'mouseup', function() {
+                save.src = "images/icn_save.png";
+            });
+
+            Element.observe(save, 'click', function() {
+                document.fire("bespin:editor:savefile");
             });
         },
 
