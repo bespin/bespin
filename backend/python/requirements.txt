@@ -8,3 +8,4 @@ sqlalchemy-migrate>0.5.1
 Paste
 static
 virtualenv
+httplib2
