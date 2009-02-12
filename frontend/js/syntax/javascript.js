@@ -51,7 +51,7 @@ Bespin.Syntax.JavaScriptSyntaxEngine = Class.create({
                     'new null package private protected public return short static super switch ' +
                     'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
 
-    punctuation: '{ } / + - % * . , ; ( ) ? : = " \''.split(" "),
+    punctuation: '{ } > < / + - % * . , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
         if (!meta) meta = {};
