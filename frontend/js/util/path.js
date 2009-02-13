@@ -70,4 +70,4 @@ Bespin.Path = {
     escape: function() {
         return escape(this.combine.apply(this, arguments));
     }
-}
+};
