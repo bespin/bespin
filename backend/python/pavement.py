@@ -50,7 +50,8 @@ options(
     server=Bunch(
         # set to true to allow connections from other machines
         open=False,
-        port=8080
+        port=8080,
+        try_build=False
     )
 )
 
@@ -83,6 +84,9 @@ def start():
     options.order('server')
     
     config.set_profile('dev')
+    
+    if options.try_build:
+        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.path.dirname(__file__))
     config.activate_profile()
     port = int(options.port)
     if options.open in ["True", "true", "yes", "1"]:
@@ -91,6 +95,12 @@ def start():
         listen_on = "localhost"
     info("Server starting on %s:%s" % (listen_on, port))
     make_server(listen_on, port, controllers.make_app()).serve_forever()
+    
+@task
+def try_build():
+    """Starts the server using the compressed JavaScript."""
+    options.server.try_build=True
+    start()
     
 @task
 def clean_data():
