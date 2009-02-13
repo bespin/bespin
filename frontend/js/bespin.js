@@ -31,6 +31,6 @@
 // {{{ Bespin.commandlineHeight }}} is the height of the command line
 
 var Bespin = {
-   version: '0.1a',
+   version: '0.1.1',
    commandlineHeight: 95
 };
