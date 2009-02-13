@@ -52,8 +52,8 @@ body {
     border: none;
     background-image: url("../images/splash_inputs.png");
     background-repeat: no-repeat;
-    padding-left: 4px;
-    padding-right: 4px;
+    padding: 0px 4px;
+    height: 16px;
     width: 81px;
     color: #ddd;
 }
