@@ -202,7 +202,7 @@ def dist():
     backend = path("backend/python/production")
     backend.copytree(options.build_dir)
     copy_front_end()
-    # compress_js()
+    compress_js()
     docs = path("docs")
     docs.copytree(options.build_dir / "docs")
     
