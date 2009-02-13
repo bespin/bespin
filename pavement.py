@@ -136,10 +136,23 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
     html_file.write_bytes("".join(html_lines))
 
 @task
+def copy_front_end():
+    build_dir = options.build_dir
+    build_dir.mkdir()
+    front_end_target = build_dir / "frontend"
+    if front_end_target.exists():
+        front_end_target.rmtree()
+    front_end_source = path("frontend")
+    front_end_source.copytree(front_end_target)
+
+@task
+@needs(['copy_front_end'])
 def compress_js():
     """Compress the JavaScript using the YUI compressor."""
     current_dir = path.getcwd()
     build_dir = options.build_dir
+    front_end_target = build_dir / "frontend"
+    
     externals_dir = path("ext")
     externals_dir.mkdir()
     yui_dir = externals_dir / ("yuicompressor-%s" % options.compressor_version)
@@ -163,13 +176,6 @@ def compress_js():
         bs_dir = externals_dir.glob("BeautifulSoup-*")
     bs_dir = bs_dir[0]
     sys.path.append(bs_dir)
-    
-    build_dir.mkdir()
-    front_end_target = build_dir / "frontend"
-    if front_end_target.exists():
-        front_end_target.rmtree()
-    front_end_source = path("frontend")
-    front_end_source.copytree(front_end_target)
     
     editor_filename = front_end_target / "editor.html"
     _install_compressed(front_end_target, yui_dir, editor_filename, "editor_all_uncompressed.js")
@@ -195,7 +201,8 @@ def dist():
     options.build_dir.rmtree()
     backend = path("backend/python/production")
     backend.copytree(options.build_dir)
-    compress_js()
+    copy_front_end()
+    # compress_js()
     docs = path("docs")
     docs.copytree(options.build_dir / "docs")
     
