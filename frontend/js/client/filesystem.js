@@ -33,7 +33,7 @@ if (typeof Bespin == "undefined") Bespin = {};
 
 Bespin.FileSystem = Class.create({
 
-    // ** {{{ FileSystem.newFile(project, path, onSuccess) }}}
+    // ** {{{ FileSystem.newFile(project, path, callback) }}}
     //
     // Create a new file in the file system using:
     //
@@ -52,7 +52,7 @@ Bespin.FileSystem = Class.create({
         });
     },
 
-    // ** {{{ FileSystem.loadFile(project, path, onSuccess, dontStartSession) }}}
+    // ** {{{ FileSystem.loadFile(project, path, callback) }}}
     //
     // Load the file in the given project and path and get going
     //
@@ -71,30 +71,6 @@ Bespin.FileSystem = Class.create({
                 content: content,
                 timestamp: new Date().getTime()
             });
-        });
-    },
-
-    // ** {{{ FileSystem.forceOpenFile(project, path) }}}
-    //
-    // With the given project and path, open a file if existing, else create a new one
-    //
-    // * {{{project}}} is the name of the project to create the file in
-    // * {{{path}}} is the full path to save the file into
-    forceOpenFile: function(project, path) {
-        this.whenFileDoesNotExist(project, path, {
-            execute: function() {
-                document.fire("bespin:editor:newfile", {
-                    project: project,
-                    newfilename: path,
-                    content: "Bespin.Commands.add({\n    name: 'YOUR_COMMAND_NAME',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n\n    }\n});"
-                });
-            },
-            elseFailed: function() {
-                document.fire("bespin:editor:openfile", {
-                    project: project,
-                    filename: path
-                });
-            }
         });
     },
 
@@ -163,13 +139,11 @@ Bespin.FileSystem = Class.create({
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
         _server.list(project, Bespin.Path.directory(path), function(files) {
-            if (files && files.map(function(file) { return file.name; }).include(path)) {
+            if (files && files.include(path)) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
             }
-        }, function(xhr) {
-            if (callbacks['elseFailed']) callbacks['elseFailed'](xhr);
         });
     },
 
@@ -184,13 +158,12 @@ Bespin.FileSystem = Class.create({
     //   elseFailed (file exists)
     whenFileDoesNotExist: function(project, path, callbacks) {
         _server.list(project, Bespin.Path.directory(path), function(files) {
-            if (!files || !files.map(function(file) { return file.name; }).include(path)) {
+            if (!files || !files.include(path)) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
             }
-        }, function(xhr) {
-            callbacks['execute'](); // the list failed which means it didn't exist
         });
     }
+
 });

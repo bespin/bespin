@@ -64,6 +64,7 @@ Bespin.Settings.Core = Class.create({
 
     defaultSettings: function() {
         return {
+            'keybindings': 'emacs',
             'tabsize': '2',
             'fontsize': '10',
             'autocomplete': 'off',
@@ -184,6 +185,7 @@ Bespin.Settings.Cookie = Class.create({
             this.settings = fromJar;
         } else {
             this.settings = {
+                'keybindings': 'emacs',
                 'tabsize': '2',
                 'fontsize': '10',
                 'autocomplete': 'off',
@@ -528,15 +530,6 @@ Bespin.Settings.Events = Class.create({
 
         // ** {{{ Event: bespin:settings:init }}} **
         // 
-        // Setup the special keybindings
-        document.observe("bespin:settings:init", function(event) {
-            document.fire("bespin:settings:set:keybindings", {
-                value: settings.get('keybindings')
-            });
-        });
-
-        // ** {{{ Event: bespin:settings:init }}} **
-        // 
         // Check for auto load
         document.observe("bespin:settings:init", function(event) {
             if (settings.isOn(settings.get('autoconfig'))) {
@@ -544,14 +537,5 @@ Bespin.Settings.Events = Class.create({
             }
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
-        // 
-        // Setup the font size that the user has configured
-        document.observe("bespin:settings:init", function(event) {
-            var fontsize = settings.get('fontsize');
-            document.fire("bespin:settings:set:fontsize", {
-                value: fontsize
-            });
-        });        
     }
 });

@@ -236,16 +236,14 @@ body {
 }
 
 #prompt {
-    width: 11px;
-}
-
-#promptimg {
-    margin-top: 6px;
-    padding-right: 4px;
+    float: left;
+    padding: 9px 5px 0 5px;
 }
 
 #commandline {
-    width: 100%;
+    float: left;
+    padding: 5px 0 0 0;
+    width: 40%;
 }
 
 #command {
@@ -255,17 +253,6 @@ body {
     font-size: 12pt;
     font-family: Calibri, Arial, sans-serif;
     width: 100%;
-}
-
-#message {
-    font-size: 14px;
-    font-family: Calibri, Arial, sans-serif;
-    color: #777777;
-}
-
-#message a {
-    color: #777777;
-    text-decoration: none;
 }
 
 #info {
@@ -289,6 +276,14 @@ body {
 	color: #ddd;
 }
 
+#message {
+    float: right;
+    font-size: 12pt;
+    font-family: Calibri, Arial, sans-serif;
+    color: #777777;
+    padding-top: 6px;
+}
+
 #footer_bar {
     float: right;
     border-left: 1px solid #312F2A;
@@ -309,22 +304,3 @@ body {
     color: #DDDDDD;
     padding-left: 2px;
 }
-
-#version {
-    float: right;
-    padding: 8px;
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12px;
-    color: #aaa;
-}
-
-#version a {
-    text-decoration: none;
-    color: #aaa;
-}
-
-.versionnumber {
-    color: #777;
-}
-
-*:focus { outline: 0; }

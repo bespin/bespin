@@ -43,8 +43,6 @@
 <body>
 
 <div id="loginpane" align="right">
-  <div id="version"></div>
-
   <div id="not_logged_in" style="display: none;">
     <div id="loginbutton"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
     
@@ -68,9 +66,8 @@
         <img src="images/splash_browser_compat.png" style="float: left; padding: 6px; margin-top: 4px">
         <p><em>We would love to have you try Bespin</em></p>
         <p>Unfortunately, we are using exciting new technology in HTML 5 that only leading browsers have implemented.</p>
-        <p>This message is not shown to you because we flag a particular browser.</p>
-        <p>We are specifically testing for Canvas and the ability to draw text in Canvas. As soon as your current browser supports these technologies, Bespin will work.</p>
-        <p>We have successfully tested Bespin on <a href="http://nightly.webkit.org/">WebKit Nightly</a> and <a href="http://getfirefox.com/">Firefox 3</a>, so try one of them!</p>
+        <p>We want to push the Open Web forward, so for this tech preview you will have to use a new browser.</p> 
+        <p>We have successfully tested Bespin on <a href="http://getfirefox.com/">Firefox 3</a> and <a href="http://nightly.webkit.org/">WebKit Nightly</a>, so try one of them!</p>
         <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="hideBrowserCompatScreen()"></center>
         </div>
     </div>
@@ -182,9 +179,10 @@
 
 <br clear="all"/>
 
-<div id="footer" align="center">&copy; 2008 Mozilla. All rights reserved.</div>
+<div id="footer" align="center">&copy; 2009 Mozilla. All rights reserved.</div>
 
 <div id="opaque" style="display: none"></div>
+
 <canvas id="testcanvas" style="display: none"></canvas>
 </body>
 </html>

@@ -27,22 +27,10 @@
 // This is the root of it all. The {{{Bespin}}} namespace.
 // All of the JavaScript for Bespin will be placed in this namespace later.
 //
-// {{{ Bespin.versionNumber }}} is the core version of the Bespin system
-// {{{ Bespin.apiVersion }}} is the version number of the API (to ensure that the
-//                          client and server are talking the same language)
+// {{{ Bespin.version }}} is the core version of the Bespin system
 // {{{ Bespin.commandlineHeight }}} is the height of the command line
 
 var Bespin = {
-    // BEGIN VERSION BLOCK
-    versionNumber: 'tip',
-    versionCodename: '(none)',
-    apiVersion: 'dev',
-    // END VERSION BLOCK
-    commandlineHeight: 95,
-   
-    displayVersion: function(el) {
-        if (!el) el = $("version");
-        if (!el) return;
-        el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
-    }
+   version: '0.1a',
+   commandlineHeight: 95
 };
