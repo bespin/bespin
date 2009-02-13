@@ -44,16 +44,13 @@ if (!Bespin.Session) Bespin.Session = {};
 Bespin.Session.EditSession = Class.create({
     initialize: function(editor) {
         this.editor = editor;
+        this.project = 'SomeAjaxApp'; // TODO: default
         this.collaborate = false;
     },
     
     projectForDisplay: function(testProject) {
         var project = testProject || this.project;
         return (project == this.userproject) ? "* Your Special Project *" : project;
-    },
-    
-    checkSameFile: function(project, path) {
-        return ( (_editSession.project == project) && (_editSession.path == path) );
     },
 
     startSession: function(project, path, username) {

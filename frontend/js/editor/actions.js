@@ -54,27 +54,12 @@ Bespin.Editor.Actions = Class.create({
     },
 
     moveCursorLeft: function(args) {
-        // start of the line so move up
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col == 0)) {
-            var originalRow = args.pos.row;
-            this.moveCursorUp(args);
-            if (originalRow > 0) this.moveToLineEnd(args);
-            return;
-        }
         this.editor.cursorPosition.col = Math.max(0, args.pos.col - 1);
         this.handleCursorSelection(args);
         this.repaint();
     },
 
     moveCursorRight: function(args) {
-        // end of the line, so go to the start of the next line
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col >= this.editor.model.getRowLength(args.pos.row))) {
-            var originalRow = args.pos.row;
-            this.moveCursorDown(args);
-            if (originalRow < this.editor.model.getRowCount() - 1) this.moveToLineStart(args);
-            return;
-        }
-
         this.editor.cursorPosition.col = args.pos.col + 1;
         this.handleCursorSelection(args);
         this.repaint();
@@ -82,16 +67,7 @@ Bespin.Editor.Actions = Class.create({
 
     moveCursorUp: function(args) {
         this.editor.cursorPosition.row = Math.max(0, args.pos.row - 1);
-
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
-            this.handleCursorSelection(args);
-            
-            args.pos.row -= 1; // one above
-            this.moveToLineEnd(args);
-        } else {
-            this.handleCursorSelection(args);            
-        }
-
+        this.handleCursorSelection(args);
         this.repaint();
 
         args.pos.row = this.editor.cursorPosition.row;
@@ -100,16 +76,7 @@ Bespin.Editor.Actions = Class.create({
 
     moveCursorDown: function(args) {
         this.editor.cursorPosition.row = Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1);
-
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
-            this.handleCursorSelection(args);
-            
-            args.pos.row += 1; // one below
-            this.moveToLineEnd(args);
-        } else {
-            this.handleCursorSelection(args);
-        }
-
+        this.handleCursorSelection(args);
         this.repaint();
 
         args.pos.row = this.editor.cursorPosition.row;

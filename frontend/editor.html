@@ -45,7 +45,6 @@
     <script type="text/javascript" src="js/util/path.js"></script>
     <script type="text/javascript" src="js/util/urlbar.js"></script>
     <script type="text/javascript" src="js/util/navigate.js"></script>
-    <script type="text/javascript" src="js/util/mousewheelevent.js"></script>
 
     <script type="text/javascript" src="js/editor/actions.js"></script>
     <script type="text/javascript" src="js/editor/editor.js"></script>
@@ -81,7 +80,6 @@
     <div id="header">
         <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
         <div id="collab_line"></div>
-        <div id="version"></div>
         <a href="index.html" title="Go Home"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
         <a href="dashboard.html" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
@@ -100,8 +98,7 @@
 
         <div id="status"><canvas id="projectLabel"></canvas></div>
         <div id="bar"></div>
-        <img id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save">
-        <img id="toolbar_close" src="images/icn_close.png" alt="Close" title="Close" style="padding-right: 20px">
+        <img id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save" style="padding-right: 20px">
         <img id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
         <img id="toolbar_redo" src="images/icn_redo.png" alt="Redo" title="Redo" style="padding-right: 20px">
         <img id="toolbar_cut" src="images/icn_cut.png" alt="Cut" title="Cut">
@@ -113,17 +110,14 @@
     </div>
     <div id="editor" width="500" height="500"></div>
     <div id="footer">
-        <table cellpadding="0">
-            <tr>
-                <td id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></td>
-                <td id="commandline"><input id="command"></td>
-                <!-- <td id="error_bar">
-                    <div style="float: left"><img src="images/icn_error.png" alt="Errors"></div>
-                    <div id="error_bar_text" style="float: right">3</div>
-                </td> -->
-                <td id="message" align="right" nowrap><a href="https://wiki.mozilla.org/Labs/Bespin/Tips" target="_blank" title="Ctrl-J jumps you between the command line and the editor">Hint: Try Ctrl-J</a></td>
-            </tr>
-        </table>
+        <div id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></div>
+        <div id="commandline"><input id="command"></div>
+        <!--<div id="error_bar">-->
+            <!--<div style="float: left"><img src="images/icn_error.png" alt="Errors"></div>-->
+            <!--<div id="error_bar_text" style="float: right">3</div>-->
+        <!--</div>-->
+        <!--<div id="footer_bar"></div>-->
+        <div id="message"></div>
     </div>
 
     <div id="files">

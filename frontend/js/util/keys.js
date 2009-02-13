@@ -129,23 +129,6 @@ Bespin.Key.fillArguments = function(string, args) {
     return args;
 }
 
-// ** {{{ Bespin.Key.PassThroughCharCodes }}} **
-//
-// Cache the character codes that we want to pass through to the browser
-// Should map to list below
-Bespin.Key.PassThroughCharCodes = ["k", "l", "n", "o", "t", "w", "+", "-", "~", 
-    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].invoke('charCodeAt');
-
-// ** {{{ Bespin.Key.PassThroughKeyCodes }}} **
-//
-// Cache the key codes that we want to pass through to the browser
-// Should map to list above 
-Bespin.Key.PassThroughKeyCodes = (function() {
-    var Key = Bespin.Key;
-    return [Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
-            Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];   
-})();
-
 // ** {{{ Bespin.Key.passThroughToBrowser }}} **
 //
 // Given the event, return true if you want to allow the event to pass through to the browser.
@@ -157,10 +140,9 @@ Bespin.Key.passThroughToBrowser = function(e) {
     var Key = Bespin.Key;
     
     if (e.metaKey || e.altKey) { // Apple or Alt key
-        if (e.type == "keypress") {
-            if (Bespin.Key.PassThroughCharCodes.include(e.charCode)) return true;
-        } else {
-            if (Bespin.Key.PassThroughKeyCodes.include(e.keyCode)) return true;
+        if ([Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
+             Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE].include(e.keyCode)) {
+            return true;
         }
     }
 
