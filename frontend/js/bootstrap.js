@@ -67,9 +67,6 @@ Element.observe(window, 'load', function() {
     
     // Force a login just in case the user session isn't around
     _server.currentuser(isLoggedIn, isNotLoggedIn);
-    
-    // Set the version info
-    Bespin.displayVersion();
 
     // Get going when settings are loaded
     document.observe("bespin:settings:loaded", function(event) {

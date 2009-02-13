@@ -304,20 +304,3 @@ body {
     color: #DDDDDD;
     padding-left: 2px;
 }
-
-#version {
-    float: right;
-    padding: 8px;
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12px;
-    color: #aaa;
-}
-
-#version a {
-    text-decoration: none;
-    color: #aaa;
-}
-
-.versionnumber {
-    color: #777;
-}
