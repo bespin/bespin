@@ -8,6 +8,9 @@ has only been tested on Unix-like platforms.
 Getting Started
 ---------------
 
+If you are running on a Linux system, you will likely need a "python-devel"
+package installed, if you do not already have it.
+
 Run::
 
   python bootstrap.py
