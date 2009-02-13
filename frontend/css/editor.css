@@ -194,6 +194,14 @@ img {
     padding: 3px 0 0 9px;
 }
 
+.collab_text {
+    margin-left: 10px;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 10pt;
+    color: #dad4ba;
+    padding: 3px 0 0 9px;
+}
+
 .collab_person {
     background-image: url("../images/collab_user_bg.gif");
     margin-left: 10px;
