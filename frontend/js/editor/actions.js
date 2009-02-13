@@ -84,18 +84,20 @@ Bespin.Editor.Actions = Class.create({
     },
 
     moveToLineStart: function(args) {
-        this.editor.cursorPosition.col = args.pos.col = 0;
+        this.editor.cursorPosition.col = 0;
         this.handleCursorSelection(args);
         this.repaint();
 
+        args.pos.col = this.editor.cursorPosition.col;
         return args;
     },
 
     moveToLineEnd: function(args) {
-        this.editor.cursorPosition.col = args.pos.col = this.editor.model.getRowLength(args.pos.row);
+        this.editor.cursorPosition.col = this.editor.model.getRowLength(args.pos.row);
         this.handleCursorSelection(args);
         this.repaint();
 
+        args.pos.col = this.editor.cursorPosition.col;
         return args;
     },
 
