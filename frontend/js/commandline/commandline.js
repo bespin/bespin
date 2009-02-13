@@ -458,7 +458,7 @@ Bespin.CommandLine.Events = Class.create({
                 command += " " + args;
             }
 
-            if (command) commandline.executeCommand(command);
+            if (command) commandline.executeCommand(commandname);
         });
 
 
