@@ -27,6 +27,7 @@
 # 
 
 import re
+import os
 
 from setuptools import find_packages
 from paver.setuputils import find_package_data
@@ -85,8 +86,8 @@ def start():
     
     config.set_profile('dev')
     
-    if options.try_build:
-        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.path.dirname(__file__))
+    if options.server.try_build:
+        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
     config.activate_profile()
     port = int(options.port)
     if options.open in ["True", "true", "yes", "1"]:
