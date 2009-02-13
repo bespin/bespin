@@ -537,14 +537,5 @@ Bespin.Settings.Events = Class.create({
             }
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
-        // 
-        // Setup the font size that the user has configured
-        document.observe("bespin:settings:init", function(event) {
-            var fontsize = settings.get('fontsize');
-            document.fire("bespin:settings:set:fontsize", {
-                value: fontsize
-            });
-        });        
     }
 });

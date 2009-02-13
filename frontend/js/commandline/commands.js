@@ -351,7 +351,7 @@ Bespin.Commands.add({
     preview: 'show the version for Bespin or a command',
     completeText: 'optionally, a command name',
     execute: function(self, command) {
-        var bespinVersion = 'Your Bespin is at version ' + Bespin.versionNumber + ', Code name: "' + Bespin.versionCodename + '"';
+        var bespinVersion = 'Your Bespin is at version ' + Bespin.version;
         var version;
         if (command) {
             var theCommand = self.commands[command];
@@ -360,7 +360,7 @@ Bespin.Commands.add({
             } else {
                 version = (theCommand.version)
                     ? "The command named '" + command + "' is at version " + theCommand.version 
-                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.versionNumber;
+                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.version;
             }
         } else {
             version = bespinVersion;
@@ -648,7 +648,7 @@ Bespin.Commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
-      if (!args.alias) { // -- show all
+      if (!alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
         for (var x in self.aliases) {
           output += x + ": " + self.aliases[x] + "<br/>";
