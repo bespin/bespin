@@ -613,7 +613,9 @@ var Label = Class.define({
 
         getPreferredWidth: function(height) {
             var ctx = this.styleContext(this.parent.getScratchContext());
-            var w = ctx.measureText(this.attributes.text).width;
+
+            // the +2 is to compensate for anti-aliasing on Windows, which isn't taken into account in measurements; this fudge factor should eventually become platform-specific
+            var w = ctx.measureText(this.attributes.text).width + 2;
             return w + this.getInsets().left + this.getInsets().right;
         },
 
