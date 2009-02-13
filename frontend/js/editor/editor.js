@@ -706,7 +706,6 @@ Bespin.Editor.UI = Class.create({
     // of the editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
     paint: function(ctx, fullRefresh) {
         // DECLARE VARIABLES
-        // ====
 
         // these are convenience references so we don't have to type so much
         var c = $(this.editor.canvas);
@@ -723,7 +722,7 @@ Bespin.Editor.UI = Class.create({
 
 
         // SETUP STATE
-        // ====
+
         var refreshCanvas = fullRefresh;        // if the user explicitly requests a full refresh, give it to 'em
 
         if (!refreshCanvas) refreshCanvas = (this.selectMouseDownPos);
@@ -796,7 +795,6 @@ Bespin.Editor.UI = Class.create({
         //refreshCanvas = true;
 
         // START RENDERING
-        // ====
 
         // if we're not doing a full repaint, work out which rows are "dirty" and need to be repainted
         if (!refreshCanvas) {
@@ -882,7 +880,7 @@ Bespin.Editor.UI = Class.create({
                 // setup a clip for the current line only; this makes drawing just that piece of the scrollbar easy
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(x, y, cwidth, this.lineHeight);
+                ctx.rect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
                 ctx.closePath();
                 ctx.clip();
 
@@ -941,7 +939,7 @@ Bespin.Editor.UI = Class.create({
             }
 
             if (!refreshCanvas) {
-                ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
+                ctx.drawImage(this.verticalScrollCanvas, verticalx + Math.abs(this.xoffset), Math.abs(this.yoffset));
                 ctx.restore();
             }
 
