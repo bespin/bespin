@@ -351,7 +351,7 @@ Bespin.Commands.add({
     preview: 'show the version for Bespin or a command',
     completeText: 'optionally, a command name',
     execute: function(self, command) {
-        var bespinVersion = 'Your Bespin is at version ' + Bespin.version;
+        var bespinVersion = 'Your Bespin is at version ' + Bespin.versionNumber + ', Code name: "' + this.versionCodename + '"';
         var version;
         if (command) {
             var theCommand = self.commands[command];
@@ -360,7 +360,7 @@ Bespin.Commands.add({
             } else {
                 version = (theCommand.version)
                     ? "The command named '" + command + "' is at version " + theCommand.version 
-                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.version;
+                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.versionNumber;
             }
         } else {
             version = bespinVersion;
