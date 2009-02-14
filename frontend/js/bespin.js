@@ -31,6 +31,13 @@
 // {{{ Bespin.commandlineHeight }}} is the height of the command line
 
 var Bespin = {
-   version: '0.1.1',
-   commandlineHeight: 95
+   versionNumber: '0.1.1',
+   versionCodename: 'Naughty Nimbus',
+   commandlineHeight: 95,
+   
+   displayVersion: function(el) {
+       if (!el) el = $("version");
+       if (!el) return;
+       el.innerHTML = 'Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"';
+   }
 };
