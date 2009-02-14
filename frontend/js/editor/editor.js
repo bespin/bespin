@@ -407,13 +407,6 @@ Bespin.Editor.UI = Class.create({
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
-            x = -1;
-        } else {
-            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
-            x = Math.floor(tx / this.charWidth);
-        }
-
         if (y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
@@ -421,6 +414,22 @@ Bespin.Editor.UI = Class.create({
             y = Math.floor(ty / this.lineHeight);
         }
 
+        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
+            x = -1;
+        } else {
+            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
+            x = Math.floor(tx / this.charWidth);
+            
+            // With striclines turned on, don't select past the end of the line
+            if (_settings.isOn(_settings.get('strictlines'))) {
+                var maxcol = this.editor.model.getRowLength(y);
+            
+                if (x >= maxcol) {
+                    x = this.editor.model.getRowLength(y);
+                }
+            }
+        }
+        
         return { col: x, row: y };
     },
 
