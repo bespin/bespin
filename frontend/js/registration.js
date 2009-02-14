@@ -45,10 +45,6 @@ function logout() {
     $('not_logged_in').show();
 }
 
-Event.observe(document, "dom:loaded", function() {
-    svr.currentuser(isLoggedIn, isNotLoggedIn);
-});
-
 function centerOnScreen(el) {
     // retrieve required dimensions
     var elDims = el.getDimensions();
@@ -136,3 +132,8 @@ var register = {
         register.hideForm();
     }
 };
+
+Event.observe(document, "dom:loaded", function() {
+    Bespin.displayVersion();
+    svr.currentuser(isLoggedIn, isNotLoggedIn);
+});

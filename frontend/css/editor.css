@@ -372,3 +372,15 @@ img {
     color: red;
     font-style: italic;
 }
+
+#version {
+    float: right;
+    padding: 8px;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.versionnumber {
+    color: #777;
+}
