@@ -282,14 +282,14 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
     onkeypress: function(e) {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
-        
+
         if (this.skipKeypress) return this.returnValue;
 
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126)) {
+        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously
