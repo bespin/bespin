@@ -124,7 +124,9 @@ Bespin.Themes.white = {
     tag: "#bdae9d",
     "tag-name": "#bdae9d",
     value: "#BF9464",
-    important: "#990000"
+    important: "#990000",
+    cssclass: "#BF9464",
+    cssid: "#bdae9d"
 }
 
 // ** White Zebra Theme **
@@ -174,7 +176,9 @@ Bespin.Themes.black = {
     tag: "#bdae9d",
     "tag-name": "#bdae9d",
     value: "#BF9464",
-    important: "#990000"
+    important: "#990000",
+    cssclass: "#BF9464",
+    cssid: "#bdae9d"
 }
 // ** Black Zebra Theme **
 Bespin.Themes.blackzebra = new Hash(Bespin.Themes.black).toObject();
