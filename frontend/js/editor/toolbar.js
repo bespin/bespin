@@ -182,7 +182,7 @@ Bespin.Editor.Toolbar = Class.create({
             });
 
             Element.observe(cut, 'click', function() {
-                toolbar.editor.ui.actions.cutSelection(Bespin.Editor.Utils.argsWithPos());
+                toolbar.editor.ui.actions.cutSelection(Bespin.Editor.Utils.buildArgs());
             });
         },
 
@@ -198,7 +198,7 @@ Bespin.Editor.Toolbar = Class.create({
             });
 
             Element.observe(copy, 'click', function() {
-                toolbar.editor.ui.actions.copySelection(Bespin.Editor.Utils.argsWithPos());
+                toolbar.editor.ui.actions.copySelection(Bespin.Editor.Utils.buildArgs());
             });
         },
 
@@ -214,7 +214,7 @@ Bespin.Editor.Toolbar = Class.create({
             });
 
             Element.observe(paste, 'click', function() {
-                toolbar.editor.ui.actions.pasteFromClipboard(Bespin.Editor.Utils.argsWithPos());
+                toolbar.editor.ui.actions.pasteFromClipboard(Bespin.Editor.Utils.buildArgs());
             });
         },
 
