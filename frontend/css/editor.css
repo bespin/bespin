@@ -389,3 +389,5 @@ img {
 .versionnumber {
     color: #777;
 }
+
+*:focus { outline: 0; }
