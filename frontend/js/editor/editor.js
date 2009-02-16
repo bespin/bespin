@@ -271,25 +271,32 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
             this.lastAction = action;
         }
 
-        if (e.metaKey || e.ctrlKey || e.altKey) {
+        // If a special key is pressed OR if an action is assigned to a given key (e.g. TAB or BACKSPACE)
+        if (e.metaKey || e.ctrlKey || e.altKey || hasAction) {
             this.skipKeypress = true;
             this.returnValue = true;
             if (hasAction || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e); // stop going, but allow special strokes to get to the browser
         }
-
     },
 
     onkeypress: function(e) {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
         
+        // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
+        // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
+        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+            Event.stop(e);
+            return false;
+        }
+
         if (this.skipKeypress) return this.returnValue;
 
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126)) {
+        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously
@@ -407,13 +414,6 @@ Bespin.Editor.UI = Class.create({
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
-            x = -1;
-        } else {
-            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
-            x = Math.floor(tx / this.charWidth);
-        }
-
         if (y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
@@ -421,6 +421,22 @@ Bespin.Editor.UI = Class.create({
             y = Math.floor(ty / this.lineHeight);
         }
 
+        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
+            x = -1;
+        } else {
+            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
+            x = Math.floor(tx / this.charWidth);
+            
+            // With striclines turned on, don't select past the end of the line
+            if (_settings.isOn(_settings.get('strictlines'))) {
+                var maxcol = this.editor.model.getRowLength(y);
+            
+                if (x >= maxcol) {
+                    x = this.editor.model.getRowLength(y);
+                }
+            }
+        }
+        
         return { col: x, row: y };
     },
 
