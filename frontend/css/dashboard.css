@@ -313,6 +313,11 @@ body {
     color: #aaa;
 }
 
+#version a {
+    text-decoration: none;
+    color: #aaa;
+}
+
 .versionnumber {
     color: #777;
 }

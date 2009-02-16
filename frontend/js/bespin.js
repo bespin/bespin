@@ -38,6 +38,6 @@ var Bespin = {
    displayVersion: function(el) {
        if (!el) el = $("version");
        if (!el) return;
-       el.innerHTML = 'Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"';
+       el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
    }
 };
