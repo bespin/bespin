@@ -178,7 +178,12 @@ Bespin.Editor.SelectionHelper = Class.create({
 //
 // Mess with positions mainly
 Bespin.Editor.Utils = {
-    argsWithPos: function(oldPos) {
+    buildArgs: function(oldPos) {
+        return { pos: Bespin.Editor.Utils.copyPos(oldPos || _editor.cursorPosition) };    
+    },
+
+    changePos: function(args, pos) {
+        ar
         return { pos: Bespin.Editor.Utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
     
@@ -290,7 +295,10 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
             return false;
         }
 
-        if (this.skipKeypress) return this.returnValue;
+        if (this.skipKeypress) {
+            Event.stop(e);
+            return this.returnValue;
+        }
 
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
@@ -1333,7 +1341,7 @@ Bespin.Editor.Events = Class.create({
         // -- fire an event here and you can run any editor action
         document.observe("bespin:editor:doaction", function(event) {
             var action = event.memo.action;
-            var args   = event.memo.args || Bespin.Editor.Utils.argsWithPos();
+            var args   = event.memo.args || Bespin.Editor.Utils.buildArgs();
 
             if (action) editor.ui.actions[action](args);
         });
