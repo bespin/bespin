@@ -281,10 +281,11 @@ img {
 
 #message {
     float: right;
-    font-size: 12pt;
+    font-size: 14px;
     font-family: Calibri, Arial, sans-serif;
     color: #777777;
-    padding-top: 6px;
+    padding-top: 10px;
+    padding-right: 4px;
 }
 
 #footer_bar {
@@ -372,3 +373,22 @@ img {
     color: red;
     font-style: italic;
 }
+
+#version {
+    float: right;
+    padding: 8px;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 12px;
+    color: #aaa;
+}
+
+#version a {
+    text-decoration: none;
+    color: #aaa;
+}
+
+.versionnumber {
+    color: #777;
+}
+
+*:focus { outline: 0; }

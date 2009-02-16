@@ -30,6 +30,20 @@ body {
     font-family: Calibri, Arial, sans-serif;
 }
 
+#version {
+    float: left;
+    padding: 8px;
+}
+
+#version a {
+    text-decoration: none;
+    color: #aaa;
+}
+
+.versionnumber {
+    color: #777;
+}
+
 #loginbutton {
     float: right;
     padding: 9px 10px 0 7px;
