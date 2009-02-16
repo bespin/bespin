@@ -284,6 +284,7 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
+        // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
         if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             Event.stop(e);
             return false;
