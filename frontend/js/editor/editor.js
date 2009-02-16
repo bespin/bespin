@@ -283,13 +283,19 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
         
+        // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
+        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+            Event.stop(e);
+            return false;
+        }
+
         if (this.skipKeypress) return this.returnValue;
 
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126)) {
+        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously

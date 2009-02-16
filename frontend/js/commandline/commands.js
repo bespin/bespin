@@ -648,7 +648,7 @@ Bespin.Commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
-      if (!alias) { // -- show all
+      if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
         for (var x in self.aliases) {
           output += x + ": " + self.aliases[x] + "<br/>";
