@@ -282,6 +282,12 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
     onkeypress: function(e) {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
+        
+        // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
+        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+            Event.stop(e);
+            return false;
+        }
 
         if (this.skipKeypress) return this.returnValue;
 
