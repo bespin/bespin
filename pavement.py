@@ -153,7 +153,7 @@ def copy_front_end():
 def update_python_version():
     version_file = path("backend/python/bespin/__init__.py")
     in_version_block = False
-    lines = version_file.readlines()
+    lines = version_file.lines()
     replaced_lines = []
     for i in range(0, len(lines)):
         line = lines[i]
@@ -172,13 +172,13 @@ def update_python_version():
             lines[i] = "API_VERSION = '%s'" % (options.version.api)
         else:
             raise BuildFailure("Invalid Python version number line: %s" % line)
-        replaced_lines.append(lines)
-    version_file.writelines(lines)
+        replaced_lines.append(line)
+    version_file.write_lines(lines)
     return replaced_lines
     
 def restore_python_version(replaced_lines):
     version_file = path("backend/python/bespin/__init__.py")
-    lines = version_file.readlines()
+    lines = version_file.lines()
     version_block_start = None
     version_block_end = None
     for i in range(0, len(lines)):
@@ -188,8 +188,9 @@ def restore_python_version(replaced_lines):
         if "END VERSION BLOCK" in line:
             version_block_end = i
             break
+    print "Start: %s, end: %s, rl: %s" % (version_block_start, version_block_end, replaced_lines)
     lines[version_block_start+1:version_block_end] = replaced_lines
-    version_file.writelines(lines)
+    version_file.write_lines(lines)
 
 @task
 @needs(['copy_front_end'])
@@ -239,8 +240,8 @@ def prod_server():
     replaced_lines = dry("Updating Python version number", update_python_version)
     path("backend/python").chdir()
     sh("bin/paver production")
-    dry("Restoring Python version number", restore_python_version, replaced_lines)
     current_directory.chdir()
+    dry("Restoring Python version number", restore_python_version, replaced_lines)
     
 @task
 @needs(['prod_server'])
