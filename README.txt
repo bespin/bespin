@@ -18,26 +18,11 @@ README.txt file there.
 Contributing to Bespin
 ----------------------
 
-Bespin is using the Mercurial distributed version control system. The public 
-repository is:
+For details see:
+  https://wiki.mozilla.org/Labs/Bespin/Contributing
 
-http://hg.mozilla.org/labs/bespin/
-
-Since Mercurial is a distributed version control system, you've got three 
-options for getting code changes to us:
-
-1. have a public hg repository of your own that you can point us to
-2. create a patch for your changes
-3. create a "bundle" for your changes (a bundle is a mercurial-specific 
-   format that includes every commit, rather than just a snapshot of 
-   the difference)
-
-You can submit the enhancements as an attachment in Bugzilla:
-
-https://bugzilla.mozilla.org/enter_bug.cgi?product=Mozilla%20Labs&component=Bespin
-
-(This is the "Report a bug" link on the project homepage, so you don't need to remember
-that URL.)
+The source repository is in Mercurial at:
+  http://hg.mozilla.org/labs/bespin/
 
 
 Note about running on Windows
