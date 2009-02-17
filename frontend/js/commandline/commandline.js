@@ -74,7 +74,7 @@ Bespin.CommandLine.Interface = Class.create({
             return;
         }
 
-        document.fire("bespin:cmdline:executed", { command: command, args: data });
+        document.fire("bespin:cmdline:executed", { command: command, args: data.join(' ') });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
