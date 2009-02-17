@@ -27,12 +27,17 @@
 // This is the root of it all. The {{{Bespin}}} namespace.
 // All of the JavaScript for Bespin will be placed in this namespace later.
 //
-// {{{ Bespin.version }}} is the core version of the Bespin system
+// {{{ Bespin.versionNumber }}} is the core version of the Bespin system
+// {{{ Bespin.apiVersion }}} is the version number of the API (to ensure that the
+//                          client and server are talking the same language)
 // {{{ Bespin.commandlineHeight }}} is the height of the command line
 
 var Bespin = {
-   versionNumber: '0.1.1',
-   versionCodename: 'Naughty Nimbus',
+    // BEGIN VERSION BLOCK
+    versionNumber: 'tip',
+    versionCodename: '(none)',
+    apiVersion: 'dev',
+    // END VERSION BLOCK
    commandlineHeight: 95,
    
    displayVersion: function(el) {
