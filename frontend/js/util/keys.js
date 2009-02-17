@@ -100,13 +100,6 @@ Bespin.Key = {
   TILDE: 192
 };
 
-// ** {{{ Bespin.Key.PassThroughCharCodes }}} **
-//
-// Cache the character codes that we want to pass through to the browser
-Bespin.Key.PassThroughCharCodes = ["k", "l", "n", "o", "t", "w", "+", "-", "~", 
-    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].invoke('charCodeAt');
-
-
 // ** {{{ Bespin.Key.fillArguments }}} **
 //
 // Fill out the arguments for action, key, modifiers
@@ -147,8 +140,11 @@ Bespin.Key.PassThroughCharCodes = ["k", "l", "n", "o", "t", "w", "+", "-", "~",
 //
 // Cache the key codes that we want to pass through to the browser
 // Should map to list above 
-Bespin.Key.PassThroughKeyCodes = [Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
-         Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];
+Bespin.Key.PassThroughKeyCodes = (function() {
+    var Key = Bespin.Key;
+    return [Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
+            Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];   
+})();
 
 // ** {{{ Bespin.Key.passThroughToBrowser }}} **
 //
