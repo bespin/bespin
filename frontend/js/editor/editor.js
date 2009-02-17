@@ -296,7 +296,7 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
         }
 
         if (this.skipKeypress) {
-            Event.stop(e);
+            if (!Bespin.Key.passThroughToBrowser(e)) Event.stop(e);
             return this.returnValue;
         }
 
