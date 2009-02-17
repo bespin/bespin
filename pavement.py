@@ -58,6 +58,11 @@ Contributor(s):
 """
 
 options(
+    version=Bunch(
+        number="0.1.1",
+        name="Naughty Nimbus",
+        api="1"
+    ),
     build_top=path("build"),
     build_dir=lambda: options.build_top / "BespinServer",
     compress_js=Bunch(
@@ -144,6 +149,47 @@ def copy_front_end():
         front_end_target.rmtree()
     front_end_source = path("frontend")
     front_end_source.copytree(front_end_target)
+    
+def update_python_version():
+    version_file = path("backend/python/bespin/__init__.py")
+    in_version_block = False
+    lines = version_file.readlines()
+    replaced_lines = []
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if "BEGIN VERSION BLOCK" in line:
+            in_version_block = True
+            continue
+        if "END VERSION BLOCK" in line:
+            break
+        if not in_version_block:
+            continue
+        if line.startswith("VERSION ="):
+            lines[i] = "VERSION = '%s'\n" % (options.version.number)
+        elif line.startswith("VERSION_NAME ="):
+            lines[i] = 'VERSION_NAME = "%s"\n' % (options.version.name)
+        elif line.startswith('API_VERSION'):
+            lines[i] = "API_VERSION = '%s'" % (options.version.api)
+        else:
+            raise BuildFailure("Invalid Python version number line: %s" % line)
+        replaced_lines.append(lines)
+    version_file.writelines(lines)
+    return replaced_lines
+    
+def restore_python_version(replaced_lines):
+    version_file = path("backend/python/bespin/__init__.py")
+    lines = version_file.readlines()
+    version_block_start = None
+    version_block_end = None
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if "BEGIN VERSION BLOCK" in line:
+            version_block_start = i
+        if "END VERSION BLOCK" in line:
+            version_block_end = i
+            break
+    lines[version_block_start+1:version_block_end] = replaced_lines
+    version_file.writelines(lines)
 
 @task
 @needs(['copy_front_end'])
@@ -190,8 +236,10 @@ def compress_js():
 def prod_server():
     """Creates the production server code."""
     current_directory = path.getcwd()
+    replaced_lines = dry("Updating Python version number", update_python_version)
     path("backend/python").chdir()
     sh("bin/paver production")
+    dry("Restoring Python version number", restore_python_version, replaced_lines)
     current_directory.chdir()
     
 @task
