@@ -200,6 +200,23 @@ document.observe("bespin:editor:preview", function(event) {
         window.open(Bespin.Path.combine("preview/at", project, filename));
 });
 
+// ** {{{ Event: bespin:editor:closefile }}} **
+// 
+// Load the users config file
+document.observe("bespin:editor:closefile", function(event) {
+    var filename = event.memo.filename || _editSession.path; // default to current page
+    var project  = event.memo.project  || _editSession.project;
+
+    _files.closeFile(project, filename, function() {
+        document.fire("bespin:editor:closedfile", { filename: filename });
+        
+        // if the current file, move on to a new one
+        if (filename == _editSession.path) document.fire("bespin:editor:newfile");
+
+        document.fire("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename });
+    });
+});
+
 // == Events
 // 
 // ** {{{ Bespin.Events }}} **
