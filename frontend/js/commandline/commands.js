@@ -322,16 +322,11 @@ Bespin.Commands.add({
 // ** {{{Command: closefile}}} **
 Bespin.Commands.add({
     name: 'closefile',
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'close the file (may lose edits)',
-    completeText: 'add the filename to close',
-    execute: function(self, filename) {
-        self.files.closeFile(_editSession.project, filename, function() {
-            document.fire("bespin:editor:closedfile", { filename: filename });
-            if (filename == _editSession.path) document.fire("bespin:editor:newfile");
-
-            self.showInfo('Closed file: ' + filename, true);
-        });
+    completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
+    execute: function(self, args) {
+        document.fire("bespin:editor:closefile", args);
     }
 });
 
@@ -573,7 +568,7 @@ Bespin.Commands.add({
         var url = args.url;
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
-return;        
+
         _server.importProject(project, url, { call: function(xhr) {
             self.showInfo("Project " + project + " imported from:<br><br>" + url);
         }, onFailure: function(xhr) {
