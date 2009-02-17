@@ -285,19 +285,6 @@ body {
     text-align: right;
 }
 
-#register_form input[type="text"]:focus {
-    border: 1px solid orange;
-}
-
-#register_form input[type="text"] {
-    border: 1px solid #aaa;
-    -moz-border-radius: 3px;
-    -webkit-border-radius: 3px;
-    background: #fff;
-    padding: 2px;
-    color: #000;
-}
-
 #register_form .darkButton {
     border: 1px solid #DAD4BA;
 }
