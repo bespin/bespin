@@ -149,6 +149,7 @@ def copy_front_end():
         front_end_target.rmtree()
     front_end_source = path("frontend")
     front_end_source.copytree(front_end_target)
+    update_javascript_version()
     
 def update_python_version():
     version_file = path("backend/python/bespin/__init__.py")
@@ -169,9 +170,35 @@ def update_python_version():
         elif line.startswith("VERSION_NAME ="):
             lines[i] = 'VERSION_NAME = "%s"\n' % (options.version.name)
         elif line.startswith('API_VERSION'):
-            lines[i] = "API_VERSION = '%s'" % (options.version.api)
+            lines[i] = "API_VERSION = '%s'\n" % (options.version.api)
         else:
             raise BuildFailure("Invalid Python version number line: %s" % line)
+        replaced_lines.append(line)
+    version_file.write_lines(lines)
+    return replaced_lines
+    
+def update_javascript_version():
+    version_file = options.build_dir / "frontend" / "js" / "bespin.js"
+    in_version_block = False
+    lines = version_file.lines()
+    replaced_lines = []
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if "BEGIN VERSION BLOCK" in line:
+            in_version_block = True
+            continue
+        if "END VERSION BLOCK" in line:
+            break
+        if not in_version_block:
+            continue
+        if "versionNumber:" in line:
+            lines[i] = "versionNumber: '%s',\n" % (options.version.number)
+        elif 'versionCodename:' in line:
+            lines[i] = 'versionCodename: "%s",\n' % (options.version.name)
+        elif 'apiVersion:' in line:
+            lines[i] = "apiVersion: '%s',\n" % (options.version.api)
+        else:
+            raise BuildFailure("Invalid JavaScript version number line: %s" % line)
         replaced_lines.append(line)
     version_file.write_lines(lines)
     return replaced_lines
@@ -188,7 +215,6 @@ def restore_python_version(replaced_lines):
         if "END VERSION BLOCK" in line:
             version_block_end = i
             break
-    print "Start: %s, end: %s, rl: %s" % (version_block_start, version_block_end, replaced_lines)
     lines[version_block_start+1:version_block_end] = replaced_lines
     version_file.write_lines(lines)
 
