@@ -516,24 +516,64 @@ Bespin.Commands.add({
 // ** {{{Command: import}}} **
 Bespin.Commands.add({
     name: 'import',
-    takes: ['project', 'url'],
-    preview: 'import the given url as a project',
-    completeText: 'project name, url (to an archive zip | tgz)',
+    takes: ['url', 'project'],
+    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
+    completeText: 'url (to an archive zip | tgz), optional project name',
+    // ** {{{calculateProjectName}}}
+    //
+    // Given a URL, work out the project name as a default
+    // For example, given http://foo.com/path/to/myproject.zip
+    // return "myproject"
+    calculateProjectName: function(url) {
+        var projectMaker = url.split('/').last().split(".");
+        projectMaker.pop();
+        return projectMaker.join("_");
+    },
+    // ** {{{isURL}}}
+    //
+    // Test the given string to return if it is a URL.
+    // In this context it has to be http(s) only
+    isURL: function(url) {
+        return (url && (url.startsWith("http:") || url.startsWith("https:")));
+    },
+    // ** {{{usage}}}
+    //
+    // Show the usage message
+    usage: function(commandline) {
+        commandline.showInfo("Please run: import [url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>");
+    },
+    // ** {{{execute}}}
+    //
+    // Can be called in three ways:
+    //
+    // * import http://foo.com/path/to/archive.zip
+    // * import http://foo.com/path/to/archive.zip projectName
+    // * import projectName http://foo.com/path/to/archive.zip
     execute: function(self, args) {
-        var project = args.project;
-        if (!project) {
-            self.showInfo("Please run: import [projectname] [url of archive]");
+        // Fail fast. Nothing given?
+        if (!args.url) {
+            this.usage(self);
             return;
+        // * checking - import http://foo.com/path/to/archive.zip
+        } else if (!args.project && this.isURL(args.url)) {
+            args.project = this.calculateProjectName(args.url);
+        // * Oops, project and url are the wrong way around. That's fine
+        } else if (this.isURL(args.project)) {
+            var project = args.project;
+            var url = args.url;
+            args.project = url;
+            args.url = project;
+        // * Make sure that a URL came along at some point
+        } else if (!this.isURL(args.url)) {
+            this.usage(self);
+            return;            
         }
         
+        var project = args.project;
         var url = args.url;
-        if (!url || !(url.endsWith('.tgz') || url.endsWith('.tar.gz') || url.endsWith('.zip'))) {
-            self.showInfo("Please run: import [projectname] [url of archive]<br>(make sure the archive is a zip, or tgz)");
-            return;
-        }
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
-        
+return;        
         _server.importProject(project, url, { call: function(xhr) {
             self.showInfo("Project " + project + " imported from:<br><br>" + url);
         }, onFailure: function(xhr) {
