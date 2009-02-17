@@ -139,7 +139,7 @@ Bespin.FileSystem = Class.create({
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
         _server.list(project, Bespin.Path.directory(path), function(files) {
-            if (files && files.include(path)) {
+            if (files && files.map(function(file) { return file.name; }).include(path)) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
@@ -158,12 +158,11 @@ Bespin.FileSystem = Class.create({
     //   elseFailed (file exists)
     whenFileDoesNotExist: function(project, path, callbacks) {
         _server.list(project, Bespin.Path.directory(path), function(files) {
-            if (!files || !files.include(path)) {
+            if (!files || !files.map(function(file) { return file.name; }).include(path)) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
             }
         });
     }
-
 });
