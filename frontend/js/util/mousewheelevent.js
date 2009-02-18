@@ -10,7 +10,7 @@ Object.extend(Event, {
         var delta = 0;
         if (!event) event = window.event;
         if (event.wheelDelta) {
-            delta = -(event.wheelDelta/360);
+            delta = -(event.wheelDelta/620);
             if (window.opera) delta = -delta;
         } else if (event.detail) {
             delta = event.detail;
