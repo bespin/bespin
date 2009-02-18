@@ -33,7 +33,7 @@ if (typeof Bespin == "undefined") Bespin = {};
 
 Bespin.FileSystem = Class.create({
 
-    // ** {{{ FileSystem.newFile(project, path, callback) }}}
+    // ** {{{ FileSystem.newFile(project, path, onSuccess) }}}
     //
     // Create a new file in the file system using:
     //
@@ -52,7 +52,7 @@ Bespin.FileSystem = Class.create({
         });
     },
 
-    // ** {{{ FileSystem.loadFile(project, path, callback) }}}
+    // ** {{{ FileSystem.loadFile(project, path, onSuccess, dontStartSession) }}}
     //
     // Load the file in the given project and path and get going
     //
@@ -71,6 +71,29 @@ Bespin.FileSystem = Class.create({
                 content: content,
                 timestamp: new Date().getTime()
             });
+        });
+    },
+
+    // ** {{{ FileSystem.forceOpenFile(project, path) }}}
+    //
+    // With the given project and path, open a file if existing, else create a new one
+    //
+    // * {{{project}}} is the name of the project to create the file in
+    // * {{{path}}} is the full path to save the file into
+    forceOpenFile: function(project, path) {
+        this.whenFileDoesNotExist(project, path, {
+            execute: function() {
+                document.fire("bespin:editor:newfile", {
+                    project: project,
+                    newfilename: path
+                });
+            },
+            elseFailed: function() {
+                document.fire("bespin:editor:openfile", {
+                    project: project,
+                    filename: path
+                });
+            }
         });
     },
 
@@ -144,6 +167,8 @@ Bespin.FileSystem = Class.create({
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
             }
+        }, function(xhr) {
+            if (callbacks['elseFailed']) callbacks['elseFailed'](xhr);
         });
     },
 
@@ -163,6 +188,8 @@ Bespin.FileSystem = Class.create({
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
             }
+        }, function(xhr) {
+            callbacks['execute'](); // the list failed which means it didn't exist
         });
     }
 });

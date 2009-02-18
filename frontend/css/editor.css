@@ -288,6 +288,11 @@ img {
     padding-right: 4px;
 }
 
+#message a {
+    color: #777777;
+    text-decoration: none;
+}
+
 #footer_bar {
     float: right;
     border-left: 1px solid #312F2A;
