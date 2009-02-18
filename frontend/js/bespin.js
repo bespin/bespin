@@ -38,11 +38,11 @@ var Bespin = {
     versionCodename: '(none)',
     apiVersion: 'dev',
     // END VERSION BLOCK
-   commandlineHeight: 95,
+    commandlineHeight: 95,
    
-   displayVersion: function(el) {
-       if (!el) el = $("version");
-       if (!el) return;
-       el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
-   }
+    displayVersion: function(el) {
+        if (!el) el = $("version");
+        if (!el) return;
+        el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
+    }
 };
