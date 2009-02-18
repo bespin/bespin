@@ -530,6 +530,15 @@ Bespin.Settings.Events = Class.create({
 
         // ** {{{ Event: bespin:settings:init }}} **
         // 
+        // Setup the special keybindings
+        document.observe("bespin:settings:init", function(event) {
+            document.fire("bespin:settings:set:keybindings", {
+                value: settings.get('keybindings')
+            });
+        });
+
+        // ** {{{ Event: bespin:settings:init }}} **
+        // 
         // Check for auto load
         document.observe("bespin:settings:init", function(event) {
             if (settings.isOn(settings.get('autoconfig'))) {
