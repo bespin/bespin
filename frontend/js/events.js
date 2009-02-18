@@ -36,11 +36,12 @@
 document.observe("bespin:editor:newfile", function(event) {
     var project = event.memo.project || _editSession.project;
     var newfilename = event.memo.newfilename || "new.txt";
+    var content = event.memo.content || " ";
 
     _files.newFile(project, newfilename, function() {
         document.fire("bespin:editor:openfile:opensuccess", { file: {
             name: newfilename,
-            content: " ",
+            content: content,
             timestamp: new Date().getTime()
         }});
     });
@@ -122,7 +123,7 @@ document.observe("bespin:editor:savefile", function(event) {
 
     document.fire("bespin:editor:titlechange", { filename: filename });
 
-    document.fire("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name });
+    document.fire("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name, autohide: true });
 });
 
 
@@ -262,7 +263,7 @@ document.observe("bespin:editor:closefile", function(event) {
         // if the current file, move on to a new one
         if (filename == _editSession.path) document.fire("bespin:editor:newfile");
 
-        document.fire("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename });
+        document.fire("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename, autohide: true });
     });
 });
 

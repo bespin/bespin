@@ -438,8 +438,9 @@ Bespin.CommandLine.Events = Class.create({
         // 
         // Observe when others want to show the info bar for the command line
         document.observe("bespin:cmdline:showinfo", function(event) {
-            var msg = event.memo.msg;
-            if (msg) commandline.showInfo(msg);
+            var message  = event.memo.msg;
+            var autohide = event.memo.autohide;
+            if (message) commandline.showInfo(message, autohide);
         });
 
         // ** {{{ Event: bespin:cmdline:executed }}} **
