@@ -96,7 +96,6 @@ function validateEmail(str) {
     return filter.test(str);
 }
 
-
 var register = {
     checkUsername:function() {
         $('register_username_error').innerHTML = ($F('register_username').length < 4) ? "Usernames must be at least 4 characters long" : "";
