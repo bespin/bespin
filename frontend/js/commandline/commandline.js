@@ -129,6 +129,11 @@ Bespin.CommandLine.Interface = Class.create({
         return false;
     },
 
+    showUsage: function(command, autohide) {
+        var usage = command.usage || "no usage information found for " + command.name;
+        this.showInfo(usage, autohide);
+    },
+    
     showInfo: function(html, autohide) {
         this.hideInfo();
 
