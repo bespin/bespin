@@ -181,4 +181,9 @@ def test_bad_ticket_is_ignored():
                                         email="a@b.com"))
     app.cookies['auth_tkt'] = app.cookies['auth_tkt'][:-1]
     resp = app.get("/preview/at/SampleProjectFor%3AAldus/index.html", status=401)
-    
+
+def test_api_version_header():
+    app = controllers.make_app()
+    app = TestApp(app)    
+    resp = app.get("/register/userinfo/", status=401)
+    assert resp.headers.get("X-Bespin-API") == "dev"
