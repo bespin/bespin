@@ -64,7 +64,6 @@ Bespin.Settings.Core = Class.create({
 
     defaultSettings: function() {
         return {
-            'keybindings': 'emacs',
             'tabsize': '2',
             'fontsize': '10',
             'autocomplete': 'off',
@@ -185,7 +184,6 @@ Bespin.Settings.Cookie = Class.create({
             this.settings = fromJar;
         } else {
             this.settings = {
-                'keybindings': 'emacs',
                 'tabsize': '2',
                 'fontsize': '10',
                 'autocomplete': 'off',
