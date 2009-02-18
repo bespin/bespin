@@ -69,6 +69,12 @@ Element.observe(window, 'load', function() {
     // Set the version info
     Bespin.displayVersion();
 
+    // Get going when settings are loaded
+    document.observe("bespin:settings:loaded", function(event) {
+        _settings.loadSession();  // load the last file or what is passed in
+        doResize();
+    });
+
     Element.observe(window, 'resize', doResize);
 
     _scene = new Scene($("projectLabel"));
@@ -113,6 +119,8 @@ Element.observe(window, 'load', function() {
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
     _editSession.userproject = userinfo.project; // the special user project
+    _editSession.username = userinfo.username;
+    
     _settings    = new Bespin.Settings.Core();
     _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Editor);
 }

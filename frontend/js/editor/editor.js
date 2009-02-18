@@ -86,7 +86,7 @@ Bespin.Editor.Scrollbar = Class.create({
     },
 
     onmousewheel: function(e) {
-        this.setValue(this.value + (e.detail * this.ui.lineHeight));
+        this.setValue(this.value + (Event.wheel(e) * this.ui.lineHeight));
     },
 
     onmousedown: function(e) {
@@ -411,7 +411,10 @@ Bespin.Editor.UI = Class.create({
         Event.observe(window, "mouseup", function(e) {
             this.yscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
-        Event.observe(window, "DOMMouseScroll", function(e) {
+        Event.observe(window, "DOMMouseScroll", function(e) { // Firefox
+            this.yscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
+        Event.observe(window, "mousewheel", function(e) { // IE / Opera
             this.yscrollbar.onmousewheel(e);
         }.bindAsEventListener(this));
 
