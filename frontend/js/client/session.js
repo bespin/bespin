@@ -44,7 +44,6 @@ if (!Bespin.Session) Bespin.Session = {};
 Bespin.Session.EditSession = Class.create({
     initialize: function(editor) {
         this.editor = editor;
-        this.project = 'SomeAjaxApp'; // TODO: default
         this.collaborate = false;
     },
     
