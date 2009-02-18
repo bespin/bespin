@@ -85,7 +85,8 @@ Bespin.FileSystem = Class.create({
             execute: function() {
                 document.fire("bespin:editor:newfile", {
                     project: project,
-                    newfilename: path
+                    newfilename: path,
+                    content: "Bespin.Commands.add({\n    name: 'YOUR_COMMAND_NAME',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n\n    }\n});"
                 });
             },
             elseFailed: function() {
