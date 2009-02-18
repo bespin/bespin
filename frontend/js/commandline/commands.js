@@ -216,7 +216,7 @@ Bespin.Commands.add({
     execute: function(self) {
         Bespin.Clipboard.copy(self.editor.model.getDocument());
 
-        self.showInfo('Saved file contents to clipboard');
+        self.showInfo('Saved file contents to clipboard', true);
     }
 });
 
@@ -284,7 +284,7 @@ Bespin.Commands.add({
     name: 'cmdadd',
     takes: ['commandname'],
     preview: 'load up a new command',
-    completeText: 'required, command name to add',
+    completeText: 'command name to add (required)',
     usage: 'cmdadd commandname: Command name required.',
     execute: function(self, commandname) {
         if (!commandname) {
@@ -580,7 +580,7 @@ Bespin.Commands.add({
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
         _server.importProject(project, url, { call: function(xhr) {
-            self.showInfo("Project " + project + " imported from:<br><br>" + url);
+            self.showInfo("Project " + project + " imported from:<br><br>" + url, true);
         }, onFailure: function(xhr) {
             self.showInfo("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
         }});
