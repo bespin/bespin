@@ -168,18 +168,21 @@ Bespin.Server = Class.create({
 
     // == FILES ==
 
-    // ** {{{ list(project, path, callback) }}}
+    // ** {{{ list(project, path, onSuccess, onFailure) }}}
     //
     // List the path in the given project
     // 
     // * {{{project}}} is the project to list
     // * {{{path}}} is the path to list out
-    // * {{{callback}}} fires after the list returns
-    list: function(project, path, callback) {
+    // * {{{onSuccess}}} fires if the list returns something
+    // * {{{onFailure}}} fires if there is an error getting a list from the server
+    list: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var url = Bespin.Path.combine('/file/list/', project, path || '/');
+        var opts = { call: onSuccess, evalJSON: true, log: "Listing files in: " + url };
+        if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
 
-        this.request('GET', url, null, { call: callback, evalJSON: true, log: "Listing files in: " + url });
+        this.request('GET', url, null, opts);
     },
 
     // ** {{{ projects(callback) }}}

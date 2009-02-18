@@ -260,17 +260,13 @@ Bespin.Commands.add({
     }
 });
 
-
 // ** {{{Command: editconfig}}} **
 Bespin.Commands.add({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(self) {
-        document.fire("bespin:editor:openfile", {
-            project: _editSession.userproject,
-            filename: "config.js"
-        });
+        document.fire("bespin:editor:config:edit");
     }
 });
 
@@ -283,17 +279,36 @@ Bespin.Commands.add({
     }
 });
 
+// ** {{{Command: cmdadd}}} **
+Bespin.Commands.add({
+    name: 'cmdadd',
+    takes: ['commandname'],
+    preview: 'load up a new command',
+    completeText: 'required, command name to add',
+    usage: 'cmdadd commandname: Command name required.',
+    execute: function(self, commandname) {
+        if (!commandname) {
+            self.showUsage(this);
+            return;
+        }
+        document.fire("bespin:editor:commands:add", { commandname: commandname });
+    }
+});
+
 // ** {{{Command: newfile}}} **
 Bespin.Commands.add({
     name: 'newfile',
     //aliases: ['new'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
     completeText: 'optionally, name the new filename',
     withKey: "CTRL SHIFT N",            
-    execute: function(self, filename) {
-        var opts = (filename) ? { newfilename: filename } : {};
-        document.fire("bespin:editor:newfile", opts);
+    execute: function(self, args) {
+        if (args.filename) {
+            args.newfilename = args.filename;
+            delete args.filename;
+        }
+        document.fire("bespin:editor:newfile", args || {});
     }
 });
 
@@ -514,6 +529,7 @@ Bespin.Commands.add({
     takes: ['url', 'project'],
     preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
     completeText: 'url (to an archive zip | tgz), optional project name',
+    usage: "Please run: import [url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
     // ** {{{calculateProjectName}}}
     //
     // Given a URL, work out the project name as a default
@@ -531,12 +547,6 @@ Bespin.Commands.add({
     isURL: function(url) {
         return (url && (url.startsWith("http:") || url.startsWith("https:")));
     },
-    // ** {{{usage}}}
-    //
-    // Show the usage message
-    usage: function(commandline) {
-        commandline.showInfo("Please run: import [url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>");
-    },
     // ** {{{execute}}}
     //
     // Can be called in three ways:
@@ -547,7 +557,7 @@ Bespin.Commands.add({
     execute: function(self, args) {
         // Fail fast. Nothing given?
         if (!args.url) {
-            this.usage(self);
+            self.showUsage(this);
             return;
         // * checking - import http://foo.com/path/to/archive.zip
         } else if (!args.project && this.isURL(args.url)) {
