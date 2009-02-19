@@ -86,7 +86,12 @@ Bespin.Editor.Scrollbar = Class.create({
     },
 
     onmousewheel: function(e) {
-        this.setValue(this.value + (e.detail * this.ui.lineHeight));
+        var axis = Event.axis(e);
+        if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
+            this.setValue(this.value + (Event.wheel(e) * this.ui.lineHeight));
+        } else if (this.orientation == this.HORIZONTAL && axis == this.HORIZONTAL) {
+            this.setValue(this.value + (Event.wheel(e) * this.ui.charWidth));
+        }
     },
 
     onmousedown: function(e) {
@@ -399,6 +404,12 @@ Bespin.Editor.UI = Class.create({
         Event.observe(window, "mouseup", function(e) {
             this.xscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
+        Event.observe(window, "DOMMouseScroll", function(e) { // Firefox
+            this.xscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
+        Event.observe(window, "mousewheel", function(e) { // IE / Opera
+            this.xscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
 
         this.yscrollbar = new Bespin.Editor.Scrollbar(this, "vertical");
         this.yscrollbar.valueChanged = function() {
@@ -411,7 +422,10 @@ Bespin.Editor.UI = Class.create({
         Event.observe(window, "mouseup", function(e) {
             this.yscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
-        Event.observe(window, "DOMMouseScroll", function(e) {
+        Event.observe(window, "DOMMouseScroll", function(e) { // Firefox
+            this.yscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
+        Event.observe(window, "mousewheel", function(e) { // IE / Opera
             this.yscrollbar.onmousewheel(e);
         }.bindAsEventListener(this));
 

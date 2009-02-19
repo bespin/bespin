@@ -52,13 +52,11 @@ var _showCollabHotCounter = 0;
 // ** {{{ window.load time }}} **
 //
 // Loads and configures the objects that the editor needs
-Element.observe(window, 'load', function() {    
+Element.observe(window, 'load', function() {
     _editor      = new Bespin.Editor.API($('editor'));
     _editSession = new Bespin.Session.EditSession(_editor);
     _server      = new Bespin.Server();
-    _settings    = new Bespin.Settings.Core();
     _files       = new Bespin.FileSystem();
-    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Editor);
     _toolbar     = new Bespin.Editor.Toolbar();
 
     _toolbar.setupDefault();
@@ -121,6 +119,10 @@ Element.observe(window, 'load', function() {
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
     _editSession.userproject = userinfo.project; // the special user project
+    _editSession.username = userinfo.username;
+    
+    _settings    = new Bespin.Settings.Core();
+    _commandLine = new Bespin.CommandLine.Interface($('command'), Bespin.Commands.Editor);
 }
 
 
