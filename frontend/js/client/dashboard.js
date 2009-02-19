@@ -45,6 +45,8 @@ Event.observe(document, "dom:loaded", function() {
     sizeCanvas($("canvas"));
 
     $('subheader', 'header').invoke('enableTextSelection', false);
+    
+    Bespin.displayVersion(); // display the version on the page
 
     scene = new Scene($("canvas"));
 

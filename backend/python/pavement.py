@@ -36,10 +36,12 @@ from paver.defaults import *
 
 import paver.virtual
 
+execfile(os.path.join('bespin', '__init__.py'))
+
 options(
     setup=Bunch(
         name="BespinServer",
-        version="0.1.1",
+        version=VERSION,
         packages=find_packages(),
         package_data=find_package_data('bespin', 'bespin', 
                                 only_in_packages=False)

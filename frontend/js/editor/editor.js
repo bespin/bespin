@@ -86,7 +86,11 @@ Bespin.Editor.Scrollbar = Class.create({
     },
 
     onmousewheel: function(e) {
-        this.setValue(this.value + (e.detail * this.ui.lineHeight));
+        if (this.orientation == 'vertical' && (e.axis == undefined || e.axis == e.VERTICAL_AXIS) ) {
+            this.setValue(this.value + (Event.wheel(e) * this.ui.lineHeight));
+        } else if (this.orientation == 'horizontal' && (e.axis != undefined && e.axis == e.HORIZONTAL_AXIS) ){
+            this.setValue(this.value + (Event.wheel(e) * this.ui.charWidth));
+        }
     },
 
     onmousedown: function(e) {
@@ -178,7 +182,12 @@ Bespin.Editor.SelectionHelper = Class.create({
 //
 // Mess with positions mainly
 Bespin.Editor.Utils = {
-    argsWithPos: function(oldPos) {
+    buildArgs: function(oldPos) {
+        return { pos: Bespin.Editor.Utils.copyPos(oldPos || _editor.cursorPosition) };    
+    },
+
+    changePos: function(args, pos) {
+        ar
         return { pos: Bespin.Editor.Utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
     
@@ -271,25 +280,35 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
             this.lastAction = action;
         }
 
-        if (e.metaKey || e.ctrlKey || e.altKey) {
+        // If a special key is pressed OR if an action is assigned to a given key (e.g. TAB or BACKSPACE)
+        if (e.metaKey || e.ctrlKey || e.altKey || hasAction) {
             this.skipKeypress = true;
             this.returnValue = true;
             if (hasAction || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e); // stop going, but allow special strokes to get to the browser
         }
-
     },
 
     onkeypress: function(e) {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
         
-        if (this.skipKeypress) return this.returnValue;
+        // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
+        // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
+        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+            Event.stop(e);
+            return false;
+        }
+
+        if (this.skipKeypress) {
+            if (!Bespin.Key.passThroughToBrowser(e)) Event.stop(e);
+            return this.returnValue;
+        }
 
         var args = { event: e, pos: Bespin.Editor.Utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126)) {
+        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously
@@ -384,6 +403,12 @@ Bespin.Editor.UI = Class.create({
         Event.observe(window, "mouseup", function(e) {
             this.xscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
+        Event.observe(window, "DOMMouseScroll", function(e) { // Firefox
+            this.xscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
+        Event.observe(window, "mousewheel", function(e) { // IE / Opera
+            this.xscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
 
         this.yscrollbar = new Bespin.Editor.Scrollbar(this, "vertical");
         this.yscrollbar.valueChanged = function() {
@@ -396,7 +421,10 @@ Bespin.Editor.UI = Class.create({
         Event.observe(window, "mouseup", function(e) {
             this.yscrollbar.onmouseup(e);
         }.bindAsEventListener(this));
-        Event.observe(window, "DOMMouseScroll", function(e) {
+        Event.observe(window, "DOMMouseScroll", function(e) { // Firefox
+            this.yscrollbar.onmousewheel(e);
+        }.bindAsEventListener(this));
+        Event.observe(window, "mousewheel", function(e) { // IE / Opera
             this.yscrollbar.onmousewheel(e);
         }.bindAsEventListener(this));
 
@@ -407,13 +435,6 @@ Bespin.Editor.UI = Class.create({
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
-            x = -1;
-        } else {
-            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
-            x = Math.floor(tx / this.charWidth);
-        }
-
         if (y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
@@ -421,6 +442,22 @@ Bespin.Editor.UI = Class.create({
             y = Math.floor(ty / this.lineHeight);
         }
 
+        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
+            x = -1;
+        } else {
+            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
+            x = Math.floor(tx / this.charWidth);
+            
+            // With striclines turned on, don't select past the end of the line
+            if (_settings.isOn(_settings.get('strictlines'))) {
+                var maxcol = this.editor.model.getRowLength(y);
+            
+                if (x >= maxcol) {
+                    x = this.editor.model.getRowLength(y);
+                }
+            }
+        }
+        
         return { col: x, row: y };
     },
 
@@ -1317,7 +1354,7 @@ Bespin.Editor.Events = Class.create({
         // -- fire an event here and you can run any editor action
         document.observe("bespin:editor:doaction", function(event) {
             var action = event.memo.action;
-            var args   = event.memo.args || Bespin.Editor.Utils.argsWithPos();
+            var args   = event.memo.args || Bespin.Editor.Utils.buildArgs();
 
             if (action) editor.ui.actions[action](args);
         });

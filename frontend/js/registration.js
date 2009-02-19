@@ -3,15 +3,15 @@
 var svr = new Bespin.Server();
 var go = Bespin.Navigate;
 
-function processLogin(xhr) {
+function whenLoginSucceeded() {
     go.dashboard();
 }
 
-function notLoggedIn(xhr) {
+function whenLoginFailed() {
     showStatus("Sorry, login didn't work. Try again? Caps lock on?");
 }
 
-function usernameInUse() {
+function whenUsernameInUse() {
     showStatus("The username is taken. Please choose another.");
 }
 
@@ -22,20 +22,20 @@ function showStatus(msg) {
 
 function login() {
     if (showingBrowserCompatScreen()) return;
-    
+
     if ($("username").value && $("password").value) {
-        svr.login($("username").value, $("password").value, processLogin, notLoggedIn)
+        svr.login($("username").value, $("password").value, whenLoginSucceeded, whenLoginFailed)
     } else {
         showStatus("Please give me both a username and a password");
     }
 }
 
-function isLoggedIn(userinfo) {
+function whenAlreadyLoggedIn(userinfo) {
     $('display_username').innerHTML = userinfo.username;
     $('logged_in').show();
 }
 
-function isNotLoggedIn() {
+function whenNotAlreadyLoggedIn() {
     $('not_logged_in').show();
 }
 
@@ -44,10 +44,6 @@ function logout() {
     $('logged_in').hide();
     $('not_logged_in').show();
 }
-
-Event.observe(document, "dom:loaded", function() {
-    svr.currentuser(isLoggedIn, isNotLoggedIn);
-});
 
 function centerOnScreen(el) {
     // retrieve required dimensions
@@ -59,10 +55,10 @@ function centerOnScreen(el) {
     var x = (browserDims.width - elDims.width) / 2;
 
     // set the style of the element so it is centered
-    var styles = { 
+    var styles = {
         position: 'absolute',
         top: y + 'px',
-        left : x + 'px' 
+        left : x + 'px'
     };
     el.setStyle(styles);
 }
@@ -70,10 +66,10 @@ function centerOnScreen(el) {
 // make sure that the browser can do our wicked shizzle
 function checkBrowserAbility() {
     if (typeof $('testcanvas').getContext != "function") return false; // no canvas
-    
+
     var ctx = $('testcanvas').getContext("2d");
-    
-    if (ctx.fillText || ctx.mozDrawText) 
+
+    if (ctx.fillText || ctx.mozDrawText)
         return true; // you need text support my friend
     else
         return false;
@@ -100,7 +96,6 @@ function validateEmail(str) {
     return filter.test(str);
 }
 
-
 var register = {
     checkUsername:function() {
         $('register_username_error').innerHTML = ($F('register_username').length < 4) ? "Usernames must be at least 4 characters long" : "";
@@ -125,14 +120,19 @@ var register = {
     hideForm:function() {
         $('opaque').hide();
         $('register_border').hide();
-        svr.currentuser(isLoggedIn, isNotLoggedIn);
+        svr.currentuser(whenAlreadyLoggedIn, whenNotAlreadyLoggedIn);
     },
     send:function() {
         register.hideForm();
-        svr.signup($("register_username").value, $("register_password").value, $('register_email').value, processLogin, notLoggedIn);
-
+        svr.signup($("register_username").value, $("register_password").value, $('register_email').value, whenLoginSucceeded, whenLoginFailed, whenUsernameInUse);
     },
     cancel:function() {
         register.hideForm();
     }
 };
+
+Event.observe(document, "dom:loaded", function() {
+    Bespin.displayVersion();
+    svr.currentuser(whenAlreadyLoggedIn, whenNotAlreadyLoggedIn);
+});
+

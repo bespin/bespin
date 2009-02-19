@@ -216,7 +216,7 @@ Bespin.Commands.add({
     execute: function(self) {
         Bespin.Clipboard.copy(self.editor.model.getDocument());
 
-        self.showInfo('Saved file contents to clipboard');
+        self.showInfo('Saved file contents to clipboard', true);
     }
 });
 
@@ -260,17 +260,13 @@ Bespin.Commands.add({
     }
 });
 
-
 // ** {{{Command: editconfig}}} **
 Bespin.Commands.add({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(self) {
-        document.fire("bespin:editor:openfile", {
-            project: _editSession.userproject,
-            filename: "config.js"
-        });
+        document.fire("bespin:editor:config:edit");
     }
 });
 
@@ -283,17 +279,36 @@ Bespin.Commands.add({
     }
 });
 
+// ** {{{Command: cmdadd}}} **
+Bespin.Commands.add({
+    name: 'cmdadd',
+    takes: ['commandname'],
+    preview: 'load up a new command',
+    completeText: 'command name to add (required)',
+    usage: 'cmdadd commandname: Command name required.',
+    execute: function(self, commandname) {
+        if (!commandname) {
+            self.showUsage(this);
+            return;
+        }
+        document.fire("bespin:editor:commands:add", { commandname: commandname });
+    }
+});
+
 // ** {{{Command: newfile}}} **
 Bespin.Commands.add({
     name: 'newfile',
     //aliases: ['new'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
     completeText: 'optionally, name the new filename',
     withKey: "CTRL SHIFT N",            
-    execute: function(self, filename) {
-        var opts = (filename) ? { newfilename: filename } : {};
-        document.fire("bespin:editor:newfile", opts);
+    execute: function(self, args) {
+        if (args.filename) {
+            args.newfilename = args.filename;
+            delete args.filename;
+        }
+        document.fire("bespin:editor:newfile", args || {});
     }
 });
 
@@ -322,16 +337,11 @@ Bespin.Commands.add({
 // ** {{{Command: closefile}}} **
 Bespin.Commands.add({
     name: 'closefile',
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'close the file (may lose edits)',
-    completeText: 'add the filename to close',
-    execute: function(self, filename) {
-        self.files.closeFile(_editSession.project, filename, function() {
-            document.fire("bespin:editor:closedfile", { filename: filename });
-            if (filename == _editSession.path) document.fire("bespin:editor:newfile");
-
-            self.showInfo('Closed file: ' + filename, true);
-        });
+    completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
+    execute: function(self, args) {
+        document.fire("bespin:editor:closefile", args);
     }
 });
 
@@ -351,7 +361,7 @@ Bespin.Commands.add({
     preview: 'show the version for Bespin or a command',
     completeText: 'optionally, a command name',
     execute: function(self, command) {
-        var bespinVersion = 'Your Bespin is at version ' + Bespin.version;
+        var bespinVersion = 'Your Bespin is at version ' + Bespin.versionNumber + ', Code name: "' + Bespin.versionCodename + '"';
         var version;
         if (command) {
             var theCommand = self.commands[command];
@@ -360,7 +370,7 @@ Bespin.Commands.add({
             } else {
                 version = (theCommand.version)
                     ? "The command named '" + command + "' is at version " + theCommand.version 
-                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.version;
+                    : "The command named '" + command + "' is a core command in Bespin version " + Bespin.versionNumber;
             }
         } else {
             version = bespinVersion;
@@ -516,26 +526,61 @@ Bespin.Commands.add({
 // ** {{{Command: import}}} **
 Bespin.Commands.add({
     name: 'import',
-    takes: ['project', 'url'],
-    preview: 'import the given url as a project',
-    completeText: 'project name, url (to an archive zip | tgz)',
+    takes: ['url', 'project'],
+    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
+    completeText: 'url (to an archive zip | tgz), optional project name',
+    usage: "Please run: import [url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
+    // ** {{{calculateProjectName}}}
+    //
+    // Given a URL, work out the project name as a default
+    // For example, given http://foo.com/path/to/myproject.zip
+    // return "myproject"
+    calculateProjectName: function(url) {
+        var projectMaker = url.split('/').last().split(".");
+        projectMaker.pop();
+        return projectMaker.join("_");
+    },
+    // ** {{{isURL}}}
+    //
+    // Test the given string to return if it is a URL.
+    // In this context it has to be http(s) only
+    isURL: function(url) {
+        return (url && (url.startsWith("http:") || url.startsWith("https:")));
+    },
+    // ** {{{execute}}}
+    //
+    // Can be called in three ways:
+    //
+    // * import http://foo.com/path/to/archive.zip
+    // * import http://foo.com/path/to/archive.zip projectName
+    // * import projectName http://foo.com/path/to/archive.zip
     execute: function(self, args) {
-        var project = args.project;
-        if (!project) {
-            self.showInfo("Please run: import [projectname] [url of archive]");
+        // Fail fast. Nothing given?
+        if (!args.url) {
+            self.showUsage(this);
             return;
+        // * checking - import http://foo.com/path/to/archive.zip
+        } else if (!args.project && this.isURL(args.url)) {
+            args.project = this.calculateProjectName(args.url);
+        // * Oops, project and url are the wrong way around. That's fine
+        } else if (this.isURL(args.project)) {
+            var project = args.project;
+            var url = args.url;
+            args.project = url;
+            args.url = project;
+        // * Make sure that a URL came along at some point
+        } else if (!this.isURL(args.url)) {
+            this.usage(self);
+            return;            
         }
         
+        var project = args.project;
         var url = args.url;
-        if (!url || !(url.endsWith('.tgz') || url.endsWith('.tar.gz') || url.endsWith('.zip'))) {
-            self.showInfo("Please run: import [projectname] [url of archive]<br>(make sure the archive is a zip, or tgz)");
-            return;
-        }
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
-        
+
         _server.importProject(project, url, { call: function(xhr) {
-            self.showInfo("Project " + project + " imported from:<br><br>" + url);
+            self.showInfo("Project " + project + " imported from:<br><br>" + url, true);
         }, onFailure: function(xhr) {
             self.showInfo("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
         }});
@@ -648,7 +693,7 @@ Bespin.Commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
-      if (!alias) { // -- show all
+      if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
         for (var x in self.aliases) {
           output += x + ": " + self.aliases[x] + "<br/>";

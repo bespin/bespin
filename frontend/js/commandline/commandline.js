@@ -74,7 +74,7 @@ Bespin.CommandLine.Interface = Class.create({
             return;
         }
 
-        document.fire("bespin:cmdline:executed", { command: command, args: data });
+        document.fire("bespin:cmdline:executed", { command: command, args: data.join(' ') });
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -129,6 +129,11 @@ Bespin.CommandLine.Interface = Class.create({
         return false;
     },
 
+    showUsage: function(command, autohide) {
+        var usage = command.usage || "no usage information found for " + command.name;
+        this.showInfo(usage, autohide);
+    },
+    
     showInfo: function(html, autohide) {
         this.hideInfo();
 
@@ -433,8 +438,9 @@ Bespin.CommandLine.Events = Class.create({
         // 
         // Observe when others want to show the info bar for the command line
         document.observe("bespin:cmdline:showinfo", function(event) {
-            var msg = event.memo.msg;
-            if (msg) commandline.showInfo(msg);
+            var message  = event.memo.msg;
+            var autohide = event.memo.autohide;
+            if (message) commandline.showInfo(message, autohide);
         });
 
         // ** {{{ Event: bespin:cmdline:executed }}} **
