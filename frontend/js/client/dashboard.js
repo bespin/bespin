@@ -125,11 +125,10 @@ Event.observe(document, "dom:loaded", function() {
 
     scene.render();
 
-    scene.bus.bind("dblclick", tree, function(e) {
-        var newTab = e.shiftKey;
+    scene.bus.bind("dblclick", tree, function() {
         var path = tree.getSelectedPath();
         if (path.length == 0 || path.last().contents) return; // don't allow directories either
-        go.editor(currentProject, getFilePath(path), newTab);
+        go.editor(currentProject, getFilePath(path));
     });
 
     scene.bus.bind("itemselected", projects.list, function(e) {
@@ -224,8 +223,7 @@ function displaySessions(sessions) {
             var panel = new BespinSessionPanel({ filename: name, project: project, path: path });
             infoPanel.add(panel);
             panel.bus.bind("dblclick", panel, function(e) {
-                var newTab = e.shiftKey;
-                go.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename, newTab);
+                go.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename);
             });
         }
     }

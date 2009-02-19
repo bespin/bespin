@@ -8,7 +8,8 @@ has only been tested on Unix-like platforms.
 Getting Started
 ---------------
 
-If you are running on a Linux system, you will likely need a "python-devel"
+*** NOTE FOR LINUX USERS: If you are running on a Linux system, you will 
+likely need a "python-dev" (on Ubuntu, possibly python-devel elsewhere) 
 package installed, if you do not already have it.
 
 Run::

@@ -208,22 +208,6 @@ Bespin.Commands.add({
     }
 });
 
-// ** {{{Command: projects}}} **
-Bespin.Commands.add({
-    name: 'createproject',
-    takes: ['projectname'],
-    preview: 'create a new project',
-    usage: 'createproject [newprojectname]',
-    execute: function(self, projectname) {
-        if (!projectname) {
-            self.showUsage(this);
-            return;
-        }
-        document.fire("bespin:editor:project:create", { project: projectname });
-    }
-});
-
-
 // ** {{{Command: clipboard}}} **
 Bespin.Commands.add({
     name: 'clipboard',

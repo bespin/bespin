@@ -267,18 +267,6 @@ document.observe("bespin:editor:closefile", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:editor:project:create }}} **
-// 
-// Create a new project
-document.observe("bespin:editor:project:create", function(event) {
-    var project = event.memo.project || _editSession.project;
-    
-    _files.createProject(project);
-    
-    document.fire("bespin:editor:project:set", { project: project });
-});
-
-
 // == Events
 // 
 // ** {{{ Bespin.Events }}} **
