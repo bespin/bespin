@@ -30,6 +30,20 @@ body {
     font-family: Calibri, Arial, sans-serif;
 }
 
+#version {
+    float: left;
+    padding: 8px;
+}
+
+#version a {
+    text-decoration: none;
+    color: #aaa;
+}
+
+.versionnumber {
+    color: #777;
+}
+
 #loginbutton {
     float: right;
     padding: 9px 10px 0 7px;
@@ -225,8 +239,8 @@ body {
 
 #sorry_browser_text {
     font-family: "Lucida Grande", Tahoma, Arial, sans-serif;
-    font-size: 14px;
-    padding: 5px;
+    font-size: 12px;
+    padding: 10px;
 }
 
 #sorry_browser_cancel {
@@ -269,19 +283,6 @@ body {
 
 #register_form th {
     text-align: right;
-}
-
-#register_form input[type="text"]:focus {
-    border: 1px solid orange;
-}
-
-#register_form input[type="text"] {
-    border: 1px solid #aaa;
-    -moz-border-radius: 3px;
-    -webkit-border-radius: 3px;
-    background: #fff;
-    padding: 2px;
-    color: #000;
 }
 
 #register_form .darkButton {

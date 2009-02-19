@@ -1,15 +1,29 @@
 Welcome to Bespin!
 ------------------
 
-Bespin is a Mozilla Labs experiment on how to build an extensible Web code editor using HTML 5 technology.
+Bespin is a Mozilla Labs experiment on how to build an extensible Web code 
+editor using HTML 5 technology.
 
 Project home page: http://labs.mozilla.com/projects/bespin/
 Live system: https://bespin.mozilla.com/
 
 
-Thanks for downloading the code to the Bespin project. You can easily get Bespin running on your local Mac or Linux machine (see note about Windows below).
+Thanks for downloading the code to the Bespin project. You can easily get 
+Bespin running on your local Mac or Linux machine (see note about Windows 
+below).
 
-To run Bespin locally, go to backend/python and take a look at the README.txt file there.
+To run Bespin locally, go to backend/python and take a look at the 
+README.txt file there.
+
+Contributing to Bespin
+----------------------
+
+For details see:
+  https://wiki.mozilla.org/Labs/Bespin/Contributing
+
+The source repository is in Mercurial at:
+  http://hg.mozilla.org/labs/bespin/
+
 
 Note about running on Windows
 -----------------------------

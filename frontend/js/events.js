@@ -36,11 +36,12 @@
 document.observe("bespin:editor:newfile", function(event) {
     var project = event.memo.project || _editSession.project;
     var newfilename = event.memo.newfilename || "new.txt";
+    var content = event.memo.content || " ";
 
     _files.newFile(project, newfilename, function() {
         document.fire("bespin:editor:openfile:opensuccess", { file: {
             name: newfilename,
-            content: " ",
+            content: content,
             timestamp: new Date().getTime()
         }});
     });
@@ -58,7 +59,7 @@ document.observe("bespin:editor:openfile", function(event) {
     var filename = event.memo.filename;
     var project  = event.memo.project || _editSession.project;
 
-    if (_editSession.path == filename) return; // short circuit
+    if (_editSession.checkSameFile(project, filename)) return; // short circuit
 
     document.fire("bespin:editor:openfile:openbefore", { filename: filename });
 
@@ -69,6 +70,23 @@ document.observe("bespin:editor:openfile", function(event) {
             document.fire("bespin:editor:openfile:opensuccess", { file: file });
         }
     });
+});
+
+// ** {{{ Event: bespin:editor:openfile }}} **
+// 
+// Observe a request for a file to be opened and start the cycle:
+//
+// * Send event that you are opening up something (openbefore)
+// * Ask the file system to load a file (loadFile)
+// * If the file is loaded send an opensuccess event
+// * If the file fails to load, send an openfail event
+document.observe("bespin:editor:forceopenfile", function(event) {
+    var filename = event.memo.filename;
+    var project  = event.memo.project || _editSession.project;
+
+    if (_editSession.checkSameFile(project, filename)) return; // short circuit
+
+    _files.forceOpenFile(project, filename);
 });
 
 // ** {{{ Event: bespin:editor:savefile }}} **
@@ -105,7 +123,7 @@ document.observe("bespin:editor:savefile", function(event) {
 
     document.fire("bespin:editor:titlechange", { filename: filename });
 
-    document.fire("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name });
+    document.fire("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name, autohide: true });
 });
 
 
@@ -184,6 +202,38 @@ document.observe("bespin:editor:config:run", function(event) {
     }, true);
 });
 
+// ** {{{ Event: bespin:editor:config:edit }}} **
+// 
+// Open the users special config file
+document.observe("bespin:editor:config:edit", function(event) {
+    if (!_editSession.userproject) {
+        document.fire("bespin:cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        return;
+    }
+
+    document.fire("bespin:editor:openfile", {
+        project: _editSession.userproject,
+        filename: "config.js"
+    });
+});
+
+// ** {{{ Event: bespin:editor:commands:add }}} **
+// 
+// Create a new command in your special command directory
+document.observe("bespin:editor:commands:add", function(event) {
+    var commandname = event.memo.commandname;
+    
+    if (!commandname) {
+        document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to add." });
+        return;
+    }
+
+    document.fire("bespin:editor:forceopenfile", {
+        project: _editSession.userproject,
+        filename: "commands/" + commandname + ".js"
+    });
+});
+
 // ** {{{ Event: bespin:editor:preview }}} **
 // 
 // Load the users config file
@@ -198,6 +248,23 @@ document.observe("bespin:editor:preview", function(event) {
 
     if (filename)
         window.open(Bespin.Path.combine("preview/at", project, filename));
+});
+
+// ** {{{ Event: bespin:editor:closefile }}} **
+// 
+// Load the users config file
+document.observe("bespin:editor:closefile", function(event) {
+    var filename = event.memo.filename || _editSession.path; // default to current page
+    var project  = event.memo.project  || _editSession.project;
+
+    _files.closeFile(project, filename, function() {
+        document.fire("bespin:editor:closedfile", { filename: filename });
+        
+        // if the current file, move on to a new one
+        if (filename == _editSession.path) document.fire("bespin:editor:newfile");
+
+        document.fire("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename, autohide: true });
+    });
 });
 
 // == Events
