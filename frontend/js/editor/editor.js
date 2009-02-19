@@ -87,9 +87,9 @@ Bespin.Editor.Scrollbar = Class.create({
 
     onmousewheel: function(e) {
         var axis = Event.axis(e);
-        if (this.orientation == 'vertical' && axis == 'vertical') {
+        if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
             this.setValue(this.value + (Event.wheel(e) * this.ui.lineHeight));
-        } else if (this.orientation == 'horizontal' && axis == 'horizontal') {
+        } else if (this.orientation == this.HORIZONTAL && axis == this.HORIZONTAL) {
             this.setValue(this.value + (Event.wheel(e) * this.ui.charWidth));
         }
     },
