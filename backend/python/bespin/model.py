@@ -277,7 +277,6 @@ class FileManager(object):
         marked as open after this call."""
         
         file_obj = self._check_and_get_file(user, project, path)
-        print "fo: %s, uo: %s" % (file_obj, user)
         self._save_status(file_obj, user, mode)
         
         contents = str(file_obj.data)
@@ -336,7 +335,8 @@ class FileManager(object):
             return sorted(user.projects, key=lambda proj: proj.name)
         full_path = project.name + "/" + path
         try:
-            dir = self.session.query(Directory).filter_by(name=full_path).one()
+            dir = self.session.query(Directory).filter_by(name=full_path) \
+                    .filter_by(project=project).one()
         except NoResultFound:
             raise FileNotFound(full_path)
         
@@ -471,21 +471,28 @@ class FileManager(object):
         full_path = project.name + "/" + path
         if full_path.endswith("/"):
             try:
-                dir_obj = s.query(Directory).filter_by(name=full_path).one()
+                dir_obj = s.query(Directory).filter_by(name=full_path) \
+                            .filter_by(project=project).one()
             except NoResultFound:
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project.name))
                 
             if dir_obj.parent:
                 dir_obj.parent.subdirs.remove(dir_obj)
-            s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
+            s.query(Directory).filter(Directory.name.like(full_path + "%")) \
+                    .filter_by(project=project).delete()
             file_space = s.query(func.sum(File.saved_size)) \
-                            .filter(File.name.like(full_path + "%")).one()[0]
+                            .filter(File.name.like(full_path + "%")) \
+                            .filter_by(project=project).one()[0]
             user.amount_used -= file_space
-            s.query(File).filter(File.name.like(full_path + "%")).delete()
+            s.query(File).filter(File.name.like(full_path + "%")) \
+                .filter_by(project=project).delete()
+            if not path:
+                s.delete(project)
         else:
             try:
-                file_obj = s.query(File).filter_by(name=full_path).one()
+                file_obj = s.query(File).filter_by(name=full_path) \
+                    .filter_by(project=project).one()
             except NoResultFound:
                 raise FileNotFound("File %s not found in project %s" %
                                     (path, project.name))
@@ -506,7 +513,8 @@ class FileManager(object):
         full_path = project.name + "/" + path
         s = self.session
         try:
-            file_obj = s.query(File).filter_by(name=full_path).one()
+            file_obj = s.query(File).filter_by(name=full_path) \
+                .filter_by(project=project).one()
         except NoResultFound:
             file_obj = self.save_file(user, project, path, None)
         
@@ -520,7 +528,8 @@ class FileManager(object):
     def list_edits(self, user, project, path, start_at=0):
         full_path = project.name + "/" + path
         try:
-            file_obj = self.session.query(File).filter_by(name=full_path).one()
+            file_obj = self.session.query(File).filter_by(name=full_path) \
+                .filter_by(project=project).one()
         except NoResultFound:
             raise FileNotFound("File %s in project %s does not exist"
                     % (path, project.name))
