@@ -38,8 +38,12 @@ Bespin.Navigate = new function() {
     //
     // Generic location changer
 
-    var go = function(url) {
-        location.href = url;
+    var go = function(url, newTab) {
+        if (newTab) {
+            window.open(url, "_blank");
+        } else {
+            location.href = url;
+        }
     }
 
     
@@ -48,19 +52,19 @@ Bespin.Navigate = new function() {
     // Simple methods to construct URLs within Bespin and go to them
 
     return {
-        dashboard: function() {
-            go("dashboard.html");
+        dashboard: function(newTab) {
+            go("dashboard.html", newTab);
         },
         
-        home: function() {
-            go("index.html");
+        home: function(newTab) {
+            go("index.html", newTab);
         },
         
-        quickEdit: function() {
-    		go("editor.html#new=true");
+        quickEdit: function(newTab) {
+    		go("editor.html#new=true", newTab);
     	},
     	
-        editor: function(project, path) {
+        editor: function(project, path, newTab) {
             var url = "editor.html#";
             var args = [];
             
@@ -69,7 +73,7 @@ Bespin.Navigate = new function() {
             
             if (args.length > 0) url += args.join("&");
             
-            go(url);
+            go(url, newTab);
         }
     };
     
