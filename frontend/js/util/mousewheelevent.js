@@ -16,5 +16,15 @@ Object.extend(Event, {
             delta = event.detail;
         }
         return Math.round(delta); // Safari Round
+    },
+
+    axis: function(event) {
+        var returnType = "vertical";
+        if (event.axis) { // Firefox world
+            if (event.axis == event.HORIZONTAL_AXIS) returnType = "horizontal";
+        } else if (event.wheelDeltaY || event.wheelDeltaX) {
+            if (event.wheelDeltaX == event.wheelDelta) returnType = "horizontal";
+        }
+        return returnType;
     }
 });
