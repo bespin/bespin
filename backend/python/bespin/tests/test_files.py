@@ -352,7 +352,9 @@ def test_basic_edit_functions():
     fm = _get_fm()
     s = fm.session
     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+    fm.save_edit(someone_else, bigmac2, "foo/bar/baz", "['some', 'thing']")
     file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz") \
                 .filter_by(project=bigmac).one()
     assert len(file_obj.edits) == 1
@@ -578,6 +580,44 @@ def test_export_zipfile():
     # the extra slash shows up in this context, but does not seem to be a problem
     assert 'bigmac/commands/yourcommands.js' in names
 
+def test_delete_does_not_affect_other_projects():
+    global macgyver, someone_else
+    fm = _get_fm()
+    bigmac1 = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac1, "bar/foo", "bar!")
+    fm.save_file(macgyver, bigmac1, "bar/foobar", "yo")
+    bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
+    fm.save_file(someone_else, bigmac2, "other/myfoo", "double bar!")
+    fm.save_file(someone_else, bigmac2, "bar/foo", "this one is mine!")
+    assert len(macgyver.projects) == 3
+    assert len(someone_else.projects) == 3
+    
+    fm.delete(macgyver, bigmac1, "bar/foo")
+    flist = fm.list_files(macgyver, bigmac1, "bar/")
+    assert len(flist) == 1
+    flist = fm.list_files(someone_else, bigmac2, "bar/")
+    assert len(flist) == 1
+    
+    fm.delete(macgyver, bigmac1)
+    
+    s = fm.session
+    s.expire(macgyver)
+    s.expire(someone_else)
+    macgyver = s.query(User).filter_by(username='MacGyver').one()
+    someone_else = s.query(User).filter_by(username='SomeoneElse').one()
+    assert len(macgyver.projects) == 2
+    assert len(someone_else.projects) == 3
+    flist = fm.list_files(someone_else, bigmac2)
+    assert len(flist) == 2
+    assert flist[0].name == "bigmac/bar/"
+    file_obj = fm.get_file_object(someone_else, bigmac2, "other/myfoo")
+    assert str(file_obj.data) == "double bar!"
+    try:
+        file_obj = fm.get_file_object(macgyver, bigmac1, "bar/foo")
+        assert False, "File should be gone"
+    except model.FileNotFound:
+        pass
+        
 
 # -------
 # Web tests
@@ -789,4 +829,14 @@ def test_quota_limits_on_the_web():
     finally:
         model.QUOTA_UNITS = old_units
     
+def test_delete_project_from_the_web():
+    global macgyver
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "README.txt", 
+        "This is the readme file.")
+    fm.session.commit()
+    resp = app.delete("/file/at/bigmac/")
+    macgyver = fm.db.user_manager.get_user("MacGyver")
+    assert len(macgyver.projects) == 2
     
