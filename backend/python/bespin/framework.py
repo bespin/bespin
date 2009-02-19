@@ -29,7 +29,7 @@
 from urlrelay import url
 from webob import Request, Response
 
-from bespin import model, config
+from bespin import model, config, API_VERSION
 
 class BadRequest(Exception):
     pass
@@ -85,9 +85,11 @@ def expose(url_pattern, method=None, auth=True):
         def wrapped(environ, start_response):
             if auth and 'REMOTE_USER' not in environ:
                 response = Response(status='401')
+                response.headers['X-Bespin-API'] = API_VERSION
                 return response(environ, start_response)
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
+            response.headers['X-Bespin-API'] = API_VERSION
             try:
                 return func(request, response)
             except model.NotAuthorized, e:

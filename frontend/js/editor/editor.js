@@ -436,7 +436,7 @@ Bespin.Editor.UI = Class.create({
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -877,7 +877,6 @@ Bespin.Editor.UI = Class.create({
                 cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
                 ctx.fillStyle = theme.lineNumberColor;
-                ctx.font = this.editor.theme.lineNumberFont;
                 ctx.fillText(currentLine + 1, x, cy);
 
                 y += this.lineHeight;
@@ -973,7 +972,6 @@ Bespin.Editor.UI = Class.create({
                     }
 
                     ctx.fillStyle = this.editor.theme[style] || "white";
-                    ctx.font = this.editor.theme.lineNumberFont;
                     ctx.fillText(thisLine, x, cy);
                 }
             }
