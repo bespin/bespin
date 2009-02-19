@@ -25,3 +25,9 @@
 # 
 # ***** END LICENSE BLOCK *****
 # 
+
+# BEGIN VERSION BLOCK
+VERSION = 'tip'
+VERSION_NAME = '(none)'
+API_VERSION = 'dev'
+# END VERSION BLOCK
