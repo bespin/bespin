@@ -113,19 +113,13 @@ def upgrade():
     
     migrate_engine.echo = False
     transaction = conn.begin()
-    result = select([func.count(file_table.c.id)]).execute().fetchall()
-    num_files = result[0][0]
+    
     try:
         current_project_name = None
         current_project_id = None
         delete_these = set()
-        counter = 0
         for file_obj in select([file_table.c.id,
                 file_table.c.name]).order_by(file_table.c.name).execute():
-            counter += 1
-            if counter % 500 == 0:
-                print "%s out of %s (%5.2f%%)" % (counter, num_files,
-                    float(counter)*100/num_files)
             project_name, path = file_obj.name.split('/', 1)
             
             if project_name != current_project_name:
@@ -151,15 +145,8 @@ def upgrade():
         current_project_name = None
         current_project_id = None
         delete_these = set()
-        result = select([func.count(directory_table.c.id)]).execute().fetchall()
-        num_dirs = result[0][0]
-        counter = 0
         for dir_obj in select([directory_table.c.id,
                 directory_table.c.name]).order_by(directory_table.c.name).execute():
-            counter += 1
-            if counter % 500 == 0:
-                print "%s out of %s (%5.2f%%)" % (counter, num_dirs,
-                    float(counter)*100/num_dirs)
             project_name, dir_name = dir_obj.name.split('/', 1)
             if project_name != current_project_name:
                 current_project_name = project_name
