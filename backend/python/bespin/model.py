@@ -90,7 +90,6 @@ class User(Base):
     email = Column(String(128))
     password = Column(String(20))
     settings = Column(PickleType())
-    private_project = Column(String(50))
     projects = relation('Project', backref='owner')
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
@@ -101,14 +100,6 @@ class User(Base):
         self.password = password
         self.settings = {}
         self.quota = config.c.default_quota
-        
-        hashobj = hashlib.sha1(self.username + " " 
-                + config.c.secret + " " + self.password)
-        # the NUMBER- at the beginning is the version number of the
-        # key. every time we change how we compute the hash, we should
-        # increment this number. This will avoid the unlikely
-        # collisions.
-        self.private_project = "2-" + hashobj.hexdigest()
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
@@ -143,7 +134,7 @@ class UserManager(object):
         
         file_manager = self.db.file_manager
         project = file_manager.get_project(user, user, 
-                    "SampleProjectFor:%s" % username, create=True)
+                    "SampleProject", create=True)
         file_manager.install_template(user, project)
         return user
         
