@@ -16,7 +16,10 @@ def setup():
     from migrate.versioning.shell import main
 
     sh("bin/pip install -r requirements.txt")
+    print "Don't forget to run the database upgrade! (paver db)"
     
+@task
+def db():
     execfile("../wsgi-apps/bespin.wsgi", {'__file__' : '/home/wsgiapps/wsgi-apps/bespin.wsgi'})
     
     repository = str(path(db_versions.__file__).dirname())
