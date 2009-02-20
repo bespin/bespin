@@ -98,7 +98,11 @@ def test_register_and_verify_user():
     assert data['project']
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    file = s.query(File).filter_by(name="SampleProjectFor:BillBixby/readme.txt").one()
+    fm = user_manager.db.file_manager
+    billbixby = user_manager.get_user("BillBixby")
+    sample_project = fm.get_project(billbixby, billbixby, "SampleProjectFor:BillBixby")
+    file = s.query(File).filter_by(name="readme.txt") \
+        .filter_by(project=sample_project).one()
     svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
     assert not svnfiles
     

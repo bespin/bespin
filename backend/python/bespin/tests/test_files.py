@@ -81,7 +81,8 @@ def test_basic_file_creation():
     starting_point = macgyver.amount_used
     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
     fm.save_file(macgyver, bigmac, "reqs", "Chewing gum wrapper")
-    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    file_obj = fm.session.query(model.File).filter_by(name="reqs") \
+                .filter_by(project=bigmac).one()
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
     assert file_obj.saved_size == 19
@@ -98,14 +99,15 @@ def test_basic_file_creation():
     bigmac = fm.get_project(macgyver, macgyver, "bigmac")
     files = fm.list_files(macgyver, bigmac, "")
     assert len(files) == 1
-    assert files[0].name == 'bigmac/reqs'
+    assert files[0].name == 'reqs'
     proj_names = set([proj.name for proj in macgyver.projects])
     assert proj_names == set(['bigmac', "SampleProjectFor:MacGyver", 
                               macgyver.private_project])
     
     # let's update the contents
     fm.save_file(macgyver, bigmac, "reqs", "New content")
-    file_obj = fm.session.query(model.File).filter_by(name="bigmac/reqs").one()
+    file_obj = fm.session.query(model.File).filter_by(name="reqs") \
+            .filter_by(project=bigmac).one()
     
     assert now - file_obj.created < timedelta(days=1, seconds=2)
     assert now - file_obj.modified < timedelta(seconds=2)
@@ -174,12 +176,13 @@ def test_get_file_opens_the_file():
     assert contents == "biz"
     
     s = fm.session
-    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz") \
+    file_obj = s.query(File).filter_by(name="foo/bar/baz") \
                 .filter_by(project=bigmac).one()
     files = [f.file for f in macgyver.files]
     assert file_obj in files
     
     open_files = fm.list_open(macgyver)
+    print "OF: ", open_files
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
@@ -239,7 +242,7 @@ def test_delete_raises_file_not_found():
     except model.FileNotFound:
         pass
     flist = fm.list_files(macgyver, bigmac)
-    assert flist[0].name == "bigmac/foo/"
+    assert flist[0].name == "foo/"
     fm.delete(macgyver, bigmac, "foo/bar/")
     
 def test_authorize_other_user():
@@ -294,7 +297,7 @@ def test_can_delete_file_open_by_me():
     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
     fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
     fm.get_file(macgyver, bigmac, "foo/bar/baz")
-    file_obj_id = s.query(File).filter_by(name="bigmac/foo/bar/baz") \
+    file_obj_id = s.query(File).filter_by(name="foo/bar/baz") \
                 .filter_by(project=bigmac).one().id
     fm.delete(macgyver, bigmac, "foo/bar/baz")
     fs = fm.session.query(FileStatus).filter_by(file_id=file_obj_id).first()
@@ -333,8 +336,8 @@ def test_directory_deletion():
     fm.delete(macgyver, bigmac, "foo/")
     flist = fm.list_files(macgyver, bigmac)
     assert len(flist) == 1
-    assert flist[0].name == 'bigmac/whiz/'
-    file = fm.session.query(File).filter_by(name="bigmac/foo/bar") \
+    assert flist[0].name == 'whiz/'
+    file = fm.session.query(File).filter_by(name="foo/bar") \
                         .filter_by(project=bigmac).first()
     assert file is None
     assert macgyver.amount_used == starting_used
@@ -355,7 +358,7 @@ def test_basic_edit_functions():
     bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
     fm.save_edit(someone_else, bigmac2, "foo/bar/baz", "['some', 'thing']")
-    file_obj = s.query(File).filter_by(name="bigmac/foo/bar/baz") \
+    file_obj = s.query(File).filter_by(name="foo/bar/baz") \
                 .filter_by(project=bigmac).one()
     assert len(file_obj.edits) == 1
     
@@ -432,7 +435,7 @@ def test_template_installation():
     assert "Welcome to Bespin" in data
     result = fm.list_files(macgyver, bigmac)
     result_names = [file.name for file in result]
-    assert 'bigmac/readme.txt' in result_names
+    assert 'readme.txt' in result_names
     
 def test_list_top_level():
     fm = _get_fm()
@@ -440,7 +443,7 @@ def test_list_top_level():
     fm.save_file(macgyver, bigmac, "readme.txt", "Hi there!")
     result = fm.list_files(macgyver, bigmac)
     result_names = [file.name for file in result]
-    assert result_names == ["bigmac/readme.txt"]
+    assert result_names == ["readme.txt"]
     result = fm.list_files(macgyver)
     result_names = [proj.name for proj in result]
     assert result_names == [macgyver.private_project,
@@ -453,9 +456,9 @@ def test_secondary_objects_are_saved_when_creating_new_file():
     fm.save_file(macgyver, bigmac, "foo/bar", "Data")
     project_names = [proj.name for proj in macgyver.projects]
     assert "bigmac" in project_names
-    bigmac_obj = fm.session.query(Directory).filter_by(name="bigmac/")\
+    bigmac_obj = fm.session.query(Directory).filter_by(name="")\
                     .filter_by(project=bigmac).one()
-    assert bigmac_obj.subdirs[0].name == "bigmac/foo/"
+    assert bigmac_obj.subdirs[0].name == "foo/"
     
 def test_common_base_selection():
     tests = [
@@ -486,16 +489,16 @@ def test_import():
         proj_names = [proj.name for proj in macgyver.projects]
         assert 'bigmac' in proj_names
         s = fm.session
-        dir = s.query(Directory).filter_by(name="bigmac/") \
+        dir = s.query(Directory).filter_by(name="") \
                 .filter_by(project=bigmac).one()
         filenames = [file.name for file in dir.files]
-        assert "bigmac/config.js" in filenames
+        assert "config.js" in filenames
         dirnames = [d.name for d in dir.subdirs]
-        assert 'bigmac/commands/' in dirnames
-        dir = s.query(Directory).filter_by(name="bigmac/commands/") \
+        assert 'commands/' in dirnames
+        dir = s.query(Directory).filter_by(name="commands/") \
                 .filter_by(project=bigmac).one()
         filenames = [file.name for file in dir.files]
-        assert 'bigmac/commands/yourcommands.js' in filenames
+        assert 'commands/yourcommands.js' in filenames
     
     for test in tests:
         yield run_one, test[0], test[1]
@@ -518,7 +521,7 @@ def test_reimport_wipes_out_the_project():
         bigmac.members.append(someone_else)
         flist = fm.list_files(macgyver, bigmac)
         flist = [item.name for item in flist]
-        assert flist == ["bigmac/commands/", "bigmac/config.js", "bigmac/scratchpad/"]
+        assert flist == ["commands/", "config.js", "scratchpad/"]
         
         fm.session.clear()
         
@@ -530,7 +533,7 @@ def test_reimport_wipes_out_the_project():
             os.path.basename(f), handle)
         flist = fm.list_files(macgyver, bigmac)
         flist = [item.name for item in flist]
-        assert flist == ["bigmac/README"]
+        assert flist == ["README"]
         usernames = [user.username for user in bigmac.members]
         assert 'SomeoneElse' in usernames
         
@@ -609,7 +612,7 @@ def test_delete_does_not_affect_other_projects():
     assert len(someone_else.projects) == 3
     flist = fm.list_files(someone_else, bigmac2)
     assert len(flist) == 2
-    assert flist[0].name == "bigmac/bar/"
+    assert flist[0].name == "bar/"
     file_obj = fm.get_file_object(someone_else, bigmac2, "other/myfoo")
     assert str(file_obj.data) == "double bar!"
     try:
@@ -627,7 +630,7 @@ def test_good_file_operations_from_web():
     fm = _get_fm()
     s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
-    fileobj = s.query(File).filter_by(name="bigmac/reqs").one()
+    fileobj = s.query(File).filter_by(name="reqs").one()
     fileobj.created = datetime(2009, 2, 3, 10, 0, 0)
     fileobj.modified = datetime(2009, 2, 4, 11, 30, 30)
     s.commit()
