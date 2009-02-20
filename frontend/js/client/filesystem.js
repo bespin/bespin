@@ -129,6 +129,15 @@ Bespin.FileSystem = Class.create({
         _server.saveFile(project, file.name, file.content, file.lastOp);
     },
 
+    // ** {{{ FileSystem.createProject(project) }}}
+    //
+    // Save a file to the given project
+    //
+    // * {{{project}}} is the name of the project to create
+    createProject: function(project) {
+        _server.saveFile(project, "README.txt", "README for " + project);
+    },
+
     // ** {{{ FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
     //
     // Remove the file from the file system
