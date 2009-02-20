@@ -75,6 +75,11 @@ class BespinResponse(Response):
         self.body = str(e)
         self.environ['bespin.docommit'] = False
 
+def _add_base_headers(response):
+    response.headers['X-Bespin-API'] = API_VERSION
+    response.headers['Cache-Control'] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, private"
+    response.headers['Pragma'] = "no-cache"
+
 def expose(url_pattern, method=None, auth=True):
     """Expose this function to the world, matching the given URL pattern
     and, optionally, HTTP method. By default, the user is required to
@@ -85,11 +90,11 @@ def expose(url_pattern, method=None, auth=True):
         def wrapped(environ, start_response):
             if auth and 'REMOTE_USER' not in environ:
                 response = Response(status='401')
-                response.headers['X-Bespin-API'] = API_VERSION
+                _add_base_headers(response)
                 return response(environ, start_response)
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
-            response.headers['X-Bespin-API'] = API_VERSION
+            _add_base_headers(response)
             try:
                 return func(request, response)
             except model.NotAuthorized, e:
