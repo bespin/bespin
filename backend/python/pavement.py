@@ -54,7 +54,8 @@ options(
         # set to true to allow connections from other machines
         open=False,
         port=8080,
-        try_build=False
+        try_build=False,
+        dburl=None
     )
 )
 
@@ -90,6 +91,10 @@ def start():
     
     if options.server.try_build:
         config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
+    
+    if options.server.dburl:
+        config.c.dburl = options.server.dburl
+    
     config.activate_profile()
     port = int(options.port)
     if options.open in ["True", "true", "yes", "1"]:
