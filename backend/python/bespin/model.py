@@ -146,8 +146,8 @@ class UserManager(object):
 class FileStatus(Base):
     __tablename__ = "filestatus"
     
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    file_id = Column(Integer, ForeignKey('files.id'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id', ondelete='cascade'), primary_key=True)
     read_only = Column(Boolean)
     user = relation(User, backref="files")
     
@@ -155,7 +155,7 @@ class File(Base):
     __tablename__ = "files"
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+    project_id = Column(Integer, ForeignKey('projects.id', ondelete='cascade'), nullable=False)
     project = relation('Project')
     name = Column(String(700), nullable=False)
     created = Column(DateTime, default=datetime.now)
@@ -163,7 +163,7 @@ class File(Base):
     saved_size = Column(Integer)
     data = deferred(Column(Binary))
     edits = deferred(Column(PickleType))
-    dir_id = Column(Integer, ForeignKey('directories.id'))
+    dir_id = Column(Integer, ForeignKey('directories.id', ondelete='cascade'))
     dir = relation('Directory', backref="files")
     
     users = relation(FileStatus,
@@ -192,17 +192,17 @@ class File(Base):
         return "File: %s" % (self.name)
         
 project_members = Table('members', Base.metadata,
-                        Column('project_id', Integer, ForeignKey('projects.id')),
-                        Column('user_id', Integer, ForeignKey('users.id')))
+                        Column('project_id', Integer, ForeignKey('projects.id', ondelete='cascade')),
+                        Column('user_id', Integer, ForeignKey('users.id', ondelete='cascade')))
     
 class Directory(Base):
     __tablename__ = "directories"
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+    project_id = Column(Integer, ForeignKey('projects.id', ondelete='cascade'), nullable=False)
     project = relation('Project', backref="directories")
     name = Column(String(700), nullable=False)
-    parent_id = Column(Integer, ForeignKey('directories.id'))
+    parent_id = Column(Integer, ForeignKey('directories.id', ondelete='cascade'))
     subdirs = relation('Directory', backref=backref("parent", 
                                         remote_side=[id]))
     
@@ -224,7 +224,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(60), nullable=False)
     members = relation("User", secondary=project_members, lazy=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), nullable=False)
     
     __table_args__ = (UniqueConstraint("user_id", "name"), {})
     
