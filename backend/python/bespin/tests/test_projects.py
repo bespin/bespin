@@ -219,6 +219,21 @@ def test_export_zipfile():
     # the extra slash shows up in this context, but does not seem to be a problem
     assert 'bigmac/commands/yourcommands.js' in names
 
+
+# -------
+# Web tests
+# -------
+    
+def test_create_a_project_from_the_web():
+    fm = _get_fm()
+    app.put("/file/at/bigmac/")
+    project_names = [project.name for project in macgyver.projects]
+    assert 'bigmac' in project_names
+    bigmac = fm.get_project(macgyver, macgyver, 'bigmac')
+    s = fm.session
+    filelist = s.query(File).filter_by(project=bigmac).all()
+    assert not filelist
+    
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
     

@@ -375,7 +375,7 @@ class FileManager(object):
             s.add(project)
         return project
         
-    def save_file(self, user, project, path, contents, last_edit=None):
+    def save_file(self, user, project, path, contents=None, last_edit=None):
         """Saves the contents to the file path provided, creating
         directories as needed in between. If last_edit is not provided,
         the file must not be opened for editing. Otherwise, the
@@ -411,6 +411,11 @@ class FileManager(object):
             last_d = d
         if not last_d:
             raise FSException("Unable to get to path %s from the root" % path)
+            
+        # we're actually just creating a directory
+        if path.endswith('/') or not path:
+            return
+            
         subdir_names = [item.name for item in last_d.subdirs]
         if (path + "/") in subdir_names:
             raise FileConflict("Cannot save a file at %s because there is a directory there." % path)
