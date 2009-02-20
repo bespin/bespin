@@ -95,12 +95,12 @@ def test_register_and_verify_user():
                                                     password="notangry"))
     assert resp.content_type == "application/json"
     data = simplejson.loads(resp.body)
-    assert data['project']
+    assert data == {}
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
     fm = user_manager.db.file_manager
     billbixby = user_manager.get_user("BillBixby")
-    sample_project = fm.get_project(billbixby, billbixby, "SampleProjectFor:BillBixby")
+    sample_project = fm.get_project(billbixby, billbixby, "SampleProject")
     file = s.query(File).filter_by(name="readme.txt") \
         .filter_by(project=sample_project).one()
     svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
@@ -116,15 +116,13 @@ def test_register_and_verify_user():
     resp = app.get('/register/userinfo/')
     assert resp.content_type == 'application/json'
     data = simplejson.loads(resp.body)
-    assert 'project' in data
     assert data['username'] == 'BillBixby'
     assert 'quota' in data
     assert data['quota'] == 15000000
     assert 'amountUsed' in data
     
-    project_id = data['project']
-    resp = app.get("/file/at/%s/config.js" % project_id)
-    app.post("/file/close/%s/config.js" % project_id)
+    resp = app.get("/file/at/BespinSettings/config.js")
+    app.post("/file/close/BespinSettings/config.js")
     
 def test_logout():
     s, user_manager = _get_user_manager(True)

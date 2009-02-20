@@ -101,8 +101,8 @@ def test_basic_file_creation():
     assert len(files) == 1
     assert files[0].name == 'reqs'
     proj_names = set([proj.name for proj in macgyver.projects])
-    assert proj_names == set(['bigmac', "SampleProjectFor:MacGyver", 
-                              macgyver.private_project])
+    assert proj_names == set(['bigmac', "SampleProject", 
+                              "BespinSettings"])
     
     # let's update the contents
     fm.save_file(macgyver, bigmac, "reqs", "New content")
@@ -446,8 +446,8 @@ def test_list_top_level():
     assert result_names == ["readme.txt"]
     result = fm.list_files(macgyver)
     result_names = [proj.name for proj in result]
-    assert result_names == [macgyver.private_project,
-                            "SampleProjectFor:MacGyver", "bigmac"]
+    assert result_names == ["BespinSettings",
+                            "SampleProject", "bigmac"]
     
     
 def test_secondary_objects_are_saved_when_creating_new_file():
@@ -666,10 +666,11 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)
-    assert data == [{'name' : 'SampleProjectFor:MacGyver/'}, 
+    assert data == [{'name' : 'BespinSettings/'},
+                    {'name' : 'SampleProject/'}, 
                     {'name' : 'bigmac/'}]
     
-    resp = app.get("/file/list/SampleProjectFor:MacGyver/")
+    resp = app.get("/file/list/SampleProject/")
     data = simplejson.loads(resp.body)
     assert data[1]['name'] == 'index.html'
     
@@ -730,18 +731,6 @@ def test_edit_interface():
     data = simplejson.loads(resp.body)
     assert data == []
     
-def test_private_project_does_not_appear_in_list():
-    fm = _get_fm()
-    resp = app.get("/register/userinfo/")
-    data = simplejson.loads(resp.body)
-    project_name = data['project']
-    app.put("/file/at/%s/foo" % project_name, "BAR!")
-    app.post("/file/close/%s/foo" % project_name)
-    resp = app.get("/file/list/")
-    data = simplejson.loads(resp.body)
-    assert len(data) == 1
-    assert data[0]['name'] == "SampleProjectFor:MacGyver/"
-
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
     
