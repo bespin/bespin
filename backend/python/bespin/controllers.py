@@ -55,12 +55,12 @@ def new_user(request, response):
     user = request.user_manager.create_user(username, password, email)
     
     file_manager = request.file_manager
-    private_project = file_manager.get_project(user, user, 
-                        user.private_project, create=True)
-    file_manager.install_template(user, private_project,
+    settings_project = file_manager.get_project(user, user, 
+                        "BespinSettings", create=True)
+    file_manager.install_template(user, settings_project,
                                           'usertemplate')
     response.content_type = "application/json"
-    response.body = simplejson.dumps(dict(project=user.private_project))
+    response.body = "{}"
     request.environ['paste.auth_tkt.set_user'](username)
     return response()
 
@@ -68,15 +68,12 @@ def new_user(request, response):
 def get_registered(request, response):
     response.content_type = "application/json"
     if request.user:
-        private_project = request.user.private_project
         quota, amount_used = request.user.quota_info()
     else:
-        private_project = None
         quota = None
         amount_used = None
     response.body=simplejson.dumps(
         dict(username=request.username,
-        project=private_project,
         quota=quota, amountUsed=amount_used)
     )
     return response()
@@ -94,13 +91,7 @@ def login(request, response):
     request.environ['paste.auth_tkt.set_user'](username)
     
     response.content_type = "application/json"
-    if request.user:
-        private_project = request.user.private_project
-    else:
-        private_project = None
-    response.body=simplejson.dumps(
-        dict(project=private_project)
-    )
+    response.body="{}"
     return response()
 
 @expose(r'^/register/logout/$')
@@ -232,11 +223,8 @@ def listfiles(request, response):
         project = fm.get_project(user, user, project)
     
     files = fm.list_files(user, project, path)
-    pp = user.private_project
     result = []
     for item in files:
-        if item.name == pp:
-            continue
         f = {'name' : item.short_name}
         _populate_stats(item, f)
         result.append(f)
