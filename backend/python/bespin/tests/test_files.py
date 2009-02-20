@@ -334,6 +334,7 @@ def test_directory_deletion():
     fm.save_file(macgyver, bigmac, "foo/bar", "data")
     fm.save_file(macgyver, bigmac, "foo/blorg", "moredata")
     fm.delete(macgyver, bigmac, "foo/")
+    fm.session.clear()
     flist = fm.list_files(macgyver, bigmac)
     assert len(flist) == 1
     assert flist[0].name == 'whiz/'
