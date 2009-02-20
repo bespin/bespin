@@ -59,7 +59,7 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.1",
+        number="0.1.2",
         name="Naughty Nimbus",
         api="1"
     ),
