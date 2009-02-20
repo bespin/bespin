@@ -479,6 +479,20 @@ def test_delete_does_not_affect_other_projects():
     except model.FileNotFound:
         pass
         
+def test_save_file_can_create_directory():
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar/")
+    flist = fm.list_files(macgyver, bigmac)
+    assert len(flist) == 1
+    assert flist[0].name == "foo/"
+    flist = fm.list_files(macgyver, bigmac, "foo/")
+    assert len(flist) == 1
+    assert flist[0].name == "foo/bar/"
+    s = fm.session
+    file_obj = s.query(File).filter_by(name='foo/bar/').first()
+    print file_obj
+    assert file_obj is None, "No file should have been created"
 
 # -------
 # Web tests
