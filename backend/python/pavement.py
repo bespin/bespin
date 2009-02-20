@@ -179,10 +179,12 @@ def production():
     requirement_pattern = re.compile(r'^(.*)==')
     
     i = 0
+    found_packages = set()
     while i < len(lines):
         rmatch = requirement_pattern.match(lines[i])
         if rmatch:
             name = rmatch.group(1)
+            found_packages.add(name)
             deleted = False
             for npp in non_production_packages:
                 if name == npp:
@@ -194,7 +196,8 @@ def production():
         i+=1
     
     lines.append("libs/BespinServer-%s.tar.gz" % options.version)
-    lines.append("MySQL-python")
+    if "MySQL-python" not in found_packages:
+        lines.append("MySQL-python")
     lines.extend(external_libs)
     production_requirements.write_lines(lines)
     
