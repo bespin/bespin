@@ -52,7 +52,7 @@ var _showCollabHotCounter = 0;
 // ** {{{ window.load time }}} **
 //
 // Loads and configures the objects that the editor needs
-Element.observe(window, 'load', function() {
+Event.observe(document, "dom:loaded", function() {
     _editor      = new Bespin.Editor.API($('editor'));
     _editSession = new Bespin.Session.EditSession(_editor);
     _server      = new Bespin.Server();
