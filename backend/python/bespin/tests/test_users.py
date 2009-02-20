@@ -98,7 +98,11 @@ def test_register_and_verify_user():
     assert data['project']
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    file = s.query(File).filter_by(name="SampleProjectFor:BillBixby/readme.txt").one()
+    fm = user_manager.db.file_manager
+    billbixby = user_manager.get_user("BillBixby")
+    sample_project = fm.get_project(billbixby, billbixby, "SampleProjectFor:BillBixby")
+    file = s.query(File).filter_by(name="readme.txt") \
+        .filter_by(project=sample_project).one()
     svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
     assert not svnfiles
     
@@ -181,4 +185,9 @@ def test_bad_ticket_is_ignored():
                                         email="a@b.com"))
     app.cookies['auth_tkt'] = app.cookies['auth_tkt'][:-1]
     resp = app.get("/preview/at/SampleProjectFor%3AAldus/index.html", status=401)
-    
+
+def test_api_version_header():
+    app = controllers.make_app()
+    app = TestApp(app)    
+    resp = app.get("/register/userinfo/", status=401)
+    assert resp.headers.get("X-Bespin-API") == "dev"

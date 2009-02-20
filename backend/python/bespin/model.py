@@ -42,7 +42,7 @@ import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
-                    DateTime, func)
+                    DateTime, func, UniqueConstraint)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -140,8 +140,11 @@ class UserManager(object):
             self.session.flush()
         except DBAPIError:
             raise ConflictError("Username %s is already in use" % username)
-        self.db.file_manager.install_template(user,
-                                "SampleProjectFor:%s" % username)
+        
+        file_manager = self.db.file_manager
+        project = file_manager.get_project(user, user, 
+                    "SampleProjectFor:%s" % username, create=True)
+        file_manager.install_template(user, project)
         return user
         
     def get_user(self, username):
@@ -161,7 +164,9 @@ class File(Base):
     __tablename__ = "files"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(700), unique=True)
+    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+    project = relation('Project')
+    name = Column(String(700), nullable=False)
     created = Column(DateTime, default=datetime.now)
     modified = Column(DateTime, onupdate=datetime.now)
     saved_size = Column(Integer)
@@ -172,10 +177,16 @@ class File(Base):
     
     users = relation(FileStatus,
                      backref="file")
+                     
+    __table_args__ = (UniqueConstraint("project_id", "name"), {})
     
     @property
     def short_name(self):
-        return self.name.rsplit("/", 1)[1]
+        elems = self.name.rsplit("/", 1)
+        if len(elems) == 1:
+            return self.name
+        else:
+            return elems[1]
         
     @property
     def mimetype(self):
@@ -197,10 +208,15 @@ class Directory(Base):
     __tablename__ = "directories"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(700), unique=True)
+    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+    project = relation('Project', backref="directories")
+    name = Column(String(700), nullable=False)
     parent_id = Column(Integer, ForeignKey('directories.id'))
     subdirs = relation('Directory', backref=backref("parent", 
                                         remote_side=[id]))
+    
+    __table_args__ = (UniqueConstraint("project_id", "name"), {})
+    
     
     @property
     def short_name(self):
@@ -215,9 +231,11 @@ class Project(Base):
     __tablename__ = "projects"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(60), unique=True)
+    name = Column(String(60), nullable=False)
     members = relation("User", secondary=project_members, lazy=False)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    __table_args__ = (UniqueConstraint("user_id", "name"), {})
     
     def authorize(self, user):
         log.debug("Checking user %s access to project %s owned by %s with members %s",
@@ -251,7 +269,15 @@ class Project(Base):
         return "Project(name=%s)" % (self.name)
 
 
-_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])    
+_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
+
+def _cmp_files_in_project(fs1, fs2):
+    file1 = fs1.file
+    file2 = fs2.file
+    proj_diff = cmp(file1.project.name, file2.project.name)
+    if not proj_diff:
+        return cmp(file1.name, file2.name)
+    return proj_diff
 
 class FileManager(object):
     def __init__(self, session):
@@ -262,8 +288,7 @@ class FileManager(object):
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
         
-        project, file_obj = \
-            self._check_and_get_file(user, project, path)
+        file_obj = self._check_and_get_file(user, project, path)
         self._save_status(file_obj, user, mode)
         
         contents = str(file_obj.data)
@@ -271,12 +296,11 @@ class FileManager(object):
         
     def _check_and_get_file(self, user, project, path):
         """Returns the project, user object, file object."""
-        project = self.get_project(user, project)
         s = self.session
-        full_path = project.name + "/" + path
         
         try:
-            file_obj = s.query(File).filter_by(name=full_path).one()
+            file_obj = s.query(File).filter_by(name=path) \
+                        .filter_by(project=project).one()
         except NoResultFound:
             raise FileNotFound("File %s in project %s does not exist" 
                                 % (path, project.name))
@@ -285,13 +309,12 @@ class FileManager(object):
             raise FileNotFound("File %s in project %s does not exist" 
                                 % (path, project.name))
         
-        return project, file_obj
+        return file_obj
         
     def get_file_object(self, user, project, path):
         """Retrieves the File instance from the project at the
         path provided."""
-        project, file_obj = \
-            self._check_and_get_file(user, project, path)
+        file_obj = self._check_and_get_file(user, project, path)
         return file_obj
     
     def _save_status(self, file_obj, user_obj, mode="rw"):
@@ -321,25 +344,22 @@ class FileManager(object):
         owned by the user."""
         if not project:
             return sorted(user.projects, key=lambda proj: proj.name)
-        project = self.get_project(user, project)
-        full_path = project.name + "/" + path
         try:
-            dir = self.session.query(Directory).filter_by(name=full_path).one()
+            dir = self.session.query(Directory).filter_by(name=path) \
+                    .filter_by(project=project).one()
         except NoResultFound:
-            raise FileNotFound(full_path)
+            raise FileNotFound(path)
         
         result = set(dir.subdirs)
         result.update(set(dir.files))
         return sorted(result, key=lambda item: item.name)
         
-    def get_project(self, user, project_name, create=False, clean=False):
+    def get_project(self, user, owner, project_name, create=False, 
+                    clean=False):
         """Retrieves the project object, optionally creating it if it
         doesn't exist. Additionally, this will verify that the
         user is authorized for the project. If the project_name is
         actually a project object, that object is simply returned."""
-        
-        if isinstance(project_name, Project):
-            return project_name
         
         s = self.session
         
@@ -349,7 +369,8 @@ class FileManager(object):
             create = True
         
         try:
-            project = s.query(Project).filter_by(name=project_name).one()
+            project = s.query(Project).filter_by(name=project_name)\
+                        .filter_by(owner=owner).one()
             project.authorize(user)
             if clean:
                 # a clean project has been requested, so we will delete its
@@ -369,15 +390,12 @@ class FileManager(object):
         the file must not be opened for editing. Otherwise, the
         last_edit parameter should include the last edit ID received by
         the user."""
-        project = self.get_project(user, project, create=True)
-        
         saved_size = len(contents) if contents is not None else 0
         if not user.check_save(saved_size):
             raise OverQuota()
         
         s = self.session
-        full_path = project.name + "/" + path
-        segments = full_path.split("/")
+        segments = path.split("/")
         fn = segments[-1]
         
         # temporary step to replace tabs with 4 spaces.
@@ -386,32 +404,36 @@ class FileManager(object):
             contents = contents.replace("\t", "    ")
         
         last_d = None
-        
-        for i in range(1, len(segments)):
-            segment = "/".join(segments[0:i]) + "/"
+        for i in range(0, len(segments)):
+            if i == 0:
+                segment = ""
+            else:
+                segment = "/".join(segments[0:i]) + "/"
             try:
-                d = s.query(Directory).filter_by(name=segment).one()
+                d = s.query(Directory).filter_by(name=segment) \
+                        .filter_by(project=project).one()
             except NoResultFound:
-                d = Directory(name=segment)
+                d = Directory(name=segment, project=project)
                 s.add(d)
                 if last_d:
                     last_d.subdirs.append(d)
             last_d = d
         if not last_d:
-            raise FSException("Unable to get to path %s from the root" % full_path)
+            raise FSException("Unable to get to path %s from the root" % path)
         subdir_names = [item.name for item in last_d.subdirs]
-        if (full_path + "/") in subdir_names:
-            raise FileConflict("Cannot save a file at %s because there is a directory there." % full_path)
+        if (path + "/") in subdir_names:
+            raise FileConflict("Cannot save a file at %s because there is a directory there." % path)
         
         try:
-            file = s.query(File).filter_by(name=full_path).one()
+            file = s.query(File).filter_by(name=path) \
+                    .filter_by(project=project).one()
             file.data = contents
             size_change = saved_size - file.saved_size
             user.amount_used += size_change
             file.saved_size = saved_size
         except NoResultFound:
-            file = File(name=full_path, dir=last_d, data=contents,
-                        saved_size=saved_size)
+            file = File(name=path, dir=last_d, data=contents,
+                        saved_size=saved_size, project=project)
             user.amount_used += saved_size
             s.add(file)
             
@@ -423,8 +445,10 @@ class FileManager(object):
         output = {}
         current_files = None
         last_proj = None
-        for fs in sorted(user.files, key=lambda item: item.file.name):
-            project, path = fs.file.name.split("/", 1)
+        for fs in sorted(user.files, cmp=_cmp_files_in_project):
+            file = fs.file
+            path = file.name
+            project = file.project.name
             if project != last_proj:
                 last_proj = project
                 current_files = {}
@@ -436,11 +460,10 @@ class FileManager(object):
         
     def close(self, user, project, path):
         """Close the file for the given user"""
-        project = self.get_project(user, project)
         s = self.session
-        full_path = project.name + "/" + path
         try:
-            file_obj = s.query(File).filter_by(name=full_path).one()
+            file_obj = s.query(File).filter_by(name=path) \
+                .filter_by(project=project).one()
         except NoResultFound:
             return
             
@@ -457,26 +480,31 @@ class FileManager(object):
         open, a FileConflict is raised. If the path is a directory,
         the directory and everything underneath it will be deleted.
         If the path is empty, the project will be deleted."""
-        project = self.get_project(user, project)
         s = self.session
-        full_path = project.name + "/" + path
-        if full_path.endswith("/"):
+        if not path or path.endswith("/"):
             try:
-                dir_obj = s.query(Directory).filter_by(name=full_path).one()
+                dir_obj = s.query(Directory).filter_by(name=path) \
+                            .filter_by(project=project).one()
             except NoResultFound:
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project.name))
                 
             if dir_obj.parent:
                 dir_obj.parent.subdirs.remove(dir_obj)
-            s.query(Directory).filter(Directory.name.like(full_path + "%")).delete()
+            s.query(Directory).filter(Directory.name.like(path + "%")) \
+                    .filter_by(project=project).delete()
             file_space = s.query(func.sum(File.saved_size)) \
-                            .filter(File.name.like(full_path + "%")).one()[0]
+                            .filter(File.name.like(path + "%")) \
+                            .filter_by(project=project).one()[0]
             user.amount_used -= file_space
-            s.query(File).filter(File.name.like(full_path + "%")).delete()
+            s.query(File).filter(File.name.like(path + "%")) \
+                .filter_by(project=project).delete()
+            if not path:
+                s.delete(project)
         else:
             try:
-                file_obj = s.query(File).filter_by(name=full_path).one()
+                file_obj = s.query(File).filter_by(name=path) \
+                    .filter_by(project=project).one()
             except NoResultFound:
                 raise FileNotFound("File %s not found in project %s" %
                                     (path, project.name))
@@ -494,13 +522,12 @@ class FileManager(object):
             s.delete(file_obj)
         
     def save_edit(self, user, project, path, edit):
-        project = self.get_project(user, project, create=True)
-        full_path = project.name + "/" + path
         s = self.session
         try:
-            file_obj = s.query(File).filter_by(name=full_path).one()
+            file_obj = s.query(File).filter_by(name=path) \
+                .filter_by(project=project).one()
         except NoResultFound:
-            file_obj = self.save_file(user, project.name, path, None)
+            file_obj = self.save_file(user, project, path, None)
         
         if file_obj.edits is None:
             file_obj.edits = []
@@ -510,10 +537,9 @@ class FileManager(object):
         self._save_status(file_obj, user, "rw")
         
     def list_edits(self, user, project, path, start_at=0):
-        project = self.get_project(user, project)
-        full_path = project.name + "/" + path
         try:
-            file_obj = self.session.query(File).filter_by(name=full_path).one()
+            file_obj = self.session.query(File).filter_by(name=path) \
+                .filter_by(project=project).one()
         except NoResultFound:
             raise FileNotFound("File %s in project %s does not exist"
                     % (path, project.name))
@@ -521,7 +547,7 @@ class FileManager(object):
         if start_at:
             if start_at >= len(edits):
                 raise FSException("%s only has %s edits (after %s requested)"
-                    % (full_path, len(edits), start_at))
+                    % (path, len(edits), start_at))
             edits = edits[start_at:]
         return edits
         
@@ -529,14 +555,12 @@ class FileManager(object):
         if not project or not path:
             for fs in user.files[:]:
                 file_obj = fs.file
-                project, path = file_obj.name.split("/", 1)
-                self.reset_edits(user, project, path)
+                self.reset_edits(user, file_obj.project, file_obj.name)
             return
-        project = self.get_project(user, project)
-        full_path = project.name + "/" + path
         s = self.session
         try:
-            file_obj = s.query(File).filter_by(name=full_path).one()
+            file_obj = s.query(File).filter_by(name=path) \
+                        .filter_by(project=project).one()
         except NoResultFound:
             return
         file_obj.edits = []
@@ -552,7 +576,6 @@ class FileManager(object):
         """Installs a set of template files into a new project."""
         log.debug("Installing template %s for user %s as project %s",
                 template, user, project)
-        project = self.get_project(user, project, create=True)
         source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -569,20 +592,17 @@ class FileManager(object):
                 
     def authorize_user(self, user, project, auth_user):
         """Allow auth_user to access project which is owned by user."""
-        project = self.get_project(user, project)
         project.authorize_user(user, auth_user)
         
     def unauthorize_user(self, user, project, auth_user):
         """Disallow auth_user from accessing project_name which is owned
         by user."""
-        project = self.get_project(user, project)
         project.unauthorize_user(user, auth_user)
         
     def import_tarball(self, user, project, filename, file_obj):
         """Imports the tarball in the file_obj into the project
         project owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project, clean=True)
         pfile = tarfile.open(filename, fileobj=file_obj)
         max_import_file_size = config.c.max_import_file_size
         info = list(pfile)
@@ -604,7 +624,6 @@ class FileManager(object):
         """Imports the zip file in the file_obj into the project
         project owned by user. If the project already exists,
         IT WILL BE WIPED OUT AND REPLACED."""
-        project = self.get_project(user, project, clean=True)
         max_import_file_size = config.c.max_import_file_size
         
         pfile = zipfile.ZipFile(file_obj)
@@ -627,18 +646,17 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project = self.get_project(user, project)
         temporaryfile = tempfile.NamedTemporaryFile()
         s = self.session
         
         mtime = time.time()
         tfile = tarfile.open(temporaryfile.name, "w:gz")
         
-        dirs = s.query(Directory).filter(Directory.name.like(project.name + "/%")) \
-                        .order_by(Directory.name).all()
+        dirs = s.query(Directory) \
+                        .filter_by(project=project).order_by(Directory.name).all()
                         
         for dir in dirs:
-            tarinfo = tarfile.TarInfo(str(dir.name))
+            tarinfo = tarfile.TarInfo(str(project.name + "/" + dir.name))
             tarinfo.type = tarfile.DIRTYPE
             # we don't know the original permissions.
             # we'll default to read/execute for all, write only by user
@@ -646,7 +664,7 @@ class FileManager(object):
             tarinfo.mtime = mtime
             tfile.addfile(tarinfo)
             for file in dir.files:
-                tarinfo = tarfile.TarInfo(str(file.name))
+                tarinfo = tarfile.TarInfo(str(project.name + "/" + file.name))
                 tarinfo.mtime = mtime
                 # we don't know the original permissions.
                 # we'll default to read for all, write only by user
@@ -670,17 +688,16 @@ class FileManager(object):
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
-        project = self.get_project(user, project)
         temporaryfile = tempfile.NamedTemporaryFile()
         s = self.session
         
         zfile = zipfile.ZipFile(temporaryfile, "w", zipfile.ZIP_DEFLATED)
         ztime = time.gmtime()[:6]
         
-        files = s.query(File).filter(File.name.like(project.name + "/%")) \
-                    .order_by(File.name).all()
+        files = s.query(File) \
+                    .filter_by(project=project).order_by(File.name).all()
         for file in files:
-            zipinfo = zipfile.ZipInfo(str(file.name))
+            zipinfo = zipfile.ZipInfo(str(project.name + "/" + file.name))
             # we don't know the original permissions.
             # we'll default to read for all, write only by user
             zipinfo.external_attr = 420 << 16L
@@ -700,7 +717,7 @@ class FileManager(object):
         total = 0
         for project in user.projects:
             total += s.query(func.sum(File.saved_size)) \
-                            .filter(File.name.like(project.name + "/%")).one()[0]
+                            .filter_by(project=project).one()[0]
         user.amount_used = total
         
 def _find_common_base(member_names):
