@@ -12,14 +12,14 @@ options(
 @task
 def setup():
     """Get this production environment setup."""
-    from bespin import config, model, db_versions
-    from migrate.versioning.shell import main
-
     sh("bin/pip install -r requirements.txt")
     print "Don't forget to run the database upgrade! (paver db)"
     
 @task
 def db():
+    from bespin import config, model, db_versions
+    from migrate.versioning.shell import main
+
     execfile("../wsgi-apps/bespin.wsgi", {'__file__' : '/home/wsgiapps/wsgi-apps/bespin.wsgi'})
     
     repository = str(path(db_versions.__file__).dirname())
