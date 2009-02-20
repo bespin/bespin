@@ -480,13 +480,12 @@ class FileManager(object):
                 raise FileNotFound("Directory %s not found in project %s" %
                                     (path, project.name))
                 
-            if dir_obj.parent:
-                dir_obj.parent.subdirs.remove(dir_obj)
-            s.query(Directory).filter(Directory.name.like(path + "%")) \
-                    .filter_by(project=project).delete()
             file_space = s.query(func.sum(File.saved_size)) \
                             .filter(File.name.like(path + "%")) \
                             .filter_by(project=project).one()[0]
+            q = s.query(Directory).filter(Directory.name.like(path + "%")) \
+                    .filter_by(project=project)
+            q.delete()
             user.amount_used -= file_space
             s.query(File).filter(File.name.like(path + "%")) \
                 .filter_by(project=project).delete()
