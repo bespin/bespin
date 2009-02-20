@@ -49,7 +49,7 @@ Bespin.Session.EditSession = Class.create({
     
     projectForDisplay: function(testProject) {
         var project = testProject || this.project;
-        return (project == this.userproject) ? "* Your Special Project *" : project;
+        return project;
     },
     
     checkSameFile: function(project, path) {
