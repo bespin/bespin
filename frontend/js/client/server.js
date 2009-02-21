@@ -205,7 +205,7 @@ Bespin.Server = Class.create({
     saveFile: function(project, path, contents, lastOp) {
         if (!project || !path) return;
 
-        var url = '/file/at/' + project + '/' + (path || '');
+        var url = Bespin.Path.combine('/file/at', project, (path || ''));
         if (lastOp) url += "?lastEdit=" + lastOp;
 
         this.request('PUT', url, contents, { log: 'Saved file.' });
@@ -241,6 +241,53 @@ Bespin.Server = Class.create({
         var opts = { call: onSuccess };
         if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
         
+        this.request('DELETE', url, null, opts);
+    },
+
+    // ** {{{ makeDirectory(project, path, onSuccess, onFailure) }}}
+    //
+    // Create a new directory
+    // 
+    // * {{{project}}} is the project to save
+    // * {{{path}}} is the path to save to
+    // * {{{onSuccess}}} fires if the deletion works
+    // * {{{onFailure}}} fires if the deletion failed
+    makeDirectory: function(project, path, onSuccess, onFailure) {
+        if (!project) return;
+
+        var url = Bespin.Path.combineAsDirectory('/file/at', project, (path || ''));
+        var opts = {};
+        if (Object.isFunction(onSuccess)) {
+            opts.call = onSuccess;
+        } else {
+            opts['log'] = "Made a directory: [project=" + project + ", path=" + path + "]";
+        }
+        if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
+
+        this.request('PUT', url, null, opts);
+    },
+    
+    // ** {{{ removeDirectory(project, path, onSuccess, onFailure) }}}
+    //
+    // Removed a directory
+    // 
+    // * {{{project}}} is the project to save
+    // * {{{path}}} is the path to save to
+    // * {{{onSuccess}}} fires if the deletion works
+    // * {{{onFailure}}} fires if the deletion failed
+    removeDirectory: function(project, path, onSuccess, onFailure) {
+        if (!project) return;
+        if (!path) path = '';
+        
+        var url = Bespin.Path.combineAsDirectory('/file/at', project, path);
+        var opts = {};
+        if (Object.isFunction(onSuccess)) {
+            opts.call = onSuccess;
+        } else {
+            opts['log'] = "Removed directory: [project=" + project + ", path=" + path + "]";
+        }
+        if (Object.isFunction(onFailure)) opts.onFailure = onFailure;
+
         this.request('DELETE', url, null, opts);
     },
 
@@ -354,6 +401,18 @@ Bespin.Server = Class.create({
         
         this.request('POST', '/project/fromurl/' + project, url, opts || {});
     },
+    
+    // ** {{{ renameProject(currentProject, newProject) }}}
+    //
+    // Import the given file into the given project
+    // 
+    // * {{{currentProject}}} is the current name of the project
+    // * {{{newProject}}} is the new name
+    renameProject: function(currentProject, newProject) {
+        if (currentProject && newProject) {
+            this.request('POST', '/project/rename/' + currentProject, newProject);
+        }
+    }    
 
     // == SETTINGS ==
     //
