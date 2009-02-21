@@ -491,7 +491,10 @@ class FileManager(object):
             q = s.query(Directory).filter(Directory.name.like(path + "%")) \
                     .filter_by(project=project)
             q.delete()
-            user.amount_used -= file_space
+            
+            if file_space is not None:
+                user.amount_used -= file_space
+                
             s.query(File).filter(File.name.like(path + "%")) \
                 .filter_by(project=project).delete()
             if not path:
