@@ -31,6 +31,6 @@ if (!Bespin.Commands) Bespin.Commands = {};
 
 Bespin.Commands.Dashboard = [
     'help', 'files', 'set', 'projects', 'version', 'bespin', 
-    'import', 'export', 'alias', 'history', 'createproject', 'deleteproject',
-    'mkdir'
+    'import', 'export', 'alias', 'history', 'mkdir',
+    'createproject', 'deleteproject', 'renameproject'
 ];
