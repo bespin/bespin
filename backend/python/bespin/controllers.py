@@ -474,12 +474,15 @@ def make_app():
     register("^/docs/code/", code_app)
     register("^/docs/", docs_app)
     
+    from paste.cascade import Cascade
+    
     app = URLRelay()
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
                 include_ip=False, httponly=True,
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
-    app = default_to_static(app, static_app)
+    # app = default_to_static(app, static_app)
+    app = Cascade([app, static_app])
     
     return app
