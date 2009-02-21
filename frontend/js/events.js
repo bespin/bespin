@@ -186,19 +186,26 @@ document.observe("bespin:editor:config:run", function(event) {
     // 1. load the file
     //   project: _editSession.userproject,
     //   filename: "config.js"
-    // 2. Take the contents and run each line as a command 
+    // 2. Take the contents and eval the code with a nice scope
     _files.loadFile(_editSession.userproject, "config.js", function(file) {
-        var contents = file.content.split(/\n/);
+        var scope = {
+            Bespin: Bespin
+        };
 
-        contents.each(function(line) {
-            if (line.startsWith('/') || line.startsWith('#')) return;
-            line = line.replace(/#.*$/, ''); // nuke inline comment (e.g. "version    # get the current version")
-            var command = line.split(' ');
-            var commandname = command.first();
-            if (_commandLine.hasCommand(commandname)) {
-                _commandLine.executeCommand(line);
+        if (typeof _commandLine != "undefined") scope.commandLine = _commandLine;
+        if (typeof _editor != "undefined")      scope.editor = _editor;
+        if (typeof _editSession != "undefined") scope.editSession = _editSession;
+        if (typeof _files != "undefined")       scope.files = _files;        
+        if (typeof _server != "undefined")      scope.server = _server;
+        if (typeof _toolbar != "undefined")     scope.toolbar = _toolbar;
+        
+        with (scope) { // wow, using with. crazy.
+            try {
+                eval(file.content);
+            } catch (e) {
+                _commandLine.showInfo("There is a error in your config.js:<br><br>" + e);
             }
-        });
+        }
     }, true);
 });
 
@@ -323,9 +330,16 @@ document.observe("bespin:project:delete", function(event) {
 document.observe("bespin:project:rename", function(event) {
     var currentProject = event.memo.currentProject;
     var newProject = event.memo.newProject;
-    if (!currentProject || !newProject) return;
+    if ( (!currentProject || !newProject) || (currentProject == newProject) ) return;
     
-    _server.renameProject(currentProject, newProject);
+    _server.renameProject(currentProject, newProject, {
+        call: function() {
+            document.fire("bespin:project:set", { project: newProject });
+        },
+        onFailure: function(xhr) {
+            document.fire("bespin:cmdline:showinfo", { msg: 'Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>", autohide: true });
+        }
+    });
 });
 
 

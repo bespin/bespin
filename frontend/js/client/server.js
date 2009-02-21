@@ -408,9 +408,10 @@ Bespin.Server = Class.create({
     // 
     // * {{{currentProject}}} is the current name of the project
     // * {{{newProject}}} is the new name
-    renameProject: function(currentProject, newProject) {
+    renameProject: function(currentProject, newProject, opts) {
+        if (!opts) opts = { log: "Renaming project from " + currentProject + " to " + newProject };
         if (currentProject && newProject) {
-            this.request('POST', '/project/rename/' + currentProject, newProject);
+            this.request('POST', '/project/rename/' + currentProject + "/", newProject, opts);
         }
     },
 
