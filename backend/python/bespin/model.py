@@ -715,6 +715,13 @@ class FileManager(object):
                             .filter_by(project=project).one()[0]
         user.amount_used = total
         
+    def rename(self, user, project, path, new_name):
+        """Right now, path is ignored and this just renames the project
+        to new_name."""
+        segments = new_name.split('/')
+        project.name = segments[0]
+        
+        
 def _find_common_base(member_names):
     base = None
     base_len = None

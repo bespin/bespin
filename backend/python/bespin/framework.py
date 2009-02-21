@@ -100,6 +100,7 @@ def expose(url_pattern, method=None, auth=True):
             except model.NotAuthorized, e:
                 response.error("401 Not Authorized", e)
             except model.FileNotFound, e:
+                environ['bespin.good_url_but_not_found'] = True
                 response.error("404 Not Found", e)
             except model.FileConflict, e:
                 response.error("409 Conflict", e)
@@ -113,4 +114,4 @@ def expose(url_pattern, method=None, auth=True):
                 response.error("400 Bad Request", e)
             return response()
     return entangle
-
+    
