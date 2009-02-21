@@ -281,12 +281,17 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
             this.lastAction = action;
         }
 
+
         // If a special key is pressed OR if an action is assigned to a given key (e.g. TAB or BACKSPACE)
-        if (e.metaKey || e.ctrlKey || e.altKey || hasAction) {
+        var special = false;        
+        if (e.metaKey || e.ctrlKey || e.altKey) {
             this.skipKeypress = true;
             this.returnValue = true;
-            if (hasAction || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e); // stop going, but allow special strokes to get to the browser
+            special = true;
         }
+
+        // stop going, but allow special strokes to get to the browser
+        if (hasAction || special || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e);
     },
 
     onkeypress: function(e) {
