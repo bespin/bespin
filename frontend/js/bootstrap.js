@@ -118,7 +118,6 @@ Event.observe(document, "dom:loaded", function() {
 //
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
-    _editSession.userproject = "BespinSettings"; // the special user project
     _editSession.username = userinfo.username;
     
     _settings    = new Bespin.Settings.Core();
