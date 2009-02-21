@@ -411,6 +411,18 @@ def preview_file(request, response):
     response.content_type = file_obj.mimetype
     return response()
     
+@expose(r'^/project/rename/(?P<project_name>.+)/$', 'POST')
+def rename_project(request, response):
+    fm = request.file_manager
+    user = request.user
+    
+    project_name = request.kwargs['project_name']
+    project = fm.get_project(user, user, project_name)
+    fm.rename(user, project, "", request.body)
+    response.body = ""
+    response.content_type = "text/plain"
+    return response()
+    
 def db_middleware(app):
     def wrapped(environ, start_response):
         from bespin import model
@@ -440,7 +452,16 @@ def pathpopper_middleware(app, num_to_pop=1):
             req.path_info_pop()
         return app(environ, start_response)
     return new_app
-    
+
+def default_to_static(dynamic_app, static_app):
+    def new_app(environ, start_response):
+        def wrapped_sr(status, headers, exc_info=None):
+            if "bespin.good_url_but_not_found" not in environ \
+                and status.startswith("404"):
+                return static_app(environ, start_response)
+            return start_response(status, headers, exc_info)
+        return dynamic_app(environ, wrapped_sr)
+    return new_app
 
 def make_app():
     from webob import Response
@@ -453,13 +474,12 @@ def make_app():
     register("^/docs/code/", code_app)
     register("^/docs/", docs_app)
     
-    from paste.cascade import Cascade
     app = URLRelay()
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
                 include_ip=False, httponly=True,
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
-    app = Cascade([app, static_app])
+    app = default_to_static(app, static_app)
     
     return app
