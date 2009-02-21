@@ -226,6 +226,14 @@ def test_directory_shortname_computed_to_have_last_dir():
     shortname = d.short_name
     assert shortname == "bar/"
     
+def test_can_delete_empty_directory():
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar/")
+    fm.delete(macgyver, bigmac, "foo/bar/")
+    s = fm.session
+    flist = s.query(File).filter_by(project=bigmac).all()
+    assert len(flist) == 0
     
 def test_delete_raises_file_not_found():
     fm = _get_fm()
