@@ -147,7 +147,7 @@ Bespin.Editor.Actions = Class.create({
 
     moveToFileBottom: function(args) {
         this.editor.cursorPosition.row = this.editor.model.getRowCount() - 1;
-        this.editor.cursorPosition.col = this.editor.model.getRowLength(args.pos.row);
+        this.editor.cursorPosition.col = this.editor.model.getRowLength(this.editor.cursorPosition.row);
 
         this.handleCursorSelection(args);
         this.repaint();
