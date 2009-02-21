@@ -186,7 +186,7 @@ Bespin.Commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            document.fire("bespin:editor:project:set", { project: projectname });
+            document.fire("bespin:project:set", { project: projectname });
         } else {
             self.executeCommand('status');
         }
@@ -208,7 +208,7 @@ Bespin.Commands.add({
     }
 });
 
-// ** {{{Command: projects}}} **
+// ** {{{Command: createproject}}} **
 Bespin.Commands.add({
     name: 'createproject',
     takes: ['projectname'],
@@ -219,7 +219,56 @@ Bespin.Commands.add({
             self.showUsage(this);
             return;
         }
-        document.fire("bespin:editor:project:create", { project: projectname });
+        document.fire("bespin:project:create", { project: projectname });
+    }
+});
+
+// ** {{{Command: createproject}}} **
+Bespin.Commands.add({
+    name: 'deleteproject',
+    takes: ['projectname'],
+    preview: 'delete a new project',
+    usage: 'deleteproject [newprojectname]',
+    execute: function(self, projectname) {
+        if (!projectname) {
+            self.showUsage(this);
+            return;
+        }
+        document.fire("bespin:project:delete", { project: projectname });
+    }
+});
+
+// ** {{{Command: renameproject}}} **
+Bespin.Commands.add({
+    name: 'renameproject',
+    takes: ['currentProject', 'newProject'],
+    preview: 'rename a project',
+    usage: 'renameproject [currentProject], [newProject]',
+    execute: function(self, args) {
+        if (!args.currentProject || !args.newProject) {
+            self.showUsage(this);
+            return;
+        }
+        document.fire("bespin:project:rename", { currentProject: args.currentProject, newProject: args.newProject });
+    }
+});
+
+// ** {{{Command: mkdir}}} **
+Bespin.Commands.add({
+    name: 'mkdir',
+    takes: ['path', 'projectname'],
+    preview: 'create a new directory in the given project',
+    usage: 'mkdir [path] [projectname]',
+    execute: function(self, args) {
+        if (!args.path) {
+            self.showUsage(this);
+            return;
+        }
+        
+        var opts = { path: args.path };
+        if (args.projectname) opts.project = args.projectname;
+        
+        document.fire("bespin:directory:create", opts);
     }
 });
 

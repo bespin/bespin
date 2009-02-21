@@ -29,4 +29,8 @@ if (!Bespin.Commands) Bespin.Commands = {};
 //
 // This array stores all of the dashboard commands.
 
-Bespin.Commands.Dashboard = ['help', 'files', 'set', 'projects', 'version', 'bespin', 'import', 'export', 'alias', 'history', 'createproject'];
+Bespin.Commands.Dashboard = [
+    'help', 'files', 'set', 'projects', 'version', 'bespin', 
+    'import', 'export', 'alias', 'history', 'createproject', 'deleteproject',
+    'mkdir'
+];

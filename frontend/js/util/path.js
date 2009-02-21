@@ -64,6 +64,29 @@ Bespin.Path = {
         }
     },
 
+    // ** {{{ Bespin.Path.makeDirectory }}} **
+    //
+    // Given a {{{path}}} make sure that it returns as a directory 
+    // (As in, ends with a '/')
+    //
+    // * makeDirectory("/path/to/directory") -> /path/to/directory/
+    // * makeDirectory("/path/to/directory/") -> /path/to/directory/
+    makeDirectory: function(path) {
+        if (!path.endsWith('/')) path += '/';
+        return path;
+    },
+
+    // ** {{{ Bespin.Path.combineAsDirectory }}} **
+    //
+    // Take the given arguments and combine them with one path seperator and
+    // then make sure that you end up with a directory
+    //
+    // * combine("foo", "bar") -> foo/bar/
+    // * combine(" foo/", "/bar  ") -> foo/bar/
+    combineAsDirectory: function() {
+        return this.makeDirectory(this.combine.apply(this, arguments));
+    },
+
     // ** {{{ Bespin.Path.escape }}} **
     //
     // This function doubles down and calls {{{combine}}} and then escapes the output

@@ -129,13 +129,28 @@ Bespin.FileSystem = Class.create({
         _server.saveFile(project, file.name, file.content, file.lastOp);
     },
 
-    // ** {{{ FileSystem.createProject(project) }}}
+    // ** {{{ FileSystem.makeDirectory(project, path, onSuccess, onFailure) }}}
     //
-    // Save a file to the given project
+    // Create a directory
     //
-    // * {{{project}}} is the name of the project to create
-    createProject: function(project) {
-        _server.saveFile(project, "README.txt", "README for " + project);
+    // * {{{project}}} is the name of the directory to create
+    // * {{{path}}} is the full path to the directory to create
+    // * {{{onSuccess}}} is the callback to fire if the make works
+    // * {{{onFailure}}} is the callback to fire if the make fails
+    makeDirectory: function(project, path, onSuccess, onFailure) {
+        _server.makeDirectory(project, path, onSuccess, onFailure);
+    },
+
+    // ** {{{ FileSystem.makeDirectory(project, path, onSuccess, onFailure) }}}
+    //
+    // Remove a directory
+    //
+    // * {{{project}}} is the name of the directory to remove
+    // * {{{path}}} is the full path to the directory to delete
+    // * {{{onSuccess}}} is the callback to fire if the remove works
+    // * {{{onFailure}}} is the callback to fire if the remove fails
+    removeDirectory: function(project, path, onSuccess, onFailure) {
+        _server.removeFile(project, path, onSuccess, onFailure);
     },
 
     // ** {{{ FileSystem.removeFile(project, path, onSuccess, onFailure) }}}

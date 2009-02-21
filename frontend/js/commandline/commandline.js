@@ -488,10 +488,10 @@ Bespin.CommandLine.Events = Class.create({
         });
 
         // -- Projects
-        // ** {{{ Event: bespin:editor:project:set }}} **
+        // ** {{{ Event: bespin:project:set }}} **
         // 
         // When the project changes, alert the user
-        document.observe("bespin:editor:project:set", function(event) {
+        document.observe("bespin:project:set", function(event) {
             var project = event.memo.project;
 
             _editSession.project = project;
