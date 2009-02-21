@@ -155,10 +155,11 @@ Event.observe(document, "dom:loaded", function() {
 
 var currentProject;
 
+// After a project is imported or created, do a list
 document.observe("bespin:project:imported", function(event) {
-    var project = event.memo.project;
-    var url     = event.memo.url;
-    
+    _server.list(null, null, displayProjects); // get projects
+});
+document.observe("bespin:project:set", function(event) {
     _server.list(null, null, displayProjects); // get projects
 });
 

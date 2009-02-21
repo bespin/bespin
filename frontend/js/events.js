@@ -267,15 +267,65 @@ document.observe("bespin:editor:closefile", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:editor:project:create }}} **
+// ** {{{ Event: bespin:directory:create }}} **
+// 
+// Create a new directory
+document.observe("bespin:directory:create", function(event) {
+    var project = event.memo.project || _editSession.project;
+    var path    = event.memo.path || '';
+    
+    _files.makeDirectory(project, path, function() {
+        if (path == '') document.fire("bespin:project:set", { project: project });
+        document.fire("bespin:cmdline:showinfo", { 
+            msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', autohide: true });
+    }, function() {
+        document.fire("bespin:cmdline:showinfo", { 
+            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']' + project, autohide: true });
+    });
+});
+
+document.observe("bespin:directory:delete", function(event) {
+    var project = event.memo.project || _editSession.project;
+    var path    = event.memo.path || '/';
+    
+    _files.removeDirectory(project, path, function() {
+        if (path == '/') document.fire("bespin:project:set", { project: '' }); // reset
+        document.fire("bespin:cmdline:showinfo", { 
+            msg: 'Successfully deleted directory: [project=' + project + ', path=' + path + ']', autohide: true });
+    }, function() {
+        document.fire("bespin:cmdline:showinfo", {
+            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']', autohide: true });
+    });
+});
+
+// ** {{{ Event: bespin:project:create }}} **
 // 
 // Create a new project
-document.observe("bespin:editor:project:create", function(event) {
+document.observe("bespin:project:create", function(event) {
     var project = event.memo.project || _editSession.project;
     
-    _files.createProject(project);
+    document.fire("bespin:directory:create", { project: project });    
+});
+
+// ** {{{ Event: bespin:project:delete }}} **
+// 
+// Create a new project
+document.observe("bespin:project:delete", function(event) {
+    var project = event.memo.project;
+    if (!project) return;
     
-    document.fire("bespin:editor:project:set", { project: project });
+    document.fire("bespin:directory:delete", { project: project });
+});
+
+// ** {{{ Event: bespin:project:delete }}} **
+// 
+// Create a new project
+document.observe("bespin:project:rename", function(event) {
+    var currentProject = event.memo.currentProject;
+    var newProject = event.memo.newProject;
+    if (!currentProject || !newProject) return;
+    
+    _server.renameProject(currentProject, newProject);
 });
 
 

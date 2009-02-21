@@ -508,7 +508,7 @@ Bespin.Settings.Events = Class.create({
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
                 if (project && (_editSession.project != project)) {
-                    document.fire("bespin:editor:project:set", { project: project });
+                    document.fire("bespin:project:set", { project: project });
                 }
 
                 if (path) {
