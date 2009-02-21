@@ -38,7 +38,9 @@ var Bespin = {
     versionCodename: '(none)',
     apiVersion: 'dev',
     // END VERSION BLOCK
+
     commandlineHeight: 95,
+    userSettingsProject: "BespinSettings",
    
     displayVersion: function(el) {
         if (!el) el = $("version");
