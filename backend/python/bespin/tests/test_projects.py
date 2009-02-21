@@ -297,3 +297,15 @@ def test_delete_project_from_the_web():
     macgyver = fm.db.user_manager.get_user("MacGyver")
     assert len(macgyver.projects) == 2
     
+def test_rename_project():
+    fm = _get_fm()
+    app.post("/project/rename/bigmac/", "foobar", status=404)
+    app.put("/file/at/bigmac/")
+    app.post("/project/rename/bigmac/", "foobar")
+    try:
+        bigmac = fm.get_project(macgyver, macgyver, "bigmac")
+        assert False, "The bigmac project should have been renamed"
+    except model.FileNotFound:
+        pass
+    bigmac = fm.get_project(macgyver, macgyver, "foobar")
+    
