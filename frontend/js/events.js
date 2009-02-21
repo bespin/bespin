@@ -184,10 +184,10 @@ document.observe("bespin:cmdline:executed", function(event) {
 // Load the users config file
 document.observe("bespin:editor:config:run", function(event) {
     // 1. load the file
-    //   project: _editSession.userproject,
+    //   project: Bespin.userSettingsProject,
     //   filename: "config.js"
     // 2. Take the contents and eval the code with a nice scope
-    _files.loadFile(_editSession.userproject, "config.js", function(file) {
+    _files.loadFile(Bespin.userSettingsProject, "config.js", function(file) {
         var scope = {
             Bespin: Bespin
         };
@@ -213,13 +213,13 @@ document.observe("bespin:editor:config:run", function(event) {
 // 
 // Open the users special config file
 document.observe("bespin:editor:config:edit", function(event) {
-    if (!_editSession.userproject) {
+    if (!Bespin.userSettingsProject) {
         document.fire("bespin:cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
     document.fire("bespin:editor:openfile", {
-        project: _editSession.userproject,
+        project: Bespin.userSettingsProject,
         filename: "config.js"
     });
 });
@@ -236,7 +236,7 @@ document.observe("bespin:editor:commands:add", function(event) {
     }
 
     document.fire("bespin:editor:forceopenfile", {
-        project: _editSession.userproject,
+        project: Bespin.userSettingsProject,
         filename: "commands/" + commandname + ".js"
     });
 });
@@ -295,6 +295,8 @@ document.observe("bespin:directory:delete", function(event) {
     var project = event.memo.project || _editSession.project;
     var path    = event.memo.path || '/';
     
+    if (project == Bespin.userSettingsProject && path == '/') return; // don't delete the settings project
+    
     _files.removeDirectory(project, path, function() {
         if (path == '/') document.fire("bespin:project:set", { project: '' }); // reset
         document.fire("bespin:cmdline:showinfo", { 
@@ -319,7 +321,7 @@ document.observe("bespin:project:create", function(event) {
 // Create a new project
 document.observe("bespin:project:delete", function(event) {
     var project = event.memo.project;
-    if (!project) return;
+    if (!project || project == Bespin.userSettingsProject) return; // don't delete the settings project
     
     document.fire("bespin:directory:delete", { project: project });
 });
