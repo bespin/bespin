@@ -412,7 +412,7 @@ Bespin.Server = Class.create({
         if (currentProject && newProject) {
             this.request('POST', '/project/rename/' + currentProject, newProject);
         }
-    }    
+    },
 
     // == SETTINGS ==
     //
