@@ -436,7 +436,7 @@ Bespin.Editor.UI = Class.create({
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
