@@ -50,19 +50,33 @@ body {
     cursor: pointer;
 }
 
+#logged_in > div {
+    float: right;
+}
+
 #loginpane {
     height: 32px;
     background-image: url("../images/splash_toolbar_bg.png");
     background-repeat: repeat-x;
     color: #4f4e45;
     font-size: 10pt;
+    text-align: right;
 }
 
 #loginpane a {
     color: #DAD4BA;
 }
 
-#loginpane input {
+#loginpane #login-holder {
+    padding-top: 8px;
+}
+
+#loginpane #login-holder #psw-label {
+    padding-left: 12px;
+}
+
+#loginpane input#username,
+#loginpane input#password {
     border: none;
     background-image: url("../images/splash_inputs.png");
     background-repeat: no-repeat;
