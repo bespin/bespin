@@ -42,18 +42,19 @@
 </head>
 <body>
 
-<div id="loginpane" align="right">
+<div id="loginpane">
   <div id="version"></div>
 
   <div id="not_logged_in" style="display: none;">
-    <div id="loginbutton"><img src="images/splash_btn_login.gif" onclick="login()" /></div>
-    
-    <div style="padding-top: 8px;"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a> or log in:</span>
-    Username: <input id="username" type="text" /> <span style="padding-left: 12px">Password:</span> <input id="password" type="password" /> <div id="status" style="display: none;"></div> 
-    </div> 
+      <form onsubmit="login(); return false;">
+          <input id="loginbutton" type="image" src="images/splash_btn_login.gif" />
+          <div id="login-holder"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a> or log in:</span>
+              <label for="username">Username: </label><input id="username" type="text" /> <label id="psw-label" for="password">Password: </label><input id="password" type="password" /> <div id="status" style="display: none;"></div>
+          </div>
+      </form>
   </div>
   <div id="logged_in" style="display: none;">
-    <div style="float: right">
+    <div>
       Welcome back, <span id="display_username"></span>!
       Go to the <a href="dashboard.html">dashboard</a> to start coding.
       You can also <a href="#" onclick="logout()">logout</a>.
