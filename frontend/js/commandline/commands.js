@@ -344,22 +344,6 @@ Bespin.Commands.add({
     }
 });
 
-// ** {{{Command: cmdadd}}} **
-Bespin.Commands.add({
-    name: 'cmdadd',
-    takes: ['commandname'],
-    preview: 'make a new command available',
-    completeText: 'command name to add (required)',
-    usage: '[commandname]: Command name required.',
-    execute: function(self, commandname) {
-        if (!commandname) {
-            self.showUsage(this);
-            return;
-        }
-        document.fire("bespin:commands:add", { commandname: commandname });
-    }
-});
-
 // ** {{{Command: cmdload}}} **
 Bespin.Commands.add({
     name: 'cmdload',
@@ -380,7 +364,8 @@ Bespin.Commands.add({
 Bespin.Commands.add({
     name: 'cmdedit',
     takes: ['commandname'],
-    preview: 'edit the given command',
+    aliases: ['cmdadd'],
+    preview: 'edit the given command (force if doesn\'t exist',
     completeText: 'command name to edit (required)',
     usage: '[commandname]: Command name required.',
     execute: function(self, commandname) {
