@@ -37,7 +37,7 @@ document.observe("bespin:editor:newfile", function(event) {
     var project = event.memo.project || _editSession.project;
     var newfilename = event.memo.newfilename || "new.txt";
     var content = event.memo.content || " ";
-
+    
     _files.newFile(project, newfilename, function() {
         document.fire("bespin:editor:openfile:opensuccess", { file: {
             name: newfilename,
@@ -82,11 +82,17 @@ document.observe("bespin:editor:openfile", function(event) {
 // * If the file fails to load, send an openfail event
 document.observe("bespin:editor:forceopenfile", function(event) {
     var filename = event.memo.filename;
-    var project  = event.memo.project || _editSession.project;
+    var project  = event.memo.project;
+    var content  = event.memo.content || " ";
+    
+    if (typeof _editSession != "undefined") {
+        if (!project) project = _editSession.project;
+        if (_editSession.checkSameFile(project, filename)) return; // short circuit
+    }
 
-    if (_editSession.checkSameFile(project, filename)) return; // short circuit
+    if (!project) return; // short circuit
 
-    _files.forceOpenFile(project, filename);
+    _files.forceOpenFile(project, filename, content);
 });
 
 // ** {{{ Event: bespin:editor:savefile }}} **
@@ -224,10 +230,10 @@ document.observe("bespin:editor:config:edit", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:editor:commands:add }}} **
+// ** {{{ Event: bespin:commands:add }}} **
 // 
 // Create a new command in your special command directory
-document.observe("bespin:editor:commands:add", function(event) {
+document.observe("bespin:commands:add", function(event) {
     var commandname = event.memo.commandname;
     
     if (!commandname) {
@@ -237,9 +243,107 @@ document.observe("bespin:editor:commands:add", function(event) {
 
     document.fire("bespin:editor:forceopenfile", {
         project: Bespin.userSettingsProject,
+        filename: "commands/" + commandname + ".js",
+        content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
+    });
+});
+
+// ** {{{ Event: bespin:commands:load }}} **
+// 
+// Create a new command in your special command directory
+document.observe("bespin:commands:load", function(event) {
+    var commandname = event.memo.commandname;
+    
+    if (!commandname) {
+        document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to load." });
+        return;
+    }
+
+    _files.loadFile(Bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
+        try {
+            eval('_commandLine.addCommands([' + file.content.replace(/\n/g, "") + '])');
+        } catch (e) {
+            document.fire("bespin:cmdline:showinfo", { msg: "Something is wrong about the command:<br><br>" + e });
+        }
+    }, true);
+});
+
+// ** {{{ Event: bespin:commands:edit }}} **
+// 
+// Edit the given command
+document.observe("bespin:commands:edit", function(event) {
+    var commandname = event.memo.commandname;
+    
+    if (!Bespin.userSettingsProject) {
+        document.fire("bespin:cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        return;
+    }
+
+    if (!commandname) {
+        document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to edit." });
+        return;
+    }
+
+    document.fire("bespin:editor:openfile", {
+        project: Bespin.userSettingsProject,
         filename: "commands/" + commandname + ".js"
     });
 });
+
+// ** {{{ Event: bespin:commands:list }}} **
+// 
+// List the custom commands that a user has
+document.observe("bespin:commands:list", function(event) {
+    if (!Bespin.userSettingsProject) {
+        document.fire("bespin:cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        return;
+    }
+
+    _server.list(Bespin.userSettingsProject, 'commands/', function(commands) {
+        var output;
+        
+        if (!commands || commands.length < 1) {
+            output = "You haven't installed any custom commands.<br>Want to <a href=''>learn how?</a>";
+        } else {
+            output = "<u>Your Custom Commands</u><br/><br/>";
+            output += commands.findAll(function(file) {
+                return file.name.endsWith('.js');
+            }).map(function(c) { return c.name.replace(/\.js$/, '') }).join("<br>");
+        }
+        
+        document.fire("bespin:cmdline:showinfo", { msg: output });
+    });
+});
+
+// ** {{{ Event: bespin:commands:delete }}} **
+// 
+// List the custom commands that a user has
+document.observe("bespin:commands:delete", function(event) {
+    var commandname = event.memo.commandname;
+
+    if (!Bespin.userSettingsProject) {
+        document.fire("bespin:cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        return;
+    }
+
+    if (!commandname) {
+        document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to delete." });
+        return;
+    }
+
+    var commandpath = "commands/" + commandname + ".js";
+    
+    _files.removeFile(Bespin.userSettingsProject, commandpath, function() {
+        if (_editSession.checkSameFile(Bespin.userSettingsProject, commandpath)) _editor.model.clear(); // only clear if deleting the same file
+        document.fire("bespin:cmdline:showinfo", { msg: 'Removed command: ' + commandname, autohide: true });
+    }, function(xhr) {
+        document.fire("bespin:cmdline:showinfo", { 
+            msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText, 
+            autohide: true 
+        });
+    });
+});
+
 
 // ** {{{ Event: bespin:editor:preview }}} **
 // 
