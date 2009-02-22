@@ -74,19 +74,21 @@ Bespin.FileSystem = Class.create({
         });
     },
 
-    // ** {{{ FileSystem.forceOpenFile(project, path) }}}
+    // ** {{{ FileSystem.forceOpenFile(project, path, content) }}}
     //
     // With the given project and path, open a file if existing, else create a new one
     //
     // * {{{project}}} is the name of the project to create the file in
     // * {{{path}}} is the full path to save the file into
-    forceOpenFile: function(project, path) {
+    // * {{{content}}} is the template initial content to put in the new file (if new)
+    forceOpenFile: function(project, path, content) {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
+                if (!content) content = " ";
                 document.fire("bespin:editor:newfile", {
                     project: project,
                     newfilename: path,
-                    content: "Bespin.Commands.add({\n    name: 'YOUR_COMMAND_NAME',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n\n    }\n});"
+                    content: content
                 });
             },
             elseFailed: function() {

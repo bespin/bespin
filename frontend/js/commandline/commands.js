@@ -213,7 +213,7 @@ Bespin.Commands.add({
     name: 'createproject',
     takes: ['projectname'],
     preview: 'create a new project',
-    usage: 'createproject [newprojectname]',
+    usage: '[newprojectname]',
     execute: function(self, projectname) {
         if (!projectname) {
             self.showUsage(this);
@@ -228,7 +228,7 @@ Bespin.Commands.add({
     name: 'deleteproject',
     takes: ['projectname'],
     preview: 'delete a new project',
-    usage: 'deleteproject [newprojectname]',
+    usage: '[newprojectname]',
     execute: function(self, projectname) {
         if (!projectname) {
             self.showUsage(this);
@@ -243,7 +243,7 @@ Bespin.Commands.add({
     name: 'renameproject',
     takes: ['currentProject', 'newProject'],
     preview: 'rename a project',
-    usage: 'renameproject [currentProject], [newProject]',
+    usage: '[currentProject], [newProject]',
     execute: function(self, args) {
         if (!args.currentProject || !args.newProject) {
             self.showUsage(this);
@@ -258,7 +258,7 @@ Bespin.Commands.add({
     name: 'mkdir',
     takes: ['path', 'projectname'],
     preview: 'create a new directory in the given project',
-    usage: 'mkdir [path] [projectname]',
+    usage: '[path] [projectname]',
     execute: function(self, args) {
         if (!args.path) {
             self.showUsage(this);
@@ -348,15 +348,74 @@ Bespin.Commands.add({
 Bespin.Commands.add({
     name: 'cmdadd',
     takes: ['commandname'],
-    preview: 'load up a new command',
+    preview: 'make a new command available',
     completeText: 'command name to add (required)',
-    usage: 'cmdadd commandname: Command name required.',
+    usage: '[commandname]: Command name required.',
     execute: function(self, commandname) {
         if (!commandname) {
             self.showUsage(this);
             return;
         }
-        document.fire("bespin:editor:commands:add", { commandname: commandname });
+        document.fire("bespin:commands:add", { commandname: commandname });
+    }
+});
+
+// ** {{{Command: cmdload}}} **
+Bespin.Commands.add({
+    name: 'cmdload',
+    takes: ['commandname'],
+    preview: 'load up a new command',
+    completeText: 'command name to load (required)',
+    usage: '[commandname]: Command name required.',
+    execute: function(self, commandname) {
+        if (!commandname) {
+            self.showUsage(this);
+            return;
+        }
+        document.fire("bespin:commands:load", { commandname: commandname });
+    }
+});
+
+// ** {{{Command: cmdedit}}} **
+Bespin.Commands.add({
+    name: 'cmdedit',
+    takes: ['commandname'],
+    preview: 'edit the given command',
+    completeText: 'command name to edit (required)',
+    usage: '[commandname]: Command name required.',
+    execute: function(self, commandname) {
+        if (!commandname) {
+            self.showUsage(this);
+            return;
+        }
+        
+        document.fire("bespin:commands:edit", { commandname: commandname });
+    }
+});
+
+// ** {{{Command: cmdlist}}} **
+Bespin.Commands.add({
+    name: 'cmdlist',
+    preview: 'list my custom commands',
+    execute: function(self) {
+        document.fire("bespin:commands:list");
+    }
+});
+
+// ** {{{Command: cmdrm}}} **
+Bespin.Commands.add({
+    name: 'cmdrm',
+    takes: ['commandname'],
+    preview: 'delete a custom commands',
+    completeText: 'command name to delete (required)',
+    usage: '[commandname]: Command name required.',
+    execute: function(self, commandname) {
+        if (!commandname) {
+            self.showUsage(this);
+            return;
+        }
+        
+        document.fire("bespin:commands:delete", { commandname: commandname });
     }
 });
 
@@ -391,7 +450,8 @@ Bespin.Commands.add({
         }
         
         self.files.removeFile(_editSession.project, filename, function() {
-            if (_editSession.path == filename) self.editor.model.clear(); // only clear if deleting the same file
+            if (_editSession.checkSameFile(_editSession.project, filename)) self.editor.model.clear(); // only clear if deleting the same file
+
             self.showInfo('Removed file: ' + filename, true);
         }, function(xhr) {
             self.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
@@ -594,7 +654,7 @@ Bespin.Commands.add({
     takes: ['url', 'project'],
     preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
     completeText: 'url (to an archive zip | tgz), optional project name',
-    usage: "Please run: import [url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
+    usage: "[url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
     // ** {{{calculateProjectName}}}
     //
     // Given a URL, work out the project name as a default
