@@ -230,24 +230,6 @@ document.observe("bespin:editor:config:edit", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:commands:add }}} **
-// 
-// Create a new command in your special command directory
-document.observe("bespin:commands:add", function(event) {
-    var commandname = event.memo.commandname;
-    
-    if (!commandname) {
-        document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to add." });
-        return;
-    }
-
-    document.fire("bespin:editor:forceopenfile", {
-        project: Bespin.userSettingsProject,
-        filename: "commands/" + commandname + ".js",
-        content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
-    });
-});
-
 // ** {{{ Event: bespin:commands:load }}} **
 // 
 // Create a new command in your special command directory
@@ -283,10 +265,11 @@ document.observe("bespin:commands:edit", function(event) {
         document.fire("bespin:cmdline:showinfo", { msg: "Please pass me a command name to edit." });
         return;
     }
-
-    document.fire("bespin:editor:openfile", {
+    
+    document.fire("bespin:editor:forceopenfile", {
         project: Bespin.userSettingsProject,
-        filename: "commands/" + commandname + ".js"
+        filename: "commands/" + commandname + ".js",
+        content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
     });
 });
 
@@ -303,7 +286,7 @@ document.observe("bespin:commands:list", function(event) {
         var output;
         
         if (!commands || commands.length < 1) {
-            output = "You haven't installed any custom commands.<br>Want to <a href=''>learn how?</a>";
+            output = "You haven't installed any custom commands.<br>Want to <a href='https://wiki.mozilla.org/Labs/Bespin/Roadmap/Commands'>learn how?</a>";
         } else {
             output = "<u>Your Custom Commands</u><br/><br/>";
             output += commands.findAll(function(file) {
