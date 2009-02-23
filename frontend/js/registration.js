@@ -24,7 +24,19 @@ function login() {
     if (showingBrowserCompatScreen()) return;
 
     if ($("username").value && $("password").value) {
-        svr.login($("username").value, $("password").value, whenLoginSucceeded, whenLoginFailed)
+        // try to find the httpSessionId
+        var cookies = document.cookie.split(';');
+        var foundValue = "";
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i];
+            while (cookie.charAt(0) == ' ') cookie = cookie.substring(1, cookie.length);
+            if (cookie.indexOf("anticsrf=") == 0) {
+                foundValue = cookie.substring(dwr.engine._sessionCookieName.length + 1, cookie.length);
+                break;
+            }
+        }
+
+        svr.login($("username").value, $("password").value, foundValue, whenLoginSucceeded, whenLoginFailed)
     } else {
         showStatus("Please give me both a username and a password");
     }
