@@ -133,7 +133,7 @@ Bespin.Key.fillArguments = function(string, args) {
 //
 // Cache the character codes that we want to pass through to the browser
 // Should map to list below
-Bespin.Key.PassThroughCharCodes = ["k", "l", "n", "o", "t", "w", "+", "-", "~", 
+Bespin.Key.PassThroughCharCodes = ["c", "x", "v", "k", "l", "n", "o", "t", "w", "+", "-", "~", 
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].invoke('charCodeAt');
 
 // ** {{{ Bespin.Key.PassThroughKeyCodes }}} **
@@ -142,7 +142,7 @@ Bespin.Key.PassThroughCharCodes = ["k", "l", "n", "o", "t", "w", "+", "-", "~",
 // Should map to list above 
 Bespin.Key.PassThroughKeyCodes = (function() {
     var Key = Bespin.Key;
-    return [Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
+    return [Key.C, Key.X, Key.V, Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
             Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];   
 })();
 
@@ -162,6 +162,8 @@ Bespin.Key.passThroughToBrowser = function(e) {
         } else {
             if (Bespin.Key.PassThroughKeyCodes.include(e.keyCode)) return true;
         }
+    } else if (!e.ctrlKey) { // let normal characters through
+        return true;
     }
 
     return false;

@@ -26,13 +26,164 @@ if (typeof Bespin == "undefined") Bespin = {};
 
 // = Clipboard =
 //
-// Handle clipboard operations
+// Handle clipboard operations. 
+// If using WebKit (I know, feature detection would be nicer, but e.clipboardData is deep) use DOMEvents
+// Else try the bad tricks.
 
 // ** {{{ Bespin.Clipboard }}} **
 //
-// Wrap clipboard access to do the right thing if you have access to native clipboard
-// Else, just store to a local clipboard. Lame I know.
-Bespin.Clipboard = new function() {
+// The factory that is used to install, and setup the adapter that does the work
+
+Bespin.Clipboard = {
+    // ** {{{ install }}} **
+    //
+    // Given a clipboard adapter implementation, save it, an call install() on it
+    install: function(newImpl) {
+        if (this.uses && typeof this.uses['uninstall'] == "function") this.uses.uninstall();
+        this.uses = newImpl;
+        this.uses.install();
+    },
+
+    // ** {{{ setup }}} **
+    //
+    // Do the first setup. Right now checks for WebKit and inits a DOMEvents solution if that is true
+    // else install the default.
+    setup: function() {
+        if (Prototype.Browser.WebKit) {
+            this.install(new Bespin.Clipboard.DOMEvents());
+        } else {
+            this.install(new Bespin.Clipboard.Default());
+        }
+    }
+};
+
+// ** {{{ Bespin.Clipboard.DOMEvents }}} **
+//
+// This adapter configures the DOMEvents that only WebKit seems to do well right now.
+// There is trickery involved here. The before event changes focus to the hidden
+// copynpaster text input, and then the real event does its thing and we focus back
+
+Bespin.Clipboard.DOMEvents = Class.create({
+    install: function() {
+        
+        // * Configure the hidden copynpaster element
+        var copynpaster = document.createElement("input");
+        Element.writeAttribute(copynpaster, {
+            type: 'text',
+            id: 'copynpaster',
+            style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
+        });
+        document.body.appendChild(copynpaster);
+        
+        // Copy
+        Event.observe(document, "beforecopy", function(e) {
+            e.preventDefault();
+            $('copynpaster').focus();
+        });
+
+        Event.observe(document, "copy", function(e) {
+            var selectionText = _editor.getSelectionAsText();
+            
+            if (selectionText && selectionText != '') {
+                e.preventDefault();
+                e.clipboardData.setData('text/plain', selectionText);
+            }
+            
+            $('canvas').focus();
+        });
+
+        // Cut
+        Event.observe(document, "beforecut", function(e) {
+            e.preventDefault();
+            $('copynpaster').focus();
+        });
+
+        Event.observe(document, "cut", function(e) {
+            var selectionObject = _editor.getSelection();
+
+            if (selectionObject) {
+                var selectionText = _editor.model.getChunk(selectionObject);
+
+                if (selectionText && selectionText != '') {
+                    e.preventDefault();
+                    e.clipboardData.setData('text/plain', selectionText);
+                    _editor.ui.actions.deleteSelection(selectionObject);
+                }
+            }
+
+            $('canvas').focus();
+        });
+
+        // Paste
+        Event.observe(document, "beforepaste", function(e) {
+            e.preventDefault();
+            $('copynpaster').focus();
+        });
+
+        Event.observe(document, "paste", function(e) {
+            e.preventDefault();
+
+            var args = Bespin.Editor.Utils.buildArgs();    
+            args.chunk = e.clipboardData.getData('text/plain');
+            if (args.chunk) _editor.ui.actions.insertChunk(args);
+
+            $('canvas').focus();
+            $('copynpaster').value = '';
+        });
+
+        Event.observe(document, "dom:loaded", function() {
+            Event.observe($('copynpaster'), "keydown", function(e) {
+                e.stopPropagation();
+            });
+
+            Event.observe($('copynpaster'), "keypress", function(e) {
+                e.stopPropagation();
+            });
+        });        
+    },
+    
+    uninstall: function() {
+        Event.stopObserving($('copynpaster'), "keypress");
+        Event.stopObserving($('copynpaster'), "keydown");
+        Event.stopObserving(document, "beforepaste");
+        Event.stopObserving(document, "paste");
+        Event.stopObserving(document, "beforecut");
+        Event.stopObserving(document, "cut");
+        Event.stopObserving(document, "beforecopy");
+        Event.stopObserving(document, "copy");
+    }
+});
+
+// ** {{{ Bespin.Clipboard.Default }}} **
+//
+// Turn on the key combinations to access the Bespin.Clipboard.Manual class 
+
+Bespin.Clipboard.Default = Class.create({
+    install: function() {
+        var copyArgs = Bespin.Key.fillArguments("APPLE C");
+        copyArgs.action = "copySelection";
+        document.fire("bespin:editor:bindkey", copyArgs);
+        copyArgs = Bespin.Key.fillArguments("CTRL C");
+        document.fire("bespin:editor:bindkey", copyArgs);
+
+        var pasteArgs = Bespin.Key.fillArguments("APPLE V");
+        pasteArgs.action = "pasteFromClipboard";
+        document.fire("bespin:editor:bindkey", pasteArgs);
+        pasteArgs = Bespin.Key.fillArguments("CTRL V");
+        document.fire("bespin:editor:bindkey", pasteArgs);
+
+        var cutArgs = Bespin.Key.fillArguments("APPLE X");
+        cutArgs.action = "cutSelection";
+        document.fire("bespin:editor:bindkey", cutArgs);
+        cutArgs = Bespin.Key.fillArguments("CTRL X");
+        document.fire("bespin:editor:bindkey", cutArgs);
+    }
+});
+
+// ** {{{ Bespin.Clipboard.Manual }}} **
+//
+// The ugly hack that tries to use XUL to get work done, but will probably fall through to in-app copy/paste only
+Bespin.Clipboard.Manual = new function() {
     var clipdata;
     
     return {
@@ -118,4 +269,11 @@ Bespin.Clipboard = new function() {
         }
     }
 }();
+
+// ** {{{ Event: dom:loaded }}} **
+//
+// Call into setup to get working.
+Event.observe(document, "dom:loaded", function() {
+    Bespin.Clipboard.setup(); // Do it!
+});
 
