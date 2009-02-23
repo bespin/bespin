@@ -281,17 +281,14 @@ Bespin.Editor.DefaultEditorKeyListener = Class.create({
             this.lastAction = action;
         }
 
-
         // If a special key is pressed OR if an action is assigned to a given key (e.g. TAB or BACKSPACE)
-        var special = false;        
         if (e.metaKey || e.ctrlKey || e.altKey) {
             this.skipKeypress = true;
             this.returnValue = true;
-            special = true;
         }
 
         // stop going, but allow special strokes to get to the browser
-        if (hasAction || special || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e);
+        if (hasAction || !Bespin.Key.passThroughToBrowser(e)) Event.stop(e);
     },
 
     onkeypress: function(e) {
@@ -686,14 +683,14 @@ Bespin.Editor.UI = Class.create({
         listener.bindKeyString("APPLE", Key.Z, this.actions.undoRedo);
         listener.bindKeyString("CTRL", Key.Z, this.actions.undoRedo);
 
-        listener.bindKeyString("APPLE", Key.C, this.actions.copySelection);
-        listener.bindKeyString("CTRL", Key.C, this.actions.copySelection);
-
-        listener.bindKeyString("APPLE", Key.V, this.actions.pasteFromClipboard);
-        listener.bindKeyString("CTRL", Key.V, this.actions.pasteFromClipboard);
-
-        listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
-        listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
+        // listener.bindKeyString("APPLE", Key.C, this.actions.copySelection);
+        // listener.bindKeyString("CTRL", Key.C, this.actions.copySelection);
+        // 
+        // listener.bindKeyString("APPLE", Key.V, this.actions.pasteFromClipboard);
+        // listener.bindKeyString("CTRL", Key.V, this.actions.pasteFromClipboard);
+        // 
+        // listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
+        // listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
 
         listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
@@ -1322,6 +1319,16 @@ Bespin.Editor.API = Class.create({
         }
 
         return { startPos: Bespin.Editor.Utils.copyPos(startPos), endPos: Bespin.Editor.Utils.copyPos(endPos) }
+    },
+    
+    // helper to get text
+    getSelectionAsText: function() {
+        var selectionText = '';
+        var selectionObject = this.getSelection();
+        if (selectionObject) {
+            selectionText = this.model.getChunk(selectionObject);
+        }
+        return selectionText;
     },
 
     setSelection: function(selection) {

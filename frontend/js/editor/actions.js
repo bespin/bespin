@@ -326,7 +326,7 @@ Bespin.Editor.Actions = Class.create({
         if (selectionObject) {
             var selectionText = this.editor.model.getChunk(selectionObject);
             if (selectionText) {
-                Bespin.Clipboard.copy(selectionText);
+                Bespin.Clipboard.Manual.copy(selectionText);
             }
         }
     },
@@ -369,7 +369,7 @@ Bespin.Editor.Actions = Class.create({
     },
 
     pasteFromClipboard: function(args) {
-        var clipboard = (args.clipboard) ? args.clipboard : Bespin.Clipboard.data();
+        var clipboard = (args.clipboard) ? args.clipboard : Bespin.Clipboard.Manual.data();
         if (clipboard == undefined) return; // darn it clipboard!
         args.chunk = clipboard;
         this.insertChunk(args);
