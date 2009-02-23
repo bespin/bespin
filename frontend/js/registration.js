@@ -48,11 +48,17 @@ function logout() {
 function centerOnScreen(el) {
     // retrieve required dimensions
     var elDims = el.getDimensions();
-    var browserDims = document.body.getDimensions();
 
-    // calculate the center of the page using the browser and element dimensions
-    var y = (browserDims.height - elDims.height) / 2;
-    var x = (browserDims.width - elDims.width) / 2;
+    if (navigator.appName === "Microsoft Internet Explorer") {
+        var y = (document.documentElement.clientHeight - elDims.height) / 2;
+        var x = (document.documentElement.clientWidth - elDims.width) / 2;
+    } else {
+        var browserDims = document.body.getDimensions();
+
+        // calculate the center of the page using the browser and element dimensions
+        var y = (browserDims.height - elDims.height) / 2;
+        var x = (browserDims.width - elDims.width) / 2;
+    }
 
     // set the style of the element so it is centered
     var styles = {
