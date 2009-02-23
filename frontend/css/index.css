@@ -224,7 +224,7 @@ body {
 
 #browser_not_compat {
     z-index: 20;
-    background: url("/images/background_white_50.png");
+    background: url("../images/background_white_50.png");
     position: absolute;
     padding: 10px;
     width: 400px;
@@ -241,7 +241,7 @@ body {
 
 #browser_not_compat h3 {
     background-color: #22211e;
-    background-image: url("/images/register_toolbar_background.png");
+    background-image: url("../images/register_toolbar_background.png");
     background-repeat: repeat-x;
     margin: 0;
     padding: 5px;
@@ -263,7 +263,7 @@ body {
 
 #register_border {
     z-index: 20;
-    background: url("/images/background_white_50.png");
+    background: url("../images/background_white_50.png");
     position: absolute;
     padding: 10px;
     -moz-border-radius: 10px;
@@ -272,7 +272,7 @@ body {
 
 #register_title {
     background-color: #000;
-    background-image: url("/images/register_toolbar_background.png");
+    background-image: url("../images/register_toolbar_background.png");
     background-repeat: repeat-x;
     padding: 5px;
     border: 0;
@@ -321,14 +321,14 @@ body {
 }
 
 #vcsurl {
-    background-image: url("images/splash_editnow_input.png");
+    background-image: url("../images/splash_editnow_input.png");
     background-repeat: no-repeat;
 }
 
 .darkButton {
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
-    background: #111 repeat-x url("/images/button_background.png");
+    background: #111 repeat-x url("../images/button_background.png");
     padding: 5px;
     color: #FAF4DA;
 }

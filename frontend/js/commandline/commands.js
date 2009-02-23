@@ -279,7 +279,7 @@ Bespin.Commands.add({
     version: 0.1,
     preview: 'export the contents to the clipboard',
     execute: function(self) {
-        Bespin.Clipboard.copy(self.editor.model.getDocument());
+        Bespin.Clipboard.Manual.copy(self.editor.model.getDocument());
 
         self.showInfo('Saved file contents to clipboard', true);
     }
