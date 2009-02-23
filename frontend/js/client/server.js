@@ -41,7 +41,7 @@ Bespin.Server = Class.create({
 
     // == Helpers ==
 
-    // ** {{{ request(method, url, payload, callbackOptions) }}}
+    // ** {{{ request(method, url, payload, options) }}}
     //
     // The core way to access the backend system.
     // Similar to the Prototype Ajax.Request wrapper 
@@ -49,15 +49,15 @@ Bespin.Server = Class.create({
     // * {{{method}}} is the HTTP method (GET|POST|PUT|DELETE)
     // * {{{url}}} is the sub url to hit (after the base url)
     // * {{{payload}}} is what to send up for POST requests
-    // * {{{callbackOptions}}} is how you pass in various callbacks.
-    //   callbackOptions['evalJSON'] = true or false to auto eval
-    //   callbackOptions['call'] = the main callback
-    //   callbackOptions['log'] = just log the following
-    //   callbackOptions['onFailure'] = call for general failures
-    //   callbackOptions['on' + STATUS CODE] = call for specific failures
-    request: function(method, url, payload, callbackOptions) {
+    // * {{{options}}} is how you pass in various callbacks.
+    //   options['evalJSON'] = true or false to auto eval
+    //   options['call'] = the main callback
+    //   options['log'] = just log the following
+    //   options['onFailure'] = call for general failures
+    //   options['on' + STATUS CODE] = call for specific failures
+    request: function(method, url, payload, options) {
         var xhr = new XMLHttpRequest();
-        
+
         if (location.href.startsWith("file:")) { // if developing and using this locally only!
            try {
                if (netscape.security.PrivilegeManager.enablePrivilege) {
@@ -66,38 +66,45 @@ Bespin.Server = Class.create({
            } catch (ex) {
            }
         }
-        
-        if (callbackOptions) { // do it async (best)
+
+        if (options) { // do it async (best)
             xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) {                  
+                if (xhr.readyState == 4) {
                     if (xhr.status && xhr.status != 0 && (xhr.status >= 200 && xhr.status < 300)) {
                         var text = xhr.responseText;
-                        
-                        if (callbackOptions['evalJSON'] && text) {
+
+                        if (options['evalJSON'] && text) {
                             try {
                                 text = text.evalJSON(true);
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + text + " (SyntaxError: " + syntaxException + ")");
                             }
                         }
-                        
-                        if (Object.isFunction(callbackOptions['call'])) {
-                            callbackOptions['call'](text, xhr);
-                        } else if (callbackOptions['log']) {
-                            console.log(callbackOptions['log']);
+
+                        if (Object.isFunction(options['call'])) {
+                            options['call'](text, xhr);
+                        } else if (options['log']) {
+                            console.log(options['log']);
                         }
-                    } else {                        
+                    } else {
                         var onStatus = 'on' + xhr.status;
-                        if (callbackOptions[onStatus]) {
-                            callbackOptions[onStatus](xhr);
-                        } else if (callbackOptions['onFailure']) {
-                            callbackOptions['onFailure'](xhr);
+                        if (options[onStatus]) {
+                            options[onStatus](xhr);
+                        } else if (options['onFailure']) {
+                            options['onFailure'](xhr);
                         }
                     }
                 }
             }
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
-			xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded')
+            xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
+            if (options.headers) {
+                for (var key in options.headers) {
+                    if (options.headers.hasOwnProperty(key)) {
+                        xhr.setRequestHeader(key, options.headers[key]);
+                    }
+                }
+            }
             xhr.send(payload);
         } else {
             var fullUrl = this.SERVER_BASE_URL + url;
@@ -110,7 +117,7 @@ Bespin.Server = Class.create({
 
     // == USER ==
 
-    // ** {{{ login(user, pass, callback, notloggedin) }}}
+    // ** {{{ login(user, pass, token, callback, notloggedin) }}}
     //
     // Try to login to the backend system.
     // 
@@ -118,10 +125,13 @@ Bespin.Server = Class.create({
     // * {{{pass}}} is the password
     // * {{{onSuccess}}} fires when the user is logged in
     // * {{{onFailure}}} fires when the user failed to login
-    login: function(user, pass, onSuccess, onFailure) {
+    login: function(user, pass, token, onSuccess, onFailure) {
         var url = "/register/login/" + user;
         this.request('POST', url, "password=" + escape(pass), { 
-            call: onSuccess, on401: onFailure, log: 'Login complete.' 
+            call: onSuccess,
+            on401: onFailure,
+            log: 'Login complete.',
+            headers: { 'DoubleSubmitCookie':token }
         });
     },
 
