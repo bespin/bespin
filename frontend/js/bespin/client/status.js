@@ -32,7 +32,7 @@ dojo.provide("bespin.client.status");
 
 dojo.declare("bespin.client.settings.StatusChecker", null, {
     constructor: function() {
-        this.interval = 0;
+        this.interval;
         this.statusMessages = [
             "Bob is editing the file brick.html",
             "Emily is creating a new tag called 'v3.4'",
@@ -45,7 +45,9 @@ dojo.declare("bespin.client.settings.StatusChecker", null, {
     },
 
     start: function() {
-        this.interval = setInterval(dojo.hitch(this, "updateStatus"), 12000);
+        this.interval = setInterval(function() {
+            this.updateStatus();
+        }.bind(this), 12000);
     },
 
     stop: function() {
@@ -58,11 +60,11 @@ dojo.declare("bespin.client.settings.StatusChecker", null, {
     },
 
     randomStatus: function() {
-        var random = Math.floor(Math.random() * this.statusMessages.length);
+        var random = Math.floor(Math.random() * this.statusMessages.length)
         return this.statusMessages[random];
     },
 
     setStatus: function(message) {
         dojo.byId('message').innerHTML = message;
     }
-});
+})

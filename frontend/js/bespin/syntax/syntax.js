@@ -26,7 +26,7 @@
 //
 // Module for dealing with the syntax highlighting.
 //
-// The core model talks to specific engines to do the work and then packages it up to send to the editor.
+// The core model talks to specific engines to do the work and then packages it up to send to the editor. 
 
 dojo.provide("bespin.syntax.syntax");
 
@@ -42,15 +42,15 @@ dojo.declare("bespin.syntax.Model", null, {
         this.lineMetaInfo = [];
         this.syntaxType = "";
     },
-
+    
     // ** {{{ Meta Info }}} **
     //
     // We store meta info on the lines, such as the fact that it is in a multiline comment
-    setLineMetaInfo: function(lineNumber, meta) {
+    setLineMetaInfo: function(lineNumber, meta) { 
         this.lineMetaInfo[lineNumber] = meta;
     },
-
-    getLineMetaInfo: function(lineNumber) {
+    
+    getLineMetaInfo: function(lineNumber) { 
         return this.lineMetaInfo[lineNumber];
     },
 
@@ -64,15 +64,15 @@ dojo.declare("bespin.syntax.Model", null, {
     invalidateEntireCache: function() {
         this.lineCache = [];
     },
-
+    
     addToCache: function(lineNumber, line) {
         this.lineCache[lineNumber] = line;
     },
-
+    
     getFromCache: function(lineNumber) {
         return this.lineCache[lineNumber];
     },
-
+    
     mergeSyntaxResults: function(regions) {
         // TO BE COMPLETED
         // This function has to take the regions and take sub pieces and tie them into the full line
@@ -91,34 +91,34 @@ dojo.declare("bespin.syntax.Model", null, {
     // This is the main API.
     //
     // Given the line number and syntax type (e.g. css, js, html) hunt down the engine, ask it to syntax highlight, and return the regions
-    getSyntaxStyles: function(lineText, lineNumber, syntaxType) {
+    getSyntaxStyles: function(lineNumber, syntaxType) {  
         if (this.syntaxType != syntaxType) {
             this.invalidateEntireCache();
             this.engine = bespin.syntax.EngineResolver.resolve(syntaxType);
             this.syntaxType = syntaxType;
         } else { // Possible for caching to be real here
             // var cached = this.getFromCache(lineNumber);
-            // if (cached) return cached;
+            // if (cached) return cached;            
         }
 
         // Get the row contents as one string
+        var line = this.editor.model.getRowArray(lineNumber).join("");
+
         var syntaxResult = { // setup the result
-            text: lineText,
+            text: line,
             regions: []
         };
-
-        var meta;
-
+        
         // we have the ability to have subtypes within the main parser
         // E.g. HTML can have JavaScript or CSS within
         if (typeof this.engine['innertypes'] == "function") {
-            var syntaxTypes = this.engine.innertypes(lineText);
+            var syntaxTypes = this.engine.innertypes(line);
 
             for (var i = 0; i < syntaxTypes.length; i++) {
                 var type = syntaxTypes[i];
-                meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
+                var meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
                 var pieceRegions = [];
-                var fromResolver = bespin.syntax.EngineResolver.highlight(type.type, lineText.substring(type.start, type.stop), meta);
+                var fromResolver = bespin.syntax.EngineResolver.highlight(type.type, line.substring(type.start, type.stop), meta);
                 if (fromResolver.meta && (i == syntaxTypes.length - 1) ){
                     this.setLineMetaInfo(lineNumber, fromResolver.meta);
                 }
@@ -126,12 +126,12 @@ dojo.declare("bespin.syntax.Model", null, {
             }
             syntaxResult.regions.push(this.mergeSyntaxResults(pieceRegions));
         } else {
-            meta = (lineNumber > 0) ? this.getLineMetaInfo(lineNumber - 1) : {};
-            var result = this.engine.highlight(lineText, meta);
+            var meta = (lineNumber > 0) ? this.getLineMetaInfo(lineNumber - 1) : {};
+            var result = this.engine.highlight(line, meta);
             this.setLineMetaInfo(lineNumber, result.meta);
             syntaxResult.regions.push(result.regions);
         }
-
+        
         this.addToCache(lineNumber, syntaxResult);
         return syntaxResult;
     }
@@ -143,9 +143,9 @@ dojo.declare("bespin.syntax.Model", null, {
 //
 // It holds a default engine that returns the line back in the clear
 
-bespin.syntax.EngineResolver = function() {
+bespin.syntax.EngineResolver = new function() {
   var engines = {};
-
+  
   // ** {{{ NoopSyntaxEngine }}} **
   //
   // Return a plain region that is the entire line
@@ -156,11 +156,11 @@ bespin.syntax.EngineResolver = function() {
                   start: 0,
                   stop: line.length
               }]
-          } };
+          } }
       }
       //innersyntax: function() {},
-  };
-
+  }
+  
   return {
       // ** {{{ highlight }}} **
       //
@@ -171,7 +171,7 @@ bespin.syntax.EngineResolver = function() {
 
       // ** {{{ register }}} **
       //
-      // Engines register themselves,
+      // Engines register themselves, 
       // e.g. {{{Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);}}}
       register: function(syntaxEngine, types) {
           for (var i = 0; i < types.length; i++) {
@@ -184,6 +184,6 @@ bespin.syntax.EngineResolver = function() {
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(type) {
           return engines[type] || NoopSyntaxEngine;
-      }
-  };
+      }      
+  }  
 }();

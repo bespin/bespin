@@ -22,9 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.editor");
-
-dojo.require("bespin.editor.clipboard");
+dojo.provide("bespin.editor.editor"); 
 
 // = Editor =
 //
@@ -87,15 +85,14 @@ dojo.declare("bespin.editor.Scrollbar", null, {
     },
 
     onmousewheel: function(e) {           
-        var wheel = bespin.util.mousewheelevent.wheel(e);
-        var axis = bespin.util.mousewheelevent.axis(e); 
+        var wheel = bespin.util.mousewheelevent.wheel(e); 
 
-        if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
+        if (this.orientation == this.VERTICAL && !e.shiftKey) {
             this.setValue(this.value + (wheel * this.ui.lineHeight));
-        } else if (this.orientation == this.HORIZONTAL && axis == this.HORIZONTAL) {
+        } else if (this.orientation == this.HORIZONTAL && e.shiftKey) {
             this.setValue(this.value + (wheel * this.ui.charWidth));
         }  
-    },    
+    },     
 
     onmousedown: function(e) {
         var clientY = e.clientY - this.ui.getTopOffset();
@@ -177,20 +174,21 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
         startCol = (selection.startPos.row < rowIndex) ? 0 : selection.startPos.col;
         endCol = (selection.endPos.row > rowIndex) ? -1 : selection.endPos.col;
 
-        return { startCol: startCol, endCol: endCol };
+        return { startCol: startCol, endCol: endCol }
     }
 }); 
 
 // ** {{{ bespin.editor.utils }}} **
 //
 // Mess with positions mainly 
-dojo.mixin(bespin.editor, { utils: {
+dojo.mixin(bespin.editor, {utils: {
     buildArgs: function(oldPos) {
-        return { pos: bespin.editor.utils.copyPos(oldPos || bespin.get('editor').getCursorPos()) };
+        return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
 
     changePos: function(args, pos) {
-        return { pos: bespin.editor.utils.copyPos(oldPos || bespin.get('editor').getCursorPos()) };
+        ar
+        return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
     
     copyPos: function(oldPos) {
@@ -247,26 +245,15 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
             (typeof action == "string") ?
                 function() { 
                     var toFire = bespin.events.toFire(action);
-                    bespin.publish(toFire.name, toFire.args);
+                    dojo.publish(toFire.name, [toFire.args]);
                 } : dojo.hitch(this.actions, action);
     },
 
     bindKeyString: function(modifiers, keyCode, action) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
-        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1);
+        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1) || (modifiers.toUpperCase().indexOf("CMD") != -1);
         var shiftKey = (modifiers.toUpperCase().indexOf("SHIFT") != -1);
-        
-        // Check for the platform specific key type
-        // The magic "CMD" means metaKey for Mac (the APPLE or COMMAND key)
-        // and ctrlKey for Windows (CONTROL)
-        if (modifiers.toUpperCase().indexOf("CMD") != -1) {
-            if (bespin.util.isMac()) {
-                metaKey = true;
-            } else {
-                ctrlKey = true;
-            }
-        }
         return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
     },
     
@@ -276,25 +263,10 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
-            handled = true;
-        }
-        
-        if (quickopen && quickopen.handleKeys(e)) {
-            handled = true;
-        }
-        
+        var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
-        // -- End of commandLine short cut
 
-        var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) }
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -319,41 +291,22 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
-            handled = true;
-        }
-        
-        if (quickopen && quickopen.handleKeys(e)) {
-            handled = true;
-        }
-        
+        var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
-        if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             dojo.stopEvent(e);
             return false;
         }
-        // -- End of commandLine short cut
 
-        // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
-        // on some platforms and keyboardlayouts (german?). This is not working for "^"
-        if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1) {
-            this.skipKeypress = false;
-        } else if (this.skipKeypress) {
+        if (this.skipKeypress) {
             if (!bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
             return this.returnValue;
         }
 
-        var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
@@ -374,6 +327,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     }
 });
 
+
 // ** {{{ bespin.editor.UI }}} **
 //
 // Holds the UI. The editor itself, the syntax highlighter, the actions, and more
@@ -384,40 +338,36 @@ dojo.declare("bespin.editor.UI", null, {
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
 
-        this.rowLengthCache = [];
-
-        this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
-        this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
+        this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
         // combining them like sane people, but... meh
         this.horizontalScrollCanvas = dojo.create("canvas");
-        this.verticalScrollCanvas   = dojo.create("canvas");
+        this.verticalScrollCanvas = dojo.create("canvas");
 
         this.GUTTER_WIDTH = 54;
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 };
-        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 }
+        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 }
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
         this.NIB_INSETS = { top: Math.floor(this.NIB_WIDTH / 2),
                             left: Math.floor(this.NIB_WIDTH / 2),
                             right: Math.floor(this.NIB_WIDTH / 2),
-                            bottom: Math.floor(this.NIB_WIDTH / 2) };
-        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
+                            bottom: Math.floor(this.NIB_WIDTH / 2) }
+        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 }
 
-        //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
-        //this.charWidth;         // set first time a paint occurs
-        //this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
-        //this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
+        this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
+        this.charWidth;         // set first time a paint occurs
+        this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
+        this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
+        this.nibup;             // rect
+        this.nibdown;           // rect
+        this.nibleft;           // rect
+        this.nibright;          // rect
 
-        //this.nibup;             // rect
-        //this.nibdown;           // rect
-        //this.nibleft;           // rect
-        //this.nibright;          // rect
-
-        //this.selectMouseDownPos;        // position when the user moused down
+        this.selectMouseDownPos;        // position when the user moused down
 
         this.xoffset = 0;       // number of pixels to translate the canvas for scrolling
         this.yoffset = 0;
@@ -462,14 +412,14 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup");         
         dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
               
-        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
+        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), 250);
     },
 
     // col is -1 if user clicked in gutter; clicking below last line maps to last line
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -482,15 +432,16 @@ dojo.declare("bespin.editor.UI", null, {
             var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
             x = Math.floor(tx / this.charWidth);
             
-            // With strictlines turned on, don't select past the end of the line
-            if (bespin.get('settings').isSettingOn('strictlines')) {
-                var maxcol = this.getRowScreenLength(y);
-
+            // With striclines turned on, don't select past the end of the line
+            if (_settings.isOn(_settings.get('strictlines'))) {
+                var maxcol = this.editor.model.getRowLength(y);
+            
                 if (x >= maxcol) {
-                    x = this.getRowScreenLength(y);
+                    x = this.editor.model.getRowLength(y);
                 }
             }
         }
+        
         return { col: x, row: y };
     },
 
@@ -501,7 +452,7 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.overXScrollBar || this.overYScrollBar) return;
 
         if (e.shiftKey) {
-            this.selectMouseDownPos = (this.editor.selection) ? this.editor.selection.startPos : this.editor.getCursorPos();
+            this.selectMouseDownPos = (this.editor.selection) ? this.editor.selection.startPos : this.editor.cursorPosition;
             this.setSelection(e);
         } else {
             var point = { x: clientX, y: clientY };
@@ -549,7 +500,7 @@ dojo.declare("bespin.editor.UI", null, {
                 if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
                     // For now, don't select anything, but think about copying Textmate and grabbing around it
                 } else {
-                    var startPos = (up = this.editor.model.findBefore(down.row, down.col)); 
+                    var startPos = up = this.editor.model.findBefore(down.row, down.col);
                     
                     var endPos = this.editor.model.findAfter(down.row, down.col);
                     
@@ -561,7 +512,7 @@ dojo.declare("bespin.editor.UI", null, {
             }
         }
 
-        this.editor.cursorManager.moveCursor(up);
+        this.editor.moveCursor(up);
         this.editor.paint();
     },
 
@@ -575,14 +526,14 @@ dojo.declare("bespin.editor.UI", null, {
             ui.editor.paint();
         }
 
-        setTimeout(function() { ui.toggleCursor(ui); }, ui.toggleCursorFrequency);
+        setTimeout(function() { ui.toggleCursor(ui) }, 250);
     },
 
     ensureCursorVisible: function() {
         if ((!this.lineHeight) || (!this.charWidth)) return;    // can't do much without these
 
-        var y = this.lineHeight * this.editor.cursorManager.getScreenPosition().row;
-        var x = this.charWidth * this.editor.cursorManager.getScreenPosition().col;
+        var y = this.lineHeight * this.editor.cursorPosition.row;
+        var x = this.charWidth * this.editor.cursorPosition.col;
 
         var cheight = this.getHeight();
         var cwidth = this.getWidth() - this.GUTTER_WIDTH;
@@ -640,7 +591,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         if (e.type == "click") { 
-            if ((typeof e.button != "undefined") && (e.button == 0)) {
+            if (e.button && (e.button == 0)){
                 var button;
                 if (this.nibup.contains(p)) {
                     button = "up";
@@ -677,16 +628,14 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.oldkeydown) dojo.disconnect(this.oldkeydown);
         if (this.oldkeypress) dojo.disconnect(this.oldkeypress);
 
-        this.oldkeydown  = dojo.hitch(listener, "onkeydown");
+        this.oldkeydown = dojo.hitch(listener, "onkeydown");
         this.oldkeypress = dojo.hitch(listener, "onkeypress");
-        
-        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : document;
 
-        dojo.connect(scope, "keydown", this, "oldkeydown");
-        dojo.connect(scope, "keypress", this, "oldkeypress");
+        dojo.connect(document, "keydown", this, "oldkeydown");
+        dojo.connect(document, "keypress", this, "oldkeypress");
 
         // Modifiers, Key, Action
-
+        
         listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
         listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
@@ -696,50 +645,51 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
         listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
 
         listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
-        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft);
-
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
-        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight);
-
         listener.bindKeyString("", Key.ENTER, this.actions.newline);
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
-        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
 
-        listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
+        listener.bindKeyString("APPLE", Key.A, this.actions.selectAll);
+        listener.bindKeyString("CTRL", Key.A, this.actions.selectAll);
 
-        listener.bindKeyString("CMD", Key.Z, this.actions.undo);
-        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo);
-        listener.bindKeyString("CMD", Key.Y, this.actions.redo);
+        listener.bindKeyString("APPLE", Key.Z, this.actions.undoRedo);
+        listener.bindKeyString("CTRL", Key.Z, this.actions.undoRedo);
 
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
-        listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom);
+        // listener.bindKeyString("APPLE", Key.C, this.actions.copySelection);
+        // listener.bindKeyString("CTRL", Key.C, this.actions.copySelection);
+        // 
+        // listener.bindKeyString("APPLE", Key.V, this.actions.pasteFromClipboard);
+        // listener.bindKeyString("CTRL", Key.V, this.actions.pasteFromClipboard);
+        // 
+        // listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
+        // listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
 
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
+        listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
+        
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
-        
+
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
         // has been moved to the 'newfile' command withKey
-        // Also, the clipboard.js handles C, V, and X
     },
 
     getWidth: function() {
-        return parseInt(dojo.style(this.editor.canvas.parentNode, "width"));
+        return parseInt(dojo.attr(this.editor.canvas.parentNode, "width"));
     },
 
-    getHeight: function() {
-        return parseInt(dojo.style(this.editor.canvas.parentNode, "height"));
+    getHeight: function() {   
+        return parseInt(dojo.attr(this.editor.canvas.parentNode, "height"));
     },
 
     getTopOffset: function() {
@@ -788,6 +738,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         var Rect = bespin.editor.Rect;
 
+
         // SETUP STATE
 
         var refreshCanvas = fullRefresh;        // if the user explicitly requests a full refresh, give it to 'em
@@ -808,23 +759,13 @@ dojo.declare("bespin.editor.UI", null, {
         var cwidth = this.getWidth();
         var cheight = this.getHeight();
 
+        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
+        var virtualwidth = this.charWidth * (Math.max(ed.model.getMaxCols(), ed.cursorPosition.col) + 2);       // full width based on content plus a little padding
+
         // adjust the scrolling offsets if necessary; negative values are good, indicate scrolling down or to the right (we look for overflows on these later on)
         // positive values are bad; they indicate scrolling up past the first line or to the left past the first column
         if (this.xoffset > 0) this.xoffset = 0;
         if (this.yoffset > 0) this.yoffset = 0;
-
-        // only paint those lines that can be visible
-        this.visibleRows = Math.ceil(cheight / this.lineHeight);
-        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
-        lastLineToRender = this.firstVisibleRow + this.visibleRows;
-        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
-
-        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
-
-        // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
-        // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
-        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -865,7 +806,8 @@ dojo.declare("bespin.editor.UI", null, {
         // check and see if the canvas is the same size as its immediate parent in the DOM; if not, resize the canvas
         if (((dojo.attr(c, "width")) != cwidth) || (dojo.attr(c, "height") != cheight)) {
             refreshCanvas = true;   // if the canvas changes size, we'll need a full repaint
-            dojo.attr(c, { width: cwidth, height: cheight });
+            dojo.attr(c, "width", cwidth);
+            dojo.attr(c, "height", cheight);
         } 
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
@@ -878,14 +820,14 @@ dojo.declare("bespin.editor.UI", null, {
             var dirty = ed.model.getDirtyRows();
 
             // if the cursor has changed rows since the last paint, consider the previous row dirty
-            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorManager.getScreenPosition().row)) dirty[this.lastCursorPos.row] = true;
+            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorPosition.row)) dirty[this.lastCursorPos.row] = true;
 
             // we always repaint the current line
-            dirty[ed.cursorManager.getScreenPosition().row] = true;
+            dirty[ed.cursorPosition.row] = true;
         }
 
         // save this state for the next paint attempt (see above for usage)
-        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getScreenPosition());
+        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorPosition);
 
         // if we're doing a full repaint...
         if (refreshCanvas) {
@@ -901,6 +843,12 @@ dojo.declare("bespin.editor.UI", null, {
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save(); // take snapshot of current context state so we can roll back later on
         ctx.translate(0, this.yoffset);
+
+        // only paint those lines that can be visible
+        this.visibleRows = Math.ceil(cheight / this.lineHeight);
+        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
+        lastLineToRender = this.firstVisibleRow + this.visibleRows;
+        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
 
         // paint the line numbers
         if (refreshCanvas) {
@@ -979,8 +927,6 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
-            var lineText = this.getRowString(currentLine);
-
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
@@ -988,8 +934,7 @@ dojo.declare("bespin.editor.UI", null, {
 //            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
-
-            var lineInfo = this.syntaxModel.getSyntaxStyles(lineText, currentLine, this.editor.language);
+            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
             
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
@@ -1026,20 +971,20 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.editor.focus) {
             if (this.showCursor) {
                 if (ed.theme.cursorType == "underline") {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-                    y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+                    y = (ed.cursorPosition.row * this.lineHeight) + (this.lineHeight - 5);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, this.charWidth, 3);
                 } else {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-                    y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+                    y = (ed.cursorPosition.row * this.lineHeight);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, this.lineHeight);
                 }
             }
         } else {
-            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-            y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorPosition.col * this.charWidth;
+            y = (ed.cursorPosition.row * this.lineHeight);
 
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
@@ -1300,51 +1245,6 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.lineTo(midpoint - this.NIB_ARROW_INSETS.right, midpoint - this.NIB_ARROW_INSETS.bottom);
         ctx.closePath();
         ctx.fill();
-    },
-
-    // returns a string that represents the row; converts tab characters to spaces
-    getRowString: function(row) {
-        var lineText = this.editor.model.getRowArray(row).join("");
-
-        // check for tabs and handle them
-        for (var ti = 0; ti < lineText.length; ti++) {
-            // check if the current character is a tab
-            if (lineText.charCodeAt(ti) == 9) {
-                // since the current character is a tab, we potentially need to insert some blank space between the tab character
-                // and the next tab stop
-                var toInsert = this.editor.tabstop - (ti % this.editor.tabstop);
-
-                // create a spacer string representing the space between the tab and the tabstop
-                var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += "-";
-
-                // split the row string into the left half and the right half (eliminating the tab character) in preparation for
-                // creating a new row string
-                var left = (ti == 0) ? "" : lineText.substring(0, ti);
-                var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
-
-                // create the new row string; the blank space essentially replaces the tab character
-                lineText = left + ">" + spacer + right;
-
-                // increment the column counter to correspond to the new space
-                ti += toInsert - 1;
-            }
-        }
-
-        return lineText;
-    },
-
-    getRowScreenLength: function(row) {
-        return this.getRowString(row).length;
-    },
-
-    // returns the maximum number of display columns across all rows
-    getMaxCols: function(firstRow, lastRow) {
-        var cols = 0;
-        for (var i = firstRow; i <= lastRow; i++) {
-            cols = Math.max(cols, this.getRowScreenLength(i));
-        }
-        return cols;
     }
 });
 
@@ -1352,12 +1252,8 @@ dojo.declare("bespin.editor.UI", null, {
 //
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
-    constructor: function(container, opts) {
-        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
-
-        this.opts = opts || {};
-
-        this.container = dojo.byId(container);
+    constructor: function(container) {
+        this.container = container;
         this.model = new bespin.editor.DocumentModel();
 
         dojo.byId(container).innerHTML = "<canvas id='canvas' moz-opaque='true' tabindex='-1'></canvas>";        
@@ -1366,9 +1262,7 @@ dojo.declare("bespin.editor.API", null, {
 
         this.ui = new bespin.editor.UI(this);  
         this.theme = bespin.editor.themes['default'];
-
-        this.cursorManager = new bespin.editor.CursorManager(this);
-
+        this.cursorPosition = { row: 0, col: 0 }
         this.editorKeyListener = new bespin.editor.DefaultEditorKeyListener(this);
         this.undoManager = new bespin.editor.UndoManager(this);
         this.customEvents = new bespin.editor.Events(this);
@@ -1380,11 +1274,13 @@ dojo.declare("bespin.editor.API", null, {
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
 
-        bespin.editor.clipboard.setup(this); // setup the clipboard
-
         this.paint();
+    },
 
-        if (!this.opts.dontfocus) { this.setFocus(true); }
+    moveCursor: function(newpos) {
+        var row = Math.min(newpos.row, this.model.getRowCount() - 1); // last row if you go over
+        if (row < 0) row = 0; // can't move negative off screen
+        this.cursorPosition = { row: row, col: newpos.col };
     },
 
     // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee
@@ -1403,12 +1299,7 @@ dojo.declare("bespin.editor.API", null, {
 
         return { startPos: bespin.editor.utils.copyPos(startPos), endPos: bespin.editor.utils.copyPos(endPos) }
     },
-
-    // helper
-    getCursorPos: function() {
-        return this.cursorManager.getScreenPosition();
-    },
-
+    
     // helper to get text
     getSelectionAsText: function() {
         var selectionText = '';
@@ -1432,10 +1323,58 @@ dojo.declare("bespin.editor.API", null, {
     changeKeyListener: function(newKeyListener) {
         this.ui.installKeyListener(newKeyListener);
         this.editorKeyListener = newKeyListener;
-    },                                                                                                                                                   
+    },
 
     // this does not set focus to the editor; it indicates that focus has been set to the underlying canvas
     setFocus: function(focus) {
         this.focus = focus;
+    }
+});
+
+// ** {{{ bespin.editor.Events }}} **
+//
+// Handle custom events aimed at, and for the editor
+dojo.declare("bespin.editor.Events", null, {
+    constructor: function(editor) {
+        this.editor = editor;
+
+        dojo.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+            var file = event.file;
+
+            editor.model.insertDocument(file.content);
+            editor.moveCursor({ row: 0, col: 0 });
+        });
+
+        // -- fire an event here and you can run any editor action
+        dojo.subscribe("bespin:editor:doaction", function(event) {
+            var action = event.action;
+            var args   = event.args || bespin.editor.utils.buildArgs();
+
+            if (action) editor.ui.actions[action](args);
+        });
+
+        // -- fire an event to setup any new or replace actions
+        dojo.subscribe("bespin:editor:setaction", function(event) {
+            var action = event.action;
+            var code   = event.code;
+            if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
+        });
+
+        // -- add key listeners
+        // e.g. bindkey ctrl b moveCursorLeft
+        dojo.subscribe("bespin:editor:bindkey", function(event) {
+            var modifiers = event.modifiers || '';
+            if (!event.key) return;
+
+            var keyCode = bespin.util.keys.Key[event.key.toUpperCase()];
+
+            // -- try an editor action first, else fire away at the event bus
+            var action = editor.ui.actions[event.action] || event.action;
+
+            if (keyCode && action) {
+                editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+            }
+        });
+
     }
 });

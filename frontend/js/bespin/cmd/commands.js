@@ -47,24 +47,6 @@ bespin.cmd.commands.get = function(commandname) {
     return bespin.cmd.commands.store[commandname];
 };
 
-// ** {{{Command: bespin.cmd.commands.toArgArray}}} **
-// Helper for when you have a command that needs to get a hold of it's params
-// as an array for processing
-bespin.cmd.commands.toArgArray = function(args) {
-    if (args == null) {
-        return [];
-    }
-    else {
-        var spliten = args.split(" ");
-        if (spliten.length == 1 && spliten[0] == "") {
-            return [];
-        }
-        else {
-            return spliten;
-        }
-    }
-};
-
 // == Start adding commands to the store ==
 //
 
@@ -77,11 +59,9 @@ bespin.cmd.commands.add({
     completeText: 'optionally, narrow down the search',
     execute: function(self, extra) {
         var commands = [];
-        var command, name;
-
         if (self.commands[extra]) { // caught a real command
             commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
-            command = self.commands[extra];
+            var command = self.commands[extra];
             commands.push(command['description'] ? command.description : command.preview);
         } else {
             var showHidden = false;
@@ -103,14 +83,14 @@ bespin.cmd.commands.add({
             var sorted = tobesorted.sort();
             
             for (var i = 0; i < sorted.length; i++) {
-                name = sorted[i];
-                command = self.commands[name];
+                var name = sorted[i];
+                var command = self.commands[name];
 
                 if (!showHidden && command.hidden) continue;
                 if (extra && name.indexOf(extra) != 0) continue;
 
-                var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-                commands.push('<b>' + name + args + '</b>: ' + command.preview);
+                var arguments = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
+                commands.push('<b>' + name + arguments + '</b>: ' + command.preview);
             }
         }
         self.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
@@ -142,7 +122,7 @@ bespin.cmd.commands.add({
                 }
             } else {
                 var key = setting.key;
-                if (setting.value === undefined) { // show it
+                if (setting.value == undefined) { // show it
                     var value = self.settings.get(key);
                     if (value) {
                         output = "<u>Your setting</u><br/><br/>";
@@ -168,10 +148,8 @@ bespin.cmd.commands.add({
     preview: 'show files',
     completeText: 'optionally, add the project name of your choice',
     execute: function(self, project) {
-        if (!project) {
-            bespin.withComponent('editSession', function(editSession) {
-                project = editSession.project;
-            });
+        if (!project && (typeof _editSession != "undefined") ) {
+            project = _editSession.projectForDisplay();
         }
 
         if (!project) {
@@ -194,7 +172,8 @@ bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(self) {
-        bespin.publish("bespin:session:status");
+      var file = _editSession.path || 'a new scratch file';
+      self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
     }
 });
 
@@ -206,7 +185,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            bespin.publish("bespin:project:set", { project: projectname });
+            dojo.publish("bespin:editor:project:set", [{ project: projectname }]);
         } else {
             self.executeCommand('status');
         }
@@ -239,7 +218,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:create", { project: projectname });
+        dojo.publish("bespin:project:create", [{ project: projectname }]);
     }
 });
 
@@ -254,7 +233,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:delete", { project: projectname });
+        dojo.publish("bespin:project:delete", [{ project: projectname }]);
     }
 });
 
@@ -269,7 +248,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:rename", { currentProject: args.currentProject, newProject: args.newProject });
+        dojo.publish("bespin:project:rename", [{ currentProject: args.currentProject, newProject: args.newProject }]);
     }
 });
 
@@ -288,7 +267,20 @@ bespin.cmd.commands.add({
         var opts = { path: args.path };
         if (args.projectname) opts.project = args.projectname;
         
-        bespin.publish("bespin:directory:create", opts);
+        dojo.publish("bespin:directory:create", [opts]);
+    }
+});
+
+
+// ** {{{Command: clipboard}}} **
+bespin.cmd.commands.add({
+    name: 'clipboard',
+    version: 0.1,
+    preview: 'export the contents to the clipboard',
+    execute: function(self) {
+        bespin.util.clipboard.manual.copy(self.editor.model.getDocument());
+
+        self.showInfo('Saved file contents to clipboard', true);
     }
 });
 
@@ -298,11 +290,10 @@ bespin.cmd.commands.add({
     takes: ['filename'],
     preview: 'save the current contents',
     completeText: 'add the filename to save as, or use the current file',
-    withKey: "CMD S",
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:savefile", {
+        dojo.publish("bespin:editor:savefile", [{
             filename: filename
-        });
+        }]);
     }
 });
 
@@ -314,9 +305,9 @@ bespin.cmd.commands.add({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:openfile", {
+        dojo.publish("bespin:editor:openfile", [{
             filename: filename
-        });
+        }]);
     }
 });
 
@@ -327,9 +318,9 @@ bespin.cmd.commands.add({
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:preview", {
-            filename: filename
-        });
+        dojo.publish("bespin:editor:preview", [{
+            filename: filename 
+        }]);
     }
 });
 
@@ -339,7 +330,7 @@ bespin.cmd.commands.add({
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(self) {
-        bespin.publish("bespin:editor:config:edit");
+        dojo.publish("bespin:editor:config:edit");
     }
 });
 
@@ -348,7 +339,7 @@ bespin.cmd.commands.add({
     name: 'runconfig',
     preview: 'run your config file',
     execute: function(self) {
-        bespin.publish("bespin:editor:config:run");
+        dojo.publish("bespin:editor:config:run");
     }
 });
 
@@ -364,7 +355,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:commands:load", { commandname: commandname });
+        dojo.publish("bespin:commands:load", [{ commandname: commandname }]);
     }
 });
 
@@ -382,7 +373,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:edit", { commandname: commandname });
+        dojo.publish("bespin:commands:edit", [{ commandname: commandname }]);
     }
 });
 
@@ -391,7 +382,7 @@ bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(self) {
-        bespin.publish("bespin:commands:list");
+        dojo.publish("bespin:commands:list");
     }
 });
 
@@ -399,7 +390,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'cmdrm',
     takes: ['commandname'],
-    preview: 'delete a custom command',
+    preview: 'delete a custom commands',
     completeText: 'command name to delete (required)',
     usage: '[commandname]: Command name required.',
     execute: function(self, commandname) {
@@ -408,7 +399,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:delete", { commandname: commandname });
+        dojo.publish("bespin:commands:delete", [{ commandname: commandname }]);
     }
 });
 
@@ -418,14 +409,14 @@ bespin.cmd.commands.add({
     //aliases: ['new'],
     takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
-    completeText: 'optionally, name the new filename first, and then the name of the project second',
-    withKey: "CTRL SHIFT N",
+    completeText: 'optionally, name the new filename',
+    withKey: "CTRL SHIFT N",            
     execute: function(self, args) {
         if (args.filename) {
             args.newfilename = args.filename;
             delete args.filename;
         }
-        bespin.publish("bespin:editor:newfile", args || {});
+        dojo.publish("bespin:editor:newfile", [args || {}]);
     }
 });
 
@@ -437,19 +428,13 @@ bespin.cmd.commands.add({
     preview: 'remove the file',
     completeText: 'add the filename to remove',
     execute: function(self, filename) {
-        var project = bespin.get('editSession').project;
-        if (!project) {
-            self.showInfo("rm only works with the project is set.");
-            return;            
-        }
-
         if (!filename) {
             self.showInfo("give me a filename or directory to delete");
             return;
         }
-
-        self.files.removeFile(project, filename, function() {
-            if (bespin.get('editSession').checkSameFile(project, filename)) self.editor.model.clear(); // only clear if deleting the same file
+        
+        self.files.removeFile(_editSession.project, filename, function() {
+            if (_editSession.checkSameFile(_editSession.project, filename)) self.editor.model.clear(); // only clear if deleting the same file
 
             self.showInfo('Removed file: ' + filename, true);
         }, function(xhr) {
@@ -465,7 +450,7 @@ bespin.cmd.commands.add({
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
     execute: function(self, args) {
-        bespin.publish("bespin:editor:closefile", args);
+        dojo.publish("bespin:editor:closefile", [args]);
     }
 });
 
@@ -496,8 +481,7 @@ bespin.cmd.commands.add({
                     ? "The command named '" + command + "' is at version " + theCommand.version 
                     : "The command named '" + command + "' is a core command in Bespin version " + bespin.versionNumber;
             }
-        }
-        else {
+        } else {
             version = bespinVersion;
         }
         self.showInfo(version);
@@ -522,15 +506,15 @@ bespin.cmd.commands.add({
     completeText: 'add the line number to move to',
     execute: function(self, linenumber) {
         if (linenumber) {
-            var linenumAsInt = parseInt(linenumber, 10) - 1; // parse the line number as a decimal
+            var linenumAsInt = parseInt(linenumber) - 1;
             
             self.editor.moveCursor({ row: linenumAsInt, col: 0 });
             
             // If the line that we are moving to is off screen, center it, else just move in place
             if ( (linenumAsInt < self.editor.ui.firstVisibleRow) || (linenumAsInt >= self.editor.ui.firstVisibleRow+self.editor.ui.visibleRows) ) {
-                bespin.publish("bespin:editor:doaction", {
+                dojo.publish("bespin:editor:doaction", [{
                     action: 'moveCursorRowToCenter'
-                });
+                }]);
             }
         }
     }
@@ -556,7 +540,7 @@ bespin.cmd.commands.add({
     takes: {
         order: ['username', 'password'],
         username: {
-            "short": 'u'
+            "short": 'u',
         },
         password: {
             "short": 'p',
@@ -570,8 +554,8 @@ bespin.cmd.commands.add({
             self.executeCommand("status");
             return;
         }
-        bespin.get('editSession').username = args.user; // TODO: normalize syncing
-        bespin.get('server').login(args.user, args.pass);
+        _editSession.username = args.user; // TODO: normalize syncing
+        _server.login(args.user, args.pass);
     }
 });
 
@@ -580,8 +564,8 @@ bespin.cmd.commands.add({
     name: 'logout',
     preview: 'log out',
     execute: function(self) {
-        delete bespin.get('editSession').username;
-        bespin.get('server').logout(function() {
+        delete _editSession.username;
+        _server.logout(function() {
 			window.location.href="/";
 		});
     }
@@ -610,9 +594,9 @@ bespin.cmd.commands.add({
     preview: 'execute any editor action',
     hidden: true,
     execute: function(self, actionname) {
-        bespin.publish("bespin:editor:doaction", {
+        dojo.publish("bespin:editor:doaction", [{
             action: actionname
-        });
+        }]);
     }
 });
 
@@ -630,19 +614,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: quota}}} **
-bespin.cmd.commands.add({
-    name: 'quota',
-    preview: 'show your quota info',
-    megabytes: function(bytes) {
-        return (bytes / 1024 / 1024).toFixed(2);
-    },
-    execute: function(self) {
-        var editSession = bespin.get('editSession');
-        self.showInfo("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
-    }
-});
-
 // ** {{{Command: export}}} **
 bespin.cmd.commands.add({
     name: 'export',
@@ -650,14 +621,14 @@ bespin.cmd.commands.add({
     preview: 'export the given project with an archivetype of zip or tgz',
     completeText: 'project name, archivetype (zip | tgz, defaults to zip)',
     execute: function(self, args) {
-        var project = args.project || bespin.get('editSession').project;
+        var project = args.project || _editSession.project;
         
         var type = args.archivetype;
-        if (!bespin.util.include(['zip','tgz','tar.gz'], type)) {
+        if (!['zip','tgz','tar.gz'].include(type)) {
             type = 'zip';
         }
 
-        bespin.get('server').exportProject(project, type); // try to do it via the iframe
+        _server.exportProject(project, type); // try to do it via the iframe
     }
 });
 
@@ -665,9 +636,9 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'import',
     takes: ['url', 'project'],
-    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename<br>If no URL is given to import, a file upload box will be shown to import.',
-    completeText: 'url (to an archive zip | tgz) and/or project name',
-    usage: "[url of archive] [projectname]<br><br><em>If only a URL is given, the projectname will be implied<br><br>If only a project name is given, a file upload window will be shown to upload.</em>",
+    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
+    completeText: 'url (to an archive zip | tgz), optional project name',
+    usage: "[url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
     // ** {{{calculateProjectName}}}
     //
     // Given a URL, work out the project name as a default
@@ -686,50 +657,6 @@ bespin.cmd.commands.add({
     isURL: function(url) {
         return (url && (/^http(:|s:)/.test(url))); 
     },
-    upload: function(project) {
-        // use the center popup and inject a form in that points to the right place.
-        var el = dojo.byId('centerpopup');
-
-        el.innerHTML = "<div id='upload-container'><form method='POST' name='upload' id='upload' enctype='multipart/form-data'><div id='upload-header'>Import project via upload <img id='upload-close' src='images/icn_close_x.png' align='right'></div><div id='upload-content'><div id='upload-status'></div><p>Browse to find the project archive that you wish to archive<br>and then click on the <code>Upload</code> button.</p><center><input type='file' id='filedata' name='filedata' accept='application/zip,application/x-gzip'> <input type='submit' value='Upload'></center></div></form></div>";
-          
-        dojo.require("dijit._base.place");
-        dojo.require("bespin.util.webpieces");
-
-        dojo.require("dojo.io.iframe"); 
-
-        dojo.connect(dojo.byId('upload'), "submit", function() {
-            dojo.byId('upload-status').innerHTML = 'Importing file into new project ' + project;
-            dojo.io.iframe.send({
-                url: '/project/import/' + project,
-                form: dojo.byId('upload'),
-                method: 'POST',
-                handleAs: 'text',
-                preventCache: true,
-                contentType: "multipart/form-data",
-                load: function(data, ioArg) {
-                    dojo.byId('upload-status').innerHTML = 'Thanks for uploading the file!';
-                },
-                error: function(error, ioArg) {
-                    setTimeout(function() {
-                        bespin.get('files').projects(function(projectNames) {
-                            if (dojo.some(projectNames, function(testProject) { return project + '/' == testProject.name; })) {
-                                dojo.byId('upload-status').innerHTML = 'Archive imported and project ' + project + ' has been created!';
-                            } else {
-                                dojo.byId('upload-status').innerHTML = 'Error uploading the file. Sorry, try again!';                                  
-                            }
-                        });
-                    }, 100);
-                }
-            });
-        });
-
-        bespin.util.webpieces.showCenterPopup(el);
-
-        dojo.byId("overlay").onclick = dojo.byId("upload-close").onclick = function() {
-            bespin.util.webpieces.hideCenterPopup(el);
-        };
-    },
-
     // ** {{{execute}}}
     //
     // Can be called in three ways:
@@ -738,8 +665,6 @@ bespin.cmd.commands.add({
     // * import http://foo.com/path/to/archive.zip projectName
     // * import projectName http://foo.com/path/to/archive.zip
     execute: function(self, args) {
-        var project, url;
-
         // Fail fast. Nothing given?
         if (!args.url) {
             self.showUsage(this);
@@ -749,23 +674,38 @@ bespin.cmd.commands.add({
             args.project = this.calculateProjectName(args.url);
         // * Oops, project and url are the wrong way around. That's fine
         } else if (this.isURL(args.project)) {
-            project = args.project;
-            url = args.url;
+            var project = args.project;
+            var url = args.url;
             args.project = url;
             args.url = project;
-        // * Make sure that a URL came along at some point, else call up an upload box
+        // * Make sure that a URL came along at some point
         } else if (!this.isURL(args.url)) {
-            var project = args.url; // only a project has been passed in
-            this.upload(project);
-        } else {
-        // * A project and URL are here and available to do a URL based import
-            project = args.project;
-            url = args.url;
-
-            self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
-
-            bespin.publish("bespin:project:import", { project: project, url: url });
+            this.usage(self);
+            return;            
         }
+        
+        var project = args.project;
+        var url = args.url;
+
+        self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
+
+        _server.importProject(project, url, { call: function(xhr) {
+            self.showInfo("Project " + project + " imported from:<br><br>" + url, true);
+        }, onFailure: function(xhr) {
+            self.showInfo("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
+        }});
+    }
+});
+
+// ** {{{Command: doctype}}} **
+bespin.cmd.commands.add({
+    name: 'doctype',
+    takes: ['section'], // part on the Wiki
+    preview: 'grab the doctype info for a section',
+    completeText: 'can you give me the Doctype wiki section?',
+    hidden: true,
+    execute: function(self, section) {
+        //TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
     }
 });
 
@@ -778,14 +718,12 @@ bespin.cmd.commands.add({
     execute: function(self, side) {
         self.editor.model.changeEachRow(function(row) {
             if (!side) side = "right";
-            
-            if (bespin.util.include(["left", "both"], side)) {
-                while (row[0] == ' ') {
+            if (["left", "both"].include(side)) {
+                while (row.first() == ' ') {
                     row.shift();
                 }
             }
-            
-            if (bespin.util.include(["right", "both"], side)) {
+            if (["right", "both"].include(side)) {
                 var i = row.length - 1;
 
                 while (row[i] == ' ') {
@@ -793,7 +731,7 @@ bespin.cmd.commands.add({
                     i--;
                 }
             }
-            return bespin.util.shrinkArray(row);
+            return row;
         });
     }
 });
@@ -801,14 +739,14 @@ bespin.cmd.commands.add({
 // ** {{{Command: bindkey}}} **
 bespin.cmd.commands.add({
     name: 'bindkey',
-    takes: ['modifiers', 'key', 'action'],
+    takes: ['modifier', 'key', 'action'],
     preview: 'Bind a key to an action',
-    completeText: 'give modifier(s), key, and action name',
+    completeText: 'give a modifier, key, and action name',
     hidden: true,
     execute: function(self, args) {
         if (args.modifiers == "none") args.modifiers = '';
 
-        bespin.publish("bespin:editor:bindkey", args);
+        dojo.publish("bespin:editor:bindkey", [args]);
     }
 });
 
@@ -833,7 +771,7 @@ bespin.cmd.commands.add({
 
         for (var i = 0; i < 3; i++) {
             dojo.forEach(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], function(c) {
-                var args = { pos: bespin.editor.utils.copyPos(self.editor.cursorPosition) };
+                var args = { pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) };
                 args.newchar = c;
                 self.editor.ui.actions.insertCharacter(args);            
             });
@@ -871,35 +809,26 @@ bespin.cmd.commands.add({
           output += x + ": " + self.aliases[x] + "<br/>";
         }
       } else {
-        if (args.command === undefined) { // show it
+        if (args.command == undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
-          var alias = self.aliases[args.alias];
-          if (alias) {
-              output += args.alias + ": " + self.aliases[args.alias];
-          } else {
-              output += "No alias set for " + args.alias;
-          }
-        } else { // save a new alias
+          output += args.alias + ": " + self.aliases[args.alias];
+        } else {
           var key = args.alias;
           var value = args.command;
-          var aliascmd = value.split(' ')[0];
-          
           output = "<u>Saving setting</u><br/><br/>";
-          if (self.commands[key]) {
-              output += "Sorry, there is already a command with the name: " + key;
-          } else if (self.commands[aliascmd]) {
+          if (self.commands[value]) {
               output += key + ": " + value;
-              self.aliases[key] = value;
-          } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
+            self.aliases[key] = value;
+          } else if (self.aliases[value]) { // TODO: have the symlink to the alias not the end point
               output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
-              self.aliases[key] = value;
+            self.aliases[key] = value;
           } else {
-              output += "Sorry, no command or alias with that name.";
+            output += "Sorry, no command or alias with that name."
           }
         }
       }
       self.showInfo(output);
-    }
+    },
 });
 
 // ** {{{Command: history}}} **
@@ -914,7 +843,6 @@ bespin.cmd.commands.add({
 // ** {{{Command: use}}} **
 bespin.cmd.commands.add({
     name: 'use',
-    takes: ['type'],
     preview: 'use patterns to bring in code',
     completeText: '"sound" will add sound support',
     libnames: {
@@ -933,162 +861,3 @@ bespin.cmd.commands.add({
         }
     }
 });
-
-// ** {{{Command: follow}}} **
-bespin.cmd.commands.add({
-    name: 'follow',
-    takes: ['username ...'],
-    preview: 'add to the list of users we are following, or (with no args) list the current set',
-    completeText: 'username(s) of person(s) to follow',
-    usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
-    // ** {{{execute}}}
-    execute: function(self, args) {
-        var usernames = bespin.cmd.commands.toArgArray(args);
-
-        if (usernames.length == 0) {
-            bespin.publish("bespin:network:followers");
-        }
-        else {
-            bespin.publish("bespin:network:follow", [ usernames ]);
-        }
-    }
-});
-
-// ** {{{Command: unfollow}}} **
-bespin.cmd.commands.add({
-    name: 'unfollow',
-    takes: ['username ...'],
-    preview: 'remove from the list of users we are following',
-    completeText: 'username(s) of person(s) to stop following',
-    usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
-    // ** {{{execute}}}
-    execute: function(self, args) {
-        var usernames = bespin.cmd.commands.toArgArray(args);
-
-        if (usernames.length == 0) {
-            self.showInfo('Please specify the users to cease following');
-        }
-        else {
-            bespin.publish("bespin:network:unfollow", [ usernames ]);
-        }
-    }
-});
-
-// ** {{{Command: group}}} **
-bespin.cmd.commands.add({
-    name: 'group',
-    preview: 'Collect the people you follow into groups, and display the existing groups',
-    // ** {{{execute}}}
-    execute: function(self, args) {
-        args = bespin.cmd.commands.toArgArray(args);
-
-        if (args.length == 0) {
-            bespin.publish("bespin:groups:list:all");
-        }
-        else if (args.length == 1) {
-            bespin.publish("bespin:groups:list", [ args[0] ]);
-        }
-        else if (args.length == 2) {
-            if (args[1] == "-r" || args[1] == "--remove") {
-                bespin.publish("bespin:groups:remove:all", [ args[0] ]);
-            }
-            else {
-                self.showInfo('Syntax error - You must specify what you want to do with your group.');
-            }
-        }
-        else if (args.length > 2) {
-            var group = args.shift();
-            var command = args.shift();
-            if (command == "-a" || command == "--add") {
-                bespin.publish("bespin:groups:add", [ group, args ]);
-            }
-            else if (command == "-r" || command == "--remove") {
-                args.shift();
-                bespin.publish("bespin:groups:remove", [ group, args ]);
-            }
-            else {
-                self.showInfo('Syntax error - To manipulate a group you must use add/remove');
-            }
-        }
-    }
-});
-
-// ** {{{Command: test}}} **
-bespin.cmd.commands.add({
-    name: 'test',
-    preview: 'Run some automated end to end tests',
-    script: [
-        { send:"echo Starting", expect:/^Starting$/ },
-        { send:"follow", expect:/sds/ },
-        { send:"echo Finished", expect:/^Finished$/ }
-    ],
-    // ** {{{_setup}}}
-    _setup: function(self, onComplete) {
-        this.originalShowInfo = self.showInfo;
-        var that = this;
-        bespin.get('server').request('POST', '/test/setup/', null, {
-            call:onComplete,
-            onFailure:function(xhr) {
-                that._cleanup(self, "_setup() failed. Maybe due to: " + xhr.responseText);
-            }
-        });
-    },
-    // ** {{{_cleanup}}}
-    _cleanup: function(self, reason) {
-        self.showInfo = this.originalShowInfo;
-        self.showInfo(reason);
-        bespin.get('server').request('POST', '/test/cleanup/', null, {
-            call:function() {
-                console.log("Server cleanup completed")
-            },
-            onFailure:function(xhr) {
-                self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
-            }
-        });
-    },
-    // ** {{{_runNextElement}}}
-    _runNextElement: function(self, script, index) {
-        console.log("_runNextElement", index);
-        if (index >= script.length) {
-            this._cleanup(self, "Finished running tests");
-            return;
-        }
-        var element = script[index];
-        var that = this;
-        self.showInfo = function(html, autohide) {
-            var info = dojo.byId('info')
-            info.innerHTML = html;
-            var text = info.textContent;
-            if (element.expect.test(text)) {
-                that._runNextElement(self, script, index + 1);
-            }
-            else {
-                console.error("Test failure at index:", index);
-                console.log("Command: ", element.send);
-                console.log("Expected: ", element.expect.source);
-                console.log("Received:", text);
-                that._cleanup(self, "Test failure at index: " + index + "<br/>Command: '" + element.send + "'<br/>Expected: /" + element.expect.source + "/<br/>Received: '" + text + "'");
-            }
-        };
-        self.executeCommand(element.send);
-    },
-    // ** {{{execute}}}
-    execute: function(self) {
-        var that = this;
-        this._setup(self, function() {
-            that._runNextElement(self, that.script, 0);
-        });
-    }
-});
-
-// ** {{{Command: echo}}} **
-bespin.cmd.commands.add({
-    name: 'echo',
-    takes: ['message ...'],
-    preview: 'A test echo command',
-    // ** {{{execute}}}
-    execute: function(self, args) {
-        self.showInfo(args);
-    }
-});
-

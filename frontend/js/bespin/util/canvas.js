@@ -41,7 +41,7 @@ dojo.mixin(bespin.util.canvas, {
                 ctx.mozTextStyle = ctx.font;
                 ctx.mozDrawText(textToDraw);
                 ctx.translate(-x, -y);
-            };
+            }
         }
 
         // * Setup measureText
@@ -50,7 +50,7 @@ dojo.mixin(bespin.util.canvas, {
                 if (ctx.font) ctx.mozTextStyle = ctx.font;
                 var width = ctx.mozMeasureText(text);
                 return { width: width };
-            };
+            }
         }
 
         // * Setup html5MeasureText
@@ -63,16 +63,16 @@ dojo.mixin(bespin.util.canvas, {
                 textMetrics.ascent = ctx.html5MeasureText("m").width;
 
                 return textMetrics;
-            };
+            }
         }
 
         // * for other browsers, no-op away
         if (!ctx.fillText) {
-            ctx.fillText = function() {};
+            ctx.fillText = function() {}
         }
 
         if (!ctx.measureText) {
-            ctx.measureText = function() { return 10; };
+            ctx.measureText = function() { return 10; }
         }
 
         return ctx;

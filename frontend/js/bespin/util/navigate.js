@@ -22,9 +22,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.util.navigate");
 
-dojo.require("bespin.client.settings");
+dojo.provide("bespin.util.navigate");
 
 // = Navigate =
 //
@@ -34,7 +33,7 @@ dojo.require("bespin.client.settings");
 //
 // new up an object that will return public methods and hide private ones
 
-(function() {
+(function(){
 
     // ** {{{ Yup, you can be private }}} **
     //
@@ -46,43 +45,36 @@ dojo.require("bespin.client.settings");
         } else {
             location.href = url;
         }
-    };
+    }
 
-
+    
     // ** {{{ Public }}} **
     //
     // Simple methods to construct URLs within Bespin and go to them
 
     dojo.mixin(bespin.util.navigate, {
         dashboard: function(newTab) {
-            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath')
-            if (pathSelected) {
-                go("dashboard.html#path="+pathSelected, newTab);    // this contains the pathSelected parameter!
-            } else {
-                go("dashboard.html", newTab);
-            }
+            go("dashboard.html", newTab);
         },
-
+        
         home: function(newTab) {
             go("index.html", newTab);
         },
-
+        
         quickEdit: function(newTab) {
     		go("editor.html#new=true", newTab);
     	},
-
+    	
         editor: function(project, path, newTab) {
             var url = "editor.html#";
             var args = [];
-
+            
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
-            var selectedPath = bespin.page.dashboard.tree.getSelectedPath(true);
-            if (selectedPath)   args.push('fromDashboardPath='+selectedPath);
-
+            
             if (args.length > 0) url += args.join("&");
-
+            
             go(url, newTab);
         }
-    });
+    });    
 })();

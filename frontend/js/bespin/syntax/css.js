@@ -48,48 +48,48 @@ bespin.syntax.Constants = {
     SIZES: "sizes",
     ID: "cssid",
     COLOR_OR_ID: "color_or_id"
-};
+}                                                      
 
-dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
-    keywords: ['ascent', 'azimuth', 'background-attachment', 'background-color', 'background-image', 'background-position',
-        'background-repeat', 'background', 'baseline', 'bbox', 'border-collapse', 'border-color', 'border-spacing', 'border-style',
-        'border-top', 'border-right', 'border-bottom', 'border-left', 'border-top-color', 'border-right-color', 'border-bottom-color',
-        'border-left-color', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', 'border-top-width',
-        'border-right-width', 'border-bottom-width', 'border-left-width', 'border-width', 'border', 'cap-height', 'caption-side', 'centerline',
-        'clear', 'clip', 'color', 'content', 'counter-increment', 'counter-reset', 'cue-after', 'cue-before', 'cue', 'cursor', 'definition-src',
-        'descent', 'direction', 'display', 'elevation', 'empty-cells', 'float', 'font-size-adjust', 'font-family', 'font-size', 'font-stretch',
-        'font-style', 'font-variant', 'font-weight', 'font', 'height', 'letter-spacing', 'line-height', 'list-style-image', 'list-style-position',
-        'list-style-type', 'list-style', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin', 'marker-offset', 'marks', 'mathline',
-        'max-height','max-width', 'min-height', 'min-width', 'orphans', 'outline-color', 'outline-style', 'outline-width', 'outline', 'overflow',
-        'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding', 'page', 'page-break-after', 'page-break-before',
-        'page-break-inside', 'pause', 'pause-after', 'pause-before', 'pitch', 'pitch-range', 'play-during', 'position',
-        'quotes', 'richness', 'size', 'slope', 'src', 'speak-header', 'speak-numeral', 'speak-punctuation', 'speak', 'speech-rate', 'stemh', 'stemv',
-        'stress', 'table-layout', 'text-align', 'text-decoration', 'text-indent', 'text-shadow', 'text-transform', 'unicode-bidi', 'unicode-range',
-        'units-per-em', 'vertical-align', 'visibility', 'voice-family', 'volume', 'white-space', 'widows', 'width', 'widths', 'word-spacing',
+dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {    
+	keywords: ['ascent', 'azimuth', 'background-attachment', 'background-color', 'background-image', 'background-position', 
+	    'background-repeat', 'background', 'baseline', 'bbox', 'border-collapse', 'border-color', 'border-spacing', 'border-style',
+	    'border-top', 'border-right', 'border-bottom', 'border-left', 'border-top-color', 'border-right-color', 'border-bottom-color',
+	    'border-left-color', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', 'border-top-width',
+	    'border-right-width', 'border-bottom-width', 'border-left-width', 'border-width', 'border', 'cap-height', 'caption-side', 'centerline',
+	    'clear', 'clip', 'color', 'content', 'counter-increment', 'counter-reset', 'cue-after', 'cue-before', 'cue', 'cursor', 'definition-src', 
+	    'descent', 'direction', 'display', 'elevation', 'empty-cells', 'float', 'font-size-adjust', 'font-family', 'font-size', 'font-stretch',
+	    'font-style', 'font-variant', 'font-weight', 'font', 'height', 'letter-spacing', 'line-height', 'list-style-image', 'list-style-position',  
+	    'list-style-type', 'list-style', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin', 'marker-offset', 'marks', 'mathline',
+	    'max-height','max-width', 'min-height', 'min-width', 'orphans', 'outline-color', 'outline-style', 'outline-width', 'outline', 'overflow', 
+	    'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding', 'page', 'page-break-after', 'page-break-before', 
+	    'page-break-inside', 'pause', 'pause-after', 'pause-before', 'pitch', 'pitch-range', 'play-during', 'position',
+        'quotes', 'richness', 'size', 'slope', 'src', 'speak-header', 'speak-numeral', 'speak-punctuation', 'speak', 'speech-rate', 'stemh', 'stemv',   
+        'stress', 'table-layout', 'text-align', 'text-decoration', 'text-indent', 'text-shadow', 'text-transform', 'unicode-bidi', 'unicode-range', 
+        'units-per-em', 'vertical-align', 'visibility', 'voice-family', 'volume', 'white-space', 'widows', 'width', 'widths', 'word-spacing', 
         'x-height', 'z-index'],
 
-    values: ['above', 'absolute', 'all', 'always', 'aqua', 'armenian', 'attr', 'aural', 'auto', 'avoid', 'baseline', 'behind', 'below',
-        'bidi-override', 'black', 'blink', 'block', 'blue', 'bold', 'bolder', 'both', 'bottom', 'braille', 'capitalize', 'caption',
-        'center', 'center-left', 'center-right', 'circle', 'close-quote', 'code', 'collapse', 'compact', 'condensed',
-        'continuous', 'counter', 'counters', 'crop', 'cross', 'crosshair', 'cursive', 'dashed', 'decimal', 'decimal-leading-zero', 'default',
-        'digits', 'disc', 'dotted', 'double', 'embed', 'embossed', 'e-resize', 'expanded', 'extra-condensed', 'extra-expanded', 'fantasy',
-        'far-left', 'far-right', 'fast', 'faster', 'fixed', 'format', 'fuchsia', 'gray', 'green', 'groove', 'handheld', 'hebrew', 'help',
-        'hidden', 'hide', 'high', 'higher', 'icon', 'inline-table', 'inline', 'inset', 'inside', 'invert',
-        'italic', 'justify', 'landscape', 'large', 'larger', 'left-side', 'left', 'leftwards', 'level', 'lighter', 'lime', 'line-through',
-        'list-item', 'local', 'loud', 'lower-alpha', 'lowercase', 'lower-greek', 'lower-latin', 'lower-roman', 'lower', 'low', 'ltr', 'marker',
-        'maroon', 'medium', 'message-box', 'middle', 'mix', 'move', 'narrower', 'navy', 'ne-resize', 'no-close-quote', 'none', 'no-open-quote',
-        'no-repeat', 'normal', 'nowrap', 'n-resize', 'nw-resize', 'oblique', 'olive', 'once', 'open-quote', 'outset', 'outside', 'overline',
-        'pointer', 'portrait', 'pre', 'print', 'projection', 'purple', 'red', 'relative', 'repeat', 'repeat-x', 'repeat-y', 'rgb', 'ridge',
-        'right', 'right-side', 'rightwards', 'rtl', 'run-in', 'screen', 'scroll', 'semi-condensed', 'semi-expanded', 'separate', 'se-resize',
-        'show', 'silent', 'silver', 'slower', 'slow', 'small', 'small-caps', 'small-caption', 'smaller', 'soft', 'solid', 'speech', 'spell-out',
-        'square', 's-resize', 'static', 'status-bar', 'sub', 'super', 'sw-resize', 'table-caption', 'table-cell', 'table-column',
-        'table-column-group', 'table-footer-group', 'table-header-group', 'table-row', 'table-row-group', 'teal', 'text-bottom', 'text-top',
-        'thick', 'thin', 'top', 'transparent', 'tty', 'tv', 'ultra-condensed', 'ultra-expanded', 'underline', 'upper-alpha', 'uppercase',
-        'upper-latin', 'upper-roman', 'url', 'visible', 'wait', 'white', 'wider', 'w-resize', 'x-fast', 'x-high', 'x-large', 'x-loud', 'x-low',
-        'x-slow', 'x-small', 'x-soft', 'xx-large', 'xx-small', 'yellow',
-        'monospace', 'tahoma', 'verdana', 'arial', 'helvetica', 'sans-serif', 'serif'],
-
-    sizeRegex: "(?:em|pt|px|%)",
+	values:	['above', 'absolute', 'all', 'always', 'aqua', 'armenian', 'attr', 'aural', 'auto', 'avoid', 'baseline', 'behind', 'below', 
+	        'bidi-override', 'black', 'blink', 'block', 'blue', 'bold', 'bolder', 'both', 'bottom', 'braille', 'capitalize', 'caption', 
+	        'center', 'center-left', 'center-right', 'circle', 'close-quote', 'code', 'collapse', 'compact', 'condensed',
+			'continuous', 'counter', 'counters', 'crop', 'cross', 'crosshair', 'cursive', 'dashed', 'decimal', 'decimal-leading-zero', 'default',
+			'digits', 'disc', 'dotted', 'double', 'embed', 'embossed', 'e-resize', 'expanded', 'extra-condensed', 'extra-expanded', 'fantasy', 
+			'far-left', 'far-right', 'fast', 'faster', 'fixed', 'format', 'fuchsia', 'gray', 'green', 'groove', 'handheld', 'hebrew', 'help',
+			'hidden', 'hide', 'high', 'higher', 'icon', 'inline-table', 'inline', 'inset', 'inside', 'invert',
+			'italic', 'justify', 'landscape', 'large', 'larger', 'left-side', 'left', 'leftwards', 'level', 'lighter', 'lime', 'line-through',
+			'list-item', 'local', 'loud', 'lower-alpha', 'lowercase', 'lower-greek', 'lower-latin', 'lower-roman', 'lower', 'low', 'ltr', 'marker',
+			'maroon', 'medium', 'message-box', 'middle', 'mix', 'move', 'narrower', 'navy', 'ne-resize', 'no-close-quote', 'none', 'no-open-quote', 
+			'no-repeat', 'normal', 'nowrap', 'n-resize', 'nw-resize', 'oblique', 'olive', 'once', 'open-quote', 'outset', 'outside', 'overline',
+			'pointer', 'portrait', 'pre', 'print', 'projection', 'purple', 'red', 'relative', 'repeat', 'repeat-x', 'repeat-y', 'rgb', 'ridge',
+			'right', 'right-side', 'rightwards', 'rtl', 'run-in', 'screen', 'scroll', 'semi-condensed', 'semi-expanded', 'separate', 'se-resize',
+			'show', 'silent', 'silver', 'slower', 'slow', 'small', 'small-caps', 'small-caption', 'smaller', 'soft', 'solid', 'speech', 'spell-out',
+			'square', 's-resize', 'static', 'status-bar', 'sub', 'super', 'sw-resize', 'table-caption', 'table-cell', 'table-column',
+			'table-column-group', 'table-footer-group', 'table-header-group', 'table-row', 'table-row-group', 'teal', 'text-bottom', 'text-top',
+			'thick', 'thin', 'top', 'transparent', 'tty', 'tv', 'ultra-condensed', 'ultra-expanded', 'underline', 'upper-alpha', 'uppercase',
+			'upper-latin', 'upper-roman', 'url', 'visible', 'wait', 'white', 'wider', 'w-resize', 'x-fast', 'x-high', 'x-large', 'x-loud', 'x-low',
+			'x-slow', 'x-small', 'x-soft', 'xx-large', 'xx-small', 'yellow', 
+			'monospace', 'tahoma', 'verdana', 'arial', 'helvetica', 'sans-serif', 'serif'],	
+			
+	sizeRegex: "(?:em|pt|px|%)",
 
     important: '!important',
 
@@ -99,7 +99,7 @@ dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
         var K = bespin.syntax.Constants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};  // contains the individual style types as keys, with array of start/stop positions as value
-
+        
         if (!meta) meta = {}; // may not get it first time
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
@@ -134,19 +134,19 @@ dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
             // check if we have a hash character
             if (this.isHashChar(c)) {
                  currentStyle = K.COLOR_OR_ID;
-
+             
                  if (buffer == "") currentRegion = { start: i };
                  buffer += c;
-
+             
                  continue;
             }
-
+            
 
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
                 if (currentStyle == K.STRING) {
                     // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
-                    if ( ! (c == stringChar && !/\\$/.test(buffer))) {
+                    if ( ! (c == stringChar && !/\\$/.test(buffer))) { 
                         if (buffer == "") currentRegion = { start: i };
                         buffer += c;
                         continue;
@@ -161,13 +161,13 @@ dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
                         currentStyle = K.OTHER;
                     }
                     currentRegion.stop = i;
-
+                    
                     this.addRegion(regions, currentStyle, currentRegion);
 
                     currentRegion = { start: i }; // clear
                     stringChar = "";
                     buffer = c;
-
+                    
                     currentStyle = undefined;
 
                     continue;
@@ -178,7 +178,7 @@ dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
                     currentRegion.stop = i;
 
                     // if this is a string, we're all set to add it; if not, figure out if its a keyword, value, or important
-                    if (currentStyle != K.STRING) {
+                    if (currentStyle != K.STRING) { 
                         if (this.keywords.indexOf(buffer) != -1) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;

@@ -31,10 +31,7 @@
 
 dojo.provide("bespin.client.filesystem"); 
 
-dojo.declare("bespin.client.FileSystem", null, {
-    constructor: function(server) {
-        this.server = server || bespin.get('server');
-    },
+dojo.declare("bespin.client.FileSystem", null, { 
 
     // ** {{{ bespin.client.FileSystem.newFile(project, path, callback) }}}
     //
@@ -46,11 +43,11 @@ dojo.declare("bespin.client.FileSystem", null, {
     newFile: function(project, path, onSuccess) {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
-                bespin.get('editSession').startSession(project, path || "new.txt");
+                _editSession.startSession(project, path || "new.txt");
                 onSuccess();
             },
             elseFailed: function() {
-                bespin.publish("bespin:cmdline:showinfo", { msg: 'The file ' + path + ' already exists my friend.'});
+                dojo.publish("bespin:cmdline:showinfo", [{ msg: 'The file ' + path + ' already exists my friend.'}]);
             }
         });
     },
@@ -64,9 +61,9 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
     // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
     loadFile: function(project, path, onSuccess, dontStartSession) {
-        if (!dontStartSession) bespin.get('editSession').startSession(project, path);
+        if (!dontStartSession) _editSession.startSession(project, path);
 
-        this.server.loadFile(project, path, function(content) {
+        _server.loadFile(project, path, function(content) {
             if (/\n$/.test(content)) content = content.substr(0, content.length - 1);
 
             onSuccess({
@@ -88,17 +85,17 @@ dojo.declare("bespin.client.FileSystem", null, {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
                 if (!content) content = " ";
-                bespin.publish("bespin:editor:newfile", {
+                dojo.publish("bespin:editor:newfile", [{
                     project: project,
                     newfilename: path,
                     content: content
-                });
+                }]);
             },
             elseFailed: function() {
-                bespin.publish("bespin:editor:openfile", {
+                dojo.publish("bespin:editor:openfile", [{
                     project: project,
                     filename: path
-                });
+                }]);
             }
         });
     },
@@ -109,7 +106,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //
     // * {{{callback}}} is a callback that fires given the project list
     projects: function(callback) {
-        this.server.projects(callback);
+        _server.projects(callback);
     },
 
     // ** {{{ bespin.client.FileSystem.fileNames(callback) }}}
@@ -118,7 +115,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //
     // * {{{callback}}} is a callback that fires given the files
     fileNames: function(project, callback) {
-        this.server.list(project, '', callback);
+        _server.list(project, '', callback);
     },
 
     // ** {{{ bespin.client.FileSystem.saveFile(project, file) }}}
@@ -130,8 +127,8 @@ dojo.declare("bespin.client.FileSystem", null, {
     saveFile: function(project, file) {
         // Unix files should always have a trailing new-line; add if not present
         if (/\n$/.test(file.content)) file.content += "\n";
-
-        this.server.saveFile(project, file.name, file.content, file.lastOp);
+        
+        _server.saveFile(project, file.name, file.content, file.lastOp);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -143,7 +140,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the make works
     // * {{{onFailure}}} is the callback to fire if the make fails
     makeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.makeDirectory(project, path, onSuccess, onFailure);
+        _server.makeDirectory(project, path, onSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.makeDirectory(project, path, onSuccess, onFailure) }}}
@@ -155,7 +152,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        _server.removeFile(project, path, onSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -167,7 +164,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeFile: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        _server.removeFile(project, path, onSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -178,7 +175,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{path}}} is the full path to the file to close
     // * {{{callback}}} is the callback to fire when closed
     closeFile: function(project, path, callback) {
-        this.server.closeFile(project, path, callback);
+        _server.closeFile(project, path, callback);
     },
 
     // ** {{{ bespin.client.FileSystem.whenFileExists(project, path, callbacks) }}}
@@ -191,7 +188,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   execute (file exists)
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
-        this.server.list(project, bespin.util.path.directory(path), function(files) {
+        _server.list(project, bespin.util.path.directory(path), function(files) {
             if (files && dojo.some(files, function(file){ return (file.name == path); })) {   
                 callbacks['execute']();
             } else {
@@ -212,7 +209,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   execute (file does not exist)
     //   elseFailed (file exists)
     whenFileDoesNotExist: function(project, path, callbacks) {
-        this.server.list(project, bespin.util.path.directory(path), function(files) {
+        _server.list(project, bespin.util.path.directory(path), function(files) {
             if (!files || !dojo.some(files, function(file){ return (file.name == path); })) {
                 callbacks['execute']();
             } else {

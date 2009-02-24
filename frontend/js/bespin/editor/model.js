@@ -28,15 +28,9 @@ dojo.provide("bespin.editor.model");
 //
 // The editor has a model of the data that it works with. 
 // This representation is encapsulated in Bespin.Editor.DocumentModel
-dojo.declare("bespin.editor.DocumentModel", null, {
+dojo.declare("bespin.editor.DocumentModel", null, { 
     constructor: function() {
         this.rows = [];
-    },
-
-    isEmpty: function() {
-        if (this.rows.length > 1) return false;
-        if (this.rows.length == 1 && this.rows[0].length > 0) return false;
-        return true;
     },
 
     getDirtyRows: function() {
@@ -50,13 +44,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         this.dirtyRows[row] = true;
     },
 
-    isRowDirty: function(row) {
-        if (!this.dirtyRows) return true;
-        return this.dirtyRows[row];
-    },
-
     setRowArray: function(rowIndex, row) {
-        if (!dojo.isArray(row)) {
+        if (!Object.isArray(row)) {
             row = row.split('');
         }
         this.rows[rowIndex] = row;
@@ -151,18 +140,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
-    splitRow: function(pos, autoindentAmount) {
+    splitRow: function(pos) {
         var row = this.getRowArray(pos.row);
 
         var newRow;
-        if (autoindentAmount > 0) {
-            newRow = bespin.util.makeArray(autoindentAmount);
+        if (pos.col < row.length) {
+            newRow = row.splice(pos.col);
         } else {
             newRow = [];
-        }
-
-        if (pos.col < row.length) {
-            newRow = newRow.concat(row.splice(pos.col));
         }
 
         if (pos.row == (this.rows.length - 1)) {
@@ -177,10 +162,17 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // joins the passed row with the row beneath it
     joinRow: function(rowIndex) {
-        if (rowIndex >= this.rows.length - 1) return;
+        if (row >= this.rows.length - 1) return;
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);
+    },
+
+    // returns the maximum number of columns across all rows
+    getMaxCols: function() {
+        var cols = 0;
+        for (var i = 0; i < this.rows.length; i++) cols = Math.max(cols, this.rows[i].length);
+        return cols;
     },
 
     // returns the number of rows in the model
@@ -274,7 +266,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     
     findBefore: function(row, col, comparator) {
         var line = this.getRowArray(row);
-        if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
             if (letter.charAt(0) == ' ') return true;
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only
@@ -297,7 +289,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     findAfter: function(row, col, comparator) {
         var line = this.getRowArray(row);
-        if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
             if (letter.charAt(0) == ' ') return true;
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only
@@ -314,4 +306,5 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         
         return { row: row, col: col };
     }
+
 });
