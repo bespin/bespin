@@ -722,6 +722,11 @@ class FileManager(object):
         """Right now, path is ignored and this just renames the project
         to new_name."""
         segments = new_name.split('/')
+        other_project = self.session.query(Project).filter_by(name=new_name) \
+            .filter_by(owner=user).first()
+        if other_project:
+            raise ConflictError("You already have a project with the name %s" %
+                                new_name)
         project.name = segments[0]
         
         
