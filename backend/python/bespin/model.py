@@ -133,6 +133,8 @@ class UserManager(object):
         if invalid_chars.search(username):
             raise BadValue("Usernames cannot contain any of: %s"
                 % bad_characters)
+        if len(username) > 20:
+            raise BadValue("Usernames cannot be longer than 20 characters")
         log.debug("Creating user %s", username)
         user = User(username, password, email)
         self.session.add(user)

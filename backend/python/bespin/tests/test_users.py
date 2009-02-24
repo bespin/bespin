@@ -197,4 +197,5 @@ def test_username_with_bad_characters():
             dict(password="foo", email="thinga@majig"), status=400)
     resp = app.post("/register/new/Thinga<majig>",
             dict(password="foo", email="thinga@majig"), status=400)
-    
+    resp = app.post("/register/new/ReallyLongNameThatIsNotAllowed",
+            dict(password="foo", email="thinga@majig"), status=400)
