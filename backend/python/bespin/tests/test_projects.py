@@ -308,4 +308,8 @@ def test_rename_project():
     except model.FileNotFound:
         pass
     bigmac = fm.get_project(macgyver, macgyver, "foobar")
+    app.put("/file/at/bigmac/")
+    # should get a conflict error if you try to rename to a project
+    # that exists
+    app.post("/project/rename/foobar/", "bigmac", status=409)
     
