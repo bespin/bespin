@@ -304,14 +304,20 @@ def reset(request, response):
     fm.reset_edits(user, project, path)
     return response()
 
-@expose(r'^/(editor|dashboard)\.html', 'GET', auth=False)
+@expose(r'^/(?P<filename>editor|dashboard)\.html', 'GET', auth=False)
 def static_with_login(request, response):
+    """Ensure that the user is logged in. Redirect them to the front
+    page if they're not. If they are logged in, go ahead and serve
+    up the static file."""
     if not 'REMOTE_USER' in request.environ:
         response.location = "/"
         response.status = "302 Not logged in"
+        response.body = ""
     else:
-        response.status = "404 Not found"
-    response.body = ""
+        response.status = "200 OK"
+        response.content_type = "text/html"
+        response.body = open("%s/%s.html" % (c.static_dir, 
+                request.kwargs['filename'])).read()
     return response()
 
 @expose(r'^/project/import/(?P<project_name>[^/]+)', "POST")
@@ -453,16 +459,6 @@ def pathpopper_middleware(app, num_to_pop=1):
         return app(environ, start_response)
     return new_app
 
-def default_to_static(dynamic_app, static_app):
-    def new_app(environ, start_response):
-        def wrapped_sr(status, headers, exc_info=None):
-            if "bespin.good_url_but_not_found" not in environ \
-                and status.startswith("404"):
-                return static_app(environ, start_response)
-            return start_response(status, headers, exc_info)
-        return dynamic_app(environ, wrapped_sr)
-    return new_app
-
 def make_app():
     from webob import Response
     import static
@@ -474,15 +470,10 @@ def make_app():
     register("^/docs/code/", code_app)
     register("^/docs/", docs_app)
     
-    from paste.cascade import Cascade
-    
-    app = URLRelay()
+    app = URLRelay(default=static_app)
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
                 include_ip=False, httponly=True,
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
-    
-    # app = default_to_static(app, static_app)
-    app = Cascade([app, static_app])
     
     return app
