@@ -10,6 +10,7 @@ backend/python/production/bootstrap.py
 backend/python/error.txt
 backend/python/pip-log.txt
 backend/python/devserver.log*
+backend/python/setuptools-*
 backend/java/out
 *.pyc
 backend/python/.Python
@@ -18,5 +19,6 @@ backend/python/BespinServer.egg-info
 *.iws
 *.db
 *.swp
+*.tmproj
 ext/
 build/

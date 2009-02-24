@@ -30,36 +30,15 @@
     <link type="text/css" rel="stylesheet" href="css/dashboard.css"/>
 
     <!-- begin script tags -->
-    <script type="text/javascript" src="js/external/prototype-1.6.0.3.js"></script>
-
-    <script type="text/javascript" src="js/bespin.js"></script>
-    <script type="text/javascript" src="js/events.js"></script>
-            
-    <script type="text/javascript" src="js/util/fixcanvas.js"></script>
-    <script type="text/javascript" src="js/util/keys.js"></script>
-    <script type="text/javascript" src="js/util/navigate.js"></script>
-    <script type="text/javascript" src="js/util/path.js"></script>
-    <script type="text/javascript" src="js/util/textselection.js"></script>
-    <script type="text/javascript" src="js/util/tokenobject.js"></script>
-    
-    <script type="text/javascript" src="js/client/filesystem.js"></script>
-    <script type="text/javascript" src="js/client/settings.js"></script>
-    <script type="text/javascript" src="js/client/server.js"></script>
-    
-    <script type="text/javascript" src="js/commandline/commandline.js"></script>
-    <script type="text/javascript" src="js/commandline/commands.js"></script>
-    <script type="text/javascript" src="js/commandline/dashboardcommands.js"></script>
-
-    <script type="text/javascript" src="js/external/jstraits.js"></script>
-    <script type="text/javascript" src="js/th/traits.js"></script>
-    <script type="text/javascript" src="js/th/css.js"></script>
-    <script type="text/javascript" src="js/th/th.js"></script>
-    <script type="text/javascript" src="js/th/models.js"></script>
-    <script type="text/javascript" src="js/th/borders.js"></script>
-    <script type="text/javascript" src="js/th/components.js"></script>
-
-    <script type="text/javascript" src="js/client/dashboard_components.js"></script>
-    <script type="text/javascript" src="js/client/dashboard.js"></script>
+	<script type="text/javascript">
+		var djConfig = { isDebug: true, popup: true }; 
+	</script>                     
+	
+	<script type="text/javascript" src="js/dojo/dojo.js"></script> 
+	
+	<script type="text/javascript"> 
+		dojo.require("bespin.dashboard_dependencies");    
+	</script>
     <!-- end script tags -->
 </head>
 <body>
