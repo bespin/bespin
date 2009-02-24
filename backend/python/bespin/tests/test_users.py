@@ -189,3 +189,12 @@ def test_api_version_header():
     app = TestApp(app)    
     resp = app.get("/register/userinfo/", status=401)
     assert resp.headers.get("X-Bespin-API") == "dev"
+    
+def test_username_with_bad_characters():
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.post("/register/new/Thinga%20Majig",
+            dict(password="foo", email="thinga@majig"), status=400)
+    resp = app.post("/register/new/Thinga<majig>",
+            dict(password="foo", email="thinga@majig"), status=400)
+    
