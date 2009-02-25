@@ -183,7 +183,7 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
 // ** {{{ bespin.editor.utils }}} **
 //
 // Mess with positions mainly 
-dojo.mixin(bespin.editor, {utils: {
+dojo.mixin(bespin.editor, { utils: {
     buildArgs: function(oldPos) {
         return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
     },

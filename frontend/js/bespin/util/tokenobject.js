@@ -28,11 +28,16 @@
 //
 // Examples,
 //
-// * args = new Bespin.TokenObject(userString, { params: command.takes.order.join(' ') });
-// * var test = new Bespin.TokenObject(document.getElementById("input").value, { 
+// * args = new bespin.util.TokenObject(userString, { params: command.takes.order.join(' ') });
+//
+// * var test = new bespin.util.TokenObject(document.getElementById("input").value, { 
 //	     splitBy: document.getElementById("regex").value,
 //	     params: document.getElementById("params").value
 // });
+//
+// * var test = new bespin.util.TokenObject("male 'Dion Almaer'", {
+//    params: 'gender name'
+// })
 
 dojo.provide("bespin.util.tokenobject");
 
@@ -41,7 +46,7 @@ dojo.declare("bespin.util.TokenObject", null, {
         this._input = input;
         this._options = options;
         this._splitterRegex = new RegExp(this._options.splitBy || '\\s+');
-        this._pieces = input.split(this._splitterRegex);
+        this._pieces = this.tokenize(input.split(this._splitterRegex));
 
         if (this._options.params) { // -- create a hash for name based access
             this._nametoindex = {};
@@ -55,6 +60,32 @@ dojo.declare("bespin.util.TokenObject", null, {
             }
 
         }
+    },
+    
+    // Split up the input taking into account ' and "
+    tokenize: function(incoming) {
+        var tokens = [];
+        
+        var nextToken;
+        while (nextToken = incoming.shift()) {
+            if (nextToken[0] == '"' || nextToken[0] == "'") { // it's quoting time
+                var eaten = [ nextToken.substring(1, nextToken.length) ];
+                var eataway;
+                while (eataway = incoming.shift()) {
+                    if (eataway[eataway.length - 1] == '"' || eataway[eataway.length - 1] == "'") { // end quoting time
+                        eaten.push(eataway.substring(0, eataway.length - 1));
+                        break;
+                    } else {
+                        eaten.push(eataway);
+                    }
+                }
+                tokens.push(eaten.join(' '));
+            } else {
+                tokens.push(nextToken);
+            }
+        }
+        
+        return tokens;
     },
     
     param: function(index) {
