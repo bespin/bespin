@@ -247,7 +247,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
             (typeof action == "string") ?
                 function() { 
                     var toFire = bespin.events.toFire(action);
-                    dojo.publish(toFire.name, [toFire.args]);
+                    bespin.publish(toFire.name, [toFire.args]);
                 } : dojo.hitch(this.actions, action);
     },
 
@@ -1341,7 +1341,7 @@ dojo.declare("bespin.editor.Events", null, {
     constructor: function(editor) {
         this.editor = editor;
 
-        dojo.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.file;
 
             editor.model.insertDocument(file.content);
@@ -1349,7 +1349,7 @@ dojo.declare("bespin.editor.Events", null, {
         });
 
         // -- fire an event here and you can run any editor action
-        dojo.subscribe("bespin:editor:doaction", function(event) {
+        bespin.subscribe("bespin:editor:doaction", function(event) {
             var action = event.action;
             var args   = event.args || bespin.editor.utils.buildArgs();
 
@@ -1357,7 +1357,7 @@ dojo.declare("bespin.editor.Events", null, {
         });
 
         // -- fire an event to setup any new or replace actions
-        dojo.subscribe("bespin:editor:setaction", function(event) {
+        bespin.subscribe("bespin:editor:setaction", function(event) {
             var action = event.action;
             var code   = event.code;
             if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
@@ -1365,7 +1365,7 @@ dojo.declare("bespin.editor.Events", null, {
 
         // -- add key listeners
         // e.g. bindkey ctrl b moveCursorLeft
-        dojo.subscribe("bespin:editor:bindkey", function(event) {
+        bespin.subscribe("bespin:editor:bindkey", function(event) {
             var modifiers = event.modifiers || '';
             if (!event.key) return;
 

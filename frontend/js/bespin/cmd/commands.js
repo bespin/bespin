@@ -185,7 +185,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            dojo.publish("bespin:editor:project:set", [{ project: projectname }]);
+            bespin.publish("bespin:editor:project:set", [{ project: projectname }]);
         } else {
             self.executeCommand('status');
         }
@@ -218,7 +218,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        dojo.publish("bespin:project:create", [{ project: projectname }]);
+        bespin.publish("bespin:project:create", [{ project: projectname }]);
     }
 });
 
@@ -233,7 +233,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        dojo.publish("bespin:project:delete", [{ project: projectname }]);
+        bespin.publish("bespin:project:delete", [{ project: projectname }]);
     }
 });
 
@@ -248,7 +248,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        dojo.publish("bespin:project:rename", [{ currentProject: args.currentProject, newProject: args.newProject }]);
+        bespin.publish("bespin:project:rename", [{ currentProject: args.currentProject, newProject: args.newProject }]);
     }
 });
 
@@ -267,7 +267,7 @@ bespin.cmd.commands.add({
         var opts = { path: args.path };
         if (args.projectname) opts.project = args.projectname;
         
-        dojo.publish("bespin:directory:create", [opts]);
+        bespin.publish("bespin:directory:create", [opts]);
     }
 });
 
@@ -306,7 +306,7 @@ bespin.cmd.commands.add({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(self, filename) {
-        dojo.publish("bespin:editor:openfile", [{
+        bespin.publish("bespin:editor:openfile", [{
             filename: filename
         }]);
     }
@@ -319,7 +319,7 @@ bespin.cmd.commands.add({
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
     execute: function(self, filename) {
-        dojo.publish("bespin:editor:preview", [{
+        bespin.publish("bespin:editor:preview", [{
             filename: filename 
         }]);
     }
@@ -331,7 +331,7 @@ bespin.cmd.commands.add({
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(self) {
-        dojo.publish("bespin:editor:config:edit");
+        bespin.publish("bespin:editor:config:edit");
     }
 });
 
@@ -340,7 +340,7 @@ bespin.cmd.commands.add({
     name: 'runconfig',
     preview: 'run your config file',
     execute: function(self) {
-        dojo.publish("bespin:editor:config:run");
+        bespin.publish("bespin:editor:config:run");
     }
 });
 
@@ -356,7 +356,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        dojo.publish("bespin:commands:load", [{ commandname: commandname }]);
+        bespin.publish("bespin:commands:load", [{ commandname: commandname }]);
     }
 });
 
@@ -374,7 +374,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        dojo.publish("bespin:commands:edit", [{ commandname: commandname }]);
+        bespin.publish("bespin:commands:edit", [{ commandname: commandname }]);
     }
 });
 
@@ -383,7 +383,7 @@ bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(self) {
-        dojo.publish("bespin:commands:list");
+        bespin.publish("bespin:commands:list");
     }
 });
 
@@ -400,7 +400,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        dojo.publish("bespin:commands:delete", [{ commandname: commandname }]);
+        bespin.publish("bespin:commands:delete", [{ commandname: commandname }]);
     }
 });
 
@@ -417,7 +417,7 @@ bespin.cmd.commands.add({
             args.newfilename = args.filename;
             delete args.filename;
         }
-        dojo.publish("bespin:editor:newfile", [args || {}]);
+        bespin.publish("bespin:editor:newfile", [args || {}]);
     }
 });
 
@@ -451,7 +451,7 @@ bespin.cmd.commands.add({
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
     execute: function(self, args) {
-        dojo.publish("bespin:editor:closefile", [args]);
+        bespin.publish("bespin:editor:closefile", [args]);
     }
 });
 
@@ -513,7 +513,7 @@ bespin.cmd.commands.add({
             
             // If the line that we are moving to is off screen, center it, else just move in place
             if ( (linenumAsInt < self.editor.ui.firstVisibleRow) || (linenumAsInt >= self.editor.ui.firstVisibleRow+self.editor.ui.visibleRows) ) {
-                dojo.publish("bespin:editor:doaction", [{
+                bespin.publish("bespin:editor:doaction", [{
                     action: 'moveCursorRowToCenter'
                 }]);
             }
@@ -595,7 +595,7 @@ bespin.cmd.commands.add({
     preview: 'execute any editor action',
     hidden: true,
     execute: function(self, actionname) {
-        dojo.publish("bespin:editor:doaction", [{
+        bespin.publish("bespin:editor:doaction", [{
             action: actionname
         }]);
     }
@@ -745,7 +745,7 @@ bespin.cmd.commands.add({
     execute: function(self, args) {
         if (args.modifiers == "none") args.modifiers = '';
 
-        dojo.publish("bespin:editor:bindkey", [args]);
+        bespin.publish("bespin:editor:bindkey", [args]);
     }
 });
 

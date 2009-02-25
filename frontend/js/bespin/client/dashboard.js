@@ -159,11 +159,11 @@ dojo.addOnLoad(function(){
 var currentProject;
 
 // After a project is imported or created, do a list
-dojo.subscribe("bespin:project:imported", function(event) {
+bespin.subscribe("bespin:project:imported", function(event) {
     _server.list(null, null, displayProjects); // get projects
 });
 
-dojo.subscribe("bespin:project:set", function(event) {
+bespin.subscribe("bespin:project:set", function(event) {
     _server.list(null, null, displayProjects); // get projects
 });
 
