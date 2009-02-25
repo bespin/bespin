@@ -96,7 +96,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
             dojo.byId('copynpaster').focus();
         });
 
-        this.cutHandle = dojo.byId(document, "cut", function(e) {
+        this.cutHandle = dojo.connect(document, "cut", function(e) {
             var selectionObject = _editor.getSelection();
 
             if (selectionObject) {
@@ -118,7 +118,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
             dojo.byId('copynpaster').focus();
         });
 
-        this.pasteHandle = dojo.byId(document, "paste", function(e) {
+        this.pasteHandle = dojo.connect(document, "paste", function(e) {
             e.preventDefault();
 
             var args = bespin.editor.util.buildArgs();    
