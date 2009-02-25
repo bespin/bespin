@@ -26,25 +26,32 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-dojo.provide("bespin.th.models");
+dojo.provide("th.borders");
 
-dojo.declare("bespin.th.models.LazyTreeModel", null, {
-    placeholder: "(placeholder)",
-
-    loading: "(loading)",
-
-    root: this.placeholder,
-
-    getRoot: function() {
-        return this.root;
+dojo.declare("th.borders.SimpleBorder", th.Border, {
+    getInsets: function() {
+        return { left: 1, right: 1, top: 1, bottom: 1 };
     },
 
-    getChildren: function(parent) {
+    paint: function(ctx) {
+        var b = this.component.bounds;
+        ctx.strokeStyle = this.style.color;
+        ctx.strokeRect(0, 0, b.width, b.height);
+    }
+}); 
+
+dojo.declare("th.borders.EmptyBorder", th.Border, {
+    constructor: function(parms) {
+        if (!parms) parms = {};
+        
+        if (parms.size) {
+            this.insets = { left: parms.size, right: parms.size, top: parms.size, bottom: parms.size };
+        } else {
+            this.insets = parms.insets;
+        }
     },
 
-    loadChildren: function(parent) {
-    },
-
-    childrenLoaded: function(parent, children) {        
+    getInsets: function() {
+        return this.insets;
     }
 });

@@ -43,12 +43,12 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.dashboardcommands");
               
-dojo.require("bespin.th.helpers");
-dojo.require("bespin.th.css");
-dojo.require("bespin.th.th");
-dojo.require("bespin.th.models");
-dojo.require("bespin.th.borders");
-dojo.require("bespin.th.components");
+dojo.require("th.helpers"); // -- Thunderhead hoooooo
+dojo.require("th.css");
+dojo.require("th.th");
+dojo.require("th.models");
+dojo.require("th.borders");
+dojo.require("th.components");
               
 dojo.require("bespin.client.dashboard_components");
 dojo.require("bespin.client.dashboard");
