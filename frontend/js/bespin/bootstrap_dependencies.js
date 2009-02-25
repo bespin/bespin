@@ -26,17 +26,17 @@ dojo.provide("bespin.bootstrap_dependencies");
 
 dojo.require("dojo.cookie");
 
+dojo.require("bespin.bespin");
+dojo.require("bespin.events");                                                                
+
 dojo.require("bespin.util.canvas");
 dojo.require("bespin.util.keys");
 dojo.require("bespin.util.navigate");
 dojo.require("bespin.util.path");
 dojo.require("bespin.util.tokenobject");
-dojo.require("bespin.util.clipboard");
-dojo.require("bespin.util.mousewheelevent"); 
+dojo.require("bespin.util.misc");
+dojo.require("bespin.util.mousewheelevent");
 dojo.require("bespin.util.urlbar");
-
-dojo.require("bespin.bespin");
-dojo.require("bespin.events"); 	                                                                      
 
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");
@@ -50,6 +50,8 @@ dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
+
+dojo.require("bespin.util.clipboard");
 
 dojo.require("bespin.syntax.syntax");
 dojo.require("bespin.syntax.javascript");

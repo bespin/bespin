@@ -22,7 +22,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.editor"); 
+dojo.provide("bespin.editor.editor");
+
+dojo.require("bespin.util.clipboard");
 
 // = Editor =
 //
@@ -806,8 +808,7 @@ dojo.declare("bespin.editor.UI", null, {
         // check and see if the canvas is the same size as its immediate parent in the DOM; if not, resize the canvas
         if (((dojo.attr(c, "width")) != cwidth) || (dojo.attr(c, "height") != cheight)) {
             refreshCanvas = true;   // if the canvas changes size, we'll need a full repaint
-            dojo.attr(c, "width", cwidth);
-            dojo.attr(c, "height", cheight);
+            dojo.attr(c, { width: cwidth, height: cheight }); 
         } 
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
@@ -1273,6 +1274,8 @@ dojo.declare("bespin.editor.API", null, {
 
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
+        
+        bespin.util.clipboard.setup(); // setup the clipboard
 
         this.paint();
     },

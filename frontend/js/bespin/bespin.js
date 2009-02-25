@@ -45,6 +45,9 @@ dojo.mixin(bespin, {
     commandlineHeight: 95,
     userSettingsProject: "BespinSettings",
     
+    publish: dojo.publish,
+    subscribe: dojo.subscribe,
+    
     displayVersion: function(el) {
         if (!el) el = dojo.byId("version");
         if (!el) return;

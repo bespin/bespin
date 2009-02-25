@@ -290,8 +290,9 @@ bespin.cmd.commands.add({
     takes: ['filename'],
     preview: 'save the current contents',
     completeText: 'add the filename to save as, or use the current file',
+    withKey: "APPLE S",
     execute: function(self, filename) {
-        dojo.publish("bespin:editor:savefile", [{
+        bespin.publish("bespin:editor:savefile", [{
             filename: filename
         }]);
     }
@@ -410,7 +411,7 @@ bespin.cmd.commands.add({
     takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
     completeText: 'optionally, name the new filename',
-    withKey: "CTRL SHIFT N",            
+    withKey: "CTRL SHIFT N",
     execute: function(self, args) {
         if (args.filename) {
             args.newfilename = args.filename;

@@ -325,7 +325,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (selectionObject) {
             var selectionText = this.editor.model.getChunk(selectionObject);
             if (selectionText) {
-                bespin.clipboard.manual.copy(selectionText);
+                bespin.util.clipboard.Manual.copy(selectionText);
             }
         }
     },
@@ -368,7 +368,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     pasteFromClipboard: function(args) {
-        var clipboard = (args.clipboard) ? args.clipboard : bespin.clipboard.manual.data();
+        var clipboard = (args.clipboard) ? args.clipboard : bespin.util.clipboard.Manual.data();
         if (clipboard == undefined) return; // darn it clipboard!
         args.chunk = clipboard;
         this.insertChunk(args);

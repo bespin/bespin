@@ -156,14 +156,14 @@ bespin.util.keys.PassThroughKeyCodes = (function() {
 bespin.util.keys.passThroughToBrowser = function(e) {
     var Key = bespin.util.keys.Key;
     
-    if (e.metaKey || e.altKey) { // Apple or Alt key
-        if (e.type == "keypress") {   
-            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item){ return (item == e.charCode); })) return true;  
-        } else {
-            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item){ return (item == e.charCode); })) return true; 
-        }
-    } else if (!e.ctrlKey) { // let normal characters through
+    if (!e.ctrlKey) { // let normal characters through
         return true;
+    } else if (e.metaKey || e.altKey) { // Apple or Alt key
+        if (e.type == "keypress") {   
+            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;  
+        } else {
+            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true; 
+        }
     }
                                                  
     return false;

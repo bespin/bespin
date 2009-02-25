@@ -36,8 +36,7 @@ function sizeCanvas(canvas) {
         heightDiff = dojo.byId("header").clientHeight + dojo.byId("subheader").clientHeight + dojo.byId("footer").clientHeight;
     }
     var height = window.innerHeight - heightDiff + 11;
-    dojo.attr(canvas, "width", window.innerWidth);
-    dojo.attr(canvas, "height", height);                
+    dojo.attr(canvas, { width: window.innerWidth, height: height });
 }
 
 dojo.connect(window, "resize", function() {
@@ -53,7 +52,7 @@ dojo.addOnLoad(function(){
 
     scene = new bespin.th.Scene(dojo.byId("canvas"));  
     
-    tree = new bespin.th.components.HorizontalTree({ style: { 
+    tree = new bespin.th.components.HorizontalTree({ style: {
         backgroundColor: "rgb(76, 74, 65)",
         backgroundColorOdd: "rgb(82, 80, 71)",
         font: "9pt Tahoma",
@@ -163,6 +162,7 @@ var currentProject;
 dojo.subscribe("bespin:project:imported", function(event) {
     _server.list(null, null, displayProjects); // get projects
 });
+
 dojo.subscribe("bespin:project:set", function(event) {
     _server.list(null, null, displayProjects); // get projects
 });
@@ -201,6 +201,7 @@ function prepareFilesForTree(files) {
 
 function getFilePath(treePath) {
     var filepath = "";
+
     for (var i = 0; i < treePath.length; i++) {
         if (treePath[i] && treePath[i].name)
             filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
@@ -236,6 +237,7 @@ function displaySessions(sessions) {
     }
     infoPanel.render();
 
+// -- Comment this out, and you don't auto refresh.
 //    setTimeout(function() {
 //        _server.listOpen(displaySessions);   // get sessions
 //    }, 3000);

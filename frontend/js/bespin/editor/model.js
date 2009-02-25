@@ -45,7 +45,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     setRowArray: function(rowIndex, row) {
-        if (!Object.isArray(row)) {
+        if (!dojo.isArray(row)) {
             row = row.split('');
         }
         this.rows[rowIndex] = row;
@@ -266,7 +266,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     
     findBefore: function(row, col, comparator) {
         var line = this.getRowArray(row);
-        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+        if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
             if (letter.charAt(0) == ' ') return true;
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only
@@ -289,7 +289,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     findAfter: function(row, col, comparator) {
         var line = this.getRowArray(row);
-        if (!Object.isFunction(comparator)) comparator = function(letter) { // default to non alpha
+        if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
             if (letter.charAt(0) == ' ') return true;
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only

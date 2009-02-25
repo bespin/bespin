@@ -45,9 +45,7 @@ dojo.declare("bespin.client.settings.StatusChecker", null, {
     },
 
     start: function() {
-        this.interval = setInterval(function() {
-            this.updateStatus();
-        }.bind(this), 12000);
+        this.interval = setInterval(dojo.hitch(this, "updateStatus"), 12000);
     },
 
     stop: function() {

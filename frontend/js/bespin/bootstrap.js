@@ -184,12 +184,10 @@ function doResize() {
     var right = dojo.byId("subheader").style.right;
     right = (right != "") ? parseInt(right) : 0;
     
-    dojo.attr('editor', "width", window.innerWidth - left - right);
-    dojo.attr('editor', "height", window.innerHeight - bespin.commandlineHeight);
+    dojo.attr('editor', { width: window.innerWidth - left - right, height: window.innerHeight - bespin.commandlineHeight });
 
     var d = dojo.coords('status');
-    dojo.attr('projectLabel', "width", d.w); 
-    dojo.attr('projectLabel', "height", d.h);  
+    dojo.attr('projectLabel', { width: d.w, height: d.h });
 
     _editor.paint();
 }

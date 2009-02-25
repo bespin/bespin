@@ -109,7 +109,7 @@ dojo.subscribe("bespin:editor:forceopenfile", function(event) {
 // TODO: Need to actually check saved status and know if the save worked
 
 dojo.subscribe("bespin:editor:savefile", function(event) {
-    var filename =  event ? event.filename : _editSession.path; // default to what you have
+    var filename = event.filename || _editSession.path; // default to what you have
 
     dojo.publish("bespin:editor:openfile:savebefore", [{ filename: filename }]);
 
@@ -437,14 +437,14 @@ dojo.subscribe("bespin:project:rename", function(event) {
 //
 // Helpers for the event subsystem
 
-    // ** {{{ bespin.events.toFire }}} **
-    //
-    // Given an {{{eventString}}} parse out the arguments and configure an event object
-    //
-    // Example events:
-    //
-    // * {{{bespin:cmdline:execute;name=ls,args=bespin}}}
-    // * {{{bespin:cmdline:execute}}} 
+// ** {{{ bespin.events.toFire }}} **
+//
+// Given an {{{eventString}}} parse out the arguments and configure an event object
+//
+// Example events:
+//
+// * {{{bespin:cmdline:execute;name=ls,args=bespin}}}
+// * {{{bespin:cmdline:execute}}} 
     
 dojo.mixin(bespin.events, {
     toFire: function(eventString) {

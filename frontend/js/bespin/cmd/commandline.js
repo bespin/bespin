@@ -89,16 +89,15 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             var args = bespin.util.keys.fillArguments(command.withKey);
 
             args.action = "bespin:cmdline:execute;name=" + command.name;
-
             dojo.publish("bespin:editor:bindkey", [args]);
         }   
 
         this.commands[command.name] = command;
 
-        if (command['aliases']) {   
-            dojo.forEach(command['aliases'], dojo.hitch(this, function(alias) {
+        if (command['aliases']) {
+            dojo.forEach(command['aliases'], function(alias) {
                 this.aliases[alias] = command.name;
-            }));
+            }, this);
         }
     },
     
@@ -117,11 +116,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         for (command in this.commands) { // try the aliases
             if (this.commands[command]['aliases']) {
-                dojo.forEach(this.commands[command]['aliases'], function(alias) {
-                    if (alias == commandname) {
-                      return true;
-                    }
-                });
+                if (dojo.some(this.commands[command]['aliases'], function(alias) { return alias == commandname; })) {
+                    return true;
+                }
             }
         }
         return false;
@@ -323,6 +320,8 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 return false;
             } else if (e.keyCode == Key.TAB) {
+                dojo.stopEvent(e);
+                
                 this.complete(dojo.byId('command').value);
                 return false;
             } else if (e.keyCode == Key.ESCAPE) {
