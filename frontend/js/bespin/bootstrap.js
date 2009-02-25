@@ -190,4 +190,5 @@ function doResize() {
     dojo.attr('projectLabel', { width: d.w, height: d.h });
 
     _editor.paint();
+    _commandLine.infoResizer();
 }
