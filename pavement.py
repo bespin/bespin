@@ -59,8 +59,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.2",
-        name="Narky Nimbus",
+        number="0.1.3",
+        name="Nimble Nimbus",
         api="2"
     ),
     build_top=path("build"),
