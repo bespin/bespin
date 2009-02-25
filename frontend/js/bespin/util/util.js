@@ -22,14 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.util.misc");
+dojo.provide("bespin.util.util");
 
 // = queryToObject =
 //
 // While dojo.queryToObject() is mainly for URL query strings,
 // this version allows to specify a seperator character
 
-bespin.util.misc.queryToObject = function(str, seperator){
+bespin.util.queryToObject = function(str, seperator) {
     var ret = {};
     var qp = str.split(seperator);
     var dec = decodeURIComponent;
@@ -51,4 +51,17 @@ bespin.util.misc.queryToObject = function(str, seperator){
     return ret;
 };
 
+bespin.util.endsWith = function(str, end) {
+    return str.match(new RegExp(end + "$"));
+};
+
+bespin.util.include = function(array, item) {
+    return dojo.indexOf(array, item) > -1;
+};
+
+bespin.util.last = function(array) {
+    if (dojo.isArray(array)) {
+        return array[array.length - 1];
+    }
+}
 

@@ -625,7 +625,7 @@ bespin.cmd.commands.add({
         var project = args.project || _editSession.project;
         
         var type = args.archivetype;
-        if (!['zip','tgz','tar.gz'].include(type)) {
+        if (!bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
             type = 'zip';
         }
 
@@ -690,11 +690,7 @@ bespin.cmd.commands.add({
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
-        _server.importProject(project, url, { call: function(xhr) {
-            self.showInfo("Project " + project + " imported from:<br><br>" + url, true);
-        }, onFailure: function(xhr) {
-            self.showInfo("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
-        }});
+        bespin.publish("bespin:project:import", [{ project: project, url: url }]);
     }
 });
 
@@ -719,12 +715,14 @@ bespin.cmd.commands.add({
     execute: function(self, side) {
         self.editor.model.changeEachRow(function(row) {
             if (!side) side = "right";
-            if (["left", "both"].include(side)) {
-                while (row.first() == ' ') {
+            
+            if (bespin.util.include(["left", "both"], side)) {
+                while (row[0] == ' ') {
                     row.shift();
                 }
             }
-            if (["right", "both"].include(side)) {
+            
+            if (bespin.util.include(["right", "both"], side)) {
                 var i = row.length - 1;
 
                 while (row[i] == ' ') {
@@ -812,7 +810,12 @@ bespin.cmd.commands.add({
       } else {
         if (args.command == undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
-          output += args.alias + ": " + self.aliases[args.alias];
+          var alias = self.aliases[args.alias];
+          if (alias) {
+              output += args.alias + ": " + self.aliases[args.alias];
+          } else {
+              output += "No alias set for " + args.alias;
+          }
         } else {
           var key = args.alias;
           var value = args.command;

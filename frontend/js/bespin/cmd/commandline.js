@@ -116,7 +116,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         for (command in this.commands) { // try the aliases
             if (this.commands[command]['aliases']) {
-                if (dojo.some(this.commands[command]['aliases'], function(alias) { return alias == commandname; })) {
+                if (bespin.util.include(this.commands[command]['aliases'], commandname)) {
                     return true;
                 }
             }

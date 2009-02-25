@@ -189,7 +189,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
         _server.list(project, bespin.util.path.directory(path), function(files) {
-            if (files && dojo.some(files, function(file){ return (file.name == path); })) {   
+            if (files && bespin.util.include(files, file)) {   
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
@@ -210,7 +210,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   elseFailed (file exists)
     whenFileDoesNotExist: function(project, path, callbacks) {
         _server.list(project, bespin.util.path.directory(path), function(files) {
-            if (!files || !dojo.some(files, function(file){ return (file.name == path); })) {
+            if (!files || !bespin.util.include(files, file)) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
