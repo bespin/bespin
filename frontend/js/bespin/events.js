@@ -32,7 +32,7 @@ dojo.require("bespin.util.util");
 // of custom events tied to components themselves such as:
 //
 // * {{{bespin.cmd.commandline.Events}}}
-// * {{{bespin.clien.settings.Events}}}
+// * {{{bespin.client.settings.Events}}}
 
 // ** {{{ Event: bespin:editor:newfile }}} **
 // 
@@ -40,14 +40,18 @@ dojo.require("bespin.util.util");
 bespin.subscribe("bespin:editor:newfile", function(event) {
     var project  = (event) ? event.project : _editSession.project; 
     var newfilename = (event) ? event.newfilename : "new.txt";
-
-    _files.newFile(project, newfilename, function() {
-        bespin.publish("bespin:editor:openfile:opensuccess", [{ file: {
-            name: newfilename,
-            content: " ",
-            timestamp: new Date().getTime()
-        }}]);
-    });
+    
+    if (typeof _files != "undefined") { // We got the file system object baybee
+        _files.newFile(project, newfilename, function() {
+            bespin.publish("bespin:editor:openfile:opensuccess", [{ file: {
+                name: newfilename,
+                content: " ",
+                timestamp: new Date().getTime()
+            }}]);
+        });        
+    } else { // Shoot over to the editor
+        bespin.util.navigate.editor(project, newfilename);
+    }
 });
 
 // ** {{{ Event: bespin:editor:openfile }}} **

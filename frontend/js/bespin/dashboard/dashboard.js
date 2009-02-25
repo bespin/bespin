@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */ 
  
-dojo.provide("bespin.client.dashboard");
+dojo.provide("bespin.dashboard.dashboard");
 
 var heightDiff;
 var projects;
@@ -43,10 +43,10 @@ dojo.connect(window, "resize", function() {
     sizeCanvas(dojo.byId("canvas"));
 });
 
-dojo.addOnLoad(function(){
+dojo.addOnLoad(function() {
     sizeCanvas(dojo.byId("canvas"));
     
-    dojo.forEach(['subheader', 'header'], function(i){ dojo.setSelectable(i, false); })
+    dojo.forEach(['subheader', 'header'], function(i) { dojo.setSelectable(i, false); })
     
     bespin.displayVersion(); // display the version on the page
 
@@ -96,7 +96,7 @@ dojo.addOnLoad(function(){
     }
     tree.renderer = renderer;
 
-    projects = new bespin.client.dashboard_components.BespinProjectPanel();
+    projects = new bespin.dashboard.components.BespinProjectPanel();
 
     var topPanel = new th.components.Panel();
     topPanel.add([ projects, tree ]);
@@ -227,7 +227,7 @@ function displaySessions(sessions) {
             var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
             var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-            var panel = new bespin.client.dashboard_components.BespinSessionPanel({ filename: name, project: project, path: path });
+            var panel = new bespin.dashboard.components.BespinSessionPanel({ filename: name, project: project, path: path });
             infoPanel.add(panel);
             panel.bus.bind("dblclick", panel, function(e) {
                 var newTab = e.shiftKey;
