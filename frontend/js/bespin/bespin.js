@@ -31,6 +31,7 @@
 // {{{ bespin.apiVersion }}} is the version number of the API (to ensure that the
 //                          client and server are talking the same language)
 // {{{ bespin.commandlineHeight }}} is the height of the command line
+// {{{ bespin.displayVersion }}} is a function that sets innerHTML on the element given, with the Bespin version info
 
 
 dojo.provide("bespin.bespin");
@@ -45,7 +46,10 @@ dojo.mixin(bespin, {
     commandlineHeight: 95,
     userSettingsProject: "BespinSettings",
     
-    publish: dojo.publish,
+    publish: function(topic, args) {
+        dojo.publish(topic, dojo.isArray(args) ? args : [ args ]);
+    },
+    
     subscribe: dojo.subscribe,
     
     displayVersion: function(el) {

@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-dojo.provide("bespin.dashboard_dependencies");
+dojo.provide("bespin.dashboard.dependencies");
 
 dojo.require("dojo.cookie"); 
 
@@ -34,21 +34,24 @@ dojo.require("bespin.util.navigate");
 dojo.require("bespin.util.path");
 dojo.require("bespin.util.tokenobject");
 dojo.require("bespin.util.clipboard"); 
-              
+
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");
 dojo.require("bespin.client.server");
-              
+
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.dashboardcommands");
-              
-dojo.require("th.helpers"); // -- Thunderhead hoooooo
+
+// -- Thunderhead hoooooo
+dojo.require("th.helpers");
 dojo.require("th.css");
 dojo.require("th.th");
 dojo.require("th.models");
 dojo.require("th.borders");
 dojo.require("th.components");
-              
-dojo.require("bespin.client.dashboard_components");
-dojo.require("bespin.client.dashboard");
+
+// -- The main dashboard subsystems
+dojo.require("bespin.dashboard.events");
+dojo.require("bespin.dashboard.components");
+dojo.require("bespin.dashboard.dashboard");

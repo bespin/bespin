@@ -22,9 +22,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.client.dashboard_components");
+dojo.provide("bespin.dashboard.components");
 
-dojo.declare("bespin.client.dashboard_components.BespinBorder", th.Border, {
+dojo.declare("bespin.dashboard.components.BespinBorder", th.Border, {
     getInsets: function() {
         return { left: 1, right: 1, bottom: 1, top: 1 };
     },
@@ -46,7 +46,7 @@ dojo.declare("bespin.client.dashboard_components.BespinBorder", th.Border, {
     }
 });
 
-dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", th.components.Panel, {
+dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Panel, {
     constructor: function(parms) {
         this.filename = new th.components.Label({ style: { color: "white" } });
         this.path = new th.components.Label({ style: { color: "rgb(210, 210, 210)" } });
@@ -65,7 +65,7 @@ dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", th.compone
             });
         }
 
-        this.style.border = new bespin.client.dashboard_components.BespinBorder();
+        this.style.border = new bespin.dashboard.components.BespinBorder();
         this.style.backgroundColor = "rgb(67, 65, 58)";
 
         this.preferredSizes = [ 13, 9, 8, 8, 8 ];
@@ -168,7 +168,7 @@ dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", th.compone
     } 
 });
 
-dojo.declare("bespin.client.dashboard_components.BespinProjectPanel", th.components.Panel, {
+dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
