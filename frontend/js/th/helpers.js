@@ -26,15 +26,15 @@
 // ***** END LICENSE BLOCK *****
 //  
 
-dojo.provide("bespin.th.helpers");
+dojo.provide("th.helpers");
 
-dojo.mixin(bespin.th.helpers, {
+dojo.mixin(th.helpers, {
     isPercentage: function(str){  // TODO: make more robust 
         return (str.indexOf && str.indexOf("%") != -1);
     }
 });
 
-dojo.declare("bespin.th.helpers.EventHelpers", null, { 
+dojo.declare("th.helpers.EventHelpers", null, { 
     // only works on a Scene at the moment as it uses  
     wrapEvent: function(e, root) {
         // compute the canvas-local coordinates
@@ -79,7 +79,7 @@ dojo.declare("bespin.th.helpers.EventHelpers", null, {
     }
 }); 
   
-dojo.declare("bespin.th.helpers.ComponentHelpers", null, {  	
+dojo.declare("th.helpers.ComponentHelpers", null, {  	
     // returns hash with some handy short-cuts for painting
     d: function() {  
         return {
@@ -104,7 +104,7 @@ dojo.declare("bespin.th.helpers.ComponentHelpers", null, {
     }
 }); 
 
-dojo.declare("bespin.th.helpers.ContainerHelpers", null, {
+dojo.declare("th.helpers.ContainerHelpers", null, {
     getScene: function() {
         var container = this;
         while (!container.scene && container.parent) container = container.parent;

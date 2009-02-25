@@ -79,20 +79,20 @@ dojo.addOnLoad(function(){
    
     dojo.connect(window, 'resize', doResize);
     
-    _scene = new bespin.th.Scene(dojo.byId("projectLabel")); 
+    _scene = new th.Scene(dojo.byId("projectLabel")); 
 
-    var panel = new bespin.th.components.Panel();
+    var panel = new th.components.Panel();
     _scene.root.add(panel);  
     
-    _projectLabel = new bespin.th.components.Label({ style: {
+    _projectLabel = new th.components.Label({ style: {
         color: "white",
         font: "12pt Calibri, Arial, sans-serif"
     }});
-    var symbolThingie = new bespin.th.components.Label({ text: ":", style: {
+    var symbolThingie = new th.components.Label({ text: ":", style: {
         color: "gray",
         font: "12pt Calibri, Arial, sans-serif"
     }});
-    _fileLabel = new bespin.th.components.Label({ style: {
+    _fileLabel = new th.components.Label({ style: {
         color: "white",
         font: "12pt Calibri, Arial, sans-serif"
     }});
