@@ -37,6 +37,7 @@ import mimetypes
 import zipfile
 from datetime import datetime
 import logging
+import re
 
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
@@ -73,6 +74,9 @@ class NotAuthorized(FSException):
     
 class OverQuota(FSException):
     pass
+
+class BadValue(FSException):
+    pass
     
 class DB(object):
     def __init__(self, user_manager, file_manager):
@@ -86,7 +90,7 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True)
-    username = Column(String(20), unique=True)
+    username = Column(String(128), unique=True)
     email = Column(String(128))
     password = Column(String(20))
     settings = Column(PickleType())
@@ -115,6 +119,9 @@ class User(Base):
         return (self.quota * QUOTA_UNITS, self.amount_used)
     
 
+bad_characters = "<>| '\""
+invalid_chars = re.compile(r'[%s]' % bad_characters)
+
 class UserManager(object):
     def __init__(self, session):
         self.session = session
@@ -123,6 +130,9 @@ class UserManager(object):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
+        if invalid_chars.search(username):
+            raise BadValue("Usernames cannot contain any of: %s"
+                % bad_characters)
         log.debug("Creating user %s", username)
         user = User(username, password, email)
         self.session.add(user)
