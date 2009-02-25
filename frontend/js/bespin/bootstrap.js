@@ -72,7 +72,7 @@ dojo.addOnLoad(function(){
     bespin.displayVersion();
     
     // Get going when settings are loaded
-    dojo.subscribe("bespin:settings:loaded", function(event) {
+    bespin.subscribe("bespin:settings:loaded", function(event) {
         _settings.loadSession();  // load the last file or what is passed in
         doResize();
     });

@@ -55,7 +55,7 @@ dojo.declare("bespin.client.settings.Core", null, {
         var path    = this.fromURL.get('path') || this.get('_path');
         var project = this.fromURL.get('project') || this.get('_project');
         
-        dojo.publish("bespin:settings:init", [{ // -- time to init my friends
+        bespin.publish("bespin:settings:init", [{ // -- time to init my friends
             path: path,
             project: project
         }]);            
@@ -75,7 +75,7 @@ dojo.declare("bespin.client.settings.Core", null, {
     initSettings: function() {
         var self = this;
 
-        dojo.publish("bespin:settings:set:collaborate", [{
+        bespin.publish("bespin:settings:set:collaborate", [{
             value: self.get("collaborate")
         }]);
     },
@@ -115,7 +115,7 @@ dojo.declare("bespin.client.settings.Core", null, {
     set: function(key, value) {
         this.store.set(key, value);
 
-        dojo.publish("bespin:settings:set:" + key, [{ value: value }]);
+        bespin.publish("bespin:settings:set:" + key, [{ value: value }]);
     },
 
     get: function(key) {
@@ -149,7 +149,7 @@ dojo.declare("bespin.client.settings.InMemory", null, {
 
         this.settings = this.parent.defaultSettings();
 
-        dojo.publish("bespin:settings:loaded");
+        bespin.publish("bespin:settings:loaded");
     },
 
     set: function(key, value) {
@@ -191,7 +191,7 @@ dojo.declare("bespin.client.settings.Cookie", null, {
             };
             dojo.cookie("settings", dojo.toJson(this.settings), this.cookieSettings);
         }
-        dojo.publish("bespin:settings:loaded");
+        bespin.publish("bespin:settings:loaded");
     },
 
     set: function(key, value) {
@@ -225,7 +225,7 @@ dojo.declare("bespin.client.settings.Server", null, {
                 this.settings = this.parent.defaultSettings();
                 this.server.setSettings(this.settings);
             }
-            dojo.publish("bespin:settings:loaded");
+            bespin.publish("bespin:settings:loaded");
         }));
     },
 
@@ -268,7 +268,7 @@ Bespin.Settings.DB = Class.create({
                'timestamp int not null)');
 
         this.db.run('CREATE INDEX IF NOT EXISTS settings_id_index ON settings (id)');
-        dojo.publish("bespin:settings:loaded");
+        bespin.publish("bespin:settings:loaded");
     },
 
     set: function(key, value) {
@@ -347,7 +347,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:set }}} **
         // 
         // Watch for someone wanting to do a set operation
-        dojo.subscribe("bespin:settings:set", function(event) {
+        bespin.subscribe("bespin:settings:set", function(event) {
             var key = event.key;
             var value = event.value;
 
@@ -357,7 +357,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
         // 
         // Change the session settings when a new file is opened
-        dojo.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.file;
 
             _editSession.path = file.name;
@@ -372,28 +372,28 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
         // 
         // Change the syntax highlighter when a new file is opened
-        dojo.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.file;
             var split = file.name.split('.');
             var type = split[split.length - 1]; 
 
             if (type)
-                dojo.publish("bespin:settings:syntax", [{ language: type }]);
+                bespin.publish("bespin:settings:syntax", [{ language: type }]);
         });
 
         // ** {{{ Event: bespin:settings:set:syntax }}} **
         // 
         // When the syntax setting is changed, tell the syntax system to change
-        dojo.subscribe("bespin:settings:set:syntax", function(event) {
+        bespin.subscribe("bespin:settings:set:syntax", function(event) {
             var value = event.value;
             
-            dojo.publish("bespin:settings:syntax", [{ language: value, fromCommand: true }]);
+            bespin.publish("bespin:settings:syntax", [{ language: value, fromCommand: true }]);
         });
 
         // ** {{{ Event: bespin:settings:syntax }}} **
         // 
         // Given a new syntax command, change the editor.language        
-        dojo.subscribe("bespin:settings:syntax", function(event) {
+        bespin.subscribe("bespin:settings:syntax", function(event) {
             var language = event.language;
             var fromCommand = event.fromCommand;
             var syntaxSetting = settings.get('syntax') || "off";      
@@ -414,7 +414,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:set:collaborate }}} **
         // 
         // Turn on the collaboration system if set to be on
-        dojo.subscribe("bespin:settings:set:collaborate", function(event) {
+        bespin.subscribe("bespin:settings:set:collaborate", function(event) {
             var value = event.value;
 
             _editSession.collaborate = settings.isOn(value);
@@ -423,7 +423,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:set:fontsize }}} **
         // 
         // Change the font size for the editor
-        dojo.subscribe("bespin:settings:set:fontsize", function(event) {
+        bespin.subscribe("bespin:settings:set:fontsize", function(event) {
             var value = event.value;
 
             var fontsize = parseInt(value);
@@ -433,7 +433,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:set:theme }}} **
         // 
         // Change the Theme object used by the editor
-        dojo.subscribe("bespin:settings:set:theme", function(event) {
+        bespin.subscribe("bespin:settings:set:theme", function(event) {
             var theme = event.value;
 
             if (theme) {
@@ -444,7 +444,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                           _editor.theme = themeSettings;
                     }
                 } else {
-                    dojo.publish("bespin:cmdline:showinfo", [{
+                    bespin.publish("bespin:cmdline:showinfo", [{
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
                     }]);
                 }
@@ -454,41 +454,41 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:set:keybindings }}} **
         // 
         // Add in emacs key bindings
-        dojo.subscribe("bespin:settings:set:keybindings", function(event) {
+        bespin.subscribe("bespin:settings:set:keybindings", function(event) {
             var value = event.value;
 
             if (value == "emacs") {
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "b",
                     action: "moveCursorLeft"
                 }]);
 
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "f",
                     action: "moveCursorRight"
                 }]);
 
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "p",
                     action: "moveCursorUp"
                 }]);
 
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "n",
                     action: "moveCursorDown"
                 }]);
 
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "a",
                     action: "moveToLineStart"
                 }]);
 
-                dojo.publish("bespin:editor:bindkey", [{
+                bespin.publish("bespin:editor:bindkey", [{
                     modifiers: "ctrl",
                     key: "e",
                     action: "moveToLineEnd"
@@ -499,7 +499,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // If we are opening up a new file
-        dojo.subscribe("bespin:settings:init", function(event) {
+        bespin.subscribe("bespin:settings:init", function(event) {
             var path    = event.path;
             var project = event.project;
 
@@ -507,11 +507,11 @@ dojo.declare("bespin.client.settings.Events", null, {
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
                 if (project && (_editSession.project != project)) {
-                    dojo.publish("bespin:editor:project:set", [{ project: project }]);
+                    bespin.publish("bespin:editor:project:set", [{ project: project }]);
                 }
 
                 if (path) {
-                    dojo.publish("bespin:editor:openfile", [{ filename: path }]);
+                    bespin.publish("bespin:editor:openfile", [{ filename: path }]);
                 }
             }
         });
@@ -519,8 +519,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // Setup the theme
-        dojo.subscribe("bespin:settings:init", function(event) {
-            dojo.publish("bespin:settings:set:theme", [{
+        bespin.subscribe("bespin:settings:init", function(event) {
+            bespin.publish("bespin:settings:set:theme", [{
                 value: settings.get('theme')
             }]);
         });
@@ -528,8 +528,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // Setup the special keybindings
-        dojo.subscribe("bespin:settings:init", function(event) {
-            dojo.publish("bespin:settings:set:keybindings", [{
+        bespin.subscribe("bespin:settings:init", function(event) {
+            bespin.publish("bespin:settings:set:keybindings", [{
                 value: settings.get('keybindings')
             }]);
         });
@@ -537,18 +537,18 @@ dojo.declare("bespin.client.settings.Events", null, {
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // Check for auto load
-        dojo.subscribe("bespin:settings:init", function(event) {
+        bespin.subscribe("bespin:settings:init", function(event) {
             if (settings.isOn(settings.get('autoconfig'))) {
-                dojo.publish("bespin:editor:config:run");
+                bespin.publish("bespin:editor:config:run");
             }
         });
 
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // Setup the font size that the user has configured
-        dojo.subscribe("bespin:settings:init", function(event) {
+        bespin.subscribe("bespin:settings:init", function(event) {
             var fontsize = settings.get('fontsize');
-            dojo.publish("bespin:settings:set:fontsize", [{
+            bespin.publish("bespin:settings:set:fontsize", [{
                 value: fontsize
             }]);
         });        
