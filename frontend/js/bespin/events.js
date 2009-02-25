@@ -22,7 +22,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-dojo.provide("bespin.events"); 
+dojo.provide("bespin.events");
+
+dojo.require("bespin.util.util");
 
 // = Event Bus =
 //
@@ -288,8 +290,9 @@ dojo.subscribe("bespin:commands:list", function(event) {
             output = "You haven't installed any custom commands.<br>Want to <a href='https://wiki.mozilla.org/Labs/Bespin/Roadmap/Commands'>learn how?</a>";
         } else {
             output = "<u>Your Custom Commands</u><br/><br/>";
-            output += dojo.map(commands.findAll(function(file) {
-                return file.name.endsWith('.js');
+            
+            output += dojo.map(dojo.filter(commands, function(file) {
+                return bespin.util.endsWith(file.name, '\\.js');
             }), function(c) { return c.name.replace(/\.js$/, '') }).join("<br>");
         }
         
@@ -431,6 +434,22 @@ dojo.subscribe("bespin:project:rename", function(event) {
 });
 
 
+// ** {{{ Event: bespin:project:delete }}} **
+// 
+// Create a new project
+dojo.subscribe("bespin:project:import", function(event) {
+    var project = event.project;
+    var url = event.url;
+
+    _server.importProject(project, url, { call: function() {
+        dojo.publish("bespin:cmdline:showinfo", [{ msg: "Project " + project + " imported from:<br><br>" + url, autohide: true }]);
+    }, onFailure: function(xhr) {
+        dojo.publish("bespin:cmdline:showinfo", [{ msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText }]);
+    }});
+});
+
+
+
 // == Events
 // 
 // ** {{{ bespin.events }}} **
@@ -454,7 +473,7 @@ dojo.mixin(bespin.events, {
         } else { // split up the args
             var pieces = eventString.split(';');
             event.name = pieces[0];
-            event.args = bespin.util.misc.queryToObject(pieces[1], ',');
+            event.args = bespin.util.queryToObject(pieces[1], ',');
         }
         return event;
     }

@@ -399,12 +399,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             var syntaxSetting = settings.get('syntax') || "off";      
 
             if (language == _editor.language) return; // already set to be that language
-            
-            if (dojo.some(['auto', 'on'], function(item){ return (item == language); })) {
+
+            if (bespin.util.include(['auto', 'on'], language)) {
                 var split = window.location.hash.split('.');
                 var type = split[split.length - 1];                
                 if (type) _editor.language = type;
-            } else if (dojo.some(['auto', 'on'], function(item){ return (item == syntaxSetting); }) || fromCommand) {
+            } else if (bespin.util.include(['auto', 'on'], syntaxSetting) || fromCommand) {
                 _editor.language = language;
             } else if (syntaxSetting == 'off') {
                 _editor.language = 'off';

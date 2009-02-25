@@ -68,7 +68,7 @@ dojo.declare("bespin.syntax.HTMLSyntaxEngine", null, {
 
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.HTML_STYLE_COMMENT) {
-                if (c == ">" && buffer.endsWith("--") &&
+                if (c == ">" && bespin.util.endsWith(buffer, "--") &&
                         ! (/<!--/.test(buffer) && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
                         ! (/<!---/.test(buffer)  && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
                         ) { // has the multiline comment just ended?
