@@ -822,12 +822,12 @@ bespin.cmd.commands.add({
           output = "<u>Saving setting</u><br/><br/>";
           if (self.commands[value]) {
               output += key + ": " + value;
-            self.aliases[key] = value;
-          } else if (self.aliases[value]) { // TODO: have the symlink to the alias not the end point
+              self.aliases[key] = value;
+          } else if (self.aliases[value.split(' ')[0]]) { // TODO: have the symlink to the alias not the end point
               output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
-            self.aliases[key] = value;
+              self.aliases[key] = value;
           } else {
-            output += "Sorry, no command or alias with that name."
+              output += "Sorry, no command or alias with that name."
           }
         }
       }

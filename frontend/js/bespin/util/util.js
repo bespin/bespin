@@ -24,6 +24,10 @@
 
 dojo.provide("bespin.util.util");
 
+// === Helpful Utilities ===
+//
+// We gotta keep some of the Prototype spirit around :)
+
 // = queryToObject =
 //
 // While dojo.queryToObject() is mainly for URL query strings,
@@ -34,30 +38,30 @@ bespin.util.queryToObject = function(str, seperator) {
     var qp = str.split(seperator);
     var dec = decodeURIComponent;
     dojo.forEach(qp, function(item){
-    	if(item.length){
+    	if (item.length){
     		var parts = item.split("=");
     		var name = dec(parts.shift());
     		var val = dec(parts.join("="));
-    		if(dojo.isString(ret[name])){
+    		if (dojo.isString(ret[name])){
     			ret[name] = [ret[name]];
     		}
-    		if(dojo.isArray(ret[name])){
+    		if (dojo.isArray(ret[name])){
     			ret[name].push(val);
-    		}else{
+    		} else {
     			ret[name] = val;
     		}
     	}
     });
     return ret;
-};
+}
 
 bespin.util.endsWith = function(str, end) {
     return str.match(new RegExp(end + "$"));
-};
+}
 
 bespin.util.include = function(array, item) {
     return dojo.indexOf(array, item) > -1;
-};
+}
 
 bespin.util.last = function(array) {
     if (dojo.isArray(array)) {
