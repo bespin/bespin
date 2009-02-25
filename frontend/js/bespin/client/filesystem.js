@@ -47,7 +47,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 onSuccess();
             },
             elseFailed: function() {
-                dojo.publish("bespin:cmdline:showinfo", [{ msg: 'The file ' + path + ' already exists my friend.'}]);
+                bespin.publish("bespin:cmdline:showinfo", [{ msg: 'The file ' + path + ' already exists my friend.'}]);
             }
         });
     },
@@ -85,14 +85,14 @@ dojo.declare("bespin.client.FileSystem", null, {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
                 if (!content) content = " ";
-                dojo.publish("bespin:editor:newfile", [{
+                bespin.publish("bespin:editor:newfile", [{
                     project: project,
                     newfilename: path,
                     content: content
                 }]);
             },
             elseFailed: function() {
-                dojo.publish("bespin:editor:openfile", [{
+                bespin.publish("bespin:editor:openfile", [{
                     project: project,
                     filename: path
                 }]);
@@ -189,7 +189,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
         _server.list(project, bespin.util.path.directory(path), function(files) {
-            if (files && bespin.util.include(files, file)) {   
+            if (files && dojo.some(files, function(file){ return (file.name == path); })) {   
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();
@@ -210,7 +210,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   elseFailed (file exists)
     whenFileDoesNotExist: function(project, path, callbacks) {
         _server.list(project, bespin.util.path.directory(path), function(files) {
-            if (!files || !bespin.util.include(files, file)) {
+            if (!files || !dojo.some(files, function(file){ return (file.name == path); })) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();

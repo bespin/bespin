@@ -72,7 +72,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return;
         }
 
-        dojo.publish("bespin:cmdline:executed", [{ command: command, args: data.join(' ') }]);
+        bespin.publish("bespin:cmdline:executed", [{ command: command, args: data.join(' ') }]);
 
         command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
@@ -89,7 +89,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             var args = bespin.util.keys.fillArguments(command.withKey);
 
             args.action = "bespin:cmdline:execute;name=" + command.name;
-            dojo.publish("bespin:editor:bindkey", [args]);
+            bespin.publish("bespin:editor:bindkey", [args]);
         }   
 
         this.commands[command.name] = command;
@@ -431,7 +431,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // ** {{{ Event: bespin:cmdline:showinfo }}} **
         // 
         // Observe when others want to show the info bar for the command line
-        dojo.subscribe("bespin:cmdline:showinfo", function(event) {
+        bespin.subscribe("bespin:cmdline:showinfo", function(event) {
             var msg = event.msg;
             var autohide = event.autohide; 
             if (msg) commandline.showInfo(msg, autohide);
@@ -441,7 +441,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // 
         // Once the command has been executed, do something.
         // In this case, save it for the history
-        dojo.subscribe("bespin:cmdline:executed", function(event) {
+        bespin.subscribe("bespin:cmdline:executed", function(event) {
             var commandname = event.command.name;
             var args        = event.args;
 
@@ -451,7 +451,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // ** {{{ Event: bespin:cmdline:executed }}} **
         // 
         // Once the command has been executed, do something.        
-        dojo.subscribe("bespin:cmdline:execute", function(event) {
+        bespin.subscribe("bespin:cmdline:execute", function(event) {
             var command = event.name;
             var args    = event.args;
             if (command && args) { // if we have a command and some args
@@ -466,7 +466,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // ** {{{ Event: bespin:editor:openfile:openfail }}} **
         // 
         // If an open file action failed, tell the user.
-        dojo.subscribe("bespin:editor:openfile:openfail", function(event) {
+        bespin.subscribe("bespin:editor:openfile:openfail", function(event) {
             var filename = event.filename;
 
             commandline.showInfo('Could not open file: ' + filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
@@ -475,7 +475,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
         // 
         // The open file action worked, so tell the user
-        dojo.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.file;
 
             commandline.showInfo('Loaded file: ' + file.name, true);
@@ -485,7 +485,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // ** {{{ Event: bespin:editor:project:set }}} **
         // 
         // When the project changes, alert the user
-        dojo.subscribe("bespin:editor:project:set", function(event) {
+        bespin.subscribe("bespin:editor:project:set", function(event) {
             var project = event.project;
 
             _editSession.project = project;
