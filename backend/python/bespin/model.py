@@ -90,7 +90,7 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True)
-    username = Column(String(20), unique=True)
+    username = Column(String(128), unique=True)
     email = Column(String(128))
     password = Column(String(20))
     settings = Column(PickleType())
@@ -133,8 +133,6 @@ class UserManager(object):
         if invalid_chars.search(username):
             raise BadValue("Usernames cannot contain any of: %s"
                 % bad_characters)
-        if len(username) > 20:
-            raise BadValue("Usernames cannot be longer than 20 characters")
         log.debug("Creating user %s", username)
         user = User(username, password, email)
         self.session.add(user)
