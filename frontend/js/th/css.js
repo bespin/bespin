@@ -50,9 +50,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-dojo.provide("bespin.th.css");
+dojo.provide("th.css");
 
-dojo.declare("bespin.th.css.CSSParser", null, {
+dojo.declare("th.css.CSSParser", null, {
     parse: function(str, ret) {
         // parses the passed stylesheet into an object with properties containing objects with the attribute names and values
         if (!ret) ret = {};

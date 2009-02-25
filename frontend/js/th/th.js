@@ -22,12 +22,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.th.th");  
+dojo.provide("th.th");  
 
 /*
     Constants
  */ 
-dojo.mixin(bespin.th, {
+dojo.mixin(th, {
     VERTICAL: "v",
     HORIZONTAL: "h"    
 });
@@ -35,7 +35,7 @@ dojo.mixin(bespin.th, {
 /*
     Event bus; all listeners and events pass through a single global instance of this class.
  */ 
-dojo.declare("bespin.th.Bus", null, {
+dojo.declare("th.Bus", null, {
     constructor: function() {
         // map of event name to listener; listener contains a selector, function, and optional context object
         this.events = {};
@@ -112,10 +112,10 @@ dojo.declare("bespin.th.Bus", null, {
 });
 
 // create the global event bus
-bespin.th.global_event_bus = new bespin.th.Bus();
+th.global_event_bus = new th.Bus();
 
-dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, { 
-    bus: bespin.th.global_event_bus,
+dojo.declare("th.Scene", th.helpers.EventHelpers, { 
+    bus: th.global_event_bus,
 
     css: {},
 
@@ -132,7 +132,7 @@ dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, {
             self.render();
         }); 
         
-        this.root = new bespin.th.components.Panel({ id: "root", style: {
+        this.root = new th.components.Panel({ id: "root", style: {
 //            backgroundColor: "pink" // for debugging         
         } });
         this.root.scene = this; 
@@ -148,29 +148,29 @@ dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, {
 
             self.mouseDownComponent = e.thComponent;
 
-            bespin.th.global_event_bus.fire("mousedown", e, e.thComponent);
+            th.global_event_bus.fire("mousedown", e, e.thComponent);
         });
 
         dojo.connect(window, "dblclick", function(e) {
             self.wrapEvent(e, self.root);
 
-            bespin.th.global_event_bus.fire("dblclick", e, e.thComponent);
+            th.global_event_bus.fire("dblclick", e, e.thComponent);
         });
 
         dojo.connect(window, "click", function(e) {
             self.wrapEvent(e, self.root);
 
-            bespin.th.global_event_bus.fire("click", e, e.thComponent);
+            th.global_event_bus.fire("click", e, e.thComponent);
         });
 
         dojo.connect(window, "mousemove", function(e) {
             self.wrapEvent(e, self.root);
 
-            bespin.th.global_event_bus.fire("mousemove", e, e.thComponent);
+            th.global_event_bus.fire("mousemove", e, e.thComponent);
 
             if (self.mouseDownComponent) {
                 self.addComponentXY(e, self.root, self.mouseDownComponent);
-                bespin.th.global_event_bus.fire("mousedrag", e, self.mouseDownComponent);
+                th.global_event_bus.fire("mousedrag", e, self.mouseDownComponent);
             }
         });
 
@@ -178,7 +178,7 @@ dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, {
             if (!self.mouseDownComponent) return;
 
             self.addComponentXY(e, self.root, self.mouseDownComponent);
-            bespin.th.global_event_bus.fire("mouseup", e, self.mouseDownComponent);
+            th.global_event_bus.fire("mouseup", e, self.mouseDownComponent);
 
             delete self.mouseDownComponent;
         });
@@ -273,7 +273,7 @@ dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, {
     processCSS: function(stylesheet) { 
         // TODO: use CSS dojox.datastore
         /*  
-        this.css = new bespin.th.css.CSSParser().parse(stylesheet, this.css);   
+        this.css = new th.css.CSSParser().parse(stylesheet, this.css);   
 
         if (++this.currentSheet == this.sheetCount) {
             this.cssLoaded = true;
@@ -286,7 +286,7 @@ dojo.declare("bespin.th.Scene", bespin.th.helpers.EventHelpers, {
     }
 });
 
-dojo.declare("bespin.th.Border", bespin.th.helpers.ComponentHelpers, {
+dojo.declare("th.Border", th.helpers.ComponentHelpers, {
     constructor: function(parms) {
         if (!parms) parms = {};
         this.style = parms.style || {};
@@ -300,7 +300,7 @@ dojo.declare("bespin.th.Border", bespin.th.helpers.ComponentHelpers, {
     paint: function(ctx) {}
 });   
     
-dojo.declare("bespin.th.Component", bespin.th.helpers.ComponentHelpers, {
+dojo.declare("th.Component", th.helpers.ComponentHelpers, {
     constructor: function(parms) { 
         if (!parms) parms = {};
         this.bounds = parms.bounds || {};
@@ -310,7 +310,7 @@ dojo.declare("bespin.th.Component", bespin.th.helpers.ComponentHelpers, {
         this.border = parms.border;
         this.opaque = parms.opaque || true;
     
-        this.bus = bespin.th.global_event_bus; 
+        this.bus = th.global_event_bus; 
     },
     
     // used to obtain a throw-away canvas context for performing measurements, etc.; may or may not be the same canvas as that used to draw the component
@@ -336,7 +336,7 @@ dojo.declare("bespin.th.Component", bespin.th.helpers.ComponentHelpers, {
     }
 });
 
-dojo.declare("bespin.th.Container", [bespin.th.Component, bespin.th.helpers.ContainerHelpers], {
+dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
     constructor: function() {       
         this.children = [];
     },

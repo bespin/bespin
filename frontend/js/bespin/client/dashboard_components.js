@@ -24,7 +24,7 @@
 
 dojo.provide("bespin.client.dashboard_components");
 
-dojo.declare("bespin.client.dashboard_components.BespinBorder", bespin.th.Border, {
+dojo.declare("bespin.client.dashboard_components.BespinBorder", th.Border, {
     getInsets: function() {
         return { left: 1, right: 1, bottom: 1, top: 1 };
     },
@@ -46,13 +46,13 @@ dojo.declare("bespin.client.dashboard_components.BespinBorder", bespin.th.Border
     }
 });
 
-dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", bespin.th.components.Panel, {
+dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", th.components.Panel, {
     constructor: function(parms) {
-        this.filename = new bespin.th.components.Label({ style: { color: "white" } });
-        this.path = new bespin.th.components.Label({ style: { color: "rgb(210, 210, 210)" } });
-        this.opened = new bespin.th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
-        this.details = new bespin.th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
-        this.editTime = new bespin.th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
+        this.filename = new th.components.Label({ style: { color: "white" } });
+        this.path = new th.components.Label({ style: { color: "rgb(210, 210, 210)" } });
+        this.opened = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
+        this.details = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
+        this.editTime = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
 
         var labels = [ this.filename, this.path, this.opened, this.details, this.editTime ];
 
@@ -168,11 +168,11 @@ dojo.declare("bespin.client.dashboard_components.BespinSessionPanel", bespin.th.
     } 
 });
 
-dojo.declare("bespin.client.dashboard_components.BespinProjectPanel", bespin.th.components.Panel, {
+dojo.declare("bespin.client.dashboard_components.BespinProjectPanel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
-        this.projectLabel = new bespin.th.components.Label({ text: "Projects", style: { color: "white", font: "9pt Tahoma" } });
+        this.projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "9pt Tahoma" } });
         this.projectLabel.oldPaint = this.projectLabel.paint;
         this.projectLabel.paint = function(ctx) {
             var d = this.d();
@@ -192,9 +192,9 @@ dojo.declare("bespin.client.dashboard_components.BespinProjectPanel", bespin.th.
             this.oldPaint(ctx);
         }
 
-        this.list = new bespin.th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "9pt Tahoma" } });
+        this.list = new th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "9pt Tahoma" } });
 
-        this.splitter = new bespin.th.components.Splitter({ orientation: bespin.th.HORIZONTAL });
+        this.splitter = new th.components.Splitter({ orientation: th.HORIZONTAL });
 
         this.add([ this.projectLabel, this.list, this.splitter ]);
 

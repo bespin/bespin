@@ -26,9 +26,9 @@
 // ***** END LICENSE BLOCK *****
 // 
 
-dojo.provide("bespin.th.components");
+dojo.provide("th.components");
 
-dojo.declare("bespin.th.components.Button", bespin.th.Component, {
+dojo.declare("th.components.Button", th.Component, {
     paint: function(ctx) {
         var d = this.d();
 
@@ -49,19 +49,19 @@ dojo.declare("bespin.th.components.Button", bespin.th.Component, {
     }
 });
 
-dojo.declare("bespin.th.components.Scrollbar", bespin.th.Container, {
+dojo.declare("th.components.Scrollbar", th.Container, {
     constructor: function(parms) {
         if (!parms) parms = {};
-        this.orientation = parms.orientation || bespin.th.VERTICAL;
+        this.orientation = parms.orientation || th.VERTICAL;
         this.value = parms.value || 0;
         this.min = parms.min || 0;
         this.max = parms.max || 100;
         this.extent = parms.extent || 0.1;
         this.increment = parms.increment || 2;
 
-        this.up = new bespin.th.components.Button();
-        this.down = new bespin.th.components.Button();
-        this.bar = new bespin.th.components.Button();
+        this.up = new th.components.Button();
+        this.down = new th.components.Button();
+        this.bar = new th.components.Button();
         this.add([ this.up, this.down, this.bar ]);
 
         this.bus.bind("click", this.up, this.scrollup, this);
@@ -71,7 +71,7 @@ dojo.declare("bespin.th.components.Scrollbar", bespin.th.Container, {
     },
 
     onmousedrag: function(e) {
-        var currentPosition = (this.orientation == bespin.th.VERTICAL) ? e.clientY : e.clientX;
+        var currentPosition = (this.orientation == th.VERTICAL) ? e.clientY : e.clientX;
 
         if (this.dragstart_value == undefined) {
             this.dragstart_value = this.value;
@@ -135,7 +135,7 @@ dojo.declare("bespin.th.components.Scrollbar", bespin.th.Container, {
             return;
         }
 
-        if (this.orientation == bespin.th.VERTICAL) {
+        if (this.orientation == th.VERTICAL) {
             var w = d.b.iw;
             var h = 12;
             this.up.bounds = { x: d.i.l + 1, y: d.i.t, width: w, height: h };
@@ -172,7 +172,7 @@ dojo.declare("bespin.th.components.Scrollbar", bespin.th.Container, {
     }     
 });
     
-dojo.declare("bespin.th.components.Panel", bespin.th.Container, {
+dojo.declare("th.components.Panel", th.Container, {
     paintSelf: function(ctx) {
         if (this.style.backgroundColor) {
             ctx.fillStyle = this.style.backgroundColor;
@@ -188,7 +188,7 @@ dojo.declare("bespin.th.components.Panel", bespin.th.Container, {
 });  
 
 
-dojo.declare("bespin.th.components.ResizeNib", bespin.th.Component, { 
+dojo.declare("th.components.ResizeNib", th.Component, { 
     constructor: function(parms) {
         this.bus.bind("mousedown", this, this.onmousedown, this);
         this.bus.bind("mouseup", this, this.onmouseup, this);
@@ -221,7 +221,7 @@ dojo.declare("bespin.th.components.ResizeNib", bespin.th.Component, {
     paint: function(ctx) {
         var d = this.d();  
 
-        if (this.attributes.orientation == bespin.th.VERTICAL) {
+        if (this.attributes.orientation == th.VERTICAL) {
             var bw = 7;
             var x = Math.floor((d.b.w / 2) - (bw / 2));
             var y = 7;
@@ -291,10 +291,10 @@ dojo.declare("bespin.th.components.ResizeNib", bespin.th.Component, {
     ignored.
 
  */ 
-dojo.declare("bespin.th.components.Splitter", bespin.th.Container, { 
+dojo.declare("th.components.Splitter", th.Container, { 
     constructor: function(parms) {
-        this.topNib = new bespin.th.components.ResizeNib({ attributes: { orientation: this.attributes.orientation } });
-        this.bottomNib = new bespin.th.components.ResizeNib({ attributes: { orientation: this.attributes.orientation } });
+        this.topNib = new th.components.ResizeNib({ attributes: { orientation: this.attributes.orientation } });
+        this.bottomNib = new th.components.ResizeNib({ attributes: { orientation: this.attributes.orientation } });
         this.add(this.topNib, this.bottomNib);
 
         this.label = parms.label;
@@ -332,9 +332,9 @@ dojo.declare("bespin.th.components.Splitter", bespin.th.Container, {
         var d = this.d();
 
         // if the orientation isn't explicitly set, guess it by examining the ratio
-        if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? bespin.th.HORIZONTAL : bespin.th.VERTICAL;
+        if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? th.HORIZONTAL : th.VERTICAL;
 
-        if (this.attributes.orientation == bespin.th.HORIZONTAL) {
+        if (this.attributes.orientation == th.HORIZONTAL) {
             this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
             this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
 
@@ -353,7 +353,7 @@ dojo.declare("bespin.th.components.Splitter", bespin.th.Container, {
 
     paintSelf: function(ctx) {
         var d = this.d();
-        if (this.attributes.orientation == bespin.th.VERTICAL) {
+        if (this.attributes.orientation == th.VERTICAL) {
             ctx.fillStyle = "rgb(73, 72, 66)";
             ctx.fillRect(0, 0, d.b.w, 1);
             ctx.fillStyle = "black";
@@ -379,9 +379,9 @@ dojo.declare("bespin.th.components.Splitter", bespin.th.Container, {
     }
 });
 
-dojo.declare("bespin.th.components.SplitPanelContainer", bespin.th.components.Panel, {
+dojo.declare("th.components.SplitPanelContainer", th.components.Panel, {
     constructor: function(parms) {
-        this.splitter = new bespin.th.components.Splitter({ attributes: { orientation: this.attributes.orientation }, label: parms.label });
+        this.splitter = new th.components.Splitter({ attributes: { orientation: this.attributes.orientation }, label: parms.label });
     },
 
     getContents: function() {                                                 
@@ -397,11 +397,11 @@ dojo.declare("bespin.th.components.SplitPanelContainer", bespin.th.components.Pa
         );
         if (this.children.length == childrenWithoutSplitter.length) this.add(this.splitter);
 
-        var slength = (this.attributes.orientation == bespin.th.HORIZONTAL) ?
+        var slength = (this.attributes.orientation == th.HORIZONTAL) ?
                       this.splitter.getPreferredWidth(this.bounds.height) :
                       this.splitter.getPreferredHeight(this.bounds.width);
         if (this.splitter.shouldLayout()) {
-            if (this.attributes.orientation == bespin.th.HORIZONTAL) {
+            if (this.attributes.orientation == th.HORIZONTAL) {
                 this.splitter.bounds = { x: this.bounds.width - slength, y: 0, height: this.bounds.height, width: slength }; 
             } else {
                 this.splitter.bounds = { x: 0, y: this.bounds.height - slength, height: slength, width: this.bounds.width };
@@ -412,7 +412,7 @@ dojo.declare("bespin.th.components.SplitPanelContainer", bespin.th.components.Pa
 
         // only the first non-splitter child is laid out
         if (childrenWithoutSplitter.length > 0) {
-            if (this.attributes.orientation == bespin.th.HORIZONTAL) {
+            if (this.attributes.orientation == th.HORIZONTAL) {
                 childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength }
             } else {
                 childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width }
@@ -424,9 +424,9 @@ dojo.declare("bespin.th.components.SplitPanelContainer", bespin.th.components.Pa
 /*
     A component that allocates all visible space to two or more nested regions.
  */
-dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
+dojo.declare("th.components.SplitPanel", th.components.Panel, {
     constructor: function(parms) {
-        if (!this.attributes.orientation) this.attributes.orientation = bespin.th.HORIZONTAL;
+        if (!this.attributes.orientation) this.attributes.orientation = th.HORIZONTAL;
 
         if (!this.attributes.regions) this.attributes.regions = [{},{}];
     },
@@ -439,7 +439,7 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
     ondrag: function(e) {
         var container = e.thComponent.parent; // splitter -> splitpanecontainer
 
-        var delta = (this.attributes.orientation == bespin.th.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
+        var delta = (this.attributes.orientation == th.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
 
         container.region.size = container.region.startSize + delta;
         this.render();
@@ -462,7 +462,7 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
         for (var i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
             if (!region.container) {
-                region.container = new bespin.th.components.SplitPanelContainer({ attributes: { orientation: this.attributes.orientation }, label: region.label });
+                region.container = new th.components.SplitPanelContainer({ attributes: { orientation: this.attributes.orientation }, label: region.label });
 
                 region.container.region = region;   // give the container a reference back to the region
 
@@ -484,7 +484,7 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
             this.add(region.container);
         }
 
-        var containerSize = (this.attributes.orientation == bespin.th.HORIZONTAL) ? this.bounds.width : this.bounds.height;
+        var containerSize = (this.attributes.orientation == th.HORIZONTAL) ? this.bounds.width : this.bounds.height;
 
         // size the regions
         var totalSize = 0;
@@ -495,7 +495,7 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
                 r.size = (this.attributes.defaultSize || (100 / this.attributes.regions.length) + "%");
             }
 
-            if (bespin.th.helpers.isPercentage(r.size)) {
+            if (th.helpers.isPercentage(r.size)) {
                 // percentage lengths are allowed, but will be immediately converted to pixels
                 r.size = Math.floor((parseInt(r.size) / 100) * containerSize); 
             }
@@ -524,7 +524,7 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
         var startPx = 0;
         for (var i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
-            if (this.attributes.orientation == bespin.th.HORIZONTAL) {
+            if (this.attributes.orientation == th.HORIZONTAL) {
                 region.container.bounds = { x: startPx, y: 0, width: region.size, height: this.bounds.height };
             } else {
                 region.container.bounds = { x: 0, y: startPx, width: this.bounds.width, height: region.size };
@@ -535,10 +535,10 @@ dojo.declare("bespin.th.components.SplitPanel", bespin.th.components.Panel, {
     }
 });
 
-dojo.declare("bespin.th.components.Label", bespin.th.components.Panel, {
+dojo.declare("th.components.Label", th.components.Panel, {
     constructor: function(parms) { 
         if (!parms) parms = {};
-        if (!this.border) this.border = new bespin.th.borders.EmptyBorder({ insets: { left: 5, right: 5, top: 2, bottom: 2 }});
+        if (!this.border) this.border = new th.borders.EmptyBorder({ insets: { left: 5, right: 5, top: 2, bottom: 2 }});
         this.attributes.text = parms.text || "";
         if (!this.style.font) this.style.font = "12pt Arial";
         if (!this.style.color) this.style.color = "black"; 
@@ -596,7 +596,7 @@ dojo.declare("bespin.th.components.Label", bespin.th.components.Panel, {
     }
 });
 
-dojo.declare("bespin.th.components.ExpandingInfoPanel", bespin.th.components.Panel, {
+dojo.declare("th.components.ExpandingInfoPanel", th.components.Panel, {
     getMinimumRowHeight: function() {
         return 40;
     },
@@ -648,7 +648,7 @@ dojo.declare("bespin.th.components.ExpandingInfoPanel", bespin.th.components.Pan
     }
 });
 
-dojo.declare("bespin.th.components.List", bespin.th.Container, {
+dojo.declare("th.components.List", th.Container, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
@@ -658,7 +658,7 @@ dojo.declare("bespin.th.components.List", bespin.th.Container, {
 
         this.bus.bind("mousedown", this, this.onmousedown, this);  
         
-        this.renderer = new bespin.th.components.Label({ style: { border: new bespin.th.borders.EmptyBorder({ size: 3 }) }});
+        this.renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) }});
     },
 
     onmousedown: function(e) {
@@ -788,12 +788,12 @@ dojo.declare("bespin.th.components.List", bespin.th.Container, {
     }
 });
 
-dojo.declare("bespin.th.components.HorizontalTree", bespin.th.Container, {
+dojo.declare("th.components.HorizontalTree", th.Container, {
     constructor: function(parms) {
         if (!parms) parms = {};
         if (!this.style.defaultSize) this.style.defaultSize = 150;
 
-        this.attributes.orientation = bespin.th.HORIZONTAL;
+        this.attributes.orientation = th.HORIZONTAL;
 
         this.lists = [];
         this.splitters = [];
@@ -820,7 +820,7 @@ dojo.declare("bespin.th.components.HorizontalTree", bespin.th.Container, {
 
     ondrag: function(e) {
         var splitterIndex = this.splitters.indexOf(e.thComponent);
-        var delta = (this.attributes.orientation == bespin.th.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
+        var delta = (this.attributes.orientation == th.HORIZONTAL) ? e.currentPos.x - e.startPos.x : e.currentPos.y - e.startPos.y;
         this.listWidths[splitterIndex] = this.startSize + delta;
         this.render();
     },
@@ -861,7 +861,7 @@ dojo.declare("bespin.th.components.HorizontalTree", bespin.th.Container, {
         this.lists.push(list);
         this.add(list);
 
-        var splitter = new bespin.th.components.Splitter({ attributes: { orientation: bespin.th.HORIZONTAL }, scrollbar: new bespin.th.components.Scrollbar() });
+        var splitter = new th.components.Splitter({ attributes: { orientation: th.HORIZONTAL }, scrollbar: new th.components.Scrollbar() });
         splitter.scrollbar.style = this.style;
         splitter.scrollbar.scrollable = list;
         splitter.scrollbar.opaque = false;
@@ -888,7 +888,7 @@ dojo.declare("bespin.th.components.HorizontalTree", bespin.th.Container, {
     },
 
     createList: function(items) {
-        var list = new bespin.th.components.List({ items: items, style: this.style });
+        var list = new th.components.List({ items: items, style: this.style });
         if (this.renderer) list.renderer = this.renderer;
         list.oldGetRenderer = list.getRenderer;
         list.getRenderer = function(rctx) {

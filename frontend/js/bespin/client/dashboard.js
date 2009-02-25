@@ -50,9 +50,9 @@ dojo.addOnLoad(function(){
     
     bespin.displayVersion(); // display the version on the page
 
-    scene = new bespin.th.Scene(dojo.byId("canvas"));  
+    scene = new th.Scene(dojo.byId("canvas"));  
     
-    tree = new bespin.th.components.HorizontalTree({ style: {
+    tree = new th.components.HorizontalTree({ style: {
         backgroundColor: "rgb(76, 74, 65)",
         backgroundColorOdd: "rgb(82, 80, 71)",
         font: "9pt Tahoma",
@@ -67,7 +67,7 @@ dojo.addOnLoad(function(){
         scrollDownArrow: dojo.byId("vscroll_down_arrow")
     }});
 
-    var renderer = new bespin.th.components.Label({ style: { border: new bespin.th.borders.EmptyBorder({ size: 3 }) } });
+    var renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) } });
     renderer.old_paint = renderer.paint;
     renderer.paint = function(ctx) {
         var d = this.d();
@@ -98,7 +98,7 @@ dojo.addOnLoad(function(){
 
     projects = new bespin.client.dashboard_components.BespinProjectPanel();
 
-    var topPanel = new bespin.th.components.Panel();
+    var topPanel = new th.components.Panel();
     topPanel.add([ projects, tree ]);
     topPanel.layout = function() {
         var d = this.d();
@@ -107,21 +107,21 @@ dojo.addOnLoad(function(){
     }
     projects.list.renderer = renderer;
 
-    infoPanel = new bespin.th.components.ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
+    infoPanel = new th.components.ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
 
-    var splitPanel = new bespin.th.components.SplitPanel({ id: "splitPanel", attributes: {
-        orientation: bespin.th.VERTICAL,
+    var splitPanel = new th.components.SplitPanel({ id: "splitPanel", attributes: {
+        orientation: th.VERTICAL,
         regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
     } });
 
-    splitPanel.attributes.regions[0].label = new bespin.th.components.Label({
+    splitPanel.attributes.regions[0].label = new th.components.Label({
             id: "foobar",
             text: "Open Sessions",
             style: {
                 color: "white",
                 font: "9pt Tahoma"
             },
-            border: new bespin.th.borders.EmptyBorder({ size: 4 })
+            border: new th.borders.EmptyBorder({ size: 4 })
     });
 
     scene.root.add(splitPanel);
