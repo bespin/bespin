@@ -113,7 +113,15 @@ function validateEmail(str) {
 
 var register = {
     checkUsername:function() {
-        dojo.byId('register_username_error').innerHTML = (dojo.byId('register_username').value.length < 4) ? "Usernames must be at least 4 characters long" : "";
+        var username_error = [];
+        var username = dojo.byId("register_username").value;
+        if (username.length < 4) {
+            username_error.push("Usernames must be at least 4 characters long");   
+        }
+        if (/[<>| '"]/.test(username)) {
+            username_error.push("Usernames must not contain any of: <>| '\"");   
+        }
+        dojo.byId('register_username_error').innerHTML = username_error.join(", ");
     },
     checkPassword:function() {
         dojo.byId('register_password_error').innerHTML = (dojo.byId('register_password').value.length < 6) ? "Passwords must be at least 6 characters long" : "";
