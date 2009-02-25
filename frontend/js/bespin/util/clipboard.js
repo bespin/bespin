@@ -49,7 +49,7 @@ dojo.mixin(bespin.util.clipboard, {
     // Do the first setup. Right now checks for WebKit and inits a DOMEvents solution if that is true
     // else install the default.
     setup: function() {
-        if (dojo.isWebkit) {
+        if (dojo.isWebKit) {
             this.install(new bespin.util.clipboard.DOMEvents());
         } else {
             this.install(new bespin.util.clipboard.Default());
@@ -120,8 +120,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
 
         this.pasteHandle = dojo.connect(document, "paste", function(e) {
             e.preventDefault();
-
-            var args = bespin.editor.util.buildArgs();    
+            var args = bespin.editor.utils.buildArgs();    
             args.chunk = e.clipboardData.getData('text/plain');
             if (args.chunk) _editor.ui.actions.insertChunk(args);
 
@@ -223,7 +222,7 @@ bespin.util.clipboard.Manual = new function() {
                     range.execCommand('Copy');
             } else {
                 var flashcopier = 'flashcopier';
-                if(!document.getElementById(flashcopier)) {
+                if (!document.getElementById(flashcopier)) {
                     var divholder = document.createElement('div');
                     divholder.id = flashcopier;
                     document.body.appendChild(divholder);
