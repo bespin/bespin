@@ -140,7 +140,7 @@ def start():
     blocking the connection) and start the server on port 8000.
     """
     from bespin import config, controllers
-    from wsgiref.simple_server import make_server
+    from paste.httpserver import serve
     
     options.order('server')
     
@@ -159,7 +159,7 @@ def start():
     else:
         listen_on = "localhost"
     info("Server starting on %s:%s" % (listen_on, port))
-    make_server(listen_on, port, controllers.make_app()).serve_forever()
+    serve(controllers.make_app(), listen_on, port, use_threadpool=True)
     
 @task
 def try_build():
