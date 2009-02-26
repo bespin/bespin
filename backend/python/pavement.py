@@ -34,8 +34,6 @@ from paver.setuputils import find_package_data
 
 from paver.defaults import *
 
-import paver.virtual
-
 execfile(os.path.join('bespin', '__init__.py'))
 
 options(
@@ -45,17 +43,6 @@ options(
         packages=find_packages(),
         package_data=find_package_data('bespin', 'bespin', 
                                 only_in_packages=False)
-    ),
-    virtualenv=Bunch(
-        packages_to_install=['pip'],
-        paver_command_line="required"
-    ),
-    server=Bunch(
-        # set to true to allow connections from other machines
-        open=False,
-        port=8080,
-        try_build=False,
-        dburl=None
     )
 )
 
@@ -70,80 +57,6 @@ def required():
     path("README").unlink()
     path("include").rmtree()
 
-@task
-def start():
-    """Starts the BespinServer on localhost port 8080 for development.
-    
-    You can change the port and allow remote connections by setting
-    server.port or server.open on the command line.
-    
-    paver server.open=1 server.port=8000 start
-    
-    will allow remote connections (assuming you don't have a firewall
-    blocking the connection) and start the server on port 8000.
-    """
-    from bespin import config, controllers
-    from wsgiref.simple_server import make_server
-    
-    options.order('server')
-    
-    config.set_profile('dev')
-    
-    if options.server.try_build:
-        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
-    
-    if options.server.dburl:
-        config.c.dburl = options.server.dburl
-    
-    config.activate_profile()
-    port = int(options.port)
-    if options.open in ["True", "true", "yes", "1"]:
-        listen_on = ""
-    else:
-        listen_on = "localhost"
-    info("Server starting on %s:%s" % (listen_on, port))
-    make_server(listen_on, port, controllers.make_app()).serve_forever()
-    
-@task
-def try_build():
-    """Starts the server using the compressed JavaScript."""
-    options.server.try_build=True
-    start()
-    
-@task
-def clean_data():
-    """Deletes the development data and recreates the database."""
-    data_path = path("devdata.db")
-    data_path.unlink()
-    create_db()
-    
-@task
-def create_db():
-    """Creates the development database"""
-    from bespin import config, model, db_versions
-    from migrate.versioning.shell import main
-    
-    if path("devdata.db").exists():
-        raise BuildFailure("Development database already exists")
-    config.set_profile('dev')
-    config.activate_profile()
-    dry("Create database tables", model.Base.metadata.create_all, bind=config.c.dbengine)
-    
-    repository = str(path(db_versions.__file__).dirname())
-    dburl = config.c.dburl
-    dry("Turn on migrate versioning", main, ["version_control", dburl, repository])
-
-@task
-def upgrade():
-    """Upgrade your database."""
-    from bespin import config, model, db_versions
-    from migrate.versioning.shell import main
-    config.set_profile('dev')
-    config.activate_profile()
-    repository = str(path(db_versions.__file__).dirname())
-    dburl = config.c.dburl
-    dry("Run the database upgrade", main, ["upgrade", dburl, repository])
-    
 
 @task
 @needs(['sdist'])
