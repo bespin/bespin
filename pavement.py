@@ -99,7 +99,7 @@ options(
         dburl=None
     ),
     dojo=Bunch(
-        download_url="http://download.dojotoolkit.org/release-1.2.3/dojo-release-1.2.3.tar.gz",
+        download_url="http://download.dojotoolkit.org/release-1.3.0b2/dojo-release-1.3.0b2.tar.gz",
         destination=path('frontend/js')
     )
 )
