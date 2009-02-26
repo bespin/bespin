@@ -62,25 +62,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var commandname = data.shift();
 
         var command;
-        var argstr = data.join(' ');
 
         if (this.commands[commandname]) {
             command = this.commands[commandname];
         } else if (this.aliases[commandname]) {
-            var alias = this.aliases[commandname].split(' ');
-            var aliascmd = alias.shift();
-            if (alias.length > 0) {
-                argstr = alias.join(' ') + ' ' + argstr;
-            }
-            command = this.commands[aliascmd];
+            command = this.commands[this.aliases[commandname]];
         } else {
             this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
 
-        bespin.publish("bespin:cmdline:executed", { command: command, args: argstr });
+        bespin.publish("bespin:cmdline:executed", [{ command: command, args: data.join(' ') }]);
 
-        command.execute(this, this.getArgs(argstr.split(' '), command));
+        command.execute(this, this.getArgs(data, command));
         this.commandLine.value = ''; // clear after the command
     },
       
@@ -95,7 +89,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             var args = bespin.util.keys.fillArguments(command.withKey);
 
             args.action = "bespin:cmdline:execute;name=" + command.name;
-            bespin.publish("bespin:editor:bindkey", args);
+            bespin.publish("bespin:editor:bindkey", [args]);
         }   
 
         this.commands[command.name] = command;
@@ -138,8 +132,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     showInfo: function(html, autohide) {
         this.hideInfo();
 
-        dojo.byId('info').innerHTML = html;
+        dojo.byId('info_text').innerHTML = html;
         dojo.style('info', 'display', 'block'); 
+	this.infoResizer();
         dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
 
         if (autohide) {
@@ -148,7 +143,18 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             }), 4600);
         }
     },
-
+    infoResizer: function() {
+        if(dojo.style('info','display')!='none') {
+		dojo.style('info','height','');
+		var browserY=window.innerHeight-bespin.commandlineHeight;
+		var infoY=dojo.style('info','height');
+		if(((infoY/browserY)*100)>35) {
+			//I use 35 in the if to make the math easier and less chance to fail 
+			var nHeight=(browserY*.35)+'px';
+			dojo.style('info','height',nHeight);
+		}
+	}
+    },
     hideInfo: function() {
         dojo.style('info', 'display', 'none');
         if (this.infoTimeout) clearTimeout(this.infoTimeout);
@@ -158,15 +164,17 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var matches = [];
 
         if (value.length > 0) {
-            for (var command in this.commands) {
+            for (command in this.commands) {
                 if (command.indexOf(value) == 0) {
                   matches.push(command);
                 }
-            }
-            
-            for (var alias in this.aliases) {
-                if (alias.indexOf(value) == 0) {
-                  matches.push(alias);
+
+                if (this.commands[command]['aliases']) {
+                    dojo.forEach(this.commands[command]['aliases'], function(alias) {
+                        if (alias.indexOf(value) == 0) {
+                          matches.push(alias);
+                        }
+                    });
                 }
             }
         }
@@ -177,27 +185,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     complete: function(value) {
         var matches = this.findCompletions(value);
         if (matches.length == 1) {
+            var command = this.commands[matches[0]] || this.commands[this.aliases[matches[0]]];
+
             var commandLineValue = matches[0];
-            
-            var command = this.commands[matches[0]];
 
-            if (command) {
-                if (this.commandTakesArgs(command)) {
-                    commandLineValue += ' ';
-                }
-
-                if (command['completeText']) {
-                    this.showInfo(command['completeText']);
-                }
-
-                if (command['complete']) {
-                    this.showInfo(command.complete(this, value));
-                }
-            } else { // an alias
-                this.showInfo(commandLineValue + " is an alias for: " + this.aliases[commandLineValue]);
+            if (this.commandTakesArgs(command)) {
                 commandLineValue += ' ';
             }
             this.commandLine.value = commandLineValue;
+
+            if (command['completeText']) {
+                this.showInfo(command['completeText']);
+            }
+
+            if (command['complete']) {
+                this.showInfo(command.complete(this, value));
+            }
         }
     },
 

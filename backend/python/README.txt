@@ -5,6 +5,51 @@ This program provides the server side functionality for Bespin. Though there
 is nothing Mac or Unix specific to the Bespin server, at the moment it
 has only been tested on Unix-like platforms.
 
+Getting Started
+---------------
+
+*** NOTE FOR LINUX USERS: If you are running on a Linux system, you will 
+likely need a "python-dev" (on Ubuntu, possibly python-devel elsewhere) 
+package installed, if you do not already have it.
+
+Run::
+
+  python bootstrap.py
+  
+to get the environment set up. This is built around virtualenv. All of the
+required packages will automatically be installed. Once this is set up,
+you can run::
+
+  source bin/activate
+  
+to enter the virtualenv. Alternatively, you can just prefix the commands you
+run with "bin/". If you wish to restore your command line environment,
+you can type "deactivate".
+
+The first time around, you'll need to create the database::
+
+  paver create_db
+
+You can start up the development server (runs on localhost:8080) by running::
+
+  paver start
+  
+You can run the unit tests by running::
+
+  py.test bespin
+  
+Updating the Required Files
+---------------------------
+
+If the "requirements.txt" file changes, you can re-install the required packages
+by running::
+
+  paver required
+  
+You can also force upgrade all of the packages like so::
+
+  pip install -U -r requirements.txt
+
 Understanding the Code
 ----------------------
 

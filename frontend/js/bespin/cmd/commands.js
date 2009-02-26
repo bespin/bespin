@@ -185,7 +185,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            bespin.publish("bespin:editor:project:set", { project: projectname });
+            bespin.publish("bespin:editor:project:set", [{ project: projectname }]);
         } else {
             self.executeCommand('status');
         }
@@ -218,7 +218,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:create", { project: projectname });
+        bespin.publish("bespin:project:create", [{ project: projectname }]);
     }
 });
 
@@ -233,7 +233,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:delete", { project: projectname });
+        bespin.publish("bespin:project:delete", [{ project: projectname }]);
     }
 });
 
@@ -248,7 +248,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:rename", { currentProject: args.currentProject, newProject: args.newProject });
+        bespin.publish("bespin:project:rename", [{ currentProject: args.currentProject, newProject: args.newProject }]);
     }
 });
 
@@ -267,7 +267,7 @@ bespin.cmd.commands.add({
         var opts = { path: args.path };
         if (args.projectname) opts.project = args.projectname;
         
-        bespin.publish("bespin:directory:create", opts);
+        bespin.publish("bespin:directory:create", [opts]);
     }
 });
 
@@ -292,9 +292,9 @@ bespin.cmd.commands.add({
     completeText: 'add the filename to save as, or use the current file',
     withKey: "APPLE S",
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:savefile", {
+        bespin.publish("bespin:editor:savefile", [{
             filename: filename
-        });
+        }]);
     }
 });
 
@@ -306,9 +306,9 @@ bespin.cmd.commands.add({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:openfile", {
+        bespin.publish("bespin:editor:openfile", [{
             filename: filename
-        });
+        }]);
     }
 });
 
@@ -319,9 +319,9 @@ bespin.cmd.commands.add({
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:preview", {
-            filename: filename
-        });
+        bespin.publish("bespin:editor:preview", [{
+            filename: filename 
+        }]);
     }
 });
 
@@ -356,7 +356,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:commands:load", { commandname: commandname });
+        bespin.publish("bespin:commands:load", [{ commandname: commandname }]);
     }
 });
 
@@ -374,7 +374,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:edit", { commandname: commandname });
+        bespin.publish("bespin:commands:edit", [{ commandname: commandname }]);
     }
 });
 
@@ -400,7 +400,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:delete", { commandname: commandname });
+        bespin.publish("bespin:commands:delete", [{ commandname: commandname }]);
     }
 });
 
@@ -417,7 +417,7 @@ bespin.cmd.commands.add({
             args.newfilename = args.filename;
             delete args.filename;
         }
-        bespin.publish("bespin:editor:newfile", args || {});
+        bespin.publish("bespin:editor:newfile", [args || {}]);
     }
 });
 
@@ -451,7 +451,7 @@ bespin.cmd.commands.add({
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
     execute: function(self, args) {
-        bespin.publish("bespin:editor:closefile", args);
+        bespin.publish("bespin:editor:closefile", [args]);
     }
 });
 
@@ -513,9 +513,9 @@ bespin.cmd.commands.add({
             
             // If the line that we are moving to is off screen, center it, else just move in place
             if ( (linenumAsInt < self.editor.ui.firstVisibleRow) || (linenumAsInt >= self.editor.ui.firstVisibleRow+self.editor.ui.visibleRows) ) {
-                bespin.publish("bespin:editor:doaction", {
+                bespin.publish("bespin:editor:doaction", [{
                     action: 'moveCursorRowToCenter'
-                });
+                }]);
             }
         }
     }
@@ -595,9 +595,9 @@ bespin.cmd.commands.add({
     preview: 'execute any editor action',
     hidden: true,
     execute: function(self, actionname) {
-        bespin.publish("bespin:editor:doaction", {
+        bespin.publish("bespin:editor:doaction", [{
             action: actionname
-        });
+        }]);
     }
 });
 
@@ -681,7 +681,7 @@ bespin.cmd.commands.add({
             args.url = project;
         // * Make sure that a URL came along at some point
         } else if (!this.isURL(args.url)) {
-            self.showUsage(this);
+            this.usage(self);
             return;            
         }
         
@@ -690,7 +690,7 @@ bespin.cmd.commands.add({
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
-        bespin.publish("bespin:project:import", { project: project, url: url });
+        bespin.publish("bespin:project:import", [{ project: project, url: url }]);
     }
 });
 
@@ -745,7 +745,7 @@ bespin.cmd.commands.add({
     execute: function(self, args) {
         if (args.modifiers == "none") args.modifiers = '';
 
-        bespin.publish("bespin:editor:bindkey", args);
+        bespin.publish("bespin:editor:bindkey", [args]);
     }
 });
 
@@ -816,18 +816,14 @@ bespin.cmd.commands.add({
           } else {
               output += "No alias set for " + args.alias;
           }
-        } else { // save a new alias
+        } else {
           var key = args.alias;
           var value = args.command;
-          var aliascmd = value.split(' ')[0];
-          
           output = "<u>Saving setting</u><br/><br/>";
-          if (self.commands[key]) {
-              output += "Sorry, there is already a command with the name: " + key;
-          } else if (self.commands[aliascmd]) {
+          if (self.commands[value]) {
               output += key + ": " + value;
               self.aliases[key] = value;
-          } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
+          } else if (self.aliases[value.split(' ')[0]]) { // TODO: have the symlink to the alias not the end point
               output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
               self.aliases[key] = value;
           } else {
