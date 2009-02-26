@@ -29,8 +29,12 @@
 # Top level pavement for putting together the Bespin project.
 import sys
 import tarfile
+import urllib2
+from urlparse import urlparse
 
-from paver.defaults import *
+from paver.easy import *
+import paver.misctasks
+import paver.virtual
 
 HEADER = """ ***** BEGIN LICENSE BLOCK *****
 Version: MPL 1.1
@@ -82,8 +86,121 @@ options(
             './backend/python/bin',
             './backend/python/bootstrap.py'
         ])
+    ),
+    virtualenv=Bunch(
+        packages_to_install=['pip'],
+        paver_command_line="required"
+    ),
+    server=Bunch(
+        # set to true to allow connections from other machines
+        open=False,
+        port=8080,
+        try_build=False,
+        dburl=None
+    ),
+    dojo=Bunch(
+        download_url="http://download.dojotoolkit.org/release-1.2.3/dojo-release-1.2.3.tar.gz",
+        destination=path('frontend/js')
     )
 )
+
+@task
+def required():
+    """Install the required packages.
+    
+    Installs the requirements set in requirements.txt."""
+    pip = path("bin/pip")
+    if not pip.exists():
+        # try Windows version
+        pip = path("Scripts/pip")
+    sh("%s install -U -r requirements.txt" % pip)
+    
+    # note this change directory should be done by Paver
+    cwd = path.getcwd()
+    path("backend/python").chdir()
+    try:
+        call_pavement('pavement.py', 'develop')
+    finally:
+        cwd.chdir()
+        
+    # clean up after urlrelay's installation
+    path("README").unlink()
+    path("include").rmtree()
+
+@task
+def start():
+    """Starts the BespinServer on localhost port 8080 for development.
+    
+    You can change the port and allow remote connections by setting
+    server.port or server.open on the command line.
+    
+    paver server.open=1 server.port=8000 start
+    
+    will allow remote connections (assuming you don't have a firewall
+    blocking the connection) and start the server on port 8000.
+    """
+    from bespin import config, controllers
+    from wsgiref.simple_server import make_server
+    
+    options.order('server')
+    
+    config.set_profile('dev')
+    
+    if options.server.try_build:
+        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
+    
+    if options.server.dburl:
+        config.c.dburl = options.server.dburl
+    
+    config.activate_profile()
+    port = int(options.port)
+    if options.open in ["True", "true", "yes", "1"]:
+        listen_on = ""
+    else:
+        listen_on = "localhost"
+    info("Server starting on %s:%s" % (listen_on, port))
+    make_server(listen_on, port, controllers.make_app()).serve_forever()
+    
+@task
+def try_build():
+    """Starts the server using the compressed JavaScript."""
+    options.server.try_build=True
+    start()
+    
+@task
+def clean_data():
+    """Deletes the development data and recreates the database."""
+    data_path = path("devdata.db")
+    data_path.unlink()
+    create_db()
+    
+@task
+def create_db():
+    """Creates the development database"""
+    from bespin import config, model, db_versions
+    from migrate.versioning.shell import main
+    
+    if path("devdata.db").exists():
+        raise BuildFailure("Development database already exists")
+    config.set_profile('dev')
+    config.activate_profile()
+    dry("Create database tables", model.Base.metadata.create_all, bind=config.c.dbengine)
+    
+    repository = str(path(db_versions.__file__).dirname())
+    dburl = config.c.dburl
+    dry("Turn on migrate versioning", main, ["version_control", dburl, repository])
+
+@task
+def upgrade():
+    """Upgrade your database."""
+    from bespin import config, model, db_versions
+    from migrate.versioning.shell import main
+    config.set_profile('dev')
+    config.activate_profile()
+    repository = str(path(db_versions.__file__).dirname())
+    dburl = config.c.dburl
+    dry("Run the database upgrade", main, ["upgrade", dburl, repository])
+
 
 def _get_js_file_list(html_file):
     from BeautifulSoup import BeautifulSoup
@@ -140,7 +257,8 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
                                     % compressed_filename.basename())
     html_file.write_bytes("".join(html_lines))
 
-@task
+# disabled task. needs to be updated for Dojo
+# @task
 def copy_front_end():
     build_dir = options.build_dir
     build_dir.mkdir()
@@ -218,8 +336,9 @@ def restore_python_version(replaced_lines):
     lines[version_block_start+1:version_block_end] = replaced_lines
     version_file.write_lines(lines)
 
-@task
-@needs(['copy_front_end'])
+# disabled task... needs to be updated for Dojo
+# @task
+# @needs(['copy_front_end'])
 def compress_js():
     """Compress the JavaScript using the YUI compressor."""
     current_dir = path.getcwd()
@@ -268,9 +387,10 @@ def prod_server():
     sh("bin/paver production")
     current_directory.chdir()
     dry("Restoring Python version number", restore_python_version, replaced_lines)
-    
-@task
-@needs(['prod_server'])
+
+# disabled task, needs to be updated for Dojo    
+# @task
+# @needs(['prod_server'])
 def dist():
     """Generate a tarball that is ready for deployment to the server."""
     options.build_dir.rmtree()
@@ -323,4 +443,44 @@ def license():
                 continue
             debug("Checking %s", f)
             _apply_header_if_necessary(f, header, first_line, last_line)
+    
+@task
+def dojo(options):
+    """Download Dojo and install it to the correct location."""
+    destfile = path(urlparse(options.download_url).path)
+    destfile = path("ext") / destfile.basename()
+    if not destfile.exists():
+        info("Downloading Dojo to " + destfile)
+        datafile = urllib2.urlopen(options.download_url)
+        output_file = open(destfile, "w")
+        output_file.write(datafile.read())
+        output_file.close()
+        datafile.close()
+
+    info("Expanding Dojo")
+    destination = options.destination
+    dojo = destination / "dojo"
+    dijit = destination / "dijit"
+    dojox = destination / "dojox"
+    
+    dojo.rmtree()
+    dijit.rmtree()
+    dojox.rmtree()
+    
+    dojotar = tarfile.open(destfile)
+    i = 1
+    for member in dojotar.getmembers():
+        name = member.name
+        # python seems to see double slashes on the end
+        # correct for that
+        if name.endswith("//"):
+            name = name[:-1]
+        dropped_root = name.split('/')[1:]
+        
+        # we don't want to extract the top-level dojo-release dir
+        if dropped_root == ['']:
+            continue
+            
+        destpath = destination.joinpath(*dropped_root)
+        dojotar.extract(member, destpath)
     
