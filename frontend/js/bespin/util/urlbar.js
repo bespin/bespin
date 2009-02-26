@@ -35,7 +35,7 @@ dojo.mixin(bespin.util.urlbar, {
         var hash = document.location.hash;
         if (this.last != hash) {
             var urlchange = new bespin.client.settings.URL(hash);
-            bespin.publish("bespin:editor:openfile", { filename: urlchange.get('path') });
+            bespin.publish("bespin:editor:openfile", [{ filename: urlchange.get('path') }]);
             this.last = hash;
         }
     },
