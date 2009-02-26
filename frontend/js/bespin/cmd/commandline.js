@@ -62,19 +62,25 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var commandname = data.shift();
 
         var command;
+        var argstr = data.join(' ');
 
         if (this.commands[commandname]) {
             command = this.commands[commandname];
         } else if (this.aliases[commandname]) {
-            command = this.commands[this.aliases[commandname]];
+            var alias = this.aliases[commandname].split(' ');
+            var aliascmd = alias.shift();
+            if (alias.length > 0) {
+                argstr = alias.join(' ') + ' ' + argstr;
+            }
+            command = this.commands[aliascmd];
         } else {
             this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
 
-        bespin.publish("bespin:cmdline:executed", [{ command: command, args: data.join(' ') }]);
+        bespin.publish("bespin:cmdline:executed", { command: command, args: argstr });
 
-        command.execute(this, this.getArgs(data, command));
+        command.execute(this, this.getArgs(argstr.split(' '), command));
         this.commandLine.value = ''; // clear after the command
     },
       
@@ -89,7 +95,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             var args = bespin.util.keys.fillArguments(command.withKey);
 
             args.action = "bespin:cmdline:execute;name=" + command.name;
-            bespin.publish("bespin:editor:bindkey", [args]);
+            bespin.publish("bespin:editor:bindkey", args);
         }   
 
         this.commands[command.name] = command;
@@ -152,17 +158,15 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var matches = [];
 
         if (value.length > 0) {
-            for (command in this.commands) {
+            for (var command in this.commands) {
                 if (command.indexOf(value) == 0) {
                   matches.push(command);
                 }
-
-                if (this.commands[command]['aliases']) {
-                    dojo.forEach(this.commands[command]['aliases'], function(alias) {
-                        if (alias.indexOf(value) == 0) {
-                          matches.push(alias);
-                        }
-                    });
+            }
+            
+            for (var alias in this.aliases) {
+                if (alias.indexOf(value) == 0) {
+                  matches.push(alias);
                 }
             }
         }
@@ -173,22 +177,27 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     complete: function(value) {
         var matches = this.findCompletions(value);
         if (matches.length == 1) {
-            var command = this.commands[matches[0]] || this.commands[this.aliases[matches[0]]];
-
             var commandLineValue = matches[0];
+            
+            var command = this.commands[matches[0]];
 
-            if (this.commandTakesArgs(command)) {
+            if (command) {
+                if (this.commandTakesArgs(command)) {
+                    commandLineValue += ' ';
+                }
+
+                if (command['completeText']) {
+                    this.showInfo(command['completeText']);
+                }
+
+                if (command['complete']) {
+                    this.showInfo(command.complete(this, value));
+                }
+            } else { // an alias
+                this.showInfo(commandLineValue + " is an alias for: " + this.aliases[commandLineValue]);
                 commandLineValue += ' ';
             }
             this.commandLine.value = commandLineValue;
-
-            if (command['completeText']) {
-                this.showInfo(command['completeText']);
-            }
-
-            if (command['complete']) {
-                this.showInfo(command.complete(this, value));
-            }
         }
     },
 

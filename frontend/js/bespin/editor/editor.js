@@ -247,7 +247,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
             (typeof action == "string") ?
                 function() { 
                     var toFire = bespin.events.toFire(action);
-                    bespin.publish(toFire.name, [toFire.args]);
+                    bespin.publish(toFire.name, toFire.args);
                 } : dojo.hitch(this.actions, action);
     },
 

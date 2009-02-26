@@ -21,7 +21,8 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */ 
- 
+
+// TODO: We need to get rid of the global stuff here!!!
 dojo.provide("bespin.dashboard.dashboard");
 
 var heightDiff;
@@ -158,15 +159,6 @@ dojo.addOnLoad(function() {
 
 var currentProject;
 
-// After a project is imported or created, do a list
-bespin.subscribe("bespin:project:imported", function(event) {
-    _server.list(null, null, displayProjects); // get projects
-});
-
-bespin.subscribe("bespin:project:set", function(event) {
-    _server.list(null, null, displayProjects); // get projects
-});
-
 function loggedIn(user) {
     _server.list(null, null, displayProjects); // get projects
     _server.listOpen(displaySessions); // get sessions
@@ -250,3 +242,8 @@ function displayProjects(projectItems) {
     projects.list.items = projectItems;
     scene.render();
 }
+
+function refreshProjects() {
+    _server.list(null, null, displayProjects);
+}
+
