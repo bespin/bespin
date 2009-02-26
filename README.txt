@@ -33,9 +33,9 @@ to enter the virtualenv. Alternatively, you can just prefix the commands you
 run with "bin/". If you wish to restore your command line environment,
 you can type "deactivate".
 
-The first time around, you'll need to create the database::
+The first time around, you'll need to download Dojo and create the database::
 
-  paver create_db
+  paver dojo create_db
 
 You can start up the development server (runs on localhost:8080) by running::
 

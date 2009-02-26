@@ -29,6 +29,8 @@
 # Top level pavement for putting together the Bespin project.
 import sys
 import tarfile
+import urllib2
+from urlparse import urlparse
 
 from paver.easy import *
 import paver.misctasks
@@ -95,6 +97,10 @@ options(
         port=8080,
         try_build=False,
         dburl=None
+    ),
+    dojo=Bunch(
+        download_url="http://download.dojotoolkit.org/release-1.2.3/dojo-release-1.2.3.tar.gz",
+        destination=path('frontend/js')
     )
 )
 
@@ -437,4 +443,44 @@ def license():
                 continue
             debug("Checking %s", f)
             _apply_header_if_necessary(f, header, first_line, last_line)
+    
+@task
+def dojo(options):
+    """Download Dojo and install it to the correct location."""
+    destfile = path(urlparse(options.download_url).path)
+    destfile = path("ext") / destfile.basename()
+    if not destfile.exists():
+        info("Downloading Dojo to " + destfile)
+        datafile = urllib2.urlopen(options.download_url)
+        output_file = open(destfile, "w")
+        output_file.write(datafile.read())
+        output_file.close()
+        datafile.close()
+
+    info("Expanding Dojo")
+    destination = options.destination
+    dojo = destination / "dojo"
+    dijit = destination / "dijit"
+    dojox = destination / "dojox"
+    
+    dojo.rmtree()
+    dijit.rmtree()
+    dojox.rmtree()
+    
+    dojotar = tarfile.open(destfile)
+    i = 1
+    for member in dojotar.getmembers():
+        name = member.name
+        # python seems to see double slashes on the end
+        # correct for that
+        if name.endswith("//"):
+            name = name[:-1]
+        dropped_root = name.split('/')[1:]
+        
+        # we don't want to extract the top-level dojo-release dir
+        if dropped_root == ['']:
+            continue
+            
+        destpath = destination.joinpath(*dropped_root)
+        dojotar.extract(member, destpath)
     
