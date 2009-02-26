@@ -471,10 +471,8 @@ def dojo(options):
     i = 1
     for member in dojotar.getmembers():
         name = member.name
-        # python seems to see double slashes on the end
-        # correct for that
         if name.endswith("//"):
-            name = name[:-1]
+            continue
         dropped_root = name.split('/')[1:]
         
         # we don't want to extract the top-level dojo-release dir
@@ -482,5 +480,10 @@ def dojo(options):
             continue
             
         destpath = destination.joinpath(*dropped_root)
-        dojotar.extract(member, destpath)
+        destdir = destpath.dirname()
+        if not destdir.exists():
+            destdir.makedirs()
+        f = dojotar.extractfile(member)
+        destpath.write_bytes(f.read())
+        f.close()
     
