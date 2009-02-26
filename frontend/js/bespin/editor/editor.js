@@ -593,7 +593,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         if (e.type == "click") { 
-            if (e.button && (e.button == 0)){
+            if ((typeof e.button != "undefined") && (e.button == 0)) {
                 var button;
                 if (this.nibup.contains(p)) {
                     button = "up";
