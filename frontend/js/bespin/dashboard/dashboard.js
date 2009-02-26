@@ -37,6 +37,7 @@ function sizeCanvas(canvas) {
     }
     var height = window.innerHeight - heightDiff + 11;
     dojo.attr(canvas, { width: window.innerWidth, height: height });
+    _commandLine.infoResizer();
 }
 
 dojo.connect(window, "resize", function() {
