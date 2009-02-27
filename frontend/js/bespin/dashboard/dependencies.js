@@ -27,6 +27,7 @@ dojo.provide("bespin.dashboard.dependencies");
 dojo.require("dojo.cookie"); 
 
 dojo.require("bespin.bespin"); 
+dojo.require("bespin.events");
 
 dojo.require("bespin.util.canvas");
 dojo.require("bespin.util.keys"); 
@@ -52,6 +53,6 @@ dojo.require("th.borders");
 dojo.require("th.components");
 
 // -- The main dashboard subsystems
-dojo.require("bespin.dashboard.events");
 dojo.require("bespin.dashboard.components");
 dojo.require("bespin.dashboard.dashboard");
+dojo.require("bespin.dashboard.events");

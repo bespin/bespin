@@ -159,21 +159,21 @@ dojo.declare("bespin.util.clipboard.Default", null, {
     install: function() {
         var copyArgs = bespin.util.keys.fillArguments("APPLE C");
         copyArgs.action = "copySelection";
-        bespin.publish("bespin:editor:bindkey", [copyArgs]);
+        bespin.publish("bespin:editor:bindkey", copyArgs);
         copyArgs = bespin.util.keys.fillArguments("CTRL C");
-        bespin.publish("bespin:editor:bindkey", [copyArgs]);
+        bespin.publish("bespin:editor:bindkey", copyArgs);
 
         var pasteArgs = bespin.util.keys.fillArguments("APPLE V");
         pasteArgs.action = "pasteFromClipboard";
-        bespin.publish("bespin:editor:bindkey", [pasteArgs]);
+        bespin.publish("bespin:editor:bindkey", pasteArgs);
         pasteArgs = bespin.util.keys.fillArguments("CTRL V");
-        bespin.publish("bespin:editor:bindkey", [pasteArgs]);
+        bespin.publish("bespin:editor:bindkey", pasteArgs);
 
         var cutArgs = bespin.util.keys.fillArguments("APPLE X");
         cutArgs.action = "cutSelection";
-        bespin.publish("bespin:editor:bindkey", [cutArgs]);
+        bespin.publish("bespin:editor:bindkey", cutArgs);
         cutArgs = bespin.util.keys.fillArguments("CTRL X");
-        bespin.publish("bespin:editor:bindkey", [cutArgs]);
+        bespin.publish("bespin:editor:bindkey", cutArgs);
     }
 });
 
