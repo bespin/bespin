@@ -21,20 +21,22 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
-
+ 
 dojo.provide("bespin.dashboard.events");
 
-// ** {{{ Event: bespin:editor:newfile }}} **
-// 
-// Observe a request for a new file to be created
-bespin.subscribe("bespin:editor:newfile", function(event) {
-    var project  = (event) ? event.project : _editSession.project;
-    var newfilename = (event) ? event.newfilename : "new.txt";
-    
-    if (!project) {
-        bespin.publish("bespin:cmdline:showinfo", [{ msg: 'Tell me which project you want the new file inserted.'}]);
-        return;
-    }
-    
-    bespin.util.navigate.editor(project, newfilename);
+// After a project is imported or created, do a list
+bespin.subscribe("bespin:project:imported", function(event) {
+    refreshProjects(); // get projects
+});
+
+bespin.subscribe("bespin:project:set", function(event) {
+    refreshProjects(); // get projects
+});
+
+bespin.subscribe("bespin:project:create", function(event) {
+    refreshProjects(); // get projects
+});
+
+bespin.subscribe("bespin:project:delete", function(event) {
+    refreshProjects(); // get projects
 });
