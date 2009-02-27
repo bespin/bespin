@@ -38,8 +38,8 @@ dojo.require("bespin.util.util");
 // 
 // Observe a request for a new file to be created
 bespin.subscribe("bespin:editor:newfile", function(event) {
-    var project  = (event) ? event.project : _editSession.project; 
-    var newfilename = (event) ? event.newfilename : "new.txt";
+    var project = event.project || _editSession.project; 
+    var newfilename = event.newfilename || "new.txt";
     
     if (typeof _files != "undefined") { // We got the file system object baybee
         _files.newFile(project, newfilename, function() {
@@ -224,8 +224,8 @@ bespin.subscribe("bespin:commands:delete", function(event) {
 // 
 // Load the users config file
 bespin.subscribe("bespin:editor:preview", function(event) {
-    var filename = (event) ? event.filename : _editSession.path;  // default to current page
-    var project  = (event) ? event.project : _editSession.project; 
+    var filename = event.filename || _editSession.path;  // default to current page
+    var project  = event.project  || _editSession.project; 
 
     // Make sure to save the file first
     bespin.publish("bespin:editor:savefile", {
@@ -240,8 +240,8 @@ bespin.subscribe("bespin:editor:preview", function(event) {
 // 
 // Load the users config file
 bespin.subscribe("bespin:editor:closefile", function(event) {
-    var filename = (event) ? event.filename : _editSession.path;  // default to current page
-    var project  = (event) ? event.project : _editSession.project;   
+    var filename = event.filename || _editSession.path;  // default to current page
+    var project  = event.project  || _editSession.project;   
     
     _files.closeFile(project, filename, function() {
         bespin.publish("bespin:editor:closedfile", { filename: filename }); 
@@ -257,8 +257,8 @@ bespin.subscribe("bespin:editor:closefile", function(event) {
 // 
 // Create a new directory
 bespin.subscribe("bespin:directory:create", function(event) {
-    var project  = (event) ? event.project : _editSession.project;
-    var path = (event) ? event.path : ''; 
+    var project = event.project || _editSession.project;
+    var path = event.path || ''; 
     
     _files.makeDirectory(project, path, function() {
         if (path == '') bespin.publish("bespin:project:set", { project: project });
@@ -271,8 +271,8 @@ bespin.subscribe("bespin:directory:create", function(event) {
 });
 
 bespin.subscribe("bespin:directory:delete", function(event) {
-    var project  = (event) ? event.project : _editSession.project;
-    var path = (event) ? event.path : '';
+    var project = event.project || _editSession.project;
+    var path = event.path || '';
     
     if (project == bespin.userSettingsProject && path == '/') return; // don't delete the settings project
     
@@ -290,7 +290,7 @@ bespin.subscribe("bespin:directory:delete", function(event) {
 // 
 // Create a new project
 bespin.subscribe("bespin:project:create", function(event) {
-    var project  = (event) ? event.project : _editSession.project;
+    var project = event.project || _editSession.project;
     
     bespin.publish("bespin:directory:create", { project: project });
 });
