@@ -31,9 +31,9 @@
 
     <!-- begin script tags -->
 	<script type="text/javascript" src="js/dojo/dojo.js"></script>
-	
-	<script type="text/javascript"> 
-		dojo.require("bespin.registration_dependencies");    
+
+	<script type="text/javascript">
+		dojo.require("bespin.user.dependencies");
 	</script>
     <!-- end script tags -->
 </head>
@@ -43,9 +43,9 @@
   <div id="version"></div>
 
   <div id="not_logged_in" style="display: none;">
-      <form onsubmit="login(); return false;">
+      <form onsubmit="bespin.user.login(); return false;">
           <input id="loginbutton" type="image" src="images/splash_btn_login.gif" />
-          <div id="login-holder"><span id="login_label"><a href="#" onclick="register.showForm();">Sign up</a> or log in:</span>
+          <div id="login-holder"><span id="login_label"><a href="#" onclick="bespin.user.register.showForm();">Sign up</a> or log in:</span>
               <label for="username">Username: </label><input id="username" type="text" /> <label id="psw-label" for="password">Password: </label><input id="password" type="password" /> <div id="status" style="display: none;"></div>
           </div>
       </form>
@@ -54,7 +54,7 @@
     <div>
       Welcome back, <span id="display_username"></span>!
       Go to the <a href="dashboard.html">dashboard</a> to start coding.
-      You can also <a href="#" onclick="logout()">logout</a>.
+      You can also <a href="#" onclick="bespin.user.logout()">logout</a>.
     </div>
   </div>
 </div>
@@ -69,7 +69,7 @@
         <p>This message is not shown to you because we flag a particular browser.</p>
         <p>We are specifically testing for Canvas and the ability to draw text in Canvas. As soon as your current browser supports these technologies, Bespin will work.</p>
         <p>We have successfully tested Bespin on <a href="http://apple.com/safari/">Safari 4</a> and <a href="http://getfirefox.com/">Firefox 3</a>, so try one of them!</p>
-        <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="hideBrowserCompatScreen()"></center>
+        <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="bespin.user.utils.hideBrowserCompatScreen()"></center>
         </div>
     </div>
 </div>
@@ -83,7 +83,7 @@
     <tbody>
       <tr>
         <th>Username:</th>
-        <td><input type="text" id="register_username" onchange="register.checkUsername();"/></td>
+        <td><input type="text" id="register_username" onchange="bespin.user.register.checkUsername();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">
@@ -92,7 +92,7 @@
       </tr>
       <tr>
         <th>Password:</th>
-        <td><input type="password" id="register_password" onchange="register.checkPassword();"/></td>
+        <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">
@@ -101,7 +101,7 @@
       </tr>
       <tr>
         <th>Confirm Password:</th>
-        <td><input type="password" id="register_confirm" onchange="register.checkConfirm();"/></td>
+        <td><input type="password" id="register_confirm" onchange="bespin.user.register.checkConfirm();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">
@@ -110,7 +110,7 @@
       </tr>
       <tr>
         <th>Email:</th>
-        <td><input type="text" id="register_email" onchange="register.checkEmail();"/></td>
+        <td><input type="text" id="register_email" onchange="bespin.user.register.checkEmail();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">
@@ -120,8 +120,8 @@
       <tr>
         <th>&nbsp;</th>
         <th>
-          <input type="button" class="darkButton" value="Cancel >" onclick="register.cancel();"/>
-          <input type="button" class="darkButton" value="Register >" onclick="register.send();"/>
+          <input type="button" class="darkButton" value="Cancel >" onclick="bespin.user.register.cancel();"/>
+          <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
         </th>
         <td><div id="register_register_error"></div></td>
       </tr>
@@ -139,11 +139,11 @@
 <div id="main" align="center">
     <div id="usebespin">
         <h2>Use Bespin</h2>
-        
+
         <img src="images/splash_icn_editnow.png" style="float: left; padding: 4px;">
-        
+
         <h3>Edit Open Source</h3>
-        
+
         <p>
             Give us an open-source project name or a publicly accessible repository URL and we'll create a project for you.
         </p>
@@ -153,15 +153,15 @@
             <!-- <img src="images/splash_btn_editnow.png" align="right" style="padding-right: 16px"> -->
             <br clear="all">
         </p>
-        
+
         <img src="images/splash_icn_register.png" style="float: left; padding: 4px;">
 
         <h3 style="padding-top: 12px;">Register for Bespin</h3>
-        
+
         <p>
             No account? No problem! Click below to create an account. Registration is free.
-            
-            <img src="images/splash_btn_register.png" align="right" onclick="register.showForm();" style="padding-right: 20px">
+
+            <img src="images/splash_btn_register.png" align="right" onclick="bespin.user.register.showForm();" style="padding-right: 20px">
         </p>
     </div>
 
@@ -170,7 +170,7 @@
         <h3>What is Bespin?</h3>
         <p>Bespin is a Mozilla Labs experiment on how to build an extensible Web code editor using HTML 5 technology.</p>
         <a href="http://vimeo.com/3195079"><img src="images/splash_video.png" border="0"></a>
-        
+
         <p>
             <a href="http://labs.mozilla.com/projects/bespin/" style="padding-right: 10px;">Read more &gt;</a>
             <a href="http://groups.google.com/group/bespin">Participate &gt;</a>
