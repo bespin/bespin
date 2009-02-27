@@ -576,4 +576,4 @@ dojo.declare("bespin.syntax.PHPSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.PHPSyntaxEngine(), ['php', 'php3', 'php4']);
+bespin.syntax.EngineResolver.register(new bespin.syntax.PHPSyntaxEngine(), ['php', 'php3', 'php4', 'php5']);

@@ -138,9 +138,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     showInfo: function(html, autohide) {
         this.hideInfo();
 
-        dojo.byId('info_text').innerHTML = html;
+        dojo.byId('info').innerHTML = html;
         dojo.style('info', 'display', 'block'); 
-	this.infoResizer();
         dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
 
         if (autohide) {
@@ -149,18 +148,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             }), 4600);
         }
     },
-    infoResizer: function() {
-        if(dojo.style('info','display')!='none') {
-		dojo.style('info','height','');
-		var browserY=window.innerHeight-bespin.commandlineHeight;
-		var infoY=dojo.style('info','height');
-		if(((infoY/browserY)*100)>35) {
-			//I use 35 in the if to make the math easier and less chance to fail 
-			var nHeight=(browserY*.35)+'px';
-			dojo.style('info','height',nHeight);
-		}
-	}
-    },
+
     hideInfo: function() {
         dojo.style('info', 'display', 'none');
         if (this.infoTimeout) clearTimeout(this.infoTimeout);
