@@ -770,7 +770,7 @@ bespin.cmd.commands.add({
 
         for (var i = 0; i < 3; i++) {
             dojo.forEach(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], function(c) {
-                var args = { pos: Bespin.Editor.Utils.copyPos(self.editor.cursorPosition) };
+                var args = { pos: bespin.editor.utils.copyPos(self.editor.cursorPosition) };
                 args.newchar = c;
                 self.editor.ui.actions.insertCharacter(args);            
             });
