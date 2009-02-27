@@ -41,7 +41,7 @@ bespin.syntax.PHPConstants = {
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
-};
+}
 
 dojo.declare("bespin.syntax.PHPSyntaxEngine", null, {
     keywords: 'include require include_once require_once for foreach as if elseif else while do endwhile ' +
@@ -61,7 +61,8 @@ dojo.declare("bespin.syntax.PHPSyntaxEngine", null, {
 		'PHP_OUTPUT_HANDLER_CONT PHP_OUTPUT_HANDLER_END ' +
 		'PHP_OUTPUT_HANDLER_START PHP_SYSCONFDIR ' +
 		'PHP_VERSION private public self true ' +
-		'var __CLASS__ __FILE__ __LINE__ __METHOD__ __FUNCTION__ ' +
+		'var __CLASS__ __FILE__ __FUNCTION__ ' +
+		'__LINE__ __METHOD__'
 		'abs acos acosh addcslashes addslashes aggregate ' +
 		'aggregate_methods aggregate_methods_by_list ' +
 		'aggregate_methods_by_regexp ' +
@@ -576,4 +577,4 @@ dojo.declare("bespin.syntax.PHPSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.PHPSyntaxEngine(), ['php', 'php3', 'php4', 'php5']);
+bespin.syntax.EngineResolver.register(new bespin.syntax.PHPSyntaxEngine(), ['php', 'php3', 'php4']);
