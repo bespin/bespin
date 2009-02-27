@@ -471,14 +471,10 @@ def dojo(options):
     i = 1
     for member in dojotar.getmembers():
         name = member.name
-        if name.endswith("//"):
+        if name.endswith("/"):
             continue
         dropped_root = name.split('/')[1:]
         
-        # we don't want to extract the top-level dojo-release dir
-        if dropped_root == ['']:
-            continue
-            
         destpath = destination.joinpath(*dropped_root)
         destdir = destpath.dirname()
         if not destdir.exists():
