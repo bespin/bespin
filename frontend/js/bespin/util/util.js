@@ -37,7 +37,7 @@ bespin.util.queryToObject = function(str, seperator) {
     var ret = {};
     var qp = str.split(seperator);
     var dec = decodeURIComponent;
-    dojo.forEach(qp, function(item){
+    dojo.forEach(qp, function(item) {
     	if (item.length){
     		var parts = item.split("=");
     		var name = dec(parts.shift());
@@ -55,17 +55,76 @@ bespin.util.queryToObject = function(str, seperator) {
     return ret;
 }
 
+// = endsWith =
+//
+// A la Prototype endsWith(). Takes a regex exclusing the '$' end marker
 bespin.util.endsWith = function(str, end) {
     return str.match(new RegExp(end + "$"));
 }
 
+// = include =
+//
+// A la Prototype include().
 bespin.util.include = function(array, item) {
     return dojo.indexOf(array, item) > -1;
 }
 
+// = include =
+//
+// A la Prototype last().
 bespin.util.last = function(array) {
-    if (dojo.isArray(array)) {
-        return array[array.length - 1];
-    }
+    if (dojo.isArray(array)) return array[array.length - 1];
 }
 
+// = shrinkArray =
+//
+// Knock off any undefined items from the end of an array
+bespin.util.shrinkArray = function(array) {
+    var newArray = [];
+    
+    var stillAtBeginning = true;
+    dojo.forEach(array.reverse(), function(item) {
+        if (stillAtBeginning && item == undefined) {
+            return;
+        }
+
+        stillAtBeginning = false;
+        
+        newArray.push(item);
+    });
+    
+    return newArray.reverse();
+}
+
+// = makeArray =
+//
+// {{number}} - The size of the new array to create
+// {{character}} - The item to put in the array, defaults to ' '
+bespin.util.makeArray = function(number, character) {
+    if (number < 1) return []; // give us a normal number please!
+    if (!character) character = ' ';
+    
+    var newArray = [];
+    for (var i = 0; i < number; i++) {
+        newArray.push(character);
+    }
+    return newArray;
+}
+
+// = leadingSpaces =
+//
+// Given a row, find the number of leading spaces.
+// E.g. an array with the string "  aposjd" would return 2
+//
+// {{row}} - The row to hunt through
+bespin.util.leadingSpaces = function(row) {
+    var numspaces = 0;
+    for (var i = 0; i < row.length; i++) {
+        if (row[i] == ' ' || row[i] == '' || row[i] == undefined) {
+            numspaces++;
+        } else {
+            return numspaces;
+        }
+    }
+    return numspaces;
+}
