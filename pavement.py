@@ -93,7 +93,7 @@ options(
     ),
     server=Bunch(
         # set to true to allow connections from other machines
-        open=False,
+        address="",
         port=8080,
         try_build=False,
         dburl=None
@@ -132,9 +132,9 @@ def start():
     """Starts the BespinServer on localhost port 8080 for development.
     
     You can change the port and allow remote connections by setting
-    server.port or server.open on the command line.
+    server.port or server.host on the command line.
     
-    paver server.open=1 server.port=8000 start
+    paver server.host=your.ip.address server.port=8000 start
     
     will allow remote connections (assuming you don't have a firewall
     blocking the connection) and start the server on port 8000.
@@ -154,12 +154,7 @@ def start():
     
     config.activate_profile()
     port = int(options.port)
-    if options.open in ["True", "true", "yes", "1"]:
-        listen_on = ""
-    else:
-        listen_on = "localhost"
-    info("Server starting on %s:%s" % (listen_on, port))
-    serve(controllers.make_app(), listen_on, port, use_threadpool=True)
+    serve(controllers.make_app(), options.address, port, use_threadpool=True)
     
 @task
 def try_build():
