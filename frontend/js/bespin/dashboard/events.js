@@ -26,17 +26,17 @@ dojo.provide("bespin.dashboard.events");
 
 // After a project is imported or created, do a list
 bespin.subscribe("bespin:project:imported", function(event) {
-    refreshProjects(); // get projects
+    bespin.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:set", function(event) {
-    refreshProjects(); // get projects
+    bespin.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:create", function(event) {
-    refreshProjects(); // get projects
+    bespin.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:delete", function(event) {
-    refreshProjects(); // get projects
+    bespin.dashboard.refreshProjects(); // get projects
 });
