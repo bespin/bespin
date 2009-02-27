@@ -21,14 +21,14 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
-
+ 
 dojo.provide("bespin.user.dependencies");
 
-dojo.require("dojo.cookie");
-dojo.require("dijit._base.place");
+dojo.require("dojo.cookie"); 
+dojo.require("dijit._base.place"); 
 
-dojo.require("bespin.bespin");
-dojo.require("bespin.util.navigate");
+dojo.require("bespin.bespin");         
+dojo.require("bespin.util.navigate"); 
 dojo.require("bespin.client.server");
-dojo.require("bespin.user.utils");
+dojo.require("bespin.user.utils"); 
 dojo.require("bespin.user.register");

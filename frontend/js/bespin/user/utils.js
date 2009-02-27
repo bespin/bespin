@@ -21,26 +21,28 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
+ 
+dojo.provide("bespin.user.utils"); 
 
-dojo.provide("bespin.user.utils");
+// Utility functions for the Bespin front page.
+     
 
-dojo.require("bespin.util.webpieces");
-
-// = Utility functions for the Bespin front page =
-//
-// Dealing with login on the front page of the site and beyond
-
-dojo.mixin(bespin.user.utils, {
+dojo.mixin(bespin.user.utils, { 
     whenLoginSucceeded: function() {
         bespin.util.navigate.dashboard();
     },
 
     whenLoginFailed: function() {
-        bespin.util.webpieces.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
+        bespin.user.utils.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
     },
 
-    whenUsernameInUse: function() {
-        bespin.util.webpieces.showStatus("The username is taken. Please choose another.");
+    whenUsernameInUs: function() {
+        bespin.user.utils.showStatus("The username is taken. Please choose another.");
+    },
+
+    showStatus: function(msg) {
+        dojo.byId("status").innerHTML = msg;
+        dojo.style('status', 'display', 'block');
     },
 
     whenAlreadyLoggedIn: function(userinfo) {
@@ -52,22 +54,40 @@ dojo.mixin(bespin.user.utils, {
         dojo.style('not_logged_in', 'display', 'block');
     },
 
+    centerOnScreen: function(el) {
+        // retrieve required dimensions
+        var elDims = dojo.coords(el);
+        var browserDims = dijit.getViewport();
+
+        // calculate the center of the page using the browser and element dimensions
+        var y = (browserDims.h - elDims.h) / 2;
+        var x = (browserDims.w - elDims.w) / 2;
+
+        // set the style of the element so it is centered
+        dojo.style(el, {
+            position: 'absolute',
+            top: y + 'px',
+            left : x + 'px'
+        });
+    },
+
     // make sure that the browser can do our wicked shizzle
     checkBrowserAbility: function() {
         if (typeof dojo.byId('testcanvas').getContext != "function") return false; // no canvas
 
         var ctx = dojo.byId('testcanvas').getContext("2d");
 
-        if (ctx.fillText || ctx.mozDrawText) {
+        if (ctx.fillText || ctx.mozDrawText)
             return true; // you need text support my friend
-        } else {
+        else
             return false;
-        }
     },
 
     showingBrowserCompatScreen: function() {
-       if (!this.checkBrowserAbility()) { // if you don't have the ability
-            bespin.util.webpieces.showCenterPopup(dojo.byId('browser_not_compat'));
+        if (!this.checkBrowserAbility()) { // if you don't have the ability              
+            dojo.style('browser_not_compat', 'display', 'block'); 
+            this.centerOnScreen(dojo.byId('browser_not_compat'));
+            dojo.style('opaque', 'display', 'block'); 
 
             return true;
         } else {
@@ -75,8 +95,13 @@ dojo.mixin(bespin.user.utils, {
         }
     },
 
+    hideBrowserCompatScreen: function() {
+        dojo.style('browser_not_compat', 'display', 'none');
+        dojo.style('opaque', 'display', 'none');
+    },
+
     validateEmail: function(str) {
-        var filter=/^([\w-+_]+(?:\.[\w-+_]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+        var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
         return filter.test(str);
-    }
+    }  
 });
