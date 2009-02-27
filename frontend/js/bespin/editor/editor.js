@@ -667,15 +667,6 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("APPLE", Key.Z, this.actions.undoRedo);
         listener.bindKeyString("CTRL", Key.Z, this.actions.undoRedo);
 
-        // listener.bindKeyString("APPLE", Key.C, this.actions.copySelection);
-        // listener.bindKeyString("CTRL", Key.C, this.actions.copySelection);
-        // 
-        // listener.bindKeyString("APPLE", Key.V, this.actions.pasteFromClipboard);
-        // listener.bindKeyString("CTRL", Key.V, this.actions.pasteFromClipboard);
-        // 
-        // listener.bindKeyString("APPLE", Key.X, this.actions.cutSelection);
-        // listener.bindKeyString("CTRL", Key.X, this.actions.cutSelection);
-
         listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
@@ -686,6 +677,7 @@ dojo.declare("bespin.editor.UI", null, {
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
         // has been moved to the 'newfile' command withKey
+        // Also, the clipboard.js handles C, V, and X
     },
 
     getWidth: function() {
