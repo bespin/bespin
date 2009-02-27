@@ -44,6 +44,7 @@ dojo.mixin(bespin, {
     // END VERSION BLOCK
     
     commandlineHeight: 95,
+    defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
     
     publish: function(topic, args) {
