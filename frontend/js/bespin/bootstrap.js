@@ -21,16 +21,16 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
-
-dojo.provide("bespin.bootstrap");
-
+ 
+dojo.provide("bespin.bootstrap"); 
+ 
 // = Bootstrap =
 //
 // This file is the editor bootstrap code that is loaded via script src
 // from /editor.html.
-//
+// 
 // It handles setting up the objects that are to be used on the editor
-// and deals with layout changes.
+// and deals with layout changes. 
 
 // ** {{{ Globals }}}
 //
@@ -54,36 +54,36 @@ var _showCollabHotCounter = 0;
 // ** {{{ window.load time }}} **
 //
 // Loads and configures the objects that the editor needs
-dojo.addOnLoad(function(){
-    _editor      = new bespin.editor.API(dojo.byId('editor'));
-    _editSession = new bespin.client.session.EditSession(_editor);
-    _server      = new bespin.client.Server();
-    _files       = new bespin.client.FileSystem();
+dojo.addOnLoad(function(){                                                       
+    _editor      = new bespin.editor.API(dojo.byId('editor')); 
+    _editSession = new bespin.client.session.EditSession(_editor); 
+    _server      = new bespin.client.Server();                    
+    _files       = new bespin.client.FileSystem(); 
     _toolbar     = new bespin.editor.Toolbar();
 
     _toolbar.setupDefault();
 
     _editor.setFocus(true);
-
+  
     // Force a login just in case the user session isn't around
     _server.currentuser(isLoggedIn, isNotLoggedIn);
-
+    
     // Set the version info
     bespin.displayVersion();
-
+    
     // Get going when settings are loaded
     bespin.subscribe("bespin:settings:loaded", function(event) {
         _settings.loadSession();  // load the last file or what is passed in
         doResize();
     });
-
+   
     dojo.connect(window, 'resize', doResize);
-
-    _scene = new th.Scene(dojo.byId("projectLabel"));
+    
+    _scene = new th.Scene(dojo.byId("projectLabel")); 
 
     var panel = new th.components.Panel();
-    _scene.root.add(panel);
-
+    _scene.root.add(panel);  
+    
     _projectLabel = new th.components.Label({ style: {
         color: "white",
         font: "12pt Calibri, Arial, sans-serif"
@@ -121,7 +121,7 @@ dojo.addOnLoad(function(){
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
     _editSession.username = userinfo.username;
-
+    
     _settings    = new bespin.client.settings.Core();
     _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.editorcommands.Commands);
 }
@@ -132,7 +132,7 @@ function isLoggedIn(userinfo) {
 // The server should stop this from happening, but JUST in case.
 function isNotLoggedIn() {
     bespin.util.navigate.home(); // go back
-}
+}    
 
 // ** {{{ recalcLayout() }}} **
 //
@@ -149,11 +149,11 @@ function recalcLayout() {
     var move = [ subheader, footer, editor ];
 
     if (_showFiles) {
-        files.style.display = "block";
+        files.style.display = "block"; 
         dojo.forEach(move, function(item) { item.style.left = "201px" });
     } else {
         files.style.display = "none";
-        dojo.forEach(move, function(item) { item.style.left = "0" });
+        dojo.forEach(move, function(item) { item.style.left = "0" }); 
     }
 
     move.pop();   // editor shouldn't have its right-hand side set
@@ -183,12 +183,11 @@ function doResize() {
     left = (left != "") ? parseInt(left) : 0;
     var right = dojo.byId("subheader").style.right;
     right = (right != "") ? parseInt(right) : 0;
-
+    
     dojo.attr('editor', { width: window.innerWidth - left - right, height: window.innerHeight - bespin.commandlineHeight });
 
     var d = dojo.coords('status');
     dojo.attr('projectLabel', { width: d.w, height: d.h });
 
     _editor.paint();
-    _commandLine.infoResizer();
 }
