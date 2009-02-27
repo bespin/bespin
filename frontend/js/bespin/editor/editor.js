@@ -89,8 +89,6 @@ dojo.declare("bespin.editor.Scrollbar", null, {
     onmousewheel: function(e) {           
         var wheel = bespin.util.mousewheelevent.wheel(e);
         var axis = bespin.util.mousewheelevent.axis(e); 
-        
-        console.log(axis);
 
         if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
             this.setValue(this.value + (wheel * this.ui.lineHeight));

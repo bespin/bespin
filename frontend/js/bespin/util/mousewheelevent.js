@@ -4,7 +4,7 @@
  *
  * Tweaked to map everyting to Mozilla's event.detail result
  */
-  
+
 dojo.provide("bespin.util.mousewheelevent");
 
 dojo.mixin(bespin.util.mousewheelevent, {
