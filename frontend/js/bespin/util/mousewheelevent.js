@@ -19,5 +19,15 @@ dojo.mixin(bespin.util.mousewheelevent, {
         }  
 
         return Math.round(delta); // Safari Round
+    },
+    
+    axis: function(event) {
+        var returnType = "vertical";
+        if (event.axis) { // Firefox 3.1 world
+            if (event.axis == event.HORIZONTAL_AXIS) returnType = "horizontal";
+        } else if (event.wheelDeltaY || event.wheelDeltaX) {
+            if (event.wheelDeltaX == event.wheelDelta) returnType = "horizontal";
+        } else if (event.shiftKey) returnType = "horizontal";
+        return returnType;
     }
 });
