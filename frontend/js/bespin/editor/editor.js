@@ -87,14 +87,15 @@ dojo.declare("bespin.editor.Scrollbar", null, {
     },
 
     onmousewheel: function(e) {           
-        var wheel = bespin.util.mousewheelevent.wheel(e); 
+        var wheel = bespin.util.mousewheelevent.wheel(e);
+        var axis = bespin.util.mousewheelevent.axis(e); 
 
-        if (this.orientation == this.VERTICAL && !e.shiftKey) {
+        if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
             this.setValue(this.value + (wheel * this.ui.lineHeight));
-        } else if (this.orientation == this.HORIZONTAL && e.shiftKey) {
+        } else if (this.orientation == this.HORIZONTAL && axis == this.HORIZONTAL) {
             this.setValue(this.value + (wheel * this.ui.charWidth));
         }  
-    },     
+    },    
 
     onmousedown: function(e) {
         var clientY = e.clientY - this.ui.getTopOffset();
