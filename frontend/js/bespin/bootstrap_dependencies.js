@@ -58,6 +58,7 @@ dojo.require("bespin.syntax.syntax");
 dojo.require("bespin.syntax.javascript");
 dojo.require("bespin.syntax.css");
 dojo.require("bespin.syntax.html");
+dojo.require("bespin.syntax.php");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
