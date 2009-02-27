@@ -306,13 +306,100 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // TODO: needs undo
     insertTab: function(args) {
-        var numberOfCharacters = _settings.get('tabsize') || 4;   // TODO: global needs fixing
+        if (this.editor.getSelection()) {
+            this.indent(args);
+            return;
+        }
+
+        var numberOfCharacters = _settings.get('tabsize') || bespin.defaultTabSize;   // TODO: global needs fixing
         args.newchar = ' ';
 
         for (var x = 0; x < numberOfCharacters; x++) {
             this.editor.ui.actions.insertCharacter(args);
         }
         this.repaint();
+    },
+
+    indent: function(args) {
+        var selection = args.selection || this.editor.getSelection();
+        var fakeSelection = args.fakeSelection || false;
+        var startRow = selection.startPos.row;
+        var endRow = selection.endPos.row;
+        var tabWidth = _settings.get('tabsize') || bespin.defaultTabSize;   // TODO: global needs fixing
+        var tab = "";
+        while (tabWidth-- > 0) {
+            tab += " ";
+        }
+
+        for (var y = startRow; y <= endRow; y++) {
+            this.editor.model.insertCharacters({row: y, col: 0}, tab);
+        }
+
+        if (!fakeSelection) {
+            selection.startPos.col += tab.length;
+            selection.endPos.col += tab.length;
+            this.editor.setSelection(selection);
+        }
+        args.pos.col += tab.length;
+        this.editor.cursorPosition.col = args.pos.col;
+
+        this.repaint();
+
+        // undo/redo
+        args.action = "indent";
+        args.selection = selection;
+        var redoOperation = args;
+        var undoArgs = { action: "unindent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+
+    unindent: function(args) {
+        var selection = args.selection || this.editor.getSelection();
+        var fakeSelection = args.fakeSelection || false;
+        if (!selection) {
+            fakeSelection = true;
+            selection = {startPos: {row: args.pos.row, col: args.pos.col}, endPos: {row: args.pos.row, col: args.pos.col}};
+        }
+        var startRow = selection.startPos.row;
+        var endRow = selection.endPos.row;
+        var tabWidth = _settings.get('tabsize') || bespin.defaultTabSize;   // TODO: global needs fixing
+
+        for (var y = startRow; y <= endRow; y++) {
+            var row = this.editor.model.getRowArray(y).join("");
+            var match = /^(\s+).*/.exec(row);
+            var leadingWhitespaceLength = 0;
+            if (match && match.length == 2) {
+                leadingWhitespaceLength = match[1].length;
+            }
+            var charsToDelete = leadingWhitespaceLength >= tabWidth ? tabWidth : leadingWhitespaceLength;
+            if (charsToDelete) {
+                this.editor.model.deleteCharacters({row: y, col: 0}, charsToDelete);
+            }
+            if (y == startRow) {
+                selection.startPos.col = Math.max(0, selection.startPos.col - charsToDelete);
+            }
+            if (y == endRow) {
+                selection.endPos.col = Math.max(0, selection.endPos.col - charsToDelete);
+            }
+            if (y == args.pos.row) {
+                args.pos.col = Math.max(0, args.pos.col - charsToDelete);
+            }
+        }
+        this.editor.cursorPosition.col = args.pos.col;
+
+        if (!fakeSelection) {
+            this.editor.setSelection(selection);
+        }
+        this.repaint();
+
+        // undo/redo
+        args.action = "unindent";
+        args.selection = selection;
+        var redoOperation = args;
+        var undoArgs = { action: "indent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
     cutSelection: function(args) {

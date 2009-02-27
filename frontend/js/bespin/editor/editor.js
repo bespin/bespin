@@ -659,6 +659,7 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
         listener.bindKeyString("", Key.ENTER, this.actions.newline);
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
+        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
 
         listener.bindKeyString("APPLE", Key.A, this.actions.selectAll);
         listener.bindKeyString("CTRL", Key.A, this.actions.selectAll);
