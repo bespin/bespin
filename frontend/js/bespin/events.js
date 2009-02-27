@@ -158,7 +158,7 @@ bespin.subscribe("bespin:commands:edit", function(event) {
     }
     
     bespin.publish("bespin:editor:forceopenfile", {
-        project: Bespin.userSettingsProject,
+        project: bespin.userSettingsProject,
         filename: "commands/" + commandname + ".js",
         content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
     });
@@ -209,7 +209,7 @@ bespin.subscribe("bespin:commands:delete", function(event) {
     var commandpath = "commands/" + commandname + ".js";
     
     _files.removeFile(bespin.userSettingsProject, commandpath, function() {
-        if (_editSession.checkSameFile(Bespin.userSettingsProject, commandpath)) _editor.model.clear(); // only clear if deleting the same file
+        if (_editSession.checkSameFile(bespin.userSettingsProject, commandpath)) _editor.model.clear(); // only clear if deleting the same file
         bespin.publish("bespin:cmdline:showinfo", { msg: 'Removed command: ' + commandname, autohide: true });
     }, function(xhr) {
         bespin.publish("bespin:cmdline:showinfo", { 
