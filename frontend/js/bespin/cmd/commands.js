@@ -730,7 +730,7 @@ bespin.cmd.commands.add({
                     i--;
                 }
             }
-            return row;
+            return bespin.util.shrinkArray(row);
         });
     }
 });

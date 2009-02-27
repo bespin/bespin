@@ -608,15 +608,16 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     newline: function(args) {
-        this.editor.model.splitRow(args.pos);
+        var autoindentAmount = _settings.get('autoindent') ? bespin.util.leadingSpaces(this.editor.model.getRowArray(args.pos.row)) : 0;
+        this.editor.model.splitRow(args.pos, autoindentAmount);
         this.editor.cursorPosition.row += 1;
-        this.editor.cursorPosition.col = 0;
+        this.editor.cursorPosition.col = autoindentAmount;
 
         // undo/redo
         args.action = "newline";
-        var redoOperation = args
-        var undoArgs = { action: "joinLine", joinDirection: "up", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = { action: "joinLine", joinDirection: "up", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         this.repaint();
