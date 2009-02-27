@@ -190,4 +190,4 @@ dojo.declare("bespin.syntax.JavaScriptSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript', 'jsm']);
+bespin.syntax.EngineResolver.register(new bespin.syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript', 'jsm', 'java']);
