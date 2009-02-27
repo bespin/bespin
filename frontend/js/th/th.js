@@ -242,9 +242,6 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     parseCSS: function() { 
-        // TODO: use CSS dojox.datastore
-        /* 
-        var self = this;
         var links = [];   
         var s, l = document.getElementsByTagName('link');
 		for (var i=0; i < l.length; i++){ 
@@ -258,22 +255,18 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
             return;
         }
         this.sheetCount = links.length;
-        dojo.forEach(links, function(link) {
+        dojo.forEach(links, function(link) {            
             dojo.xhrGet({
                 url: link, 
-                load: function(response) {
-                    self.processCSS(response);
-                }
+                load: dojo.hitch(this, function(response) {
+                    this.processCSS(response);
+                })
             });
-        });
-        */
-        this.cssLoaded = true; 
+        }, this);
     },
 
-    processCSS: function(stylesheet) { 
-        // TODO: use CSS dojox.datastore
-        /*  
-        this.css = new th.css.CSSParser().parse(stylesheet, this.css);   
+    processCSS: function(stylesheet) {
+        this.css = new th.css.CSSParser().parse(stylesheet, this.css);  
 
         if (++this.currentSheet == this.sheetCount) {
             this.cssLoaded = true;
@@ -282,7 +275,6 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
                 this.renderRequested = false;
             }
         }
-        */
     }
 });
 
