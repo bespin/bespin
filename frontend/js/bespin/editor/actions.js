@@ -304,20 +304,46 @@ dojo.declare("bespin.editor.Actions", null, {
         }
     },
 
-    // TODO: needs undo
     insertTab: function(args) {
-        if (this.editor.getSelection()) {
+        if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
             return;
         }
 
-        var numberOfCharacters = _settings.get('tabsize') || bespin.defaultTabSize;   // TODO: global needs fixing
-        args.newchar = ' ';
-
-        for (var x = 0; x < numberOfCharacters; x++) {
-            this.editor.ui.actions.insertCharacter(args);
+        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabWidthCount = tabWidth;
+        var tab = "";
+        while (tabWidthCount-- > 0) {
+            tab += " ";
         }
+        
+        this.editor.model.insertCharacters({row: args.pos.row, col: args.pos.col}, tab);            
+        this.editor.moveCursor({row: args.pos.row, col: args.pos.col + tabWidth});
+        
         this.repaint();
+        
+        // undo/redo
+        args.action = "insertTab";
+        var redoOperation = args;
+        var undoArgs = { action: "removeTab", queued: args.queued, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+    
+    // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
+    removeTab: function(args) {
+        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        
+        this.editor.model.deleteCharacters({row: args.pos.row, col: args.pos.col}, tabWidth);
+        this.editor.moveCursor({row: args.pos.row, col: args.pos.col});
+        
+        this.repaint();
+        
+        args.action = "removeTab";
+        var redoOperation = args;
+        var undoArgs = { action: "insertTab", undoInsertTab: true, queued: args.queued, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
     indent: function(args) {
