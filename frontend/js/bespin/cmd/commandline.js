@@ -230,12 +230,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var takes = command.takes;
         command.takes = {
             order: takes
-        }
+        };
         
         dojo.forEach(takes, function(item) {
             command.takes[item] = {
                 "short": item[0]
-            }
+            };
         });
 
         return command;
@@ -244,7 +244,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     handleCommandLineFocus: function(e) {
         if (this.inCommandLine) return true; // in the command line!
 
-        if (e.keyCode == bespin.util.keys.Key.J && e.ctrlKey) { // send to command line
+        if (e.keyChar == 'j' && e.ctrlKey) { // send to command line
             this.commandLine.focus();
 
             dojo.stopEvent(e);
@@ -261,20 +261,18 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {        
         // -- Tie to the commandLine element itself     
-        dojo.connect(cl.commandLine, "onfocus", dojo.hitch(cl, function() {
+        dojo.connect(cl.commandLine, "onfocus", cl, function() {
             if (window['_editor']) _editor.setFocus(false);
             this.inCommandLine = true;
             dojo.byId('promptimg').src = 'images/icn_command_on.png';
-        }));
-        dojo.connect(cl.commandLine, "onblur", dojo.hitch(cl, function() {
+        });
+        dojo.connect(cl.commandLine, "onblur", cl, function() {
             this.inCommandLine = false;
             dojo.byId('promptimg').src = 'images/icn_command.png';
-        }));
+        });
         
-        dojo.connect(cl.commandLine, "onkeyup", dojo.hitch(cl, function(e) {
-            var Key = bespin.util.keys.Key;
-
-            if (e.keyCode >= Key.A && e.keyCode < Key.Z) { // only real letters
+        dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
+            if (e.keyChar >= "A".charCodeAt() && e.keyChar < "Z".charCodeAt()) { // only real letters
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
@@ -307,36 +305,35 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                     }
                 }
             }
-        }));             
+        });             
         
-        dojo.connect(cl.commandLine, "onkeydown", dojo.hitch(cl, function(e) {
-            var Key = bespin.util.keys.Key; // alias
-            if (e.keyCode == Key.J && e.ctrlKey) { // send back
+        dojo.connect(cl.commandLine, "onkeypress", cl, function(e) {
+            if (e.keyChar == 'j' && e.ctrlKey) { // send back
                 dojo.stopEvent(e);
 
                 dojo.byId('command').blur();
                 if (window['_editor']) _editor.setFocus(true);
 
                 return false;
-            } else if ((e.keyCode == Key.N && e.ctrlKey) || e.keyCode == Key.ARROW_DOWN) {
+            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == dojo.keys.DOWN_ARROW) {
                 this.commandLineHistory.setNext();
                 return false;
-            } else if ((e.keyCode == Key.P && e.ctrlKey) || e.keyCode == Key.ARROW_UP) {
+            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == dojo.keys.UP_ARROW) {
                 this.commandLineHistory.setPrevious();
                 return false;
-            } else if (e.keyCode == Key.ENTER) {
+            } else if (e.keyCode == dojo.keys.ENTER) {
                 this.executeCommand(dojo.byId('command').value);
 
                 return false;
-            } else if (e.keyCode == Key.TAB) {
+            } else if (e.keyCode == dojo.keys.TAB) { 
                 dojo.stopEvent(e);
                 
                 this.complete(dojo.byId('command').value);
                 return false;
-            } else if (e.keyCode == Key.ESCAPE) {
+            } else if (e.keyCode == dojo.keys.ESCAPE) {
                 this.hideInfo();
             }
-        }));   
+        });   
     }
 });
 
