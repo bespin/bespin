@@ -246,7 +246,7 @@ dojo.provide("bespin.dashboard.dashboard");
         _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.dashboardcommands.Commands);
 
         // Handle jumping to the command line
-        dojo.connect(document, "keydown", function(e) {
+        dojo.connect(document, "onkeypress", function(e) {
             var handled = _commandLine.handleCommandLineFocus(e);
             if (handled) return false;
         });
