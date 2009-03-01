@@ -738,9 +738,9 @@ bespin.cmd.commands.add({
 // ** {{{Command: bindkey}}} **
 bespin.cmd.commands.add({
     name: 'bindkey',
-    takes: ['modifier', 'key', 'action'],
+    takes: ['modifiers', 'key', 'action'],
     preview: 'Bind a key to an action',
-    completeText: 'give a modifier, key, and action name',
+    completeText: 'give modifier(s), key, and action name',
     hidden: true,
     execute: function(self, args) {
         if (args.modifiers == "none") args.modifiers = '';
@@ -851,6 +851,7 @@ bespin.cmd.commands.add({
 // ** {{{Command: use}}} **
 bespin.cmd.commands.add({
     name: 'use',
+    takes: ['type'],
     preview: 'use patterns to bring in code',
     completeText: '"sound" will add sound support',
     libnames: {
