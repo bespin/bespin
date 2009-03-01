@@ -391,7 +391,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'cmdrm',
     takes: ['commandname'],
-    preview: 'delete a custom commands',
+    preview: 'delete a custom command',
     completeText: 'command name to delete (required)',
     usage: '[commandname]: Command name required.',
     execute: function(self, commandname) {
