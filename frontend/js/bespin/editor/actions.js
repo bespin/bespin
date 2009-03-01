@@ -116,7 +116,23 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     moveToLineStart: function(args) {
-        this.editor.cursorPosition.col = 0;
+        var line = this.editor.model.getRowArray(this.editor.cursorPosition.row).join('');
+        var match = /^(\s+).*/.exec(line)
+        var leadingWhitespaceLength = 0;
+
+        // Check to see if there is leading white space and move to the first text if that is the case
+        if (match && match.length == 2) {
+            leadingWhitespaceLength = match[1].length;
+        }
+
+        if (args.pos.col == 0) {
+            this.editor.cursorPosition.col = leadingWhitespaceLength;
+        } else if (args.pos.col == leadingWhitespaceLength) {
+            this.editor.cursorPosition.col = 0;
+        } else {
+            this.editor.cursorPosition.col = leadingWhitespaceLength;
+        }
+
         this.handleCursorSelection(args);
         this.repaint();
 
