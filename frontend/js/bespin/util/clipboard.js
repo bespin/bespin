@@ -160,6 +160,7 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
         // * Configure the hidden copynpaster element
         var copynpaster = dojo.create("textarea", {
             tabIndex: '-1',
+            autocomplete: 'off',
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
