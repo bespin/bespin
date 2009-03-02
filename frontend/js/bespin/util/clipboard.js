@@ -52,7 +52,7 @@ dojo.mixin(bespin.util.clipboard, {
         if (dojo.isWebKit) {
             this.install(new bespin.util.clipboard.DOMEvents());
         } else {
-            this.install(new bespin.util.clipboard.Default());
+            this.install(new bespin.util.clipboard.HiddenWorld());
         }
     }
 });
@@ -151,11 +151,73 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
     }
 });
 
-// ** {{{ bespin.util.clipboard.Default }}} **
+// ** {{{ bespin.util.clipboard.HiddenWorld }}} **
 //
-// Turn on the key combinations to access the Bespin.Clipboard.Manual class 
+// Exclusively grab the C, X, and V key combos and use a hidden textarea to move data around
 
-dojo.declare("bespin.util.clipboard.Default", null, {
+dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
+    install: function() {
+        // * Configure the hidden copynpaster element
+        var copynpaster = dojo.create("textarea", {
+            id: 'copynpaster',
+            style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
+        }, dojo.body());
+        
+        var grabAndGo = function(text) {
+            dojo.byId('copynpaster').value = text;
+            dojo.byId('copynpaster').focus();
+            dojo.byId('copynpaster').select();
+            setTimeout(function() {
+                dojo.byId('canvas').focus();
+            }, 0);
+        }
+        
+        this.keyDown = dojo.connect(document, "keydown", function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                // Copy
+                if (e.keyCode == 67 /*c*/) {
+                    // place the selection into the textarea
+                    var selectionText = _editor.getSelectionAsText();
+
+                    if (selectionText && selectionText != '') {
+                        grabAndGo(selectionText);
+                    }
+
+                // Cut
+                } else if (e.keyCode == 88 /*x*/) {
+                    // place the selection into the textarea
+                    var selectionObject = _editor.getSelection();
+
+                    if (selectionObject) {
+                        var selectionText = _editor.model.getChunk(selectionObject);
+
+                        if (selectionText && selectionText != '') {
+                            grabAndGo(selectionText);
+                            _editor.ui.actions.deleteSelection(selectionObject);
+                        }
+                    }
+
+                // Paste
+                } else if (e.keyCode == 86 /*v*/) {
+                    var args = bespin.editor.utils.buildArgs();    
+                    args.chunk = dojo.byId('copynpaster').value;
+                    if (args.chunk) _editor.ui.actions.insertChunk(args);
+                }
+            }
+        });
+    },
+    
+    uninstall: function() {
+        dojo.disconnect(this.keyDown);
+    }
+});
+
+// ** {{{ bespin.util.clipboard.EditorOnly }}} **
+//
+// Turn on the key combinations to access the Bespin.Clipboard.Manual class which basically only works
+// with the editor only. Not in favour.
+
+dojo.declare("bespin.util.clipboard.EditorOnly", null, {
     install: function() {
         var copyArgs = bespin.util.keys.fillArguments("APPLE C");
         copyArgs.action = "copySelection";

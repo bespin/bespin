@@ -31,7 +31,7 @@ dojo.provide("bespin.editor.toolbar");
 
 dojo.declare("bespin.editor.Toolbar", null, { 
     DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "save",
-                      "close", "undo", "redo", "cut", "copy", "paste", "preview", "fontsize"],
+                      "close", "undo", "redo", "preview", "fontsize"],
     FONT_SIZES: {
         1: 8,  // small
         2: 10, // medium
@@ -184,53 +184,56 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
         },
         
-        cut: function(toolbar, el) {
-            var cut = dojo.byId(el) || dojo.byId("toolbar_cut");
-
-            dojo.connect(cut, 'mousedown', function() {
-                cut.src = "images/icn_cut_on.png";
-            });
-
-            dojo.connect(cut, 'mouseup', function() {
-                cut.src = "images/icn_cut.png";
-            });
-
-            dojo.connect(cut, 'click', function() {
-                toolbar.editor.ui.actions.cutSelection(bespin.editor.utils.buildArgs());
-            });
-        },
-
-        copy: function(toolbar, el) {
-            var copy = dojo.byId(el) || dojo.byId("toolbar_copy");
-
-            dojo.connect(copy, 'mousedown', function() {
-                copy.src = "images/icn_copy_on.png";
-            });
-
-            dojo.connect(copy, 'mouseup', function() {
-                copy.src = "images/icn_copy.png";
-            });
-
-            dojo.connect(copy, 'click', function() {
-                toolbar.editor.ui.actions.copySelection(bespin.editor.utils.buildArgs());
-            });
-        },
-
-        paste: function(toolbar, el) {
-            var paste = dojo.byId(el) || dojo.byId("toolbar_paste");
-
-            dojo.connect(paste, 'mousedown', function() {
-                paste.src = "images/icn_paste_on.png";
-            });
-
-            dojo.connect(paste, 'mouseup', function() {
-                paste.src = "images/icn_paste.png";
-            });
-
-            dojo.connect(paste, 'click', function() {
-                toolbar.editor.ui.actions.pasteFromClipboard(bespin.editor.utils.buildArgs());
-            });
-        },
+        // -- THESE ARE MORE TROUBLE THAN THEY ARE WORTH
+        // Developers are smart enough to know that they can Cmd/Ctrl C X V!
+        //
+        // cut: function(toolbar, el) {
+        //     var cut = dojo.byId(el) || dojo.byId("toolbar_cut");
+        // 
+        //     dojo.connect(cut, 'mousedown', function() {
+        //         cut.src = "images/icn_cut_on.png";
+        //     });
+        // 
+        //     dojo.connect(cut, 'mouseup', function() {
+        //         cut.src = "images/icn_cut.png";
+        //     });
+        // 
+        //     dojo.connect(cut, 'click', function() {
+        //         toolbar.editor.ui.actions.cutSelection(bespin.editor.utils.buildArgs());
+        //     });
+        // },
+        // 
+        // copy: function(toolbar, el) {
+        //     var copy = dojo.byId(el) || dojo.byId("toolbar_copy");
+        // 
+        //     dojo.connect(copy, 'mousedown', function() {
+        //         copy.src = "images/icn_copy_on.png";
+        //     });
+        // 
+        //     dojo.connect(copy, 'mouseup', function() {
+        //         copy.src = "images/icn_copy.png";
+        //     });
+        // 
+        //     dojo.connect(copy, 'click', function() {
+        //         toolbar.editor.ui.actions.copySelection(bespin.editor.utils.buildArgs());
+        //     });
+        // },
+        // 
+        // paste: function(toolbar, el) {
+        //     var paste = dojo.byId(el) || dojo.byId("toolbar_paste");
+        // 
+        //     dojo.connect(paste, 'mousedown', function() {
+        //         paste.src = "images/icn_paste_on.png";
+        //     });
+        // 
+        //     dojo.connect(paste, 'mouseup', function() {
+        //         paste.src = "images/icn_paste.png";
+        //     });
+        // 
+        //     dojo.connect(paste, 'click', function() {
+        //         toolbar.editor.ui.actions.pasteFromClipboard(bespin.editor.utils.buildArgs());
+        //     });
+        // },
 
         // history: function(toolbar, el) {
         //     var history = dojo.byId(el) || dojo.byId("toolbar_history");

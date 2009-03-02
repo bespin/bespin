@@ -471,11 +471,13 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
+    // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     cutSelection: function(args) {
         this.copySelection(args);
         this.deleteSelection(args);
     },
     
+    // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     copySelection: function(args) {
         var selectionObject = this.editor.getSelection();
         if (selectionObject) {
@@ -523,6 +525,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
+    // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     pasteFromClipboard: function(args) {
         var clipboard = (args.clipboard) ? args.clipboard : bespin.util.clipboard.Manual.data();
         if (clipboard == undefined) return; // darn it clipboard!
