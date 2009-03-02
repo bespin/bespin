@@ -220,7 +220,7 @@ dojo.provide("bespin.dashboard.dashboard");
         },
 
         refreshProjects: function() {
-            _server.list(null, null, displayProjects);
+            _server.list(null, null, bd.displayProjects);
         }
     }); 
     
