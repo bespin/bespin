@@ -41,6 +41,10 @@ dojo.provide("bespin.dashboard.dashboard");
     var bd = bespin.dashboard; 
     
     dojo.mixin(bespin.dashboard, {
+        projects: null,
+        tree: null,
+        _fetchFilesAndReplace: null,    // is needed, as this function is calling herselfe again... (better solution?)
+        
         sizeCanvas: function(canvas) {
             if (!heightDiff) {
                 heightDiff = dojo.byId("header").clientHeight + dojo.byId("subheader").clientHeight + dojo.byId("footer").clientHeight;
@@ -91,12 +95,27 @@ dojo.provide("bespin.dashboard.dashboard");
             return filepath;
         },
 
-        fetchFiles: function(path, tree) {
+        fetchFiles: function(path, tree) {            
             var filepath = currentProject + "/" + bd.getFilePath(path);
 
             _server.list(filepath, null, function(files) {
                 tree.updateData(path[path.length - 1], bd.prepareFilesForTree(files));
                 tree.render();
+            });
+        },
+        
+        fetchFilesAndRelace: function(wholePath, index, tree) {            
+            var path = wholePath.slice(0, index);
+            var filepath = currentProject + "/" + bd.getFilePath(path);
+            
+            _server.list(filepath, null, function(files) {
+                tree.replaceList(path.length, bd.prepareFilesForTree(files));
+                if (index != 0) {
+                    bd.tree.lists[index].selectItemByText(wholePath[index].name);                    
+                    bespin.dashboard._fetchFilesAndReplace(wholePath, index - 1, tree);
+                } else {
+                    bd.tree.lists[0].selectItemByText(wholePath[0].name);
+                }
             });
         },
 
@@ -130,7 +149,57 @@ dojo.provide("bespin.dashboard.dashboard");
                 projectItems[i] = projectItems[i].name.substring(0, projectItems[i].name.length - 1);
             }
             projects.list.items = projectItems;
-            scene.render();
+                        
+            // Restore the last selected file
+            var urlParameter = dojo.queryToObject(location.hash.substring(1));
+            var projectSelected = urlParameter['project'] || false;
+            var pathSelected = urlParameter['path'] || false;
+            if (projectSelected && pathSelected) {
+                pathSelected = pathSelected.split('/');
+                if (pathSelected[0] == '')  pathSelected.shift();   // when giving "/index.html" > remove first item which is ''
+                projects.list.selectItemByText(projectSelected);    // this also perform a rendering of the project.list
+                currentProject = projectSelected;
+    
+                _server.list(projectSelected, null, function(files) {
+                    // suppress the scene to be rendered as there is a lot of suff going on that would each time call
+                    // a scene.repaint() / render()
+                    scene.suppressPaintAndRender = true;
+                    
+                    bd.displayFiles(files);
+                    bd.tree.lists[0].selectItemByText(pathSelected[0]);
+                    
+                    if (pathSelected.length == 1) {
+                        scene.suppressPaintAndRender = false;
+                        scene.render();
+                        return;
+                    }
+                    
+                    // creates new lists, but only with one entry (the one needed to get to the end of the path)
+                    var fakePath = new Array();
+                    for (var x = 1; x < pathSelected.length-1; x++) {               
+                        bd.tree.showChildren(null, new Array({name: pathSelected[x], contents: 'noRealContents'}));
+                        bd.tree.lists[x].selectItemByText(pathSelected[x]);
+                        fakePath.push({name: pathSelected[x - 1]});
+                    }
+                    // guess the last item of the path is not a directory => no contents for this item
+                    bd.tree.showChildren(null, new Array({name: pathSelected[pathSelected.length-1]}));
+                    bd.tree.lists[pathSelected.length-1].selectItemByText(pathSelected[pathSelected.length-1]);
+                    
+                    fakePath.push({name: pathSelected[pathSelected.length-2]});
+                    fakePath.push({name: pathSelected[pathSelected.length - 1]});
+
+                    // turn rendering on again and render the fakepath
+                    scene.suppressPaintAndRender = false;
+                    scene.render();
+
+                    // load now the lists corretly (displaying all the files in the directory etc.)                    
+                    bespin.dashboard._fetchFilesAndReplace = bd.fetchFilesAndRelace;
+                    bd.fetchFilesAndRelace(fakePath, fakePath.length-1, bd.tree);                    
+                });
+            } else {
+                scene.suppressPaintAndRender = false;
+                scene.render();                
+            }
         },
 
         refreshProjects: function() {
@@ -165,6 +234,7 @@ dojo.provide("bespin.dashboard.dashboard");
             scrollUpArrow: dojo.byId("vscroll_up_arrow"),
             scrollDownArrow: dojo.byId("vscroll_down_arrow")
         }});
+        bd.tree = tree;
 
         var renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) } });
         renderer.old_paint = renderer.paint;
@@ -196,6 +266,7 @@ dojo.provide("bespin.dashboard.dashboard");
         tree.renderer = renderer;
 
         projects = new bespin.dashboard.components.BespinProjectPanel();
+        bd.projects = projects;
 
         var topPanel = new th.components.Panel();
         topPanel.add([ projects, tree ]);
@@ -252,6 +323,6 @@ dojo.provide("bespin.dashboard.dashboard");
         });
 
         // get logged in name; if not logged in, display an error of some kind
-        _server.currentuser(bd.loggedIn, bd.notLoggedIn);
+        _server.currentuser(bd.loggedIn, bd.notLoggedIn);   
     });
 })();

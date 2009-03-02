@@ -669,6 +669,29 @@ dojo.declare("th.components.List", th.Container, {
             this.repaint();
         }
     },
+    
+    // be carefull! This does NOT fire the "itemselected" event!!!
+    selectItemByText: function(text) {
+        if (this.items.length == 0)  return false;
+        var item = null;
+        if (dojo.isObject(this.items[0])) {
+            for(var x = 0; x < this.items.length; x++) {
+                if(this.items[x].name == text) {
+                    item = this.items[x];
+                    break;
+                }
+            }
+            if (item == null)    return false;
+        } else {
+            if(this.items.indexOf(text) == -1)   return false;
+            item = this.items[this.items.indexOf(text)];
+        }
+
+        this.selected = item;
+        this.repaint();
+
+        return true;
+    },
 
     getItemForPosition: function(pos) {
         pos.y += this.scrollTop;
@@ -835,6 +858,22 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
             this.showChildren(parent, parent.contents);
         }
     },
+    
+    replaceList: function(index, contents) {
+        var list = this.createList(contents);
+        list.id = "list " + (index + 1);
+
+        this.bus.bind("click", list, this.itemSelected, this);
+        var tree = this;
+        this.bus.bind("dblclick", list, function(e) {
+            tree.bus.fire("dblclick", e, tree);
+        });
+        
+        this.lists[index] = list;
+        this.replace(list, index * 2)
+        
+        this.render();
+    },
 
     showChildren: function(newItem, children) {
         if (this.details) {
@@ -918,7 +957,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         return path;
     },
 
-    itemSelected: function(e) {
+    itemSelected: function(e) {        
         var list = e.thComponent;
 
         // add check to ensure that list has an item selected; otherwise, bail
@@ -947,7 +986,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         }
 
         // determine whether to display new list of children or details of selection
-        var newItem = this.getItem(path);
+        var newItem = path[path.length-1];
         if (newItem && newItem.contents) {
             this.showChildren(newItem, newItem.contents);
         } else {
