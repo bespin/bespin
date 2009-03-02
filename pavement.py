@@ -139,6 +139,10 @@ def start():
     will allow remote connections (assuming you don't have a firewall
     blocking the connection) and start the server on port 8000.
     """
+    # automatically install Dojo if it's not there already
+    if not (options.dojo.destination / "dojo").exists():
+        dojo()
+    
     from bespin import config, controllers
     from paste.httpserver import serve
     
