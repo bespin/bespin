@@ -78,6 +78,22 @@ bespin.subscribe("bespin:editor:forceopenfile", function(event) {
     _files.forceOpenFile(project, filename, content);
 });
 
+// ** {{{ Event: bespin:editor:newfile }}} **
+// 
+// Observe a request for a new file to be created
+bespin.subscribe("bespin:editor:newfile", function(event) {
+    var project = event.project || _editSession.project; 
+    var newfilename = event.newfilename || "new.txt";
+    
+    _files.newFile(project, newfilename, function() {
+        bespin.publish("bespin:editor:openfile:opensuccess", { file: {
+            name: newfilename,
+            content: " ",
+            timestamp: new Date().getTime()
+        }});
+    });        
+});
+
 // ** {{{ Event: bespin:editor:savefile }}} **
 // 
 // Observe a request for a file to be saved and start the cycle:

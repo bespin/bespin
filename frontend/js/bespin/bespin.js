@@ -48,7 +48,7 @@ dojo.mixin(bespin, {
     userSettingsProject: "BespinSettings",
     
     publish: function(topic, args) {
-        dojo.publish(topic, dojo.isArray(args) ? args : [ args ]);
+        dojo.publish(topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
     
     subscribe: dojo.subscribe,

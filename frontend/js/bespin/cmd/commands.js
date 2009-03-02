@@ -397,7 +397,7 @@ bespin.cmd.commands.add({
     //aliases: ['new'],
     takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
-    completeText: 'optionally, name the new filename',
+    completeText: 'optionally, name the new filename first, and then the name of the project second',
     withKey: "CTRL SHIFT N",
     execute: function(self, args) {
         if (args.filename) {

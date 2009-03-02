@@ -34,26 +34,6 @@ dojo.require("bespin.util.util");
 // * {{{bespin.cmd.commandline.Events}}}
 // * {{{bespin.client.settings.Events}}}
 
-// ** {{{ Event: bespin:editor:newfile }}} **
-// 
-// Observe a request for a new file to be created
-bespin.subscribe("bespin:editor:newfile", function(event) {
-    var project = event.project || _editSession.project; 
-    var newfilename = event.newfilename || "new.txt";
-    
-    if (typeof _files != "undefined") { // We got the file system object baybee
-        _files.newFile(project, newfilename, function() {
-            bespin.publish("bespin:editor:openfile:opensuccess", { file: {
-                name: newfilename,
-                content: " ",
-                timestamp: new Date().getTime()
-            }});
-        });        
-    } else { // Shoot over to the editor
-        bespin.util.navigate.editor(project, newfilename);
-    }
-});
-
 // ** {{{ Event: bespin:editor:titlechange }}} **
 // 
 // Observe a title change event and then... change the document.title!
@@ -76,48 +56,38 @@ bespin.subscribe("bespin:cmdline:executed", function(event) {
     dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
 });
 
-// ** {{{ Event: bespin:editor:config:run }}} **
+// ** {{{ Event: bespin:editor:evalfile }}} **
 // 
-// Load the user's config file
-bespin.subscribe("bespin:editor:config:run", function(event) {
-    // 1. load the file
-    //   project: _editSession.userproject,
-    //   filename: "config.js"
-    // 2. Take the contents and eval the code with a nice scope
-    _files.loadFile(bespin.userSettingsProject, "config.js", function(file) {
-        var scope = {
-            bespin: bespin,
-            include: function(file) {
-                dojo.require(file);
-            },
-            publish: function(topic, args) {
-                bespin.publish(topic, args);
-            },
-            subscribe: function(topic, args) {
-                bespin.subscribe(topic, args);
-            }
-        };
+// Load up the given file and try to run it
+bespin.subscribe("bespin:editor:evalfile", function(event) {
+    var project  = event.project;
+    var filename = event.filename;
+    var scope    = event.scope || bespin.events.defaultScope();
 
-        if (typeof _commandLine != "undefined") {
-            scope.commandLine = _commandLine;
-            scope.execute = function(cmd) {
-                _commandLine.executeCommand(cmd);
-            }
-        }
-        if (typeof _editor != "undefined")      scope.editor = _editor;
-        if (typeof _editSession != "undefined") scope.editSession = _editSession;
-        if (typeof _files != "undefined")       scope.files = _files;        
-        if (typeof _server != "undefined")      scope.server = _server;
-        if (typeof _toolbar != "undefined")     scope.toolbar = _toolbar;
-        
+    if (!project || !filename) {
+        _commandLine.showInfo("Please, I need a project and filename to evaulate");
+        return;
+    }
+
+    _files.loadFile(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
                 eval(file.content);
             } catch (e) {
-                _commandLine.showInfo("There is a error in your config.js:<br><br>" + e);
+                _commandLine.showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
             }
         }
     }, true);
+});
+
+// ** {{{ Event: bespin:editor:config:run }}} **
+// w
+// Load the user's config file
+bespin.subscribe("bespin:editor:config:run", function(event) {
+    bespin.publish("bespin:editor:evalfile", {
+        project: bespin.userSettingsProject,
+        filename: "config.js"
+    });
 });
 
 // ** {{{ Event: bespin:editor:config:edit }}} **
@@ -382,3 +352,45 @@ dojo.mixin(bespin.events, {
         return event;
     }
 });
+
+// ** {{{ bespin.events.defaultScope }}} **
+//
+// Return a default scope to be used for evaluation files
+bespin.events.defaultScope = function() {
+    if (bespin.events._defaultScope) return bespin.events._defaultScope;
+    
+    var scope = {
+        bespin: bespin,
+        include: function(file) {
+            bespin.publish("bespin:editor:evalfile", {
+                project: bespin.userSettingsProject,
+                filename: file
+            });
+        },
+        require: function(file) {
+            dojo.require(file);
+        },
+        publish: function(topic, args) {
+            bespin.publish(topic, args);
+        },
+        subscribe: function(topic, args) {
+            bespin.subscribe(topic, args);
+        }
+    };
+
+    if (typeof _commandLine != "undefined") {
+        scope.commandLine = _commandLine;
+        scope.execute = function(cmd) {
+            _commandLine.executeCommand(cmd);
+        }
+    }
+    if (typeof _editor != "undefined")      scope.editor = _editor;
+    if (typeof _editSession != "undefined") scope.editSession = _editSession;
+    if (typeof _files != "undefined")       scope.files = _files;        
+    if (typeof _server != "undefined")      scope.server = _server;
+    if (typeof _toolbar != "undefined")     scope.toolbar = _toolbar;
+
+    bespin.events._defaultScope = scope; // setup the short circuit
+
+    return bespin.events._defaultScope;
+};
