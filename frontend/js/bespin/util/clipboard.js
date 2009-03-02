@@ -165,6 +165,10 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
         
         var grabAndGo = function(text) {
             dojo.byId('copynpaster').value = text;
+            focusSelectAndGo();
+        }
+        
+        var focusSelectAndGo = function() {
             dojo.byId('copynpaster').focus();
             dojo.byId('copynpaster').select();
             setTimeout(function() {
@@ -199,6 +203,8 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
 
                 // Paste
                 } else if (e.keyCode == 86 /*v*/) {
+                    focusSelectAndGo();
+
                     var args = bespin.editor.utils.buildArgs();    
                     args.chunk = dojo.byId('copynpaster').value;
                     if (args.chunk) _editor.ui.actions.insertChunk(args);
