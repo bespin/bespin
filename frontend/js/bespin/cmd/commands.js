@@ -271,19 +271,6 @@ bespin.cmd.commands.add({
     }
 });
 
-
-// ** {{{Command: clipboard}}} **
-bespin.cmd.commands.add({
-    name: 'clipboard',
-    version: 0.1,
-    preview: 'export the contents to the clipboard',
-    execute: function(self) {
-        bespin.util.clipboard.manual.copy(self.editor.model.getDocument());
-
-        self.showInfo('Saved file contents to clipboard', true);
-    }
-});
-
 // ** {{{Command: save}}} **
 bespin.cmd.commands.add({
     name: 'save',
