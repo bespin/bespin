@@ -78,7 +78,7 @@ bespin.subscribe("bespin:cmdline:executed", function(event) {
 
 // ** {{{ Event: bespin:editor:config:run }}} **
 // 
-// Load the users config file
+// Load the user's config file
 bespin.subscribe("bespin:editor:config:run", function(event) {
     // 1. load the file
     //   project: _editSession.userproject,
@@ -206,7 +206,7 @@ bespin.subscribe("bespin:commands:list", function(event) {
 
 // ** {{{ Event: bespin:commands:delete }}} **
 // 
-// List the custom commands that a user has
+// Delete the named command
 bespin.subscribe("bespin:commands:delete", function(event) {
     var commandname = event.commandname;
 
@@ -236,7 +236,7 @@ bespin.subscribe("bespin:commands:delete", function(event) {
 
 // ** {{{ Event: bespin:editor:preview }}} **
 // 
-// Load the users config file
+// Preview the given file in a browser context
 bespin.subscribe("bespin:editor:preview", function(event) {
     var filename = event.filename || _editSession.path;  // default to current page
     var project  = event.project  || _editSession.project; 
@@ -252,7 +252,7 @@ bespin.subscribe("bespin:editor:preview", function(event) {
 
 // ** {{{ Event: bespin:editor:closefile }}} **
 // 
-// Load the users config file
+// Close the given file (wrt the session)
 bespin.subscribe("bespin:editor:closefile", function(event) {
     var filename = event.filename || _editSession.path;  // default to current page
     var project  = event.project  || _editSession.project;   
@@ -311,7 +311,7 @@ bespin.subscribe("bespin:project:create", function(event) {
 
 // ** {{{ Event: bespin:project:delete }}} **
 // 
-// Create a new project
+// Delete a project
 bespin.subscribe("bespin:project:delete", function(event) {
     var project = event.project;
     if (!project || project == bespin.userSettingsProject) return; // don't delete the settings project
@@ -319,9 +319,9 @@ bespin.subscribe("bespin:project:delete", function(event) {
     bespin.publish("bespin:directory:delete", { project: project });
 });
 
-// ** {{{ Event: bespin:project:delete }}} **
+// ** {{{ Event: bespin:project:rename }}} **
 // 
-// Create a new project
+// Rename a project
 bespin.subscribe("bespin:project:rename", function(event) {
     var currentProject = event.currentProject;
     var newProject = event.newProject;
@@ -340,7 +340,7 @@ bespin.subscribe("bespin:project:rename", function(event) {
 
 // ** {{{ Event: bespin:project:import }}} **
 // 
-// Create a new project
+// Import a project
 bespin.subscribe("bespin:project:import", function(event) {
     var project = event.project;
     var url = event.url;
