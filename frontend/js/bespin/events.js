@@ -86,10 +86,24 @@ bespin.subscribe("bespin:editor:config:run", function(event) {
     // 2. Take the contents and eval the code with a nice scope
     _files.loadFile(bespin.userSettingsProject, "config.js", function(file) {
         var scope = {
-            bespin: bespin
+            bespin: bespin,
+            include: function(file) {
+                dojo.require(file);
+            },
+            publish: function(topic, args) {
+                bespin.publish(topic, args);
+            },
+            subscribe: function(topic, args) {
+                bespin.subscribe(topic, args);
+            }
         };
 
-        if (typeof _commandLine != "undefined") scope.commandLine = _commandLine;
+        if (typeof _commandLine != "undefined") {
+            scope.commandLine = _commandLine;
+            scope.execute = function(cmd) {
+                _commandLine.executeCommand(cmd);
+            }
+        }
         if (typeof _editor != "undefined")      scope.editor = _editor;
         if (typeof _editSession != "undefined") scope.editSession = _editSession;
         if (typeof _files != "undefined")       scope.files = _files;        
