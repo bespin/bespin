@@ -94,6 +94,18 @@ dojo.provide("bespin.dashboard.dashboard");
             }
             return filepath;
         },
+        
+        getSelectedPath: function() {
+            if (!this.projects.list.selected)    return null;
+            var path = this.projects.list.selected + '/';
+            
+            for (var x = 0; x < this.tree.lists.length; x++) {
+                if (!bd.tree.lists[x].selected) break;
+                path += bd.tree.lists[x].selected.name + (bd.tree.lists[x].selected.contents ? '/' : '');
+            }
+            
+            return path;
+        },
 
         fetchFiles: function(path, tree) {            
             var filepath = currentProject + "/" + bd.getFilePath(path);
@@ -152,11 +164,11 @@ dojo.provide("bespin.dashboard.dashboard");
                         
             // Restore the last selected file
             var urlParameter = dojo.queryToObject(location.hash.substring(1));
-            var projectSelected = urlParameter['project'] || false;
-            var pathSelected = urlParameter['path'] || false;
-            if (projectSelected && pathSelected) {
+            var pathSelected = urlParameter['pathSelected'] || false;
+            
+            if (pathSelected) {
                 pathSelected = pathSelected.split('/');
-                if (pathSelected[0] == '')  pathSelected.shift();   // when giving "/index.html" > remove first item which is ''
+                var projectSelected = pathSelected.shift();;
                 projects.list.selectItemByText(projectSelected);    // this also perform a rendering of the project.list
                 currentProject = projectSelected;
     
@@ -168,7 +180,7 @@ dojo.provide("bespin.dashboard.dashboard");
                     bd.displayFiles(files);
                     bd.tree.lists[0].selectItemByText(pathSelected[0]);
                     
-                    if (pathSelected.length == 1) {
+                    if (pathSelected.length <= 1) {
                         scene.suppressPaintAndRender = false;
                         scene.render();
                         return;
@@ -181,9 +193,14 @@ dojo.provide("bespin.dashboard.dashboard");
                         bd.tree.lists[x].selectItemByText(pathSelected[x]);
                         fakePath.push({name: pathSelected[x - 1]});
                     }
+
                     // guess the last item of the path is not a directory => no contents for this item
                     bd.tree.showChildren(null, new Array({name: pathSelected[pathSelected.length-1]}));
-                    bd.tree.lists[pathSelected.length-1].selectItemByText(pathSelected[pathSelected.length-1]);
+                    // select the last list item only if the selectPath doesn't end on an folder (bespin/commands/ = >['besin','commands',''])
+                    if(pathSelected[pathSelected.length-1] != '')
+                    {
+                        bd.tree.lists[pathSelected.length-1].selectItemByText(pathSelected[pathSelected.length-1]);                        
+                    }
                     
                     fakePath.push({name: pathSelected[pathSelected.length-2]});
                     fakePath.push({name: pathSelected[pathSelected.length - 1]});
