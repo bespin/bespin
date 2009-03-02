@@ -43,7 +43,7 @@ bespin.syntax.ArduinoConstants = {
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
-};
+}
 
 dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
     keywords: 'HIGH LOW INPUT OUTPUT SERIAL DISPLAY  DEC BIN HEX OCT BYTE PI HALF_PI  TWO_PI LSBFIRST MSBFIRST CHANGE FALLING  RISING DEFAULT  EXTERNAL INTERAL ' +
