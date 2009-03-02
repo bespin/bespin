@@ -40,3 +40,18 @@ bespin.subscribe("bespin:project:create", function(event) {
 bespin.subscribe("bespin:project:delete", function(event) {
     bespin.dashboard.refreshProjects(); // get projects
 });
+
+// ** {{{ Event: bespin:editor:newfile }}} **
+// 
+// Observe a request for a new file to be created
+bespin.subscribe("bespin:editor:newfile", function(event) {
+    var project = event.project;
+    if (!project) {
+        bespin.publish("bespin:cmdline:showinfo", { msg: 'The new file action requires a project' });
+        return;
+    }
+    
+    var newfilename = event.newfilename || "new.txt";
+    
+    bespin.util.navigate.editor(project, newfilename);
+});
