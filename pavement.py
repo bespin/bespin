@@ -99,8 +99,13 @@ options(
         dburl=None
     ),
     dojo=Bunch(
-        download_url="http://download.dojotoolkit.org/release-1.3.0b2/dojo-release-1.3.0b2.tar.gz",
-        destination=path('frontend/js')
+        version="1.3.0b2",
+        download_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s.tar.gz"
+                            % (options.dojo.version, options.dojo.version),
+        src_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s-src.tar.gz"
+                            % (options.dojo.version, options.dojo.version),
+        destination=path('frontend/js'),
+        source=False
     )
 )
 
@@ -335,10 +340,28 @@ def restore_python_version(replaced_lines):
     lines[version_block_start+1:version_block_end] = replaced_lines
     version_file.write_lines(lines)
 
+@task
+def compress_js():
+    """Compress the JavaScript using Dojo's build system."""
+    destination = options.dojo.destination.abspath()
+    if not (destination / "util").exists():
+        raise BuildFailure("You need to be using a Dojo source package. Run paver dojo -s.")
+    builder_dir = destination / "util/buildscripts"
+    profile_file = destination / "buildProfile.js"
+    release_dir = (options.build_top / "js").abspath()
+    cwd = path.getcwd()
+    try:
+        builder_dir.chdir()
+        sh("sh build.sh action=release profileFile=%s version=%s "
+            "releaseDir=%s optimize=shrinksafe log=logger.TRACE" 
+            % (profile_file, options.version.number, release_dir))
+    finally:
+        cwd.chdir()
+
 # disabled task... needs to be updated for Dojo
 # @task
 # @needs(['copy_front_end'])
-def compress_js():
+def compress_js_old():
     """Compress the JavaScript using the YUI compressor."""
     current_dir = path.getcwd()
     build_dir = options.build_dir
@@ -444,13 +467,18 @@ def license():
             _apply_header_if_necessary(f, header, first_line, last_line)
     
 @task
+@cmdopts([('source', 's', "Grab a Dojo source release")])
 def dojo(options):
-    """Download Dojo and install it to the correct location."""
-    destfile = path(urlparse(options.download_url).path)
+    """Download Dojo and install it to the correct location.
+    Provide the -s switch if you will need the Dojo source package
+    to either build production-ready packages of Bespin or
+    to debug Dojo issues."""
+    download_url = options.src_url if options.source else options.download_url
+    destfile = path(urlparse(download_url).path)
     destfile = path("ext") / destfile.basename()
     if not destfile.exists():
         info("Downloading Dojo to " + destfile)
-        datafile = urllib2.urlopen(options.download_url)
+        datafile = urllib2.urlopen(download_url)
         output_file = open(destfile, "w")
         output_file.write(datafile.read())
         output_file.close()
@@ -461,10 +489,12 @@ def dojo(options):
     dojo = destination / "dojo"
     dijit = destination / "dijit"
     dojox = destination / "dojox"
+    util = destination / "util"
     
     dojo.rmtree()
     dijit.rmtree()
     dojox.rmtree()
+    util.rmtree()
     
     dojotar = tarfile.open(destfile)
     i = 1

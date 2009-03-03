@@ -1,28 +1,21 @@
 dependencies = {
     layers: [
         {
-            name: "../index_all.js",
+            name: "index_all.js",
             dependencies: [
-                "bespin.page.index.dependencies"
+                "bespin.user.dependencies"
             ]
         },
         {
-            name: "../editor_all.js",
+            name: "editor_all.js",
             dependencies: [
-                "bespin.page.editor.dependencies"
-            ]
-        },
-        {
-            name: "../dashboard_all.js",
-            dependencies: [
-                "bespin.page.dashboard.dependencies"
+                "bespin.bootstrap_dependencies"
             ]
         }
     ],
     prefixes: [
         ["dijit", "../dijit"],
         ["dojox", "../dojox"],
-        ["bespin", "../bespin"],
-        ["th", "../th"]
+        ["bespin", "../bespin"]
     ]
 };
