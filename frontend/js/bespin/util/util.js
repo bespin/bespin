@@ -69,7 +69,7 @@ bespin.util.include = function(array, item) {
     return dojo.indexOf(array, item) > -1;
 }
 
-// = include =
+// = last =
 //
 // A la Prototype last().
 bespin.util.last = function(array) {
