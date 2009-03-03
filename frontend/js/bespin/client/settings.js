@@ -507,7 +507,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
                 if (project && (_editSession.project != project)) {
-                    bespin.publish("bespin:editor:project:set", { project: project });
+                    bespin.publish("bespin:project:set", { project: project });
                 }
 
                 if (path) {
