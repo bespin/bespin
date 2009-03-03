@@ -302,7 +302,6 @@ dojo.provide("bespin.dashboard.dashboard");
         } });
 
         splitPanel.attributes.regions[0].label = new th.components.Label({
-                id: "foobar",
                 text: "Open Sessions",
                 style: {
                     color: "white",

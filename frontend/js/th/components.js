@@ -592,7 +592,10 @@ dojo.declare("th.components.Label", th.components.Panel, {
             lastLength -= 1;
         }
 
-        ctx.fillText(textToRender, this.getInsets().left, this.getInsets().top + textMetrics.ascent);
+        var y = this.getInsets().top + textMetrics.ascent;
+        if (dojo.isWebKit) y += 1;  // strings are one pixel too high in Safari 4 and Webkit nightly
+
+        ctx.fillText(textToRender, this.getInsets().left, y);
     }
 });
 
