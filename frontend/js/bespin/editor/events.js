@@ -172,5 +172,5 @@ bespin.subscribe("bespin:session:status", function(event) {
 // 
 // Observe a request for session status
 bespin.subscribe("bespin:url:changed", function(event) {
-    bespin.publish("bespin:editor:openfile", { filename: event.now });
+    bespin.publish("bespin:editor:openfile", { filename: event.now.get('path') });
 });
