@@ -1,13 +1,13 @@
 dependencies = {
     layers: [
         {
-            name: "index_all.js",
+            name: "../index_all.js",
             dependencies: [
                 "bespin.user.dependencies"
             ]
         },
         {
-            name: "editor_all.js",
+            name: "../editor_all.js",
             dependencies: [
                 "bespin.bootstrap_dependencies"
             ]
