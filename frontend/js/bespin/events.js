@@ -367,15 +367,9 @@ bespin.events.defaultScope = function() {
                 filename: file
             });
         },
-        require: function(file) {
-            dojo.require(file);
-        },
-        publish: function(topic, args) {
-            bespin.publish(topic, args);
-        },
-        subscribe: function(topic, args) {
-            bespin.subscribe(topic, args);
-        }
+        require: dojo.require,
+        publish: bespin.publish,
+        subscribe: bespin.subscribe
     };
 
     if (typeof _commandLine != "undefined") {
