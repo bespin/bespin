@@ -67,9 +67,8 @@ dojo.addOnLoad(function(){
   
     // Adds information for dashboard where to jump back again
     var urlParameter = dojo.queryToObject(location.hash.substring(1));
-    if(urlParameter.pathSelected)
-    {
-        dojo.byId('hrefDashboard').href = "dashboard.html#pathSelected="+urlParameter.pathSelected;        
+    if (urlParameter.pathSelected) {
+        dojo.byId('hrefDashboard').href = "dashboard.html#pathSelected=" + urlParameter.pathSelected;        
     }
       
     // Force a login just in case the user session isn't around

@@ -198,8 +198,7 @@ dojo.provide("bespin.dashboard.dashboard");
                     // guess the last item of the path is not a directory => no contents for this item
                     bd.tree.showChildren(null, new Array({name: pathSelected[pathSelected.length-1]}));
                     // select the last list item only if the selectPath doesn't end on an folder (bespin/commands/ = >['besin','commands',''])
-                    if(pathSelected[pathSelected.length-1] != '')
-                    {
+                    if (pathSelected[pathSelected.length-1] != '') {
                         bd.tree.lists[pathSelected.length-1].selectItemByText(pathSelected[pathSelected.length-1]);                        
                     }
                     
