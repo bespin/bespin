@@ -168,11 +168,41 @@ dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Pan
     } 
 });
 
+dojo.declare("bespin.dashboard.components.BespinProjectPanelFooter", th.components.Panel, {
+    constructor: function(parms) {
+        this.add = new th.components.Button();
+
+    },
+
+    getPreferredHeight: function(width) {
+        return 17;
+    },
+
+    paintSelf: function(ctx) {
+
+        // not ready to display this yet - bg
+
+//        var d = this.d();
+//
+//        ctx.fillStyle = "rgb(85, 80, 72)";
+//        ctx.fillRect(0, 0, d.b.w, 1);
+//
+//        ctx.fillStyle = "rgb(35, 31, 28)";
+//        ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+//
+//        var gradient = ctx.createLinearGradient(0, 1, 1, d.b.h - 2);
+//        gradient.addColorStop(0, "rgb(71, 66, 57)");
+//        gradient.addColorStop(1, "rgb(65, 61, 53)");
+//        ctx.fillStyle = gradient;
+//        ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+    }
+});
+
 dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
-        this.projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "9pt Tahoma" } });
+        this.projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "8pt Tahoma" } });
         this.projectLabel.oldPaint = this.projectLabel.paint;
         this.projectLabel.paint = function(ctx) {
             var d = this.d();
@@ -192,11 +222,13 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
             this.oldPaint(ctx);
         }
 
-        this.list = new th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "9pt Tahoma" } });
+        this.list = new th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" } });
 
         this.splitter = new th.components.Splitter({ orientation: th.HORIZONTAL });
 
-        this.add([ this.projectLabel, this.list, this.splitter ]);
+        this.footer = new bespin.dashboard.components.BespinProjectPanelFooter();
+
+        this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
 
         this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
         this.bus.bind("drag", this.splitter, this.ondrag, this);
@@ -237,6 +269,12 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
         var sw = this.splitter.getPreferredWidth()
         this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
 
-        this.list.bounds = { x: d.i.l, y: y, width: d.b.w - d.i.w - sw, height: this.splitter.bounds.height };
+        var innerWidth = d.b.w - d.i.w - sw;
+        var ph = this.footer.getPreferredHeight(innerWidth);
+        this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };  
+
+        this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
+
+        
     }
 });
