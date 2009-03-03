@@ -16,6 +16,7 @@ dependencies = {
     prefixes: [
         ["dijit", "../dijit"],
         ["dojox", "../dojox"],
-        ["bespin", "../bespin"]
+        ["bespin", "../bespin"],
+        ["th", "../th"]
     ]
 };
