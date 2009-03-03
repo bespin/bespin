@@ -488,10 +488,10 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
 
         // -- Projects
-        // ** {{{ Event: bespin:editor:project:set }}} **
+        // ** {{{ Event: bespin:project:set }}} **
         // 
         // When the project changes, alert the user
-        bespin.subscribe("bespin:editor:project:set", function(event) {
+        bespin.subscribe("bespin:project:set", function(event) {
             var project = event.project;
 
             _editSession.project = project;
