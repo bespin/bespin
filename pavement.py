@@ -353,11 +353,11 @@ def compress_js():
     try:
         builder_dir.chdir()
         sh("sh build.sh action=release profileFile=%s version=%s "
-            "releaseDir=%s optimize=shrinksafe log=logger.TRACE" 
+            "releaseDir=%s optimize=shrinksafe" 
             % (profile_file, options.version.number, release_dir))
     finally:
         cwd.chdir()
-
+        
 # disabled task... needs to be updated for Dojo
 # @task
 # @needs(['copy_front_end'])
@@ -500,7 +500,7 @@ def dojo(options):
     i = 1
     for member in dojotar.getmembers():
         name = member.name
-        if name.endswith("/"):
+        if member.type == tarfile.DIRTYPE:
             continue
         dropped_root = name.split('/')[1:]
         
