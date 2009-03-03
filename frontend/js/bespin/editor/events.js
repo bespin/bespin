@@ -167,3 +167,10 @@ bespin.subscribe("bespin:session:status", function(event) {
     var file = _editSession.path || 'a new scratch file';
     self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
 });
+
+// ** {{{ Event: bespin:url:changed }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:url:changed", function(event) {
+    bespin.publish("bespin:editor:openfile", { filename: event.now });
+});
