@@ -39,6 +39,7 @@ dojo.require("bespin.util.clipboard");
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");
 dojo.require("bespin.client.server");
+dojo.require("bespin.client.session");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
