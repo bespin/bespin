@@ -351,19 +351,19 @@ dojo.declare("bespin.editor.UI", null, {
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
         // combining them like sane people, but... meh
         this.horizontalScrollCanvas = dojo.create("canvas");
-        this.verticalScrollCanvas = dojo.create("canvas");
+        this.verticalScrollCanvas   = dojo.create("canvas");
 
         this.GUTTER_WIDTH = 54;
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 }
-        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 }
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 };
+        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
         this.NIB_INSETS = { top: Math.floor(this.NIB_WIDTH / 2),
                             left: Math.floor(this.NIB_WIDTH / 2),
                             right: Math.floor(this.NIB_WIDTH / 2),
-                            bottom: Math.floor(this.NIB_WIDTH / 2) }
-        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 }
+                            bottom: Math.floor(this.NIB_WIDTH / 2) };
+        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
         this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         this.charWidth;         // set first time a paint occurs
