@@ -5,6 +5,7 @@ bin
 frontend/js/dijit
 frontend/js/dojo
 frontend/js/dojox
+frontend/js/util
 backend/python/dist
 backend/python/production/libs
 backend/python/production/requirements.txt
