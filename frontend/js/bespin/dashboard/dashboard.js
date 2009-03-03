@@ -53,7 +53,8 @@ dojo.provide("bespin.dashboard.dashboard");
             dojo.attr(canvas, { width: window.innerWidth, height: height });
         },
         
-        loggedIn: function(user)  {
+        loggedIn: function(userinfo)  {
+            _editSession.username = userinfo.username;
             _server.list(null, null, bd.displayProjects); // get projects
             _server.listOpen(bd.displaySessions); // get sessions
         },
@@ -325,11 +326,13 @@ dojo.provide("bespin.dashboard.dashboard");
         scene.bus.bind("itemselected", projects.list, function(e) {
             currentProject = e.item;
             _server.list(e.item, null, bd.displayFiles);
+            bespin.publish("bespin:project:set", { project: currentProject });
         });
 
         // setup the command line
         _server      = new bespin.client.Server();
         _settings    = new bespin.client.settings.Core();
+        _editSession = new bespin.client.session.EditSession(); 
         _files       = new bespin.client.FileSystem();
         _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.dashboardcommands.Commands);
 

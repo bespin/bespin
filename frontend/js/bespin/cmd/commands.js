@@ -172,8 +172,7 @@ bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(self) {
-      var file = _editSession.path || 'a new scratch file';
-      self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
+        bespin.publish("bespin:session:status");
     }
 });
 

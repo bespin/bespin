@@ -160,3 +160,10 @@ bespin.subscribe("bespin:editor:urlchange", function(event) {
     window.location.hash = "project=" + project + "&path=" + path;
 });
 
+// ** {{{ Event: bespin:session:status }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:session:status", function(event) {
+    var file = _editSession.path || 'a new scratch file';
+    self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
+});
