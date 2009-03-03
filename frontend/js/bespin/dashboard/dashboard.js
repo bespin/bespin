@@ -302,7 +302,6 @@ dojo.provide("bespin.dashboard.dashboard");
         } });
 
         splitPanel.attributes.regions[0].label = new th.components.Label({
-                id: "foobar",
                 text: "Open Sessions",
                 style: {
                     color: "white",
@@ -326,6 +325,7 @@ dojo.provide("bespin.dashboard.dashboard");
             currentProject = e.item;
             _server.list(e.item, null, bd.displayFiles);
             bespin.publish("bespin:project:set", { project: currentProject });
+            bespin.publish("bespin:editor:project:set", { project: currentProject });
         });
 
         // setup the command line

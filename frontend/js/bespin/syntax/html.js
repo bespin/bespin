@@ -175,4 +175,4 @@ dojo.declare("bespin.syntax.HTMLSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.HTMLSyntaxEngine(), ['html', 'htm', 'xml', 'xhtml']);
+bespin.syntax.EngineResolver.register(new bespin.syntax.HTMLSyntaxEngine(), ['html', 'htm', 'xml', 'xhtml', 'shtml']);
