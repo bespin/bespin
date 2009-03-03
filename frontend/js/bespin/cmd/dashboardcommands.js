@@ -29,7 +29,7 @@ dojo.provide("bespin.cmd.dashboardcommands");
 // This array stores all of the dashboard commands.
 
 bespin.cmd.dashboardcommands.Commands = [
-    'help', 'files', 'set', 'projects', 'version', 'bespin', 
+    'help', 'files', 'set', 'project', 'projects', 'version', 'bespin',
     'import', 'export', 'alias', 'history', 'mkdir', 'newfile',
-    'createproject', 'deleteproject', 'renameproject'
+    'createproject', 'deleteproject', 'renameproject', 'status'
 ];
