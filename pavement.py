@@ -206,38 +206,7 @@ def upgrade():
     dry("Run the database upgrade", main, ["upgrade", dburl, repository])
 
 
-def _get_js_file_list(html_file):
-    from BeautifulSoup import BeautifulSoup
-    html = html_file.text()
-    soup = BeautifulSoup(html)
-    tags = soup.findAll("script")
-    result = []
-    for tag in tags:
-        result.append(tag['src'])
-    return result
-
-def _install_compressed(front_end_target, yui_dir, html_file, output_file):
-    # concatenate the files
-    file_list = _get_js_file_list(html_file)
-    output_filename = front_end_target / "js" / output_file
-    compressed_filename = path(output_filename.replace("_uncompressed", ""))
-    output_file = open(output_filename, "w")
-    for f in file_list:
-        js_file = front_end_target / f
-        output_file.write(js_file.bytes())
-        output_file.write("\n")
-    output_file.close()
-    
-    info("Running YUI Compressor")
-    jars = (yui_dir / "lib").glob("*.jar")
-    cp = ":".join(jars)
-    sh("env CLASSPATH=%s java -jar %s -o %s %s" % (
-        cp,
-        yui_dir / "build" / ("yuicompressor-%s.jar" % options.compressor_version),
-        compressed_filename,
-        output_filename
-        ))
-    
+def _install_compressed(html_file, jslayer):
     html_lines = html_file.lines()
     
     # strip out the MPL
@@ -257,8 +226,10 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
         elif "<!-- end script tags -->" in html_lines[i]:
             end_marker = i
     del html_lines[start_marker:end_marker+1]
-    html_lines.insert(start_marker, '<script type="text/javascript" src="js/%s"></script>'
-                                    % compressed_filename.basename())
+    html_lines.insert(start_marker, """
+            <script type="text/javascript" src="js/dojo/dojo.js"></script>
+            <script type="text/javascript" src="js/%s"></script>
+""" % jslayer)
     html_file.write_bytes("".join(html_lines))
 
 @task
@@ -375,49 +346,19 @@ def compress_js():
     finally:
         cwd.chdir()
         restore_javascript_version(replaced_lines)
-        
-# disabled task... needs to be updated for Dojo
-# @task
-# @needs(['copy_front_end'])
-def compress_js_old():
-    """Compress the JavaScript using the YUI compressor."""
-    current_dir = path.getcwd()
-    build_dir = options.build_dir
-    front_end_target = build_dir / "frontend"
-    
-    externals_dir = path("ext")
-    externals_dir.mkdir()
-    yui_dir = externals_dir / ("yuicompressor-%s" % options.compressor_version)
-    if not yui_dir.exists():
-        zip_file = externals_dir / options.zip_name
-        externals_dir.chdir()
-        if not zip_file.exists():
-            info("Downloading %s", options.url)
-            sh("curl -O %s" % options.url)
-        sh("unzip %s" % options.zip_name)
-        current_dir.chdir()
-    bs_dir = externals_dir.glob("BeautifulSoup-*")
-    if not bs_dir:
-        bs_file = externals_dir / "BeautifulSoup.tar.gz"
-        externals_dir.chdir()
-        if not bs_file.exists():
-            info("Downloading %s", options.beautiful_soup_url)
-            sh("curl -O %s" % options.beautiful_soup_url)
-        sh("tar xzf BeautifulSoup.tar.gz")
-        current_dir.chdir()
-        bs_dir = externals_dir.glob("BeautifulSoup-*")
-    bs_dir = bs_dir[0]
-    sys.path.append(bs_dir)
+
+    front_end_target = options.build_dir / "frontend"
     
     editor_filename = front_end_target / "editor.html"
-    _install_compressed(front_end_target, yui_dir, editor_filename, "editor_all_uncompressed.js")
+    _install_compressed(editor_filename, "editor_all.js")
     
     dashboard_filename = front_end_target / "dashboard.html"
-    _install_compressed(front_end_target, yui_dir, dashboard_filename, "dashboard_all_uncompressed.js")
+    _install_compressed(dashboard_filename, "editor_all.js")
     
     index_filename = front_end_target / "index.html"
-    _install_compressed(front_end_target, yui_dir, index_filename, "index_all_uncompressed.js")
-    
+    _install_compressed(index_filename, "index_all.js")
+
+        
 @task
 def prod_server():
     """Creates the production server code."""
