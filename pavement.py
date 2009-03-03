@@ -261,8 +261,7 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
                                     % compressed_filename.basename())
     html_file.write_bytes("".join(html_lines))
 
-# disabled task. needs to be updated for Dojo
-# @task
+@task
 def copy_front_end():
     build_dir = options.build_dir
     build_dir.mkdir()
@@ -271,7 +270,6 @@ def copy_front_end():
         front_end_target.rmtree()
     front_end_source = path("frontend")
     front_end_source.copytree(front_end_target)
-    update_javascript_version()
     
 def update_python_version():
     version_file = path("backend/python/bespin/__init__.py")
@@ -300,7 +298,7 @@ def update_python_version():
     return replaced_lines
     
 def update_javascript_version():
-    version_file = options.build_dir / "frontend" / "js" / "bespin.js"
+    version_file = path("frontend") / "js" / "bespin" / "bespin.js"
     in_version_block = False
     lines = version_file.lines()
     replaced_lines = []
@@ -325,6 +323,21 @@ def update_javascript_version():
     version_file.write_lines(lines)
     return replaced_lines
     
+def restore_javascript_version(replaced_lines):
+    version_file = path("frontend") / "js" / "bespin" / "bespin.js"
+    lines = version_file.lines()
+    version_block_start = None
+    version_block_end = None
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if "BEGIN VERSION BLOCK" in line:
+            version_block_start = i
+        if "END VERSION BLOCK" in line:
+            version_block_end = i
+            break
+    lines[version_block_start+1:version_block_end] = replaced_lines
+    version_file.write_lines(lines)
+
 def restore_python_version(replaced_lines):
     version_file = path("backend/python/bespin/__init__.py")
     lines = version_file.lines()
@@ -341,22 +354,27 @@ def restore_python_version(replaced_lines):
     version_file.write_lines(lines)
 
 @task
+@needs('copy_front_end')
 def compress_js():
     """Compress the JavaScript using Dojo's build system."""
     destination = options.dojo.destination.abspath()
     if not (destination / "util").exists():
         raise BuildFailure("You need to be using a Dojo source package. Run paver dojo -s.")
+
+    replaced_lines = update_javascript_version()
+
     builder_dir = destination / "util/buildscripts"
     profile_file = destination / "buildProfile.js"
-    release_dir = (options.build_top / "js").abspath()
+    release_dir = (options.build_dir / "frontend").abspath()
     cwd = path.getcwd()
     try:
         builder_dir.chdir()
         sh("sh build.sh action=release profileFile=%s version=%s "
-            "releaseDir=%s optimize=shrinksafe" 
+            "releaseDir=%s optimize=shrinksafe releaseName=js" 
             % (profile_file, options.version.number, release_dir))
     finally:
         cwd.chdir()
+        restore_javascript_version(replaced_lines)
         
 # disabled task... needs to be updated for Dojo
 # @task
