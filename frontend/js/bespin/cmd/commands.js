@@ -184,7 +184,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            bespin.publish("bespin:editor:project:set", { project: projectname });
+            bespin.publish("bespin:project:set", { project: projectname });
         } else {
             self.executeCommand('status');
         }
