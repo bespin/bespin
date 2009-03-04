@@ -72,16 +72,19 @@ bespin.subscribe("bespin:editor:evalfile", function(event) {
     _files.loadFile(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
+                bespin.publish("bespin:cmdline:suppressinfo");
                 eval(file.content);
+                bespin.publish("bespin:cmdline:unsuppressinfo");
             } catch (e) {
                 _commandLine.showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
             }
         }
     }, true);
+    
 });
 
 // ** {{{ Event: bespin:editor:config:run }}} **
-// w
+//
 // Load the user's config file
 bespin.subscribe("bespin:editor:config:run", function(event) {
     bespin.publish("bespin:editor:evalfile", {
