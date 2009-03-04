@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.4",
-        name="Nonchalant Nimbus",
+        number="0.1.5",
+        name="Nonchalant Nimbus+",
         api="2"
     ),
     build_top=path("build"),
