@@ -87,9 +87,10 @@ dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Pan
         var w = d.b.w - d.i.w;
         var labels = 5;
         var sizes = this.preferredSizes.slice();
+        var y;
 
         while (labels > 0) {
-            var y = d.i.t;
+            y = d.i.t;
 
             // set the fonts and clear the bounds
             for (var i = 0; i < this.children.length; i++) {
@@ -150,8 +151,8 @@ dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Pan
                 continue;
             }
 
-            var changeMade = false;
-            for (var y = 0; y < 2; y++) {
+            changeMade = false;
+            for (y = 0; y < 2; y++) {
                 if (sizes[y] > this.minimumSizes[y]) {
                     sizes[y]--;
                     changeMade = true;
@@ -220,7 +221,7 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
             ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
 
             this.oldPaint(ctx);
-        }
+        };
 
         this.list = new th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" } });
 

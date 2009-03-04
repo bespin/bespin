@@ -21,13 +21,13 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
-dojo.provide("bespin.user.utils"); 
+
+dojo.provide("bespin.user.utils");
 
 // Utility functions for the Bespin front page.
-     
 
-dojo.mixin(bespin.user.utils, { 
+
+dojo.mixin(bespin.user.utils, {
     whenLoginSucceeded: function() {
         bespin.util.navigate.dashboard();
     },
@@ -77,17 +77,18 @@ dojo.mixin(bespin.user.utils, {
 
         var ctx = dojo.byId('testcanvas').getContext("2d");
 
-        if (ctx.fillText || ctx.mozDrawText)
+        if (ctx.fillText || ctx.mozDrawText) {
             return true; // you need text support my friend
-        else
+        } else {
             return false;
+        }
     },
 
     showingBrowserCompatScreen: function() {
-        if (!this.checkBrowserAbility()) { // if you don't have the ability              
-            dojo.style('browser_not_compat', 'display', 'block'); 
+        if (!this.checkBrowserAbility()) { // if you don't have the ability
+            dojo.style('browser_not_compat', 'display', 'block');
             this.centerOnScreen(dojo.byId('browser_not_compat'));
-            dojo.style('opaque', 'display', 'block'); 
+            dojo.style('opaque', 'display', 'block');
 
             return true;
         } else {
@@ -103,5 +104,5 @@ dojo.mixin(bespin.user.utils, {
     validateEmail: function(str) {
         var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
         return filter.test(str);
-    }  
+    }
 });

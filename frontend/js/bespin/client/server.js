@@ -94,7 +94,7 @@ dojo.declare("bespin.client.Server", null, {
                         }
                     }
                 }
-            }
+            };
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
             xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
             if (options.headers) {
@@ -405,7 +405,7 @@ dojo.declare("bespin.client.Server", null, {
                     project: project,
                     url: url
                 });
-            }
+            };
         }
         
         this.request('POST', '/project/fromurl/' + project, url, opts || {});

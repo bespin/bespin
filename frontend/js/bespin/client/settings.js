@@ -377,8 +377,9 @@ dojo.declare("bespin.client.settings.Events", null, {
             var split = file.name.split('.');
             var type = split[split.length - 1]; 
 
-            if (type)
+            if (type) {
                 bespin.publish("bespin:settings:syntax", { language: type });
+            }
         });
 
         // ** {{{ Event: bespin:settings:set:syntax }}} **
