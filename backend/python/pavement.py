@@ -32,7 +32,10 @@ import os
 from setuptools import find_packages
 from paver.setuputils import find_package_data
 
-from paver.defaults import *
+from paver.easy import *
+from paver import setuputils
+setuputils.install_distutils_tasks()
+
 
 execfile(os.path.join('bespin', '__init__.py'))
 
@@ -85,8 +88,6 @@ def production():
         non_production_packages.add(name)
         external_libs.append("libs/%s" % (f.basename()))
         
-    sh("../../bin/pip freeze -r ../../requirements.txt %s" % (production_requirements))
-    
     lines = production_requirements.lines()
     
     requirement_pattern = re.compile(r'^(.*)==')
