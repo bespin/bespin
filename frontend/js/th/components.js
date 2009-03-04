@@ -519,7 +519,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
                 if (diff <= 0) break;
             }
         } else if (totalSize < containerSize) {    // if the regions are smaller, grow 'em, all in the last one
-            var r = this.attributes.regions[this.attributes.regions.length - 1].size += (containerSize - totalSize);
+            this.attributes.regions[this.attributes.regions.length - 1].size += (containerSize - totalSize);
         }
 
         var startPx = 0;
