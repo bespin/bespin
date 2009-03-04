@@ -40,14 +40,13 @@ dojo.provide("bespin.cmd.commandline");
 
 dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands) {
-        this.commandLine = dojo.byId(commandLine);
+        this.commandLine = commandLine;
 
-        if (bespin.get('files')) this.files = bespin.get('files');
-        if (bespin.get('settings')) this.settings = bespin.get('settings');
-        if (bespin.get('editor')) this.editor = bespin.get('editor');
+        if (window['_files']) this.files = _files;        
+        if (window['_settings']) this.settings = _settings;
+        if (window['_editor']) this.editor = _editor;
 
         this.inCommandLine = false;
-        this.suppressInfo = false; // When true, info bar popups will not be shown
         this.commands = {};
         this.aliases = {};
 
@@ -135,10 +134,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var usage = command.usage || "no usage information found for " + command.name;
         this.showInfo("Usage: " + command.name + " " + usage, autohide);
     },
-
+    
     showInfo: function(html, autohide) {
-        if (this.suppressInfo) return; // bypass
-
         this.hideInfo();
 
         dojo.byId('info').innerHTML = html;
@@ -265,8 +262,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {        
         // -- Tie to the commandLine element itself     
         dojo.connect(cl.commandLine, "onfocus", cl, function() {
-            bespin.publish("bespin:cmdline:focus");
-            
+            if (window['_editor']) _editor.setFocus(false);
             this.inCommandLine = true;
             dojo.byId('promptimg').src = 'images/icn_command_on.png';
         });
@@ -281,7 +277,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
-                    var isAutoComplete = bespin.get('settings').isSettingOn('autocomplete');
+                    var isAutoComplete = _settings.isOn(_settings.get('autocomplete'));
                     if (isAutoComplete && completions.length == 1) { // if only one just set the value
                         command = this.commands[commandString] || this.commands[this.aliases[commandString]];
 
@@ -317,8 +313,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 dojo.stopEvent(e);
 
                 dojo.byId('command').blur();
-
-                bespin.publish("bespin:cmdline:blur");
+                if (window['_editor']) _editor.setFocus(true);
 
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == dojo.keys.DOWN_ARROW) {
@@ -438,6 +433,8 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
+        this.commandline = commandline;
+
         // ** {{{ Event: bespin:cmdline:showinfo }}} **
         // 
         // Observe when others want to show the info bar for the command line
@@ -447,26 +444,15 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             if (msg) commandline.showInfo(msg, autohide);
         });
 
-        // ** {{{ Event: bespin:cmdline:suppressinfo }}} **
-        // 
-        // Turn on info bar suppression
-        bespin.subscribe("bespin:cmdline:suppressinfo", function(event) {
-            commandline.suppressInfo = true;
-        });
-
-        // ** {{{ Event: bespin:cmdline:unsuppressinfo }}} **
-        // 
-        // Turn off info bar suppression
-        bespin.subscribe("bespin:cmdline:unsuppressinfo", function(event) {
-            commandline.suppressInfo = false;
-        });
-
         // ** {{{ Event: bespin:cmdline:executed }}} **
         // 
         // Once the command has been executed, do something.
         // In this case, save it for the history
         bespin.subscribe("bespin:cmdline:executed", function(event) {
-            commandline.commandLineHistory.add(event.command.name + " " + event.args); // only add to the history when a valid command
+            var commandname = event.command.name;
+            var args        = event.args;
+
+            commandline.commandLineHistory.add(commandname + " " + args); // only add to the history when a valid command
         });
         
         // ** {{{ Event: bespin:cmdline:executed }}} **
@@ -481,20 +467,25 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
 
             if (command) commandline.executeCommand(command);
         });
-        
+
+
         // -- Files
         // ** {{{ Event: bespin:editor:openfile:openfail }}} **
         // 
         // If an open file action failed, tell the user.
         bespin.subscribe("bespin:editor:openfile:openfail", function(event) {
-            commandline.showInfo('Could not open file: ' + event.filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
+            var filename = event.filename;
+
+            commandline.showInfo('Could not open file: ' + filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
         });
 
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
         // 
         // The open file action worked, so tell the user
         bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
-            commandline.showInfo('Loaded file: ' + event.file.name, true);
+            var file = event.file;
+
+            commandline.showInfo('Loaded file: ' + file.name, true);
         });
 
         // -- Projects
@@ -504,8 +495,8 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("bespin:project:set", function(event) {
             var project = event.project;
 
-            bespin.get('editSession').project = project;
-            if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
+            _editSession.project = project;
+            commandline.showInfo('Changed project to ' + project, true);
         });
 
     }

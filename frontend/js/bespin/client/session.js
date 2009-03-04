@@ -45,15 +45,14 @@ dojo.declare("bespin.client.session.EditSession", null, {
         this.editor = editor;
         this.collaborate = false;
     },
-
-    setUserinfo: function(userinfo) {
-        this.username = userinfo.username;
-        this.amountUsed = userinfo.amountUsed;
-        this.quota = userinfo.quota;
+    
+    projectForDisplay: function(testProject) {
+        var project = testProject || this.project;
+        return project;
     },
-
+    
     checkSameFile: function(project, path) {
-        return ((this.project == project) && (this.path == path));
+        return ( (_editSession.project == project) && (_editSession.path == path) );
     },
 
     startSession: function(project, path, username) {
@@ -84,29 +83,28 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
 
         this.editor = editor;
         this.editor.undoManager.syncHelper = this;
-
-        this.server = bespin.get('server');
-        this.editSession = bespin.get('editSession');
-        
         this.opQueue = [];
         this.lastOp = 0;
         this.stopped = false;
 
-        setTimeout(dojo.hitch(this, function() { this.processSendQueue(); }), this.SEND_INTERVAL );
+        var self = this;
+        setTimeout(function() { self.processSendQueue(); }, self.SEND_INTERVAL );
     },
 
     retrieveUpdates: function() {
-        // TODO: fix global references
-        this.server.editAfterActions(this.editSession.project, this.editSession.path, this.lastOp, dojo.hitch(this, function(json) { 
+        var self = this;
 
-            this.editor.undoManager.syncHelper = undefined; // TODO: document why I do this
+        // TODO: fix global references
+        _server.editAfterActions(_editSession.project, _editSession.path, this.lastOp, function(json) { 
+
+            self.editor.undoManager.syncHelper = undefined; // TODO: document why I do this
 
             var ops = eval(json);
             this.lastOp += ops.length;
 
-            dojo.forEach(ops, function(op) {
-                if (op.username != this.editSession.username) { // don't play operations that have been performed by this user
-                    this.playOp(op);
+            ops.each(function(op) {
+                if (op.username != _editSession.username) { // don't play operations that have been performed by this user
+                    self.playOp(op);
                     _showCollabHotCounter = 20;
                 }
             });
@@ -117,10 +115,10 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
 
             if (_showCollabHotCounter > 0) _showCollabHotCounter--;
 
-            this.editor.undoManager.syncHelper = this;
+            self.editor.undoManager.syncHelper = self;
 
-            if (!this.stopped) setTimeout(dojo.hitch(this, function() { this.retrieveUpdates(); }), this.UPDATE_INTERVAL );
-        }));
+            if (!self.stopped) setTimeout(function() { self.retrieveUpdates(); }, self.UPDATE_INTERVAL );
+        });
     },
 
     playOp: function(val) {
@@ -135,25 +133,27 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
     },
 
     syncWithServer: function() {
-        this.server.editActions(this.editSession.project, this.editSession.path, dojo.hitch(this, function(json) {
+        var self = this;
+
+        _server.editActions(_editSession.project, _editSession.path, function(json) {
             if (json.length > 2) {
-                this.editor.undoManager.syncHelper = undefined;
+                self.editor.undoManager.syncHelper = undefined;
 
                 var ops = eval(json);
                 this.lastOp = ops.length;
 
-                this.editor.ui.actions.ignoreRepaints = true;
+                self.editor.ui.actions.ignoreRepaints = true;
                 ops.each(function(val) {
-                    this.playOp(val);
+                    self.playOp(val);
                 });
-                this.editor.ui.actions.ignoreRepaints = false;
-                this.editor.ui.actions.repaint();
+                self.editor.ui.actions.ignoreRepaints = false;
+                self.editor.ui.actions.repaint();
 
-                this.editor.undoManager.syncHelper = this;
+                self.editor.undoManager.syncHelper = self;
             }
 
-            setTimeout(dojo.hitch(this, function() { this.retrieveUpdates(); }), this.UPDATE_INTERVAL);
-        }));
+            setTimeout(function() { self.retrieveUpdates(); }, self.UPDATE_INTERVAL );
+        });
     },
 
     stop: function() {
@@ -163,10 +163,11 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
     processSendQueue: function() {
         if (this.opQueue.length > 0) {
             var sendQueue = this.opQueue.splice(0, this.opQueue.length);
-            this.server.doAction(this.editSession.project, this.editSession.path, sendQueue);
+            _server.doAction(_editSession.project, _editSession.path, sendQueue);
         }
 
-        if (!this.stopped) setTimeout(dojo.hitch(this, function() { this.processSendQueue(); }), this.SEND_INTERVAL );
+        var self = this;
+        if (!this.stopped) setTimeout(function() { self.processSendQueue(); }, self.SEND_INTERVAL );
     },
 
     applyEditOperations: function(ops) {
@@ -188,16 +189,16 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
     },
 
     undo: function(op) {
-        this.opQueue.push(dojo.toJson({ username: this.editSession.username, action: 'undo' }));
+        this.opQueue.push(dojo.toJson({ username: _editSession.username, action: 'undo' }));
     },
 
     redo: function(op) {
-        this.opQueue.push(dojo.toJson({ username: this.editSession.username, action: 'redo' }));
+        this.opQueue.push(dojo.toJson({ username: _editSession.username, action: 'redo' }));
     },
 
     queueUndoOp: function(undoOp) {
         var undoOpJson = {
-            username: this.editSession.username,
+            username: _editSession.username,
             undoOp: undoOp.undoOp,
             redoOp: undoOp.redoOp
         };
@@ -205,6 +206,6 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
     },
 
     queueSelect: function(selection) {
-        this.opQueue.push(dojo.toJson({ username: this.editSession.username, action: "select", args: { startPos: (selection) ? selection.startPos : undefined, endPos: (selection) ? selection.endPos : undefined }}));
+        this.opQueue.push(dojo.toJson({ username: _editSession.username, action: "select", args: { startPos: (selection) ? selection.startPos : undefined, endPos: (selection) ? selection.endPos : undefined }}));
     }
 });

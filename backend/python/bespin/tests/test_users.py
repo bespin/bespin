@@ -55,6 +55,7 @@ def test_create_new_user():
     num_users = s.query(User).count()
     assert num_users == 0
     user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
     
@@ -118,7 +119,7 @@ def test_register_and_verify_user():
     data = simplejson.loads(resp.body)
     assert data['username'] == 'BillBixby'
     assert 'quota' in data
-    assert data['quota'] == 15728640
+    assert data['quota'] == 15000000
     assert 'amountUsed' in data
     
     resp = app.get("/file/at/BespinSettings/config.js")

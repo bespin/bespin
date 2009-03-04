@@ -955,7 +955,7 @@ def after_install(options, home_dir):
         bin_dir = join(home_dir, 'Scripts')
     else:
         bin_dir = join(home_dir, 'bin')
-    subprocess.call([join(bin_dir, 'easy_install'), 'paver>=1.0a4'])
+    subprocess.call([join(bin_dir, 'easy_install'), 'paver>=1.0a2'])
     subprocess.call([join(bin_dir, 'easy_install'), 'pip'])
     subprocess.call([join(bin_dir, 'paver'),'required'])
 

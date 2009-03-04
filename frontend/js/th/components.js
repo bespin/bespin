@@ -659,34 +659,23 @@ dojo.declare("th.components.List", th.Container, {
         this.items = parms.items || [];
 
         this.scrollTop = 0;
-        
-        this.allowDeselection = parms.allowDeselection || false;
 
         this.bus.bind("mousedown", this, this.onmousedown, this);  
         
         this.renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) }});
-        
-        if (parms.topLabel) {
-            this.label = parms.topLabel;
-            this.label.height = 16;
-        }
     },
 
     onmousedown: function(e) {
         var item = this.getItemForPosition({ x: e.componentX, y: e.componentY });
         if (item != this.selected) {
-            if (item) {
-                this.selected = item; 
-                this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
-                this.repaint();
-            } else if(this.allowDeselection)  {
-                delete this.selected;
-            }
+            if (item) this.selected = item; else delete this.selected;
+            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+            this.repaint();
         }
     },
     
     // be carefull! This does NOT fire the "itemselected" event!!!
-    selectItemByText: function(text) {        
+    selectItemByText: function(text) {
         if (this.items.length == 0)  return false;
         var item = null;
         if (dojo.isObject(this.items[0])) {
@@ -702,16 +691,14 @@ dojo.declare("th.components.List", th.Container, {
             item = this.items[this.items.indexOf(text)];
         }
 
-        if (this.selected != item) {
-            this.selected = item;
-            this.repaint();   
-        }
+        this.selected = item;
+        this.repaint();
 
         return true;
     },
 
     getItemForPosition: function(pos) {
-        pos.y += this.scrollTop - (this.label ? this.label.height : 0);
+        pos.y += this.scrollTop;
         var y = this.getInsets().top;
         for (var i = 0; i < this.items.length; i++) {
             var h = this.heights[i];
@@ -753,25 +740,16 @@ dojo.declare("th.components.List", th.Container, {
 
     paint: function(ctx) {
         var d = this.d();
-        
         var paintHeight = Math.max(this.getScrollInfo().scrollHeight, d.b.h);
         var scrollInfo = this.getScrollInfo();
 
-        ctx.save();        
-        
-        if (this.label) {
-            var prefHeight = this.label.height;
-            this.label.bounds = { y: y, x: d.i.l, height: prefHeight, width: d.b.w };
-            this.label.paint(ctx);
-            d.i.t = prefHeight;
-        }
-        
+        ctx.save();
         ctx.translate(0, -this.scrollTop);
 
         try {
             if (this.style.backgroundColor) {
                 ctx.fillStyle = this.style.backgroundColor;
-                ctx.fillRect(0, d.i.t, d.b.w, paintHeight);
+                ctx.fillRect(0, 0, d.b.w, paintHeight);
             }
 
             if (this.style.backgroundColorOdd) {
@@ -846,7 +824,6 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
 
         this.lists = [];
         this.splitters = [];
-        this.listWidths = [];
     },
 
     setData: function(data) {
@@ -887,23 +864,19 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
     },
     
     replaceList: function(index, contents) {
-        this.lists[index].items = contents;
-        delete this.lists[index].selected;
-        this.render();
-    },
-    
-    removeListsFrom: function(index) {
-        for (var x = index; x < this.lists.length; x++)
-        {
-            this.bus.unbind(this.lists[x]);
-            this.bus.unbind(this.splitters[x]);
+        var list = this.createList(contents);
+        list.id = "list " + (index + 1);
 
-            this.remove(this.lists[x]);
-            this.remove(this.splitters[x]);            
-        }
+        this.bus.bind("click", list, this.itemSelected, this);
+        var tree = this;
+        this.bus.bind("dblclick", list, function(e) {
+            tree.bus.fire("dblclick", e, tree);
+        });
         
-        this.lists = this.lists.slice(0, index);
-        this.splitters = this.splitters.slice(0, index);        
+        this.lists[index] = list;
+        this.replace(list, index * 2)
+        
+        this.render();
     },
 
     showChildren: function(newItem, children) {
@@ -915,6 +888,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         if (!dojo.isArray(children)) {
             // if it's not an array, assume it's a function that will load the children
             children(this.getSelectedPath(), this);
+            this.render();
             return;
         }
 
@@ -973,8 +947,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         if (selected.length > 0) return selected[selected.length - 1];
     },
 
-    getSelectedPath: function(asString) {
-        asString = asString || false;
+    getSelectedPath: function() {
         var path = [];
 
         for (var i = 0; i < this.lists.length; i++) {
@@ -985,26 +958,10 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
             }
         }
 
-        if (path.length == 0) return;
-
-        if (asString) {
-            var result = '';
-            for (var i = 0; i < path.length - 1; i++) {
-                result += path[i].name + '/';
-            }
-            if (!path[path.length - 1].contents) {
-                result += path[path.length - 1].name
-            } else {
-                result += path[path.length - 1].name + '/';
-            }
-            
-            return result;
-        } else {
-            return path;   
-        }
+        return path;
     },
 
-    itemSelected: function(e) {                 
+    itemSelected: function(e) {        
         var list = e.thComponent;
 
         // add check to ensure that list has an item selected; otherwise, bail
@@ -1014,16 +971,8 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
 
         for (var i = 0; i < this.lists.length; i++) {
             path.push(this.lists[i].selected);
-            if (this.lists[i] == list) {
-                for (var j = i + 1; j < this.lists.length && this.lists[j].selected; j++) {
-                    delete this.lists[j].selected;
-                }
-                break;
-            }
+            if (this.lists[i] == list) break;
         }
-        
-        // fire the event AFTER some items maybe got deselected
-        this.bus.fire('itemSelected', {e: e}, this);
 
         if (path.length < this.lists.length) {
             // user selected an item in a previous list; must ditch the subsequent lists

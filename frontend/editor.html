@@ -27,18 +27,18 @@
 <html>
 <head>
     <title>Bespin &raquo; Your Community Editor</title>
-    <link type="text/css" rel="stylesheet" href="css/editor.css">
+  	<link type="text/css" rel="stylesheet" href="css/editor.css">
 
     <!-- begin script tags -->
-    <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
-    </script>
+	<script type="text/javascript">
+		var djConfig = { isDebug: false }; 
+	</script>   
 
-    <script type="text/javascript" src="js/dojo/dojo.js"></script>
-
-    <script type="text/javascript">
-        dojo.require("bespin.bootstrap_dependencies");
-    </script>
+	<script type="text/javascript" src="js/dojo/dojo.js"></script> 
+	
+	<script type="text/javascript"> 
+		dojo.require("bespin.bootstrap_dependencies");    
+	</script>
     <!-- end script tags -->
 </head>
 <body>
@@ -47,7 +47,7 @@
         <div id="collab_line"></div>
         <div id="version"></div>
         <a href="index.html" title="Go Home"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
-        <a href="javascript:bespin.util.navigate.dashboard()" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
+        <a href="dashboard.html" id="hrefDashboard" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
         <!-- coming soon -->
         <!--<img id="toolbar_files" src="images/icn_files_off.png" alt="Files" title="Show Files">-->
@@ -75,7 +75,7 @@
         <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser" style="padding-right: 20px">
         <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
     </div>
-    <div id="editor"></div>
+    <div id="editor" width="500" height="500"></div>
     <div id="footer">
         <table cellpadding="0">
             <tr>
@@ -178,8 +178,5 @@
             </tr>
         </table>
     </div>
-    <div id="centerpopup" style="display:none;"></div>
-    <div id="overlay" style="display: none;"></div>
 </body>
 </html>
-

@@ -124,7 +124,7 @@ bespin.cmd.commands.add({
                 }
             } else {
                 var key = setting.key;
-                if (setting.value === undefined) { // show it
+                if (setting.value == undefined) { // show it
                     var value = self.settings.get(key);
                     if (value) {
                         output = "<u>Your setting</u><br/><br/>";
@@ -150,10 +150,8 @@ bespin.cmd.commands.add({
     preview: 'show files',
     completeText: 'optionally, add the project name of your choice',
     execute: function(self, project) {
-        if (!project) {
-            bespin.withComponent('editSession', function(editSession) {
-                project = editSession.project;
-            });
+        if (!project && (typeof _editSession != "undefined") ) {
+            project = _editSession.projectForDisplay();
         }
 
         if (!project) {
@@ -280,7 +278,7 @@ bespin.cmd.commands.add({
     takes: ['filename'],
     preview: 'save the current contents',
     completeText: 'add the filename to save as, or use the current file',
-    withKey: "CMD S",
+    withKey: "APPLE S",
     execute: function(self, filename) {
         bespin.publish("bespin:editor:savefile", {
             filename: filename
@@ -419,19 +417,13 @@ bespin.cmd.commands.add({
     preview: 'remove the file',
     completeText: 'add the filename to remove',
     execute: function(self, filename) {
-        var project = bespin.get('editSession').project;
-        if (!project) {
-            self.showInfo("rm only works with the project is set.");
-            return;            
-        }
-
         if (!filename) {
             self.showInfo("give me a filename or directory to delete");
             return;
         }
-
-        self.files.removeFile(project, filename, function() {
-            if (bespin.get('editSession').checkSameFile(project, filename)) self.editor.model.clear(); // only clear if deleting the same file
+        
+        self.files.removeFile(_editSession.project, filename, function() {
+            if (_editSession.checkSameFile(_editSession.project, filename)) self.editor.model.clear(); // only clear if deleting the same file
 
             self.showInfo('Removed file: ' + filename, true);
         }, function(xhr) {
@@ -551,8 +543,8 @@ bespin.cmd.commands.add({
             self.executeCommand("status");
             return;
         }
-        bespin.get('editSession').username = args.user; // TODO: normalize syncing
-        bespin.get('server').login(args.user, args.pass);
+        _editSession.username = args.user; // TODO: normalize syncing
+        _server.login(args.user, args.pass);
     }
 });
 
@@ -561,8 +553,8 @@ bespin.cmd.commands.add({
     name: 'logout',
     preview: 'log out',
     execute: function(self) {
-        delete bespin.get('editSession').username;
-        bespin.get('server').logout(function() {
+        delete _editSession.username;
+        _server.logout(function() {
 			window.location.href="/";
 		});
     }
@@ -611,19 +603,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: quota}}} **
-bespin.cmd.commands.add({
-    name: 'quota',
-    preview: 'show your quota info',
-    megabytes: function(bytes) {
-        return (bytes / 1024 / 1024).toFixed(2);
-    },
-    execute: function(self) {
-        var editSession = bespin.get('editSession');
-        self.showInfo("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
-    }
-});
-
 // ** {{{Command: export}}} **
 bespin.cmd.commands.add({
     name: 'export',
@@ -631,14 +610,14 @@ bespin.cmd.commands.add({
     preview: 'export the given project with an archivetype of zip or tgz',
     completeText: 'project name, archivetype (zip | tgz, defaults to zip)',
     execute: function(self, args) {
-        var project = args.project || bespin.get('editSession').project;
+        var project = args.project || _editSession.project;
         
         var type = args.archivetype;
-        if (!bespin.util.include(['zip','tgz','tar.gz'], type)) {
+        if (!bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
             type = 'zip';
         }
 
-        bespin.get('server').exportProject(project, type); // try to do it via the iframe
+        _server.exportProject(project, type); // try to do it via the iframe
     }
 });
 
@@ -702,6 +681,18 @@ bespin.cmd.commands.add({
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
         bespin.publish("bespin:project:import", { project: project, url: url });
+    }
+});
+
+// ** {{{Command: doctype}}} **
+bespin.cmd.commands.add({
+    name: 'doctype',
+    takes: ['section'], // part on the Wiki
+    preview: 'grab the doctype info for a section',
+    completeText: 'can you give me the Doctype wiki section?',
+    hidden: true,
+    execute: function(self, section) {
+        //TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
     }
 });
 
@@ -807,7 +798,7 @@ bespin.cmd.commands.add({
           output += x + ": " + self.aliases[x] + "<br/>";
         }
       } else {
-        if (args.command === undefined) { // show it
+        if (args.command == undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
           var alias = self.aliases[args.alias];
           if (alias) {

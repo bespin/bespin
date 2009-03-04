@@ -381,7 +381,6 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{archivetype}}} is either zip | tgz
     exportProject: function(project, archivetype) {
         if (bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
-//            console.log('/project/export', project + "." + archivetype);
             var iframe = document.createElement("iframe");
             iframe.src = bespin.util.path.combine('/project/export', project + "." + archivetype);
             iframe.style.display = 'none';

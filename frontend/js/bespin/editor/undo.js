@@ -49,7 +49,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
         if (this.undoStack.length == 0) return;
         var item = this.undoStack.pop();
 
-        this.editor.cursorManager.moveCursor(item.undoOp.pos);
+        this.editor.moveCursor(item.undoOp.pos);
         item.undo();
         this.redoStack.push(item);
 
@@ -60,7 +60,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
         if (this.redoStack.length == 0) return;
         var item = this.redoStack.pop();
 
-        this.editor.cursorManager.moveCursor(item.redoOp.pos);
+        this.editor.moveCursor(item.redoOp.pos);
         item.redo();
         this.undoStack.push(item);
 

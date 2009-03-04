@@ -25,11 +25,11 @@
 dojo.provide("bespin.user.register"); 
 
 // Login, logout and registration functions for the Bespin front page.
+     
 
 (function(){
     var svr = new bespin.client.Server(); 
-    var utils = bespin.user.utils;
-    var webpieces = bespin.util.webpieces;
+    var utils = bespin.user.utils; 
     
     dojo.mixin(bespin.user, {
         login: function() {
@@ -53,7 +53,7 @@ dojo.provide("bespin.user.register");
                     utils.whenLoginSucceeded,
                     utils.whenLoginFailed);
             } else {
-                webpieces.showStatus("Please give me both a username and a password");
+                utils.showStatus("Please give me both a username and a password");
             }
         },
 
@@ -65,7 +65,7 @@ dojo.provide("bespin.user.register");
     }); 
     
     dojo.mixin(bespin.user.register, {
-        checkUsername: function() {
+        checkUsername:function() {
             var username_error = [];
             var username = dojo.byId("register_username").value;
             if (username.length < 4) {
@@ -76,28 +76,29 @@ dojo.provide("bespin.user.register");
             }
             dojo.byId('register_username_error').innerHTML = username_error.join(", ");
         },
-        checkPassword: function() {
+        checkPassword:function() {
             dojo.byId('register_password_error').innerHTML = (dojo.byId('register_password').value.length < 6) ? "Passwords must be at least 6 characters long" : "";
         },
-        checkConfirm: function() {
+        checkConfirm:function() {
             dojo.byId('register_confirm_error').innerHTML = (dojo.byId('register_password').value != dojo.byId('register_confirm').value) ? "Passwords do not match" : "";
         },
-        checkEmail: function() {
+        checkEmail:function() {
             dojo.byId('register_email_error').innerHTML = (!utils.validateEmail(dojo.byId('register_email').value)) ? "Invalid email address" : "";
         },
-        showForm: function() {
+        showForm:function() {
             if (utils.showingBrowserCompatScreen()) return;
             dojo.style('logged_in', 'display', 'none');
             dojo.style('not_logged_in', 'display', 'none');
-            dojo.style('overlay', 'display', 'block');
-            dojo.style('centerpopup', 'display', 'block');            
-            webpieces.showCenterPopup(dojo.byId('centerpopup'));  
+            dojo.style('opaque', 'display', 'block');
+            dojo.style('register_border', 'display', 'block');            
+            utils.centerOnScreen(dojo.byId('register_border'));  
         },
-        hideForm: function() {
-            webpieces.hideCenterPopup(dojo.byId('centerpopup'));
+        hideForm:function() {                                 
+            dojo.style('opaque', 'display', 'none'); 
+            dojo.style('register_border', 'display', 'none');
             svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
         },
-        send: function() {
+        send:function() {
             this.hideForm();
             svr.signup(dojo.byId("register_username").value, 
                 dojo.byId("register_password").value, 
@@ -106,18 +107,13 @@ dojo.provide("bespin.user.register");
                 utils.whenLoginFailed, 
                 utils.whenUsernameInUse);
         },
-        cancel: function() { 
+        cancel:function() { 
             this.hideForm();
         }
     });  
-
-    dojo.addOnLoad(function() {
+        
+    dojo.addOnLoad(function(){
         bespin.displayVersion();
         svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
-		webpieces.fillScreenOverlay();
-    });
-
-    dojo.connect(window, "resize", function() {
-        webpieces.fillScreenOverlay();
     });
 })();

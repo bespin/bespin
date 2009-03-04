@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.6",
-        name="Nonchalant Nimbus+",
+        number="0.1.4",
+        name="Nonchalant Nimbus",
         api="2"
     ),
     build_top=path("build"),
@@ -117,10 +117,16 @@ def required():
     pip = path("bin/pip")
     if not pip.exists():
         # try Windows version
-        pip = path("Scripts") / "pip"
+        pip = path("Scripts/pip")
     sh("%s install -U -r requirements.txt" % pip)
     
-    call_pavement('backend/python/pavement.py', 'develop')
+    # note this change directory should be done by Paver
+    cwd = path.getcwd()
+    path("backend/python").chdir()
+    try:
+        call_pavement('pavement.py', 'develop')
+    finally:
+        cwd.chdir()
         
     # clean up after urlrelay's installation
     path("README").unlink()
@@ -131,9 +137,9 @@ def start():
     """Starts the BespinServer on localhost port 8080 for development.
     
     You can change the port and allow remote connections by setting
-    server.port or server.address on the command line.
+    server.port or server.host on the command line.
     
-    paver server.address=your.ip.address server.port=8000 start
+    paver server.host=your.ip.address server.port=8000 start
     
     will allow remote connections (assuming you don't have a firewall
     blocking the connection) and start the server on port 8000.
@@ -359,11 +365,13 @@ def compress_js():
 @task
 def prod_server():
     """Creates the production server code."""
+    current_directory = path.getcwd()
     replaced_lines = dry("Updating Python version number", update_python_version)
-    sh("bin/pip freeze -r requirements.txt backend/python/production/requirements.txt")
     try:
-        call_pavement("backend/python/pavement.py", "production")
+        path("backend/python").chdir()
+        call_pavement("pavement.py", "production")
     finally:
+        current_directory.chdir()
         dry("Restoring Python version number", restore_python_version, replaced_lines)
 
 @task
