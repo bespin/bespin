@@ -11,6 +11,12 @@ dependencies = {
             dependencies: [
                 "bespin.bootstrap_dependencies"
             ]
+        },
+        {
+            name: "../dashboard_all.js",
+            dependencies: [
+                "bespin.dashboard.dependencies"
+            ]
         }
     ],
     prefixes: [
