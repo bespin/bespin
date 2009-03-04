@@ -55,6 +55,7 @@ def test_create_new_user():
     num_users = s.query(User).count()
     assert num_users == 0
     user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
     
