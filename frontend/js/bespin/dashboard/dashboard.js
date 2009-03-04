@@ -251,7 +251,7 @@ dojo.provide("bespin.dashboard.dashboard");
             projects.list.items = projectItems;
                         
             // Restore the last selected file
-            var pathSelected =  (new bespin.client.settings.URL()).get('pathSelected');
+            var pathSelected =  (new bespin.client.settings.URL()).get('path');
             
             if (!bd.lastSelectedPath) {
                 bd.restorePath(pathSelected);
@@ -364,7 +364,7 @@ dojo.provide("bespin.dashboard.dashboard");
 
         scene.bus.bind("itemselected", projects.list, function(e) {
             bespin.dashboard.lastSelectedPath = bespin.dashboard.projects.list.selected;
-            location.hash = '#pathSelected=' + bespin.dashboard.projects.list.selected;
+            location.hash = '#path=' + bespin.dashboard.projects.list.selected;
             currentProject = e.item;
             _server.list(e.item, null, bd.displayFiles);
             bespin.publish("bespin:project:set", { project: currentProject });
@@ -389,7 +389,7 @@ dojo.provide("bespin.dashboard.dashboard");
         
         // provide history for the dashboard
         bespin.subscribe("bespin:url:changed", function(e) {
-            var pathSelected =  (new bespin.client.settings.URL()).get('pathSelected');
+            var pathSelected =  (new bespin.client.settings.URL()).get('path');
             bespin.dashboard.restorePath(pathSelected);
         });
     });
