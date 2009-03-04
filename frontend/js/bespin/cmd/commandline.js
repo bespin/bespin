@@ -137,7 +137,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     showInfo: function(html, autohide) {
-        if (!this.suppressInfo) return; // bypass
+        if (this.suppressInfo) return; // bypass
 
         this.hideInfo();
 
