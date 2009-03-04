@@ -2,10 +2,10 @@ urlrelay>0.7
 WebOb
 WebTest
 py
-http://pypi.python.org/packages/source/s/simplejson/simplejson-2.0.9.tar.gz
+http://pypi.python.org/packages/source/s/simplejson/simplejson-2.0.9.tar.gz#egg=simplejson
 SQLAlchemy
 sqlalchemy-migrate>0.5.1
 ext/Paste-1.7.3dev-r7791.tar.gz
 static
 virtualenv
-http://httplib2.googlecode.com/files/httplib2-0.4.0.tar.gz
+http://httplib2.googlecode.com/files/httplib2-0.4.0.tar.gz#egg=httplib2
