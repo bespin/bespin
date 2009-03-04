@@ -154,10 +154,17 @@ bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
 // 
 // Observe a urlchange event and then... change the location hash
 bespin.subscribe("bespin:editor:urlchange", function(event) {
-    var project = event.project;
-    var path    = event.path;
+    var hashArguments = dojo.queryToObject(location.hash.substring(1));
+    hashArguments.project = event.project;
+    hashArguments.path    = event.path;
 
-    window.location.hash = "project=" + project + "&path=" + path;
+    // window.location.hash = dojo.objectToQuery() is not doing the right thing...
+    var pairs = [];
+    for (var name in hashArguments) {
+        var value = hashArguments[name];
+        pairs.push(name + '=' + value);
+    }
+    window.location.hash = pairs.join("&");
 });
 
 // ** {{{ Event: bespin:session:status }}} **
