@@ -127,7 +127,7 @@ bespin.util.keys.fillArguments = function(string, args) {
     }
     
     return args;
-}
+};
 
 // ** {{{ bespin.util.keys.PassThroughCharCodes }}} **
 //
@@ -167,4 +167,4 @@ bespin.util.keys.passThroughToBrowser = function(e) {
     }
                                                  
     return false;
-}
+};

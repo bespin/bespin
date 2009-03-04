@@ -88,7 +88,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
         this.stopped = false;
 
         var self = this;
-        setTimeout(function() { self.processSendQueue() }, self.SEND_INTERVAL );
+        setTimeout(function() { self.processSendQueue(); }, self.SEND_INTERVAL );
     },
 
     retrieveUpdates: function() {
@@ -117,7 +117,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
 
             self.editor.undoManager.syncHelper = self;
 
-            if (!self.stopped) setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );
+            if (!self.stopped) setTimeout(function() { self.retrieveUpdates(); }, self.UPDATE_INTERVAL );
         });
     },
 
@@ -152,7 +152,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
                 self.editor.undoManager.syncHelper = self;
             }
 
-            setTimeout(function() { self.retrieveUpdates() }, self.UPDATE_INTERVAL );
+            setTimeout(function() { self.retrieveUpdates(); }, self.UPDATE_INTERVAL );
         });
     },
 
@@ -167,7 +167,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
         }
 
         var self = this;
-        if (!this.stopped) setTimeout(function() { self.processSendQueue() }, self.SEND_INTERVAL );
+        if (!this.stopped) setTimeout(function() { self.processSendQueue(); }, self.SEND_INTERVAL );
     },
 
     applyEditOperations: function(ops) {
@@ -201,7 +201,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
             username: _editSession.username,
             undoOp: undoOp.undoOp,
             redoOp: undoOp.redoOp
-        }
+        };
         this.opQueue.push(dojo.toJson(undoOpJson));
     },
 

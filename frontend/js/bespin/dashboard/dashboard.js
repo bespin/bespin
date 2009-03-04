@@ -73,9 +73,9 @@ dojo.provide("bespin.dashboard.dashboard");
 
             var fdata = [];
             for (var i = 0; i < files.length; i++) {
-        		var name = files[i].name;
+                var name = files[i].name;
                 if (/\/$/.test(name)) {
-                    var name = name.substring(0, name.length - 1);
+                    name = name.substring(0, name.length - 1);
                     var contents = bd.fetchFiles;
                     fdata.push({ name: name, contents: contents });
                 } else {
@@ -90,8 +90,9 @@ dojo.provide("bespin.dashboard.dashboard");
             var filepath = "";
 
             for (var i = 0; i < treePath.length; i++) {
-                if (treePath[i] && treePath[i].name)
+                if (treePath[i] && treePath[i].name) {
                     filepath += treePath[i].name + ((i < treePath.length - 1) ? "/" : "");
+                }
             }
             return filepath;
         },
@@ -169,7 +170,7 @@ dojo.provide("bespin.dashboard.dashboard");
             
             if (pathSelected) {
                 pathSelected = pathSelected.split('/');
-                var projectSelected = pathSelected.shift();;
+                var projectSelected = pathSelected.shift();
                 projects.list.selectItemByText(projectSelected);    // this also perform a rendering of the project.list
                 currentProject = projectSelected;
     
@@ -188,7 +189,7 @@ dojo.provide("bespin.dashboard.dashboard");
                     }
                     
                     // creates new lists, but only with one entry (the one needed to get to the end of the path)
-                    var fakePath = new Array();
+                    var fakePath = [];
                     for (var x = 1; x < pathSelected.length-1; x++) {               
                         bd.tree.showChildren(null, new Array({name: pathSelected[x], contents: 'noRealContents'}));
                         bd.tree.lists[x].selectItemByText(pathSelected[x]);

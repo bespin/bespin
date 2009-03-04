@@ -41,7 +41,7 @@ bespin.syntax.PHPConstants = {
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
-}
+};
 
 dojo.declare("bespin.syntax.PHPSyntaxEngine", null, {
     keywords: 'include require include_once require_once for foreach as if elseif else while do endwhile ' +

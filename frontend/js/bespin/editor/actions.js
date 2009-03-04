@@ -117,7 +117,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     moveToLineStart: function(args) {
         var line = this.editor.model.getRowArray(this.editor.cursorPosition.row).join('');
-        var match = /^(\s+).*/.exec(line)
+        var match = /^(\s+).*/.exec(line);
         var leadingWhitespaceLength = 0;
 
         // Check to see if there is leading white space and move to the first text if that is the case
@@ -192,6 +192,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     moveWordLeft: function(args) {
         var row = this.editor.model.getRowArray(args.pos.row);
+        var c, charCode;
 
         if (args.pos.col == 0) { // -- at the start to move up and to the end
             var newargs = this.moveCursorUp(args);
@@ -210,8 +211,8 @@ dojo.declare("bespin.editor.Actions", null, {
         while (newcol > 0) {
             newcol--;
 
-            var c = row[newcol];
-            var charCode = c.charCodeAt(0);
+            c = row[newcol];
+            charCode = c.charCodeAt(0);
             if (charCode == 32) {
                 wasSpaces = true;
             } else {
@@ -224,8 +225,8 @@ dojo.declare("bespin.editor.Actions", null, {
         if (!wasSpaces) {
             while (newcol > 0) {
                 newcol--;
-                var c = row[newcol];
-                var charCode = c.charCodeAt(0);
+                c = row[newcol];
+                charCode = c.charCodeAt(0);
                 if ( (charCode < 65) || (charCode > 122) ) { // if you get to an alpha you are done
                     if (newcol != args.pos.col - 1) newcol++; // right next to a stop char, move back one
                     break;
@@ -240,6 +241,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     moveWordRight: function(args) {
         var row = this.editor.model.getRowArray(args.pos.row);
+        var c, charCode;
 
         if (row.length <= args.pos.col) { // -- at the edge so go to the next line
             this.moveCursorDown(this.moveToLineStart(args));
@@ -251,8 +253,8 @@ dojo.declare("bespin.editor.Actions", null, {
         // This slurps up leading spaces
         var wasSpaces = false;
         while (newcol < row.length) {
-            var c = row[newcol];
-            var charCode = c.charCodeAt(0);
+            c = row[newcol];
+            charCode = c.charCodeAt(0);
             if (charCode == 32) {
                 wasSpaces = true;
                 newcol++;
@@ -271,8 +273,8 @@ dojo.declare("bespin.editor.Actions", null, {
                     return;
                 }
 
-                var c = row[newcol];
-                var charCode = c.charCodeAt(0);
+                c = row[newcol];
+                charCode = c.charCodeAt(0);
             
                 if ( (charCode < 65) || (charCode > 122) ) {
                     break;
@@ -365,13 +367,14 @@ dojo.declare("bespin.editor.Actions", null, {
     indent: function(args) {
         var historyIndent = args.historyIndent || false;    
         if (!historyIndent) {
-            var newHistoryIndent = new Array();
+            var newHistoryIndent = [];
         }
         var selection = args.selection || this.editor.getSelection();
         var fakeSelection = args.fakeSelection || false;
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var tabWidth = tabWidthCount = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabWidthCount = tabWidth;
         var tab = "";
         while (tabWidthCount-- > 0) {
             tab += " ";
@@ -415,7 +418,7 @@ dojo.declare("bespin.editor.Actions", null, {
     unindent: function(args) {
         var historyIndent = args.historyIndent || false;
         if (!historyIndent) {
-            var newHistoryIndent = new Array();
+            var newHistoryIndent = [];
         }
         var selection = args.selection || this.editor.getSelection();
         var fakeSelection = args.fakeSelection || false;
@@ -502,9 +505,15 @@ dojo.declare("bespin.editor.Actions", null, {
         // undo/redo
         args.action = "deleteSelectionAndInsertChunk";
         args.selection = selection;
-        var redoOperation = args
-        var undoArgs = { action: "deleteChunkAndInsertChunkAndSelect", pos: bespin.editor.utils.copyPos(args.pos), endPos: endPos, queued: args.queued, chunk: chunk }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = {
+            action: "deleteChunkAndInsertChunkAndSelect",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            endPos: endPos,
+            queued: args.queued,
+            chunk: chunk
+        };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
@@ -519,9 +528,14 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // undo/redo
         args.action = "deleteChunkAndInsertChunkAndSelect";
-        var redoOperation = args
-        var undoArgs = { action: "deleteSelectionAndInsertChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, selection: args.selection }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = {
+            action: "deleteSelectionAndInsertChunk",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            queued: args.queued,
+            selection: args.selection
+        };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
@@ -543,9 +557,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
             // undo/redo
             args.action = "insertChunk";
-            var redoOperation = args
-            var undoArgs = { action: "deleteChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, endPos: pos }
-            var undoOperation = undoArgs
+            var redoOperation = args;
+            var undoArgs = { action: "deleteChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, endPos: pos };
+            var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
             return pos;
@@ -559,9 +573,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // undo/redo
         args.action = "deleteChunk";
-        var redoOperation = args
-        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, chunk: chunk }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, chunk: chunk };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
@@ -586,9 +600,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // undo/redo
         args.action = "joinLine";
-        var redoOperation = args
-        var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         this.repaint();
@@ -610,8 +624,8 @@ dojo.declare("bespin.editor.Actions", null, {
         // undo/redo
         args.action = "deleteSelection";
         var redoOperation = args;
-        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(startPos), queued: args.queued, chunk: chunk }
-        var undoOperation = undoArgs
+        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(startPos), queued: args.queued, chunk: chunk };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
@@ -626,9 +640,9 @@ dojo.declare("bespin.editor.Actions", null, {
         var endPos = this.editor.model.insertChunk(args.pos, args.chunk);
 
         args.action = "insertChunkAndSelect";
-        var redoOperation = args
-        var undoArgs = { action: "deleteSelection", pos: bespin.editor.utils.copyPos(endPos), queued: args.queued }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = { action: "deleteSelection", pos: bespin.editor.utils.copyPos(endPos), queued: args.queued };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
@@ -672,9 +686,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
             // undo/redo
             args.action = "deleteCharacter";
-            var redoOperation = args
-            var undoArgs = { action: "insertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, newchar: deleted }
-            var undoOperation = undoArgs
+            var redoOperation = args;
+            var undoArgs = { action: "insertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, newchar: deleted };
+            var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
     },
@@ -710,9 +724,14 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // undo/redo
         args.action = "deleteSelectionAndInsertCharacter";
-        var redoOperation = args
-        var undoArgs = { action: "deleteCharacterAndInsertChunkAndSelect", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, chunk: chunk }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = {
+            action: "deleteCharacterAndInsertChunkAndSelect",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            queued: args.queued,
+            chunk: chunk
+        };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
@@ -727,9 +746,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // undo/redo
         args.action = "deleteCharacterAndInsertChunkAndSelect";
-        var redoOperation = args
-        var undoArgs = { action: "deleteSelectionAndInsertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued }
-        var undoOperation = undoArgs
+        var redoOperation = args;
+        var undoArgs = { action: "deleteSelectionAndInsertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued };
+        var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
@@ -743,9 +762,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
             // undo/redo
             args.action = "insertCharacter";
-            var redoOperation = args
-            var undoArgs = { action: "deleteCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued }
-            var undoOperation = undoArgs
+            var redoOperation = args;
+            var undoArgs = { action: "deleteCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued };
+            var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
     },

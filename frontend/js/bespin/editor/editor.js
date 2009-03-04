@@ -177,7 +177,7 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
         startCol = (selection.startPos.row < rowIndex) ? 0 : selection.startPos.col;
         endCol = (selection.endPos.row > rowIndex) ? -1 : selection.endPos.col;
 
-        return { startCol: startCol, endCol: endCol }
+        return { startCol: startCol, endCol: endCol };
     }
 }); 
 
@@ -190,7 +190,6 @@ dojo.mixin(bespin.editor, { utils: {
     },
 
     changePos: function(args, pos) {
-        ar
         return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
     
@@ -269,7 +268,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
 
-        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) }
+        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) };
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -507,7 +506,7 @@ dojo.declare("bespin.editor.UI", null, {
                 if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
                     // For now, don't select anything, but think about copying Textmate and grabbing around it
                 } else {
-                    var startPos = up = this.editor.model.findBefore(down.row, down.col);
+                    var startPos = (up = this.editor.model.findBefore(down.row, down.col));
                     
                     var endPos = this.editor.model.findAfter(down.row, down.col);
                     
@@ -533,7 +532,7 @@ dojo.declare("bespin.editor.UI", null, {
             ui.editor.paint();
         }
 
-        setTimeout(function() { ui.toggleCursor(ui) }, 250);
+        setTimeout(function() { ui.toggleCursor(ui); }, 250);
     },
 
     ensureCursorVisible: function() {

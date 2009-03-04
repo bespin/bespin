@@ -45,9 +45,9 @@ dojo.provide("bespin.util.navigate");
         } else {
             location.href = url;
         }
-    }
+    };
 
-    
+
     // ** {{{ Public }}} **
     //
     // Simple methods to construct URLs within Bespin and go to them
@@ -57,30 +57,30 @@ dojo.provide("bespin.util.navigate");
             if (dojo.byId('hrefDashboard')) {
                 go(dojo.byId('hrefDashboard').href, newTab);    // this contains the pathSelected parameter!
             } else {
-                go("dashboard.html", newTab);                
+                go("dashboard.html", newTab);
             }
         },
-        
+
         home: function(newTab) {
             go("index.html", newTab);
         },
-        
+
         quickEdit: function(newTab) {
     		go("editor.html#new=true", newTab);
     	},
-    	
+
         editor: function(project, path, newTab) {
             var url = "editor.html#";
             var args = [];
-            
+
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
             var selectedPath = bespin.dashboard.getSelectedPath();
             if (selectedPath)   args.push('pathSelected='+selectedPath);
-            
+
             if (args.length > 0) url += args.join("&");
-            
+
             go(url, newTab);
         }
-    });    
+    });
 })();

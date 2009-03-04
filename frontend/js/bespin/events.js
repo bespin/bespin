@@ -167,7 +167,7 @@ bespin.subscribe("bespin:commands:list", function(event) {
             
             output += dojo.map(dojo.filter(commands, function(file) {
                 return bespin.util.endsWith(file.name, '\\.js');
-            }), function(c) { return c.name.replace(/\.js$/, '') }).join("<br>");
+            }), function(c) { return c.name.replace(/\.js$/, ''); }).join("<br>");
         }
         
         bespin.publish("bespin:cmdline:showinfo", { msg: output });
@@ -216,8 +216,9 @@ bespin.subscribe("bespin:editor:preview", function(event) {
         filename: filename
     });
 
-    if (filename)
+    if (filename) {
         window.open(bespin.util.path.combine("preview/at", project, filename));
+    }
 });
 
 // ** {{{ Event: bespin:editor:closefile }}} **
@@ -376,7 +377,7 @@ bespin.events.defaultScope = function() {
         scope.commandLine = _commandLine;
         scope.execute = function(cmd) {
             _commandLine.executeCommand(cmd);
-        }
+        };
     }
     if (typeof _editor != "undefined")      scope.editor = _editor;
     if (typeof _editSession != "undefined") scope.editSession = _editSession;

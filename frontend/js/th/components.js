@@ -145,7 +145,7 @@ dojo.declare("th.components.Scrollbar", th.Container, {
 
             var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
             var extent_top = Math.floor(this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) ));
-            this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length }
+            this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length };
         } else {
 
         }
@@ -335,18 +335,18 @@ dojo.declare("th.components.Splitter", th.Container, {
         if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? th.HORIZONTAL : th.VERTICAL;
 
         if (this.attributes.orientation == th.HORIZONTAL) {
-            this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
-            this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
+            this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w };
+            this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w };
 
             if (this.scrollbar && this.scrollbar.shouldLayout()) {
                 this.scrollbar.bounds = { x: 0, y: this.topNib.bounds.height, height: d.b.h - (this.topNib.bounds.height * 2), width: d.b.w };
             }
         } else {
-            this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h }
-            this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h }
+            this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h };
+            this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h };
 
             if (this.label) {
-                this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) }
+                this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) };
             }
         }
     },
@@ -413,9 +413,9 @@ dojo.declare("th.components.SplitPanelContainer", th.components.Panel, {
         // only the first non-splitter child is laid out
         if (childrenWithoutSplitter.length > 0) {
             if (this.attributes.orientation == th.HORIZONTAL) {
-                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength }
+                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength };
             } else {
-                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width }
+                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width };
             }
         }
     }
@@ -459,7 +459,8 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
             - put the value of the contents property of region into the container if necessary
             - hide the splitter on the last region
          */
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        var i;
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
             if (!region.container) {
                 region.container = new th.components.SplitPanelContainer({ attributes: { orientation: this.attributes.orientation }, label: region.label });
@@ -488,7 +489,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
 
         // size the regions
         var totalSize = 0;
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var r = this.attributes.regions[i];
 
             if (!r.size) {
@@ -507,7 +508,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
         }
         if (totalSize > containerSize) {   // if the regions are bigger than the split pane size, shrink 'em, right-to-left
             var diff = totalSize - containerSize;
-            for (var i = this.attributes.regions.length - 1; i >= 0; i--) {
+            for (i = this.attributes.regions.length - 1; i >= 0; i--) {
                 var r = this.attributes.regions[i];
 
                 var originalSize = r.size;
@@ -522,7 +523,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
         }
 
         var startPx = 0;
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
             if (this.attributes.orientation == th.HORIZONTAL) {
                 region.container.bounds = { x: startPx, y: 0, width: region.size, height: this.bounds.height };

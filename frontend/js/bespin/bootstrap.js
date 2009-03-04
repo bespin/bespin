@@ -48,7 +48,11 @@ var _projectLabel;
 var _fileLabel;
 var _scene;
 
-var _showCollab = _showFiles = _showTarget = false; // for layout
+// for layout
+var _showCollab = false;
+var _showFiles = false;
+var _showTarget = false;
+
 var _showCollabHotCounter = 0;
 
 // ** {{{ window.load time }}} **
@@ -115,7 +119,7 @@ dojo.addOnLoad(function(){
         }
 
         this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - x, height: d.b.h };
-    }
+    };
 
     _scene.render();
 });
@@ -156,20 +160,20 @@ function recalcLayout() {
 
     if (_showFiles) {
         files.style.display = "block"; 
-        dojo.forEach(move, function(item) { item.style.left = "201px" });
+        dojo.forEach(move, function(item) { item.style.left = "201px"; });
     } else {
         files.style.display = "none";
-        dojo.forEach(move, function(item) { item.style.left = "0" }); 
+        dojo.forEach(move, function(item) { item.style.left = "0"; }); 
     }
 
     move.pop();   // editor shouldn't have its right-hand side set
 
     if (_showCollab) {
         collab.style.display = "block";
-        dojo.forEach(move, function(item) { item.style.right = "201px" });
+        dojo.forEach(move, function(item) { item.style.right = "201px"; });
     } else {
         collab.style.display = "none";
-        dojo.forEach(move, function(item) { item.style.right = "0" });
+        dojo.forEach(move, function(item) { item.style.right = "0"; });
     }
 
     if (_showTarget) {

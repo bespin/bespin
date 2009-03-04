@@ -39,7 +39,7 @@ bespin.syntax.HTMLConstants = {
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
-}
+};
 
 
 dojo.declare("bespin.syntax.HTMLSyntaxEngine", null, {
@@ -49,7 +49,7 @@ dojo.declare("bespin.syntax.HTMLSyntaxEngine", null, {
 
     highlight: function(line, meta) {
         if (!meta) meta = {};
-        
+
         var K = bespin.syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
@@ -90,7 +90,7 @@ dojo.declare("bespin.syntax.HTMLSyntaxEngine", null, {
                 // check if we're in a string
                 if (currentStyle == K.STRING) {
                     // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
-                    if ( ! (c == stringChar && !/\\$/.test(buffer))) { 
+                    if ( ! (c == stringChar && !/\\$/.test(buffer))) {
                         if (buffer == "") currentRegion = { start: i };
                         buffer += c;
                         continue;
