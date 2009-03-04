@@ -156,7 +156,7 @@ def start():
     config.set_profile('dev')
     
     if options.server.try_build:
-        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
+        config.c.static_dir = (options.build_dir / "frontend").abspath()
     
     if options.server.dburl:
         config.c.dburl = options.server.dburl
@@ -353,7 +353,7 @@ def compress_js():
     _install_compressed(editor_filename, "editor_all.js")
     
     dashboard_filename = front_end_target / "dashboard.html"
-    _install_compressed(dashboard_filename, "editor_all.js")
+    _install_compressed(dashboard_filename, "dashboard_all.js")
     
     index_filename = front_end_target / "index.html"
     _install_compressed(index_filename, "index_all.js")
