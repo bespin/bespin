@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.2.0",
-        name="Sassy Cirrus",
+        number="0.1.4",
+        name="Nonchalant Nimbus",
         api="2"
     ),
     build_top=path("build"),
