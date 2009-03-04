@@ -166,7 +166,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // joins the passed row with the row beneath it
     joinRow: function(rowIndex) {
-        if (row >= this.rows.length - 1) return;
+        if (rowIndex >= this.rows.length - 1) return;
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);

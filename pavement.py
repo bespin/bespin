@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.2.0",
-        name="Sassy Cirrus",
+        number="0.1.4",
+        name="Nonchalant Nimbus",
         api="2"
     ),
     build_top=path("build"),
@@ -99,8 +99,13 @@ options(
         dburl=None
     ),
     dojo=Bunch(
-        download_url="http://download.dojotoolkit.org/release-1.3.0b2/dojo-release-1.3.0b2.tar.gz",
-        destination=path('frontend/js')
+        version="1.3.0b2",
+        download_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s.tar.gz"
+                            % (options.dojo.version, options.dojo.version),
+        src_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s-src.tar.gz"
+                            % (options.dojo.version, options.dojo.version),
+        destination=path('frontend/js'),
+        source=False
     )
 )
 
@@ -151,7 +156,7 @@ def start():
     config.set_profile('dev')
     
     if options.server.try_build:
-        config.c.static_dir = os.path.abspath("%s/../../build/BespinServer/frontend" % os.getcwd())
+        config.c.static_dir = (options.build_dir / "frontend").abspath()
     
     if options.server.dburl:
         config.c.dburl = options.server.dburl
@@ -201,38 +206,7 @@ def upgrade():
     dry("Run the database upgrade", main, ["upgrade", dburl, repository])
 
 
-def _get_js_file_list(html_file):
-    from BeautifulSoup import BeautifulSoup
-    html = html_file.text()
-    soup = BeautifulSoup(html)
-    tags = soup.findAll("script")
-    result = []
-    for tag in tags:
-        result.append(tag['src'])
-    return result
-
-def _install_compressed(front_end_target, yui_dir, html_file, output_file):
-    # concatenate the files
-    file_list = _get_js_file_list(html_file)
-    output_filename = front_end_target / "js" / output_file
-    compressed_filename = path(output_filename.replace("_uncompressed", ""))
-    output_file = open(output_filename, "w")
-    for f in file_list:
-        js_file = front_end_target / f
-        output_file.write(js_file.bytes())
-        output_file.write("\n")
-    output_file.close()
-    
-    info("Running YUI Compressor")
-    jars = (yui_dir / "lib").glob("*.jar")
-    cp = ":".join(jars)
-    sh("env CLASSPATH=%s java -jar %s -o %s %s" % (
-        cp,
-        yui_dir / "build" / ("yuicompressor-%s.jar" % options.compressor_version),
-        compressed_filename,
-        output_filename
-        ))
-    
+def _install_compressed(html_file, jslayer):
     html_lines = html_file.lines()
     
     # strip out the MPL
@@ -252,12 +226,13 @@ def _install_compressed(front_end_target, yui_dir, html_file, output_file):
         elif "<!-- end script tags -->" in html_lines[i]:
             end_marker = i
     del html_lines[start_marker:end_marker+1]
-    html_lines.insert(start_marker, '<script type="text/javascript" src="js/%s"></script>'
-                                    % compressed_filename.basename())
+    html_lines.insert(start_marker, """
+            <script type="text/javascript" src="js/dojo/dojo.js"></script>
+            <script type="text/javascript" src="js/%s"></script>
+""" % jslayer)
     html_file.write_bytes("".join(html_lines))
 
-# disabled task. needs to be updated for Dojo
-# @task
+@task
 def copy_front_end():
     build_dir = options.build_dir
     build_dir.mkdir()
@@ -266,7 +241,6 @@ def copy_front_end():
         front_end_target.rmtree()
     front_end_source = path("frontend")
     front_end_source.copytree(front_end_target)
-    update_javascript_version()
     
 def update_python_version():
     version_file = path("backend/python/bespin/__init__.py")
@@ -295,7 +269,7 @@ def update_python_version():
     return replaced_lines
     
 def update_javascript_version():
-    version_file = options.build_dir / "frontend" / "js" / "bespin.js"
+    version_file = path("frontend") / "js" / "bespin" / "bespin.js"
     in_version_block = False
     lines = version_file.lines()
     replaced_lines = []
@@ -320,6 +294,21 @@ def update_javascript_version():
     version_file.write_lines(lines)
     return replaced_lines
     
+def restore_javascript_version(replaced_lines):
+    version_file = path("frontend") / "js" / "bespin" / "bespin.js"
+    lines = version_file.lines()
+    version_block_start = None
+    version_block_end = None
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if "BEGIN VERSION BLOCK" in line:
+            version_block_start = i
+        if "END VERSION BLOCK" in line:
+            version_block_end = i
+            break
+    lines[version_block_start+1:version_block_end] = replaced_lines
+    version_file.write_lines(lines)
+
 def restore_python_version(replaced_lines):
     version_file = path("backend/python/bespin/__init__.py")
     lines = version_file.lines()
@@ -335,67 +324,63 @@ def restore_python_version(replaced_lines):
     lines[version_block_start+1:version_block_end] = replaced_lines
     version_file.write_lines(lines)
 
-# disabled task... needs to be updated for Dojo
-# @task
-# @needs(['copy_front_end'])
+@task
+@needs('copy_front_end')
 def compress_js():
-    """Compress the JavaScript using the YUI compressor."""
-    current_dir = path.getcwd()
-    build_dir = options.build_dir
-    front_end_target = build_dir / "frontend"
-    
-    externals_dir = path("ext")
-    externals_dir.mkdir()
-    yui_dir = externals_dir / ("yuicompressor-%s" % options.compressor_version)
-    if not yui_dir.exists():
-        zip_file = externals_dir / options.zip_name
-        externals_dir.chdir()
-        if not zip_file.exists():
-            info("Downloading %s", options.url)
-            sh("curl -O %s" % options.url)
-        sh("unzip %s" % options.zip_name)
-        current_dir.chdir()
-    bs_dir = externals_dir.glob("BeautifulSoup-*")
-    if not bs_dir:
-        bs_file = externals_dir / "BeautifulSoup.tar.gz"
-        externals_dir.chdir()
-        if not bs_file.exists():
-            info("Downloading %s", options.beautiful_soup_url)
-            sh("curl -O %s" % options.beautiful_soup_url)
-        sh("tar xzf BeautifulSoup.tar.gz")
-        current_dir.chdir()
-        bs_dir = externals_dir.glob("BeautifulSoup-*")
-    bs_dir = bs_dir[0]
-    sys.path.append(bs_dir)
+    """Compress the JavaScript using Dojo's build system."""
+    destination = options.dojo.destination.abspath()
+    if not (destination / "util").exists():
+        raise BuildFailure("You need to be using a Dojo source package. Run paver dojo -s.")
+
+    replaced_lines = update_javascript_version()
+
+    builder_dir = destination / "util/buildscripts"
+    profile_file = destination / "buildProfile.js"
+    release_dir = (options.build_dir / "frontend").abspath()
+    cwd = path.getcwd()
+    try:
+        builder_dir.chdir()
+        sh("sh build.sh action=release profileFile=%s version=%s "
+            "releaseDir=%s optimize=shrinksafe releaseName=js" 
+            % (profile_file, options.version.number, release_dir))
+    finally:
+        cwd.chdir()
+        restore_javascript_version(replaced_lines)
+
+    front_end_target = options.build_dir / "frontend"
     
     editor_filename = front_end_target / "editor.html"
-    _install_compressed(front_end_target, yui_dir, editor_filename, "editor_all_uncompressed.js")
+    _install_compressed(editor_filename, "editor_all.js")
     
     dashboard_filename = front_end_target / "dashboard.html"
-    _install_compressed(front_end_target, yui_dir, dashboard_filename, "dashboard_all_uncompressed.js")
+    _install_compressed(dashboard_filename, "dashboard_all.js")
     
     index_filename = front_end_target / "index.html"
-    _install_compressed(front_end_target, yui_dir, index_filename, "index_all_uncompressed.js")
+    _install_compressed(index_filename, "index_all.js")
     
+    final_util_directory = front_end_target / "js" / "util"
+    final_util_directory.rmtree()
+
+        
 @task
 def prod_server():
     """Creates the production server code."""
     current_directory = path.getcwd()
     replaced_lines = dry("Updating Python version number", update_python_version)
-    path("backend/python").chdir()
-    sh("bin/paver production")
-    current_directory.chdir()
-    dry("Restoring Python version number", restore_python_version, replaced_lines)
+    try:
+        path("backend/python").chdir()
+        call_pavement("pavement.py", "production")
+    finally:
+        current_directory.chdir()
+        dry("Restoring Python version number", restore_python_version, replaced_lines)
 
-# disabled task, needs to be updated for Dojo    
-# @task
-# @needs(['prod_server'])
+@task
+@needs(['prod_server'])
 def dist():
     """Generate a tarball that is ready for deployment to the server."""
     options.build_dir.rmtree()
     backend = path("backend/python/production")
     backend.copytree(options.build_dir)
-    copy_front_end()
     compress_js()
     docs = path("docs")
     docs.copytree(options.build_dir / "docs")
@@ -444,13 +429,18 @@ def license():
             _apply_header_if_necessary(f, header, first_line, last_line)
     
 @task
+@cmdopts([('source', 's', "Grab a Dojo source release")])
 def dojo(options):
-    """Download Dojo and install it to the correct location."""
-    destfile = path(urlparse(options.download_url).path)
+    """Download Dojo and install it to the correct location.
+    Provide the -s switch if you will need the Dojo source package
+    to either build production-ready packages of Bespin or
+    to debug Dojo issues."""
+    download_url = options.src_url if options.source else options.download_url
+    destfile = path(urlparse(download_url).path)
     destfile = path("ext") / destfile.basename()
     if not destfile.exists():
         info("Downloading Dojo to " + destfile)
-        datafile = urllib2.urlopen(options.download_url)
+        datafile = urllib2.urlopen(download_url)
         output_file = open(destfile, "w")
         output_file.write(datafile.read())
         output_file.close()
@@ -461,16 +451,18 @@ def dojo(options):
     dojo = destination / "dojo"
     dijit = destination / "dijit"
     dojox = destination / "dojox"
+    util = destination / "util"
     
     dojo.rmtree()
     dijit.rmtree()
     dojox.rmtree()
+    util.rmtree()
     
     dojotar = tarfile.open(destfile)
     i = 1
     for member in dojotar.getmembers():
         name = member.name
-        if name.endswith("/"):
+        if member.type == tarfile.DIRTYPE:
             continue
         dropped_root = name.split('/')[1:]
         

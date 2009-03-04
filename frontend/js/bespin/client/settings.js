@@ -377,8 +377,9 @@ dojo.declare("bespin.client.settings.Events", null, {
             var split = file.name.split('.');
             var type = split[split.length - 1]; 
 
-            if (type)
+            if (type) {
                 bespin.publish("bespin:settings:syntax", { language: type });
+            }
         });
 
         // ** {{{ Event: bespin:settings:set:syntax }}} **
@@ -507,7 +508,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
                 if (project && (_editSession.project != project)) {
-                    bespin.publish("bespin:editor:project:set", { project: project });
+                    bespin.publish("bespin:project:set", { project: project });
                 }
 
                 if (path) {

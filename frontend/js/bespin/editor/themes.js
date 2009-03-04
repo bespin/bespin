@@ -75,7 +75,8 @@ bespin.editor.themes.coffee = {
     sizes: "#990000",
     cssclass: "#BF9464",
     cssid: "#46a8ed"
-}
+};
+
 // ** Coffee Zebra Theme **
 bespin.editor.themes.coffeezebra = {};
 dojo.mixin(bespin.editor.themes.coffeezebra, bespin.editor.themes.coffee);
@@ -126,7 +127,7 @@ bespin.editor.themes.white = {
     important: "#990000",
     cssclass: "#BF9464",
     cssid: "#bdae9d"
-}
+};
 
 // ** White Zebra Theme **
 bespin.editor.themes.whitezebra = {};
@@ -179,7 +180,8 @@ bespin.editor.themes.black = {
     important: "#990000",
     cssclass: "#BF9464",
     cssid: "#bdae9d"
-}
+};
+
 // ** Black Zebra Theme **
 bespin.editor.themes.blackzebra = {};
 dojo.mixin(bespin.editor.themes.blackzebra, bespin.editor.themes.black); 

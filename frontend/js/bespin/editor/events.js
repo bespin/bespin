@@ -78,6 +78,22 @@ bespin.subscribe("bespin:editor:forceopenfile", function(event) {
     _files.forceOpenFile(project, filename, content);
 });
 
+// ** {{{ Event: bespin:editor:newfile }}} **
+// 
+// Observe a request for a new file to be created
+bespin.subscribe("bespin:editor:newfile", function(event) {
+    var project = event.project || _editSession.project; 
+    var newfilename = event.newfilename || "new.txt";
+    
+    _files.newFile(project, newfilename, function() {
+        bespin.publish("bespin:editor:openfile:opensuccess", { file: {
+            name: newfilename,
+            content: " ",
+            timestamp: new Date().getTime()
+        }});
+    });        
+});
+
 // ** {{{ Event: bespin:editor:savefile }}} **
 // 
 // Observe a request for a file to be saved and start the cycle:
@@ -144,3 +160,17 @@ bespin.subscribe("bespin:editor:urlchange", function(event) {
     window.location.hash = "project=" + project + "&path=" + path;
 });
 
+// ** {{{ Event: bespin:session:status }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:session:status", function(event) {
+    var file = _editSession.path || 'a new scratch file';
+    self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
+});
+
+// ** {{{ Event: bespin:url:changed }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:url:changed", function(event) {
+    bespin.publish("bespin:editor:openfile", { filename: event.now.get('path') });
+});

@@ -30,6 +30,8 @@ bespin.subscribe("bespin:project:imported", function(event) {
 });
 
 bespin.subscribe("bespin:project:set", function(event) {
+    _editSession.project = event.project; // set it in the session
+
     bespin.dashboard.refreshProjects(); // get projects
 });
 
@@ -39,4 +41,34 @@ bespin.subscribe("bespin:project:create", function(event) {
 
 bespin.subscribe("bespin:project:delete", function(event) {
     bespin.dashboard.refreshProjects(); // get projects
+});
+
+// ** {{{ Event: bespin:session:status }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:session:status", function(event) {
+    var msg = 'Hey ' + _editSession.username;
+    
+    if (_editSession.project) {
+        msg += ', you appear to be highlighting the project ' + _editSession.projectForDisplay();
+    } else {
+        msg += ", you haven't select a project yet.";
+    }
+    
+    bespin.publish("bespin:cmdline:showinfo", { msg: msg });
+});
+
+// ** {{{ Event: bespin:editor:newfile }}} **
+// 
+// Observe a request for a new file to be created
+bespin.subscribe("bespin:editor:newfile", function(event) {
+    var project = event.project;
+    if (!project) {
+        bespin.publish("bespin:cmdline:showinfo", { msg: 'The new file action requires a project' });
+        return;
+    }
+    
+    var newfilename = event.newfilename || "new.txt";
+    
+    bespin.util.navigate.editor(project, newfilename);
 });

@@ -59,9 +59,11 @@ bespin.cmd.commands.add({
     completeText: 'optionally, narrow down the search',
     execute: function(self, extra) {
         var commands = [];
+        var command, name;
+
         if (self.commands[extra]) { // caught a real command
             commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
-            var command = self.commands[extra];
+            command = self.commands[extra];
             commands.push(command['description'] ? command.description : command.preview);
         } else {
             var showHidden = false;
@@ -83,14 +85,14 @@ bespin.cmd.commands.add({
             var sorted = tobesorted.sort();
             
             for (var i = 0; i < sorted.length; i++) {
-                var name = sorted[i];
-                var command = self.commands[name];
+                name = sorted[i];
+                command = self.commands[name];
 
                 if (!showHidden && command.hidden) continue;
                 if (extra && name.indexOf(extra) != 0) continue;
 
-                var arguments = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-                commands.push('<b>' + name + arguments + '</b>: ' + command.preview);
+                var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
+                commands.push('<b>' + name + args + '</b>: ' + command.preview);
             }
         }
         self.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
@@ -172,8 +174,7 @@ bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(self) {
-      var file = _editSession.path || 'a new scratch file';
-      self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
+        bespin.publish("bespin:session:status");
     }
 });
 
@@ -185,7 +186,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            bespin.publish("bespin:editor:project:set", { project: projectname });
+            bespin.publish("bespin:project:set", { project: projectname });
         } else {
             self.executeCommand('status');
         }
@@ -397,7 +398,7 @@ bespin.cmd.commands.add({
     //aliases: ['new'],
     takes: ['filename', 'project'],
     preview: 'create a new buffer for file',
-    completeText: 'optionally, name the new filename',
+    completeText: 'optionally, name the new filename first, and then the name of the project second',
     withKey: "CTRL SHIFT N",
     execute: function(self, args) {
         if (args.filename) {
@@ -494,7 +495,7 @@ bespin.cmd.commands.add({
     completeText: 'add the line number to move to',
     execute: function(self, linenumber) {
         if (linenumber) {
-            var linenumAsInt = parseInt(linenumber) - 1;
+            var linenumAsInt = parseInt(linenumber, 10) - 1; // parse the line number as a decimal
             
             self.editor.moveCursor({ row: linenumAsInt, col: 0 });
             
@@ -528,7 +529,7 @@ bespin.cmd.commands.add({
     takes: {
         order: ['username', 'password'],
         username: {
-            "short": 'u',
+            "short": 'u'
         },
         password: {
             "short": 'p',
@@ -653,6 +654,8 @@ bespin.cmd.commands.add({
     // * import http://foo.com/path/to/archive.zip projectName
     // * import projectName http://foo.com/path/to/archive.zip
     execute: function(self, args) {
+        var project, url;
+
         // Fail fast. Nothing given?
         if (!args.url) {
             self.showUsage(this);
@@ -662,8 +665,8 @@ bespin.cmd.commands.add({
             args.project = this.calculateProjectName(args.url);
         // * Oops, project and url are the wrong way around. That's fine
         } else if (this.isURL(args.project)) {
-            var project = args.project;
-            var url = args.url;
+            project = args.project;
+            url = args.url;
             args.project = url;
             args.url = project;
         // * Make sure that a URL came along at some point
@@ -672,8 +675,8 @@ bespin.cmd.commands.add({
             return;            
         }
         
-        var project = args.project;
-        var url = args.url;
+        project = args.project;
+        url = args.url;
 
         self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
@@ -818,12 +821,12 @@ bespin.cmd.commands.add({
               output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
               self.aliases[key] = value;
           } else {
-              output += "Sorry, no command or alias with that name."
+              output += "Sorry, no command or alias with that name.";
           }
         }
       }
       self.showInfo(output);
-    },
+    }
 });
 
 // ** {{{Command: history}}} **

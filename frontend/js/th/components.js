@@ -145,7 +145,7 @@ dojo.declare("th.components.Scrollbar", th.Container, {
 
             var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
             var extent_top = Math.floor(this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) ));
-            this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length }
+            this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length };
         } else {
 
         }
@@ -335,18 +335,18 @@ dojo.declare("th.components.Splitter", th.Container, {
         if (!this.attributes.orientation) this.attributes.orientation = (this.bounds.height > this.bounds.width) ? th.HORIZONTAL : th.VERTICAL;
 
         if (this.attributes.orientation == th.HORIZONTAL) {
-            this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w }
-            this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w }
+            this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w };
+            this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w };
 
             if (this.scrollbar && this.scrollbar.shouldLayout()) {
                 this.scrollbar.bounds = { x: 0, y: this.topNib.bounds.height, height: d.b.h - (this.topNib.bounds.height * 2), width: d.b.w };
             }
         } else {
-            this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h }
-            this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h }
+            this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h };
+            this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h };
 
             if (this.label) {
-                this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) }
+                this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) };
             }
         }
     },
@@ -413,9 +413,9 @@ dojo.declare("th.components.SplitPanelContainer", th.components.Panel, {
         // only the first non-splitter child is laid out
         if (childrenWithoutSplitter.length > 0) {
             if (this.attributes.orientation == th.HORIZONTAL) {
-                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength }
+                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height, width: this.bounds.width - slength };
             } else {
-                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width }
+                childrenWithoutSplitter[0].bounds = { x: 0, y: 0, height: this.bounds.height - slength, width: this.bounds.width };
             }
         }
     }
@@ -459,7 +459,8 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
             - put the value of the contents property of region into the container if necessary
             - hide the splitter on the last region
          */
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        var i;
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
             if (!region.container) {
                 region.container = new th.components.SplitPanelContainer({ attributes: { orientation: this.attributes.orientation }, label: region.label });
@@ -488,7 +489,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
 
         // size the regions
         var totalSize = 0;
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var r = this.attributes.regions[i];
 
             if (!r.size) {
@@ -507,7 +508,7 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
         }
         if (totalSize > containerSize) {   // if the regions are bigger than the split pane size, shrink 'em, right-to-left
             var diff = totalSize - containerSize;
-            for (var i = this.attributes.regions.length - 1; i >= 0; i--) {
+            for (i = this.attributes.regions.length - 1; i >= 0; i--) {
                 var r = this.attributes.regions[i];
 
                 var originalSize = r.size;
@@ -518,11 +519,11 @@ dojo.declare("th.components.SplitPanel", th.components.Panel, {
                 if (diff <= 0) break;
             }
         } else if (totalSize < containerSize) {    // if the regions are smaller, grow 'em, all in the last one
-            var r = this.attributes.regions[this.attributes.regions.length - 1].size += (containerSize - totalSize);
+            this.attributes.regions[this.attributes.regions.length - 1].size += (containerSize - totalSize);
         }
 
         var startPx = 0;
-        for (var i = 0; i < this.attributes.regions.length; i++) {
+        for (i = 0; i < this.attributes.regions.length; i++) {
             var region = this.attributes.regions[i];
             if (this.attributes.orientation == th.HORIZONTAL) {
                 region.container.bounds = { x: startPx, y: 0, width: region.size, height: this.bounds.height };
@@ -592,7 +593,10 @@ dojo.declare("th.components.Label", th.components.Panel, {
             lastLength -= 1;
         }
 
-        ctx.fillText(textToRender, this.getInsets().left, this.getInsets().top + textMetrics.ascent);
+        var y = this.getInsets().top + textMetrics.ascent;
+        if (dojo.isWebKit) y += 1;  // strings are one pixel too high in Safari 4 and Webkit nightly
+
+        ctx.fillText(textToRender, this.getInsets().left, y);
     }
 });
 
@@ -668,6 +672,29 @@ dojo.declare("th.components.List", th.Container, {
             this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
             this.repaint();
         }
+    },
+    
+    // be carefull! This does NOT fire the "itemselected" event!!!
+    selectItemByText: function(text) {
+        if (this.items.length == 0)  return false;
+        var item = null;
+        if (dojo.isObject(this.items[0])) {
+            for(var x = 0; x < this.items.length; x++) {
+                if(this.items[x].name == text) {
+                    item = this.items[x];
+                    break;
+                }
+            }
+            if (item == null)    return false;
+        } else {
+            if(this.items.indexOf(text) == -1)   return false;
+            item = this.items[this.items.indexOf(text)];
+        }
+
+        this.selected = item;
+        this.repaint();
+
+        return true;
     },
 
     getItemForPosition: function(pos) {
@@ -835,6 +862,22 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
             this.showChildren(parent, parent.contents);
         }
     },
+    
+    replaceList: function(index, contents) {
+        var list = this.createList(contents);
+        list.id = "list " + (index + 1);
+
+        this.bus.bind("click", list, this.itemSelected, this);
+        var tree = this;
+        this.bus.bind("dblclick", list, function(e) {
+            tree.bus.fire("dblclick", e, tree);
+        });
+        
+        this.lists[index] = list;
+        this.replace(list, index * 2)
+        
+        this.render();
+    },
 
     showChildren: function(newItem, children) {
         if (this.details) {
@@ -918,7 +961,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         return path;
     },
 
-    itemSelected: function(e) {
+    itemSelected: function(e) {        
         var list = e.thComponent;
 
         // add check to ensure that list has an item selected; otherwise, bail
@@ -947,7 +990,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         }
 
         // determine whether to display new list of children or details of selection
-        var newItem = this.getItem(path);
+        var newItem = path[path.length-1];
         if (newItem && newItem.contents) {
             this.showChildren(newItem, newItem.contents);
         } else {
@@ -1003,4 +1046,520 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
             ctx.fillRect(0, 0, d.b.w, d.b.h);
         }
     }
+});
+
+dojo.declare("th.components.TextArea", th.Container, {
+    /* Some definitions:
+     * Visual line - a phisical line visible on the editor
+     * Text line - The "logical" text is divided into lines of text
+     *      which were originally seperated by newlines (\n)
+     *
+     * For example - if a Text-Line is too long, it gets split into
+     * several Visual-Lines
+     *
+     * TODO: make this class compatible with mozilla's coding style
+     */
+    constructor: function(parms) {
+        this.leftPadding = 10;
+        this.rightPadding = 10 + 16; // the 16 is for the scrollbar. TODO: scrollbar size should not be hardcoded
+        this.style = parms.style || {};
+        this.lines = [];
+        this.font = this.style.font;
+        // the current position of the cursor
+        this.cursor = {
+                row: 0,     // row in screen coordinates
+                col: 0,     // column in screen coordinates
+                line: 0,    // current text line
+                offset: 0   // offset in text line
+        };
+        // THE FOLLOWING IS BAD!!! This needs to pass through TH's event bus
+        // I had no alternative here because the keydown event has no (x,y) location
+        // and so according to how the event bus works it can not be assigned to any
+        // specific object. Because of this, the event will not be dispatched.
+        dojo.connect(window, "keypress", this, this.onkeypress);
+        dojo.connect(window, "keydown", this, this.onkeydown);
+        // fvl := First Visible Line
+        this.fvl = 0;
+        
+        // a flag that indicates wheter it is necessary to recalculate the
+        // character dimensions
+        this.recalcCharSize = true;
+
+        this.scrollbar = new th.components.Scrollbar2();
+        this.scrollbar.style = this.style;
+        this.scrollbar.scrollable = this;
+        this.scrollbar.opaque = false;
+        this.add(this.scrollbar);
+        this.totalNumberOfLines = 0;
+    },
+
+    getScrollInfo: function() {
+        return {offset: this.fvl, span: this.totalNumberOfLines, scope: this.vlc};
+    },
+
+    addText: function(text) {
+        if (typeof text == "string") {
+            var lines = text.split('\n'); // split the text along newlines
+            for (var k = 0; k < lines.length; k++)
+                this.lines.push(lines[k]);
+        }
+        // whenever adding text, we change the span of the text-area
+        // the scrollbar needs to be notified
+        this.scrollbar.layout();
+    },
+
+    paintLine: function(ctx, index, offset) {
+        var line = this.lines[index];
+        ctx.fillText(line.substr(offset*this.vll, this.vll), 0, 0);
+    },
+
+    setFont: function(font) {
+        this.font = font;
+        this.recalcCharSize = true;
+    },
+
+    layout: function() {
+        var d = this.d();
+        this.h = d.b.h;
+        this.w = d.b.w;
+        // set the scrollbar bounds
+        // TODO: the "16" should not be hardcoded
+        this.scrollbar.bounds = { x: this.w - 16, y: 0, height: d.b.h, width: 16};
+        // Calculate line-height and char-width using the Scene's scratch context
+        if (this.recalcCharSize) {
+            var tmpctx = this.getScratchContext();
+            tmpctx.font = this.font;
+            this.charSize = tmpctx.measureText("a");
+            this.recalcCharSize = false;
+        }
+        // I have no idea what ascent means, but in the old editor
+        // implementation, the height is 2.8 times the ascent
+        this.charSize.height = Math.floor(this.charSize.ascent * 2.8);
+
+        this.scrollbar.increment = 1;
+
+        // effw := Effective Width (textarea width sans the left&right padding)
+        this.effw = this.w - this.leftPadding - this.rightPadding;
+        // vll := Visual Line Length
+        this.vll = Math.floor(this.effw / this.charSize.width);
+        // vlc := Visible Lines Count
+        this.vlc = Math.floor(this.h / this.charSize.height);
+        // calculate total number of lines (wrapped)
+        this.totalNumberOfLines = 0;
+        for (var k = 0; k < this.lines.length; k++)
+            this.totalNumberOfLines += this.numberOfLines(k);
+    },
+
+    scrollUp: function(delta) {
+        if (delta > this.fvl) {
+            delta = this.fvl;
+            this.fvl = 0;
+        } else {
+            this.fvl -= delta;
+        }
+        if (this.cursor.row < this.vlc - delta) 
+            this.cursor.row += delta;
+        else {
+            this.cursor.row = this.vlc - 1;
+            var old_offset = this.cursor.offset;
+            var refLine = this.getTextLine(this.fvl + this.vlc - 1);
+            var new_offset = this.lines[refLine.index].length;
+            this.cursor.line = refLine.index;
+            this.cursor.offset = Math.min(old_offset, new_offset);
+            this.cursor.col = this.cursor.offset % this.vll;
+        }
+    },
+
+    scrollDown: function(delta) {
+        if (this.fvl + this.vlc + delta > this.totalNumberOfLines) {
+            this.fvl = this.totalNumberOfLines - this.vlc;
+            delta = this.totalNumberOfLines - (this.fvl + this.vlc);
+        } else {
+            this.fvl += delta;
+        }
+        if (this.cursor.row > delta)
+            this.cursor.row -= delta;
+        else {
+            this.cursor.row = 0;
+            var old_offset = this.cursor.offset;
+            var refLine = this.getTextLine(this.fvl);
+            var new_offset = this.lines[refLine.index].length;
+            this.cursor.line = refLine.index;
+            this.cursor.offset = Math.min(old_offset, new_offset);
+            this.cursor.col = this.cursor.offset % this.vll;
+        }
+    },
+
+    moveLeft: function() {
+        if (this.cursor.offset > 0) {
+            this.cursor.offset--;
+            if (this.cursor.col > 0) {
+                this.cursor.col--;
+            } else { // I assume (this.cursor.col == 0)
+                this.cursor.col = this.vll - 1;
+                this.cursor.row--;
+            }
+        } else { // I assume (this.cursor.offset == 0)
+            // this also implies that (this.cursor.col == 0)
+            // Handle going up one line
+            // Two options :
+            //  1. I'm in the first line, so do nothing
+            //  2. Some other line, in which case, the cursor should be on
+            //      end of the previous line
+            if (this.cursor.line > 0) {
+                this.cursor.line--;
+                // put the cursor at the very end of the line, so that new
+                // text added will be added at the end of the line
+                this.cursor.offset = this.lines[this.cursor.line].length;
+                this.cursor.col = this.cursor.offset % this.vll;
+                this.cursor.row--;
+            }
+        }
+    },
+
+    moveRight: function() {
+        if (this.cursor.offset < this.lines[this.cursor.line].length) {
+            this.cursor.offset++;
+            if (this.cursor.col < this.vll - 1) {
+                this.cursor.col++;
+            } else { // I assume (this.cursor.col == this.vll - 1)
+                this.cursor.col = 0;
+                this.cursor.row++;
+            }
+        } else { // I assume (this.cursor.offset == line.length)
+            // I don't care what this.cursor.col is....or should I?
+            // Handle going down one line
+            // Two options :
+            //  1. I'm in the last line, so do nothing
+            //  2. Some other line, in which case, the cursor should be on
+            //      beginning of the next line
+            if (this.cursor.line < this.lines.length) {
+                this.cursor.line++;
+                this.cursor.offset = 0;
+                this.cursor.col = 0;
+                this.cursor.row++;
+            }
+        }
+    },
+
+    moveDown: function() {
+        if (this.cursor.line < this.lines.length - 1) {
+            this.cursor.line++;
+
+            var old_offset = this.cursor.offset;
+            var line = this.cursor.line;
+            var new_offset = Math.min(old_offset, this.lines[line].length);
+            var row_offset = Math.floor(old_offset / this.vll) -
+                    Math.floor(new_offset / this.vll) +
+                    this.numberOfLines(line - 1);
+            this.cursor.row += row_offset;
+            this.cursor.offset = new_offset;
+            this.cursor.col = new_offset % this.vll;
+        }
+    },
+
+    moveUp: function() {
+        if (this.cursor.line > 0) {
+            this.cursor.line--;
+
+            var old_offset = this.cursor.offset;
+            var line = this.cursor.line;
+            var new_offset = Math.min(old_offset, this.lines[line].length);
+            var row_offset = Math.floor(old_offset / this.vll) -
+                    Math.floor(new_offset / this.vll) +
+                    this.numberOfLines(line);
+            this.cursor.row -= row_offset;
+            this.cursor.offset = new_offset;
+            this.cursor.col = new_offset % this.vll;
+        }
+    },
+
+    onkeydown: function(e) {
+        if (e.keyCode >= 37 && e.keyCode <= 40) {
+            // save the first visible line of the editor, so that if it
+            // changes after interaction with the user, the scrollbar needs
+            // to be notified
+            var fvl_before = this.fvl;
+            // left
+            if (e.keyCode == 37) this.moveLeft();
+            // right
+            if (e.keyCode == 39) this.moveRight();
+            // up
+            if (e.keyCode == 38) this.moveUp();
+            // down
+            if (e.keyCode == 40) this.moveDown();
+            // handle scrolling
+            if (this.cursor.row < 0) {
+                if (-this.cursor.row > this.fvl)
+                    this.fvl = 0;
+                else {
+                    this.fvl += this.cursor.row;
+                    this.cursor.row = 0;
+                }            
+            } else if (this.cursor.row >= this.vlc) {
+                if (this.fvl + this.cursor.row + 1 > this.totalNumberOfLines)
+                    this.fvl = this.totalNumberOfLines - 1;
+                else {
+                    this.fvl += this.cursor.row - this.vlc + 1;
+                    this.cursor.row = this.vlc - 1;
+                }
+            }
+            if (this.fvl != fvl_before)
+                this.scrollbar.layout();
+            this.repaint();
+            dojo.stopEvent(e);
+        }
+    },
+
+    onkeypress: function(e) {
+        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
+            var ch = String.fromCharCode(e.charCode);
+            var textLine = this.cursor.line;
+            var textCol = this.cursor.offset;
+            var line = this.lines[textLine];
+            if (this.cursor.offset > this.lines[this.cursor.line].length)
+                this.lines[textLine] = line + ch;
+            else
+                this.lines[textLine] = line.substring(0, textCol) + ch +
+                    line.substring(textCol, line.length);
+            this.moveRight();
+            this.repaint();
+            dojo.stopEvent(e);
+        }
+    },
+
+    paintCursor: function(ctx) {
+        ctx.fillStyle = this.style.color;
+        //cvpx, cvpy := cursor visual position x/y
+        var cvpx = this.leftPadding + this.charSize.width * this.cursor.col;
+        var cvpy = this.charSize.height * this.cursor.row;
+        ctx.fillRect(cvpx, cvpy, 1, this.charSize.height);
+    },
+
+    numberOfLines: function(k) {
+        // return the number of wrapped lines in text entry 'k'
+        if (k < 0)
+            return Math.ceil(this.lines[0].length / this.vll);
+        if (this.lines[k].length == 0)
+            return 1;
+        return Math.ceil(this.lines[k].length / this.vll);
+    },
+
+    getTextLine: function(visual_line) {
+        // For a visual line, find the text line to which it belongs
+        var k = 0;
+        var count = 0;
+        while (count <= visual_line) {
+            if (k == this.lines.length)
+                return {index: k-1, offset: this.numberOfLines(k-1)};
+
+            count += this.numberOfLines(k);
+            k++;
+        }
+        count -= this.numberOfLines(k-1);
+        return {index:k-1, offset: visual_line - count};
+    },
+
+    paintSelf: function(ctx) {
+        this.paintCursor(ctx);
+        // draw the text
+        // TODO: I'm not so sure about how to calculate the vertical offset
+        ctx.font = this.font;
+        ctx.fillStyle = this.style.color;
+        var verticalOffset = this.charSize.height * 3 / 4;
+
+        var firstLine = this.getTextLine(this.fvl);
+        var lastLine = this.getTextLine(this.fvl + this.vlc);
+        var k, startOffset, endOffset;
+        ctx.save();
+        ctx.translate(this.leftPadding, this.charSize.height * 3 / 4);
+        // If the screen contains just one line, just render from offset to offset
+        if (firstLine.index == lastLine.index) {
+            k = firstLine.index
+            for (var l = firstLine.offset; l < lastLine.offset; l++) {
+                this.paintLine(ctx, k, l);
+                ctx.translate(0, this.charSize.height);
+            }
+        } else {
+            // paint the first line (from offset)
+            k = firstLine.index;
+            startOffset = firstLine.offset;
+            endOffset = this.numberOfLines(k);
+            for (var l = startOffset; l < endOffset; l++) {
+                this.paintLine(ctx, k, l);
+                ctx.translate(0, this.charSize.height);
+            }
+            // paint the lines in between (whole)
+            k++;
+            for (k; k < lastLine.index; k++) {
+                endOffset = this.numberOfLines(k);
+                for (l = 0; l < endOffset; l++) {
+                    this.paintLine(ctx, k, l);
+                    ctx.translate(0, this.charSize.height);
+                }
+            }
+            // paint the last line (up-to offset)
+            k = lastLine.index;
+            startOffset = 0;
+            endOffset = lastLine.offset;
+            for (l = startOffset; l < endOffset; l++) {
+                this.paintLine(ctx, k, l);
+                ctx.translate(0, this.charSize.height);
+            }
+        }
+        ctx.restore();
+    }
+});
+
+/* Scrollbar2 - the next generation
+ * The main changes:
+ *  1. This scrollbar maps from the scrollable's "value" space to the
+ *      scrollbar's pixel space, as opposed to "th.components.Scrollbar"
+ *      which maps from the scrollable's pixel space to the scrollbar's
+ *      pixel space.
+ *  2. This scrollbar does not interfere with the scrollable's properties
+ *      but instead, interacts with it using two entry functions:
+ *      scrollUp and scrollDown which take as an argument the number of
+ *      "value units" the scrollable has to move
+ */
+dojo.declare("th.components.Scrollbar2", th.Container, {
+    constructor: function(parms) {
+        if (!parms) parms = {};
+        this.orientation = parms.orientation || th.VERTICAL;
+        this.value = parms.value || 0;
+        this.min = parms.min || 0;
+        this.max = parms.max || 100;
+        this.increment = parms.increment || 2;
+
+        this.up = new th.components.Button();
+        this.down = new th.components.Button();
+        this.bar = new th.components.Button();
+        this.add([ this.up, this.down, this.bar ]);
+
+        this.bus.bind("click", this.up, this.scrollup, this);
+        this.bus.bind("click", this.down, this.scrolldown, this);
+        this.bus.bind("mousedrag", this.bar, this.onmousedrag, this);
+        this.bus.bind("mouseup", this.bar, this.onmouseup, this);
+    },
+
+    onmousedrag: function(e) {
+        var currentPosition = (this.orientation == th.VERTICAL) ? e.clientY : e.clientX;
+
+        if (this.dragstart_mouse === undefined) {
+            this.dragstart_mouse = currentPosition;
+            return;
+        }
+
+        // difference in pixels; needs to be translated to a difference in value
+        var diff = currentPosition - this.dragstart_mouse;
+        this.dragstart_mouse = currentPosition;
+        
+        // the difference in the value
+        var delta;
+        // Math.floor works differently for negative and positive numbers
+        // (it rounds towards -infinity), so if diff is negative, it will
+        // scroll "slower" than it would if delta is positive.
+        // To correct it, I seperate handling according to the sign of diff.
+        if (diff > 0)
+            delta = Math.floor(diff / this.ratio);
+        else
+            delta = -Math.floor(-diff / this.ratio);
+
+        this.value += delta;
+        if (this.value < this.min) this.value = this.min;
+        if (this.value > this.max) this.value = this.max;
+        this.layout();
+        if (this.scrollable) 
+            if (delta > 0)
+                this.scrollable.scrollDown(delta);
+            else
+                this.scrollable.scrollUp(-delta);
+        this.repaint();
+        if (this.scrollable) this.scrollable.repaint();
+    },
+
+    onmouseup: function(e) {
+        delete this.dragstart_value;
+        delete this.dragstart_mouse;
+    },
+
+    scrollup: function(e) {
+        if (this.value > this.min) {
+            this.value = Math.min(this.min, this.value - this.increment);
+            if (this.scrollable) this.scrollable.scrollUp(this.increment);
+            this.render();
+            if (this.scrollable) this.scrollable.repaint();
+        }
+    },
+
+    scrolldown: function(e) {
+        if (this.value < this.max) {
+            this.value = Math.min(this.max, this.value + this.increment);
+            if (this.scrollable) this.scrollable.scrollDown(this.increment);
+            this.render();
+            if (this.scrollable) this.scrollable.repaint();
+        }
+    },
+
+    layout: function() {
+        var d = this.d();
+
+        // check if there's a scrollable attached; if so, refresh state
+        if (this.scrollable !== undefined) {
+            // si := scrollable info
+            var si = this.scrollable.getScrollInfo();
+            var scrollbar_span = d.b.ih - this.up.bounds.height - this.down.bounds.height
+            this.min = 0;
+            this.max = si.span - si.scope;
+            this.scope = si.scope;
+            this.ratio = scrollbar_span / si.span;
+            this.value = si.offset;
+        }
+
+        // if the maximum value is less than the minimum, we're in an invalid state and won't paint anything
+        if (this.max < this.min) {
+            for (var i = 0; i < this.children.length; i++) delete this.children[i].bounds;
+            return;
+        }
+
+        if (this.orientation == th.VERTICAL) {
+            var w = d.b.iw;
+            var h = 12;
+            this.up.bounds = { x: d.i.l + 1, y: d.i.t, width: w, height: h };
+            this.down.bounds = { x: d.i.l + 1, y: d.b.ih - h, width: w, height: h };
+
+            var bar_length = Math.floor(this.ratio * this.scope);
+            var bar_top = Math.floor(this.up.bounds.height + this.ratio * this.value);
+
+            this.bar.bounds = { x: d.i.l + 1, y: bar_top, width: d.b.iw, height: bar_length }
+        } else {
+
+        }
+    },
+
+    paint: function(ctx) {
+        if (this.max < 0) return;
+
+        // paint the track
+        if (this.style.scrollTopImage)
+            ctx.drawImage(this.style.scrollTopImage, 1, this.up.bounds.height);
+        if (this.style.scrollMiddleImage)
+            ctx.drawImage(this.style.scrollMiddleImage, 1,
+                    this.up.bounds.height + this.style.scrollTopImage.height,
+                    this.style.scrollMiddleImage.width,
+                    this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
+        if (this.style.scrollBottomImage)
+            ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
+
+        // propagate the styles to the children if not already there
+        if (this.style.scrollHandleTopImage && !this.bar.style.topImage) {
+            this.bar.style.topImage = this.style.scrollHandleTopImage;
+            this.bar.style.middleImage = this.style.scrollHandleMiddleImage;
+            this.bar.style.bottomImage = this.style.scrollHandleBottomImage;
+            this.up.style.backgroundImage = this.style.scrollUpArrow;
+            this.down.style.backgroundImage = this.style.scrollDownArrow;
+        }
+
+        this.inherited(arguments);
+    }     
 });

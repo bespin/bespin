@@ -41,8 +41,8 @@ dojo.require("bespin.util.urlbar");
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");
 dojo.require("bespin.client.status");
-dojo.require("bespin.client.server"); 
-dojo.require("bespin.client.session");  
+dojo.require("bespin.client.server");
+dojo.require("bespin.client.session");
 
 dojo.require("bespin.editor.actions");
 dojo.require("bespin.editor.editor");

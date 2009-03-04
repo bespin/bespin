@@ -69,7 +69,7 @@ bespin.util.include = function(array, item) {
     return dojo.indexOf(array, item) > -1;
 }
 
-// = include =
+// = last =
 //
 // A la Prototype last().
 bespin.util.last = function(array) {
@@ -89,12 +89,12 @@ bespin.util.shrinkArray = function(array) {
         }
 
         stillAtBeginning = false;
-        
+
         newArray.push(item);
     });
-    
+
     return newArray.reverse();
-}
+};
 
 // = makeArray =
 //
@@ -103,13 +103,13 @@ bespin.util.shrinkArray = function(array) {
 bespin.util.makeArray = function(number, character) {
     if (number < 1) return []; // give us a normal number please!
     if (!character) character = ' ';
-    
+
     var newArray = [];
     for (var i = 0; i < number; i++) {
         newArray.push(character);
     }
     return newArray;
-}
+};
 
 // = leadingSpaces =
 //
@@ -127,4 +127,4 @@ bespin.util.leadingSpaces = function(row) {
         }
     }
     return numspaces;
-}
+};

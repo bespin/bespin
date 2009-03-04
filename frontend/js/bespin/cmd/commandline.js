@@ -272,13 +272,14 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         });
         
         dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
+            var command;
             if (e.keyChar >= "A".charCodeAt() && e.keyChar < "Z".charCodeAt()) { // only real letters
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
                     var isAutoComplete = _settings.isOn(_settings.get('autocomplete'));
                     if (isAutoComplete && completions.length == 1) { // if only one just set the value
-                        var command = this.commands[commandString] || this.commands[this.aliases[commandString]];
+                        command = this.commands[commandString] || this.commands[this.aliases[commandString]];
 
                         var spacing = (this.commandTakesArgs(command)) ? ' ' : '';
                         dojo.byId('command').value = commandString + spacing;
@@ -292,7 +293,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                         if (completions[0] != dojo.byId('command').value) {
                             this.showInfo(completions.join(', '));
                         } else {
-                            var command = this.commands[completions[0]] || this.commands[this.aliases[completions[0]]];
+                            command = this.commands[completions[0]] || this.commands[this.aliases[completions[0]]];
 
                             if (this.commandTakesArgs(command)) {
                                 this.complete(dojo.byId('command').value); // make it complete
@@ -488,10 +489,10 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
 
         // -- Projects
-        // ** {{{ Event: bespin:editor:project:set }}} **
+        // ** {{{ Event: bespin:project:set }}} **
         // 
         // When the project changes, alert the user
-        bespin.subscribe("bespin:editor:project:set", function(event) {
+        bespin.subscribe("bespin:project:set", function(event) {
             var project = event.project;
 
             _editSession.project = project;

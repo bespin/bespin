@@ -177,7 +177,7 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
         startCol = (selection.startPos.row < rowIndex) ? 0 : selection.startPos.col;
         endCol = (selection.endPos.row > rowIndex) ? -1 : selection.endPos.col;
 
-        return { startCol: startCol, endCol: endCol }
+        return { startCol: startCol, endCol: endCol };
     }
 }); 
 
@@ -190,7 +190,6 @@ dojo.mixin(bespin.editor, { utils: {
     },
 
     changePos: function(args, pos) {
-        ar
         return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
     },
     
@@ -269,7 +268,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         var handled = _commandLine.handleCommandLineFocus(e);
         if (handled) return false;
 
-        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) }
+        var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) };
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -351,19 +350,19 @@ dojo.declare("bespin.editor.UI", null, {
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
         // combining them like sane people, but... meh
         this.horizontalScrollCanvas = dojo.create("canvas");
-        this.verticalScrollCanvas = dojo.create("canvas");
+        this.verticalScrollCanvas   = dojo.create("canvas");
 
         this.GUTTER_WIDTH = 54;
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 }
-        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 }
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 };
+        this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
         this.NIB_INSETS = { top: Math.floor(this.NIB_WIDTH / 2),
                             left: Math.floor(this.NIB_WIDTH / 2),
                             right: Math.floor(this.NIB_WIDTH / 2),
-                            bottom: Math.floor(this.NIB_WIDTH / 2) }
-        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 }
+                            bottom: Math.floor(this.NIB_WIDTH / 2) };
+        this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
         this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         this.charWidth;         // set first time a paint occurs
@@ -507,7 +506,7 @@ dojo.declare("bespin.editor.UI", null, {
                 if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
                     // For now, don't select anything, but think about copying Textmate and grabbing around it
                 } else {
-                    var startPos = up = this.editor.model.findBefore(down.row, down.col);
+                    var startPos = (up = this.editor.model.findBefore(down.row, down.col));
                     
                     var endPos = this.editor.model.findAfter(down.row, down.col);
                     
@@ -533,7 +532,7 @@ dojo.declare("bespin.editor.UI", null, {
             ui.editor.paint();
         }
 
-        setTimeout(function() { ui.toggleCursor(ui) }, 250);
+        setTimeout(function() { ui.toggleCursor(ui); }, 250);
     },
 
     ensureCursorVisible: function() {

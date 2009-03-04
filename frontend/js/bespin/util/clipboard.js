@@ -159,6 +159,8 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
     install: function() {
         // * Configure the hidden copynpaster element
         var copynpaster = dojo.create("textarea", {
+            tabIndex: '-1',
+            autocomplete: 'off',
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
@@ -166,7 +168,7 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
         var grabAndGo = function(text) {
             dojo.byId('copynpaster').value = text;
             focusSelectAndGo();
-        }
+        };
         
         var focusSelectAndGo = function() {
             dojo.byId('copynpaster').focus();
@@ -174,7 +176,7 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
             setTimeout(function() {
                 dojo.byId('canvas').focus();
             }, 0);
-        }
+        };
         
         this.keyDown = dojo.connect(document, "keydown", function(e) {
             if (e.ctrlKey || e.metaKey) {
@@ -248,7 +250,7 @@ dojo.declare("bespin.util.clipboard.EditorOnly", null, {
 // ** {{{ Bespin.Clipboard.Manual }}} **
 //
 // The ugly hack that tries to use XUL to get work done, but will probably fall through to in-app copy/paste only        
-bespin.util.clipboard.Manual = new function() {
+bespin.util.clipboard.Manual = function() {
     var clipdata;
     
     return {
@@ -323,8 +325,8 @@ bespin.util.clipboard.Manual = new function() {
 
             clip.getData(trans, clip.kGlobalClipboard);
 
-            var str       = new Object();
-            var strLength = new Object();
+            var str       = {};
+            var strLength = {};
             var pastetext = "";
 
             trans.getTransferData("text/unicode", str, strLength);
@@ -332,5 +334,5 @@ bespin.util.clipboard.Manual = new function() {
             if (str) pastetext = str.data.substring(0, strLength.value / 2);
             return pastetext;
         }
-    }
+    };
 }();

@@ -123,6 +123,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     currentSheet: 0,
     cssLoaded: false,
     renderRequested: false,
+    suppressPaintAndRender: false,
 
     constructor: function(canvas) {
         this.canvas = canvas;
@@ -187,6 +188,9 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     render: function() { 
+        if (this.suppressPaintAndRender) {
+            return;
+        }
         if (!this.cssLoaded) { 
             this.renderRequested = true;
             return;
@@ -202,7 +206,10 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
         }
     },
 
-    paint: function(component) {        
+    paint: function(component) {
+        if (this.suppressPaintAndRender) {
+            return;
+        }
         if (!this.cssLoaded) {
             this.renderRequested = true;
             return;
@@ -354,6 +361,12 @@ dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
                 if (old_length != this.children.length) delete component[i].parent;
             }
         }
+    },
+    
+    replace: function(component, index) {
+        this.bus.unbind(this.children[index]);
+        component.parent = this;
+        this.children[index] = component;
     },
 
     paint: function(ctx) {
