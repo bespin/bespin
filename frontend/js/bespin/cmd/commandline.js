@@ -496,7 +496,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             var project = event.project;
 
             _editSession.project = project;
-            commandline.showInfo('Changed project to ' + project, true);
+            if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
         });
 
     }
