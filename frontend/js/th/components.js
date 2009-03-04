@@ -878,6 +878,20 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         
         this.render();
     },
+    
+    removeListsFrom: function(index) {
+        for (var x = index; x < this.lists.length; x++)
+        {
+            this.bus.unbind(this.lists[x]);
+            this.bus.unbind(this.splitters[x]);
+
+            this.remove(this.lists[x]);
+            this.remove(this.splitters[x]);            
+        }
+        
+        this.lists = this.lists.slice(0, index);
+        this.splitters = this.splitters.slice(0, index);        
+    },
 
     showChildren: function(newItem, children) {
         if (this.details) {
@@ -962,6 +976,10 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
     },
 
     itemSelected: function(e) {        
+        var newPath = bespin.dashboard.getSelectedPath();
+        bespin.dashboard.lastSelectedPath = newPath;
+        location.hash = '#pathSelected=' + newPath;
+
         var list = e.thComponent;
 
         // add check to ensure that list has an item selected; otherwise, bail
