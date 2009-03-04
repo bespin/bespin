@@ -357,6 +357,9 @@ def compress_js():
     
     index_filename = front_end_target / "index.html"
     _install_compressed(index_filename, "index_all.js")
+    
+    final_util_directory = front_end_target / "js" / "util"
+    final_util_directory.rmtree()
 
         
 @task
@@ -364,20 +367,20 @@ def prod_server():
     """Creates the production server code."""
     current_directory = path.getcwd()
     replaced_lines = dry("Updating Python version number", update_python_version)
-    path("backend/python").chdir()
-    sh("bin/paver production")
-    current_directory.chdir()
+    try:
+        path("backend/python").chdir()
+        call_pavement("pavement.py", "production")
+    finally:
+        current_directory.chdir()
     dry("Restoring Python version number", restore_python_version, replaced_lines)
 
-# disabled task, needs to be updated for Dojo    
-# @task
-# @needs(['prod_server'])
+@task
+@needs(['prod_server'])
 def dist():
     """Generate a tarball that is ready for deployment to the server."""
     options.build_dir.rmtree()
     backend = path("backend/python/production")
     backend.copytree(options.build_dir)
-    copy_front_end()
     compress_js()
     docs = path("docs")
     docs.copytree(options.build_dir / "docs")
