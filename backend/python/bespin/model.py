@@ -193,9 +193,9 @@ class File(Base):
     def mimetype(self):
         """Returns the mimetype of the file, or application/octet-stream 
         if it cannot be guessed."""
-        t = mimetypes.guess_type(self.name)
-        if t and t[0] is not None:
-            return t[0]
+        type, encoding = mimetypes.guess_type(self.name)
+        if type:
+            return type
         return "application/octet-stream"
                      
     def __repr__(self):
