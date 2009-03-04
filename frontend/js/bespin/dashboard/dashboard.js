@@ -367,8 +367,7 @@ dojo.provide("bespin.dashboard.dashboard");
             location.hash = '#path=' + bespin.dashboard.projects.list.selected;
             currentProject = e.item;
             _server.list(e.item, null, bd.displayFiles);
-            bespin.publish("bespin:project:set", { project: currentProject });
-            bespin.publish("bespin:editor:project:set", { project: currentProject });
+            bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true });
         });
 
         // setup the command line
