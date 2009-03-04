@@ -54,8 +54,9 @@ dojo.provide("bespin.util.navigate");
 
     dojo.mixin(bespin.util.navigate, {
         dashboard: function(newTab) {
-            if (dojo.byId('hrefDashboard')) {
-                go(dojo.byId('hrefDashboard').href, newTab);    // this contains the pathSelected parameter!
+            var pathSelected = (new bespin.client.settings.URL()).get('pathSelected')
+            if (pathSelected) {
+                go("dashboard.html#pathSelected="+pathSelected, newTab);    // this contains the pathSelected parameter!
             } else {
                 go("dashboard.html", newTab);
             }
