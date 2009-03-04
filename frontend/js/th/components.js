@@ -978,7 +978,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
     itemSelected: function(e) {        
         var newPath = bespin.dashboard.getSelectedPath();
         bespin.dashboard.lastSelectedPath = newPath;
-        location.hash = '#pathSelected=' + newPath;
+        location.hash = '#path=' + newPath;
 
         var list = e.thComponent;
 
