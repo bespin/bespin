@@ -372,7 +372,7 @@ def prod_server():
         call_pavement("pavement.py", "production")
     finally:
         current_directory.chdir()
-    dry("Restoring Python version number", restore_python_version, replaced_lines)
+        dry("Restoring Python version number", restore_python_version, replaced_lines)
 
 @task
 @needs(['prod_server'])
