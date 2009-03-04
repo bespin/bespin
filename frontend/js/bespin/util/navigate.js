@@ -54,9 +54,9 @@ dojo.provide("bespin.util.navigate");
 
     dojo.mixin(bespin.util.navigate, {
         dashboard: function(newTab) {
-            var pathSelected = (new bespin.client.settings.URL()).get('pathSelected')
+            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath')
             if (pathSelected) {
-                go("dashboard.html#pathSelected="+pathSelected, newTab);    // this contains the pathSelected parameter!
+                go("dashboard.html#path="+pathSelected, newTab);    // this contains the pathSelected parameter!
             } else {
                 go("dashboard.html", newTab);
             }
@@ -77,7 +77,7 @@ dojo.provide("bespin.util.navigate");
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
             var selectedPath = bespin.dashboard.getSelectedPath();
-            if (selectedPath)   args.push('pathSelected='+selectedPath);
+            if (selectedPath)   args.push('fromDashboardPath='+selectedPath);
 
             if (args.length > 0) url += args.join("&");
 
