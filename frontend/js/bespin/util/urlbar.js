@@ -22,25 +22,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.util.urlbar");   
+dojo.provide("bespin.util.urlbar");
 
 // = URLBar =
 //
-// URLBar watches the browser URL navigation bar for changes. 
+// URLBar watches the browser URL navigation bar for changes.
 // If it sees a change it tries to open the file
 // The common case is using the back/forward buttons
 dojo.mixin(bespin.util.urlbar, {
     last: document.location.hash,
-    check: function() {                         
+    check: function() {
         var hash = document.location.hash;
         if (this.last != hash) {
             var urlchange = new bespin.client.settings.URL(hash);
             bespin.publish("bespin:url:changed", { was: this.last, now: urlchange });
             this.last = hash;
         }
-    },
+    }
 });
 
-setInterval(function() {  
+setInterval(function() {
     dojo.hitch(bespin.util.urlbar, "check")();
 }, 200);
