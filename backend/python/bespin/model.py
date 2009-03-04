@@ -194,7 +194,7 @@ class File(Base):
         """Returns the mimetype of the file, or application/octet-stream 
         if it cannot be guessed."""
         t = mimetypes.guess_type(self.name)
-        if t:
+        if t and t[0] is not None:
             return t[0]
         return "application/octet-stream"
                      

@@ -625,12 +625,16 @@ def test_preview_mode():
     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
     fm.save_file(macgyver, bigmac, "README.txt", 
         "This is the readme file.")
+    fm.save_file(macgyver, bigmac, "foo.flibber", "Can't guess what this is!")
     fm.session.commit()
     
     resp = app.get("/preview/at/bigmac/", status=404)
     resp = app.get("/preview/at/bigmac/README.txt")
     assert resp.body == "This is the readme file."
     assert resp.content_type == "text/plain"
+    
+    resp = app.get("/preview/at/bigmac/foo.flibber")
+    assert resp.content_type == "application/octet-stream"
     
     fm.save_file(macgyver, bigmac, "index.html",
         "<html><body>Simple HTML file</body></html>")
