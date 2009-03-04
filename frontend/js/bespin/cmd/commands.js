@@ -495,7 +495,7 @@ bespin.cmd.commands.add({
     completeText: 'add the line number to move to',
     execute: function(self, linenumber) {
         if (linenumber) {
-            var linenumAsInt = parseInt(linenumber) - 1;
+            var linenumAsInt = parseInt(linenumber, 10) - 1; // parse the line number as a decimal
             
             self.editor.moveCursor({ row: linenumAsInt, col: 0 });
             
