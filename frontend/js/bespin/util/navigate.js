@@ -25,6 +25,8 @@
 
 dojo.provide("bespin.util.navigate");
 
+dojo.require("bespin.client.settings");
+
 // = Navigate =
 //
 // Simple wrapper to force navigation to a project URL without all using location.href
