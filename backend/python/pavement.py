@@ -85,7 +85,7 @@ def production():
         non_production_packages.add(name)
         external_libs.append("libs/%s" % (f.basename()))
         
-    sh("bin/pip freeze -r requirements.txt %s" % (production_requirements))
+    sh("../../bin/pip freeze -r ../../requirements.txt %s" % (production_requirements))
     
     lines = production_requirements.lines()
     
@@ -115,6 +115,8 @@ def production():
     production_requirements.write_lines(lines)
     
     production.chdir()
-    sh("../bin/paver bootstrap")
-    current_directory.chdir()
+    try:
+        call_pavement("pavement.py", "bootstrap")
+    finally:
+        current_directory.chdir()
     
