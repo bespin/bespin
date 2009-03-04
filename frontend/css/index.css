@@ -211,7 +211,7 @@ body {
     color: #ff9600;
 }
 
-#overlay {
+#opaque {
     z-index: 10;
     position: absolute;
     width: 100%;
@@ -261,7 +261,7 @@ body {
     cursor: pointer;
 }
 
-#centerpopup {
+#register_border {
     z-index: 20;
     background: url("../images/background_white_50.png");
     position: absolute;

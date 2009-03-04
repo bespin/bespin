@@ -32,10 +32,7 @@ import os
 from setuptools import find_packages
 from paver.setuputils import find_package_data
 
-from paver.easy import *
-from paver import setuputils
-setuputils.install_distutils_tasks()
-
+from paver.defaults import *
 
 execfile(os.path.join('bespin', '__init__.py'))
 
@@ -65,6 +62,8 @@ def required():
 @needs(['sdist'])
 def production():
     """Gets things ready for production."""
+    current_directory = path.getcwd()
+    
     non_production_packages = set(["py", "WebTest", "boto", "virtualenv", 
                                   "Paver", "BespinServer"])
     production = path("production")
@@ -86,6 +85,8 @@ def production():
         non_production_packages.add(name)
         external_libs.append("libs/%s" % (f.basename()))
         
+    sh("../../bin/pip freeze -r ../../requirements.txt %s" % (production_requirements))
+    
     lines = production_requirements.lines()
     
     requirement_pattern = re.compile(r'^(.*)==')
@@ -113,5 +114,9 @@ def production():
     lines.extend(external_libs)
     production_requirements.write_lines(lines)
     
-    call_pavement("production/pavement.py", "bootstrap")
+    production.chdir()
+    try:
+        call_pavement("pavement.py", "bootstrap")
+    finally:
+        current_directory.chdir()
     

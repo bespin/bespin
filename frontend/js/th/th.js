@@ -123,69 +123,72 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     currentSheet: 0,
     cssLoaded: false,
     renderRequested: false,
-    renderAllowed: true,
+    suppressPaintAndRender: false,
 
     constructor: function(canvas) {
         this.canvas = canvas;
 
-        dojo.connect(window, "resize", dojo.hitch(this, function() {
-            this.render();
-        })); 
-
+        var self = this;
+        dojo.connect(window, "resize", function(){
+            self.render();
+        }); 
+        
         this.root = new th.components.Panel({ id: "root", style: {
 //            backgroundColor: "pink" // for debugging         
         } });
         this.root.scene = this; 
-
+        
         var testCanvas = document.createElement("canvas");
         this.scratchContext = testCanvas.getContext("2d");
         bespin.util.canvas.fix(this.scratchContext);
 
-        dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
-            this.wrapEvent(e, this.root);
+        var self = this;
+        
+        dojo.connect(window, "mousedown", function(e) {
+            self.wrapEvent(e, self.root);
 
-            this.mouseDownComponent = e.thComponent;
+            self.mouseDownComponent = e.thComponent;
 
             th.global_event_bus.fire("mousedown", e, e.thComponent);
-        }));
+        });
 
-        dojo.connect(window, "dblclick", dojo.hitch(this, function(e) {
-            this.wrapEvent(e, this.root);
+        dojo.connect(window, "dblclick", function(e) {
+            self.wrapEvent(e, self.root);
 
             th.global_event_bus.fire("dblclick", e, e.thComponent);
-        }));
+        });
 
-        dojo.connect(window, "click", dojo.hitch(this, function(e) {
-            this.wrapEvent(e, this.root);
+        dojo.connect(window, "click", function(e) {
+            self.wrapEvent(e, self.root);
 
             th.global_event_bus.fire("click", e, e.thComponent);
-        }));
+        });
 
-        dojo.connect(window, "mousemove", dojo.hitch(this, function(e) {
-            this.wrapEvent(e, this.root);
+        dojo.connect(window, "mousemove", function(e) {
+            self.wrapEvent(e, self.root);
 
             th.global_event_bus.fire("mousemove", e, e.thComponent);
 
-            if (this.mouseDownComponent) {
-                this.addComponentXY(e, this.root, this.mouseDownComponent);
-                th.global_event_bus.fire("mousedrag", e, this.mouseDownComponent);
+            if (self.mouseDownComponent) {
+                self.addComponentXY(e, self.root, self.mouseDownComponent);
+                th.global_event_bus.fire("mousedrag", e, self.mouseDownComponent);
             }
-        }));
+        });
 
-        dojo.connect(window, "mouseup", dojo.hitch(this, function(e) {
-            if (!this.mouseDownComponent) return;
+        dojo.connect(window, "mouseup", function(e) {
+            if (!self.mouseDownComponent) return;
 
-            this.addComponentXY(e, this.root, this.mouseDownComponent);
-            th.global_event_bus.fire("mouseup", e, this.mouseDownComponent);
+            self.addComponentXY(e, self.root, self.mouseDownComponent);
+            th.global_event_bus.fire("mouseup", e, self.mouseDownComponent);
 
-            delete this.mouseDownComponent;
-        }));
+            delete self.mouseDownComponent;
+        });
 
         this.parseCSS();
     },
 
-    render: function(forceRendering) { 
-        if (!this.renderAllowed && !forceRendering) {
+    render: function() { 
+        if (this.suppressPaintAndRender) {
             return;
         }
         if (!this.cssLoaded) { 
@@ -204,6 +207,9 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     paint: function(component) {
+        if (this.suppressPaintAndRender) {
+            return;
+        }
         if (!this.cssLoaded) {
             this.renderRequested = true;
             return;

@@ -28,15 +28,9 @@ dojo.provide("bespin.editor.model");
 //
 // The editor has a model of the data that it works with. 
 // This representation is encapsulated in Bespin.Editor.DocumentModel
-dojo.declare("bespin.editor.DocumentModel", null, {
+dojo.declare("bespin.editor.DocumentModel", null, { 
     constructor: function() {
         this.rows = [];
-    },
-
-    isEmpty: function() {
-        if (this.rows.length > 1) return false;
-        if (this.rows.length == 1 && this.rows[0].length > 0) return false;
-        return true;
     },
 
     getDirtyRows: function() {
@@ -48,11 +42,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     setRowDirty: function(row) {
         if (!this.dirtyRows) this.dirtyRows = new Array(this.rows.length);
         this.dirtyRows[row] = true;
-    },
-
-    isRowDirty: function(row) {
-        if (!this.dirtyRows) return true;
-        return this.dirtyRows[row];
     },
 
     setRowArray: function(rowIndex, row) {
@@ -181,6 +170,13 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);
+    },
+
+    // returns the maximum number of columns across all rows
+    getMaxCols: function() {
+        var cols = 0;
+        for (var i = 0; i < this.rows.length; i++) cols = Math.max(cols, this.rows[i].length);
+        return cols;
     },
 
     // returns the number of rows in the model
@@ -314,4 +310,5 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         
         return { row: row, col: col };
     }
+
 });

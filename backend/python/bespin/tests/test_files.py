@@ -31,13 +31,14 @@ from cStringIO import StringIO
 import tarfile
 import zipfile
 from datetime import datetime, timedelta
+import shutil
 
 from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
 
-from bespin.model import File, Project, User, FileStatus, Directory
+from bespin.model import File, Project, User, FileStatus
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -57,13 +58,20 @@ def setup_module(module):
     
 def _get_fm():
     global macgyver, someone_else, murdoc
+    fsroot = config.c.fsroot
+    if os.path.exists(fsroot):
+        # perform a sanity check to make sure we're not going to just stat
+        # deleting everything!
+        testdir = os.path.abspath("%s/../../" % os.path.dirname(__file__))
+        assert fsroot.startswith(testdir)
+        shutil.rmtree(fsroot)
     config.activate_profile()
     app.reset()
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = model.UserManager(s)
-    file_manager = model.FileManager(s)
+    file_manager = model.FSFileManager(fsroot, 0)
     db = model.DB(user_manager, file_manager)
     someone_else = user_manager.create_user("SomeoneElse", "", "someone@else.com")
     murdoc = user_manager.create_user("Murdoc", "", "murdoc@badpeople.bad")

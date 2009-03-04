@@ -30,13 +30,9 @@ bespin.subscribe("bespin:project:imported", function(event) {
 });
 
 bespin.subscribe("bespin:project:set", function(event) {
-    bespin.get('editSession').project = event.project; // set it in the session
-    
-    if (!event.fromDashboardItemSelected) {
-        // selects the project in the tree and fire the itemselected event    
-        bespin.dashboard.tree.lists[0].selectItemByText(event.project);
-        bespin.dashboard.tree.itemSelected({thComponent: bespin.dashboard.tree.lists[0], item: bespin.dashboard.tree.lists[0].selected});
-    }
+    _editSession.project = event.project; // set it in the session
+
+    bespin.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:create", function(event) {
@@ -51,11 +47,10 @@ bespin.subscribe("bespin:project:delete", function(event) {
 // 
 // Observe a request for session status
 bespin.subscribe("bespin:session:status", function(event) {
-    var editSession = bespin.get('editSession');
-    var msg = 'Hey ' + editSession.username;
+    var msg = 'Hey ' + _editSession.username;
     
-    if (editSession.project) {
-        msg += ', you appear to be highlighting the project ' + editSession.project;
+    if (_editSession.project) {
+        msg += ', you appear to be highlighting the project ' + _editSession.projectForDisplay();
     } else {
         msg += ", you haven't select a project yet.";
     }
