@@ -124,7 +124,7 @@ dojo.addOnLoad(function(){
 //
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
-    _editSession.username = userinfo.username;
+    _editSession.setUserinfo(userinfo);
     
     _settings    = new bespin.client.settings.Core();
     _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.editorcommands.Commands);
