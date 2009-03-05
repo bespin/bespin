@@ -254,8 +254,19 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     bindKeyString: function(modifiers, keyCode, action) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
-        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1) || (modifiers.toUpperCase().indexOf("CMD") != -1);
+        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1);
         var shiftKey = (modifiers.toUpperCase().indexOf("SHIFT") != -1);
+        
+        // Check for the platform specific key type
+        // The magic "CMD" means metaKey for Mac (the APPLE or COMMAND key)
+        // and ctrlKey for Windows (CONTROL)
+        if (modifiers.toUpperCase().indexOf("CMD") != -1) {
+            if (bespin.util.isMac()) {
+                metaKey = true;
+            } else {
+                ctrlKey = true;
+            }
+        }
         return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
     },
     
@@ -647,13 +658,13 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
         listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
 
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
         listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
@@ -664,14 +675,12 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
 
-        listener.bindKeyString("APPLE", Key.A, this.actions.selectAll);
-        listener.bindKeyString("CTRL", Key.A, this.actions.selectAll);
+        listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
 
-        listener.bindKeyString("APPLE", Key.Z, this.actions.undoRedo);
-        listener.bindKeyString("CTRL", Key.Z, this.actions.undoRedo);
+        listener.bindKeyString("CMD", Key.Z, this.actions.undoRedo);
 
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
@@ -1372,7 +1381,11 @@ dojo.declare("bespin.editor.Events", null, {
             var action = editor.ui.actions[event.action] || event.action;
 
             if (keyCode && action) {
-                editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
+                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action);
+                } else {
+                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                }
             }
         });
 
