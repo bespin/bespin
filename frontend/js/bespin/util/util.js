@@ -128,3 +128,14 @@ bespin.util.leadingSpaces = function(row) {
     }
     return numspaces;
 };
+
+// = isMac =
+//
+// I hate doing this, but we need some way to determine if the user is on a Mac
+// The reason is that users have different expectations of their key combinations.
+//
+// Take copy as an example, Mac people expect to use CMD or APPLE + C
+// Windows folks expect to use CTRL + C
+bespin.util.isMac = function() {
+    return navigator.appVersion.indexOf("Macintosh") >= 0;
+}
