@@ -24,8 +24,9 @@
 
 dojo.provide("bespin.user.utils");
 
-// Utility functions for the Bespin front page.
-
+// = Utility functions for the Bespin front page =
+//
+// Dealing with login on the front page of the site and beyond
 
 dojo.mixin(bespin.user.utils, {
     whenLoginSucceeded: function() {
