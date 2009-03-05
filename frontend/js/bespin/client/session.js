@@ -47,8 +47,13 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
     
     projectForDisplay: function(testProject) {
-        var project = testProject || this.project;
-        return project;
+        return testProject || this.project;
+    },
+
+    setUserinfo: function(userinfo) {
+        this.username = userinfo.username;
+        this.amountUsed = userinfo.amountUsed;
+        this.quota = userinfo.quota;
     },
     
     checkSameFile: function(project, path) {
