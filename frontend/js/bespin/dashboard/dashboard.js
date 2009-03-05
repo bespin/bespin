@@ -54,7 +54,8 @@ dojo.provide("bespin.dashboard.dashboard");
         },
         
         loggedIn: function(userinfo)  {
-            _editSession.username = userinfo.username;
+            _editSession.setUserinfo(userinfo);
+
             _server.list(null, null, bd.displayProjects); // get projects
             _server.listOpen(bd.displaySessions); // get sessions
         },

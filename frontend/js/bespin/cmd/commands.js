@@ -603,6 +603,15 @@ bespin.cmd.commands.add({
     }
 });
 
+// ** {{{Command: quota}}} **
+bespin.cmd.commands.add({
+    name: 'quota',
+    preview: 'show your quota info',
+    execute: function(self) {
+        self.showInfo("You have used " + _editSession.amountUsed + " bytes out of your " + _editSession.quota + " quota");
+    }
+});
+
 // ** {{{Command: export}}} **
 bespin.cmd.commands.add({
     name: 'export',
@@ -613,7 +622,7 @@ bespin.cmd.commands.add({
         var project = args.project || _editSession.project;
         
         var type = args.archivetype;
-        if (!bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
+        if (!bespin.util.include(['zip','tgz','tar.gz'], type)) {
             type = 'zip';
         }
 
