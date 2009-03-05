@@ -123,7 +123,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     currentSheet: 0,
     cssLoaded: false,
     renderRequested: false,
-    renderSuppressed: false,
+    renderAllowed: true,
 
     constructor: function(canvas) {
         this.canvas = canvas;
@@ -188,7 +188,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     render: function(forceRendering) { 
-        if (this.renderSuppressed && !forceRendering) {
+        if (!this.renderAllowed && !forceRendering) {
             return;
         }
         if (!this.cssLoaded) { 

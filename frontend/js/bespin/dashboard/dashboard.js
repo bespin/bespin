@@ -150,77 +150,79 @@ dojo.provide("bespin.dashboard.dashboard");
             var oldPath = bd.lastSelectedPath;
             bd.lastSelectedPath = newPath;
                         
-            if (newPath == oldPath && newPath != '') return;     // the path has to be changed
+            if (newPath == oldPath && newPath != '') return;     // the path has not changed
 
-            var pathSelected = newPath.split('/');
-            var projectSelected = pathSelected.shift();
-            projects.list.selectItemByText(projectSelected);    // this also perform a rendering of the project.list
-            currentProject = projectSelected;
+            newPath = newPath.split('/');
+            oldPath = oldPath.split('/');
+            currentProject = newPath[0];
+            
+            scene.renderAllowed = false;
+            
+            projects.list.selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
 
-            if (newPath == '') {
+            if (newPath[0] == '') {
+                // this is true if no path is given via URL
+                bd.tree.removeListsFrom(0);
+                bd.projects.list.selected = null;
+                scene.renderAllowed = true;
                 scene.render();
-                return;   // nothing is selected => there are no files to be loaded! 
+                return;
             } 
 
-            var sameLevel;
-            for (sameLevel = 0; sameLevel < pathSelected.length && sameLevel < tree.lists.length; sameLevel++) {
-                if (!bd.tree.lists[sameLevel].selected || bd.tree.lists[sameLevel].selected.name != pathSelected[sameLevel]) {
-                    break;
-                }
+            var sameLevel = 1;
+            while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel]) {
+                sameLevel ++;
             }
                                                 
-            scene.renderSuppressed = true;
-
-            var fakePath = new Array(pathSelected.length);
-            for (var x = 0; x < pathSelected.length; x++) {
+            var fakePath = new Array(newPath.length);
+            for (var x = 1; x < newPath.length; x++) {
                 var fakeItem = new Object();
-                fakeItem.name = pathSelected[x];
-                if (x != pathSelected.length - 1) {
+                fakeItem.name = newPath[x];
+                if (x != newPath.length - 1) {
                     fakeItem.contents = 'fake';   
                 }
                 if (x > bd.tree.lists.length - 1) {
                    bd.tree.showChildren(null, new Array(fakeItem)); 
                 }  
-                if (pathSelected[x] != '') {
-                    bd.tree.lists[x].selectItemByText(pathSelected[x]);   
+                if (newPath[x] != '') {
+                    bd.tree.lists[x - 1].selectItemByText(newPath[x]);   
                 }
                 fakePath[x] = fakeItem;
             }
             
-            if (pathSelected.length < bd.tree.lists.length) {
-                bd.tree.removeListsFrom(pathSelected.length);
+            if (newPath.length <= bd.tree.lists.length) {
+                bd.tree.removeListsFrom(newPath.length - 1);
             }
-            
-            scene.render(true);
-
-            var pathContents = new Array(pathSelected.length);
+                    
+            var contentsPath = new Array(newPath.length);
             var countSetupPaths = sameLevel;
 
-            // this function should stay here, because this funciton is accessing "pathContents" and "countSetupPaths"
+            // this function should stay here, as this funciton is accessing "pathContents" and "countSetupPaths"
             var displayFetchedFiles = function(files) {
                 // "this" is the callbackData object!
                 var contents =  bd.prepareFilesForTree(files);
-                if (this.listIndex != 0) {
-                    pathContents[this.listIndex] = contents;
+                if (this.index != 0) {
+                    contentsPath[this.listIndex] = contents;
                 }
-                bd.tree.replaceList(this.listIndex, contents);
-                bd.tree.lists[this.listIndex].selectItemByText(this.selectedItem);
+                
+                bd.tree.replaceList(this.index, contents);
+                bd.tree.lists[this.index].selectItemByText(fakePath[this.index + 1].name);
                 countSetupPaths ++;
                 
-                if (countSetupPaths == pathSelected.length) {
-                    for (var x = 0; x < pathSelected.length - 1; x++) {
+                if (countSetupPaths == newPath.length) {
+                    for (var x = 0; x < newPath.length - 1; x++) {
                         // when the path is not restored from the root, then there are contents without contents!
-                        if (pathContents[x + 1]) {
-                            bd.tree.lists[x].selected.contents = pathContents[x + 1];                            
+                        if (contentsPath[x + 1]) {
+                            bd.tree.lists[x].selected.contents = contentsPath[x + 1];                            
                         }
                     }
                 }
             }
 
-            for (var x = sameLevel; x < pathSelected.length; x++) {                                
+            for (var x = sameLevel; x < newPath.length; x++) {                                
                 var selected = (x != 0 ? bd.tree.lists[x - 1].selected : null);
                 if (selected && selected.contents && dojo.isArray(selected.contents)) {
-                    // the content is available => reload from local memory
+                    // restore filelist from local memory (the filelists was ones fetched)
                     if (x > bd.tree.lists.length - 1) {
                         bd.tree.showChildren(null, selected.contents)
                     } else {
@@ -229,19 +231,13 @@ dojo.provide("bespin.dashboard.dashboard");
                     bd.tree.lists[x].selectItemByText(fakePath[x].name);                        
                     countSetupPaths ++;
                 } else {
-                    // load filelist form server
-                    var callbackData = new Object();
-                    callbackData.listIndex = x;
-                    callbackData.selectedItem = fakePath[x].name
-                    
-                    var path = fakePath.slice(0, x);
-                    var filepath = currentProject + "/" + bd.getFilePath(path);
-                    _server.list(filepath, null, dojo.hitch(callbackData, displayFetchedFiles));                    
+                    // load filelist form server                                                            
+                    var filepath = currentProject + "/" + bd.getFilePath(fakePath.slice(1, x));
+                    _server.list(filepath, null, dojo.hitch({index: x - 1}, displayFetchedFiles));                    
                 }
-                
             }
             
-            scene.renderSuppressed = false;
+            scene.renderAllowed = true;
             scene.render();
         },
 
@@ -252,10 +248,10 @@ dojo.provide("bespin.dashboard.dashboard");
             projects.list.items = projectItems;
                         
             // Restore the last selected file
-            var pathSelected =  (new bespin.client.settings.URL()).get('path');
+            var path =  (new bespin.client.settings.URL()).get('path');
             
             if (!bd.lastSelectedPath) {
-                bd.restorePath(pathSelected);
+                bd.restorePath(path);
             } else {
                 scene.render();                
             }
@@ -364,10 +360,10 @@ dojo.provide("bespin.dashboard.dashboard");
         });
 
         scene.bus.bind("itemselected", projects.list, function(e) {
-            bespin.dashboard.lastSelectedPath = bespin.dashboard.projects.list.selected;
-            location.hash = '#path=' + bespin.dashboard.projects.list.selected;
-            currentProject = e.item;
+            bespin.dashboard.lastSelectedPath = e.item + '/';
+            location.hash = '#path=' + e.item + '/';
             _server.list(e.item, null, bd.displayFiles);
+            currentProject = e.item;
             bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true });
         });
 

@@ -659,6 +659,8 @@ dojo.declare("th.components.List", th.Container, {
         this.items = parms.items || [];
 
         this.scrollTop = 0;
+        
+        this.allowDeselection = parms.allowDeselection || false;
 
         this.bus.bind("mousedown", this, this.onmousedown, this);  
         
@@ -668,9 +670,13 @@ dojo.declare("th.components.List", th.Container, {
     onmousedown: function(e) {
         var item = this.getItemForPosition({ x: e.componentX, y: e.componentY });
         if (item != this.selected) {
-            if (item) this.selected = item; else delete this.selected;
-            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
-            this.repaint();
+            if (item) {
+                this.selected = item; 
+                this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+                this.repaint();
+            } else if(this.allowDeselection)  {
+                delete this.selected;
+            }
         }
     },
     
@@ -864,18 +870,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
     },
     
     replaceList: function(index, contents) {
-        var list = this.createList(contents);
-        list.id = "list " + (index + 1);
-
-        this.bus.bind("click", list, this.itemSelected, this);
-        var tree = this;
-        this.bus.bind("dblclick", list, function(e) {
-            tree.bus.fire("dblclick", e, tree);
-        });
-        
-        this.lists[index] = list;
-        this.replace(list, index * 2)
-        
+        this.lists[index].items = contents;
         this.render();
     },
     
@@ -902,7 +897,6 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         if (!dojo.isArray(children)) {
             // if it's not an array, assume it's a function that will load the children
             children(this.getSelectedPath(), this);
-            this.render();
             return;
         }
 
