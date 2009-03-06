@@ -54,8 +54,8 @@ log = logging.getLogger("bespin.model")
 
 Base = declarative_base()
 
-# quotas are expressed in 1 million byte increments
-QUOTA_UNITS = 1000000
+# quotas are expressed in 1 megabyte increments
+QUOTA_UNITS = 1048576
 
 class ConflictError(Exception):
     pass
