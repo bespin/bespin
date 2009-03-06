@@ -436,7 +436,7 @@ dojo.declare("bespin.editor.UI", null, {
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -449,7 +449,7 @@ dojo.declare("bespin.editor.UI", null, {
             var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
             x = Math.floor(tx / this.charWidth);
             
-            // With striclines turned on, don't select past the end of the line
+            // With strictlines turned on, don't select past the end of the line
             if (_settings.isOn(_settings.get('strictlines'))) {
                 var maxcol = this.editor.model.getRowLength(y);
             
@@ -458,7 +458,6 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
         }
-        
         return { col: x, row: y };
     },
 
@@ -677,7 +676,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
 
-        listener.bindKeyString("CMD", Key.Z, this.actions.undoRedo);
+        listener.bindKeyString("CMD", Key.Z, this.actions.undo);
+        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo);
 
         listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
         listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
@@ -1287,6 +1287,8 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     moveCursor: function(newpos) {
+        if (!newpos) return; // guard against a bad position (certain redo did this)
+
         var row = Math.min(newpos.row, this.model.getRowCount() - 1); // last row if you go over
         if (row < 0) row = 0; // can't move negative off screen
         this.cursorPosition = { row: row, col: newpos.col };

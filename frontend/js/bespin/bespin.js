@@ -39,7 +39,7 @@ dojo.provide("bespin.bespin");
 dojo.mixin(bespin, {
     // BEGIN VERSION BLOCK
     versionNumber: 'tip',
-    versionCodename: '(none)',
+    versionCodename: 'DEVELOPMENT MODE',
     apiVersion: 'dev',
     // END VERSION BLOCK
     
