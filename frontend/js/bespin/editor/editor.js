@@ -934,6 +934,8 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
+            var lineText = this.editor.model.getRowString(currentLine);
+
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
@@ -941,7 +943,8 @@ dojo.declare("bespin.editor.UI", null, {
 //            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
-            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
+
+            var lineInfo = this.syntaxModel.getSyntaxStyles(lineText, currentLine, this.editor.language);
             
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
@@ -1288,9 +1291,26 @@ dojo.declare("bespin.editor.API", null, {
 
     moveCursor: function(newpos) {
         if (!newpos) return; // guard against a bad position (certain redo did this)
+        if (newpos.col == undefined) newpos.col = this.cursorPosition.col;
+        if (newpos.row == undefined) newpos.row = this.cursorPosition.row;
+
+        var oldpos = this.cursorPosition;
 
         var row = Math.min(newpos.row, this.model.getRowCount() - 1); // last row if you go over
         if (row < 0) row = 0; // can't move negative off screen
+
+        var invalid = this.model.isInvalidCursorPosition(row, newpos.col);
+        if (invalid) {
+            if (oldpos.col < newpos.col) {
+                newpos.col = invalid.right;
+            } else if (oldpos.col > newpos.col) {
+                newpos.col = invalid.left;
+            } else {
+                // default
+                newpos.col = invalid.left;
+            }
+        }
+
         this.cursorPosition = { row: row, col: newpos.col };
     },
 

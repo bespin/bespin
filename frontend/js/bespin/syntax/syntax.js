@@ -91,7 +91,7 @@ dojo.declare("bespin.syntax.Model", null, {
     // This is the main API.
     //
     // Given the line number and syntax type (e.g. css, js, html) hunt down the engine, ask it to syntax highlight, and return the regions
-    getSyntaxStyles: function(lineNumber, syntaxType) {
+    getSyntaxStyles: function(lineText, lineNumber, syntaxType) {
         if (this.syntaxType != syntaxType) {
             this.invalidateEntireCache();
             this.engine = bespin.syntax.EngineResolver.resolve(syntaxType);
@@ -102,10 +102,8 @@ dojo.declare("bespin.syntax.Model", null, {
         }
 
         // Get the row contents as one string
-        var line = this.editor.model.getRowArray(lineNumber).join("");
-
         var syntaxResult = { // setup the result
-            text: line,
+            text: lineText,
             regions: []
         };
 
@@ -114,13 +112,13 @@ dojo.declare("bespin.syntax.Model", null, {
         // we have the ability to have subtypes within the main parser
         // E.g. HTML can have JavaScript or CSS within
         if (typeof this.engine['innertypes'] == "function") {
-            var syntaxTypes = this.engine.innertypes(line);
+            var syntaxTypes = this.engine.innertypes(lineText);
 
             for (var i = 0; i < syntaxTypes.length; i++) {
                 var type = syntaxTypes[i];
                 meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
                 var pieceRegions = [];
-                var fromResolver = bespin.syntax.EngineResolver.highlight(type.type, line.substring(type.start, type.stop), meta);
+                var fromResolver = bespin.syntax.EngineResolver.highlight(type.type, lineText.substring(type.start, type.stop), meta);
                 if (fromResolver.meta && (i == syntaxTypes.length - 1) ){
                     this.setLineMetaInfo(lineNumber, fromResolver.meta);
                 }
@@ -129,7 +127,7 @@ dojo.declare("bespin.syntax.Model", null, {
             syntaxResult.regions.push(this.mergeSyntaxResults(pieceRegions));
         } else {
             meta = (lineNumber > 0) ? this.getLineMetaInfo(lineNumber - 1) : {};
-            var result = this.engine.highlight(line, meta);
+            var result = this.engine.highlight(lineText, meta);
             this.setLineMetaInfo(lineNumber, result.meta);
             syntaxResult.regions.push(result.regions);
         }
