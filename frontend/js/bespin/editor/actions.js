@@ -287,14 +287,6 @@ dojo.declare("bespin.editor.Actions", null, {
         this.repaint();
     },
 
-    undoRedo: function(args) {
-        if (! args.event.shiftKey) { // holding down the shift key causes the undo keystroke to be a redo TODO: move this logic to key handler
-            this.undo();
-        } else {
-            this.redo();
-        }
-    },
-
     undo: function() {
         this.editor.undoManager.undo();
     },
