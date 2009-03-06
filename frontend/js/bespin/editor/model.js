@@ -344,13 +344,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var line = this.getRowArray(pos.row);
         var tabspaces = 0;
         var curCol = 0;
-        for (var i = 0; i < Math.min(line.length, pos.col); i++) {
+        for (var i = 0; i < line.length; i++) {
             if (line[i].charCodeAt(0) == 9) {
                 var toInsert = this.tabstop - (curCol % this.tabstop);
                 curCol += toInsert - 1;
                 tabspaces += toInsert - 1;
             }
             curCol++;
+            if (curCol >= pos.col) break;
         }
         if (tabspaces > 0) {
             return { col: pos.col = pos.col - tabspaces, row: pos.row };
