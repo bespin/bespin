@@ -30,7 +30,6 @@
 // {{{ bespin.versionNumber }}} is the core version of the Bespin system
 // {{{ bespin.apiVersion }}} is the version number of the API (to ensure that the
 //                          client and server are talking the same language)
-// {{{ bespin.commandlineHeight }}} is the height of the command line
 // {{{ bespin.displayVersion }}} is a function that sets innerHTML on the element given, with the Bespin version info
 
 
@@ -43,7 +42,6 @@ dojo.mixin(bespin, {
     apiVersion: 'dev',
     // END VERSION BLOCK
     
-    commandlineHeight: 95,
     defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
     
