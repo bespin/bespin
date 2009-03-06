@@ -214,7 +214,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
             c = row.charAt(newcol);
             charCode = c.charCodeAt(0);
-            if (charCode == 32) {
+            if (charCode == 32 /*space*/) {
                 wasSpaces = true;
             } else {
                 newcol++;
@@ -241,7 +241,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     moveWordRight: function(args) {
-        var row = this.editor.model.getRowArray(args.pos.row);
+        var row = this.editor.model.getRowString(args.pos.row);
         var c, charCode;
 
         if (row.length <= args.pos.col) { // -- at the edge so go to the next line
@@ -256,7 +256,7 @@ dojo.declare("bespin.editor.Actions", null, {
         while (newcol < row.length) {
             c = row[newcol];
             charCode = c.charCodeAt(0);
-            if (charCode == 32) {
+            if (charCode == 32 /*space*/) {
                 wasSpaces = true;
                 newcol++;
             } else {
