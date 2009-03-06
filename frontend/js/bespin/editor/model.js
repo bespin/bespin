@@ -337,19 +337,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             }
         }
 
-        if (tabs) {
-            var ds = "";
-            for (var di = 0; di < this.getRowArray(row).length; di++) {
-                if (this.getRowArray(row)[di].charCodeAt(0) == 9) {
-                    ds += "!";
-                } else if (this.getRowArray(row)[di] == " ") {
-                    ds += "_";
-                } else {
-                    ds += this.getRowArray(row)[di];
-                }
-            }
-            console.log("*" + ds + "*");
-        }
         return lineText;
     },
 
@@ -381,7 +368,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             if (line[i].charCodeAt(0) == 9) {
                 var toInsert = this.tabstop - (curCol % this.tabstop);
 
-                //console.log("col: " + col + ", curCol: " + curCol + ", toInsert: " + toInsert + ", tabstop: " + this.tabstop);
                 if (col > curCol && col < (curCol + toInsert)) {
                     return { left: curCol, right: curCol + toInsert };
                 }
