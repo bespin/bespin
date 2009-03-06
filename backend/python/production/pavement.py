@@ -1,4 +1,4 @@
-from paver.defaults import *
+from paver.easy import *
 
 import paver.virtual
 

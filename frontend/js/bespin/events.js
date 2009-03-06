@@ -46,16 +46,6 @@ bespin.subscribe("bespin:editor:titlechange", function(event) {
     document.title = title;
 });
 
-// ** {{{ Event: bespin:cmdline:executed }}} **
-// 
-// Set the last command in the status window
-bespin.subscribe("bespin:cmdline:executed", function(event) {
-    var commandname = event.command.name;
-    var args        = event.args;
-
-    dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
-});
-
 // ** {{{ Event: bespin:editor:evalfile }}} **
 // 
 // Load up the given file and try to run it
@@ -72,7 +62,9 @@ bespin.subscribe("bespin:editor:evalfile", function(event) {
     _files.loadFile(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
+                bespin.publish("bespin:cmdline:suppressinfo");
                 eval(file.content);
+                bespin.publish("bespin:cmdline:unsuppressinfo");
             } catch (e) {
                 _commandLine.showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
             }
@@ -80,9 +72,43 @@ bespin.subscribe("bespin:editor:evalfile", function(event) {
     }, true);
 });
 
+// ** {{{ Event: bespin:editor:preview }}} **
+// 
+// Preview the given file in a browser context
+bespin.subscribe("bespin:editor:preview", function(event) {
+    var filename = event.filename || _editSession.path;  // default to current page
+    var project  = event.project  || _editSession.project; 
+
+    // Make sure to save the file first
+    bespin.publish("bespin:editor:savefile", {
+        filename: filename
+    });
+
+    if (filename) {
+        window.open(bespin.util.path.combine("preview/at", project, filename));
+    }
+});
+
+// ** {{{ Event: bespin:editor:closefile }}} **
+// 
+// Close the given file (wrt the session)
+bespin.subscribe("bespin:editor:closefile", function(event) {
+    var filename = event.filename || _editSession.path;  // default to current page
+    var project  = event.project  || _editSession.project;   
+    
+    _files.closeFile(project, filename, function() {
+        bespin.publish("bespin:editor:closedfile", { filename: filename }); 
+        
+        // if the current file, move on to a new one
+        if (filename == _editSession.path) bespin.publish("bespin:editor:newfile");    
+
+        bespin.publish("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename });
+    });
+});
+
 // ** {{{ Event: bespin:editor:config:run }}} **
-// w
-// Load the user's config file
+//
+// Load and execute the user's config file
 bespin.subscribe("bespin:editor:config:run", function(event) {
     bespin.publish("bespin:editor:evalfile", {
         project: bespin.userSettingsProject,
@@ -103,6 +129,16 @@ bespin.subscribe("bespin:editor:config:edit", function(event) {
         project: bespin.userSettingsProject,
         filename: "config.js"
     });
+});
+
+// ** {{{ Event: bespin:cmdline:executed }}} **
+// 
+// Set the last command in the status window
+bespin.subscribe("bespin:cmdline:executed", function(event) {
+    var commandname = event.command.name;
+    var args        = event.args;
+
+    dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
 });
 
 // ** {{{ Event: bespin:commands:load }}} **
@@ -203,41 +239,6 @@ bespin.subscribe("bespin:commands:delete", function(event) {
     });
 });
 
-
-// ** {{{ Event: bespin:editor:preview }}} **
-// 
-// Preview the given file in a browser context
-bespin.subscribe("bespin:editor:preview", function(event) {
-    var filename = event.filename || _editSession.path;  // default to current page
-    var project  = event.project  || _editSession.project; 
-
-    // Make sure to save the file first
-    bespin.publish("bespin:editor:savefile", {
-        filename: filename
-    });
-
-    if (filename) {
-        window.open(bespin.util.path.combine("preview/at", project, filename));
-    }
-});
-
-// ** {{{ Event: bespin:editor:closefile }}} **
-// 
-// Close the given file (wrt the session)
-bespin.subscribe("bespin:editor:closefile", function(event) {
-    var filename = event.filename || _editSession.path;  // default to current page
-    var project  = event.project  || _editSession.project;   
-    
-    _files.closeFile(project, filename, function() {
-        bespin.publish("bespin:editor:closedfile", { filename: filename }); 
-        
-        // if the current file, move on to a new one
-        if (filename == _editSession.path) bespin.publish("bespin:editor:newfile");    
-
-        bespin.publish("bespin:cmdline:showinfo", { msg: 'Closed file: ' + filename });
-    });
-});
-
 // ** {{{ Event: bespin:directory:create }}} **
 // 
 // Create a new directory
@@ -255,6 +256,9 @@ bespin.subscribe("bespin:directory:create", function(event) {
     });
 });
 
+// ** {{{ Event: bespin:directory:delete }}} **
+// 
+// Delete a directory
 bespin.subscribe("bespin:directory:delete", function(event) {
     var project = event.project || _editSession.project;
     var path = event.path || '';

@@ -124,7 +124,7 @@ bespin.cmd.commands.add({
                 }
             } else {
                 var key = setting.key;
-                if (setting.value == undefined) { // show it
+                if (setting.value === undefined) { // show it
                     var value = self.settings.get(key);
                     if (value) {
                         output = "<u>Your setting</u><br/><br/>";
@@ -603,6 +603,18 @@ bespin.cmd.commands.add({
     }
 });
 
+// ** {{{Command: quota}}} **
+bespin.cmd.commands.add({
+    name: 'quota',
+    preview: 'show your quota info',
+    megabytes: function(bytes) {
+        return (bytes / 1024 / 1024).toFixed(2);
+    },
+    execute: function(self) {
+        self.showInfo("You have used " + this.megabytes(_editSession.amountUsed) + " MB out of your " + this.megabytes(_editSession.quota) + " MB quota");
+    }
+});
+
 // ** {{{Command: export}}} **
 bespin.cmd.commands.add({
     name: 'export',
@@ -613,7 +625,7 @@ bespin.cmd.commands.add({
         var project = args.project || _editSession.project;
         
         var type = args.archivetype;
-        if (!bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
+        if (!bespin.util.include(['zip','tgz','tar.gz'], type)) {
             type = 'zip';
         }
 
@@ -798,7 +810,7 @@ bespin.cmd.commands.add({
           output += x + ": " + self.aliases[x] + "<br/>";
         }
       } else {
-        if (args.command == undefined) { // show it
+        if (args.command === undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
           var alias = self.aliases[args.alias];
           if (alias) {

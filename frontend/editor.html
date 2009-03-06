@@ -31,7 +31,7 @@
 
     <!-- begin script tags -->
 	<script type="text/javascript">
-		var djConfig = { isDebug: false }; 
+		var djConfig = { isDebug: false, debugAtAllCosts: false };
 	</script>   
 
 	<script type="text/javascript" src="js/dojo/dojo.js"></script> 
@@ -47,7 +47,7 @@
         <div id="collab_line"></div>
         <div id="version"></div>
         <a href="index.html" title="Go Home"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
-        <a href="dashboard.html" id="hrefDashboard" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
+        <a href="javascript:bespin.util.navigate.dashboard()" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
         <!-- coming soon -->
         <!--<img id="toolbar_files" src="images/icn_files_off.png" alt="Files" title="Show Files">-->

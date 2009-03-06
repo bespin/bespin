@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.4",
-        name="Nonchalant Nimbus",
+        number="0.1.6",
+        name="Nonchalant Nimbus+",
         api="2"
     ),
     build_top=path("build"),
@@ -367,6 +367,7 @@ def prod_server():
     """Creates the production server code."""
     current_directory = path.getcwd()
     replaced_lines = dry("Updating Python version number", update_python_version)
+    sh("bin/pip freeze -r requirements.txt backend/python/production/requirements.txt")
     try:
         path("backend/python").chdir()
         call_pavement("pavement.py", "production")

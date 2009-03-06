@@ -47,8 +47,13 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
     
     projectForDisplay: function(testProject) {
-        var project = testProject || this.project;
-        return project;
+        return testProject || this.project;
+    },
+
+    setUserinfo: function(userinfo) {
+        this.username = userinfo.username;
+        this.amountUsed = userinfo.amountUsed;
+        this.quota = userinfo.quota;
     },
     
     checkSameFile: function(project, path) {
@@ -102,7 +107,7 @@ dojo.declare("bespin.client.session.SyncHelper", null, {
             var ops = eval(json);
             this.lastOp += ops.length;
 
-            ops.each(function(op) {
+            dojo.forEach(ops, function(op) {
                 if (op.username != _editSession.username) { // don't play operations that have been performed by this user
                     self.playOp(op);
                     _showCollabHotCounter = 20;

@@ -344,12 +344,17 @@ def _perform_import(file_manager, user, project_name, filename, fileobj):
     func(user,
         project, filename, fileobj)
     return
+
+def validate_url(url):
+    if not url.startswith("http://") and not url.startswith("https://"):
+        raise BadRequest("Invalid url: " + url)
+    return url
     
 @expose(r'^/project/fromurl/(?P<project_name>[^/]+)', "POST")
 def import_from_url(request, response):
     project_name = request.kwargs['project_name']
     
-    url = request.body
+    url = validate_url(request.body)
     try:
         resp = httplib2.Http().request(url, method="HEAD")
     except httplib2.HttpLib2Error, e:

@@ -223,7 +223,7 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
             this.oldPaint(ctx);
         };
 
-        this.list = new th.components.List({ style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" } });
+        this.list = new th.components.List({ allowDeselection: false, style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" } });
 
         this.splitter = new th.components.Splitter({ orientation: th.HORIZONTAL });
 
@@ -275,7 +275,5 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
         this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };  
 
         this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
-
-        
     }
 });

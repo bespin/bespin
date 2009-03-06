@@ -68,13 +68,7 @@ dojo.addOnLoad(function(){
     _toolbar.setupDefault();
 
     _editor.setFocus(true);
-  
-    // Adds information for dashboard where to jump back again
-    var urlParameter = dojo.queryToObject(location.hash.substring(1));
-    if (urlParameter.pathSelected) {
-        dojo.byId('hrefDashboard').href = "dashboard.html#pathSelected=" + urlParameter.pathSelected;        
-    }
-      
+        
     // Force a login just in case the user session isn't around
     _server.currentuser(isLoggedIn, isNotLoggedIn);
     
@@ -130,7 +124,7 @@ dojo.addOnLoad(function(){
 //
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
-    _editSession.username = userinfo.username;
+    _editSession.setUserinfo(userinfo);
     
     _settings    = new bespin.client.settings.Core();
     _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.editorcommands.Commands);

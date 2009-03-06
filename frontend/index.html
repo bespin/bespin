@@ -30,6 +30,10 @@
     <link type="text/css" rel="stylesheet" href="css/index.css"/>
 
     <!-- begin script tags -->
+	<script type="text/javascript">
+		var djConfig = { isDebug: false, debugAtAllCosts: false };
+	</script>   
+
 	<script type="text/javascript" src="js/dojo/dojo.js"></script>
 
 	<script type="text/javascript">
@@ -46,7 +50,7 @@
       <form onsubmit="bespin.user.login(); return false;">
           <input id="loginbutton" type="image" src="images/splash_btn_login.gif" />
           <div id="login-holder"><span id="login_label"><a href="#" onclick="bespin.user.register.showForm();">Sign up</a> or log in:</span>
-              <label for="username">Username: </label><input id="username" type="text" /> <label id="psw-label" for="password">Password: </label><input id="password" type="password" /> <div id="status" style="display: none;"></div>
+              <label for="username">Username: </label><input id="username" type="text" /> <label id="psw-label" for="password">Password: </label><input id="password" type="password" maxlength="20"/> <div id="status" style="display: none;"></div>
           </div>
       </form>
   </div>
@@ -92,7 +96,7 @@
       </tr>
       <tr>
         <th>Password:</th>
-        <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
+        <td><input type="password" id="register_password" maxlength="20" onchange="bespin.user.register.checkPassword();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">

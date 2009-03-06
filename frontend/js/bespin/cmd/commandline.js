@@ -47,6 +47,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (window['_editor']) this.editor = _editor;
 
         this.inCommandLine = false;
+        this.suppressInfo = false; // When true, info bar popups will not be shown
         this.commands = {};
         this.aliases = {};
 
@@ -134,8 +135,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var usage = command.usage || "no usage information found for " + command.name;
         this.showInfo("Usage: " + command.name + " " + usage, autohide);
     },
-    
+
     showInfo: function(html, autohide) {
+        if (this.suppressInfo) return; // bypass
+
         this.hideInfo();
 
         dojo.byId('info').innerHTML = html;
@@ -444,6 +447,20 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             if (msg) commandline.showInfo(msg, autohide);
         });
 
+        // ** {{{ Event: bespin:cmdline:suppressinfo }}} **
+        // 
+        // Turn on info bar suppression
+        bespin.subscribe("bespin:cmdline:suppressinfo", function(event) {
+            commandline.suppressInfo = true;
+        });
+
+        // ** {{{ Event: bespin:cmdline:unsuppressinfo }}} **
+        // 
+        // Turn off info bar suppression
+        bespin.subscribe("bespin:cmdline:unsuppressinfo", function(event) {
+            commandline.suppressInfo = false;
+        });
+
         // ** {{{ Event: bespin:cmdline:executed }}} **
         // 
         // Once the command has been executed, do something.
@@ -496,7 +513,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             var project = event.project;
 
             _editSession.project = project;
-            commandline.showInfo('Changed project to ' + project, true);
+            if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
         });
 
     }
