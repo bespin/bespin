@@ -38,7 +38,10 @@ import zipfile
 from datetime import datetime
 import logging
 import re
+from uuid import uuid4
+import shutil
 
+import path
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
@@ -90,11 +93,11 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, default=lambda: str(uuid4()))
     username = Column(String(128), unique=True)
     email = Column(String(128))
     password = Column(String(20))
     settings = Column(PickleType())
-    projects = relation('Project', backref='owner')
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
     
@@ -157,30 +160,13 @@ class FileStatus(Base):
     __tablename__ = "filestatus"
     
     user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
-    file_id = Column(Integer, ForeignKey('files.id', ondelete='cascade'), primary_key=True)
+    filepath = Column(String(700), primary_key=True)
     read_only = Column(Boolean)
-    user = relation(User, backref="files")
     
-class File(Base):
-    __tablename__ = "files"
-    
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id', ondelete='cascade'), nullable=False)
-    project = relation('Project')
-    name = Column(String(700), nullable=False)
-    created = Column(DateTime, default=datetime.now)
-    modified = Column(DateTime, onupdate=datetime.now)
-    saved_size = Column(Integer)
-    data = deferred(Column(Binary))
-    edits = deferred(Column(PickleType))
-    dir_id = Column(Integer, ForeignKey('directories.id', ondelete='cascade'))
-    dir = relation('Directory', backref="files")
-    
-    users = relation(FileStatus,
-                     backref="file")
-                     
-    __table_args__ = (UniqueConstraint("project_id", "name"), {})
-    
+class File(object):
+    def __init__(self, name):
+        pass
+        
     @property
     def short_name(self):
         elems = self.name.rsplit("/", 1)
@@ -201,67 +187,13 @@ class File(Base):
     def __repr__(self):
         return "File: %s" % (self.name)
         
-project_members = Table('members', Base.metadata,
-                        Column('project_id', Integer, ForeignKey('projects.id', ondelete='cascade')),
-                        Column('user_id', Integer, ForeignKey('users.id', ondelete='cascade')))
-    
-class Directory(Base):
-    __tablename__ = "directories"
-    
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id', ondelete='cascade'), nullable=False)
-    project = relation('Project', backref="directories")
-    name = Column(String(700), nullable=False)
-    parent_id = Column(Integer, ForeignKey('directories.id', ondelete='cascade'))
-    subdirs = relation('Directory', backref=backref("parent", 
-                                        remote_side=[id]))
-    
-    __table_args__ = (UniqueConstraint("project_id", "name"), {})
-    
-    
-    @property
-    def short_name(self):
-        return self.name.rsplit("/", 2)[-2] + "/"
-        
-    def __str__(self):
-        return "Dir: %s" % (self.name)
-    
-    __repr__ = __str__
-    
-class Project(Base):
-    __tablename__ = "projects"
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(60), nullable=False)
-    members = relation("User", secondary=project_members, lazy=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), nullable=False)
-    
-    __table_args__ = (UniqueConstraint("user_id", "name"), {})
+class Project(object):
+    def __init__(self, location):
+        self.location = location
     
     def authorize(self, user):
-        log.debug("Checking user %s access to project %s owned by %s with members %s",
-            user, self.name, self.owner, self.members)
-        if user != self.owner and user not in self.members:
-            raise NotAuthorized("You are not authorized to access that project.")
-            
-    def authorize_user(self, user, auth_user):
-        """user is requesting to allow auth_user to access this
-        project. user must be this project's owner."""
-        if user != self.owner:
-            raise NotAuthorized("Only the project owner can authorize users.")
-        if auth_user not in self.members:
-            self.members.append(auth_user)
-        
-    def unauthorize_user(self, user, auth_user):
-        """user wants auth_user to no longer be able to access this
-        project. user must be the project owner."""
-        if user != self.owner:
-            raise NotAuthorized("Only the project owner can unauthorize users.")
-        try:
-            self.members.remove(auth_user)
-        except KeyError:
             pass
-    
+            
     @property
     def short_name(self):
         return self.name + "/"
@@ -279,6 +211,55 @@ def _cmp_files_in_project(fs1, fs2):
     if not proj_diff:
         return cmp(file1.name, file2.name)
     return proj_diff
+
+class FSFileManager(object):
+    """File Manager that stores the files in the filesystem."""
+    def __init__(self, root, levels):
+        self.root = root
+        self.levels = levels
+    
+    def get_project(self, user, owner, project_name, create=False, 
+                clean=False):
+        if user != owner:
+            raise NotAuthorized("User %s is not allowed to access project %s" %
+                                owner)
+
+        # a request for a clean project also implies that creating it
+        # is okay
+        if clean:
+            create = True
+        
+        fspath = path.join(self.root, user.uuid, project_name)
+        if path.exists(fspath):
+            project = Project(fspath)
+            if clean:
+                shutil.rmtree(fspath)
+                os.mkdir(fspath)
+        else:
+            if not create:
+                raise FileNotFound("Project %s not found" % project_name)
+            log.debug("Creating new project %s", project_name)
+            project = Project(fspath)
+        return project
+
+    def install_template(self, user, project, template="template"):
+        """Installs a set of template files into a new project."""
+        log.debug("Installing template %s for user %s as project %s",
+                template, user, project)
+        source_dir = pkg_resources.resource_filename("bespin", template)
+        common_path_len = len(source_dir) + 1
+        for dirpath, dirnames, filenames in os.walk(source_dir):
+            destdir = dirpath[common_path_len:]
+            if '.svn' in destdir:
+                continue
+            for f in filenames:
+                if destdir:
+                    destpath = "%s/%s" % (destdir, f)
+                else:
+                    destpath = f
+                contents = open(os.path.join(dirpath, f)).read()
+                self.save_file(user, project, destpath, contents)
+
 
 class FileManager(object):
     def __init__(self, session):
