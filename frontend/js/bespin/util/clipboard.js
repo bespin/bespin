@@ -205,6 +205,8 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
 
                 // Paste
                 } else if (e.keyCode == 86 /*v*/) {
+                    if (e.target == dojo.byId("command")) return; // let the paste happen in the command
+
                     focusSelectAndGo();
 
                     setTimeout(function() { // wait just a TOUCH to make sure that it is selected

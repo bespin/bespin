@@ -608,7 +608,7 @@ bespin.cmd.commands.add({
     name: 'quota',
     preview: 'show your quota info',
     megabytes: function(bytes) {
-        return (byte / 1024 / 1024).toFixed(2);
+        return (bytes / 1024 / 1024).toFixed(2);
     },
     execute: function(self) {
         self.showInfo("You have used " + this.megabytes(_editSession.amountUsed) + " MB out of your " + this.megabytes(_editSession.quota) + " MB quota");
