@@ -65,8 +65,6 @@ def required():
 @needs(['sdist'])
 def production():
     """Gets things ready for production."""
-    current_directory = path.getcwd()
-    
     non_production_packages = set(["py", "WebTest", "boto", "virtualenv", 
                                   "Paver", "BespinServer"])
     production = path("production")
@@ -115,9 +113,5 @@ def production():
     lines.extend(external_libs)
     production_requirements.write_lines(lines)
     
-    production.chdir()
-    try:
-        call_pavement("pavement.py", "bootstrap")
-    finally:
-        current_directory.chdir()
+    call_pavement("production/pavement.py", "bootstrap")
     
