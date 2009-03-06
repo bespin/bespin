@@ -657,8 +657,8 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
         listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
 
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
         listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
