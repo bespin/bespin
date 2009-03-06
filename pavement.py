@@ -120,13 +120,7 @@ def required():
         pip = path("Scripts/pip")
     sh("%s install -U -r requirements.txt" % pip)
     
-    # note this change directory should be done by Paver
-    cwd = path.getcwd()
-    path("backend/python").chdir()
-    try:
-        call_pavement('pavement.py', 'develop')
-    finally:
-        cwd.chdir()
+    call_pavement('backend/python/pavement.py', 'develop')
         
     # clean up after urlrelay's installation
     path("README").unlink()
@@ -365,14 +359,11 @@ def compress_js():
 @task
 def prod_server():
     """Creates the production server code."""
-    current_directory = path.getcwd()
     replaced_lines = dry("Updating Python version number", update_python_version)
     sh("bin/pip freeze -r requirements.txt backend/python/production/requirements.txt")
     try:
-        path("backend/python").chdir()
-        call_pavement("pavement.py", "production")
+        call_pavement("backend/python/pavement.py", "production")
     finally:
-        current_directory.chdir()
         dry("Restoring Python version number", restore_python_version, replaced_lines)
 
 @task

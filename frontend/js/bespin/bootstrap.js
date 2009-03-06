@@ -183,13 +183,6 @@ function recalcLayout() {
 //
 // When a user resizes the window, deal with resizing the canvas and repaint
 function doResize() {
-    var left = dojo.byId("subheader").style.left;
-    left = (left != "") ? parseInt(left) : 0;
-    var right = dojo.byId("subheader").style.right;
-    right = (right != "") ? parseInt(right) : 0;
-    
-    dojo.attr('editor', { width: window.innerWidth - left - right, height: window.innerHeight - bespin.commandlineHeight });
-
     var d = dojo.coords('status');
     dojo.attr('projectLabel', { width: d.w, height: d.h });
 

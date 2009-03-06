@@ -38,8 +38,10 @@ img {
 
 #editor {
     position: absolute;
+    margin: 0;
+    padding: 0;
     top: 63px;
-    bottom:37px;
+    bottom: 33px;
     right: 0px;
     left: 0px;
     z-index: -1;
