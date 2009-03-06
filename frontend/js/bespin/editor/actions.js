@@ -321,7 +321,7 @@ dojo.declare("bespin.editor.Actions", null, {
             return;
         }
 
-        var realTabs = (_settings.get('tabmode') == 'tabs') || true;
+        var realTabs = (_settings.get('tabmode') == 'tabs');
         if (realTabs) {
             // do something tabby
             tab = "\t";
