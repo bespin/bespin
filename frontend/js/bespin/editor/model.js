@@ -327,11 +327,11 @@ dojo.declare("bespin.editor.DocumentModel", null, {
                 var toInsert = this.tabstop - (ti % this.tabstop);
 
                 var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += "-";
+                for (var si = 1; si < toInsert; si++) spacer += " ";
 
                 var left = (ti == 0) ? "" : lineText.substring(0, ti);
                 var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
-                lineText = left + ">" + spacer + right;
+                lineText = left + " " + spacer + right;
 
                 ti += toInsert - 1;
             }
