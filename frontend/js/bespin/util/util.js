@@ -84,7 +84,7 @@ bespin.util.shrinkArray = function(array) {
     
     var stillAtBeginning = true;
     dojo.forEach(array.reverse(), function(item) {
-        if (stillAtBeginning && item == undefined) {
+        if (stillAtBeginning && item === undefined) {
             return;
         }
 
@@ -120,7 +120,7 @@ bespin.util.makeArray = function(number, character) {
 bespin.util.leadingSpaces = function(row) {
     var numspaces = 0;
     for (var i = 0; i < row.length; i++) {
-        if (row[i] == ' ' || row[i] == '' || row[i] == undefined) {
+        if (row[i] == ' ' || row[i] == '' || row[i] === undefined) {
             numspaces++;
         } else {
             return numspaces;
