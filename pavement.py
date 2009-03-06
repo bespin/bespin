@@ -63,7 +63,7 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.5",
+        number="0.1.6",
         name="Nonchalant Nimbus+",
         api="2"
     ),
