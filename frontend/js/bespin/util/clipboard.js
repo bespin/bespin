@@ -76,7 +76,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
         // Copy
         this.beforecopyHandle = dojo.connect(document, "beforecopy", function(e) {
             e.preventDefault();
-            dojo.byId('copynpaster').focus();
+            copynpaster.focus();
         });
 
         this.copyHandle = dojo.connect(document, "copy", function(e) {
@@ -93,7 +93,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
         // Cut
         this.beforecutHandle = dojo.connect(document, "beforecut", function(e) {
             e.preventDefault();
-            dojo.byId('copynpaster').focus();
+            copynpaster.focus();
         });
 
         this.cutHandle = dojo.connect(document, "cut", function(e) {
@@ -115,7 +115,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
         // Paste
         this.beforepasteHandle = dojo.connect(document, "beforepaste", function(e) {
             e.preventDefault();
-            dojo.byId('copynpaster').focus();
+            copynpaster.focus();
         });
 
         this.pasteHandle = dojo.connect(document, "paste", function(e) {
@@ -125,15 +125,15 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
             if (args.chunk) _editor.ui.actions.insertChunk(args);
 
             dojo.byId('canvas').focus();
-            dojo.byId('copynpaster').value = '';
+            copynpaster.value = '';
         });
 
         dojo.connect(document, "dom:loaded", dojo.hitch(this, function() {
-            this.keydownHandle = dojo.connect(dojo.byId('copynpaster'), "keydown", function(e) {
+            this.keydownHandle = dojo.connect(copynpaster, "keydown", function(e) {
                 e.stopPropagation();
             });
 
-            this.keypressHandle = dojo.connect(dojo.byId('copynpaster'), "keypress", function(e) {
+            this.keypressHandle = dojo.connect(copynpaster, "keypress", function(e) {
                 e.stopPropagation();
             });
         }));        
@@ -166,13 +166,13 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
         }, dojo.body());
         
         var grabAndGo = function(text) {
-            dojo.byId('copynpaster').value = text;
+            copynpaster.value = text;
             focusSelectAndGo();
         };
         
         var focusSelectAndGo = function() {
-            dojo.byId('copynpaster').focus();
-            dojo.byId('copynpaster').select();
+            copynpaster.focus();
+            copynpaster.select();
             setTimeout(function() {
                 dojo.byId('canvas').focus();
             }, 0);
@@ -207,9 +207,11 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
                 } else if (e.keyCode == 86 /*v*/) {
                     focusSelectAndGo();
 
-                    var args = bespin.editor.utils.buildArgs();    
-                    args.chunk = dojo.byId('copynpaster').value;
-                    if (args.chunk) _editor.ui.actions.insertChunk(args);
+                    setTimeout(function() { // wait just a TOUCH to make sure that it is selected
+                        var args = bespin.editor.utils.buildArgs();    
+                        args.chunk = copynpaster.value;
+                        if (args.chunk) _editor.ui.actions.insertChunk(args);
+                    }, 1);
                 }
             }
         });
