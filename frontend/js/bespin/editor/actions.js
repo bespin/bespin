@@ -542,7 +542,7 @@ dojo.declare("bespin.editor.Actions", null, {
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     pasteFromClipboard: function(args) {
         var clipboard = (args.clipboard) ? args.clipboard : bespin.util.clipboard.Manual.data();
-        if (clipboard == undefined) return; // darn it clipboard!
+        if (clipboard === undefined) return; // darn it clipboard!
         args.chunk = clipboard;
         this.insertChunk(args);
     },

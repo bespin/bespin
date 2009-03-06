@@ -1291,8 +1291,8 @@ dojo.declare("bespin.editor.API", null, {
 
     moveCursor: function(newpos) {
         if (!newpos) return; // guard against a bad position (certain redo did this)
-        if (newpos.col == undefined) newpos.col = this.cursorPosition.col;
-        if (newpos.row == undefined) newpos.row = this.cursorPosition.row;
+        if (newpos.col === undefined) newpos.col = this.cursorPosition.col;
+        if (newpos.row === undefined) newpos.row = this.cursorPosition.row;
 
         var oldpos = this.cursorPosition;
 
