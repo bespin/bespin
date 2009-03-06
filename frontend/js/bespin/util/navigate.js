@@ -25,6 +25,8 @@
 
 dojo.provide("bespin.util.navigate");
 
+dojo.require("bespin.client.settings");
+
 // = Navigate =
 //
 // Simple wrapper to force navigation to a project URL without all using location.href
@@ -54,8 +56,9 @@ dojo.provide("bespin.util.navigate");
 
     dojo.mixin(bespin.util.navigate, {
         dashboard: function(newTab) {
-            if (dojo.byId('hrefDashboard')) {
-                go(dojo.byId('hrefDashboard').href, newTab);    // this contains the pathSelected parameter!
+            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath')
+            if (pathSelected) {
+                go("dashboard.html#path="+pathSelected, newTab);    // this contains the pathSelected parameter!
             } else {
                 go("dashboard.html", newTab);
             }
@@ -76,7 +79,7 @@ dojo.provide("bespin.util.navigate");
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
             var selectedPath = bespin.dashboard.getSelectedPath();
-            if (selectedPath)   args.push('pathSelected='+selectedPath);
+            if (selectedPath)   args.push('fromDashboardPath='+selectedPath);
 
             if (args.length > 0) url += args.join("&");
 

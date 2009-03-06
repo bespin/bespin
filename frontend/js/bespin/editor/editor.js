@@ -254,8 +254,19 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     bindKeyString: function(modifiers, keyCode, action) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
-        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1) || (modifiers.toUpperCase().indexOf("CMD") != -1);
+        var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1);
         var shiftKey = (modifiers.toUpperCase().indexOf("SHIFT") != -1);
+        
+        // Check for the platform specific key type
+        // The magic "CMD" means metaKey for Mac (the APPLE or COMMAND key)
+        // and ctrlKey for Windows (CONTROL)
+        if (modifiers.toUpperCase().indexOf("CMD") != -1) {
+            if (bespin.util.isMac()) {
+                metaKey = true;
+            } else {
+                ctrlKey = true;
+            }
+        }
         return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
     },
     
@@ -425,7 +436,7 @@ dojo.declare("bespin.editor.UI", null, {
     convertClientPointToCursorPoint: function(pos) {
         var x, y;
 
-        if (y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -438,7 +449,7 @@ dojo.declare("bespin.editor.UI", null, {
             var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
             x = Math.floor(tx / this.charWidth);
             
-            // With striclines turned on, don't select past the end of the line
+            // With strictlines turned on, don't select past the end of the line
             if (_settings.isOn(_settings.get('strictlines'))) {
                 var maxcol = this.editor.model.getRowLength(y);
             
@@ -447,7 +458,6 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
         }
-        
         return { col: x, row: y };
     },
 
@@ -651,9 +661,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_LEFT, this.actions.moveToLineStart);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
         listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
@@ -664,14 +674,13 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
 
-        listener.bindKeyString("APPLE", Key.A, this.actions.selectAll);
-        listener.bindKeyString("CTRL", Key.A, this.actions.selectAll);
+        listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
 
-        listener.bindKeyString("APPLE", Key.Z, this.actions.undoRedo);
-        listener.bindKeyString("CTRL", Key.Z, this.actions.undoRedo);
+        listener.bindKeyString("CMD", Key.Z, this.actions.undo);
+        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo);
 
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("APPLE", Key.ARROW_DOWN, this.actions.moveToFileBottom);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
         
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
@@ -925,6 +934,8 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
+            var lineText = this.editor.model.getRowString(currentLine);
+
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
@@ -932,7 +943,8 @@ dojo.declare("bespin.editor.UI", null, {
 //            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses new the SyntaxModel API to attempt to render a line with fewer passes than the color helper API
-            var lineInfo = this.syntaxModel.getSyntaxStyles(currentLine, this.editor.language);
+
+            var lineInfo = this.syntaxModel.getSyntaxStyles(lineText, currentLine, this.editor.language);
             
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
@@ -1278,8 +1290,27 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     moveCursor: function(newpos) {
+        if (!newpos) return; // guard against a bad position (certain redo did this)
+        if (newpos.col === undefined) newpos.col = this.cursorPosition.col;
+        if (newpos.row === undefined) newpos.row = this.cursorPosition.row;
+
+        var oldpos = this.cursorPosition;
+
         var row = Math.min(newpos.row, this.model.getRowCount() - 1); // last row if you go over
         if (row < 0) row = 0; // can't move negative off screen
+
+        var invalid = this.model.isInvalidCursorPosition(row, newpos.col);
+        if (invalid) {
+            if (oldpos.col < newpos.col) {
+                newpos.col = invalid.right;
+            } else if (oldpos.col > newpos.col) {
+                newpos.col = invalid.left;
+            } else {
+                // default
+                newpos.col = invalid.left;
+            }
+        }
+
         this.cursorPosition = { row: row, col: newpos.col };
     },
 
@@ -1372,7 +1403,11 @@ dojo.declare("bespin.editor.Events", null, {
             var action = editor.ui.actions[event.action] || event.action;
 
             if (keyCode && action) {
-                editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
+                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action);
+                } else {
+                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                }
             }
         });
 

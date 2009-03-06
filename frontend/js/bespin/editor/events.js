@@ -44,25 +44,20 @@ bespin.subscribe("bespin:editor:openfile", function(event) {
 
     if (_editSession.checkSameFile(project, filename)) return; // short circuit
 
-    bespin.publish("bespin:editor:openfile:openbefore", { filename: filename });
+    bespin.publish("bespin:editor:openfile:openbefore", { project: project, filename: filename });
 
     _files.loadFile(project, filename, function(file) {
         if (!file) {
-            bespin.publish("bespin:editor:openfile:openfail", { filename: filename });
+            bespin.publish("bespin:editor:openfile:openfail", { project: project, filename: filename });
         } else {
-            bespin.publish("bespin:editor:openfile:opensuccess", { file: file });
+            bespin.publish("bespin:editor:openfile:opensuccess", { project: project, file: file });
         }
     });
 });
 
 // ** {{{ Event: bespin:editor:forceopenfile }}} **
 // 
-// Observe a request for a file to be opened and start the cycle:
-//
-// * Send event that you are opening up something (openbefore)
-// * Ask the file system to load a file (loadFile)
-// * If the file is loaded send an opensuccess event
-// * If the file fails to load, send an openfail event
+// Open an existing file, or create a new one.
 bespin.subscribe("bespin:editor:forceopenfile", function(event) {
     var filename = event.filename;
     var project  = event.project;
@@ -107,6 +102,7 @@ bespin.subscribe("bespin:editor:newfile", function(event) {
 // TODO: Need to actually check saved status and know if the save worked
 
 bespin.subscribe("bespin:editor:savefile", function(event) {
+    var project = event.project || _editSession.project; 
     var filename = event.filename || _editSession.path; // default to what you have
 
     bespin.publish("bespin:editor:openfile:savebefore", { filename: filename });
@@ -121,7 +117,7 @@ bespin.subscribe("bespin:editor:savefile", function(event) {
         file.lastOp = _editor.undoManager.syncHelper.lastOp;
     }
 
-    _files.saveFile(_editSession.project, file); // it will save asynchronously.
+    _files.saveFile(project, file); // it will save asynchronously.
     // TODO: Here we need to add in closure to detect errors and thus fire different success / error
 
     bespin.publish("bespin:editor:titlechange", { filename: filename });
@@ -137,6 +133,7 @@ bespin.subscribe("bespin:editor:savefile", function(event) {
 // When a file is opened successfully change the project and file status area.
 // Then change the window title, and change the URL hash area
 bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+    var project = event.project || _editSession.project; 
     var file = event.file;
 
     var filename = file.name;
@@ -147,17 +144,31 @@ bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
 
     bespin.publish("bespin:editor:titlechange", { filename: file.name });
 
-    bespin.publish("bespin:editor:urlchange", { project: _editSession.project, path: file.name });
+    bespin.publish("bespin:url:change", { project: project, path: file.name });
 });
 
 // ** {{{ Event: bespin:editor:urlchange }}} **
 // 
 // Observe a urlchange event and then... change the location hash
-bespin.subscribe("bespin:editor:urlchange", function(event) {
-    var project = event.project;
-    var path    = event.path;
+bespin.subscribe("bespin:url:change", function(event) {
+    var hashArguments = dojo.queryToObject(location.hash.substring(1));
+    hashArguments.project = event.project;
+    hashArguments.path    = event.path;
 
-    window.location.hash = "project=" + project + "&path=" + path;
+    // window.location.hash = dojo.objectToQuery() is not doing the right thing...
+    var pairs = [];
+    for (var name in hashArguments) {
+        var value = hashArguments[name];
+        pairs.push(name + '=' + value);
+    }
+    window.location.hash = pairs.join("&");
+});
+
+// ** {{{ Event: bespin:url:changed }}} **
+// 
+// Observe a request for session status
+bespin.subscribe("bespin:url:changed", function(event) {
+    bespin.publish("bespin:editor:openfile", { filename: event.now.get('path') });
 });
 
 // ** {{{ Event: bespin:session:status }}} **
@@ -166,11 +177,4 @@ bespin.subscribe("bespin:editor:urlchange", function(event) {
 bespin.subscribe("bespin:session:status", function(event) {
     var file = _editSession.path || 'a new scratch file';
     self.showInfo('Hey ' + _editSession.username + ', you are editing ' + file + ' in project ' + _editSession.projectForDisplay());
-});
-
-// ** {{{ Event: bespin:url:changed }}} **
-// 
-// Observe a request for session status
-bespin.subscribe("bespin:url:changed", function(event) {
-    bespin.publish("bespin:editor:openfile", { filename: event.now.get('path') });
 });

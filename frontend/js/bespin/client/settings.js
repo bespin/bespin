@@ -221,7 +221,7 @@ dojo.declare("bespin.client.settings.Server", null, {
         // TODO: seed the settings  
         this.server.listSettings(dojo.hitch(this, function(settings) {
             this.settings = settings;
-            if (settings['tabsize'] == undefined) {
+            if (settings['tabsize'] === undefined) {
                 this.settings = this.parent.defaultSettings();
                 this.server.setSettings(this.settings);
             }
