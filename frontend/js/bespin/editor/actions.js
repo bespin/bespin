@@ -323,7 +323,6 @@ dojo.declare("bespin.editor.Actions", null, {
         var realTabs = (_settings.get('tabmode') == 'tabs') || true;
         if (realTabs) {
             // do something tabby
-            console.log("inserting tab");
             tab = "\t";
             tabWidth = 1;
         } else {
