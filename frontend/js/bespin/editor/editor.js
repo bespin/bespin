@@ -693,11 +693,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     getWidth: function() {
-        return parseInt(dojo.attr(this.editor.canvas.parentNode, "width"));
+        return parseInt(dojo.style(this.editor.canvas.parentNode, "width"));
     },
 
     getHeight: function() {   
-        return parseInt(dojo.attr(this.editor.canvas.parentNode, "height"));
+        return parseInt(dojo.style(this.editor.canvas.parentNode, "height"));
     },
 
     getTopOffset: function() {
@@ -745,7 +745,6 @@ dojo.declare("bespin.editor.UI", null, {
         var lastLineToRender;
 
         var Rect = bespin.editor.Rect;
-
 
         // SETUP STATE
 
@@ -814,7 +813,7 @@ dojo.declare("bespin.editor.UI", null, {
         // check and see if the canvas is the same size as its immediate parent in the DOM; if not, resize the canvas
         if (((dojo.attr(c, "width")) != cwidth) || (dojo.attr(c, "height") != cheight)) {
             refreshCanvas = true;   // if the canvas changes size, we'll need a full repaint
-            dojo.attr(c, { width: cwidth, height: cheight }); 
+            dojo.attr(c, { width: cwidth, height: cheight });
         } 
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
