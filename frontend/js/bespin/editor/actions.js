@@ -191,7 +191,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     moveWordLeft: function(args) {
-        var row = this.editor.model.getRowArray(args.pos.row);
+        var row = this.editor.model.getRowString(args.pos.row);
+
         var c, charCode;
 
         if (args.pos.col == 0) { // -- at the start to move up and to the end
@@ -211,7 +212,7 @@ dojo.declare("bespin.editor.Actions", null, {
         while (newcol > 0) {
             newcol--;
 
-            c = row[newcol];
+            c = row.charAt(newcol);
             charCode = c.charCodeAt(0);
             if (charCode == 32) {
                 wasSpaces = true;
@@ -225,7 +226,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (!wasSpaces) {
             while (newcol > 0) {
                 newcol--;
-                c = row[newcol];
+                c = row.charAt(newcol);
                 charCode = c.charCodeAt(0);
                 if ( (charCode < 65) || (charCode > 122) ) { // if you get to an alpha you are done
                     if (newcol != args.pos.col - 1) newcol++; // right next to a stop char, move back one
