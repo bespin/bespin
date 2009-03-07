@@ -1,7 +1,7 @@
 urlrelay>0.7
 WebOb
 WebTest
-py
+nose
 http://pypi.python.org/packages/source/s/simplejson/simplejson-2.0.9.tar.gz#egg=simplejson
 SQLAlchemy
 sqlalchemy-migrate>0.5.1

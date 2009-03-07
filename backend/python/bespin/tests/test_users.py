@@ -118,7 +118,7 @@ def test_register_and_verify_user():
     data = simplejson.loads(resp.body)
     assert data['username'] == 'BillBixby'
     assert 'quota' in data
-    assert data['quota'] == 15000000
+    assert data['quota'] == 15728640
     assert 'amountUsed' in data
     
     resp = app.get("/file/at/BespinSettings/config.js")

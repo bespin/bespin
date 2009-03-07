@@ -42,7 +42,7 @@ You can start up the development server (runs on localhost:8080) by running::
 
 You can run the unit tests by running::
 
-  py.test backend/python/bespin
+  nosetests backend/python/bespin
 
 Updating the Required Files
 ---------------------------
