@@ -278,7 +278,7 @@ bespin.cmd.commands.add({
     takes: ['filename'],
     preview: 'save the current contents',
     completeText: 'add the filename to save as, or use the current file',
-    withKey: "APPLE S",
+    withKey: "CMD S",
     execute: function(self, filename) {
         bespin.publish("bespin:editor:savefile", {
             filename: filename
