@@ -71,21 +71,20 @@ dojo.declare("bespin.client.settings.Core", null, {
         };
     },
 
-    // TODO: Make sure I can nuke the default function
-    initSettings: function() {
-        var self = this;
-
-        bespin.publish("bespin:settings:set:collaborate", {
-            value: self.get("collaborate")
-        });
-    },
-
     isOn: function(value) {
         return value == 'on' || value == 'true';
     },
 
     isOff: function(value) {
         return value == 'off' || value == 'false';
+    },
+    
+    isSettingOn: function(key) {
+        return this.isOn(this.get(key));
+    },
+
+    isSettingOff: function(key) {
+        return this.isOff(this.get(key));
     },
 
     // ** {{{ Settings.loadStore() }}} **
@@ -216,7 +215,7 @@ dojo.declare("bespin.client.settings.Cookie", null, {
 dojo.declare("bespin.client.settings.Server", null, {
     constructor: function(parent) {
         this.parent = parent;
-        this.server = _server;
+        this.server = bespin.get('server');
 
         // TODO: seed the settings  
         this.server.listSettings(dojo.hitch(this, function(settings) {
@@ -342,7 +341,8 @@ dojo.declare("bespin.client.settings.URL", null, {
 
 dojo.declare("bespin.client.settings.Events", null, {
     constructor: function(settings) {
-        this.settings = settings;
+        var editSession = bespin.get('editSession');
+        var editor = bespin.get('editor');
 
         // ** {{{ Event: bespin:settings:set }}} **
         // 
@@ -360,13 +360,13 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var file = event.file;
 
-            _editSession.path = file.name;
+            editSession.path = file.name;
 
-            settings.set('_project',  _editSession.project);
-            settings.set('_path',     _editSession.path);
-            settings.set('_username', _editSession.username);
+            settings.set('_project',  editSession.project);
+            settings.set('_path',     editSession.path);
+            settings.set('_username', editSession.username);
 
-            if (_editSession.syncHelper) _editSession.syncHelper.syncWithServer();
+            if (editSession.syncHelper) editSession.syncHelper.syncWithServer();
         });
 
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
@@ -386,9 +386,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // 
         // When the syntax setting is changed, tell the syntax system to change
         bespin.subscribe("bespin:settings:set:syntax", function(event) {
-            var value = event.value;
-            
-            bespin.publish("bespin:settings:syntax", { language: value, fromCommand: true });
+            bespin.publish("bespin:settings:syntax", { language: event.value, fromCommand: true });
         });
 
         // ** {{{ Event: bespin:settings:syntax }}} **
@@ -397,18 +395,18 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("bespin:settings:syntax", function(event) {
             var language = event.language;
             var fromCommand = event.fromCommand;
-            var syntaxSetting = settings.get('syntax') || "off";      
+            var syntaxSetting = settings.get('syntax') || "off";
 
-            if (language == _editor.language) return; // already set to be that language
+            if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
                 var split = window.location.hash.split('.');
                 var type = split[split.length - 1];                
-                if (type) _editor.language = type;
+                if (type) editor.language = type;
             } else if (bespin.util.include(['auto', 'on'], syntaxSetting) || fromCommand) {
-                _editor.language = language;
+                editor.language = language;
             } else if (syntaxSetting == 'off') {
-                _editor.language = 'off';
+                editor.language = 'off';
             } 
         });
 
@@ -416,19 +414,15 @@ dojo.declare("bespin.client.settings.Events", null, {
         // 
         // Turn on the collaboration system if set to be on
         bespin.subscribe("bespin:settings:set:collaborate", function(event) {
-            var value = event.value;
-
-            _editSession.collaborate = settings.isOn(value);
+            editSession.collaborate = settings.isOn(event.value);
         });
 
         // ** {{{ Event: bespin:settings:set:fontsize }}} **
         // 
         // Change the font size for the editor
         bespin.subscribe("bespin:settings:set:fontsize", function(event) {
-            var value = event.value;
-
-            var fontsize = parseInt(value);
-            _editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
+            var fontsize = parseInt(event.value);
+            editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
         // ** {{{ Event: bespin:settings:set:theme }}} **
@@ -441,8 +435,8 @@ dojo.declare("bespin.client.settings.Events", null, {
                 var themeSettings = bespin.themes[theme];
 
                 if (themeSettings) {
-                    if (themeSettings != _editor.theme) {
-                          _editor.theme = themeSettings;
+                    if (themeSettings != editor.theme) {
+                        editor.theme = themeSettings;
                     }
                 } else {
                     bespin.publish("bespin:cmdline:showinfo", {
@@ -507,7 +501,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             // TODO: use the action and don't run a command itself
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
-                if (project && (_editSession.project != project)) {
+                if (project && (editSession.project != project)) {
                     bespin.publish("bespin:project:set", { project: project });
                 }
 
@@ -548,9 +542,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         // 
         // Setup the font size that the user has configured
         bespin.subscribe("bespin:settings:init", function(event) {
-            var fontsize = settings.get('fontsize');
             bespin.publish("bespin:settings:set:fontsize", {
-                value: fontsize
+                value: settings.get('fontsize')
             });
         });        
     }

@@ -30,15 +30,21 @@ dojo.provide("bespin.dashboard.dashboard");
 // from /dashboard.html.
 //
 
-(function(){   
+(function() {
     var heightDiff;
     var projects;
     var scene;
     var tree;
-    var infoPanel;            
+    var infoPanel;
     var currentProject;
     var go = bespin.util.navigate; // short cut static method 
-    var bd = bespin.dashboard; 
+    var bd = bespin.dashboard;
+
+    var server;
+    var settings;
+    var editSession;
+    var files;
+    var commandLine;
     
     dojo.mixin(bespin.dashboard, {
         projects: null,
@@ -54,10 +60,10 @@ dojo.provide("bespin.dashboard.dashboard");
         },
         
         loggedIn: function(userinfo)  {
-            _editSession.setUserinfo(userinfo);
+            editSession.setUserinfo(userinfo);
 
-            _server.list(null, null, bd.displayProjects); // get projects
-            _server.listOpen(bd.displaySessions); // get sessions
+            server.list(null, null, bd.displayProjects); // get projects
+            server.listOpen(bd.displaySessions); // get sessions
         },
 
         notLoggedIn: function(xhr) {
@@ -113,7 +119,7 @@ dojo.provide("bespin.dashboard.dashboard");
         fetchFiles: function(path, tree) {            
             var filepath = currentProject + "/" + bd.getFilePath(path);
 
-            _server.list(filepath, null, function(files) {
+            server.list(filepath, null, function(files) {
                 tree.updateData(path[path.length - 1], bd.prepareFilesForTree(files));
                 tree.render();
             });
@@ -140,7 +146,7 @@ dojo.provide("bespin.dashboard.dashboard");
 
             // -- Comment this out, and you don't auto refresh.
             //    setTimeout(function() {
-            //        _server.listOpen(displaySessions);   // get sessions
+            //        server.listOpen(displaySessions);   // get sessions
             //    }, 3000);
         },
 
@@ -233,7 +239,7 @@ dojo.provide("bespin.dashboard.dashboard");
                 } else {
                     // load filelist form server                                                            
                     var filepath = currentProject + "/" + bd.getFilePath(fakePath.slice(1, x));
-                    _server.list(filepath, null, dojo.hitch({index: x - 1}, displayFetchedFiles));                    
+                    server.list(filepath, null, dojo.hitch({index: x - 1}, displayFetchedFiles));                    
                 }
             }
             
@@ -258,7 +264,7 @@ dojo.provide("bespin.dashboard.dashboard");
         },
 
         refreshProjects: function() {
-            _server.list(null, null, bd.displayProjects);
+            server.list(null, null, bd.displayProjects);
         }
     }); 
     
@@ -362,26 +368,26 @@ dojo.provide("bespin.dashboard.dashboard");
         scene.bus.bind("itemselected", projects.list, function(e) {
             bespin.dashboard.lastSelectedPath = e.item + '/';
             location.hash = '#path=' + e.item + '/';
-            _server.list(e.item, null, bd.displayFiles);
+            server.list(e.item, null, bd.displayFiles);
             currentProject = e.item;
             bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true });
         });
 
         // setup the command line
-        _server      = new bespin.client.Server();
-        _settings    = new bespin.client.settings.Core();
-        _editSession = new bespin.client.session.EditSession(); 
-        _files       = new bespin.client.FileSystem();
-        _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.dashboardcommands.Commands);
+        server = bespin.register('server', new bespin.client.Server());
+        settings = bespin.register('settings', new bespin.client.settings.Core());
+        editSession = bespin.register('editSession', new bespin.client.session.EditSession());
+        files = bespin.register('files', new bespin.client.FileSystem());
+        commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.dashboardcommands.Commands));
 
         // Handle jumping to the command line
         dojo.connect(document, "onkeypress", function(e) {
-            var handled = _commandLine.handleCommandLineFocus(e);
+            var handled = commandLine.handleCommandLineFocus(e);
             if (handled) return false;
         });
 
         // get logged in name; if not logged in, display an error of some kind
-        _server.currentuser(bd.loggedIn, bd.notLoggedIn);   
+        server.currentuser(bd.loggedIn, bd.notLoggedIn);   
         
         // provide history for the dashboard
         bespin.subscribe("bespin:url:changed", function(e) {

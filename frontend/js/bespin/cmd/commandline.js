@@ -40,11 +40,11 @@ dojo.provide("bespin.cmd.commandline");
 
 dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands) {
-        this.commandLine = commandLine;
+        this.commandLine = dojo.byId(commandLine);
 
-        if (window['_files']) this.files = _files;        
-        if (window['_settings']) this.settings = _settings;
-        if (window['_editor']) this.editor = _editor;
+        if (bespin.get('files')) this.files = bespin.get('files');
+        if (bespin.get('settings')) this.settings = bespin.get('settings');
+        if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
         this.suppressInfo = false; // When true, info bar popups will not be shown
@@ -265,7 +265,8 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {        
         // -- Tie to the commandLine element itself     
         dojo.connect(cl.commandLine, "onfocus", cl, function() {
-            if (window['_editor']) _editor.setFocus(false);
+            bespin.publish("bespin:cmdline:focus");
+            
             this.inCommandLine = true;
             dojo.byId('promptimg').src = 'images/icn_command_on.png';
         });
@@ -280,7 +281,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
-                    var isAutoComplete = _settings.isOn(_settings.get('autocomplete'));
+                    var isAutoComplete = bespin.get('settings').isSettingOn('autocomplete');
                     if (isAutoComplete && completions.length == 1) { // if only one just set the value
                         command = this.commands[commandString] || this.commands[this.aliases[commandString]];
 
@@ -316,7 +317,8 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 dojo.stopEvent(e);
 
                 dojo.byId('command').blur();
-                if (window['_editor']) _editor.setFocus(true);
+
+                bespin.publish("bespin:cmdline:blur");
 
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == dojo.keys.DOWN_ARROW) {
@@ -436,8 +438,6 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
-        this.commandline = commandline;
-
         // ** {{{ Event: bespin:cmdline:showinfo }}} **
         // 
         // Observe when others want to show the info bar for the command line
@@ -466,10 +466,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // Once the command has been executed, do something.
         // In this case, save it for the history
         bespin.subscribe("bespin:cmdline:executed", function(event) {
-            var commandname = event.command.name;
-            var args        = event.args;
-
-            commandline.commandLineHistory.add(commandname + " " + args); // only add to the history when a valid command
+            commandline.commandLineHistory.add(event.command.name + " " + event.args); // only add to the history when a valid command
         });
         
         // ** {{{ Event: bespin:cmdline:executed }}} **
@@ -484,25 +481,20 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
 
             if (command) commandline.executeCommand(command);
         });
-
-
+        
         // -- Files
         // ** {{{ Event: bespin:editor:openfile:openfail }}} **
         // 
         // If an open file action failed, tell the user.
         bespin.subscribe("bespin:editor:openfile:openfail", function(event) {
-            var filename = event.filename;
-
-            commandline.showInfo('Could not open file: ' + filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
+            commandline.showInfo('Could not open file: ' + event.filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
         });
 
         // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
         // 
         // The open file action worked, so tell the user
         bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
-            var file = event.file;
-
-            commandline.showInfo('Loaded file: ' + file.name, true);
+            commandline.showInfo('Loaded file: ' + event.file.name, true);
         });
 
         // -- Projects
@@ -512,7 +504,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("bespin:project:set", function(event) {
             var project = event.project;
 
-            _editSession.project = project;
+            bespin.get('editSession').project = project;
             if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
         });
 
