@@ -235,7 +235,6 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
         this.bus.bind("drag", this.splitter, this.ondrag, this);
         this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
 
-
         // this is a closed container
         delete this.add;
         delete this.remove;
