@@ -31,8 +31,12 @@ bespin.subscribe("bespin:project:imported", function(event) {
 
 bespin.subscribe("bespin:project:set", function(event) {
     bespin.get('editSession').project = event.project; // set it in the session
-
-    bespin.dashboard.refreshProjects(); // get projects
+    
+    if (!event.fromDashboardItemSelected) {
+        // selects the project in the tree and fire the itemselected event    
+        bespin.dashboard.tree.lists[0].selectItemByText(event.project);
+        bespin.dashboard.tree.itemSelected({thComponent: bespin.dashboard.tree.lists[0], item: bespin.dashboard.tree.lists[0].selected});
+    }
 });
 
 bespin.subscribe("bespin:project:create", function(event) {
