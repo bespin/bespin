@@ -38,9 +38,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         3: 14  // large
     },
 
-    constructor: function(editor) {
-        this.editor = editor || _editor;
+    constructor: function(editor, opts) {
+        this.editor = editor || bespin.get('editor');
         this.currentFontSize = 2;
+
+        if (opts.setupDefault) this.setupDefault();
     },
     
     setup: function(type, el) {
@@ -125,11 +127,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
 
         save: function(toolbar, el) {
             var save = dojo.byId(el) || dojo.byId("toolbar_save");
-            dojo.connect(save, 'mousedown', function() {
+            dojo.connect(save, 'mouseover', function() {
                 save.src = "images/icn_save_on.png";
             });
 
-            dojo.connect(save, 'mouseup', function() {
+            dojo.connect(save, 'mouseout', function() {
                 save.src = "images/icn_save.png";
             });
                
@@ -140,11 +142,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
 
         close: function(toolbar, el) {
             var close = dojo.byId(el) || dojo.byId("toolbar_close");
-            dojo.connect(close, 'mousedown', function() {
+            dojo.connect(close, 'mouseover', function() {
                 close.src = "images/icn_close_on.png";
             });
 
-            dojo.connect(close, 'mouseup', function() {
+            dojo.connect(close, 'mouseout', function() {
                 close.src = "images/icn_close.png";
             });
 
@@ -155,11 +157,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
 
         undo: function(toolbar, el) {
             var undo = dojo.byId(el) || dojo.byId("toolbar_undo");
-            dojo.connect(undo, 'mousedown', function() {
+            dojo.connect(undo, 'mouseover', function() {
                 undo.src = "images/icn_undo_on.png";
             });
 
-            dojo.connect(undo, 'mouseup', function() {
+            dojo.connect(undo, 'mouseout', function() {
                 undo.src = "images/icn_undo.png";
             });
 
@@ -171,11 +173,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         redo: function(toolbar, el) {
             var redo = dojo.byId(el) || dojo.byId("toolbar_undo");
 
-            dojo.connect(redo, 'mousedown', function() {
+            dojo.connect(redo, 'mouseover', function() {
                 redo.src = "images/icn_redo_on.png";
             });
 
-            dojo.connect(redo, 'mouseup', function() {
+            dojo.connect(redo, 'mouseout', function() {
                 redo.src = "images/icn_redo.png";
             });
 
@@ -190,11 +192,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         // cut: function(toolbar, el) {
         //     var cut = dojo.byId(el) || dojo.byId("toolbar_cut");
         // 
-        //     dojo.connect(cut, 'mousedown', function() {
+        //     dojo.connect(cut, 'mouseover', function() {
         //         cut.src = "images/icn_cut_on.png";
         //     });
         // 
-        //     dojo.connect(cut, 'mouseup', function() {
+        //     dojo.connect(cut, 'mouseout', function() {
         //         cut.src = "images/icn_cut.png";
         //     });
         // 
@@ -206,11 +208,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         // copy: function(toolbar, el) {
         //     var copy = dojo.byId(el) || dojo.byId("toolbar_copy");
         // 
-        //     dojo.connect(copy, 'mousedown', function() {
+        //     dojo.connect(copy, 'mouseover', function() {
         //         copy.src = "images/icn_copy_on.png";
         //     });
         // 
-        //     dojo.connect(copy, 'mouseup', function() {
+        //     dojo.connect(copy, 'mouseout', function() {
         //         copy.src = "images/icn_copy.png";
         //     });
         // 
@@ -222,11 +224,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         // paste: function(toolbar, el) {
         //     var paste = dojo.byId(el) || dojo.byId("toolbar_paste");
         // 
-        //     dojo.connect(paste, 'mousedown', function() {
+        //     dojo.connect(paste, 'mouseover', function() {
         //         paste.src = "images/icn_paste_on.png";
         //     });
         // 
-        //     dojo.connect(paste, 'mouseup', function() {
+        //     dojo.connect(paste, 'mouseout', function() {
         //         paste.src = "images/icn_paste.png";
         //     });
         // 
@@ -238,11 +240,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         // history: function(toolbar, el) {
         //     var history = dojo.byId(el) || dojo.byId("toolbar_history");
         //     
-        //     Element.observe(history, 'mousedown', function() {
+        //     Element.observe(history, 'mouseover', function() {
         //         history.src = "images/icn_history_on.png";
         //     });
         // 
-        //     Element.observe(history, 'mouseup', function() {
+        //     Element.observe(history, 'mouseout', function() {
         //         history.src = "images/icn_history.png";
         //     });
         //     
@@ -254,11 +256,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         preview: function(toolbar, el) {
             var preview = dojo.byId(el) || dojo.byId("toolbar_preview");
             
-            dojo.connect(preview, 'mousedown', function() {
+            dojo.connect(preview, 'mouseover', function() {
                 preview.src = "images/icn_preview_on.png";
             });
 
-            dojo.connect(preview, 'mouseup', function() {
+            dojo.connect(preview, 'mouseout', function() {
                 preview.src = "images/icn_preview.png";
             });
             
@@ -270,11 +272,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         fontsize: function(toolbar, el) {
             var fontsize = dojo.byId(el) || dojo.byId("toolbar_fontsize");
             
-            dojo.connect(fontsize, 'mousedown', function() {
+            dojo.connect(fontsize, 'mouseover', function() {
                 fontsize.src = "images/icn_fontsize_on.png";
             });
 
-            dojo.connect(fontsize, 'mouseup', function() {
+            dojo.connect(fontsize, 'mouseout', function() {
                 fontsize.src = "images/icn_fontsize.png";
             });
 

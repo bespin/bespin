@@ -186,11 +186,11 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
 // Mess with positions mainly 
 dojo.mixin(bespin.editor, { utils: {
     buildArgs: function(oldPos) {
-        return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
+        return { pos: bespin.editor.utils.copyPos(oldPos || bespin.get('editor').cursorPosition) };    
     },
 
     changePos: function(args, pos) {
-        return { pos: bespin.editor.utils.copyPos(oldPos || _editor.cursorPosition) };    
+        return { pos: bespin.editor.utils.copyPos(oldPos || bespin.get('editor').cursorPosition) };    
     },
     
     copyPos: function(oldPos) {
@@ -276,7 +276,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        var handled = _commandLine.handleCommandLineFocus(e);
+        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
         if (handled) return false;
 
         var args = { event: e, pos: bespin.editor.utils.copyPos(this.editor.cursorPosition) };
@@ -304,7 +304,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        var handled = _commandLine.handleCommandLineFocus(e);
+        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
@@ -450,7 +450,7 @@ dojo.declare("bespin.editor.UI", null, {
             x = Math.floor(tx / this.charWidth);
             
             // With strictlines turned on, don't select past the end of the line
-            if (_settings.isOn(_settings.get('strictlines'))) {
+            if (bespin.get('settings').isSettingOn('strictlines')) {
                 var maxcol = this.editor.model.getRowLength(y);
             
                 if (x >= maxcol) {
@@ -1264,8 +1264,10 @@ dojo.declare("bespin.editor.UI", null, {
 //
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
-    constructor: function(container) {
-        this.container = container;
+    constructor: function(container, opts) {
+        if (!opts) opts = {};
+
+        this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel();
 
         dojo.byId(container).innerHTML = "<canvas id='canvas' moz-opaque='true' tabindex='-1'></canvas>";        
@@ -1285,10 +1287,12 @@ dojo.declare("bespin.editor.API", null, {
 
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
-        
+
         bespin.util.clipboard.setup(); // setup the clipboard
 
         this.paint();
+
+        if (!opts.dontfocus) { this.setFocus(true); }
     },
 
     moveCursor: function(newpos) {
@@ -1361,57 +1365,5 @@ dojo.declare("bespin.editor.API", null, {
     // this does not set focus to the editor; it indicates that focus has been set to the underlying canvas
     setFocus: function(focus) {
         this.focus = focus;
-    }
-});
-
-// ** {{{ bespin.editor.Events }}} **
-//
-// Handle custom events aimed at, and for the editor
-dojo.declare("bespin.editor.Events", null, {
-    constructor: function(editor) {
-        this.editor = editor;
-
-        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
-            var file = event.file;
-
-            editor.model.insertDocument(file.content);
-            editor.moveCursor({ row: 0, col: 0 });
-        });
-
-        // -- fire an event here and you can run any editor action
-        bespin.subscribe("bespin:editor:doaction", function(event) {
-            var action = event.action;
-            var args   = event.args || bespin.editor.utils.buildArgs();
-
-            if (action) editor.ui.actions[action](args);
-        });
-
-        // -- fire an event to setup any new or replace actions
-        bespin.subscribe("bespin:editor:setaction", function(event) {
-            var action = event.action;
-            var code   = event.code;
-            if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
-        });
-
-        // -- add key listeners
-        // e.g. bindkey ctrl b moveCursorLeft
-        bespin.subscribe("bespin:editor:bindkey", function(event) {
-            var modifiers = event.modifiers || '';
-            if (!event.key) return;
-
-            var keyCode = bespin.util.keys.Key[event.key.toUpperCase()];
-
-            // -- try an editor action first, else fire away at the event bus
-            var action = editor.ui.actions[event.action] || event.action;
-
-            if (keyCode && action) {
-                if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
-                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action);
-                } else {
-                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
-                }
-            }
-        });
-
     }
 });

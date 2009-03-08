@@ -54,7 +54,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     moveCursorLeft: function(args) {
         // start of the line so move up
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col == 0)) {
+        if (bespin.get('settings').isSettingOn('strictlines') && (this.editor.cursorPosition.col == 0)) {
             var originalRow = args.pos.row;
             this.moveCursorUp(args);
             if (originalRow > 0) this.moveToLineEnd(args);
@@ -67,7 +67,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     moveCursorRight: function(args) {
         // end of the line, so go to the start of the next line
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col >= this.editor.model.getRowLength(args.pos.row))) {
+        if (bespin.get('settings').isSettingOn('strictlines') && (this.editor.cursorPosition.col >= this.editor.model.getRowLength(args.pos.row))) {
             var originalRow = args.pos.row;
             this.moveCursorDown(args);
             if (originalRow < this.editor.model.getRowCount() - 1) this.moveToLineStart(args);
@@ -82,7 +82,7 @@ dojo.declare("bespin.editor.Actions", null, {
     moveCursorUp: function(args) {
         this.editor.moveCursor({ row: Math.max(0, args.pos.row - 1) });
 
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
+        if (bespin.get('settings').isSettingOn('strictlines') && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
             this.handleCursorSelection(args);
             
             args.pos.row -= 1; // one above
@@ -100,7 +100,7 @@ dojo.declare("bespin.editor.Actions", null, {
     moveCursorDown: function(args) {
         this.editor.moveCursor({ row: Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1) });
 
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
+        if (bespin.get('settings').isSettingOn('strictlines') && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
             this.handleCursorSelection(args);
             
             args.pos.row += 1; // one below
@@ -316,18 +316,20 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertTab: function(args) {
+        var settings = bespin.get('settings');
+        
         if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
             return;
         }
 
-        var realTabs = (_settings.get('tabmode') == 'tabs');
+        var realTabs = (settings.get('tabmode') == 'tabs');
         if (realTabs) {
             // do something tabby
             tab = "\t";
             tabWidth = 1;
         } else {
-            var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+            var tabWidth = parseInt(settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
             var tabWidthCount = tabWidth;
             var tab = "";
             while (tabWidthCount-- > 0) {
@@ -412,7 +414,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoOperation = args;
         var undoArgs = { action: "unindent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, historyIndent: historyIndent, pos: bespin.editor.utils.copyPos(args.pos) };
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));        
     },
 
     unindent: function(args) {
@@ -694,7 +696,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     newline: function(args) {
-        var autoindentAmount = _settings.get('autoindent') ? bespin.util.leadingSpaces(this.editor.model.getRowArray(args.pos.row)) : 0;
+        var autoindentAmount = bespin.get('settings').get('autoindent') ? bespin.util.leadingSpaces(this.editor.model.getRowArray(args.pos.row)) : 0;
         this.editor.model.splitRow(args.pos, autoindentAmount);
         this.editor.moveCursor({ row: this.editor.cursorPosition.row + 1, col: autoindentAmount });
 
