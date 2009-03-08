@@ -34,21 +34,14 @@ dojo.provide("bespin.bootstrap");
 
 // ** {{{ Globals }}}
 //
-// One day we will get rid of all of these bar the core Bespin / _ object.
-var _ = bespin; // alias away!
+// One day we will get rid of all of these bar the core bespin object.
 
-var _editor;
-var _editSession;
-var _commandLine;
-var _files;
-var _settings;
-var _server;
-var _toolbar;
+// pieces in the scene
 var _projectLabel;
 var _fileLabel;
 var _scene;
 
-// for layout
+// Variables that tell you which layout elements are turned on and in view
 var _showCollab = false;
 var _showFiles = false;
 var _showTarget = false;
@@ -58,26 +51,23 @@ var _showCollabHotCounter = 0;
 // ** {{{ window.load time }}} **
 //
 // Loads and configures the objects that the editor needs
-dojo.addOnLoad(function(){                                                       
-    _editor      = new bespin.editor.API(dojo.byId('editor')); 
-    _editSession = new bespin.client.session.EditSession(_editor); 
-    _server      = new bespin.client.Server();                    
-    _files       = new bespin.client.FileSystem(); 
-    _toolbar     = new bespin.editor.Toolbar();
-
-    _toolbar.setupDefault();
-
-    _editor.setFocus(true);
+dojo.addOnLoad(function() {
+    var editor = bespin.register('editor', new bespin.editor.API('editor'));
+    var editSession = bespin.register('editSession', new bespin.client.session.EditSession(editor));
+    var server = bespin.register('server', new bespin.client.Server());
+    var files = bespin.register('files', new bespin.client.FileSystem());
+    
+    bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
         
     // Force a login just in case the user session isn't around
-    _server.currentuser(isLoggedIn, isNotLoggedIn);
+    server.currentuser(isLoggedIn, isNotLoggedIn);
     
     // Set the version info
     bespin.displayVersion();
     
     // Get going when settings are loaded
     bespin.subscribe("bespin:settings:loaded", function(event) {
-        _settings.loadSession();  // load the last file or what is passed in
+        bespin.get('settings').loadSession();  // load the last file or what is passed in
         doResize();
     });
    
@@ -124,10 +114,10 @@ dojo.addOnLoad(function(){
 //
 // Save the users magic project into the session
 function isLoggedIn(userinfo) {
-    _editSession.setUserinfo(userinfo);
+    bespin.get('editSession').setUserinfo(userinfo);
     
-    _settings    = new bespin.client.settings.Core();
-    _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.editorcommands.Commands);
+    bespin.register('settings', new bespin.client.settings.Core());
+    bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
 }
 
 // ** {{{ isNotLoggedIn() }}} **
@@ -186,5 +176,5 @@ function doResize() {
     var d = dojo.coords('status');
     dojo.attr('projectLabel', { width: d.w, height: d.h });
 
-    _editor.paint();
+    bespin.get('editor').paint();
 }
