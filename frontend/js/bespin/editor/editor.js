@@ -625,7 +625,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
 
         this.position = { row: row, col: newpos.col };
-        console.log(this.position);
     },
 
     // Pass in a screen position; returns undefined if the postion is valid, otherwise returns closest left and right valid positions
