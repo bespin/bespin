@@ -28,10 +28,9 @@ dojo.provide("bespin.editor.model");
 //
 // The editor has a model of the data that it works with. 
 // This representation is encapsulated in Bespin.Editor.DocumentModel
-dojo.declare("bespin.editor.DocumentModel", null, { 
+dojo.declare("bespin.editor.DocumentModel", null, {
     constructor: function() {
         this.rows = [];
-        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
     },
 
     getDirtyRows: function() {
@@ -59,9 +58,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // gets the number of characters in the passed row
-    getRowLength: function(rowIndex) {
-        return this.getRowString(rowIndex).length;
-    },
+//    getRowLength: function(rowIndex) {
+//        return this.getRowString(rowIndex).length;
+//    },
 
     // checks if there is a row at the specified index; useful because getRowArray() creates rows as necessary
     hasRow: function(rowIndex) {
@@ -70,7 +69,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // will insert blank spaces if passed col is past the end of passed row
     insertCharacters: function(pos, string) {
-        pos = this.removeTabSpacesFromPosition(pos);
         var row = this.getRowArray(pos.row);
         while (row.length < pos.col) row.push(" ");
 
@@ -121,7 +119,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // will silently adjust the length argument if invalid
     deleteCharacters: function(pos, length) {
-        pos = this.removeTabSpacesFromPosition(pos);
         var row = this.getRowArray(pos.row);
         var diff = (pos.col + length - 1) - row.length;
         if (diff > 0) length -= diff;
@@ -173,13 +170,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);
-    },
-
-    // returns the maximum number of columns across all rows
-    getMaxCols: function() {
-        var cols = 0;
-        for (var i = 0; i < this.rows.length; i++) cols = Math.max(cols, this.getRowString(i).length);
-        return cols;
     },
 
     // returns the number of rows in the model
@@ -312,72 +302,5 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         }
         
         return { row: row, col: col };
-    },
-
-    // returns a string that represents the row; converts tab characters to spaces
-    getRowString: function(row) {
-        var lineText = this.getRowArray(row).join("");
-
-        var tabs = false;
-
-        // check for tabs and handle them
-        for (var ti = 0; ti < lineText.length; ti++) {
-            if (lineText.charCodeAt(ti) == 9) {
-                tabs = true;
-                var toInsert = this.tabstop - (ti % this.tabstop);
-
-                var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += " ";
-
-                var left = (ti == 0) ? "" : lineText.substring(0, ti);
-                var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
-                lineText = left + " " + spacer + right;
-
-                ti += toInsert - 1;
-            }
-        }
-
-        return lineText;
-    },
-
-    removeTabSpacesFromPosition: function(pos) {
-        var line = this.getRowArray(pos.row);
-        var tabspaces = 0;
-        var curCol = 0;
-        for (var i = 0; i < line.length; i++) {
-            if (line[i].charCodeAt(0) == 9) {
-                var toInsert = this.tabstop - (curCol % this.tabstop);
-                curCol += toInsert - 1;
-                tabspaces += toInsert - 1;
-            }
-            curCol++;
-            if (curCol >= pos.col) break;
-        }
-        if (tabspaces > 0) {
-            return { col: pos.col = pos.col - tabspaces, row: pos.row };
-        } else {
-            return pos;
-        }
-    },
-
-    // returns undefined if the postion is valid; otherwise returns closest left and right valid positions
-    isInvalidCursorPosition: function(row, col) {
-        var line = this.getRowArray(row);
-
-        var curCol = 0;
-        for (var i = 0; i < line.length; i++) {
-            if (line[i].charCodeAt(0) == 9) {
-                var toInsert = this.tabstop - (curCol % this.tabstop);
-
-                if (col > curCol && col < (curCol + toInsert)) {
-                    return { left: curCol, right: curCol + toInsert };
-                }
-
-                curCol += toInsert - 1;
-            }
-            curCol++;
-        }
-
-        return undefined;
     }
 });
