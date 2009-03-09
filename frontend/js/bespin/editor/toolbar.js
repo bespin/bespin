@@ -29,7 +29,7 @@ dojo.provide("bespin.editor.toolbar");
 // The editor has the notion of a toolbar which are components that can drive the editor from outside of itself
 // Such examples are collaboration views, file browser, undo/redo, cut/copy/paste and more.
 
-dojo.declare("bespin.editor.Toolbar", null, { 
+dojo.declare("bespin.editor.Toolbar", null, {
     DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "save",
                       "close", "undo", "redo", "preview", "fontsize"],
     FONT_SIZES: {
@@ -38,13 +38,19 @@ dojo.declare("bespin.editor.Toolbar", null, {
         3: 14  // large
     },
 
+    showCollab: false,
+    showFiles: false,
+    showTarget: false,
+
+    showCollabHotCounter: 0,
+
     constructor: function(editor, opts) {
         this.editor = editor || bespin.get('editor');
         this.currentFontSize = 2;
 
         if (opts.setupDefault) this.setupDefault();
     },
-    
+
     setup: function(type, el) {
         if (dojo.isFunction(this.components[type])) this.components[type](this, el);
     },
@@ -52,7 +58,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
     /*
      * Go through the default list and try to hitch onto the DOM element
      */
-    setupDefault: function() { 
+    setupDefault: function() {
         dojo.forEach(this.DEFAULT_TOOLBAR, dojo.hitch(this, function(item) {
             var item_el = dojo.byId("toolbar_" + item);
             if (item_el) {
@@ -60,14 +66,14 @@ dojo.declare("bespin.editor.Toolbar", null, {
             }
         }));
     },
-    
+
     components: {
         collaboration: function(toolbar, el) {
             var collab = dojo.byId(el) || dojo.byId("toolbar_collaboration");
             dojo.connect(collab, 'click', function() {
-                _showCollab = !_showCollab;
-                collab.src = "images/" + ( (_showCollab) ? "icn_collab_on.png" : (_showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
-                if (dojo.isFunction(recalcLayout)) recalcLayout(); // todo fix
+                toolbar.showCollab = !toolbar.showCollab;
+                collab.src = "images/" + ( (toolbar.showCollab) ? "icn_collab_on.png" : (toolbar.showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
+                bespin.bootstrap.recalcLayout();
             });
             dojo.connect(collab, 'mouseover', function() {
                 collab.style.cursor = "pointer";
@@ -78,13 +84,13 @@ dojo.declare("bespin.editor.Toolbar", null, {
                 collab.src = "images/icn_collab_off.png";
             });
         },
-        
+
         files: function(toolbar, el) {
             var files = dojo.byId(el) || dojo.byId("toolbar_files");
             dojo.connect(files, 'click', function() {
-                _showFiles = !_showFiles;
-                files.src = "images/" + ( (_showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
-                if (dojo.isFunction(recalcLayout)) recalcLayout(); // todo fix
+                toolbar._showFiles = !toolbar._showFiles;
+                files.src = "images/" + ( (toolbar._showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
+                bespin.bootstrap.recalcLayout();
             });
             dojo.connect(files, 'mouseover', function() {
                 files.style.cursor = "pointer";
@@ -107,13 +113,13 @@ dojo.declare("bespin.editor.Toolbar", null, {
                 dashboard.src = "images/icn_dashboard_off.png";
             });
         },
-        
+
         target_browsers: function(toolbar, el) {
             var target = dojo.byId(el) || dojo.byId("toolbar_target_browsers");
             dojo.connect(target, 'click', function() {
-                _showTarget = !_showTarget;
-                target.src = "images/" + ( (_showTarget) ? "icn_target_on.png" : "icn_target_off.png" );
-                if (dojo.isFunction(recalcLayout)) recalcLayout(); // todo fix
+                toolbar._showTarget = !toolbar._showTarget;
+                target.src = "images/" + ( (toolbar._showTarget) ? "icn_target_on.png" : "icn_target_off.png" );
+                bespin.bootstrap.recalcLayout();
             });
             dojo.connect(target, 'mouseover', function() {
                 target.style.cursor = "pointer";
@@ -134,9 +140,9 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(save, 'mouseout', function() {
                 save.src = "images/icn_save.png";
             });
-               
-            dojo.connect(save, 'click', function() {   
-                bespin.publish("bespin:editor:savefile");  
+
+            dojo.connect(save, 'click', function() {
+                bespin.publish("bespin:editor:savefile");
             });
         },
 
@@ -185,77 +191,10 @@ dojo.declare("bespin.editor.Toolbar", null, {
                 toolbar.editor.ui.actions.redo();
             });
         },
-        
-        // -- THESE ARE MORE TROUBLE THAN THEY ARE WORTH
-        // Developers are smart enough to know that they can Cmd/Ctrl C X V!
-        //
-        // cut: function(toolbar, el) {
-        //     var cut = dojo.byId(el) || dojo.byId("toolbar_cut");
-        // 
-        //     dojo.connect(cut, 'mouseover', function() {
-        //         cut.src = "images/icn_cut_on.png";
-        //     });
-        // 
-        //     dojo.connect(cut, 'mouseout', function() {
-        //         cut.src = "images/icn_cut.png";
-        //     });
-        // 
-        //     dojo.connect(cut, 'click', function() {
-        //         toolbar.editor.ui.actions.cutSelection(bespin.editor.utils.buildArgs());
-        //     });
-        // },
-        // 
-        // copy: function(toolbar, el) {
-        //     var copy = dojo.byId(el) || dojo.byId("toolbar_copy");
-        // 
-        //     dojo.connect(copy, 'mouseover', function() {
-        //         copy.src = "images/icn_copy_on.png";
-        //     });
-        // 
-        //     dojo.connect(copy, 'mouseout', function() {
-        //         copy.src = "images/icn_copy.png";
-        //     });
-        // 
-        //     dojo.connect(copy, 'click', function() {
-        //         toolbar.editor.ui.actions.copySelection(bespin.editor.utils.buildArgs());
-        //     });
-        // },
-        // 
-        // paste: function(toolbar, el) {
-        //     var paste = dojo.byId(el) || dojo.byId("toolbar_paste");
-        // 
-        //     dojo.connect(paste, 'mouseover', function() {
-        //         paste.src = "images/icn_paste_on.png";
-        //     });
-        // 
-        //     dojo.connect(paste, 'mouseout', function() {
-        //         paste.src = "images/icn_paste.png";
-        //     });
-        // 
-        //     dojo.connect(paste, 'click', function() {
-        //         toolbar.editor.ui.actions.pasteFromClipboard(bespin.editor.utils.buildArgs());
-        //     });
-        // },
-
-        // history: function(toolbar, el) {
-        //     var history = dojo.byId(el) || dojo.byId("toolbar_history");
-        //     
-        //     Element.observe(history, 'mouseover', function() {
-        //         history.src = "images/icn_history_on.png";
-        //     });
-        // 
-        //     Element.observe(history, 'mouseout', function() {
-        //         history.src = "images/icn_history.png";
-        //     });
-        //     
-        //     Element.observe(history, 'click', function() {
-        //         console.log("clicked on history toolbar icon");
-        //     });
-        // },
 
         preview: function(toolbar, el) {
             var preview = dojo.byId(el) || dojo.byId("toolbar_preview");
-            
+
             dojo.connect(preview, 'mouseover', function() {
                 preview.src = "images/icn_preview_on.png";
             });
@@ -263,15 +202,15 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(preview, 'mouseout', function() {
                 preview.src = "images/icn_preview.png";
             });
-            
+
             dojo.connect(preview, 'click', function() {
-                bespin.publish("bespin:editor:preview"); // use default file                
+                bespin.publish("bespin:editor:preview"); // use default file
             });
         },
 
         fontsize: function(toolbar, el) {
             var fontsize = dojo.byId(el) || dojo.byId("toolbar_fontsize");
-            
+
             dojo.connect(fontsize, 'mouseover', function() {
                 fontsize.src = "images/icn_fontsize_on.png";
             });
