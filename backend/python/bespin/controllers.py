@@ -54,10 +54,10 @@ def new_user(request, response):
         raise BadRequest("username, email and password are required.")
     user = request.user_manager.create_user(username, password, email)
     
-    file_manager = request.file_manager
-    settings_project = file_manager.get_project(user, user, 
+    file_manager = model.FSFileManager(user)
+    settings_project = file_manager.get_project(user, 
                         "BespinSettings", create=True)
-    file_manager.install_template(user, settings_project,
+    file_manager.install_template(settings_project,
                                           'usertemplate')
     response.content_type = "application/json"
     response.body = "{}"
@@ -441,8 +441,6 @@ def db_middleware(app):
         environ['bespin.dbsession'] = session
         environ['bespin.docommit'] = True
         environ['user_manager'] = model.UserManager(session)
-        environ['file_manager'] = model.FileManager(session)
-        environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
         try:
             result = app(environ, start_response)
             if environ['bespin.docommit']:
