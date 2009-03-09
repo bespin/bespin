@@ -438,7 +438,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         this.moveCursor({ col: oldPos.col, row: oldPos.row - 1 });
 
-        if (_settings.isOn(_settings.get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
             this.moveToLineEnd();
         }
 
@@ -450,7 +450,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         this.moveCursor({ row: Math.max(0, oldPos.row + 1) });
 
-        if (_settings.isOn(_settings.get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
             this.moveToLineEnd();
         }
 
@@ -461,7 +461,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var oldPos = bespin.editor.utils.copyPos(this.position);
 
         // start of the line so move up
-        if (_settings.isOn(_settings.get('strictlines')) && (this.position.col == 0)) {
+        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col == 0)) {
             this.moveUp();
             if (oldPos.row > 0) this.moveToLineEnd();
         } else {
@@ -475,7 +475,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var oldPos = bespin.editor.utils.copyPos(this.position);
 
         // end of the line, so go to the start of the next line
-        if (_settings.isOn(_settings.get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
+        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
             this.moveDown();
             if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
         } else {
@@ -1645,7 +1645,7 @@ dojo.declare("bespin.editor.API", null, {
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
 
-        bespin.util.clipboard.setup(); // setup the clipboard
+        bespin.util.clipboard.setup(this); // setup the clipboard
 
         this.paint();
 

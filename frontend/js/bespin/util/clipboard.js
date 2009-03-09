@@ -38,21 +38,21 @@ dojo.mixin(bespin.util.clipboard, {
     // ** {{{ install }}} **
     //
     // Given a clipboard adapter implementation, save it, an call install() on it
-    install: function(newImpl) {
+    install: function(editor, newImpl) {
         if (this.uses && typeof this.uses['uninstall'] == "function") this.uses.uninstall();
         this.uses = newImpl;
-        this.uses.install();
+        this.uses.install(editor);
     },
 
     // ** {{{ setup }}} **
     //
     // Do the first setup. Right now checks for WebKit and inits a DOMEvents solution if that is true
     // else install the default.
-    setup: function() {
+    setup: function(editor) {
         if (dojo.isWebKit) {
-            this.install(new bespin.util.clipboard.DOMEvents());
+            this.install(editor, new bespin.util.clipboard.DOMEvents());
         } else {
-            this.install(new bespin.util.clipboard.HiddenWorld());
+            this.install(editor, new bespin.util.clipboard.HiddenWorld());
         }
     }
 });
@@ -64,8 +64,7 @@ dojo.mixin(bespin.util.clipboard, {
 // copynpaster text input, and then the real event does its thing and we focus back
 
 dojo.declare("bespin.util.clipboard.DOMEvents", null, {
-    install: function() {
-        var editor = bespin.get('editor');
+    install: function(editor) {
         
         // * Configure the hidden copynpaster element
         var copynpaster = dojo.create("input", {
@@ -157,8 +156,7 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
 // Exclusively grab the C, X, and V key combos and use a hidden textarea to move data around
 
 dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
-    install: function() {
-        var editor = bespin.get('editor');
+    install: function(editor) {
 
         // * Configure the hidden copynpaster element
         var copynpaster = dojo.create("textarea", {
