@@ -58,9 +58,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // gets the number of characters in the passed row
-//    getRowLength: function(rowIndex) {
-//        return this.getRowString(rowIndex).length;
-//    },
+    getRowLength: function(rowIndex) {
+        return this.getRowArray(rowIndex).length;
+    },
 
     // checks if there is a row at the specified index; useful because getRowArray() creates rows as necessary
     hasRow: function(rowIndex) {

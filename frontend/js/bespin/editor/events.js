@@ -35,7 +35,7 @@ dojo.declare("bespin.editor.Events", null, {
             var file = event.file;
 
             editor.model.insertDocument(file.content);
-            editor.moveCursor({ row: 0, col: 0 });
+            editor.cursorManager.moveCursor({ row: 0, col: 0 });
         });
 
         // -- fire an event here and you can run any editor action
