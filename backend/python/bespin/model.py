@@ -41,7 +41,6 @@ import re
 from uuid import uuid4
 import shutil
 
-import path
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
@@ -81,25 +80,18 @@ class OverQuota(FSException):
 class BadValue(FSException):
     pass
     
-class DB(object):
-    def __init__(self, user_manager, file_manager):
-        self.user_manager = user_manager
-        self.file_manager = file_manager
-        
-        user_manager.db = self
-        file_manager.db = self
-    
 class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(36), unique=True, default=lambda: str(uuid4()))
+    uuid = Column(String(36), unique=True)
     username = Column(String(128), unique=True)
     email = Column(String(128))
     password = Column(String(20))
     settings = Column(PickleType())
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
+    file_location = Column(String(200))
     
     def __init__(self, username, password, email):
         self.username = username
@@ -107,6 +99,8 @@ class User(Base):
         self.password = password
         self.settings = {}
         self.quota = config.c.default_quota
+        self.uuid = str(uuid4())
+        self.file_location = self.uuid
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
@@ -121,6 +115,19 @@ class User(Base):
         """Returns the tuple of quota and amount_used"""
         return (self.quota * QUOTA_UNITS, self.amount_used)
     
+    def get_location(self):
+        location = self.file_location
+        fsroot = config.c.fsroot
+        if not fsroot.exists(location):
+            fsroot.makedir(location, recursive=True)
+        return fsroot.opendir(location)
+    
+    @property
+    def projects(self):
+        location = self.get_location()
+        result = [Project(name, location.opendir(name)) 
+                for name in location.listdir()]
+        return result
 
 bad_characters = "<>| '\""
 invalid_chars = re.compile(r'[%s]' % bad_characters)
@@ -145,10 +152,11 @@ class UserManager(object):
         except DBAPIError:
             raise ConflictError("Username %s is already in use" % username)
         
-        file_manager = self.db.file_manager
-        project = file_manager.get_project(user, user, 
+        file_manager = FSFileManager(user)
+        file_manager.create_user_directory()
+        project = file_manager.get_project(user, 
                     "SampleProject", create=True)
-        file_manager.install_template(user, project)
+        file_manager.install_template(project)
         return user
         
     def get_user(self, username):
@@ -163,9 +171,18 @@ class FileStatus(Base):
     filepath = Column(String(700), primary_key=True)
     read_only = Column(Boolean)
     
-class File(object):
+class Directory(object):
     def __init__(self, name):
-        pass
+        if not name.endswith("/"):
+            name += "/"
+        self.name = name
+
+class File(object):
+    def __init__(self, name, location, info=None):
+        self.name = name
+        self.basename = os.path.basename(name)
+        self.location = location
+        self._info = info
         
     @property
     def short_name(self):
@@ -174,6 +191,22 @@ class File(object):
             return self.name
         else:
             return elems[1]
+            
+    @property
+    def exists(self):
+        return self.location.exists(self.basename)
+        
+    @property
+    def info(self):
+        if self._info is None:
+            self._info = self.location.getinfo(self.basename)
+        return self._info
+    
+    @property
+    def data(self):
+        name = self.basename
+        data = self.location.open(name).read()
+        return data
         
     @property
     def mimetype(self):
@@ -183,12 +216,28 @@ class File(object):
         if type:
             return type
         return "application/octet-stream"
+    
+    @property
+    def saved_size(self):
+        return self.info['size']
+    
+    @property
+    def created(self):
+        return self.info['created_time']
+        
+    @property
+    def modified(self):
+        return self.info['modified_time']
+    
+    def save(self, contents):
+        file_obj = self.location.createfile(self.basename, contents)
                      
     def __repr__(self):
         return "File: %s" % (self.name)
         
 class Project(object):
-    def __init__(self, location):
+    def __init__(self, name, location):
+        self.name = name
         self.location = location
     
     def authorize(self, user):
@@ -200,6 +249,24 @@ class Project(object):
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
+        
+    def get_file_location(self, destpath, create=False):
+        location = self.location
+        dirname = os.path.dirname(destpath)
+        
+        # is this a file in the project root?
+        if not dirname:
+            return location
+            
+        # make the directory if need be
+        if not location.exists(dirname):
+            if create:
+                location.makedir(dirname, recursive=True)
+            else:
+                raise FileNotFound("Directory %s does not exist in project %s"
+                                % destpath, self.name)
+            
+        return location.opendir(dirname)
 
 
 _text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
@@ -214,36 +281,66 @@ def _cmp_files_in_project(fs1, fs2):
 
 class FSFileManager(object):
     """File Manager that stores the files in the filesystem."""
-    def __init__(self, root, levels):
-        self.root = root
-        self.levels = levels
+    def __init__(self, owner):
+        self.owner = owner
+        
+    def _get_owner_path(self):
+        return self.owner.get_location()
+        
+    def create_user_directory(self):
+        full_path = self._get_owner_path()
     
-    def get_project(self, user, owner, project_name, create=False, 
+    def get_project(self, user, project_name, create=False, 
                 clean=False):
+        owner = self.owner
+        
         if user != owner:
             raise NotAuthorized("User %s is not allowed to access project %s" %
-                                owner)
+                                (owner, project_name))
 
         # a request for a clean project also implies that creating it
         # is okay
         if clean:
             create = True
         
-        fspath = path.join(self.root, user.uuid, project_name)
-        if path.exists(fspath):
-            project = Project(fspath)
+        userdir = self._get_owner_path()
+        if userdir.exists(project_name):
+            project = Project(project_name, userdir.opendir(project_name))
             if clean:
-                shutil.rmtree(fspath)
-                os.mkdir(fspath)
+                userdir.removedir(project_name)
+                userdir.makedir(project_name)
         else:
             if not create:
                 raise FileNotFound("Project %s not found" % project_name)
             log.debug("Creating new project %s", project_name)
-            project = Project(fspath)
+            userdir.makedir(project_name, recursive=True)
+            project = Project(project_name, userdir.opendir(project_name))
         return project
+        
+    def save_file(self, project, destpath, contents):
+        """Saves the contents to the file path provided, creating
+        directories as needed in between. If last_edit is not provided,
+        the file must not be opened for editing. Otherwise, the
+        last_edit parameter should include the last edit ID received by
+        the user."""
+        saved_size = len(contents) if contents is not None else 0
+        if not self.owner.check_save(saved_size):
+            raise OverQuota()
+        
+        file_loc = project.get_file_location(destpath, create=True)
+        file = File(destpath, file_loc)
+        if file.exists:
+            size_delta = saved_size - file.saved_size
+        else:
+            size_delta = saved_size
+        file.save(contents)
+        self.owner.amount_used += size_delta
+        return file
+        
 
-    def install_template(self, user, project, template="template"):
+    def install_template(self, project, template="template"):
         """Installs a set of template files into a new project."""
+        user = self.owner
         log.debug("Installing template %s for user %s as project %s",
                 template, user, project)
         source_dir = pkg_resources.resource_filename("bespin", template)
@@ -258,7 +355,31 @@ class FSFileManager(object):
                 else:
                     destpath = f
                 contents = open(os.path.join(dirpath, f)).read()
-                self.save_file(user, project, destpath, contents)
+                self.save_file(project, destpath, contents)
+                
+    def list_files(self, project=None, path=""):
+        """Retrieve a list of files at the path. Directories will have
+        '/' at the end of the name.
+
+        If project is None, this will return the projects
+        owned by the user."""
+        if not project:
+            return sorted(user.projects, key=lambda proj: proj.name)
+        
+        location = project.location if not path else \
+            project.get_file_location(path)
+        
+        names = location.listdir()
+        
+        result = []
+        for name in names:
+            if location.isdir(name):
+                result.append(Directory(name))
+            else:
+                result.append(File(name, None, location.getinfo(name)))
+        
+        return sorted(result, key=lambda item: item.name)
+
 
 
 class FileManager(object):
