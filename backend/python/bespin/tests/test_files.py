@@ -38,7 +38,7 @@ import simplejson
 
 from bespin import config, controllers, model
 
-from bespin.model import File, Project, User, FileStatus
+from bespin.model import File, Project, User
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -85,7 +85,7 @@ def test_basic_file_creation():
     starting_point = macgyver.amount_used
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "reqs", "Chewing gum wrapper")
-    file_obj = File("reqs", bigmac.location / "reqs")
+    file_obj = File(bigmac, "reqs", bigmac.location / "reqs")
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
     ending_point = macgyver.amount_used
@@ -106,7 +106,7 @@ def test_basic_file_creation():
     
     # let's update the contents
     fm.save_file(bigmac, "reqs", "New content")
-    file_obj = File("reqs", bigmac.location / "reqs")
+    file_obj = File(bigmac, "reqs", bigmac.location / "reqs")
     
     assert file_obj.data == 'New content'
     
@@ -164,36 +164,33 @@ def test_error_if_you_try_to_replace_dir_with_file():
     
 def test_get_file_opens_the_file():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     contents = fm.get_file(macgyver, bigmac, "foo/bar/baz")
     assert contents == "biz"
     
-    s = fm.session
-    file_obj = s.query(File).filter_by(name="foo/bar/baz") \
-                .filter_by(project=bigmac).one()
-    files = [f.file for f in macgyver.files]
-    assert file_obj in files
+    assert "bigmac" in macgyver.files
+    assert "foo/bar/baz" in macgyver.files["bigmac"]
     
-    open_files = fm.list_open(macgyver)
+    open_files = fm.list_open()
     print "OF: ", open_files
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
     fm.close(macgyver, bigmac, "foo")
     # does nothing, because we don't have that one open
-    open_files = fm.list_open(macgyver)
+    open_files = fm.list_open()
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
     fm.close(macgyver, bigmac, "foo/bar/baz")
-    open_files = fm.list_open(macgyver)
+    open_files = fm.list_open()
     assert open_files == {}
 
 def test_get_file_raises_exception_if_its_a_directory():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
         contents = fm.get_file(macgyver, bigmac, "foo/bar/")
         assert False, "Expected exception for directory"

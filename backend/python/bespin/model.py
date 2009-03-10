@@ -43,6 +43,7 @@ import shutil
 import subprocess
 
 from path import path as path_obj
+from pathutils import LockError as PULockError, Lock, LockFile
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
@@ -51,6 +52,7 @@ from sqlalchemy import (Column, PickleType, String, Integer,
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
+import simplejson
 
 from bespin import config
 
@@ -80,6 +82,9 @@ class OverQuota(FSException):
     pass
 
 class BadValue(FSException):
+    pass
+    
+class LockError(FSException):
     pass
     
 class User(Base):
@@ -129,6 +134,78 @@ class User(Base):
         result = [Project(name.basename(), location / name) 
                 for name in location.listdir()]
         return result
+        
+    @property
+    def statusfile(self):
+        return self.get_location() / ".bespin-status.json"
+        
+    def mark_opened(self, file_obj, mode):
+        """Keeps track of this file as being currently open by the
+        user with the mode provided."""
+        statusfile = self.statusfile
+        try:
+            lock = Lock(statusfile)
+            lock.lock()
+            if statusfile.exists():
+                statusinfo = statusfile.bytes()
+                statusinfo = simplejson.loads(statusinfo)
+            else:
+                statusinfo = dict()
+            
+            project_files = statusinfo.setdefault(file_obj.project.name, {})
+            project_files[file_obj.name] = {'mode' : mode}
+            statusfile.write_bytes(simplejson.dumps(statusinfo))
+            lock.unlock()
+        except PULockError, e:
+            raise LockError("Problem tracking open status for file %s: %s" %
+                        (file_obj.name, str(e)))
+    
+    def close(self, file_obj):
+        """Keeps track of this file as being currently closed by the
+        user."""
+        statusfile = self.statusfile
+        try:
+            lock = Lock(statusfile)
+            lock.lock()
+            if statusfile.exists():
+                statusinfo = statusfile.bytes()
+                statusinfo = simplejson.loads(statusinfo)
+            else:
+                statusinfo = dict()
+            
+            project_files = statusinfo.get(file_obj.project.name)
+            if project_files is not None:
+                try:
+                    del project_files[file_obj.name]
+                except KeyError:
+                    pass
+                
+                if not project_files:
+                    del statusinfo[file_obj.project.name]
+                    
+                statusfile.write_bytes(simplejson.dumps(statusinfo))
+                
+            lock.unlock()
+        except PULockError, e:
+            raise LockError("Problem tracking open status for file %s: %s" %
+                        (file_obj.name, str(e)))
+    
+    @property
+    def files(self):
+        """Returns a dictionary of the form::
+            
+            {'project' : {'path/to/file' : {'mode' : 'rw'}}}
+            """
+        try:
+            statusfile = LockFile(self.statusfile)
+            statusinfo = statusfile.read()
+            statusfile.close()
+        except PULockError, e:
+            raise LockError("Problem reading open file status: %s", str(e))
+        
+        statusinfo = simplejson.loads(statusinfo)
+        return statusinfo
+        
 
 bad_characters = "<>| '\""
 invalid_chars = re.compile(r'[%s]' % bad_characters)
@@ -165,13 +242,6 @@ class UserManager(object):
         found."""
         return self.session.query(User).filter_by(username=username).first()
             
-class FileStatus(Base):
-    __tablename__ = "filestatus"
-    
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
-    filepath = Column(String(700), primary_key=True)
-    read_only = Column(Boolean)
-    
 class Directory(object):
     def __init__(self, name):
         if not name.endswith("/"):
@@ -183,7 +253,8 @@ class Directory(object):
         return self.name.basename() + "/"
 
 class File(object):
-    def __init__(self, name, location):
+    def __init__(self, project, name, location):
+        self.project = project
         self.name = name
         self.location = location
         self._info = None
@@ -235,6 +306,71 @@ class File(object):
     def save(self, contents):
         file_obj = self.location.write_bytes(contents)
                      
+    @property
+    def statusfile(self):
+        return self.project.location / ".bespin-status.json"
+        
+    def mark_opened(self, user_obj, mode):
+        """Keeps track of this file as being currently open by the
+        user with the mode provided."""
+        statusfile = self.statusfile
+        try:
+            lock = Lock(statusfile)
+            lock.lock()
+            if statusfile.exists():
+                statusinfo = statusfile.bytes()
+                statusinfo = simplejson.loads(statusinfo)
+            else:
+                statusinfo = dict()
+            
+            file_users = statusinfo.setdefault(self.name, {})
+            file_users[user_obj.username] = mode
+
+            statusfile.write_bytes(simplejson.dumps(statusinfo))
+            lock.unlock()
+        except PULockError, e:
+            raise LockError("Problem tracking open status for file %s: %s" %
+                        (file_obj.name, str(e)))
+    
+    @property
+    def users(self):
+        """Returns a dictionary with the keys being the list of users
+        with this file open and the values being the modes."""
+        try:
+            statusfile = LockFile(self.statusfile)
+            statusinfo = statusfile.read()
+            statusfile.close()
+        except PULockError, e:
+            raise LockError("Problem reading open file status: %s", str(e))
+        
+        statusinfo = simplejson.loads(statusinfo)
+        return statusinfo.get(self.name, {})
+    
+    def close(self, user):
+        """Close this file for the given user."""
+        statusfile = self.statusfile
+        try:
+            lock = Lock(statusfile)
+            lock.lock()
+            if statusfile.exists():
+                statusinfo = statusfile.bytes()
+                statusinfo = simplejson.loads(statusinfo)
+            else:
+                statusinfo = dict()
+            
+            file_users = statusinfo.setdefault(self.name, {})
+            try:
+                del file_users[user.username]
+            except KeyError:
+                pass
+
+            statusfile.write_bytes(simplejson.dumps(statusinfo))
+            lock.unlock()
+        except PULockError, e:
+            raise LockError("Problem tracking open status for file %s: %s" %
+                        (file_obj.name, str(e)))
+        
+
     def __repr__(self):
         return "File: %s" % (self.name)
         
@@ -313,14 +449,14 @@ class FSFileManager(object):
         
         file_loc = project.location / destpath
         if file_loc.isdir():
-            raise ConflictError("Cannot save file at %s in project "
+            raise FileConflict("Cannot save file at %s in project "
                 "%s, because there is already a directory with that name.")
         
         file_dir = file_loc.dirname()
         if not file_dir.exists():
             file_dir.makedirs()
         
-        file = File(destpath, file_loc)
+        file = File(project, destpath, file_loc)
         if file.exists():
             size_delta = saved_size - file.saved_size
         else:
@@ -372,7 +508,7 @@ class FSFileManager(object):
             if name.isdir():
                 result.append(Directory(name))
             else:
-                result.append(File(path_obj(project.name) / path, name))
+                result.append(File(project, path_obj(project.name) / path, name))
         
         return sorted(result, key=lambda item: item.name)
 
@@ -389,7 +525,7 @@ class FSFileManager(object):
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
         
-        file_obj = self._check_and_get_file(user, project, path)
+        file_obj = self._check_and_get_file(project, path)
         self._save_status(file_obj, user, mode)
         
         contents = str(file_obj.data)
@@ -397,10 +533,14 @@ class FSFileManager(object):
         
     def _check_and_get_file(self, project, path):
         """Returns the project, user object, file object."""
-        file_obj = File(path, project.location / path)
+        file_obj = File(project, path, project.location / path)
         if not file_obj.exists():
             raise FileNotFound("File %s in project %s does not exist" 
                                 % (path, project.name))
+        
+        if file_obj.location.isdir():
+            raise FSException("%s in project %s is a file, not a directory"
+                    % (path, project.name))
         
         return file_obj
         
@@ -410,6 +550,23 @@ class FSFileManager(object):
         file_obj = self._check_and_get_file(project, path)
         return file_obj
 
+    def _save_status(self, file_obj, user_obj, mode="rw"):
+        user_obj.mark_opened(file_obj, mode)
+        file_obj.mark_opened(user_obj, mode)
+
+    def list_open(self):
+        """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": {"mode" : "rw"} } }"""
+        return self.owner.files
+        
+    def close(self, user, project, path):
+        """Close the file for the given user"""
+        file_obj = File(project, path, project.location / path)
+        file_obj.close(user)
+        user.close(file_obj)
+        
+        # self.reset_edits(user, project, path)
+
+    
 class FileManager(object):
     def __init__(self, session):
         self.session = session
