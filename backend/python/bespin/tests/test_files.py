@@ -166,7 +166,7 @@ def test_get_file_opens_the_file():
     fm = _get_fm()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
-    contents = fm.get_file(macgyver, bigmac, "foo/bar/baz")
+    contents = fm.get_file(bigmac, "foo/bar/baz")
     assert contents == "biz"
     
     assert "bigmac" in macgyver.files
@@ -177,13 +177,13 @@ def test_get_file_opens_the_file():
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
-    fm.close(macgyver, bigmac, "foo")
+    fm.close(bigmac, "foo")
     # does nothing, because we don't have that one open
     open_files = fm.list_open()
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
-    fm.close(macgyver, bigmac, "foo/bar/baz")
+    fm.close(bigmac, "foo/bar/baz")
     open_files = fm.list_open()
     assert open_files == {}
 
@@ -192,7 +192,7 @@ def test_get_file_raises_exception_if_its_a_directory():
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
-        contents = fm.get_file(macgyver, bigmac, "foo/bar/")
+        contents = fm.get_file(bigmac, "foo/bar/")
         assert False, "Expected exception for directory"
     except model.FSException:
         pass
@@ -202,7 +202,7 @@ def test_get_file_raises_not_found_exception():
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
-        contents = fm.get_file(macgyver, bigmac, "NOTFOUND")
+        contents = fm.get_file(bigmac, "NOTFOUND")
         assert False, "Expected exception for not found"
     except model.FileNotFound:
         pass
@@ -248,7 +248,7 @@ def test_cannot_delete_file_open_by_someone_else():
     fm = _get_fm()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
-    fm.get_file(macgyver, bigmac, "foo/bar/baz")
+    fm.get_file(bigmac, "foo/bar/baz")
     try:
         fm.delete(someone_else, bigmac, "foo/bar/baz")
         assert False, "Expected FileConflict exception for deleting open file"
@@ -259,7 +259,7 @@ def test_can_delete_file_open_by_me():
     fm = _get_fm()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
-    fm.get_file(macgyver, bigmac, "foo/bar/baz")
+    fm.get_file(bigmac, "foo/bar/baz")
     fm.delete(macgyver, bigmac, "foo/bar/baz")
     assert not macgyver.files
     
@@ -271,7 +271,7 @@ def test_successful_deletion():
     fm.delete(macgyver, bigmac, "foo/bar/baz")
     assert macgyver.amount_used == starting_used
     try:
-        fm.get_file(macgyver, bigmac, "foo/bar/baz")
+        fm.get_file(bigmac, "foo/bar/baz")
         assert False, "Expected FileNotFound because the file is gone"
     except model.FileNotFound:
         pass
@@ -301,156 +301,141 @@ def test_directory_deletion():
     assert not file_loc.exists()
     assert macgyver.amount_used == starting_used
     
-def test_basic_edit_functions():
-    fm = _get_fm()
-    s = fm.session
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
-    fm.save_edit(someone_else, bigmac2, "foo/bar/baz", "['some', 'thing']")
-    file_obj = s.query(File).filter_by(name="foo/bar/baz") \
-                .filter_by(project=bigmac).one()
-    assert len(file_obj.edits) == 1
-    
-    try:
-        content = fm.get_file(macgyver, bigmac, "foo/bar/baz")
-        assert False, "Files are not retrievable until the edits are saved"
-    except model.FileNotFound:
-        pass
-        
-    files = fm.list_open(macgyver)
-    info = files['bigmac']['foo/bar/baz']
-    assert info['mode'] == "rw"
-    
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == ["['edit', 'thinger']"]
-    
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['second', 'edit']")
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == ["['edit', 'thinger']", "['second', 'edit']"]
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz", 1)
-    assert edits == ["['second', 'edit']"]
-    
-    try:
-        edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz", 2)
-        assert False, "Expected FSException for out-of-bounds start point"
-    except model.FSException:
-        pass
-    
-def test_reset_edits():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
-    fm.reset_edits(macgyver, bigmac, "foo/bar/baz")
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == []
-    files = fm.list_open(macgyver)
-    assert files == {}
-    
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
-    fm.save_edit(macgyver, bigmac, "foo/bar/blork", "['edit', 'thinger']")
-    files = fm.list_open(macgyver)
-    bigmac_files = files['bigmac']
-    assert len(bigmac_files) == 2
-    fm.reset_edits(macgyver)
-    files = fm.list_open(macgyver)
-    assert files == {}
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == []
-    
-def test_edits_cleared_after_save():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == []
+# Edit functions are commented out for now. These may be reimplemented
+# after the collaboration merge. If not, we should delete this stuff.
 
-def test_edits_cleared_after_close():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
-    fm.get_file(macgyver, bigmac, "foo/bar/baz")
-    fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
-    fm.close(macgyver, bigmac, "foo/bar/baz")
-    edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
-    assert edits == []
-    
+# def test_basic_edit_functions():
+#     fm = _get_fm()
+#     s = fm.session
+#     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+#     bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+#     fm.save_edit(someone_else, bigmac2, "foo/bar/baz", "['some', 'thing']")
+#     file_obj = s.query(File).filter_by(name="foo/bar/baz") \
+#                 .filter_by(project=bigmac).one()
+#     assert len(file_obj.edits) == 1
+#     
+#     try:
+#         content = fm.get_file(bigmac, "foo/bar/baz")
+#         assert False, "Files are not retrievable until the edits are saved"
+#     except model.FileNotFound:
+#         pass
+#         
+#     files = fm.list_open(macgyver)
+#     info = files['bigmac']['foo/bar/baz']
+#     assert info['mode'] == "rw"
+#     
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == ["['edit', 'thinger']"]
+#     
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['second', 'edit']")
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == ["['edit', 'thinger']", "['second', 'edit']"]
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz", 1)
+#     assert edits == ["['second', 'edit']"]
+#     
+#     try:
+#         edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz", 2)
+#         assert False, "Expected FSException for out-of-bounds start point"
+#     except model.FSException:
+#         pass
+#     
+# def test_reset_edits():
+#     fm = _get_fm()
+#     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+#     fm.reset_edits(macgyver, bigmac, "foo/bar/baz")
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == []
+#     files = fm.list_open(macgyver)
+#     assert files == {}
+#     
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+#     fm.save_edit(macgyver, bigmac, "foo/bar/blork", "['edit', 'thinger']")
+#     files = fm.list_open(macgyver)
+#     bigmac_files = files['bigmac']
+#     assert len(bigmac_files) == 2
+#     fm.reset_edits(macgyver)
+#     files = fm.list_open(macgyver)
+#     assert files == {}
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == []
+#     
+# def test_edits_cleared_after_save():
+#     fm = _get_fm()
+#     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+#     fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == []
+# 
+# def test_edits_cleared_after_close():
+#     fm = _get_fm()
+#     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+#     fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
+#     fm.get_file(bigmac, "foo/bar/baz")
+#     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
+#     fm.close(bigmac, "foo/bar/baz")
+#     edits = fm.list_edits(macgyver, bigmac, "foo/bar/baz")
+#     assert edits == []
+#     
 def test_list_top_level():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "readme.txt", "Hi there!")
-    result = fm.list_files(macgyver, bigmac)
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "readme.txt", "Hi there!")
+    result = fm.list_files(bigmac)
     result_names = [file.name for file in result]
     assert result_names == ["readme.txt"]
-    result = fm.list_files(macgyver)
+    result = fm.list_files()
     result_names = [proj.name for proj in result]
     assert result_names == ["BespinSettings",
                             "SampleProject", "bigmac"]
     
     
-def test_secondary_objects_are_saved_when_creating_new_file():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar", "Data")
-    project_names = [proj.name for proj in macgyver.projects]
-    assert "bigmac" in project_names
-    bigmac_obj = fm.session.query(Directory).filter_by(name="")\
-                    .filter_by(project=bigmac).one()
-    assert bigmac_obj.subdirs[0].name == "foo/"
-    
 def test_delete_does_not_affect_other_projects():
     global macgyver, someone_else
     fm = _get_fm()
-    bigmac1 = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac1, "bar/foo", "bar!")
-    fm.save_file(macgyver, bigmac1, "bar/foobar", "yo")
-    bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
-    fm.save_file(someone_else, bigmac2, "other/myfoo", "double bar!")
-    fm.save_file(someone_else, bigmac2, "bar/foo", "this one is mine!")
+    bigmac1 = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac1, "bar/foo", "bar!")
+    fm.save_file(bigmac1, "bar/foobar", "yo")
+    fm2 = model.FSFileManager(someone_else)
+    bigmac2 = fm2.get_project(someone_else, "bigmac", create=True)
+    fm2.save_file(bigmac2, "other/myfoo", "double bar!")
+    fm2.save_file(bigmac2, "bar/foo", "this one is mine!")
     assert len(macgyver.projects) == 3
     assert len(someone_else.projects) == 3
     
     fm.delete(macgyver, bigmac1, "bar/foo")
-    flist = fm.list_files(macgyver, bigmac1, "bar/")
+    flist = fm.list_files(bigmac1, "bar/")
     assert len(flist) == 1
-    flist = fm.list_files(someone_else, bigmac2, "bar/")
+    flist = fm2.list_files(bigmac2, "bar/")
     assert len(flist) == 1
     
     fm.delete(macgyver, bigmac1)
     
-    s = fm.session
-    s.expire(macgyver)
-    s.expire(someone_else)
-    macgyver = s.query(User).filter_by(username='MacGyver').one()
-    someone_else = s.query(User).filter_by(username='SomeoneElse').one()
     assert len(macgyver.projects) == 2
     assert len(someone_else.projects) == 3
-    flist = fm.list_files(someone_else, bigmac2)
+    flist = fm2.list_files(bigmac2)
     assert len(flist) == 2
     assert flist[0].name == "bar/"
-    file_obj = fm.get_file_object(someone_else, bigmac2, "other/myfoo")
+    file_obj = fm2.get_file_object(bigmac2, "other/myfoo")
     assert str(file_obj.data) == "double bar!"
     try:
-        file_obj = fm.get_file_object(macgyver, bigmac1, "bar/foo")
+        file_obj = fm.get_file_object(bigmac1, "bar/foo")
         assert False, "File should be gone"
     except model.FileNotFound:
         pass
         
 def test_save_file_can_create_directory():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/")
-    flist = fm.list_files(macgyver, bigmac)
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/")
+    flist = fm.list_files(bigmac)
     assert len(flist) == 1
     assert flist[0].name == "foo/"
-    flist = fm.list_files(macgyver, bigmac, "foo/")
+    flist = fm.list_files(bigmac, "foo/")
     assert len(flist) == 1
     assert flist[0].name == "foo/bar/"
-    s = fm.session
-    file_obj = s.query(File).filter_by(name='foo/bar/').first()
-    print file_obj
-    assert file_obj is None, "No file should have been created"
 
 # -------
 # Web tests
@@ -458,12 +443,9 @@ def test_save_file_can_create_directory():
     
 def test_good_file_operations_from_web():
     fm = _get_fm()
-    s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
-    fileobj = s.query(File).filter_by(name="reqs").one()
-    fileobj.created = datetime(2009, 2, 3, 10, 0, 0)
-    fileobj.modified = datetime(2009, 2, 4, 11, 30, 30)
-    s.commit()
+    bigmac = fm.get_project(macgyver, "bigmac")
+    fileobj = File(bigmac, "reqs", bigmac.location / "reqs")
     contents = str(fileobj.data)
     assert contents == "Chewing gum wrapper"
     
