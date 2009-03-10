@@ -518,7 +518,7 @@ class FSFileManager(object):
         If project is None, this will return the projects
         owned by the user."""
         if not project:
-            return sorted(user.projects, key=lambda proj: proj.name)
+            return sorted(self.owner.projects, key=lambda proj: proj.name)
         
         location = project.location if not path else \
             project.location / path
@@ -549,13 +549,13 @@ class FSFileManager(object):
         userdir = self.owner.get_location()
         user.amount_used = self._get_space_used(userdir)
 
-    def get_file(self, user, project, path, mode="rw"):
+    def get_file(self, project, path, mode="rw"):
         """Gets the contents of the file as a string. Raises
         FileNotFound if the file does not exist. The file is 
         marked as open after this call."""
         
         file_obj = self._check_and_get_file(project, path)
-        self._save_status(file_obj, user, mode)
+        self._save_status(file_obj, mode)
         
         contents = str(file_obj.data)
         return contents
@@ -579,19 +579,19 @@ class FSFileManager(object):
         file_obj = self._check_and_get_file(project, path)
         return file_obj
 
-    def _save_status(self, file_obj, user_obj, mode="rw"):
-        user_obj.mark_opened(file_obj, mode)
-        file_obj.mark_opened(user_obj, mode)
+    def _save_status(self, file_obj, mode="rw"):
+        self.owner.mark_opened(file_obj, mode)
+        file_obj.mark_opened(self.owner, mode)
 
     def list_open(self):
         """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": {"mode" : "rw"} } }"""
         return self.owner.files
         
-    def close(self, user, project, path):
+    def close(self, project, path):
         """Close the file for the given user"""
         file_obj = File(project, path, project.location / path)
-        file_obj.close(user)
-        user.close(file_obj)
+        file_obj.close(self.owner)
+        self.owner.close(file_obj)
         
         # self.reset_edits(user, project, path)
 
