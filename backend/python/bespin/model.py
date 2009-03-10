@@ -40,7 +40,9 @@ import logging
 import re
 from uuid import uuid4
 import shutil
+import subprocess
 
+from path import path as path_obj
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
@@ -116,16 +118,15 @@ class User(Base):
         return (self.quota * QUOTA_UNITS, self.amount_used)
     
     def get_location(self):
-        location = self.file_location
-        fsroot = config.c.fsroot
-        if not fsroot.exists(location):
-            fsroot.makedir(location, recursive=True)
-        return fsroot.opendir(location)
+        location = config.c.fsroot / self.file_location
+        if not location.exists():
+            location.makedirs()
+        return location
     
     @property
     def projects(self):
         location = self.get_location()
-        result = [Project(name, location.opendir(name)) 
+        result = [Project(name.basename(), location / name) 
                 for name in location.listdir()]
         return result
 
@@ -176,37 +177,39 @@ class Directory(object):
         if not name.endswith("/"):
             name += "/"
         self.name = name
+    
+    @property
+    def short_name(self):
+        return self.name.basename() + "/"
 
 class File(object):
-    def __init__(self, name, location, info=None):
+    def __init__(self, name, location):
         self.name = name
-        self.basename = os.path.basename(name)
         self.location = location
-        self._info = info
+        self._info = None
         
     @property
     def short_name(self):
-        elems = self.name.rsplit("/", 1)
-        if len(elems) == 1:
-            return self.name
-        else:
-            return elems[1]
+        return self.location.basename()
             
-    @property
     def exists(self):
-        return self.location.exists(self.basename)
+        return self.location.exists()
         
     @property
     def info(self):
-        if self._info is None:
-            self._info = self.location.getinfo(self.basename)
-        return self._info
+        if self._info is not None:
+            return self._info
+        info = {}
+        self._info = info
+        stat = self.location.stat()
+        info['size'] = stat.st_size
+        info['created_time'] = datetime.fromtimestamp(stat.st_ctime)
+        info['modified_time'] = datetime.fromtimestamp(stat.st_mtime)
+        return info
     
     @property
     def data(self):
-        name = self.basename
-        data = self.location.open(name).read()
-        return data
+        return self.location.bytes()
         
     @property
     def mimetype(self):
@@ -230,7 +233,7 @@ class File(object):
         return self.info['modified_time']
     
     def save(self, contents):
-        file_obj = self.location.createfile(self.basename, contents)
+        file_obj = self.location.write_bytes(contents)
                      
     def __repr__(self):
         return "File: %s" % (self.name)
@@ -250,25 +253,6 @@ class Project(object):
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
         
-    def get_file_location(self, destpath, create=False):
-        location = self.location
-        dirname = os.path.dirname(destpath)
-        
-        # is this a file in the project root?
-        if not dirname:
-            return location
-            
-        # make the directory if need be
-        if not location.exists(dirname):
-            if create:
-                location.makedir(dirname, recursive=True)
-            else:
-                raise FileNotFound("Directory %s does not exist in project %s"
-                                % destpath, self.name)
-            
-        return location.opendir(dirname)
-
-
 _text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
 
 def _cmp_files_in_project(fs1, fs2):
@@ -303,18 +287,18 @@ class FSFileManager(object):
         if clean:
             create = True
         
-        userdir = self._get_owner_path()
-        if userdir.exists(project_name):
-            project = Project(project_name, userdir.opendir(project_name))
+        location = self._get_owner_path() / project_name
+        if location.exists():
+            project = Project(project_name, location)
             if clean:
-                userdir.removedir(project_name)
-                userdir.makedir(project_name)
+                location.rmtree()
+                location.makedirs()
         else:
             if not create:
                 raise FileNotFound("Project %s not found" % project_name)
             log.debug("Creating new project %s", project_name)
-            userdir.makedir(project_name, recursive=True)
-            project = Project(project_name, userdir.opendir(project_name))
+            location.makedirs()
+            project = Project(project_name, location)
         return project
         
     def save_file(self, project, destpath, contents):
@@ -327,9 +311,17 @@ class FSFileManager(object):
         if not self.owner.check_save(saved_size):
             raise OverQuota()
         
-        file_loc = project.get_file_location(destpath, create=True)
+        file_loc = project.location / destpath
+        if file_loc.isdir():
+            raise ConflictError("Cannot save file at %s in project "
+                "%s, because there is already a directory with that name.")
+        
+        file_dir = file_loc.dirname()
+        if not file_dir.exists():
+            file_dir.makedirs()
+        
         file = File(destpath, file_loc)
-        if file.exists:
+        if file.exists():
             size_delta = saved_size - file.saved_size
         else:
             size_delta = saved_size
@@ -367,20 +359,56 @@ class FSFileManager(object):
             return sorted(user.projects, key=lambda proj: proj.name)
         
         location = project.location if not path else \
-            project.get_file_location(path)
+            project.location / path
+        
+        if not location.exists():
+            raise FileNotFound("Directory %s in project %s does not exist"
+                              % (path, project.name))
         
         names = location.listdir()
         
         result = []
         for name in names:
-            if location.isdir(name):
+            if name.isdir():
                 result.append(Directory(name))
             else:
-                result.append(File(name, None, location.getinfo(name)))
+                result.append(File(path_obj(project.name) / path, name))
         
         return sorted(result, key=lambda item: item.name)
 
+    def recompute_used(self, user):
+        """Recomputes how much space the user has used."""
+        userdir = self.owner.get_location()
+        total = 0
+        for f in userdir.walkfiles():
+            total += f.size
+        user.amount_used = total
 
+    def get_file(self, user, project, path, mode="rw"):
+        """Gets the contents of the file as a string. Raises
+        FileNotFound if the file does not exist. The file is 
+        marked as open after this call."""
+        
+        file_obj = self._check_and_get_file(user, project, path)
+        self._save_status(file_obj, user, mode)
+        
+        contents = str(file_obj.data)
+        return contents
+        
+    def _check_and_get_file(self, project, path):
+        """Returns the project, user object, file object."""
+        file_obj = File(path, project.location / path)
+        if not file_obj.exists():
+            raise FileNotFound("File %s in project %s does not exist" 
+                                % (path, project.name))
+        
+        return file_obj
+        
+    def get_file_object(self, project, path):
+        """Retrieves the File instance from the project at the
+        path provided."""
+        file_obj = self._check_and_get_file(project, path)
+        return file_obj
 
 class FileManager(object):
     def __init__(self, session):

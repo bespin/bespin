@@ -85,7 +85,7 @@ def test_basic_file_creation():
     starting_point = macgyver.amount_used
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "reqs", "Chewing gum wrapper")
-    file_obj = File("reqs", bigmac.get_file_location("reqs"))
+    file_obj = File("reqs", bigmac.location / "reqs")
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
     ending_point = macgyver.amount_used
@@ -94,23 +94,19 @@ def test_basic_file_creation():
     
     now = datetime.now()
     assert now - file_obj.created < timedelta(seconds=2)
+    assert now - file_obj.modified < timedelta(seconds=2)
     
     bigmac = fm.get_project(macgyver, "bigmac")
     files = fm.list_files(bigmac, "")
     assert len(files) == 1
-    assert files[0].name == 'reqs'
+    assert files[0].short_name == 'reqs'
     proj_names = set([proj.name for proj in macgyver.projects])
     assert proj_names == set(['bigmac', "SampleProject", 
                               "BespinSettings"])
     
     # let's update the contents
     fm.save_file(bigmac, "reqs", "New content")
-    file_obj = File("reqs", bigmac.get_file_location("reqs"))
-    
-    assert now - file_obj.created < timedelta(days=1, seconds=2)
-    # the modified time does not appear on memory files in the current version
-    # of FS
-    # assert now - file_obj.modified < timedelta(seconds=2)
+    file_obj = File("reqs", bigmac.location / "reqs")
     
     assert file_obj.data == 'New content'
     
@@ -128,7 +124,7 @@ def test_cannot_save_beyond_quota():
     old_units = model.QUOTA_UNITS
     model.QUOTA_UNITS = 10
     try:
-        fm.save_file(macgyver, "bigmac", "foo", "x" * 11)
+        fm.save_file("bigmac", "foo", "x" * 11)
         assert False, "Expected an OverQuota exception"
     except model.OverQuota:
         pass
@@ -142,27 +138,26 @@ def test_amount_used_can_be_recomputed():
     fm.recompute_used(macgyver)
     assert macgyver.amount_used == starting_point
     
-    
 def test_retrieve_file_obj():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "reqs", "tenletters")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "reqs", "tenletters")
     try:
-        fm.get_file_object(macgyver, bigmac, "foo/bar")
+        fm.get_file_object(bigmac, "foo/bar")
         assert False, "expected file not found for missing file"
     except model.FileNotFound:
         pass
         
-    file_obj = fm.get_file_object(macgyver, bigmac, "reqs")
+    file_obj = fm.get_file_object(bigmac, "reqs")
     assert file_obj.saved_size == 10
         
 
 def test_error_if_you_try_to_replace_dir_with_file():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
-        fm.save_file(macgyver, bigmac, "foo/bar", "NOT GONNA DO IT!")
+        fm.save_file(bigmac, "foo/bar", "NOT GONNA DO IT!")
         assert False, "Expected a FileConflict exception"
     except model.FileConflict:
         pass
