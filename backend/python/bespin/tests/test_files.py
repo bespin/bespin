@@ -199,8 +199,8 @@ def test_get_file_raises_exception_if_its_a_directory():
     
 def test_get_file_raises_not_found_exception():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
         contents = fm.get_file(macgyver, bigmac, "NOTFOUND")
         assert False, "Expected exception for not found"
@@ -209,9 +209,10 @@ def test_get_file_raises_not_found_exception():
     
 def test_directory_shortname_computed_to_have_last_dir():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
-    res = fm.list_files(macgyver, bigmac, "foo/")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
+    res = fm.list_files(bigmac, "foo/")
+    print res
     assert len(res) == 1
     d = res[0]
     shortname = d.short_name
@@ -219,70 +220,34 @@ def test_directory_shortname_computed_to_have_last_dir():
     
 def test_can_delete_empty_directory():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/")
     fm.delete(macgyver, bigmac, "foo/bar/")
-    s = fm.session
-    flist = s.query(File).filter_by(project=bigmac).all()
-    assert len(flist) == 0
+    location = bigmac.location / "foo/bar"
+    assert not location.exists()
     
 def test_delete_raises_file_not_found():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
     try:
         fm.delete(macgyver, bigmac, "DOESNT MATTER")
         assert False, "Expected not found for missing project"
     except model.FileNotFound:
         pass
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
         fm.delete(macgyver, bigmac, "STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
     except model.FileNotFound:
         pass
-    flist = fm.list_files(macgyver, bigmac)
+    flist = fm.list_files(bigmac)
     assert flist[0].name == "foo/"
     fm.delete(macgyver, bigmac, "foo/bar/")
     
-def test_authorize_other_user():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
-    fm.authorize_user(macgyver, bigmac, someone_else)
-    b2 = fm.get_project(someone_else, macgyver, "bigmac")
-    assert b2.name == "bigmac"
-    
-    fm.unauthorize_user(macgyver, bigmac, someone_else)
-    try:
-        b2 = fm.get_project(someone_else, macgyver, "bigmac")
-        assert False, "Should have not been authorized any more"
-    except model.NotAuthorized:
-        pass
-    
-    
-def test_only_owner_can_authorize_user():
-    fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
-    fm.authorize_user(macgyver, bigmac, someone_else)
-    yet_another = fm.db.user_manager.create_user("YetAnother", "", "yet@another.user")
-    try:
-        fm.authorize_user(someone_else, bigmac, yet_another)
-        assert False, "Should not have been allowed to authorize with non-owner"
-    except model.NotAuthorized:
-        pass
-    
-    try:
-        fm.unauthorize_user(someone_else, bigmac, macgyver)
-        assert False, "Should not have been allowed to unauthorize with non-owner"
-    except model.NotAuthorized:
-        pass
-    
 def test_cannot_delete_file_open_by_someone_else():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
-    fm.authorize_user(macgyver, bigmac, someone_else)
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     fm.get_file(macgyver, bigmac, "foo/bar/baz")
     try:
         fm.delete(someone_else, bigmac, "foo/bar/baz")
@@ -292,21 +257,17 @@ def test_cannot_delete_file_open_by_someone_else():
         
 def test_can_delete_file_open_by_me():
     fm = _get_fm()
-    s = fm.session
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     fm.get_file(macgyver, bigmac, "foo/bar/baz")
-    file_obj_id = s.query(File).filter_by(name="foo/bar/baz") \
-                .filter_by(project=bigmac).one().id
     fm.delete(macgyver, bigmac, "foo/bar/baz")
-    fs = fm.session.query(FileStatus).filter_by(file_id=file_obj_id).first()
-    assert fs is None
+    assert not macgyver.files
     
 def test_successful_deletion():
     fm = _get_fm()
     starting_used = macgyver.amount_used
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo/bar/baz", "biz")
     fm.delete(macgyver, bigmac, "foo/bar/baz")
     assert macgyver.amount_used == starting_used
     try:
@@ -314,32 +275,30 @@ def test_successful_deletion():
         assert False, "Expected FileNotFound because the file is gone"
     except model.FileNotFound:
         pass
-    files = fm.list_files(macgyver, bigmac, "foo/bar/")
+    files = fm.list_files(bigmac, "foo/bar/")
     assert not files
     
 def test_top_level_deletion():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo", "data")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "foo", "data")
     fm.delete(macgyver, bigmac, "foo")
-    flist = fm.list_files(macgyver, bigmac)
+    flist = fm.list_files(bigmac)
     assert flist == []
     
 def test_directory_deletion():
     fm = _get_fm()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "whiz/bang", "stillmore")
+    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    fm.save_file(bigmac, "whiz/bang", "stillmore")
     starting_used = macgyver.amount_used
-    fm.save_file(macgyver, bigmac, "foo/bar", "data")
-    fm.save_file(macgyver, bigmac, "foo/blorg", "moredata")
+    fm.save_file(bigmac, "foo/bar", "data")
+    fm.save_file(bigmac, "foo/blorg", "moredata")
     fm.delete(macgyver, bigmac, "foo/")
-    fm.session.clear()
-    flist = fm.list_files(macgyver, bigmac)
+    flist = fm.list_files(bigmac)
     assert len(flist) == 1
     assert flist[0].name == 'whiz/'
-    file = fm.session.query(File).filter_by(name="foo/bar") \
-                        .filter_by(project=bigmac).first()
-    assert file is None
+    file_loc = bigmac.location / "foo/bar"
+    assert not file_loc.exists()
     assert macgyver.amount_used == starting_used
     
 def test_basic_edit_functions():
