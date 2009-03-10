@@ -151,7 +151,7 @@ def _split_path(request):
 @expose(r'^/file/listopen/$', 'GET')
 def listopen(request, response):
     fm = request.file_manager
-    result = fm.list_open(request.user)
+    result = fm.list_open()
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
@@ -162,9 +162,9 @@ def putfile(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project, create=True)
+    project = fm.get_project(user, project, create=True)
     
-    fm.save_file(user, project, path,
+    fm.save_file(project, path,
                  request.body)
     return response()
 
@@ -174,7 +174,7 @@ def getfile(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     mode = request.GET.get('mode', 'rw')
     contents = fm.get_file(user, project, path, mode)
@@ -187,7 +187,7 @@ def postfile(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     fm.close(user, project, path)
     return response()
@@ -198,7 +198,7 @@ def deletefile(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     fm.delete(user, project, path)
     return response()
@@ -220,9 +220,9 @@ def listfiles(request, response):
             path = ''
     
     if project:
-        project = fm.get_project(user, user, project)
+        project = fm.get_project(user, project)
     
-    files = fm.list_files(user, project, path)
+    files = fm.list_files(project, path)
     result = []
     for item in files:
         f = {'name' : item.short_name}
@@ -246,7 +246,7 @@ def filestats(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     file_obj = fm.get_file_object(user, project, path)
     result = {}
@@ -261,7 +261,7 @@ def save_edit(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project, create=True)
+    project = fm.get_project(user, project, create=True)
     
     fm.save_edit(user, project, path, 
                  request.body)
@@ -272,7 +272,7 @@ def _get_edit_list(request, response, start_at=0):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     edits = fm.list_edits(user, project, path, start_at)
     response.content_type = "application/json"
@@ -299,7 +299,7 @@ def reset(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     fm.reset_edits(user, project, path)
     return response()
@@ -339,7 +339,7 @@ def _perform_import(file_manager, user, project_name, filename, fileobj):
         raise BadRequest(
             "Import only supports .tar.gz, .tgz and .zip at this time.")
         
-    project = file_manager.get_project(user, user, project_name, clean=True)
+    project = file_manager.get_project(user, project_name, clean=True)
     
     func(user,
         project, filename, fileobj)
@@ -397,7 +397,7 @@ def export_project(request, response):
         response.content_type = "application/x-tar-gz"
         func = fm.export_tarball
     
-    project = fm.get_project(user, user, project_name)
+    project = fm.get_project(user, project_name)
     
     output = func(user, project)
     def filegen():
@@ -415,7 +415,7 @@ def preview_file(request, response):
     user = request.user
     
     project, path = _split_path(request)
-    project = fm.get_project(user, user, project)
+    project = fm.get_project(user, project)
     
     file_obj = fm.get_file_object(user, project, path)
     response.body = str(file_obj.data)
@@ -428,7 +428,7 @@ def rename_project(request, response):
     user = request.user
     
     project_name = request.kwargs['project_name']
-    project = fm.get_project(user, user, project_name)
+    project = fm.get_project(user, project_name)
     fm.rename(user, project, "", request.body)
     response.body = ""
     response.content_type = "text/plain"
