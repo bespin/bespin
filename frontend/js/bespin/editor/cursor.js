@@ -160,7 +160,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         if (this.position.col == 0) { // -- at the start to move up and to the end
             this.moveUp();
-            this.moveToLineEnd();
         } else {
             // Short circuit if cursor is ahead of actual spaces in model
             if (row.length < this.position.col) this.moveToLineEnd();
@@ -208,7 +207,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         if (row.length <= this.position.col) { // -- at the edge so go to the next line
             this.moveDown();
-            this.moveToLineStart();
         } else {
             var c, charCode;
 
