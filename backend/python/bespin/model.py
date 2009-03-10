@@ -164,6 +164,9 @@ class User(Base):
         """Keeps track of this file as being currently closed by the
         user."""
         statusfile = self.statusfile
+        if not statusfile.exists():
+            return
+            
         try:
             lock = Lock(statusfile)
             lock.lock()
@@ -250,7 +253,7 @@ class Directory(object):
     
     @property
     def short_name(self):
-        return self.name.basename() + "/"
+        return self.name.parent.basename() + "/"
 
 class File(object):
     def __init__(self, project, name, location):
@@ -336,19 +339,25 @@ class File(object):
     def users(self):
         """Returns a dictionary with the keys being the list of users
         with this file open and the values being the modes."""
-        try:
-            statusfile = LockFile(self.statusfile)
-            statusinfo = statusfile.read()
-            statusfile.close()
-        except PULockError, e:
-            raise LockError("Problem reading open file status: %s", str(e))
+        statusfile = self.statusfile
+        if statusfile.exists():
+            try:
+                statusfile = LockFile(self.statusfile)
+                statusinfo = statusfile.read()
+                statusfile.close()
+            except PULockError, e:
+                raise LockError("Problem reading open file status: %s", str(e))
         
-        statusinfo = simplejson.loads(statusinfo)
-        return statusinfo.get(self.name, {})
+            statusinfo = simplejson.loads(statusinfo)
+            return statusinfo.get(self.name, {})
+        else:
+            return {}
     
     def close(self, user):
         """Close this file for the given user."""
         statusfile = self.statusfile
+        if not statusfile.exists():
+            return
         try:
             lock = Lock(statusfile)
             lock.lock()
@@ -437,7 +446,7 @@ class FSFileManager(object):
             project = Project(project_name, location)
         return project
         
-    def save_file(self, project, destpath, contents):
+    def save_file(self, project, destpath, contents=None):
         """Saves the contents to the file path provided, creating
         directories as needed in between. If last_edit is not provided,
         the file must not be opened for editing. Otherwise, the
@@ -448,6 +457,23 @@ class FSFileManager(object):
             raise OverQuota()
         
         file_loc = project.location / destpath
+        
+        # this is the case where save_file is being used to
+        # create a directory
+        if contents is None:
+            if destpath.endswith("/"):
+                if file_loc.exists():
+                    if file_loc.isfile():
+                        raise FileConflict("Cannot create directory %s "
+                            "because there is already a file there."
+                            % destpath)
+                else:
+                    file_loc.makedirs()
+                    return
+            else:
+                raise FSException("Cannot create %s because no content "
+                    " was provided for the file" % destpath)
+        
         if file_loc.isdir():
             raise FileConflict("Cannot save file at %s in project "
                 "%s, because there is already a directory with that name.")
@@ -506,19 +532,22 @@ class FSFileManager(object):
         result = []
         for name in names:
             if name.isdir():
-                result.append(Directory(name))
+                result.append(Directory(project.location.relpathto(name)))
             else:
-                result.append(File(project, path_obj(project.name) / path, name))
+                result.append(File(project, project.location.relpathto(name), name))
         
         return sorted(result, key=lambda item: item.name)
+        
+    def _get_space_used(self, directory):
+        total = 0
+        for f in directory.walkfiles():
+            total += f.size
+        return total
 
     def recompute_used(self, user):
         """Recomputes how much space the user has used."""
         userdir = self.owner.get_location()
-        total = 0
-        for f in userdir.walkfiles():
-            total += f.size
-        user.amount_used = total
+        user.amount_used = self._get_space_used(userdir)
 
     def get_file(self, user, project, path, mode="rw"):
         """Gets the contents of the file as a string. Raises
@@ -565,6 +594,44 @@ class FSFileManager(object):
         user.close(file_obj)
         
         # self.reset_edits(user, project, path)
+
+    def delete(self, user, project, path=""):
+        """Deletes a file, as long as it is not opened. If the file is
+        open, a FileConflict is raised. If the path is a directory,
+        the directory and everything underneath it will be deleted.
+        If the path is empty, the project will be deleted."""
+        # deleting the project?
+        if not path or path.endswith("/"):
+            if not path:
+                location = project.location
+                if not location.exists():
+                    raise FileNotFound("Project %s does not exist" % (project.name))
+            else:
+                location = project.location / path
+                if not location.exists():
+                    raise FileNotFound("Directory %s in project %s does not exist" %
+                            (path, project.name))
+            
+            space_used = self._get_space_used(location)
+            location.rmtree()
+            user.amount_used -= space_used
+        else:
+            file_obj = File(project, path, project.location / path)
+            
+            if not file_obj.exists():
+                raise FileNotFound("Cannot delete %s in project %s, file not found."
+                    % (path, project.name))
+                    
+            open_users = set(file_obj.users.keys())
+            open_users.difference_update(set([user.username]))
+            if open_users:
+                raise FileConflict(
+                    "File %s in project %s is in use by another user"
+                    % (path, project.name))
+            
+            user.close(file_obj)
+            user.amount_used -= file_obj.saved_size
+            file_obj.location.remove()
 
     
 class FileManager(object):
