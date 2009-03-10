@@ -30,6 +30,8 @@ import os
 import logging
 import logging.handlers
 
+from path import path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -61,16 +63,14 @@ def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
-        c.memoryfs = True
+        c.fsroot = os.path.abspath("%s/../../../testfiles" 
+                        % os.path.dirname(__file__))
     elif profile == "dev":
         from fs.osfs import OSFS
         
         c.dburl = "sqlite:///devdata.db"
-        devfilepath = os.path.abspath("%s/../../../devfiles" 
+        c.fsroot = os.path.abspath("%s/../../../devfiles" 
                         % os.path.dirname(__file__))
-        if not os.path.exists(devfilepath):
-            os.makedirs(devfilepath)
-        c.fsroot = OSFS(devfilepath)
         root_log = logging.getLogger()
         root_log.setLevel(logging.DEBUG)
         handler = logging.handlers.RotatingFileHandler(
@@ -83,9 +83,9 @@ def set_profile(profile):
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
-    if 'memoryfs' in c:
-        from fs.memoryfs import MemoryFS
-        c.fsroot = MemoryFS()
+    c.fsroot = path(c.fsroot)
+    if not c.fsroot.exists:
+        c.fsroot.makedirs()
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
