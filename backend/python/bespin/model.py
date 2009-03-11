@@ -108,7 +108,10 @@ class User(Base):
         self.settings = {}
         self.quota = config.c.default_quota
         self.uuid = str(uuid4())
-        self.file_location = self.uuid
+        if config.c.use_uuid_as_dir_identifier:
+            self.file_location = self.uuid
+        else:
+            self.file_location = username
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
@@ -227,7 +230,7 @@ class UserManager(object):
     def __init__(self, session):
         self.session = session
         
-    def create_user(self, username, password, email):
+    def create_user(self, username, password, email, override_location=None):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
@@ -236,6 +239,8 @@ class UserManager(object):
                 % bad_characters)
         log.debug("Creating user %s", username)
         user = User(username, password, email)
+        if override_location is not None:
+            user.file_location = override_location
         self.session.add(user)
         # flush to ensure that the user is unique
         try:

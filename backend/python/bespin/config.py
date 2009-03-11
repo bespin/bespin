@@ -55,6 +55,13 @@ c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
+
+# if this is true, the user's UUID will be used as their
+# user directory name. If it's false, their username will
+# be used. Generally, you'll only want this to be false
+# in development.
+c.use_uuid_as_dir_identifier = True
+
 c.fslevels = 0
 
 c.max_import_file_size = 20000000
@@ -80,6 +87,7 @@ def set_profile(profile):
         # turn off the secure cookie, because localhost connections
         # will be HTTP
         c.secure_cookie = False
+        c.use_uuid_as_dir_identifier = False
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
