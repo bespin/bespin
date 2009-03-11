@@ -665,6 +665,11 @@ dojo.declare("th.components.List", th.Container, {
         this.bus.bind("mousedown", this, this.onmousedown, this);  
         
         this.renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) }});
+        
+        if (parms.topLabel) {
+            this.label = parms.topLabel;
+            this.label.height = 16;
+        }
     },
 
     onmousedown: function(e) {
@@ -681,7 +686,7 @@ dojo.declare("th.components.List", th.Container, {
     },
     
     // be carefull! This does NOT fire the "itemselected" event!!!
-    selectItemByText: function(text) {
+    selectItemByText: function(text) {        
         if (this.items.length == 0)  return false;
         var item = null;
         if (dojo.isObject(this.items[0])) {
@@ -697,14 +702,16 @@ dojo.declare("th.components.List", th.Container, {
             item = this.items[this.items.indexOf(text)];
         }
 
-        this.selected = item;
-        this.repaint();
+        if (this.selected != item) {
+            this.selected = item;
+            this.repaint();   
+        }
 
         return true;
     },
 
     getItemForPosition: function(pos) {
-        pos.y += this.scrollTop;
+        pos.y += this.scrollTop - (this.label ? this.label.height : 0);
         var y = this.getInsets().top;
         for (var i = 0; i < this.items.length; i++) {
             var h = this.heights[i];
@@ -746,16 +753,25 @@ dojo.declare("th.components.List", th.Container, {
 
     paint: function(ctx) {
         var d = this.d();
+        
         var paintHeight = Math.max(this.getScrollInfo().scrollHeight, d.b.h);
         var scrollInfo = this.getScrollInfo();
 
-        ctx.save();
+        ctx.save();        
+        
+        if (this.label) {
+            var prefHeight = this.label.height;
+            this.label.bounds = { y: y, x: d.i.l, height: prefHeight, width: d.b.w };
+            this.label.paint(ctx);
+            d.i.t = prefHeight;
+        }
+        
         ctx.translate(0, -this.scrollTop);
 
         try {
             if (this.style.backgroundColor) {
                 ctx.fillStyle = this.style.backgroundColor;
-                ctx.fillRect(0, 0, d.b.w, paintHeight);
+                ctx.fillRect(0, d.i.t, d.b.w, paintHeight);
             }
 
             if (this.style.backgroundColorOdd) {
@@ -830,6 +846,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
 
         this.lists = [];
         this.splitters = [];
+        this.listWidths = [];
     },
 
     setData: function(data) {
@@ -871,6 +888,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
     
     replaceList: function(index, contents) {
         this.lists[index].items = contents;
+        delete this.lists[index].selected;
         this.render();
     },
     
@@ -955,7 +973,8 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         if (selected.length > 0) return selected[selected.length - 1];
     },
 
-    getSelectedPath: function() {
+    getSelectedPath: function(asString) {
+        asString = asString || false;
         var path = [];
 
         for (var i = 0; i < this.lists.length; i++) {
@@ -965,15 +984,25 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
                 break;
             }
         }
-
-        return path;
+        
+        if (asString) {
+            var result = '';
+            for (var i = 0; i < path.length - 1; i++) {
+                result += path[i].name + '/';
+            }
+            if (!path[path.length - 1].contents) {
+                result += path[path.length - 1].name
+            } else {
+                result += path[path.length - 1].name + '/';
+            }
+            
+            return result;
+        } else {
+            return path;   
+        }
     },
 
-    itemSelected: function(e) {        
-        var newPath = bespin.dashboard.getSelectedPath();
-        bespin.dashboard.lastSelectedPath = newPath;
-        location.hash = '#path=' + newPath;
-
+    itemSelected: function(e) {                 
         var list = e.thComponent;
 
         // add check to ensure that list has an item selected; otherwise, bail
@@ -983,8 +1012,16 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
 
         for (var i = 0; i < this.lists.length; i++) {
             path.push(this.lists[i].selected);
-            if (this.lists[i] == list) break;
+            if (this.lists[i] == list) {
+                for (var j = i + 1; j < this.lists.length && this.lists[j].selected; j++) {
+                    delete this.lists[j].selected;
+                }
+                break;
+            }
         }
+        
+        // fire the event AFTER some items maybe got deselected
+        this.bus.fire('itemSelected', {e: e}, this);
 
         if (path.length < this.lists.length) {
             // user selected an item in a previous list; must ditch the subsequent lists

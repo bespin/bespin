@@ -30,18 +30,23 @@ dojo.provide("bespin.dashboard.dashboard");
 // from /dashboard.html.
 //
 
-(function(){   
+(function() {
     var heightDiff;
     var projects;
     var scene;
     var tree;
-    var infoPanel;            
+    var infoPanel;
     var currentProject;
     var go = bespin.util.navigate; // short cut static method 
-    var bd = bespin.dashboard; 
+    var bd = bespin.dashboard;
+
+    var server;
+    var settings;
+    var editSession;
+    var files;
+    var commandLine;
     
     dojo.mixin(bespin.dashboard, {
-        projects: null,
         tree: null,
         lastSelectedPath: null,
         
@@ -54,19 +59,14 @@ dojo.provide("bespin.dashboard.dashboard");
         },
         
         loggedIn: function(userinfo)  {
-            _editSession.setUserinfo(userinfo);
+            editSession.setUserinfo(userinfo);
 
-            _server.list(null, null, bd.displayProjects); // get projects
-            _server.listOpen(bd.displaySessions); // get sessions
+            server.list(null, null, bd.displayProjects); // get projects
+            server.listOpen(bd.displaySessions); // get sessions
         },
 
         notLoggedIn: function(xhr) {
             go.home();
-        },
-
-        displayFiles: function(files) {
-            tree.setData(bd.prepareFilesForTree(files));
-            tree.render();
         },
 
         prepareFilesForTree: function(files) {
@@ -98,22 +98,10 @@ dojo.provide("bespin.dashboard.dashboard");
             return filepath;
         },
         
-        getSelectedPath: function() {
-            if (!this.projects.list.selected)    return null;
-            var path = this.projects.list.selected + '/';
-            
-            for (var x = 0; x < this.tree.lists.length; x++) {
-                if (!bd.tree.lists[x].selected) break;
-                path += bd.tree.lists[x].selected.name + (bd.tree.lists[x].selected.contents ? '/' : '');
-            }
-            
-            return path;
-        },
-
         fetchFiles: function(path, tree) {            
-            var filepath = currentProject + "/" + bd.getFilePath(path);
+            var filepath = bd.getFilePath(path);
 
-            _server.list(filepath, null, function(files) {
+            server.list(filepath, null, function(files) {
                 tree.updateData(path[path.length - 1], bd.prepareFilesForTree(files));
                 tree.render();
             });
@@ -137,14 +125,9 @@ dojo.provide("bespin.dashboard.dashboard");
                 }
             }
             infoPanel.render();
-
-            // -- Comment this out, and you don't auto refresh.
-            //    setTimeout(function() {
-            //        _server.listOpen(displaySessions);   // get sessions
-            //    }, 3000);
         },
 
-        restorePath: function(newPath) {
+        restorePath: function(newPath) {            
             bd.lastSelectedPath = bd.lastSelectedPath || '';
             newPath = newPath || '';
             var oldPath = bd.lastSelectedPath;
@@ -155,25 +138,15 @@ dojo.provide("bespin.dashboard.dashboard");
             newPath = newPath.split('/');
             oldPath = oldPath.split('/');
             currentProject = newPath[0];
-            
+
+            tree.lists[0].selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
             scene.renderAllowed = false;
-            
-            projects.list.selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
 
-            if (newPath[0] == '') {
-                // this is true if no path is given via URL
-                bd.tree.removeListsFrom(0);
-                bd.projects.list.selected = null;
-                scene.renderAllowed = true;
-                scene.render();
-                return;
-            } 
-
-            var sameLevel = 1;
-            while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel]) {
+            var sameLevel = 1;  // the value is 1 and not 0, as the first list (the project list) is not affected!
+            while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel] && newPath[sameLevel] != '') {
                 sameLevel ++;
             }
-                                                
+                                                                                                  
             var fakePath = new Array(newPath.length);
             for (var x = 1; x < newPath.length; x++) {
                 var fakeItem = new Object();
@@ -185,15 +158,15 @@ dojo.provide("bespin.dashboard.dashboard");
                    bd.tree.showChildren(null, new Array(fakeItem)); 
                 }  
                 if (newPath[x] != '') {
-                    bd.tree.lists[x - 1].selectItemByText(newPath[x]);   
+                    bd.tree.lists[x].selectItemByText(newPath[x]);   
                 }
                 fakePath[x] = fakeItem;
             }
             
             if (newPath.length <= bd.tree.lists.length) {
-                bd.tree.removeListsFrom(newPath.length - 1);
+                bd.tree.removeListsFrom(newPath.length);
             }
-                    
+                                            
             var contentsPath = new Array(newPath.length);
             var countSetupPaths = sameLevel;
 
@@ -202,11 +175,11 @@ dojo.provide("bespin.dashboard.dashboard");
                 // "this" is the callbackData object!
                 var contents =  bd.prepareFilesForTree(files);
                 if (this.index != 0) {
-                    contentsPath[this.listIndex] = contents;
+                    contentsPath[this.index] = contents;
                 }
                 
                 bd.tree.replaceList(this.index, contents);
-                bd.tree.lists[this.index].selectItemByText(fakePath[this.index + 1].name);
+                bd.tree.lists[this.index].selectItemByText(fakePath[this.index].name);
                 countSetupPaths ++;
                 
                 if (countSetupPaths == newPath.length) {
@@ -218,9 +191,10 @@ dojo.provide("bespin.dashboard.dashboard");
                     }
                 }
             }
-
-            for (var x = sameLevel; x < newPath.length; x++) {                                
-                var selected = (x != 0 ? bd.tree.lists[x - 1].selected : null);
+            
+            // get the data for the lists
+            for (var x = sameLevel; x < newPath.length; x++) {                                                
+                var selected = bd.tree.lists[x - 1].selected;
                 if (selected && selected.contents && dojo.isArray(selected.contents)) {
                     // restore filelist from local memory (the filelists was ones fetched)
                     if (x > bd.tree.lists.length - 1) {
@@ -233,8 +207,13 @@ dojo.provide("bespin.dashboard.dashboard");
                 } else {
                     // load filelist form server                                                            
                     var filepath = currentProject + "/" + bd.getFilePath(fakePath.slice(1, x));
-                    _server.list(filepath, null, dojo.hitch({index: x - 1}, displayFetchedFiles));                    
+                    server.list(filepath, null, dojo.hitch({index: x}, displayFetchedFiles));                    
                 }
+            }
+            
+            // deselect lists if needed
+            for (var x = newPath.length; x < tree.lists.length; x++) {
+                delete tree.lists[x].selected;
             }
             
             scene.renderAllowed = true;
@@ -243,13 +222,12 @@ dojo.provide("bespin.dashboard.dashboard");
 
         displayProjects: function(projectItems) {
             for (var i = 0; i < projectItems.length; i++) {
-                projectItems[i] = projectItems[i].name.substring(0, projectItems[i].name.length - 1);
+                projectItems[i] = { name: projectItems[i].name.substring(0, projectItems[i].name.length - 1) , contents: bd.fetchFiles};
             }
-            projects.list.items = projectItems;
-                        
+            tree.replaceList(0, projectItems);
+                                    
             // Restore the last selected file
             var path =  (new bespin.client.settings.URL()).get('path');
-            
             if (!bd.lastSelectedPath) {
                 bd.restorePath(path);
             } else {
@@ -258,7 +236,7 @@ dojo.provide("bespin.dashboard.dashboard");
         },
 
         refreshProjects: function() {
-            _server.list(null, null, bd.displayProjects);
+            server.list(null, null, bd.displayProjects);
         }
     }); 
     
@@ -289,8 +267,9 @@ dojo.provide("bespin.dashboard.dashboard");
             scrollUpArrow: dojo.byId("vscroll_up_arrow"),
             scrollDownArrow: dojo.byId("vscroll_down_arrow")
         }});
-        bd.tree = tree;
 
+        bd.tree = tree;
+        
         var renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) } });
         renderer.old_paint = renderer.paint;
         renderer.paint = function(ctx) {
@@ -319,18 +298,40 @@ dojo.provide("bespin.dashboard.dashboard");
             this.old_paint(ctx);
         };
         tree.renderer = renderer;
+        
+        var projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "8pt Tahoma" } });
+        projectLabel.oldPaint = projectLabel.paint;
+        projectLabel.paint = function(ctx) {
+            var d = this.d();
 
-        projects = new bespin.dashboard.components.BespinProjectPanel();
-        bd.projects = projects;
+            ctx.fillStyle = "rgb(51, 50, 46)";
+            ctx.fillRect(0, 0, d.b.w, 1);
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+
+            var gradient = ctx.createLinearGradient(0, 1, 0, d.b.h - 2);
+            gradient.addColorStop(0, "rgb(39, 38, 33)");
+            gradient.addColorStop(1, "rgb(22, 22, 19)");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+
+            this.oldPaint(ctx);
+        };
+        
+        // add the the former project tree
+        bd.tree.showChildren(null, [{name: '<Projects>'}]);
+        tree.lists[0].label = projectLabel; 
+        tree.lists[0].label.height = 16;
+        tree.lists[0].allowDeselection = false;
+        tree.lists[0].style = { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" };
 
         var topPanel = new th.components.Panel();
-        topPanel.add([ projects, tree ]);
+        topPanel.add([ tree ]);
         topPanel.layout = function() {
             var d = this.d();
-            projects.bounds = { x: d.i.l, y: d.i.t, width: projects.getPreferredWidth(d.b.h - d.i.h), height: d.b.h - d.i.h };
-            tree.bounds = { x: projects.bounds.x + projects.bounds.width, y: d.i.t, width: d.b.w - d.i.w - projects.bounds.width, height: d.b.h - d.i.h };
+            tree.bounds = { x: d.i.l, y: d.i.t, width: d.b.w - d.i.w, height: d.b.h - d.i.h };
         };
-        projects.list.renderer = renderer;
 
         infoPanel = new th.components.ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
 
@@ -356,32 +357,35 @@ dojo.provide("bespin.dashboard.dashboard");
             var newTab = e.shiftKey;
             var path = tree.getSelectedPath();
             if (path.length == 0 || path[path.length - 1].contents) return; // don't allow directories either
-            go.editor(currentProject, bd.getFilePath(path), newTab);
+            go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
         });
 
-        scene.bus.bind("itemselected", projects.list, function(e) {
-            bespin.dashboard.lastSelectedPath = e.item + '/';
-            location.hash = '#path=' + e.item + '/';
-            _server.list(e.item, null, bd.displayFiles);
-            currentProject = e.item;
-            bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true });
+        scene.bus.bind("itemSelected", tree, function(e) {
+            var pathSelected = tree.getSelectedPath(true);
+            bespin.dashboard.lastSelectedPath = pathSelected;
+            location.hash = '#path=' + pathSelected;
+        })
+
+        scene.bus.bind("itemselected", tree.lists[0], function(e) {
+            currentProject = e.item.name;
+            bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
         });
 
         // setup the command line
-        _server      = new bespin.client.Server();
-        _settings    = new bespin.client.settings.Core();
-        _editSession = new bespin.client.session.EditSession(); 
-        _files       = new bespin.client.FileSystem();
-        _commandLine = new bespin.cmd.commandline.Interface(dojo.byId('command'), bespin.cmd.dashboardcommands.Commands);
+        server = bespin.register('server', new bespin.client.Server());
+        settings = bespin.register('settings', new bespin.client.settings.Core());
+        editSession = bespin.register('editSession', new bespin.client.session.EditSession());
+        files = bespin.register('files', new bespin.client.FileSystem());
+        commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.dashboardcommands.Commands));
 
         // Handle jumping to the command line
         dojo.connect(document, "onkeypress", function(e) {
-            var handled = _commandLine.handleCommandLineFocus(e);
+            var handled = commandLine.handleCommandLineFocus(e);
             if (handled) return false;
         });
 
         // get logged in name; if not logged in, display an error of some kind
-        _server.currentuser(bd.loggedIn, bd.notLoggedIn);   
+        server.currentuser(bd.loggedIn, bd.notLoggedIn);   
         
         // provide history for the dashboard
         bespin.subscribe("bespin:url:changed", function(e) {
