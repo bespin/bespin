@@ -132,7 +132,8 @@ class User(Base):
     def projects(self):
         location = self.get_location()
         result = [Project(self, name.basename(), location / name) 
-                for name in location.listdir()]
+                for name in location.listdir()
+                if not name.basename().startswith(".bespin")]
         result = sorted(result, key=lambda item: item.name)
         return result
         
@@ -484,6 +485,8 @@ class Project(object):
         
         result = []
         for name in names:
+            if name.basename().startswith(".bespin"):
+                continue
             if name.isdir():
                 result.append(Directory(self.location.relpathto(name)))
             else:
