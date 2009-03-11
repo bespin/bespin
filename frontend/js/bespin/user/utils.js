@@ -72,6 +72,15 @@ dojo.mixin(bespin.user.utils, {
         });
     },
 
+    // take the overlay and make sure it stretches on the entire height of the screen
+    fillScreenOverlay: function() {
+	    var coords = dojo.coords(document.body);
+	    
+	    if (coords.h) {
+            dojo.style(dojo.byId('opaque'), 'height', coords.h + "px");
+        }
+    },
+
     // make sure that the browser can do our wicked shizzle
     checkBrowserAbility: function() {
         if (typeof dojo.byId('testcanvas').getContext != "function") return false; // no canvas
