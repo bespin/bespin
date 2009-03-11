@@ -318,24 +318,22 @@ def import_project(request, response):
     project_name = request.kwargs['project_name']
     input_file = request.POST['filedata']
     filename = input_file.filename
-    _perform_import(request.file_manager, 
-                    request.user, project_name, filename,
+    _perform_import(request.user, project_name, filename,
                     input_file.file)
     return response()
     
-def _perform_import(file_manager, user, project_name, filename, fileobj):
+def _perform_import(user, project_name, filename, fileobj):
+    project = model.get_project(user, user, project_name, clean=True)
     if filename.endswith(".tgz") or filename.endswith(".tar.gz"):
-        func = file_manager.import_tarball
+        func = project.import_tarball
     elif filename.endswith(".zip"):
-        func = file_manager.import_zipfile
+        func = project.import_zipfile
     else:
         raise BadRequest(
             "Import only supports .tar.gz, .tgz and .zip at this time.")
         
-    project = file_manager.get_project(user, project_name, clean=True)
     
-    func(user,
-        project, filename, fileobj)
+    func(filename, fileobj)
     return
 
 def validate_url(url):
@@ -371,28 +369,27 @@ def import_from_url(request, response):
     tempdatafile.seek(0)
     url_parts = urlparse(url)
     filename = os.path.basename(url_parts[2])
-    _perform_import(request.file_manager, request.user,
-                    project_name, filename, tempdatafile)
+    _perform_import(request.user, project_name, filename, tempdatafile)
     tempdatafile.close()
     return response()
 
 @expose(r'^/project/export/(?P<project_name>.*(\.zip|\.tgz))')
 def export_project(request, response):
-    fm = request.file_manager
     user = request.user
     
     project_name = request.kwargs['project_name']
     project_name, extension = os.path.splitext(project_name)
+
+    project = model.get_project(user, user, project_name)
+    
     if extension == ".zip":
-        func = fm.export_zipfile
+        func = project.export_zipfile
         response.content_type = "application/zip"
     else:
         response.content_type = "application/x-tar-gz"
-        func = fm.export_tarball
+        func = project.export_tarball
     
-    project = fm.get_project(user, project_name)
-    
-    output = func(user, project)
+    output = func()
     def filegen():
         data = output.read(8192)
         while data:
