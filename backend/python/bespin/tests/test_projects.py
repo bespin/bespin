@@ -178,11 +178,10 @@ def test_export_tarfile():
 def test_export_zipfile():
     _init_data()
     handle = open(tarfilename)
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.import_tarball(macgyver, bigmac,
-        os.path.basename(tarfilename), handle)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.import_tarball(os.path.basename(tarfilename), handle)
     handle.close()
-    tempfilename = fm.export_zipfile(macgyver, bigmac)
+    tempfilename = bigmac.export_zipfile()
     zfile = zipfile.ZipFile(tempfilename.name)
     members = zfile.infolist()
     assert len(members) == 3
@@ -200,10 +199,8 @@ def test_create_a_project_from_the_web():
     app.put("/file/at/bigmac/")
     project_names = [project.name for project in macgyver.projects]
     assert 'bigmac' in project_names
-    bigmac = fm.get_project(macgyver, macgyver, 'bigmac')
-    s = fm.session
-    filelist = s.query(File).filter_by(project=bigmac).all()
-    assert not filelist
+    bigmac = get_project(macgyver, macgyver, 'bigmac')
+    assert not bigmac.list_files()
     
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
@@ -230,14 +227,14 @@ def test_import_unknown_file_type():
     
 def test_export_unknown_file_type():
     _init_data()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar", "INFO!")
     app.get("/project/export/bigmac.foo", status=404)
     
 def test_export_tarball_from_the_web():
     _init_data()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar", "INFO!")
     resp = app.get("/project/export/bigmac.tgz")
     assert resp.content_type == "application/x-tar-gz"
     tfile = tarfile.open("bigmac.tgz", "r:gz", StringIO(resp.body))
@@ -248,8 +245,8 @@ def test_export_tarball_from_the_web():
 
 def test_export_zipfile_from_the_web():
     _init_data()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar", "INFO!")
     resp = app.get("/project/export/bigmac.zip")
     assert resp.content_type == "application/zip"
     zfile = zipfile.ZipFile(StringIO(resp.body))
@@ -260,12 +257,9 @@ def test_export_zipfile_from_the_web():
 def test_delete_project_from_the_web():
     global macgyver
     _init_data()
-    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
-    fm.save_file(macgyver, bigmac, "README.txt", 
-        "This is the readme file.")
-    fm.session.commit()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("README.txt", "This is the readme file.")
     resp = app.delete("/file/at/bigmac/")
-    macgyver = fm.db.user_manager.get_user("MacGyver")
     assert len(macgyver.projects) == 2
     
 def test_rename_project():
@@ -274,11 +268,11 @@ def test_rename_project():
     app.put("/file/at/bigmac/")
     app.post("/project/rename/bigmac/", "foobar")
     try:
-        bigmac = fm.get_project(macgyver, macgyver, "bigmac")
+        bigmac = get_project(macgyver, macgyver, "bigmac")
         assert False, "The bigmac project should have been renamed"
     except model.FileNotFound:
         pass
-    bigmac = fm.get_project(macgyver, macgyver, "foobar")
+    foobar = get_project(macgyver, macgyver, "foobar")
     app.put("/file/at/bigmac/")
     # should get a conflict error if you try to rename to a project
     # that exists

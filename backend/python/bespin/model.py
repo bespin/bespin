@@ -41,6 +41,7 @@ import re
 from uuid import uuid4
 import shutil
 import subprocess
+import itertools
 
 from path import path as path_obj
 from pathutils import LockError as PULockError, Lock, LockFile
@@ -440,7 +441,8 @@ class Project(object):
         
         if file_loc.isdir():
             raise FileConflict("Cannot save file at %s in project "
-                "%s, because there is already a directory with that name.")
+                "%s, because there is already a directory with that name."
+                % (destpath, self.name))
         
         file_dir = file_loc.dirname()
         if not file_dir.exists():
@@ -606,7 +608,9 @@ class Project(object):
         location = self.location
         project_name = self.name
         
-        for dir in location.walkdirs():
+        # we'll do the top-level directory first and then
+        # step through the other directories
+        for dir in itertools.chain([location], location.walkdirs()):
             bname = dir.basename()
             if bname == "." or bname == ".." or bname.startswith(".bespin"):
                 continue
@@ -639,33 +643,45 @@ class Project(object):
         temporaryfile.seek(0)
         return temporaryfile
         
-    def export_zipfile(self, user, project):
+    def export_zipfile(self):
         """Exports the project as a zip file, returning a 
         NamedTemporaryFile object. You can either use that
         open file handle or use the .name property to get
         at the file."""
         temporaryfile = tempfile.NamedTemporaryFile()
-        s = self.session
         
         zfile = zipfile.ZipFile(temporaryfile, "w", zipfile.ZIP_DEFLATED)
         ztime = time.gmtime()[:6]
         
-        files = s.query(File) \
-                    .filter_by(project=project).order_by(File.name).all()
-        for file in files:
-            zipinfo = zipfile.ZipInfo(str(project.name + "/" + file.name))
+        project_name = self.name
+        location = self.location
+        
+        for file in self.location.walkfiles():
+            zipinfo = zipfile.ZipInfo(project_name + "/" 
+                            + location.relpathto(file))
             # we don't know the original permissions.
             # we'll default to read for all, write only by user
             zipinfo.external_attr = 420 << 16L
             zipinfo.date_time = ztime
             zipinfo.compress_type = zipfile.ZIP_DEFLATED
-            zfile.writestr(zipinfo, str(file.data))
-            s.expunge(file)
+            zfile.writestr(zipinfo, file.bytes())
             
         zfile.close()
         temporaryfile.seek(0)
         return temporaryfile
 
+    def rename(self, new_name):
+        """Renames this project to new_name, assuming there is
+        not already another project with that name."""
+        old_location = self.location
+        new_location = self.location.parent / new_name
+        if new_location.exists():
+            raise FileConflict("Cannot rename project %s to %s, because"
+                " a project with the new name already exists."
+                % (self.name, new_name))
+        old_location.rename(new_location)
+        self.name = new_name
+        self.location = new_location
 
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles
