@@ -133,12 +133,18 @@ class User(Base):
         location = self.get_location()
         result = [Project(self, name.basename(), location / name) 
                 for name in location.listdir()]
+        result = sorted(result, key=lambda item: item.name)
         return result
         
     @property
     def statusfile(self):
         return self.get_location() / ".bespin-status.json"
         
+    def recompute_used(self):
+        """Recomputes how much space the user has used."""
+        userdir = self.get_location()
+        self.amount_used = _get_space_used(userdir)
+
     def mark_opened(self, file_obj, mode):
         """Keeps track of this file as being currently open by the
         user with the mode provided."""
@@ -380,6 +386,12 @@ class File(object):
     def __repr__(self):
         return "File: %s" % (self.name)
         
+def _get_space_used(directory):
+    total = 0
+    for f in directory.walkfiles():
+        total += f.size
+    return total
+
 class Project(object):
     """Provides access to the files in a project."""
     
@@ -479,17 +491,6 @@ class Project(object):
         
         return sorted(result, key=lambda item: item.name)
         
-    def _get_space_used(self, directory):
-        total = 0
-        for f in directory.walkfiles():
-            total += f.size
-        return total
-
-    def recompute_used(self):
-        """Recomputes how much space the user has used."""
-        userdir = self.owner.get_location()
-        self.owner.amount_used = self._get_space_used(userdir)
-
     def _check_and_get_file(self, path):
         """Returns the file object."""
         file_obj = File(self, path)
@@ -526,7 +527,7 @@ class Project(object):
                     raise FileNotFound("Directory %s in project %s does not exist" %
                             (path, self.name))
             
-            space_used = self._get_space_used(location)
+            space_used = _get_space_used(location)
             location.rmtree()
             self.owner.amount_used -= space_used
         else:
@@ -614,7 +615,7 @@ def get_project(user, owner, project_name, create=False, clean=False):
     and recreated if it already exists."""
     if user != owner:
         raise NotAuthorized("User %s is not allowed to access project %s" %
-                            (owner, project_name))
+                            (user, project_name))
 
     # a request for a clean project also implies that creating it
     # is okay
