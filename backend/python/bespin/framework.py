@@ -94,7 +94,6 @@ def expose(url_pattern, method=None, auth=True):
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
             user = request.user
-            request.file_manager = model.FSFileManager(user)
             _add_base_headers(response)
             try:
                 return func(request, response)

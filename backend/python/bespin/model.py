@@ -131,7 +131,7 @@ class User(Base):
     @property
     def projects(self):
         location = self.get_location()
-        result = [Project(name.basename(), location / name) 
+        result = [Project(self, name.basename(), location / name) 
                 for name in location.listdir()]
         return result
         
@@ -233,11 +233,8 @@ class UserManager(object):
         except DBAPIError:
             raise ConflictError("Username %s is already in use" % username)
         
-        file_manager = FSFileManager(user)
-        file_manager.create_user_directory()
-        project = file_manager.get_project(user, 
-                    "SampleProject", create=True)
-        file_manager.install_template(project)
+        project = get_project(user, user, "SampleProject", create=True)
+        project.install_template()
         return user
         
     def get_user(self, username):
@@ -256,10 +253,10 @@ class Directory(object):
         return self.name.parent.basename() + "/"
 
 class File(object):
-    def __init__(self, project, name, location):
+    def __init__(self, project, name):
         self.project = project
         self.name = name
-        self.location = location
+        self.location = project.location / name
         self._info = None
         
     @property
@@ -384,69 +381,21 @@ class File(object):
         return "File: %s" % (self.name)
         
 class Project(object):
-    def __init__(self, name, location):
+    """Provides access to the files in a project."""
+    
+    def __init__(self, owner, name, location):
+        self.owner = owner
         self.name = name
         self.location = location
     
-    def authorize(self, user):
-            pass
-            
     @property
     def short_name(self):
         return self.name + "/"
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
-        
-_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
 
-def _cmp_files_in_project(fs1, fs2):
-    file1 = fs1.file
-    file2 = fs2.file
-    proj_diff = cmp(file1.project.name, file2.project.name)
-    if not proj_diff:
-        return cmp(file1.name, file2.name)
-    return proj_diff
-
-class FSFileManager(object):
-    """File Manager that stores the files in the filesystem."""
-    def __init__(self, owner):
-        self.owner = owner
-        
-    def _get_owner_path(self):
-        return self.owner.get_location()
-        
-    def create_user_directory(self):
-        full_path = self._get_owner_path()
-    
-    def get_project(self, user, project_name, create=False, 
-                clean=False):
-        owner = self.owner
-        
-        if user != owner:
-            raise NotAuthorized("User %s is not allowed to access project %s" %
-                                (owner, project_name))
-
-        # a request for a clean project also implies that creating it
-        # is okay
-        if clean:
-            create = True
-        
-        location = self._get_owner_path() / project_name
-        if location.exists():
-            project = Project(project_name, location)
-            if clean:
-                location.rmtree()
-                location.makedirs()
-        else:
-            if not create:
-                raise FileNotFound("Project %s not found" % project_name)
-            log.debug("Creating new project %s", project_name)
-            location.makedirs()
-            project = Project(project_name, location)
-        return project
-        
-    def save_file(self, project, destpath, contents=None):
+    def save_file(self, destpath, contents=None):
         """Saves the contents to the file path provided, creating
         directories as needed in between. If last_edit is not provided,
         the file must not be opened for editing. Otherwise, the
@@ -456,7 +405,7 @@ class FSFileManager(object):
         if not self.owner.check_save(saved_size):
             raise OverQuota()
         
-        file_loc = project.location / destpath
+        file_loc = self.location / destpath
         
         # this is the case where save_file is being used to
         # create a directory
@@ -482,7 +431,7 @@ class FSFileManager(object):
         if not file_dir.exists():
             file_dir.makedirs()
         
-        file = File(project, destpath, file_loc)
+        file = File(self, destpath)
         if file.exists():
             size_delta = saved_size - file.saved_size
         else:
@@ -490,13 +439,11 @@ class FSFileManager(object):
         file.save(contents)
         self.owner.amount_used += size_delta
         return file
-        
 
-    def install_template(self, project, template="template"):
+    def install_template(self, template="template"):
         """Installs a set of template files into a new project."""
-        user = self.owner
         log.debug("Installing template %s for user %s as project %s",
-                template, user, project)
+                template, self.owner, self.name)
         source_dir = pkg_resources.resource_filename("bespin", template)
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -509,32 +456,26 @@ class FSFileManager(object):
                 else:
                     destpath = f
                 contents = open(os.path.join(dirpath, f)).read()
-                self.save_file(project, destpath, contents)
+                self.save_file(destpath, contents)
                 
-    def list_files(self, project=None, path=""):
+    def list_files(self, path=""):
         """Retrieve a list of files at the path. Directories will have
-        '/' at the end of the name.
-
-        If project is None, this will return the projects
-        owned by the user."""
-        if not project:
-            return sorted(self.owner.projects, key=lambda proj: proj.name)
-        
-        location = project.location if not path else \
-            project.location / path
+        '/' at the end of the name."""
+        location = self.location if not path else \
+            self.location / path
         
         if not location.exists():
-            raise FileNotFound("Directory %s in project %s does not exist"
-                              % (path, project.name))
+            raise FileNotFound("Directory %s in self.%s does not exist"
+                              % (path, self.name))
         
         names = location.listdir()
         
         result = []
         for name in names:
             if name.isdir():
-                result.append(Directory(project.location.relpathto(name)))
+                result.append(Directory(self.location.relpathto(name)))
             else:
-                result.append(File(project, project.location.relpathto(name), name))
+                result.append(File(self, self.location.relpathto(name)))
         
         return sorted(result, key=lambda item: item.name)
         
@@ -544,58 +485,31 @@ class FSFileManager(object):
             total += f.size
         return total
 
-    def recompute_used(self, user):
+    def recompute_used(self):
         """Recomputes how much space the user has used."""
         userdir = self.owner.get_location()
-        user.amount_used = self._get_space_used(userdir)
+        self.owner.amount_used = self._get_space_used(userdir)
 
-    def get_file(self, project, path, mode="rw"):
-        """Gets the contents of the file as a string. Raises
-        FileNotFound if the file does not exist. The file is 
-        marked as open after this call."""
-        
-        file_obj = self._check_and_get_file(project, path)
-        self._save_status(file_obj, mode)
-        
-        contents = str(file_obj.data)
-        return contents
-        
-    def _check_and_get_file(self, project, path):
-        """Returns the project, user object, file object."""
-        file_obj = File(project, path, project.location / path)
+    def _check_and_get_file(self, path):
+        """Returns the file object."""
+        file_obj = File(self, path)
         if not file_obj.exists():
             raise FileNotFound("File %s in project %s does not exist" 
-                                % (path, project.name))
+                                % (path, self.name))
         
         if file_obj.location.isdir():
             raise FSException("%s in project %s is a file, not a directory"
-                    % (path, project.name))
+                    % (path, self.name))
         
         return file_obj
         
-    def get_file_object(self, project, path):
+    def get_file_object(self, path):
         """Retrieves the File instance from the project at the
         path provided."""
-        file_obj = self._check_and_get_file(project, path)
+        file_obj = self._check_and_get_file(path)
         return file_obj
 
-    def _save_status(self, file_obj, mode="rw"):
-        self.owner.mark_opened(file_obj, mode)
-        file_obj.mark_opened(self.owner, mode)
-
-    def list_open(self):
-        """list open files for the current user. a dictionary of { project: { filename: mode } } will be returned. For example, if subdir1/subdir2/test.py is open read/write, openfiles will return { "subdir1": { "somedir2/test.py": {"mode" : "rw"} } }"""
-        return self.owner.files
-        
-    def close(self, project, path):
-        """Close the file for the given user"""
-        file_obj = File(project, path, project.location / path)
-        file_obj.close(self.owner)
-        self.owner.close(file_obj)
-        
-        # self.reset_edits(user, project, path)
-
-    def delete(self, user, project, path=""):
+    def delete(self, path=""):
         """Deletes a file, as long as it is not opened. If the file is
         open, a FileConflict is raised. If the path is a directory,
         the directory and everything underneath it will be deleted.
@@ -603,37 +517,124 @@ class FSFileManager(object):
         # deleting the project?
         if not path or path.endswith("/"):
             if not path:
-                location = project.location
+                location = self.location
                 if not location.exists():
-                    raise FileNotFound("Project %s does not exist" % (project.name))
+                    raise FileNotFound("Project %s does not exist" % (self.name))
             else:
-                location = project.location / path
+                location = self.location / path
                 if not location.exists():
                     raise FileNotFound("Directory %s in project %s does not exist" %
-                            (path, project.name))
+                            (path, self.name))
             
             space_used = self._get_space_used(location)
             location.rmtree()
-            user.amount_used -= space_used
+            self.owner.amount_used -= space_used
         else:
-            file_obj = File(project, path, project.location / path)
+            file_obj = File(self, path)
             
             if not file_obj.exists():
                 raise FileNotFound("Cannot delete %s in project %s, file not found."
-                    % (path, project.name))
+                    % (path, self.name))
                     
-            open_users = set(file_obj.users.keys())
-            open_users.difference_update(set([user.username]))
+            open_users = file_obj.users
             if open_users:
                 raise FileConflict(
                     "File %s in project %s is in use by another user"
-                    % (path, project.name))
+                    % (path, self.name))
             
-            user.close(file_obj)
-            user.amount_used -= file_obj.saved_size
+            self.owner.amount_used -= file_obj.saved_size
             file_obj.location.remove()
 
+class ProjectView(Project):
+    """Provides a view of a project for a specific user. This handles
+    things like open file status for the user."""
     
+    def __init__(self, user, owner, name, location):
+        self.user = user
+        super(ProjectView, self).__init__(owner, name, location)
+        
+    def __repr__(self):
+        return "ProjectView(name=%s)" % (self.name)
+
+    def get_file(self, path, mode="rw"):
+        """Gets the contents of the file as a string. Raises
+        FileNotFound if the file does not exist. The file is 
+        marked as open after this call."""
+        
+        file_obj = self._check_and_get_file(path)
+        self.user.mark_opened(file_obj, mode)
+        file_obj.mark_opened(self.user, mode)
+        
+        contents = str(file_obj.data)
+        return contents
+        
+    def delete(self, path=""):
+        """Deletes a file, as long as it is not opened by another user. 
+        If the file is open, a FileConflict is raised. If the path is a 
+        directory, the directory and everything underneath it will be deleted.
+        If the path is empty, the project will be deleted."""
+        if path and not path.endswith("/"):
+            file_obj = File(self, path)
+            open_users = set(file_obj.users.keys())
+            open_users.difference_update(set([self.user.username]))
+            if open_users:
+                raise FileConflict(
+                    "File %s in project %s is in use by another user"
+                    % (path, self.name))
+        
+            self.user.close(file_obj)
+            file_obj.close(self.user)
+        super(ProjectView, self).delete(path)
+        
+    def close(self, path):
+        """Close the file for the current user"""
+        file_obj = File(self, path)
+        file_obj.close(self.user)
+        self.user.close(file_obj)
+        
+        # self.reset_edits(user, project, path)
+
+        
+_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
+
+def _cmp_files_in_project(fs1, fs2):
+    file1 = fs1.file
+    file2 = fs2.file
+    proj_diff = cmp(file1.project.name, file2.project.name)
+    if not proj_diff:
+        return cmp(file1.name, file2.name)
+    return proj_diff
+    
+def get_project(user, owner, project_name, create=False, clean=False):
+    """Create a project object that provides an appropriate view
+    of the project for the given user. A project is identified by
+    the 'owner' of the project and by the project name. If
+    create is True, the project will be created if it does not
+    already exist. If clean is True, the project will be deleted
+    and recreated if it already exists."""
+    if user != owner:
+        raise NotAuthorized("User %s is not allowed to access project %s" %
+                            (owner, project_name))
+
+    # a request for a clean project also implies that creating it
+    # is okay
+    if clean:
+        create = True
+    
+    location = owner.get_location() / project_name
+    if location.exists():
+        project = ProjectView(user, owner, project_name, location)
+        if clean:
+            location.rmtree()
+            location.makedirs()
+    else:
+        if not create:
+            raise FileNotFound("Project %s not found" % project_name)
+        log.debug("Creating new project %s", project_name)
+        location.makedirs()
+        project = ProjectView(user, owner, project_name, location)
+    return project
+
 class FileManager(object):
     def __init__(self, session):
         self.session = session
