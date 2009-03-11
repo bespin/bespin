@@ -38,7 +38,7 @@ import simplejson
 
 from bespin import config, controllers, model
 
-from bespin.model import File, Project, User
+from bespin.model import File, Project, User, get_project
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -56,7 +56,7 @@ def setup_module(module):
     app = controllers.make_app()
     app = TestApp(app)
     
-def _get_fm():
+def _init_data():
     global macgyver, someone_else, murdoc
     config.activate_profile()
     fsroot = config.c.fsroot
@@ -69,23 +69,21 @@ def _get_fm():
     someone_else = user_manager.create_user("SomeoneElse", "", "someone@else.com")
     murdoc = user_manager.create_user("Murdoc", "", "murdoc@badpeople.bad")
     
-    file_manager = model.FSFileManager(someone_else)
-    otherproject = file_manager.get_project(someone_else,
+    otherproject = get_project(someone_else, someone_else,
                                             "otherproject", create=True)
-    file_manager.save_file(otherproject, 'foo', 
-                 'Just a file to reserve a project')
+    otherproject.save_file('foo', 'Just a file to reserve a project')
+    
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
+        
     macgyver = user_manager.get_user("MacGyver")
-    file_manager = model.FSFileManager(macgyver)
-    return file_manager
 
 def test_basic_file_creation():
-    fm = _get_fm()
+    _init_data()
     starting_point = macgyver.amount_used
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "reqs", "Chewing gum wrapper")
-    file_obj = File(bigmac, "reqs", bigmac.location / "reqs")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("reqs", "Chewing gum wrapper")
+    file_obj = File(bigmac, "reqs")
     data = str(file_obj.data)
     assert data == 'Chewing gum wrapper'
     ending_point = macgyver.amount_used
@@ -96,8 +94,8 @@ def test_basic_file_creation():
     assert now - file_obj.created < timedelta(seconds=2)
     assert now - file_obj.modified < timedelta(seconds=2)
     
-    bigmac = fm.get_project(macgyver, "bigmac")
-    files = fm.list_files(bigmac, "")
+    bigmac = get_project(macgyver, macgyver, "bigmac")
+    files = bigmac.list_files("")
     assert len(files) == 1
     assert files[0].short_name == 'reqs'
     proj_names = set([proj.name for proj in macgyver.projects])
@@ -105,13 +103,13 @@ def test_basic_file_creation():
                               "BespinSettings"])
     
     # let's update the contents
-    fm.save_file(bigmac, "reqs", "New content")
-    file_obj = File(bigmac, "reqs", bigmac.location / "reqs")
+    bigmac.save_file("reqs", "New content")
+    file_obj = File(bigmac, "reqs")
     
     assert file_obj.data == 'New content'
     
 def test_changing_file_contents_changes_amount_used():
-    fm = _get_fm()
+    _init_data()
     starting_point = macgyver.amount_used
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo", "step 1")
@@ -120,7 +118,7 @@ def test_changing_file_contents_changes_amount_used():
     assert macgyver.amount_used == starting_point + 8
     
 def test_cannot_save_beyond_quota():
-    fm = _get_fm()
+    _init_data()
     old_units = model.QUOTA_UNITS
     model.QUOTA_UNITS = 10
     try:
@@ -132,14 +130,14 @@ def test_cannot_save_beyond_quota():
         model.QUOTA_UNITS = old_units
         
 def test_amount_used_can_be_recomputed():
-    fm = _get_fm()
+    _init_data()
     starting_point = macgyver.amount_used
     macgyver.amount_used = 0
     fm.recompute_used(macgyver)
     assert macgyver.amount_used == starting_point
     
 def test_retrieve_file_obj():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "reqs", "tenletters")
     try:
@@ -153,7 +151,7 @@ def test_retrieve_file_obj():
         
 
 def test_error_if_you_try_to_replace_dir_with_file():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
@@ -163,7 +161,7 @@ def test_error_if_you_try_to_replace_dir_with_file():
         pass
     
 def test_get_file_opens_the_file():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     contents = fm.get_file(bigmac, "foo/bar/baz")
@@ -188,7 +186,7 @@ def test_get_file_opens_the_file():
     assert open_files == {}
 
 def test_get_file_raises_exception_if_its_a_directory():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
@@ -198,7 +196,7 @@ def test_get_file_raises_exception_if_its_a_directory():
         pass
     
 def test_get_file_raises_not_found_exception():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     try:
@@ -208,7 +206,7 @@ def test_get_file_raises_not_found_exception():
         pass
     
 def test_directory_shortname_computed_to_have_last_dir():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     res = fm.list_files(bigmac, "foo/")
@@ -219,7 +217,7 @@ def test_directory_shortname_computed_to_have_last_dir():
     assert shortname == "bar/"
     
 def test_can_delete_empty_directory():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/")
     fm.delete(macgyver, bigmac, "foo/bar/")
@@ -227,7 +225,7 @@ def test_can_delete_empty_directory():
     assert not location.exists()
     
 def test_delete_raises_file_not_found():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     try:
         fm.delete(macgyver, bigmac, "DOESNT MATTER")
@@ -245,7 +243,7 @@ def test_delete_raises_file_not_found():
     fm.delete(macgyver, bigmac, "foo/bar/")
     
 def test_cannot_delete_file_open_by_someone_else():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     fm.get_file(bigmac, "foo/bar/baz")
@@ -256,7 +254,7 @@ def test_cannot_delete_file_open_by_someone_else():
         pass
         
 def test_can_delete_file_open_by_me():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
     fm.get_file(bigmac, "foo/bar/baz")
@@ -264,7 +262,7 @@ def test_can_delete_file_open_by_me():
     assert not macgyver.files
     
 def test_successful_deletion():
-    fm = _get_fm()
+    _init_data()
     starting_used = macgyver.amount_used
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/baz", "biz")
@@ -279,7 +277,7 @@ def test_successful_deletion():
     assert not files
     
 def test_top_level_deletion():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo", "data")
     fm.delete(macgyver, bigmac, "foo")
@@ -287,7 +285,7 @@ def test_top_level_deletion():
     assert flist == []
     
 def test_directory_deletion():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "whiz/bang", "stillmore")
     starting_used = macgyver.amount_used
@@ -305,7 +303,7 @@ def test_directory_deletion():
 # after the collaboration merge. If not, we should delete this stuff.
 
 # def test_basic_edit_functions():
-#     fm = _get_fm()
+#     _init_data()
 #     s = fm.session
 #     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
 #     bigmac2 = fm.get_project(someone_else, someone_else, "bigmac", create=True)
@@ -341,7 +339,7 @@ def test_directory_deletion():
 #         pass
 #     
 # def test_reset_edits():
-#     fm = _get_fm()
+#     _init_data()
 #     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
 #     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
 #     fm.reset_edits(macgyver, bigmac, "foo/bar/baz")
@@ -362,7 +360,7 @@ def test_directory_deletion():
 #     assert edits == []
 #     
 # def test_edits_cleared_after_save():
-#     fm = _get_fm()
+#     _init_data()
 #     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
 #     fm.save_edit(macgyver, bigmac, "foo/bar/baz", "['edit', 'thinger']")
 #     fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
@@ -370,7 +368,7 @@ def test_directory_deletion():
 #     assert edits == []
 # 
 # def test_edits_cleared_after_close():
-#     fm = _get_fm()
+#     _init_data()
 #     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
 #     fm.save_file(macgyver, bigmac, "foo/bar/baz", "macaroni")
 #     fm.get_file(bigmac, "foo/bar/baz")
@@ -380,7 +378,7 @@ def test_directory_deletion():
 #     assert edits == []
 #     
 def test_list_top_level():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "readme.txt", "Hi there!")
     result = fm.list_files(bigmac)
@@ -394,7 +392,7 @@ def test_list_top_level():
     
 def test_delete_does_not_affect_other_projects():
     global macgyver, someone_else
-    fm = _get_fm()
+    _init_data()
     bigmac1 = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac1, "bar/foo", "bar!")
     fm.save_file(bigmac1, "bar/foobar", "yo")
@@ -427,7 +425,7 @@ def test_delete_does_not_affect_other_projects():
         pass
         
 def test_save_file_can_create_directory():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, "bigmac", create=True)
     fm.save_file(bigmac, "foo/bar/")
     flist = fm.list_files(bigmac)
@@ -442,7 +440,7 @@ def test_save_file_can_create_directory():
 # -------
     
 def test_good_file_operations_from_web():
-    fm = _get_fm()
+    _init_data()
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
     bigmac = fm.get_project(macgyver, "bigmac")
     fileobj = File(bigmac, "reqs", bigmac.location / "reqs")
@@ -503,7 +501,7 @@ def test_good_file_operations_from_web():
     
     
 def test_error_conditions_from_web():
-    fm = _get_fm()
+    _init_data()
     app.get("/file/at/bigmac/UNKNOWN", status=404)
     app.put("/file/at/bigmac/bar/baz", "A file in bar")
     app.put("/file/at/bigmac/bar", "A file to replace bar", status=409)
@@ -513,7 +511,7 @@ def test_error_conditions_from_web():
     app.get("/file/at/", status=400)
 
 def test_edit_interface():
-    fm = _get_fm()
+    _init_data()
     app.put("/edit/at/bigmac/bar/baz", "Starting a file")
     app.put("/edit/at/bigmac/bar/baz", "Second edit")
     resp = app.get("/edit/list/bigmac/bar/baz")
@@ -544,7 +542,7 @@ def test_edit_interface():
     assert data == []
     
 def test_get_file_stats_from_web():
-    fm = _get_fm()
+    _init_data()
     s = fm.session
     app.put("/file/at/bigmac/reqs", "Chewing gum wrapper")
     resp = app.get("/file/stats/bigmac/reqs")
@@ -553,7 +551,7 @@ def test_get_file_stats_from_web():
     assert data['size'] == 19
     
 def test_preview_mode():
-    fm = _get_fm()
+    _init_data()
     bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
     fm.save_file(macgyver, bigmac, "README.txt", 
         "This is the readme file.")
@@ -576,7 +574,7 @@ def test_preview_mode():
     assert resp.content_type == "text/html"
     
 def test_quota_limits_on_the_web():
-    fm = _get_fm()
+    _init_data()
     old_units = model.QUOTA_UNITS
     model.QUOTA_UNITS = 10
     try:

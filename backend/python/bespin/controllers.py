@@ -54,11 +54,9 @@ def new_user(request, response):
         raise BadRequest("username, email and password are required.")
     user = request.user_manager.create_user(username, password, email)
     
-    file_manager = model.FSFileManager(user)
-    settings_project = file_manager.get_project(user, 
+    settings_project = model.get_project(user, user,
                         "BespinSettings", create=True)
-    file_manager.install_template(settings_project,
-                                          'usertemplate')
+    settings_project.install_template('usertemplate')
     response.content_type = "application/json"
     response.body = "{}"
     request.environ['paste.auth_tkt.set_user'](username)
