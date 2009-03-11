@@ -31,7 +31,14 @@
 // {{{ bespin.apiVersion }}} is the version number of the API (to ensure that the
 //                          client and server are talking the same language)
 // {{{ bespin.displayVersion }}} is a function that sets innerHTML on the element given, with the Bespin version info
-
+//
+// {{{ bespin.publish }}} maps onto dojo.publish but lets us abstract away for the future
+// {{{ bespin.subscribe }}} maps onto dojo.subscribe but lets us abstract away for the future
+// {{{ bespin.unsubscribe }}} maps onto dojo.unsubscribe but lets us abstract away for the future
+//
+// {{{ bespin.register }}} is the way to attach components into the bespin system for others to get out
+// {{{ bespin.get }}} allows you to get registered components out
+// {{{ bespin.withComponent }}} maps onto dojo.subscribe but lets us abstract away for the future
 
 dojo.provide("bespin.bespin");
     
@@ -44,15 +51,62 @@ dojo.mixin(bespin, {
     
     defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
-    
+
+    // == Methods for tying to the event bus
+
+    // ** {{{ publish }}} **
+    //
+    // Given a topic and a set of parameters, publish onto the bus
     publish: function(topic, args) {
         dojo.publish(topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
-    
+
+    // ** {{{ subscribe }}} **
+    //
+    // Given a topic and a function, subscribe to the event
     subscribe: dojo.subscribe,
-    
+
+    // ** {{{ unsubscribe }}} **
+    //
+    // Unsubscribe the functions from the topic
+    unsubscribe: dojo.unsubscribe,
+
+    // == Methods for registering components with the main system
+    registeredComponents: {},
+
+    // ** {{{ register }}} **
+    //
+    // Given an id and an object, register it inside of Bespin
+    register: function(id, object) {
+        bespin.publish("bespin:component:register", { id: id, object: object });
+
+        this.registeredComponents[id] = object;
+        
+        return object;
+    },
+
+    // ** {{{ get }}} **
+    //
+    // Given an id return the component
+    get: function(id) {
+        return this.registeredComponents[id];
+    },
+
+    // ** {{{ withComponent }}} **
+    //
+    // Given an id, and function to run, execute it if the component is available
+    withComponent: function(id, func) {
+        var component = this.get(id);
+        if (component) {
+            return func(component);
+        }
+    },
+
+    // ** {{{ displayVersion }}} **
+    //
+    // Given an HTML element
     displayVersion: function(el) {
-        if (!el) el = dojo.byId("version");
+        var el = dojo.byId(el) || dojo.byId("version");
         if (!el) return;
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
     }

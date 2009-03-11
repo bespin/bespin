@@ -117,7 +117,7 @@ def required():
     pip = path("bin/pip")
     if not pip.exists():
         # try Windows version
-        pip = path("Scripts/pip")
+        pip = path("Scripts") / "pip"
     sh("%s install -U -r requirements.txt" % pip)
     
     call_pavement('backend/python/pavement.py', 'develop')
@@ -131,9 +131,9 @@ def start():
     """Starts the BespinServer on localhost port 8080 for development.
     
     You can change the port and allow remote connections by setting
-    server.port or server.host on the command line.
+    server.port or server.address on the command line.
     
-    paver server.host=your.ip.address server.port=8000 start
+    paver server.address=your.ip.address server.port=8000 start
     
     will allow remote connections (assuming you don't have a firewall
     blocking the connection) and start the server on port 8000.

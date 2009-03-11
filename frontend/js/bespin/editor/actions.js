@@ -46,246 +46,82 @@ dojo.declare("bespin.editor.Actions", null, {
     handleCursorSelection: function(args) {
         if (args.event.shiftKey) {
             if (!this.editor.selection) this.editor.setSelection({ startPos: bespin.editor.utils.copyPos(args.pos) });
-            this.editor.setSelection({ startPos: this.editor.selection.startPos, endPos: bespin.editor.utils.copyPos(this.editor.cursorPosition)});
+            this.editor.setSelection({ startPos: this.editor.selection.startPos, endPos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition())});
         } else {
             this.editor.setSelection(undefined);
         }
     },
 
-    moveCursorLeft: function(args) {
-        // start of the line so move up
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col == 0)) {
-            var originalRow = args.pos.row;
-            this.moveCursorUp(args);
-            if (originalRow > 0) this.moveToLineEnd(args);
-            return;
-        }
-        this.editor.moveCursor({ col: Math.max(0, args.pos.col - 1) });
+    moveCursor: function(moveType, args) {
+        var posData = this.editor.cursorManager[moveType]();
         this.handleCursorSelection(args);
         this.repaint();
+        args.pos = posData.newPos;
+        return args;
+    },
+
+    moveCursorLeft: function(args) {
+        return this.moveCursor("moveLeft", args);
     },
 
     moveCursorRight: function(args) {
-        // end of the line, so go to the start of the next line
-        if (_settings.isOn(_settings.get('strictlines')) && (this.editor.cursorPosition.col >= this.editor.model.getRowLength(args.pos.row))) {
-            var originalRow = args.pos.row;
-            this.moveCursorDown(args);
-            if (originalRow < this.editor.model.getRowCount() - 1) this.moveToLineStart(args);
-            return;
-        }
-
-        this.editor.moveCursor({ col: args.pos.col + 1 });
-        this.handleCursorSelection(args);
-        this.repaint();
+        return this.moveCursor("moveRight", args);
     },
 
     moveCursorUp: function(args) {
-        this.editor.moveCursor({ row: Math.max(0, args.pos.row - 1) });
-
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
-            this.handleCursorSelection(args);
-            
-            args.pos.row -= 1; // one above
-            this.moveToLineEnd(args);
-        } else {
-            this.handleCursorSelection(args);            
-        }
-
-        this.repaint();
-
-        args.pos.row = this.editor.cursorPosition.row;
-        return args;
+        return this.moveCursor("moveUp", args);
     },
 
     moveCursorDown: function(args) {
-        this.editor.moveCursor({ row: Math.min(this.editor.model.getRowCount() - 1, args.pos.row + 1) });
-
-        if (_settings.isOn(_settings.get('strictlines')) && args.pos.col > this.editor.model.getRowLength(this.editor.cursorPosition.row)) {
-            this.handleCursorSelection(args);
-            
-            args.pos.row += 1; // one below
-            this.moveToLineEnd(args);
-        } else {
-            this.handleCursorSelection(args);
-        }
-
-        this.repaint();
-
-        args.pos.row = this.editor.cursorPosition.row;
-        return args;
+        return this.moveCursor("moveDown", args);
     },
 
     moveToLineStart: function(args) {
-        var line = this.editor.model.getRowString(this.editor.cursorPosition.row, this.editor.ui.tabstop);
-        var match = /^(\s+).*/.exec(line);
-        var leadingWhitespaceLength = 0;
-
-        // Check to see if there is leading white space and move to the first text if that is the case
-        if (match && match.length == 2) {
-            leadingWhitespaceLength = match[1].length;
-        }
-
-        if (args.pos.col == 0) {
-            this.editor.moveCursor({ col:  leadingWhitespaceLength });
-        } else if (args.pos.col == leadingWhitespaceLength) {
-            this.editor.moveCursor({ col: 0 });
-        } else {
-            this.editor.moveCursor({ col: leadingWhitespaceLength });
-        }
-
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        args.pos.col = this.editor.cursorPosition.col;
-        return args;
+        return this.moveCursor("moveToLineStart", args);
     },
 
     moveToLineEnd: function(args) {
-        this.editor.moveCursor({ col: this.editor.model.getRowLength(args.pos.row) });
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        args.pos.col = this.editor.cursorPosition.col;
-        return args;
+        return this.moveCursor("moveToLineEnd", args);
     },
 
     moveToFileTop: function(args) {
-        this.editor.moveCursor({ col: this.editor.cursorPosition.row = 0 });
-
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        args.pos.col = args.pos.row = 0;
-
-        return args;
+        return this.moveCursor("moveToTop", args);
     },
 
     moveToFileBottom: function(args) {
-        var row = this.editor.model.getRowCount() - 1;
-        this.editor.moveCursor({ row: row, col: this.editor.model.getRowLength(row)});
-
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        args.pos.row = this.editor.cursorPosition.row;
-        args.pos.col = this.editor.cursorPosition.col;
-        return args;
+        return this.moveCursor("moveToBottom", args);
     },
 
     movePageUp: function(args) {
-        this.editor.moveCursor({ row: Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0)});
-
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        return args;
+        return this.moveCursor("movePageUp", args);
     },
 
     movePageDown: function(args) {
-        this.editor.moveCursor({ row: Math.min(this.editor.cursorPosition.row + this.editor.ui.visibleRows, this.editor.model.getRowCount() - 1)});
-
-        this.handleCursorSelection(args);
-        this.repaint();
-
-        return args;
+        return this.moveCursor("movePageDown", args);
     },
 
     moveWordLeft: function(args) {
-        var row = this.editor.model.getRowString(args.pos.row);
-
-        var c, charCode;
-
-        if (args.pos.col == 0) { // -- at the start to move up and to the end
-            var newargs = this.moveCursorUp(args);
-            this.moveToLineEnd(newargs);
-            return;
-        }
-
-        // Short circuit if cursor is ahead of actual spaces in model
-        if (row.length < args.pos.col) {
-            args = this.moveToLineEnd(args);
-        }
-        var newcol = args.pos.col;
-
-        // This slurps up trailing spaces
-        var wasSpaces = false;
-        while (newcol > 0) {
-            newcol--;
-
-            c = row.charAt(newcol);
-            charCode = c.charCodeAt(0);
-            if (charCode == 32 /*space*/) {
-                wasSpaces = true;
-            } else {
-                newcol++;
-                break;
-            }
-        }
-
-        // This jumps to stop words        
-        if (!wasSpaces) {
-            while (newcol > 0) {
-                newcol--;
-                c = row.charAt(newcol);
-                charCode = c.charCodeAt(0);
-                if ( (charCode < 65) || (charCode > 122) ) { // if you get to an alpha you are done
-                    if (newcol != args.pos.col - 1) newcol++; // right next to a stop char, move back one
-                    break;
-                }
-            }
-        }
-        
-        this.editor.moveCursor({ col: newcol });
-        this.handleCursorSelection(args);
-        this.repaint();
+        return this.moveCursor("smartMoveLeft", args);
     },
 
     moveWordRight: function(args) {
-        var row = this.editor.model.getRowString(args.pos.row);
-        var c, charCode;
+        return this.moveCursor("smartMoveRight", args);
+    },
 
-        if (row.length <= args.pos.col) { // -- at the edge so go to the next line
-            this.moveCursorDown(this.moveToLineStart(args));
-            return;
-        }
+    deleteWordLeft: function (args) {
+        this.deleteChunk({
+            endPos: args.pos,
+            pos: this.moveCursor("smartMoveLeft", args).pos
+        });
+        return args;
+    },
 
-        var newcol = args.pos.col;
-
-        // This slurps up leading spaces
-        var wasSpaces = false;
-        while (newcol < row.length) {
-            c = row[newcol];
-            charCode = c.charCodeAt(0);
-            if (charCode == 32 /*space*/) {
-                wasSpaces = true;
-                newcol++;
-            } else {
-                break;
-            }
-        }
-
-        // This jumps to stop words        
-        if (!wasSpaces) {        
-            while (newcol < row.length) {
-                newcol++;
-
-                if (row.length == newcol) { // one more to go
-                    this.moveToLineEnd(args);
-                    return;
-                }
-
-                c = row[newcol];
-                charCode = c.charCodeAt(0);
-            
-                if ( (charCode < 65) || (charCode > 122) ) {
-                    break;
-                }
-            }
-        }
-    
-        this.editor.moveCursor({ col: newcol }); 
-        this.handleCursorSelection(args);
-        this.repaint();
+    deleteWordRight: function (args) {
+        this.deleteChunk({
+            pos: args.pos,
+            endPos: this.moveCursor("smartMoveRight", args).pos
+        });
+        return args;
     },
 
     undo: function() {
@@ -309,61 +145,75 @@ dojo.declare("bespin.editor.Actions", null, {
     select: function(args) {
         if (args.startPos) {
             this.editor.setSelection({ startPos: args.startPos, endPos: args.endPos });
-            this.editor.moveCursor(args.endPos);
+            this.editor.cursorManager.moveCursor(args.endPos);
         } else {
             this.editor.setSelection(undefined);
         }
     },
 
     insertTab: function(args) {
+        var settings = bespin.get('settings');
+        
         if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
             return;
         }
 
-        var realTabs = (_settings.get('tabmode') == 'tabs');
-        if (realTabs) {
-            // do something tabby
-            tab = "\t";
-            tabWidth = 1;
-        } else {
-            var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
-            var tabWidthCount = tabWidth;
-            var tab = "";
-            while (tabWidthCount-- > 0) {
-                tab += " ";
+        var tabWidth = args.tabWidth;
+        var tab = args.tab;
+
+        if (!tab || !tabWidth) {
+            var realTabs = (settings.get('tabsize') == 'tabs');
+            if (realTabs) {
+                // do something tabby
+                tab = "\t";
+                tabWidth = 1;
+            } else {
+                var tabWidth = parseInt(settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+                var tabWidthCount = tabWidth;
+                var tab = "";
+                while (tabWidthCount-- > 0) {
+                    tab += " ";
+                }
             }
         }
 
-        this.editor.model.insertCharacters({row: args.pos.row, col: args.pos.col}, tab);
-        this.editor.moveCursor({row: args.pos.row, col: args.pos.col + tabWidth});
-        
+        this.editor.model.insertCharacters({row: args.modelPos.row, col: args.modelPos.col}, tab);
+        this.editor.cursorManager.moveCursor({row: args.modelPos.row, col: args.modelPos.col + tabWidth});
+
+        var linetext = this.editor.model.getRowArray(args.modelPos.row).join("");
+        // linetext = linetext.replace(/\t/g, "TAB");
+        // console.log(linetext);
+
         this.repaint();
         
         // undo/redo
         args.action = "insertTab";
         var redoOperation = args;
-        var undoArgs = { action: "removeTab", queued: args.queued, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoArgs = { action: "removeTab", queued: args.queued, modelPos: bespin.editor.utils.copyPos(args.modelPos),
+                         pos: bespin.editor.utils.copyPos(args.pos), tab: tab, tabWidth: tabWidth };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
     
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
-        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabWidth = args.tabWidth;
         
         this.editor.model.deleteCharacters({row: args.pos.row, col: args.pos.col}, tabWidth);
-        this.editor.moveCursor({row: args.pos.row, col: args.pos.col});
+        this.editor.cursorManager.moveCursor({row: args.pos.row, col: args.pos.col});
         
         this.repaint();
         
         args.action = "removeTab";
         var redoOperation = args;
-        var undoArgs = { action: "insertTab", undoInsertTab: true, queued: args.queued, pos: bespin.editor.utils.copyPos(args.pos) };
+        var undoArgs = { action: "insertTab", undoInsertTab: true, queued: args.queued, pos: bespin.editor.utils.copyPos(args.pos),
+                         modelPos: bespin.editor.utils.copyPos(args.modelPos), tab: args.tab, tabWidth: args.tabWidth };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
+    // TODO: this is likely now broken
     indent: function(args) {
         var historyIndent = args.historyIndent || false;    
         if (!historyIndent) {
@@ -402,7 +252,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.setSelection(selection);
         }
         args.pos.col += (historyIndent ? historyIndent[historyIndent.length-1] : tab.length);
-        this.editor.moveCursor({ col: args.pos.col });
+        this.editor.cursorManager.moveCursor({ col: args.pos.col });
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
         this.repaint();
 
@@ -412,7 +262,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoOperation = args;
         var undoArgs = { action: "unindent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, historyIndent: historyIndent, pos: bespin.editor.utils.copyPos(args.pos) };
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));        
     },
 
     unindent: function(args) {
@@ -457,7 +307,7 @@ dojo.declare("bespin.editor.Actions", null, {
                 args.pos.col = Math.max(0, args.pos.col - charsToDelete);
             }
         }
-        this.editor.moveCursor({ col: args.pos.col });
+        this.editor.cursorManager.moveCursor({ col: args.pos.col });
 
         if (!fakeSelection) {
             this.editor.setSelection(selection);
@@ -497,7 +347,7 @@ dojo.declare("bespin.editor.Actions", null, {
         args.queued = true;
         var selection = this.editor.getSelection();
         var chunk = this.deleteSelection(args);
-        args.pos = bespin.editor.utils.copyPos(this.editor.cursorPosition);
+        args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
         var endPos = this.insertChunk(args);
 
         args.queued = oldqueued;
@@ -551,8 +401,8 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.selection) {
             this.deleteSelectionAndInsertChunk(args);
         } else {
-            var pos = this.editor.model.insertChunk(bespin.editor.utils.copyPos(this.editor.cursorPosition), args.chunk);
-            this.editor.moveCursor(pos);
+            var pos = this.editor.model.insertChunk(bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()), args.chunk);
+            this.editor.cursorManager.moveCursor(pos);
             this.repaint();
 
             // undo/redo
@@ -568,7 +418,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     deleteChunk: function(args) {
         var chunk = this.editor.model.deleteChunk({ startPos: args.pos, endPos: args.endPos });
-        this.editor.moveCursor(args.pos);
+        this.editor.cursorManager.moveCursor(args.pos);
         this.repaint();
 
         // undo/redo
@@ -581,7 +431,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     //deleteLine: function(args) {
     //    this.editor.lines.splice(args.pos.row);
-    //    if (args.pos.row >= this.editor.lines.length) this.editor.moveCursor({ row: args.pos.row - 1, col: args.pos.col });
+    //    if (args.pos.row >= this.editor.lines.length) this.editor.cursorManager.moveCursor({ row: args.pos.row - 1, col: args.pos.col });
     //    this.repaint();
     //},
 
@@ -589,9 +439,9 @@ dojo.declare("bespin.editor.Actions", null, {
         if (args.joinDirection == "up") {
             if (args.pos.row == 0) return;
 
-            var newcol = this.editor.model.getRowLength(args.pos.row - 1);
+            var newcol = this.editor.ui.getRowScreenLength(args.pos.row - 1);
             this.editor.model.joinRow(args.pos.row - 1);
-            this.editor.moveCursor({ row: args.pos.row - 1, col: newcol });
+            this.editor.cursorManager.moveCursor({ row: args.pos.row - 1, col: newcol });
         } else {
             if (args.pos.row >= this.editor.model.getRowCount() - 1) return;
 
@@ -601,7 +451,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // undo/redo
         args.action = "joinLine";
         var redoOperation = args;
-        var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued };
+        var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.getCursorPos()), queued: args.queued };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
@@ -630,7 +480,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection(undefined);
-        this.editor.moveCursor(startPos);
+        this.editor.cursorManager.moveCursor(startPos);
         this.repaint();
 
         return chunk;
@@ -647,7 +497,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection({ startPos: args.pos, endPos: endPos });
-        this.editor.moveCursor(endPos);
+        this.editor.cursorManager.moveCursor(endPos);
         this.repaint();
     },
 
@@ -656,7 +506,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelection(args);
         } else {
             if (args.pos.col > 0) {
-                this.editor.moveCursor({ col:  Math.max(0, args.pos.col - 1) });
+                this.editor.cursorManager.moveCursor({ col:  Math.max(0, args.pos.col - 1) });
                 args.pos.col -= 1;
                 this.deleteCharacter(args);
             } else {
@@ -680,7 +530,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteCharacter: function(args) {
-        if (args.pos.col < this.editor.model.getRowLength(args.pos.row)) {
+        if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
             var deleted = this.editor.model.deleteCharacters(args.pos, 1);
             this.repaint();
 
@@ -694,14 +544,14 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     newline: function(args) {
-        var autoindentAmount = _settings.get('autoindent') ? bespin.util.leadingSpaces(this.editor.model.getRowArray(args.pos.row)) : 0;
+        var autoindentAmount = bespin.get('settings').get('autoindent') ? bespin.util.leadingSpaces(this.editor.model.getRowArray(args.pos.row)) : 0;
         this.editor.model.splitRow(args.pos, autoindentAmount);
-        this.editor.moveCursor({ row: this.editor.cursorPosition.row + 1, col: autoindentAmount });
+        this.editor.cursorManager.moveCursor({ row: this.editor.cursorManager.getScreenPosition().row + 1, col: autoindentAmount });
 
         // undo/redo
         args.action = "newline";
         var redoOperation = args;
-        var undoArgs = { action: "joinLine", joinDirection: "up", pos: bespin.editor.utils.copyPos(this.editor.cursorPosition), queued: args.queued };
+        var undoArgs = { action: "joinLine", joinDirection: "up", pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()), queued: args.queued };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
@@ -716,7 +566,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
         args.queued = true;
         var chunk = this.deleteSelection(args);
-        args.pos = bespin.editor.utils.copyPos(this.editor.cursorPosition);
+        args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
         this.insertCharacter(args);
 
         args.queued = oldqueued;
@@ -756,7 +606,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelectionAndInsertCharacter(args);
         } else {
             this.editor.model.insertCharacters(args.pos, args.newchar);
-            this.editor.moveCursor({ col: this.editor.cursorPosition.col + 1 });
+            this.editor.cursorManager.moveRight();
             this.repaint();
 
             // undo/redo
@@ -769,15 +619,15 @@ dojo.declare("bespin.editor.Actions", null, {
     },
     
     moveCursorRowToCenter: function(args) {
-        var saveCursorRow = this.editor.cursorPosition.row;
+        var saveCursorRow = this.editor.getCursorPos().row;
         var halfRows = Math.floor(this.editor.ui.visibleRows / 2);
         if (saveCursorRow > (this.editor.ui.firstVisibleRow + halfRows)) { // bottom half, so move down
-            this.editor.moveCursor({ row: this.editor.cursorPosition.row + halfRows });
+            this.editor.cursorManager.moveCursor({ row: this.editor.getCursorPos().row + halfRows });
         } else { // top half, so move up
-            this.editor.moveCursor({ row: this.editor.cursorPosition.row - halfRows });
+            this.editor.cursorManager.moveCursor({ row: this.editor.getCursorPos().row - halfRows });
         }
         this.editor.ui.ensureCursorVisible();
-        this.editor.moveCursor({ row: saveCursorRow });
+        this.editor.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
     repaint: function() {

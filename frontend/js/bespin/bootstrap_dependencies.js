@@ -45,8 +45,9 @@ dojo.require("bespin.client.server");
 dojo.require("bespin.client.session");
 
 dojo.require("bespin.editor.actions");
-dojo.require("bespin.editor.editor");
 dojo.require("bespin.editor.events");
+dojo.require("bespin.editor.cursor");
+dojo.require("bespin.editor.editor");
 dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.themes");
