@@ -161,7 +161,8 @@ def putfile(request, response):
     project, path = _split_path(request)
     project = model.get_project(user, user, project, create=True)
     
-    project.save_file(path, request.body)
+    if path:
+        project.save_file(path, request.body)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'GET')
@@ -413,12 +414,11 @@ def preview_file(request, response):
     
 @expose(r'^/project/rename/(?P<project_name>.+)/$', 'POST')
 def rename_project(request, response):
-    fm = request.file_manager
     user = request.user
     
     project_name = request.kwargs['project_name']
-    project = fm.get_project(user, project_name)
-    fm.rename(user, project, "", request.body)
+    project = model.get_project(user, user, project_name)
+    project.rename(request.body)
     response.body = ""
     response.content_type = "text/plain"
     return response()
