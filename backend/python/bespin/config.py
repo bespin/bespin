@@ -30,6 +30,8 @@ import os
 import logging
 import logging.handlers
 
+from path import path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -53,6 +55,7 @@ c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
+c.fslevels = 0
 
 c.max_import_file_size = 20000000
 
@@ -60,8 +63,14 @@ def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
+        c.fsroot = os.path.abspath("%s/../../../testfiles" 
+                        % os.path.dirname(__file__))
     elif profile == "dev":
+        from fs.osfs import OSFS
+        
         c.dburl = "sqlite:///devdata.db"
+        c.fsroot = os.path.abspath("%s/../../../devfiles" 
+                        % os.path.dirname(__file__))
         root_log = logging.getLogger()
         root_log.setLevel(logging.DEBUG)
         handler = logging.handlers.RotatingFileHandler(
@@ -74,6 +83,9 @@ def set_profile(profile):
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
+    c.fsroot = path(c.fsroot)
+    if not c.fsroot.exists:
+        c.fsroot.makedirs()
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

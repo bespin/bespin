@@ -45,8 +45,6 @@ def _get_user_manager(clear=False):
         _clear_db()
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = UserManager(s)
-    file_manager = FileManager(s)
-    db = model.DB(user_manager, file_manager)
     return s, user_manager
     
 # Model tests    
@@ -55,6 +53,7 @@ def test_create_new_user():
     num_users = s.query(User).count()
     assert num_users == 0
     user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
     
@@ -98,13 +97,10 @@ def test_register_and_verify_user():
     assert data == {}
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    fm = user_manager.db.file_manager
     billbixby = user_manager.get_user("BillBixby")
-    sample_project = fm.get_project(billbixby, billbixby, "SampleProject")
-    file = s.query(File).filter_by(name="readme.txt") \
-        .filter_by(project=sample_project).one()
-    svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
-    assert not svnfiles
+    sample_project = model.get_project(billbixby, billbixby, "SampleProject")
+    files = [file.name for file in sample_project.list_files()]
+    assert "readme.txt" in files
     
     # should be able to run again without an exception appearing
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
