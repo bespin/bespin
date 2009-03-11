@@ -205,7 +205,9 @@ class User(Base):
         """Returns a dictionary of the form::
             
             {'project' : {'path/to/file' : {'mode' : 'rw'}}}
-            """
+        """
+        if not self.statusfile.exists():
+            return {}
         try:
             statusfile = LockFile(self.statusfile)
             statusinfo = statusfile.read()
@@ -549,6 +551,122 @@ class Project(object):
             self.owner.amount_used -= file_obj.saved_size
             file_obj.location.remove()
 
+    def import_tarball(self, filename, file_obj):
+        """Imports the tarball in the file_obj into the project
+        project owned by user. If the project already exists,
+        IT WILL BE WIPED OUT AND REPLACED."""
+        pfile = tarfile.open(filename, fileobj=file_obj)
+        max_import_file_size = config.c.max_import_file_size
+        info = list(pfile)
+        
+        base = _find_common_base(member.name for member in info)
+        base_len = len(base)
+        
+        for member in info:
+            # save the files, directories are created automatically
+            # note that this does not currently support empty directories.
+            if member.isreg():
+                if member.size > max_import_file_size:
+                    raise FSException("File %s too large (max is %s bytes)" 
+                        % (member.name, max_import_file_size))
+                self.save_file(member.name[base_len:], 
+                    pfile.extractfile(member).read())
+        
+    def import_zipfile(self, filename, file_obj):
+        """Imports the zip file in the file_obj into the project
+        project owned by user. If the project already exists,
+        IT WILL BE WIPED OUT AND REPLACED."""
+        max_import_file_size = config.c.max_import_file_size
+        
+        pfile = zipfile.ZipFile(file_obj)
+        info = pfile.infolist()
+        
+        base = _find_common_base(member.filename for member in info)
+        base_len = len(base)
+        
+        for member in pfile.infolist():
+            if member.filename.endswith("/"):
+                continue
+            if member.file_size > max_import_file_size:
+                raise FSException("File %s too large (max is %s bytes)" 
+                    % (member.filename, max_import_file_size))
+            self.save_file(member.filename[base_len:],
+                pfile.read(member.filename))
+        
+    def export_tarball(self):
+        """Exports the project as a tarball, returning a 
+        NamedTemporaryFile object. You can either use that
+        open file handle or use the .name property to get
+        at the file."""
+        temporaryfile = tempfile.NamedTemporaryFile()
+        
+        mtime = time.time()
+        tfile = tarfile.open(temporaryfile.name, "w:gz")
+        
+        location = self.location
+        project_name = self.name
+        
+        for dir in location.walkdirs():
+            bname = dir.basename()
+            if bname == "." or bname == ".." or bname.startswith(".bespin"):
+                continue
+            tarinfo = tarfile.TarInfo(project_name + "/" 
+                        + location.relpathto(dir))
+            tarinfo.type = tarfile.DIRTYPE
+            # we don't know the original permissions.
+            # we'll default to read/execute for all, write only by user
+            tarinfo.mode = 493
+            tarinfo.mtime = mtime
+            print "Adding dir", tarinfo.name
+            tfile.addfile(tarinfo)
+            for file in dir.files():
+                bname = file.basename()
+                if bname == "." or bname == ".." or bname.startswith(".bespin"):
+                    continue
+                tarinfo = tarfile.TarInfo(project_name + "/" 
+                                + location.relpathto(file))
+                tarinfo.mtime = mtime
+                # we don't know the original permissions.
+                # we'll default to read for all, write only by user
+                tarinfo.mode = 420
+                tarinfo.size = file.size
+                fileobj = open(file)
+                print "Adding file", tarinfo.name
+                tfile.addfile(tarinfo, fileobj)
+                fileobj.close()
+                
+        tfile.close()
+        temporaryfile.seek(0)
+        return temporaryfile
+        
+    def export_zipfile(self, user, project):
+        """Exports the project as a zip file, returning a 
+        NamedTemporaryFile object. You can either use that
+        open file handle or use the .name property to get
+        at the file."""
+        temporaryfile = tempfile.NamedTemporaryFile()
+        s = self.session
+        
+        zfile = zipfile.ZipFile(temporaryfile, "w", zipfile.ZIP_DEFLATED)
+        ztime = time.gmtime()[:6]
+        
+        files = s.query(File) \
+                    .filter_by(project=project).order_by(File.name).all()
+        for file in files:
+            zipinfo = zipfile.ZipInfo(str(project.name + "/" + file.name))
+            # we don't know the original permissions.
+            # we'll default to read for all, write only by user
+            zipinfo.external_attr = 420 << 16L
+            zipinfo.date_time = ztime
+            zipinfo.compress_type = zipfile.ZIP_DEFLATED
+            zfile.writestr(zipinfo, str(file.data))
+            s.expunge(file)
+            
+        zfile.close()
+        temporaryfile.seek(0)
+        return temporaryfile
+
+
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles
     things like open file status for the user."""
@@ -599,8 +717,6 @@ class ProjectView(Project):
         # self.reset_edits(user, project, path)
 
         
-_text_types = set(['.txt', '.html', '.htm', '.css', '.js', '.py', '.pl'])
-
 def _cmp_files_in_project(fs1, fs2):
     file1 = fs1.file
     file2 = fs2.file
@@ -760,8 +876,6 @@ class FileManager(object):
         
         # temporary step to replace tabs with 4 spaces.
         file_type = os.path.splitext(path)[1]
-        if file_type in _text_types:
-            contents = contents.replace("\t", "    ")
         
         last_d = None
         for i in range(0, len(segments)):
