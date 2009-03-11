@@ -127,7 +127,11 @@ class User(Base):
         return (self.quota * QUOTA_UNITS, self.amount_used)
     
     def get_location(self):
-        location = config.c.fsroot / self.file_location
+        file_loc = self.file_location
+        if file_loc.startswith("/"):
+            location = path_obj(file_loc)
+        else:
+            location = config.c.fsroot / file_loc
         if not location.exists():
             location.makedirs()
         return location
