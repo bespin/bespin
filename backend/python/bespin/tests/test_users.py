@@ -30,7 +30,7 @@ from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
-from bespin.model import User, UserManager, FileManager, File
+from bespin.model import User, UserManager, File
 
 def setup_module(module):
     config.set_profile("test")
