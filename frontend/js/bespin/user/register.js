@@ -25,7 +25,6 @@
 dojo.provide("bespin.user.register"); 
 
 // Login, logout and registration functions for the Bespin front page.
-     
 
 (function(){
     var svr = new bespin.client.Server(); 
@@ -112,8 +111,13 @@ dojo.provide("bespin.user.register");
         }
     });  
         
-    dojo.addOnLoad(function(){
+    dojo.addOnLoad(function() {
         bespin.displayVersion();
         svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
+		utils.fillScreenOverlay();
+    });
+
+    dojo.connect(window, "resize", function() {
+        utils.fillScreenOverlay();
     });
 })();
