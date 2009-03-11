@@ -111,18 +111,19 @@ def test_basic_file_creation():
 def test_changing_file_contents_changes_amount_used():
     _init_data()
     starting_point = macgyver.amount_used
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo", "step 1")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo", "step 1")
     assert macgyver.amount_used == starting_point + 6
-    fm.save_file(bigmac, "foo", "step two")
+    bigmac.save_file("foo", "step two")
     assert macgyver.amount_used == starting_point + 8
     
 def test_cannot_save_beyond_quota():
     _init_data()
     old_units = model.QUOTA_UNITS
     model.QUOTA_UNITS = 10
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     try:
-        fm.save_file("bigmac", "foo", "x" * 11)
+        bigmac.save_file("foo", "x" * 11)
         assert False, "Expected an OverQuota exception"
     except model.OverQuota:
         pass
@@ -133,83 +134,80 @@ def test_amount_used_can_be_recomputed():
     _init_data()
     starting_point = macgyver.amount_used
     macgyver.amount_used = 0
-    fm.recompute_used(macgyver)
+    macgyver.recompute_used()
     assert macgyver.amount_used == starting_point
     
 def test_retrieve_file_obj():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "reqs", "tenletters")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("reqs", "tenletters")
     try:
-        fm.get_file_object(bigmac, "foo/bar")
+        bigmac.get_file_object("foo/bar")
         assert False, "expected file not found for missing file"
     except model.FileNotFound:
         pass
         
-    file_obj = fm.get_file_object(bigmac, "reqs")
+    file_obj = bigmac.get_file_object("reqs")
     assert file_obj.saved_size == 10
         
 
 def test_error_if_you_try_to_replace_dir_with_file():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
     try:
-        fm.save_file(bigmac, "foo/bar", "NOT GONNA DO IT!")
+        bigmac.save_file("foo/bar", "NOT GONNA DO IT!")
         assert False, "Expected a FileConflict exception"
     except model.FileConflict:
         pass
     
 def test_get_file_opens_the_file():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
-    contents = fm.get_file(bigmac, "foo/bar/baz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
+    contents = bigmac.get_file("foo/bar/baz")
     assert contents == "biz"
     
-    assert "bigmac" in macgyver.files
-    assert "foo/bar/baz" in macgyver.files["bigmac"]
-    
-    open_files = fm.list_open()
+    open_files = macgyver.files
     print "OF: ", open_files
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
-    fm.close(bigmac, "foo")
+    bigmac.close("foo")
     # does nothing, because we don't have that one open
-    open_files = fm.list_open()
+    open_files = macgyver.files
     info = open_files['bigmac']['foo/bar/baz']
     assert info['mode'] == "rw"
     
-    fm.close(bigmac, "foo/bar/baz")
-    open_files = fm.list_open()
+    bigmac.close("foo/bar/baz")
+    open_files = macgyver.files
     assert open_files == {}
 
 def test_get_file_raises_exception_if_its_a_directory():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
     try:
-        contents = fm.get_file(bigmac, "foo/bar/")
+        contents = bigmac.get_file("foo/bar/")
         assert False, "Expected exception for directory"
     except model.FSException:
         pass
     
 def test_get_file_raises_not_found_exception():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
     try:
-        contents = fm.get_file(bigmac, "NOTFOUND")
+        contents = bigmac.get_file("NOTFOUND")
         assert False, "Expected exception for not found"
     except model.FileNotFound:
         pass
     
 def test_directory_shortname_computed_to_have_last_dir():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
-    res = fm.list_files(bigmac, "foo/")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
+    res = bigmac.list_files("foo/")
     print res
     assert len(res) == 1
     d = res[0]
@@ -218,81 +216,84 @@ def test_directory_shortname_computed_to_have_last_dir():
     
 def test_can_delete_empty_directory():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/")
-    fm.delete(macgyver, bigmac, "foo/bar/")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/")
+    bigmac.delete("foo/bar/")
     location = bigmac.location / "foo/bar"
     assert not location.exists()
     
 def test_delete_raises_file_not_found():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     try:
-        fm.delete(macgyver, bigmac, "DOESNT MATTER")
+        bigmac.delete("DOESNT MATTER")
         assert False, "Expected not found for missing project"
     except model.FileNotFound:
         pass
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
+    bigmac.save_file("foo/bar/baz", "biz")
     try:
-        fm.delete(macgyver, bigmac, "STILL DOESNT MATTER")
+        bigmac.delete("STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
     except model.FileNotFound:
         pass
-    flist = fm.list_files(bigmac)
+    flist = bigmac.list_files()
     assert flist[0].name == "foo/"
-    fm.delete(macgyver, bigmac, "foo/bar/")
+    bigmac.delete("foo/bar/")
     
 def test_cannot_delete_file_open_by_someone_else():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
-    fm.get_file(bigmac, "foo/bar/baz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
+    bigmac.get_file("foo/bar/baz")
+    
+    sebigmac = model.ProjectView(someone_else, macgyver, "bigmac", 
+                    macgyver.get_location() / "bigmac")
     try:
-        fm.delete(someone_else, bigmac, "foo/bar/baz")
+        sebigmac.delete("foo/bar/baz")
         assert False, "Expected FileConflict exception for deleting open file"
     except model.FileConflict:
         pass
         
 def test_can_delete_file_open_by_me():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
-    fm.get_file(bigmac, "foo/bar/baz")
-    fm.delete(macgyver, bigmac, "foo/bar/baz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
+    bigmac.get_file("foo/bar/baz")
+    bigmac.delete("foo/bar/baz")
     assert not macgyver.files
     
 def test_successful_deletion():
     _init_data()
     starting_used = macgyver.amount_used
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo/bar/baz", "biz")
-    fm.delete(macgyver, bigmac, "foo/bar/baz")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz", "biz")
+    bigmac.delete("foo/bar/baz")
     assert macgyver.amount_used == starting_used
     try:
-        fm.get_file(bigmac, "foo/bar/baz")
+        bigmac.get_file("foo/bar/baz")
         assert False, "Expected FileNotFound because the file is gone"
     except model.FileNotFound:
         pass
-    files = fm.list_files(bigmac, "foo/bar/")
+    files = bigmac.list_files("foo/bar/")
     assert not files
     
 def test_top_level_deletion():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "foo", "data")
-    fm.delete(macgyver, bigmac, "foo")
-    flist = fm.list_files(bigmac)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo", "data")
+    bigmac.delete("foo")
+    flist = bigmac.list_files()
     assert flist == []
     
 def test_directory_deletion():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "whiz/bang", "stillmore")
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("whiz/bang", "stillmore")
     starting_used = macgyver.amount_used
-    fm.save_file(bigmac, "foo/bar", "data")
-    fm.save_file(bigmac, "foo/blorg", "moredata")
-    fm.delete(macgyver, bigmac, "foo/")
-    flist = fm.list_files(bigmac)
+    bigmac.save_file("foo/bar", "data")
+    bigmac.save_file("foo/blorg", "moredata")
+    bigmac.delete("foo/")
+    flist = bigmac.list_files()
     assert len(flist) == 1
     assert flist[0].name == 'whiz/'
     file_loc = bigmac.location / "foo/bar"
@@ -379,12 +380,12 @@ def test_directory_deletion():
 #     
 def test_list_top_level():
     _init_data()
-    bigmac = fm.get_project(macgyver, "bigmac", create=True)
-    fm.save_file(bigmac, "readme.txt", "Hi there!")
-    result = fm.list_files(bigmac)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("readme.txt", "Hi there!")
+    result = bigmac.list_files()
     result_names = [file.name for file in result]
     assert result_names == ["readme.txt"]
-    result = fm.list_files()
+    result = macgyver.projects
     result_names = [proj.name for proj in result]
     assert result_names == ["BespinSettings",
                             "SampleProject", "bigmac"]
