@@ -630,7 +630,6 @@ class Project(object):
             # we'll default to read/execute for all, write only by user
             tarinfo.mode = 493
             tarinfo.mtime = mtime
-            print "Adding dir", tarinfo.name
             tfile.addfile(tarinfo)
             for file in dir.files():
                 bname = file.basename()
@@ -644,7 +643,6 @@ class Project(object):
                 tarinfo.mode = 420
                 tarinfo.size = file.size
                 fileobj = open(file)
-                print "Adding file", tarinfo.name
                 tfile.addfile(tarinfo, fileobj)
                 fileobj.close()
                 
