@@ -173,7 +173,15 @@ class User(Base):
     def recompute_used(self):
         """Recomputes how much space the user has used."""
         userdir = self.get_location()
-        self.amount_used = _get_space_used(userdir)
+        
+        total = 0
+        # add up all of the directory contents
+        # by only looking at directories, we skip
+        # over our metadata files
+        for directory in userdir.dirs():
+            total += _get_space_used(directory)
+            
+        self.amount_used = total
 
     def mark_opened(self, file_obj, mode):
         """Keeps track of this file as being currently open by the
