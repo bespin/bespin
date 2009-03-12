@@ -625,7 +625,7 @@ class Project(object):
         # step through the other directories
         for dir in itertools.chain([location], location.walkdirs()):
             bname = dir.basename()
-            if bname == "." or bname == ".." or bname.startswith(".bespin"):
+            if bname == "." or bname == "..":
                 continue
             tarinfo = tarfile.TarInfo(project_name + "/" 
                         + location.relpathto(dir))

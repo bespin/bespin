@@ -73,8 +73,6 @@ def set_profile(profile):
         c.fsroot = os.path.abspath("%s/../../../testfiles" 
                         % os.path.dirname(__file__))
     elif profile == "dev":
-        from fs.osfs import OSFS
-        
         c.dburl = "sqlite:///devdata.db"
         c.fsroot = os.path.abspath("%s/../../../devfiles" 
                         % os.path.dirname(__file__))
