@@ -41,6 +41,8 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model
+from bespin.mobwrite.mobwrite_daemon import RequestHandler
+import urllib
 
 log = logging.getLogger("bespin.controllers")
 
@@ -433,7 +435,19 @@ def rename_project(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
-    
+
+@expose(r'^/mobwrite/$', 'POST')
+def mobwrite(request, response):
+    handler = RequestHandler()
+    question = urllib.unquote(request.body)
+    if (question.find("q=") != 0):
+        raise BadRequest("Missing q=")
+    question = question[2:]
+    answer = handler.parseRequest(question)
+    response.body = answer + "\n\n"
+    response.content_type = "text/plain"
+    return response()
+
 def db_middleware(app):
     def wrapped(environ, start_response):
         from bespin import model
