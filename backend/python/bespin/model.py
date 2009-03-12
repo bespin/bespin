@@ -141,7 +141,7 @@ class User(Base):
         location = self.get_location()
         result = [Project(self, name.basename(), location / name) 
                 for name in location.listdir()
-                if not name.basename().startswith(".bespin")]
+                if not name.basename().startswith(".")]
         result = sorted(result, key=lambda item: item.name)
         return result
         
@@ -167,7 +167,8 @@ class User(Base):
             else:
                 statusinfo = dict()
             
-            project_files = statusinfo.setdefault(file_obj.project.name, {})
+            open_files = statusinfo.setdefault("open", {})
+            project_files = open_files.setdefault(file_obj.project.name, {})
             project_files[file_obj.name] = {'mode' : mode}
             statusfile.write_bytes(simplejson.dumps(statusinfo))
             lock.unlock()
@@ -191,7 +192,8 @@ class User(Base):
             else:
                 statusinfo = dict()
             
-            project_files = statusinfo.get(file_obj.project.name)
+            open_files = statusinfo.setdefault("open", {})
+            project_files = open_files.get(file_obj.project.name)
             if project_files is not None:
                 try:
                     del project_files[file_obj.name]
@@ -199,7 +201,7 @@ class User(Base):
                     pass
                 
                 if not project_files:
-                    del statusinfo[file_obj.project.name]
+                    del open_files[file_obj.project.name]
                     
                 statusfile.write_bytes(simplejson.dumps(statusinfo))
                 
@@ -224,7 +226,7 @@ class User(Base):
             raise LockError("Problem reading open file status: %s", str(e))
         
         statusinfo = simplejson.loads(statusinfo)
-        return statusinfo
+        return statusinfo.get("open", {})
         
 
 bad_characters = "<>| '\""
@@ -327,7 +329,8 @@ class File(object):
                      
     @property
     def statusfile(self):
-        return self.project.location / ".bespin-status.json"
+        project = self.project
+        return project.location / ".." / (".%s.json" % (project.name))
         
     def mark_opened(self, user_obj, mode):
         """Keeps track of this file as being currently open by the
@@ -342,7 +345,8 @@ class File(object):
             else:
                 statusinfo = dict()
             
-            file_users = statusinfo.setdefault(self.name, {})
+            open_files = statusinfo.setdefault("open", {})
+            file_users = open_files.setdefault(self.name, {})
             file_users[user_obj.username] = mode
 
             statusfile.write_bytes(simplejson.dumps(statusinfo))
@@ -365,7 +369,8 @@ class File(object):
                 raise LockError("Problem reading open file status: %s", str(e))
         
             statusinfo = simplejson.loads(statusinfo)
-            return statusinfo.get(self.name, {})
+            open_files = statusinfo.get("open", {})
+            return open_files.get(self.name, {})
         else:
             return {}
     
@@ -383,7 +388,8 @@ class File(object):
             else:
                 statusinfo = dict()
             
-            file_users = statusinfo.setdefault(self.name, {})
+            open_files = statusinfo.setdefault("open", {})
+            file_users = open_files.setdefault(self.name, {})
             try:
                 del file_users[user.username]
             except KeyError:
@@ -498,8 +504,6 @@ class Project(object):
         
         result = []
         for name in names:
-            if name.basename().startswith(".bespin"):
-                continue
             if name.isdir():
                 result.append(Directory(self.location.relpathto(name)))
             else:
