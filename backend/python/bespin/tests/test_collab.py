@@ -30,7 +30,7 @@
 #import simplejson
 
 from bespin import config, model
-from bespin.model import User, Connection, UserManager, FileManager
+from bespin.model import User, Connection, UserManager
 
 def setup_module(module):
     config.set_profile("test")
@@ -39,14 +39,16 @@ def setup_module(module):
 def _clear_db():
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
+    fsroot = config.c.fsroot
+    if fsroot.exists() and fsroot.basename() == "testfiles":
+        fsroot.rmtree()
+    fsroot.makedirs()
 
 def _get_user_manager(clear=False):
     if clear:
         _clear_db()
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = UserManager(s)
-    file_manager = FileManager(s)
-    db = model.DB(user_manager, file_manager)
     return s, user_manager
 
 # Follower tests
