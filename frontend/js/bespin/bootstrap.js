@@ -42,23 +42,23 @@ var _fileLabel;
 var _scene;
 
 dojo.mixin(bespin.bootstrap, {
-    // ** {{{ isLoggedIn(userinfo) }}} **
+    // ** {{{ whenLoggedIn(userinfo) }}} **
     //
     // * {{{userinfo}}} is an object containing user specific info (project etc)
     //
     // Save the users magic project into the session
-    isLoggedIn: function(userinfo) {
+    whenLoggedIn: function(userinfo) {
         bespin.get('editSession').setUserinfo(userinfo);
 
         bespin.register('settings', new bespin.client.settings.Core());
         bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
     },
 
-    // ** {{{ isNotLoggedIn() }}} **
+    // ** {{{ whenNotLoggedIn() }}} **
     //
     // Send the user back to the front page as they aren't logged in.
     // The server should stop this from happening, but JUST in case.
-    isNotLoggedIn: function() {
+    whenNotLoggedIn: function() {
         bespin.util.navigate.home(); // go back
     },
 
@@ -126,7 +126,7 @@ dojo.addOnLoad(function() {
     bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
 
     // Force a login just in case the user session isn't around
-    server.currentuser(bespin.bootstrap.isLoggedIn, bespin.bootstrap.isNotLoggedIn);
+    server.currentuser(bespin.bootstrap.whenLoggedIn, bespin.bootstrap.whenNotLoggedIn);
 
     // Set the version info
     bespin.displayVersion();
