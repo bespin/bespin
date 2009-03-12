@@ -49,6 +49,7 @@ class BespinRequest(Request):
             self._user = None
         self.username = environ.get('REMOTE_USER')
         self.user_manager = self.environ['user_manager']
+        self.file_manager = self.environ['file_manager']
         self.kwargs = environ.get('wsgiorg.routing_args')[1]
         
     @property
@@ -93,7 +94,6 @@ def expose(url_pattern, method=None, auth=True):
                 return response(environ, start_response)
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
-            user = request.user
             _add_base_headers(response)
             try:
                 return func(request, response)

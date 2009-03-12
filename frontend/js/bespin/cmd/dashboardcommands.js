@@ -31,5 +31,6 @@ dojo.provide("bespin.cmd.dashboardcommands");
 bespin.cmd.dashboardcommands.Commands = [
     'help', 'files', 'set', 'project', 'projects', 'version', 'bespin',
     'import', 'export', 'alias', 'history', 'mkdir', 'newfile',
-    'createproject', 'deleteproject', 'renameproject', 'status'
+    'createproject', 'deleteproject', 'renameproject', 'status',
+    'follow', 'unfollow', 'group', 'test', 'echo'
 ];

@@ -41,8 +41,6 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model
-from bespin.mobwrite.mobwrite_daemon import RequestHandler
-import urllib
 
 log = logging.getLogger("bespin.controllers")
 
@@ -56,9 +54,11 @@ def new_user(request, response):
         raise BadRequest("username, email and password are required.")
     user = request.user_manager.create_user(username, password, email)
     
-    settings_project = model.get_project(user, user,
+    file_manager = request.file_manager
+    settings_project = file_manager.get_project(user, user, 
                         "BespinSettings", create=True)
-    settings_project.install_template('usertemplate')
+    file_manager.install_template(user, settings_project,
+                                          'usertemplate')
     response.content_type = "application/json"
     response.body = "{}"
     request.environ['paste.auth_tkt.set_user'](username)
@@ -150,62 +150,68 @@ def _split_path(request):
     
 @expose(r'^/file/listopen/$', 'GET')
 def listopen(request, response):
-    user = request.user
-    result = user.files
+    fm = request.file_manager
+    result = fm.list_open(request.user)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'PUT')
 def putfile(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project, create=True)
+    project = fm.get_project(user, user, project, create=True)
     
-    if path:
-        project.save_file(path, request.body)
+    fm.save_file(user, project, path,
+                 request.body)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'GET')
 def getfile(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    project = fm.get_project(user, user, project)
     
     mode = request.GET.get('mode', 'rw')
-    contents = project.get_file(path, mode)
+    contents = fm.get_file(user, project, path, mode)
     response.body = contents
     return response()
     
 @expose(r'^/file/close/(?P<path>.*)$', 'POST')
 def postfile(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    project = fm.get_project(user, user, project)
     
-    project.close(path)
+    fm.close(user, project, path)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'DELETE')
 def deletefile(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    project = fm.get_project(user, user, project)
     
-    project.delete(path)
+    fm.delete(user, project, path)
     return response()
 
 @expose(r'^/file/list/(?P<path>.*)$', 'GET')
 def listfiles(request, response):
+    fm = request.file_manager
     user = request.user
     
     path = request.kwargs['path']
     if not path:
-        files = user.projects
+        project = ''
+        path = ''
     else:
         try:
             project, path = _split_path(request)
@@ -213,11 +219,10 @@ def listfiles(request, response):
             project = path
             path = ''
     
-        if project:
-            project = model.get_project(user, user, project)
+    if project:
+        project = fm.get_project(user, user, project)
     
-        files = project.list_files(path)
-        
+    files = fm.list_files(user, project, path)
     result = []
     for item in files:
         f = {'name' : item.short_name}
@@ -233,72 +238,71 @@ def _populate_stats(item, result):
         result['size'] = item.saved_size
         result['created'] = item.created.strftime("%Y%m%dT%H%M%S")
         result['modified'] = item.modified.strftime("%Y%m%dT%H%M%S")
-        result['openedBy'] = [username for username in item.users]
+        result['openedBy'] = [fs.user.username for fs in item.users]
     
 @expose(r'^/file/stats/(?P<path>.+)$', 'GET')
 def filestats(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    project = fm.get_project(user, user, project)
     
-    file_obj = project.get_file_object(path)
+    file_obj = fm.get_file_object(user, project, path)
     result = {}
     _populate_stats(file_obj, result)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
     
-# Edits may be changing with collab. Commented out for now
-# DELETE once we know these are done...
+@expose(r'^/edit/at/(?P<path>.*)$', 'PUT')
+def save_edit(request, response):
+    fm = request.file_manager
+    user = request.user
+    
+    project, path = _split_path(request)
+    project = fm.get_project(user, user, project, create=True)
+    
+    fm.save_edit(user, project, path, 
+                 request.body)
+    return response()
 
-# @expose(r'^/edit/at/(?P<path>.*)$', 'PUT')
-# def save_edit(request, response):
-#     user = request.user
-#     
-#     project, path = _split_path(request)
-#     project = model.get_project(user, user, project, create=True)
-#     
-#     fm.save_edit(user, project, path, 
-#                  request.body)
-#     return response()
-# 
-# def _get_edit_list(request, response, start_at=0):
-#     fm = request.file_manager
-#     user = request.user
-#     
-#     project, path = _split_path(request)
-#     project = fm.get_project(user, project)
-#     
-#     edits = fm.list_edits(user, project, path, start_at)
-#     response.content_type = "application/json"
-#     response.body = simplejson.dumps(edits)
-#     return response()
-# 
-# @expose(r'^/edit/list/(?P<path>.*)$', 'GET')
-# def list_edits(request, response):
-#     return _get_edit_list(request, response)
-# 
-# @expose(r'^/edit/recent/(?P<start_at>\d+)/(?P<path>.*)$', 'GET')
-# def list_recent(request, response):
-#     start_at = int(request.kwargs['start_at'])
-#     return _get_edit_list(request, response, start_at)
-#     
-# @expose(r'^/edit/reset/$', 'POST')
-# def reset_all(request, response):
-#     request.file_manager.reset_edits(request.user)
-#     return response()
-#     
-# @expose(r'^/edit/reset/(?P<path>.+)$', 'POST')
-# def reset(request, response):
-#     fm = request.file_manager
-#     user = request.user
-#     
-#     project, path = _split_path(request)
-#     project = fm.get_project(user, project)
-#     
-#     fm.reset_edits(user, project, path)
-#     return response()
+def _get_edit_list(request, response, start_at=0):
+    fm = request.file_manager
+    user = request.user
+    
+    project, path = _split_path(request)
+    project = fm.get_project(user, user, project)
+    
+    edits = fm.list_edits(user, project, path, start_at)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(edits)
+    return response()
+
+@expose(r'^/edit/list/(?P<path>.*)$', 'GET')
+def list_edits(request, response):
+    return _get_edit_list(request, response)
+
+@expose(r'^/edit/recent/(?P<start_at>\d+)/(?P<path>.*)$', 'GET')
+def list_recent(request, response):
+    start_at = int(request.kwargs['start_at'])
+    return _get_edit_list(request, response, start_at)
+    
+@expose(r'^/edit/reset/$', 'POST')
+def reset_all(request, response):
+    request.file_manager.reset_edits(request.user)
+    return response()
+    
+@expose(r'^/edit/reset/(?P<path>.+)$', 'POST')
+def reset(request, response):
+    fm = request.file_manager
+    user = request.user
+    
+    project, path = _split_path(request)
+    project = fm.get_project(user, user, project)
+    
+    fm.reset_edits(user, project, path)
+    return response()
 
 @expose(r'^/(?P<filename>editor|dashboard)\.html', 'GET', auth=False)
 def static_with_login(request, response):
@@ -321,22 +325,24 @@ def import_project(request, response):
     project_name = request.kwargs['project_name']
     input_file = request.POST['filedata']
     filename = input_file.filename
-    _perform_import(request.user, project_name, filename,
+    _perform_import(request.file_manager, 
+                    request.user, project_name, filename,
                     input_file.file)
     return response()
     
-def _perform_import(user, project_name, filename, fileobj):
-    project = model.get_project(user, user, project_name, clean=True)
+def _perform_import(file_manager, user, project_name, filename, fileobj):
     if filename.endswith(".tgz") or filename.endswith(".tar.gz"):
-        func = project.import_tarball
+        func = file_manager.import_tarball
     elif filename.endswith(".zip"):
-        func = project.import_zipfile
+        func = file_manager.import_zipfile
     else:
         raise BadRequest(
             "Import only supports .tar.gz, .tgz and .zip at this time.")
         
+    project = file_manager.get_project(user, user, project_name, clean=True)
     
-    func(filename, fileobj)
+    func(user,
+        project, filename, fileobj)
     return
 
 def validate_url(url):
@@ -372,27 +378,28 @@ def import_from_url(request, response):
     tempdatafile.seek(0)
     url_parts = urlparse(url)
     filename = os.path.basename(url_parts[2])
-    _perform_import(request.user, project_name, filename, tempdatafile)
+    _perform_import(request.file_manager, request.user,
+                    project_name, filename, tempdatafile)
     tempdatafile.close()
     return response()
 
 @expose(r'^/project/export/(?P<project_name>.*(\.zip|\.tgz))')
 def export_project(request, response):
+    fm = request.file_manager
     user = request.user
     
     project_name = request.kwargs['project_name']
     project_name, extension = os.path.splitext(project_name)
-
-    project = model.get_project(user, user, project_name)
-    
     if extension == ".zip":
-        func = project.export_zipfile
+        func = fm.export_zipfile
         response.content_type = "application/zip"
     else:
         response.content_type = "application/x-tar-gz"
-        func = project.export_tarball
+        func = fm.export_tarball
     
-    output = func()
+    project = fm.get_project(user, user, project_name)
+    
+    output = func(user, project)
     def filegen():
         data = output.read(8192)
         while data:
@@ -404,38 +411,102 @@ def export_project(request, response):
     
 @expose(r'^/preview/at/(?P<path>.+)$')
 def preview_file(request, response):
+    fm = request.file_manager
     user = request.user
     
     project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    project = fm.get_project(user, user, project)
     
-    file_obj = project.get_file_object(path)
+    file_obj = fm.get_file_object(user, project, path)
     response.body = str(file_obj.data)
     response.content_type = file_obj.mimetype
     return response()
     
 @expose(r'^/project/rename/(?P<project_name>.+)/$', 'POST')
 def rename_project(request, response):
+    fm = request.file_manager
     user = request.user
     
     project_name = request.kwargs['project_name']
-    project = model.get_project(user, user, project_name)
-    project.rename(request.body)
+    project = fm.get_project(user, user, project_name)
+    fm.rename(user, project, "", request.body)
     response.body = ""
     response.content_type = "text/plain"
     return response()
 
-@expose(r'^/mobwrite/$', 'POST')
-def mobwrite(request, response):
-    handler = RequestHandler()
-    question = urllib.unquote(request.body)
-    if (question.find("q=") != 0):
-        raise BadRequest("Missing q=")
-    question = question[2:]
-    answer = handler.parseRequest(question)
-    response.body = answer + "\n\n"
+@expose(r'^/network/followers/', 'GET')
+def follow(request, response):
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/network/follow/', 'POST')
+def follow(request, response):
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.follow(request.user, other_user)
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/network/unfollow/', 'POST')
+def unfollow(request, response):
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.unfollow(request.user, other_user)
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/group/list/all', 'GET')
+def groupListAll(request, response):
+    groups = request.user_manager.get_groups(request.user)
+    return _respond_json(response, groups)
+
+@expose(r'^/group/list/(?P<group>.+)/$', 'GET')
+def groupList(request, response):
+    group = request.kwargs['group']
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+@expose(r'^/group/remove/all/(?P<group>.+)/$', 'POST')
+def groupRemoveAll(request, response):
+    group = request.kwargs['group']
+    request.user_manager.remove_all_group_members(request.user, group)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+@expose(r'^/group/remove/(?P<group>.+)/$', 'POST')
+def groupRemove(request, response):
+    group = request.kwargs['group']
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.remove_group_members(request.user, group, other_user)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+def _respond_json(response, data):
+    response.body = simplejson.dumps(groups)
     response.content_type = "text/plain"
     return response()
+
+@expose(r'^/group/add/(?P<group>.+)/$', 'POST')
+def groupAdd(request, response):
+    group = request.kwargs['group']
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.add_group_members(request.user, group, other_user)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+def _lookup_usernames(user_manager, usernames):
+    def lookup_username(username):
+        user = user_manager.get_user(username)
+        if (user == None):
+            # TODO: XSS injection hole here, we should have some policy
+            raise BadRequest("Username not found: %s" % username)
+        return user
+    return map(lookup_username, usernames)
+
+def _users_followed_response(user_manager, user, response):
+    list = user_manager.users_i_follow(user)
+    list = map(lambda connection: connection.followed.username, list)
+    response.body = simplejson.dumps(list)
+    response.content_type = "text/plain"
 
 def db_middleware(app):
     def wrapped(environ, start_response):
@@ -444,6 +515,8 @@ def db_middleware(app):
         environ['bespin.dbsession'] = session
         environ['bespin.docommit'] = True
         environ['user_manager'] = model.UserManager(session)
+        environ['file_manager'] = model.FileManager(session)
+        environ['db'] = model.DB(environ['user_manager'], environ['file_manager'])
         try:
             result = app(environ, start_response)
             if environ['bespin.docommit']:
