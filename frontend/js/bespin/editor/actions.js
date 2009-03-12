@@ -108,6 +108,22 @@ dojo.declare("bespin.editor.Actions", null, {
         return this.moveCursor("smartMoveRight", args);
     },
 
+    deleteWordLeft: function (args) {
+        this.deleteChunk({
+            endPos: args.pos,
+            pos: this.moveCursor("smartMoveLeft", args).pos
+        });
+        return args;
+    },
+
+    deleteWordRight: function (args) {
+        this.deleteChunk({
+            pos: args.pos,
+            endPos: this.moveCursor("smartMoveRight", args).pos
+        });
+        return args;
+    },
+
     undo: function() {
         this.editor.undoManager.undo();
     },
@@ -118,7 +134,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     selectAll: function(args) {
         // do nothing with an empty doc
-        if (this.editor.model.getMaxCols == 0) return;
+        if (this.editor.model.isEmpty()) return;
 
         args.startPos = { col: 0, row: 0 };
         args.endPos = { col: this.editor.model.getRowLength(this.editor.model.getRowCount() - 1), row: this.editor.model.getRowCount() - 1 };
@@ -166,8 +182,8 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.cursorManager.moveCursor({row: args.modelPos.row, col: args.modelPos.col + tabWidth});
 
         var linetext = this.editor.model.getRowArray(args.modelPos.row).join("");
-        linetext = linetext.replace(/\t/g, "TAB");
-        console.log(linetext);
+        // linetext = linetext.replace(/\t/g, "TAB");
+        // console.log(linetext);
 
         this.repaint();
         

@@ -348,311 +348,6 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     }
 });
 
-
-
-// ** {{{ bespin.editor.CursorManager }}} **
-//
-// Handles the position of the cursor, hiding the complexity of translating between screen and model positions and so forth
-dojo.declare("bespin.editor.CursorManager", null, {
-    constructor: function(editor) {
-        this.editor = editor;
-        this.position = { col: 0, row: 0 };
-    },
-
-    getScreenPosition: function() {
-        return this.position;
-    },
-
-    getModelPosition: function() {
-        var pos = this.position;
-
-        var line = this.editor.model.getRowArray(pos.row);
-        var tabspaces = 0;
-        var curCol = 0;
-        for (var i = 0; i < line.length; i++) {
-            if (line[i].charCodeAt(0) == 9) {
-                var toInsert = this.editor.tabstop - (curCol % this.editor.tabstop);
-                curCol += toInsert - 1;
-                tabspaces += toInsert - 1;
-            }
-            curCol++;
-            if (curCol >= pos.col) break;
-        }
-        if (tabspaces > 0) {
-            return { col: pos.col = pos.col - tabspaces, row: pos.row };
-        } else {
-            return bespin.editor.utils.copyPos(pos);
-        }
-    },
-
-    moveToLineStart: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        var line = this.editor.ui.getRowString(this.editor.cursorManager.getScreenPosition().row);
-        var match = /^(\s+).*/.exec(line);
-        var leadingWhitespaceLength = 0;
-
-        // Check to see if there is leading white space and move to the first text if that is the case
-        if (match && match.length == 2) {
-            leadingWhitespaceLength = match[1].length;
-        }
-
-        if (this.position.col == 0) {
-            this.moveCursor({ col:  leadingWhitespaceLength });
-        } else if (this.position.col == leadingWhitespaceLength) {
-            this.moveCursor({ col: 0 });
-        } else {
-            this.moveCursor({ col: leadingWhitespaceLength });
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-    },
-
-    moveToLineEnd: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.moveCursor({ col: this.editor.ui.getRowScreenLength(oldPos.row) });
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-    },
-
-    moveToTop: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.editor.cursorManager.moveCursor({ col: 0, row: 0 });
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-    },
-
-    moveToBottom: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        var row = this.editor.model.getRowCount() - 1;
-        this.editor.cursorManager.moveCursor({ row: row, col: this.editor.ui.getRowScreenLength(row)});
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-    },
-
-    moveUp: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.moveCursor({ col: oldPos.col, row: oldPos.row - 1 });
-
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-    },
-
-    moveDown: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.moveCursor({ row: Math.max(0, oldPos.row + 1) });
-
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    moveLeft: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        // start of the line so move up
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col == 0)) {
-            this.moveUp();
-            if (oldPos.row > 0) this.moveToLineEnd();
-        } else {
-            this.moveCursor({ col: Math.max(0, oldPos.col - 1), row: oldPos.row });
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    moveRight: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        // end of the line, so go to the start of the next line
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
-            this.moveDown();
-            if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
-        } else {
-            this.moveCursor({ col: this.position.col + 1 });
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    movePageUp: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.moveCursor({ row: Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0)});
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    movePageDown: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        this.moveCursor({ row: Math.min(this.position.row + this.editor.ui.visibleRows, this.editor.model.getRowCount() - 1)});
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    smartMoveLeft: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        var row = this.editor.ui.getRowString(oldPos.row);
-
-        var c, charCode;
-
-        if (this.position.col == 0) { // -- at the start to move up and to the end
-            this.moveUp();
-        } else {
-            // Short circuit if cursor is ahead of actual spaces in model
-            if (row.length < this.position.col) this.moveToLineEnd();
-
-            var newcol = this.position.col;
-
-            // This slurps up trailing spaces
-            var wasSpaces = false;
-            while (newcol > 0) {
-                newcol--;
-
-                c = row.charAt(newcol);
-                charCode = c.charCodeAt(0);
-                if (charCode == 32 /*space*/) {
-                    wasSpaces = true;
-                } else {
-                    newcol++;
-                    break;
-                }
-            }
-
-            // This jumps to stop words
-            if (!wasSpaces) {
-                while (newcol > 0) {
-                    newcol--;
-                    c = row.charAt(newcol);
-                    charCode = c.charCodeAt(0);
-                    if ( (charCode < 65) || (charCode > 122) ) { // if you get to an alpha you are done
-                        if (newcol != this.position.col - 1) newcol++; // right next to a stop char, move back one
-                        break;
-                    }
-                }
-            }
-
-            this.moveCursor({ col: newcol });
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    smartMoveRight: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
-
-        var row = this.editor.ui.getRowString(oldPos.row);
-
-        if (row.length <= this.position.col) { // -- at the edge so go to the next line
-            this.moveDown();
-        } else {
-            var c, charCode;
-
-            var newcol = this.position.col;
-
-            // This slurps up leading spaces
-            var wasSpaces = false;
-            while (newcol < row.length) {
-                c = row[newcol];
-                charCode = c.charCodeAt(0);
-                if (charCode == 32 /*space*/) {
-                    wasSpaces = true;
-                    newcol++;
-                } else {
-                    break;
-                }
-            }
-
-            // This jumps to stop words
-            if (!wasSpaces) {
-                while (newcol < row.length) {
-                    newcol++;
-
-                    if (row.length == newcol) { // one more to go
-                        this.moveToLineEnd();
-                        newcol = -1;
-                        break;
-                    }
-
-                    c = row[newcol];
-                    charCode = c.charCodeAt(0);
-
-                    if ( (charCode < 65) || (charCode > 122) ) {
-                        break;
-                    }
-                }
-            }
-
-            if (newcol != -1) this.moveCursor({ col: newcol });
-        }
-
-        return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
-    },
-
-    moveCursor: function(newpos) {
-        if (!newpos) return; // guard against a bad position (certain redo did this)
-        if (newpos.col === undefined) newpos.col = this.position.col;
-        if (newpos.row === undefined) newpos.row = this.position.row;
-
-        var oldpos = this.position;
-
-        var row = Math.min(newpos.row, this.editor.model.getRowCount() - 1); // last row if you go over
-        if (row < 0) row = 0; // can't move negative off screen
-
-        var invalid = this.isInvalidCursorPosition(row, newpos.col);
-        if (invalid) {
-            console.log("invalid position: " + invalid.left + ", " + invalid.right);
-            if (oldpos.col < newpos.col) {
-                newpos.col = invalid.right;
-            } else if (oldpos.col > newpos.col) {
-                newpos.col = invalid.left;
-            } else {
-                // default
-                newpos.col = invalid.left;
-            }
-        }
-
-        this.position = { row: row, col: newpos.col };
-    },
-
-    // Pass in a screen position; returns undefined if the postion is valid, otherwise returns closest left and right valid positions
-    isInvalidCursorPosition: function(row, col) {
-        var rowArray = this.editor.model.getRowArray(row);
-
-        // we need to track the cursor position separately because we're stepping through the array, not the row string
-        var curCol = 0;
-        for (var i = 0; i < rowArray.length; i++) {
-            if (rowArray[i].charCodeAt(0) == 9) {
-                // if current character in the array is a tab, work out the white space between here and the tab stop
-                var toInsert = this.editor.tabstop - (curCol % this.editor.tabstop);
-
-                // if the passed column is in the whitespace between the tab and the tab stop, it's an invalid position
-                if (col > curCol && col < (curCol + toInsert)) {
-                    return { left: curCol, right: curCol + toInsert };
-                }
-
-                curCol += toInsert - 1;
-            }
-            curCol++;
-        }
-
-        return undefined;
-    }
-});
-
-
 // ** {{{ bespin.editor.UI }}} **
 //
 // Holds the UI. The editor itself, the syntax highlighter, the actions, and more
@@ -662,6 +357,8 @@ dojo.declare("bespin.editor.UI", null, {
         this.syntaxModel = new bespin.syntax.Model(editor);
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
+
+        this.rowLengthCache = [];
 
         this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
 
@@ -977,7 +674,11 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
 
         listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
+        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft);
+
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
+        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight);
+
         listener.bindKeyString("", Key.ENTER, this.actions.newline);
         listener.bindKeyString("", Key.TAB, this.actions.insertTab);
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
@@ -1077,13 +778,23 @@ dojo.declare("bespin.editor.UI", null, {
         var cwidth = this.getWidth();
         var cheight = this.getHeight();
 
-        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
-
         // adjust the scrolling offsets if necessary; negative values are good, indicate scrolling down or to the right (we look for overflows on these later on)
         // positive values are bad; they indicate scrolling up past the first line or to the left past the first column
         if (this.xoffset > 0) this.xoffset = 0;
         if (this.yoffset > 0) this.yoffset = 0;
+
+        // only paint those lines that can be visible
+        this.visibleRows = Math.ceil(cheight / this.lineHeight);
+        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
+        lastLineToRender = this.firstVisibleRow + this.visibleRows;
+        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
+
+        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
+
+        // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
+        // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -1160,12 +871,6 @@ dojo.declare("bespin.editor.UI", null, {
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save(); // take snapshot of current context state so we can roll back later on
         ctx.translate(0, this.yoffset);
-
-        // only paint those lines that can be visible
-        this.visibleRows = Math.ceil(cheight / this.lineHeight);
-        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
-        lastLineToRender = this.firstVisibleRow + this.visibleRows;
-        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
 
         // paint the line numbers
         if (refreshCanvas) {
@@ -1604,10 +1309,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     // returns the maximum number of display columns across all rows
-    getMaxCols: function() {
+    getMaxCols: function(firstRow, lastRow) {
         var cols = 0;
-        var rows = this.editor.model.getRowCount();
-        for (var i = 0; i < rows; i++) cols = Math.max(cols, this.getRowString(i).length);
+        for (var i = firstRow; i <= lastRow; i++) {
+            cols = Math.max(cols, this.getRowScreenLength(i));
+        }
         return cols;
     }
 });

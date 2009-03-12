@@ -63,7 +63,7 @@
   </div>
 </div>
 
-<div id="browser_not_compat" style="display:none;">
+<div id="browser_not_compat" style="display: none;">
     <div id="inner_browser_not_compat">
         <h3>Browser compatibility</h3>
         <div id="sorry_browser_text">
@@ -73,12 +73,12 @@
         <p>This message is not shown to you because we flag a particular browser.</p>
         <p>We are specifically testing for Canvas and the ability to draw text in Canvas. As soon as your current browser supports these technologies, Bespin will work.</p>
         <p>We have successfully tested Bespin on <a href="http://apple.com/safari/">Safari 4</a> and <a href="http://getfirefox.com/">Firefox 3</a>, so try one of them!</p>
-        <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="bespin.user.utils.hideBrowserCompatScreen()"></center>
+        <center><img src="images/splash_browser_cancel.png" id="sorry_browser_cancel" onclick="bespin.user.utils.hideCenterPopup('browser_not_compat')"></center>
         </div>
     </div>
 </div>
 
-<div id="register_border" style="display:none;">
+<div id="centerpopup" style="display:none;">
 <div id="register_form">
   <div id="register_title">
     <p>Register for Bespin</p>
@@ -186,7 +186,7 @@
 
 <div id="footer" align="center">&copy; 2009 Mozilla. All rights reserved.</div>
 
-<div id="opaque" style="display: none"></div>
+<div id="opaque" style="display: none;"></div>
 <canvas id="testcanvas" style="display: none"></canvas>
 </body>
 </html>
