@@ -433,7 +433,81 @@ def rename_project(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
-    
+
+@expose(r'^/network/followers/', 'GET')
+def follow(request, response):
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/network/follow/', 'POST')
+def follow(request, response):
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.follow(request.user, other_user)
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/network/unfollow/', 'POST')
+def unfollow(request, response):
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.unfollow(request.user, other_user)
+    return _users_followed_response(request.user_manager, request.user, response)
+
+@expose(r'^/group/list/all', 'GET')
+def groupListAll(request, response):
+    groups = request.user_manager.get_groups(request.user)
+    return _respond_json(response, groups)
+
+@expose(r'^/group/list/(?P<group>.+)/$', 'GET')
+def groupList(request, response):
+    group = request.kwargs['group']
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+@expose(r'^/group/remove/all/(?P<group>.+)/$', 'POST')
+def groupRemoveAll(request, response):
+    group = request.kwargs['group']
+    request.user_manager.remove_all_group_members(request.user, group)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+@expose(r'^/group/remove/(?P<group>.+)/$', 'POST')
+def groupRemove(request, response):
+    group = request.kwargs['group']
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.remove_group_members(request.user, group, other_user)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+def _respond_json(response, data):
+    response.body = simplejson.dumps(groups)
+    response.content_type = "text/plain"
+    return response()
+
+@expose(r'^/group/add/(?P<group>.+)/$', 'POST')
+def groupAdd(request, response):
+    group = request.kwargs['group']
+    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    for other_user in users:
+        request.user_manager.add_group_members(request.user, group, other_user)
+    members = request.user_manager.get_group_members(request.user, group)
+    return _respond_json(response, members)
+
+def _lookup_usernames(user_manager, usernames):
+    def lookup_username(username):
+        user = user_manager.get_user(username)
+        if (user == None):
+            # TODO: XSS injection hole here, we should have some policy
+            raise BadRequest("Username not found: %s" % username)
+        return user
+    return map(lookup_username, usernames)
+
+def _users_followed_response(user_manager, user, response):
+    list = user_manager.users_i_follow(user)
+    list = map(lambda connection: connection.followed.username, list)
+    response.body = simplejson.dumps(list)
+    response.content_type = "text/plain"
+
 def db_middleware(app):
     def wrapped(environ, start_response):
         from bespin import model
