@@ -138,7 +138,11 @@ def test_cannot_save_beyond_quota():
         
 def test_amount_used_can_be_recomputed():
     _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("secrets", "The password is pa55w0rd!")
     starting_point = macgyver.amount_used
+    # open the file, to cause a status file to be created
+    bigmac.get_file("secrets")
     macgyver.amount_used = 0
     macgyver.recompute_used()
     assert macgyver.amount_used == starting_point
