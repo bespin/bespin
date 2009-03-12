@@ -43,8 +43,6 @@ def setup_module(module):
     model.Base.metadata.create_all(bind=config.c.dbengine)
     session = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = model.UserManager(session)
-    file_manager = model.FileManager(session)
-    db = model.DB(user_manager, file_manager)
     user_manager.create_user("BillBixby", "", "bill@bixby.com")
     app = controllers.make_app()
     app = TestApp(app)
