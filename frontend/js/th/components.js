@@ -984,7 +984,9 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
                 break;
             }
         }
-        
+
+        if (path.length == 0) return;
+
         if (asString) {
             var result = '';
             for (var i = 0; i < path.length - 1; i++) {

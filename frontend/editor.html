@@ -27,18 +27,18 @@
 <html>
 <head>
     <title>Bespin &raquo; Your Community Editor</title>
-  	<link type="text/css" rel="stylesheet" href="css/editor.css">
+    <link type="text/css" rel="stylesheet" href="css/editor.css">
 
     <!-- begin script tags -->
-	<script type="text/javascript">
-		var djConfig = { isDebug: false, debugAtAllCosts: false };
-	</script>   
+    <script type="text/javascript">
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+    </script>
 
-	<script type="text/javascript" src="js/dojo/dojo.js"></script> 
-	
-	<script type="text/javascript"> 
-		dojo.require("bespin.bootstrap_dependencies");    
-	</script>
+    <script type="text/javascript" src="js/dojo/dojo.js"></script>
+
+    <script type="text/javascript">
+        dojo.require("bespin.bootstrap_dependencies");
+    </script>
     <!-- end script tags -->
 </head>
 <body>
@@ -178,5 +178,7 @@
             </tr>
         </table>
     </div>
+    <div id="centerpopup" style="display:none;"></div>
 </body>
 </html>
+

@@ -55,11 +55,14 @@ dojo.mixin(bespin.user.utils, {
         dojo.style('not_logged_in', 'display', 'block');
     },
 
-    centerOnScreen: function(el) {
+    showCenterPopup: function(el) {
+        dojo.style('opaque', 'display', 'block');
+        dojo.style(el, 'display', 'block');
+
         // retrieve required dimensions
         var elDims = dojo.coords(el);
         var browserDims = dijit.getViewport();
-
+        
         // calculate the center of the page using the browser and element dimensions
         var y = (browserDims.h - elDims.h) / 2;
         var x = (browserDims.w - elDims.w) / 2;
@@ -68,8 +71,22 @@ dojo.mixin(bespin.user.utils, {
         dojo.style(el, {
             position: 'absolute',
             top: y + 'px',
-            left : x + 'px'
+            left: x + 'px'
         });
+    },
+
+    hideCenterPopup: function(el) {
+        dojo.style(el, 'display', 'none');
+        dojo.style('opaque', 'display', 'none');
+    },
+
+    // take the overlay and make sure it stretches on the entire height of the screen
+    fillScreenOverlay: function() {
+	    var coords = dojo.coords(document.body);
+	    
+	    if (coords.h) {
+            dojo.style(dojo.byId('opaque'), 'height', coords.h + "px");
+        }
     },
 
     // make sure that the browser can do our wicked shizzle
@@ -86,20 +103,13 @@ dojo.mixin(bespin.user.utils, {
     },
 
     showingBrowserCompatScreen: function() {
-        if (!this.checkBrowserAbility()) { // if you don't have the ability
-            dojo.style('browser_not_compat', 'display', 'block');
-            this.centerOnScreen(dojo.byId('browser_not_compat'));
-            dojo.style('opaque', 'display', 'block');
+       if (!this.checkBrowserAbility()) { // if you don't have the ability
+            this.showCenterPopup(dojo.byId('browser_not_compat'));
 
             return true;
         } else {
             return false;
         }
-    },
-
-    hideBrowserCompatScreen: function() {
-        dojo.style('browser_not_compat', 'display', 'none');
-        dojo.style('opaque', 'display', 'none');
     },
 
     validateEmail: function(str) {

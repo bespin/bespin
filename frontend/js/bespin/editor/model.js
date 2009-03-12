@@ -33,6 +33,12 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         this.rows = [];
     },
 
+    isEmpty: function() {
+        if (this.rows.length > 1) return false;
+        if (this.rows.length == 1 && this.rows[0].length > 0) return false;
+        return true;
+    },
+
     getDirtyRows: function() {
         var dr = (this.dirtyRows) ? this.dirtyRows : [];
         this.dirtyRows = null;
@@ -42,6 +48,11 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     setRowDirty: function(row) {
         if (!this.dirtyRows) this.dirtyRows = new Array(this.rows.length);
         this.dirtyRows[row] = true;
+    },
+
+    isRowDirty: function(row) {
+        if (!this.dirtyRows) return true;
+        return this.dirtyRows[row];
     },
 
     setRowArray: function(rowIndex, row) {
