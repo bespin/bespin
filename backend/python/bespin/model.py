@@ -303,8 +303,16 @@ class GroupSharing(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
 
-bad_characters = "<>| '\""
+bad_characters = "<>| '\"/"
 invalid_chars = re.compile(r'[%s]' % bad_characters)
+
+def _check_identifiers(kind, value):
+    if invalid_chars.search(value):
+        raise BadValue("%s cannot contain any of: %s"
+            % (kind, bad_characters))
+    if value.startswith("."):
+        raise BadValue("%s cannot start with '.'" % (kind))
+    
 
 class UserManager(object):
     def __init__(self, session):
@@ -314,9 +322,8 @@ class UserManager(object):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
-        if invalid_chars.search(username):
-            raise BadValue("Usernames cannot contain any of: %s"
-                % bad_characters)
+        _check_identifiers("Usernames", username)
+            
         log.debug("Creating user %s", username)
         user = User(username, password, email)
         if override_location is not None:
@@ -325,7 +332,7 @@ class UserManager(object):
         # flush to ensure that the user is unique
         try:
             self.session.flush()
-        except DBAPIError:
+        except DBAPIError, e:
             raise ConflictError("Username %s is already in use" % username)
         
         project = get_project(user, user, "SampleProject", create=True)
@@ -896,6 +903,7 @@ def get_project(user, owner, project_name, create=False, clean=False):
     create is True, the project will be created if it does not
     already exist. If clean is True, the project will be deleted
     and recreated if it already exists."""
+    _check_identifiers("Project names", project_name)
     if user != owner:
         raise NotAuthorized("User %s is not allowed to access project %s" %
                             (user, project_name))
