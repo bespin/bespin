@@ -419,6 +419,13 @@ class Directory(object):
 
 class File(object):
     def __init__(self, project, name):
+        if "../" in name:
+            raise BadValue("Relative directories are not allowed")
+        
+        # chop off any leading slashes
+        while name and name.startswith("/"):
+            name = name[1:]
+            
         self.project = project
         self.name = name
         self.location = project.location / name
@@ -576,6 +583,13 @@ class Project(object):
         the file must not be opened for editing. Otherwise, the
         last_edit parameter should include the last edit ID received by
         the user."""
+        if "../" in destpath:
+            raise BadValue("Relative directories are not allowed")
+        
+        # chop off any leading slashes
+        while destpath and destpath.startswith("/"):
+            destpath = destpath[1:]
+            
         saved_size = len(contents) if contents is not None else 0
         if not self.owner.check_save(saved_size):
             raise OverQuota()
