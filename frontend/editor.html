@@ -31,13 +31,19 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+        var djConfig = { parseOnLoad: true, isDebug: true, debugAtAllCosts: true };
     </script>
 
-    <script type="text/javascript" src="js/dojo/dojo.js"></script>
+    <script type="text/javascript" src="js/mobwrite/diff_match_patch_uncompressed.js"></script>
+    <script type="text/javascript" src="js/mobwrite/mobwrite_core.js"></script>
+    <script type="text/javascript" src="js/mobwrite/mobwrite_bespin.js"></script>
+    <script type="text/javascript" src="js/mobwrite/mobwrite_form.js"></script>
+
+    <script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
 
     <script type="text/javascript">
         dojo.require("bespin.bootstrap_dependencies");
+        console.log("hello");
     </script>
     <!-- end script tags -->
 </head>
