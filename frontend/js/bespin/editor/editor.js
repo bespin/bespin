@@ -358,6 +358,8 @@ dojo.declare("bespin.editor.UI", null, {
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
 
+        this.rowLengthCache = [];
+
         this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
@@ -776,13 +778,23 @@ dojo.declare("bespin.editor.UI", null, {
         var cwidth = this.getWidth();
         var cheight = this.getHeight();
 
-        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
-
         // adjust the scrolling offsets if necessary; negative values are good, indicate scrolling down or to the right (we look for overflows on these later on)
         // positive values are bad; they indicate scrolling up past the first line or to the left past the first column
         if (this.xoffset > 0) this.xoffset = 0;
         if (this.yoffset > 0) this.yoffset = 0;
+
+        // only paint those lines that can be visible
+        this.visibleRows = Math.ceil(cheight / this.lineHeight);
+        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
+        lastLineToRender = this.firstVisibleRow + this.visibleRows;
+        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
+
+        var virtualheight = this.lineHeight * ed.model.getRowCount();    // full height based on content
+
+        // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
+        // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -859,12 +871,6 @@ dojo.declare("bespin.editor.UI", null, {
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save(); // take snapshot of current context state so we can roll back later on
         ctx.translate(0, this.yoffset);
-
-        // only paint those lines that can be visible
-        this.visibleRows = Math.ceil(cheight / this.lineHeight);
-        this.firstVisibleRow = Math.floor(Math.abs(this.yoffset / this.lineHeight));
-        lastLineToRender = this.firstVisibleRow + this.visibleRows;
-        if (lastLineToRender > (ed.model.getRowCount() - 1)) lastLineToRender = ed.model.getRowCount() - 1;
 
         // paint the line numbers
         if (refreshCanvas) {
@@ -1303,10 +1309,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     // returns the maximum number of display columns across all rows
-    getMaxCols: function() {
+    getMaxCols: function(firstRow, lastRow) {
         var cols = 0;
-        var rows = this.editor.model.getRowCount();
-        for (var i = 0; i < rows; i++) cols = Math.max(cols, this.getRowString(i).length);
+        for (var i = firstRow; i <= lastRow; i++) {
+            cols = Math.max(cols, this.getRowScreenLength(i));
+        }
         return cols;
     }
 });
