@@ -30,7 +30,7 @@ from webtest import TestApp
 import simplejson
 
 from bespin import config, controllers, model
-from bespin.model import User, UserManager, File
+from bespin.model import User, UserManager, FileManager, File
 
 def setup_module(module):
     config.set_profile("test")
@@ -39,17 +39,14 @@ def setup_module(module):
 def _clear_db():
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
-    fsroot = config.c.fsroot
-    if fsroot.exists() and fsroot.basename() == "testfiles":
-        fsroot.rmtree()
-    fsroot.makedirs()
-    
     
 def _get_user_manager(clear=False):
     if clear:
         _clear_db()
     s = config.c.sessionmaker(bind=config.c.dbengine)
     user_manager = UserManager(s)
+    file_manager = FileManager(s)
+    db = model.DB(user_manager, file_manager)
     return s, user_manager
     
 # Model tests    
@@ -58,7 +55,6 @@ def test_create_new_user():
     num_users = s.query(User).count()
     assert num_users == 0
     user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
-    assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
     
@@ -102,10 +98,13 @@ def test_register_and_verify_user():
     assert data == {}
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
+    fm = user_manager.db.file_manager
     billbixby = user_manager.get_user("BillBixby")
-    sample_project = model.get_project(billbixby, billbixby, "SampleProject")
-    files = [file.name for file in sample_project.list_files()]
-    assert "readme.txt" in files
+    sample_project = fm.get_project(billbixby, billbixby, "SampleProject")
+    file = s.query(File).filter_by(name="readme.txt") \
+        .filter_by(project=sample_project).one()
+    svnfiles = list(s.query(File).filter(File.name.like("%s.svn%s")).all())
+    assert not svnfiles
     
     # should be able to run again without an exception appearing
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",

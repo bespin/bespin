@@ -37,7 +37,7 @@ import simplejson
 
 from bespin import config, controllers, model
 
-from bespin.model import get_project, File, Project, User, Directory
+from bespin.model import File, Project, User, FileStatus, Directory
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -55,50 +55,44 @@ def setup_module(module):
     app = controllers.make_app()
     app = TestApp(app)
     
-def _init_data():
+def _get_fm():
     global macgyver, someone_else, murdoc
     config.activate_profile()
-
-    fsroot = config.c.fsroot
-    if fsroot.exists() and fsroot.basename() == "testfiles":
-        fsroot.rmtree()
-    fsroot.makedirs()
-
     app.reset()
-
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.sessionmaker(bind=config.c.dbengine)
-    
     user_manager = model.UserManager(s)
+    file_manager = model.FileManager(s)
+    db = model.DB(user_manager, file_manager)
     someone_else = user_manager.create_user("SomeoneElse", "", "someone@else.com")
     murdoc = user_manager.create_user("Murdoc", "", "murdoc@badpeople.bad")
-    
-    otherproject = get_project(someone_else, someone_else,
+    otherproject = file_manager.get_project(someone_else, someone_else,
                                             "otherproject", create=True)
-    otherproject.save_file('foo', 'Just a file to reserve a project')
-    
+    file_manager.save_file(someone_else, otherproject, 'foo', 
+                 'Just a file to reserve a project')
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
-        
     macgyver = user_manager.get_user("MacGyver")
+    return file_manager
 
 def test_project_deletion():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/baz", "biz")
-    bigmac.delete()
-    flist = macgyver.projects
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar/baz", "biz")
+    fm.delete(macgyver, bigmac)
+    flist = fm.list_files(macgyver)
     assert "bigmac" not in flist
+    assert 'bigmac' not in macgyver.projects
 
 def test_template_installation():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.install_template()
-    data = bigmac.get_file("readme.txt")
-    bigmac.close("readme.txt")
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.install_template(macgyver, bigmac)
+    data = fm.get_file(macgyver, bigmac, "readme.txt")
+    fm.close(macgyver, bigmac, "readme.txt")
     assert "Welcome to Bespin" in data
-    result = bigmac.list_files()
+    result = fm.list_files(macgyver, bigmac)
     result_names = [file.name for file in result]
     assert 'readme.txt' in result_names
     
@@ -123,18 +117,24 @@ def test_import():
     def run_one(func, f):
         print "Testing %s" % (func)
         handle = open(f)
-        _init_data()
-        bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-        getattr(bigmac, func)(os.path.basename(f), handle)
+        fm = _get_fm()
+        bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+        getattr(fm, func)(macgyver, bigmac, 
+            os.path.basename(f), handle)
         handle.close()
         proj_names = [proj.name for proj in macgyver.projects]
         assert 'bigmac' in proj_names
-        filenames = [f.basename() for f in bigmac.location.files()]
+        s = fm.session
+        dir = s.query(Directory).filter_by(name="") \
+                .filter_by(project=bigmac).one()
+        filenames = [file.name for file in dir.files]
         assert "config.js" in filenames
-        dirnames = [f.basename() for f in bigmac.location.dirs()]
-        assert 'commands' in dirnames
-        filenames = [f.basename() for f in (bigmac.location / "commands").files()]
-        assert 'yourcommands.js' in filenames
+        dirnames = [d.name for d in dir.subdirs]
+        assert 'commands/' in dirnames
+        dir = s.query(Directory).filter_by(name="commands/") \
+                .filter_by(project=bigmac).one()
+        filenames = [file.name for file in dir.files]
+        assert 'commands/yourcommands.js' in filenames
     
     for test in tests:
         yield run_one, test[0], test[1]
@@ -149,31 +149,54 @@ def test_reimport_wipes_out_the_project():
         global macgyver
         print "Testing %s" % (func)
         handle = open(f)
-        _init_data()
-        bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-        getattr(bigmac, func)(os.path.basename(f), handle)
+        fm = _get_fm()
+        bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+        getattr(fm, func)(macgyver, bigmac, 
+            os.path.basename(f), handle)
         handle.close()
-        flist = bigmac.list_files()
+        bigmac.members.append(someone_else)
+        flist = fm.list_files(macgyver, bigmac)
         flist = [item.name for item in flist]
         assert flist == ["commands/", "config.js", "scratchpad/"]
         
+        fm.session.clear()
+        
+        macgyver = fm.db.user_manager.get_user("MacGyver")
+        bigmac = fm.get_project(macgyver, macgyver, "bigmac", clean=True)
+        
         handle = open(otherfilename)
-        bigmac = get_project(macgyver, macgyver, "bigmac", clean=True)
-        bigmac.import_tarball(os.path.basename(f), handle)
-        flist = bigmac.list_files()
+        fm.import_tarball(macgyver, bigmac, 
+            os.path.basename(f), handle)
+        flist = fm.list_files(macgyver, bigmac)
         flist = [item.name for item in flist]
         assert flist == ["README"]
+        usernames = [user.username for user in bigmac.members]
+        assert 'SomeoneElse' in usernames
         
     for test in tests:
         yield run_one, test[0], test[1]
         
-def test_export_tarfile():
-    _init_data()
-    handle = open(tarfilename)
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.import_tarball(os.path.basename(tarfilename), handle)
+def test_import_converts_tabs_to_spaces():
+    # at the moment, the Bespin editor has a hard time with spaces. This
+    # behavior will be fixed in the near future.
+    fm = _get_fm()
+    handle = open(with_tabs)
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.import_tarball(macgyver, bigmac,
+        os.path.basename(with_tabs), handle)
     handle.close()
-    tempfilename = bigmac.export_tarball()
+    file_obj = fm.get_file_object(macgyver, bigmac, "FileWithTabs.txt")
+    data = str(file_obj.data)
+    assert '\t' not in data
+    
+def test_export_tarfile():
+    fm = _get_fm()
+    handle = open(tarfilename)
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.import_tarball(macgyver, bigmac,
+        os.path.basename(tarfilename), handle)
+    handle.close()
+    tempfilename = fm.export_tarball(macgyver, bigmac)
     tfile = tarfile.open(tempfilename.name)
     members = tfile.getmembers()
     assert len(members) == 6
@@ -182,12 +205,13 @@ def test_export_tarfile():
     assert 'bigmac//' in names
 
 def test_export_zipfile():
-    _init_data()
+    fm = _get_fm()
     handle = open(tarfilename)
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.import_tarball(os.path.basename(tarfilename), handle)
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.import_tarball(macgyver, bigmac,
+        os.path.basename(tarfilename), handle)
     handle.close()
-    tempfilename = bigmac.export_zipfile()
+    tempfilename = fm.export_zipfile(macgyver, bigmac)
     zfile = zipfile.ZipFile(tempfilename.name)
     members = zfile.infolist()
     assert len(members) == 3
@@ -201,18 +225,20 @@ def test_export_zipfile():
 # -------
     
 def test_create_a_project_from_the_web():
-    _init_data()
+    fm = _get_fm()
     app.put("/file/at/bigmac/")
     project_names = [project.name for project in macgyver.projects]
     assert 'bigmac' in project_names
-    bigmac = get_project(macgyver, macgyver, 'bigmac')
-    assert not bigmac.list_files()
+    bigmac = fm.get_project(macgyver, macgyver, 'bigmac')
+    s = fm.session
+    filelist = s.query(File).filter_by(project=bigmac).all()
+    assert not filelist
     
 def test_import_from_the_web():
     tests = [tarfilename, zipfilename]
     
     def run_one(f):
-        _init_data()
+        fm = _get_fm()
         filename = os.path.basename(f)
         print "Trying %s" % filename
         app.post("/project/import/newproj", upload_files=[
@@ -226,21 +252,21 @@ def test_import_from_the_web():
         yield run_one, test
     
 def test_import_unknown_file_type():
-    _init_data()
+    fm = _get_fm()
     app.post("/project/import/newproj", upload_files=[
         ("filedata", "foo.bar", "Some dummy text")
     ], status=400)
     
 def test_export_unknown_file_type():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar", "INFO!")
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
     app.get("/project/export/bigmac.foo", status=404)
     
 def test_export_tarball_from_the_web():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar", "INFO!")
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
     resp = app.get("/project/export/bigmac.tgz")
     assert resp.content_type == "application/x-tar-gz"
     tfile = tarfile.open("bigmac.tgz", "r:gz", StringIO(resp.body))
@@ -250,9 +276,9 @@ def test_export_tarball_from_the_web():
     assert "bigmac/foo/bar" in membersnames
 
 def test_export_zipfile_from_the_web():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar", "INFO!")
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "foo/bar", "INFO!")
     resp = app.get("/project/export/bigmac.zip")
     assert resp.content_type == "application/zip"
     zfile = zipfile.ZipFile(StringIO(resp.body))
@@ -262,23 +288,26 @@ def test_export_zipfile_from_the_web():
     
 def test_delete_project_from_the_web():
     global macgyver
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("README.txt", "This is the readme file.")
+    fm = _get_fm()
+    bigmac = fm.get_project(macgyver, macgyver, "bigmac", create=True)
+    fm.save_file(macgyver, bigmac, "README.txt", 
+        "This is the readme file.")
+    fm.session.commit()
     resp = app.delete("/file/at/bigmac/")
+    macgyver = fm.db.user_manager.get_user("MacGyver")
     assert len(macgyver.projects) == 2
     
 def test_rename_project():
-    _init_data()
+    fm = _get_fm()
     app.post("/project/rename/bigmac/", "foobar", status=404)
     app.put("/file/at/bigmac/")
     app.post("/project/rename/bigmac/", "foobar")
     try:
-        bigmac = get_project(macgyver, macgyver, "bigmac")
+        bigmac = fm.get_project(macgyver, macgyver, "bigmac")
         assert False, "The bigmac project should have been renamed"
     except model.FileNotFound:
         pass
-    foobar = get_project(macgyver, macgyver, "foobar")
+    bigmac = fm.get_project(macgyver, macgyver, "foobar")
     app.put("/file/at/bigmac/")
     # should get a conflict error if you try to rename to a project
     # that exists
