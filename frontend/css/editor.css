@@ -398,3 +398,12 @@ img {
 }
 
 *:focus { outline: 0; }
+
+#centerpopup {
+    z-index: 20;
+    background: url("../images/background_white_50.png");
+    position: absolute;
+    padding: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+}
