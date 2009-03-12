@@ -130,9 +130,15 @@ class User(Base):
         self.quota = config.c.default_quota
         self.uuid = str(uuid4())
         if config.c.use_uuid_as_dir_identifier:
-            self.file_location = self.uuid
+            file_location = self.uuid
         else:
-            self.file_location = username
+            file_location = username
+            
+        if config.c.fslevels:
+            levels = config.c.fslevels
+            file_location = "/".join(file_location[:levels]) + "/" + file_location
+            
+        self.file_location = file_location
         
     def __str__(self):
         return "%s (%s-%s)" % (self.username, self.id, id(self))
