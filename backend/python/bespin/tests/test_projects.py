@@ -58,8 +58,14 @@ def setup_module(module):
 def _init_data():
     global macgyver, someone_else, murdoc
     config.activate_profile()
+
     fsroot = config.c.fsroot
+    if fsroot.exists() and fsroot.basename() == "testfiles":
+        fsroot.rmtree()
+    fsroot.makedirs()
+
     app.reset()
+
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.sessionmaker(bind=config.c.dbengine)
