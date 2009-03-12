@@ -41,6 +41,7 @@ import re
 
 import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
                     DateTime, func, UniqueConstraint)
@@ -85,10 +86,20 @@ class DB(object):
         
         user_manager.db = self
         file_manager.db = self
-    
+
+class Connection(Base):
+    __tablename__ = "connections"
+
+    followed_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+    followed = relation('User', primaryjoin='User.id==Connection.followed_id')
+    following_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+    following = relation('User', primaryjoin='User.id==Connection.following_id')
+
+    followed_viewable = Column(Boolean, default=False)
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True)
     username = Column(String(128), unique=True)
     email = Column(String(128))
@@ -97,7 +108,20 @@ class User(Base):
     projects = relation('Project', backref='owner')
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
-    
+    everyone_viewable = Column(Boolean, default=False)
+
+    #users_i_follow = association_proxy('i_follow', 'followed')
+    i_follow = relation(Connection,
+                        primaryjoin=Connection.following_id==id,
+                        secondary=Connection.__table__,
+                        secondaryjoin=id==Connection.followed_id)
+
+    #users_following_me = association_proxy('following_me', 'following')
+    following_me = relation(Connection,
+                            primaryjoin=Connection.followed_id==id,
+                            secondary=Connection.__table__,
+                            secondaryjoin=id==Connection.following_id)
+
     def __init__(self, username, password, email):
         self.username = username
         self.email = email
@@ -117,7 +141,52 @@ class User(Base):
     def quota_info(self):
         """Returns the tuple of quota and amount_used"""
         return (self.quota * QUOTA_UNITS, self.amount_used)
-    
+
+    #def follow(self, following_user, followed_user):
+        #""" """
+        #self.i_follow.append(Connection(followed=other_user, following=self))
+        #self.users_i_follow.creator = lambda ou: Connection(followed=ou, following=self)
+        #self.users_i_follow.append(other_user)
+
+class Group(Base):
+    __tablename__ = "groups"
+
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    name = Column(String(128))
+    owner_viewable = Column(Boolean, default=False)
+
+    __table_args__ = (UniqueConstraint("owner_id", "name"), {})
+
+class GroupMembership(Base):
+    __tablename__ = "group_memberships"
+
+    group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+
+class UserSharing(Base):
+    __tablename__ = "user_sharing"
+
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    project_name = Column(String(128))
+    invited_user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    edit = Column(Boolean, default=False)
+    loadany = Column(Boolean, default=False)    
+
+    __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_user_id"), {})
+
+class GroupSharing(Base):
+    __tablename__ = "group_sharing"
+
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    project_name = Column(String(128))
+    invited_group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'))
+    edit = Column(Boolean, default=False)
+    loadany = Column(Boolean, default=False)    
+
+    __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
 
 bad_characters = "<>| '\""
 invalid_chars = re.compile(r'[%s]' % bad_characters)
@@ -125,7 +194,7 @@ invalid_chars = re.compile(r'[%s]' % bad_characters)
 class UserManager(object):
     def __init__(self, session):
         self.session = session
-        
+
     def create_user(self, username, password, email):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
@@ -152,7 +221,70 @@ class UserManager(object):
         """Looks up a user by username. Returns None if the user is not
         found."""
         return self.session.query(User).filter_by(username=username).first()
-            
+
+    def users_i_follow(self, following_user):
+        """ """
+        return self.session.query(Connection).filter_by(following=following_user).all()
+
+    def users_following_me(self, followed_user):
+        """ """
+        return self.session.query(Connection).filter_by(followed=followed_user).all()
+
+    def follow(self, following_user, followed_user):
+        """ """
+        if (followed_user == following_user):
+            raise ConflictError("You can't follow yourself")
+
+        following_user_name = following_user.username;
+        followed_user_name = followed_user.username;
+        self.session.add(Connection(followed=followed_user, following=following_user))
+        try:
+            self.session.flush()
+        except DBAPIError:
+            raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
+
+    def unfollow(self, following_user, followed_user):
+        """ """
+        following_user_name = following_user.username;
+        followed_user_name = followed_user.username;
+        rows = self.session.query(Connection).filter_by(followed=followed_user, following=following_user).delete()
+        if (rows == 0):
+            raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
+
+    def get_groups(user):
+        """ """
+        groups = self.session.query(Group).filter_by(owner_id=user.id).all()
+        return groups
+
+    def get_group_members(user, groupname):
+        """ """
+        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
+        members = self.sesison.query(GroupMember).filter_by(group_id=group.id).all()
+        return members
+
+    def remove_all_group_members(user, groupname):
+        """ """
+        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
+        members = self.sesison.query(GroupMember).filter_by(group_id=group.id).delete()
+        pass
+
+    def remove_group_members(user, groupname, other_user):
+        """ """
+        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
+        members = self.sesison.query(GroupMember).filter_by(group_id=group.id, user_id=other_user.id).delete()
+        pass
+
+    def add_group_members(user, groupname, other_user):
+        """ """
+        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
+        self.session.add(GroupMember(group_id=group.id, user_id=other_user.id))
+        try:
+            self.session.flush()
+        except DBAPIError:
+            raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
+        pass
+
+
 class FileStatus(Base):
     __tablename__ = "filestatus"
     
