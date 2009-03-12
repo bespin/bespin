@@ -35,6 +35,7 @@ import shutil
 
 from webtest import TestApp
 import simplejson
+from path import path
 
 from bespin import config, controllers, model
 
@@ -441,6 +442,26 @@ def test_bad_project_names():
         assert False, "Expected BadValue exception for bad name"
     except model.BadValue:
         pass
+    try:
+        badone = get_project(macgyver, macgyver, "foo/bar", create=True)
+        assert False, "Expected BadValue exception for bad name"
+    except model.BadValue:
+        pass
+
+def test_bad_files_and_directories():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    try:
+        bigmac.save_file("../foo/bar", "hi")
+        assert False, "Expected BadValue exception for bad name"
+    except model.BadValue:
+        pass
+    
+    bigmac.save_file("/tmp/foo", "hi")
+    foopath = path("/tmp/foo")
+    assert not foopath.exists()
+    location = bigmac.location
+    assert (location / "tmp" / "foo").exists()
 
 # -------
 # Web tests
