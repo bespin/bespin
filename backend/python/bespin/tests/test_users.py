@@ -39,6 +39,11 @@ def setup_module(module):
 def _clear_db():
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
+    fsroot = config.c.fsroot
+    if fsroot.exists() and fsroot.basename() == "testfiles":
+        fsroot.rmtree()
+    fsroot.makedirs()
+    
     
 def _get_user_manager(clear=False):
     if clear:
