@@ -70,7 +70,7 @@ def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
-        c.fsroot = os.path.abspath("%s/../../../testfiles" 
+        c.fsroot = os.path.abspath("%s/../testfiles" 
                         % os.path.dirname(__file__))
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
