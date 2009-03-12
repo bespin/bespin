@@ -412,6 +412,28 @@ def test_save_file_can_create_directory():
     assert len(flist) == 1
     assert flist[0].name == "foo/bar/"
 
+def test_filesystem_can_be_arranged_in_levels():
+    config.c.fslevels = 0
+    _init_data()
+    
+    assert macgyver.file_location == macgyver.uuid
+    
+    config.c.fslevels = 1
+    _init_data()
+    fsroot = config.c.fsroot
+    dirs = [d.basename() for d in fsroot.dirs()]
+    # the first character should be peeled off as the top directory name
+    for d in dirs:
+        assert len(d) == 1
+
+    uuid = macgyver.uuid
+    assert macgyver.file_location == "%s/%s" % (uuid[0], uuid)
+    
+    config.c.fslevels = 2
+    _init_data()
+    uuid = macgyver.uuid
+    assert macgyver.file_location == "%s/%s/%s" % (uuid[0], uuid[1], uuid)
+
 # -------
 # Web tests
 # -------
