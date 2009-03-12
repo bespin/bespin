@@ -28,7 +28,8 @@ dojo.provide("bespin.user.register");
 
 (function(){
     var svr = new bespin.client.Server(); 
-    var utils = bespin.user.utils; 
+    var utils = bespin.user.utils;
+    var webpieces = bespin.util.webpieces;
     
     dojo.mixin(bespin.user, {
         login: function() {
@@ -52,7 +53,7 @@ dojo.provide("bespin.user.register");
                     utils.whenLoginSucceeded,
                     utils.whenLoginFailed);
             } else {
-                utils.showStatus("Please give me both a username and a password");
+                webpieces.showStatus("Please give me both a username and a password");
             }
         },
 
@@ -88,12 +89,12 @@ dojo.provide("bespin.user.register");
             if (utils.showingBrowserCompatScreen()) return;
             dojo.style('logged_in', 'display', 'none');
             dojo.style('not_logged_in', 'display', 'none');
-            dojo.style('opaque', 'display', 'block');
+            dojo.style('overlay', 'display', 'block');
             dojo.style('centerpopup', 'display', 'block');            
-            utils.showCenterPopup(dojo.byId('centerpopup'));  
+            webpieces.showCenterPopup(dojo.byId('centerpopup'));  
         },
         hideForm: function() {
-            utils.hideCenterPopup(dojo.byId('centerpopup'));
+            webpieces.hideCenterPopup(dojo.byId('centerpopup'));
             svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
         },
         send: function() {
@@ -113,10 +114,10 @@ dojo.provide("bespin.user.register");
     dojo.addOnLoad(function() {
         bespin.displayVersion();
         svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
-		utils.fillScreenOverlay();
+		webpieces.fillScreenOverlay();
     });
 
     dojo.connect(window, "resize", function() {
-        utils.fillScreenOverlay();
+        webpieces.fillScreenOverlay();
     });
 })();

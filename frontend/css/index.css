@@ -211,7 +211,7 @@ body {
     color: #ff9600;
 }
 
-#opaque {
+#overlay {
     z-index: 10;
     position: absolute;
     width: 100%;
