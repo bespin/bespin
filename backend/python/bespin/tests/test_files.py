@@ -434,6 +434,14 @@ def test_filesystem_can_be_arranged_in_levels():
     uuid = macgyver.uuid
     assert macgyver.file_location == "%s/%s/%s" % (uuid[0], uuid[1], uuid)
 
+def test_bad_project_names():
+    _init_data()
+    try:
+        badone = get_project(macgyver, macgyver, "..", create=True)
+        assert False, "Expected BadValue exception for bad name"
+    except model.BadValue:
+        pass
+
 # -------
 # Web tests
 # -------

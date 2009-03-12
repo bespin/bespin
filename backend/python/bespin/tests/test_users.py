@@ -192,9 +192,14 @@ def test_api_version_header():
     assert resp.headers.get("X-Bespin-API") == "dev"
     
 def test_username_with_bad_characters():
+    _clear_db()
     app = controllers.make_app()
     app = TestApp(app)
     resp = app.post("/register/new/Thinga%20Majig",
             dict(password="foo", email="thinga@majig"), status=400)
     resp = app.post("/register/new/Thinga<majig>",
             dict(password="foo", email="thinga@majig"), status=400)
+    resp = app.post("/register/new/Thing/", 
+                    dict(password="foo", email="thinga@majig"), status=400)
+    resp = app.post("/register/new/..", 
+                    dict(password="foo", email="thinga@majig"), status=400)
