@@ -261,7 +261,7 @@ body {
     cursor: pointer;
 }
 
-#register_border {
+#centerpopup {
     z-index: 20;
     background: url("../images/background_white_50.png");
     position: absolute;
