@@ -697,3 +697,6 @@ def test_search_from_the_web():
         return simplejson.loads(resp.body)
     _run_search_tests(run_search)
     
+    # illegal limits are turned into the default
+    resp = app.get("/file/search/bigmac?limit=foo")
+    
