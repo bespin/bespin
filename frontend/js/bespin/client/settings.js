@@ -43,12 +43,12 @@ dojo.provide("bespin.client.settings");
 // TODO: tie into the sessions servlet; eliminate Gears dependency
 
 dojo.declare("bespin.client.settings.Core", null, {
-    constructor: function() {
+    constructor: function(store) {
         this.browserOverrides = {};
         this.fromURL = new bespin.client.settings.URL();
         this.customEvents = new bespin.client.settings.Events(this);
 
-        this.loadStore();    // Load up the correct settings store
+        this.loadStore(store);    // Load up the correct settings store
     },
 
     loadSession: function() {
@@ -90,8 +90,8 @@ dojo.declare("bespin.client.settings.Core", null, {
     // ** {{{ Settings.loadStore() }}} **
     //
     // This is where we choose which store to load
-    loadStore: function() {
-        this.store = new bespin.client.settings.Server(this);
+    loadStore: function(store) {
+        this.store = new (store || bespin.client.settings.Server)(this);
 
 //        this.store = new Bespin.Settings.Cookie(this);
 

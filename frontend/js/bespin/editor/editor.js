@@ -276,8 +276,10 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
-        if (handled) return false;
+        // -- Short cut for IF a command line is installed
+        var commandLine = bespin.get('commandLine');
+        if (commandLine && commandLine.handleCommandLineFocus(e)) return false;
+        // -- End of commandLine short cut
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
@@ -306,15 +308,17 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
-        if (handled) return false;
-        
+        // -- Short cut for IF a command line is installed
+        var commandLine = bespin.get('commandLine');
+        if (commandLine && commandLine.handleCommandLineFocus(e)) return false;
+
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
-        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+        if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             dojo.stopEvent(e);
             return false;
         }
+        // -- End of commandLine short cut
 
         // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
         // on some platforms and keyboardlayouts (german?). This is not working for "^"
@@ -651,14 +655,16 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.oldkeydown) dojo.disconnect(this.oldkeydown);
         if (this.oldkeypress) dojo.disconnect(this.oldkeypress);
 
-        this.oldkeydown = dojo.hitch(listener, "onkeydown");
+        this.oldkeydown  = dojo.hitch(listener, "onkeydown");
         this.oldkeypress = dojo.hitch(listener, "onkeypress");
+        
+        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : document;
 
-        dojo.connect(document, "keydown", this, "oldkeydown");
-        dojo.connect(document, "keypress", this, "oldkeypress");
+        dojo.connect(scope, "keydown", this, "oldkeydown");
+        dojo.connect(scope, "keypress", this, "oldkeypress");
 
         // Modifiers, Key, Action
-        
+
         listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
         listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
@@ -710,7 +716,7 @@ dojo.declare("bespin.editor.UI", null, {
         return parseInt(dojo.style(this.editor.canvas.parentNode, "width"));
     },
 
-    getHeight: function() {   
+    getHeight: function() {
         return parseInt(dojo.style(this.editor.canvas.parentNode, "height"));
     },
 
@@ -1327,7 +1333,7 @@ dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
         this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
 
-        if (!opts) opts = {};
+        this.opts = opts || {};
 
         this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel();
@@ -1356,7 +1362,7 @@ dojo.declare("bespin.editor.API", null, {
 
         this.paint();
 
-        if (!opts.dontfocus) { this.setFocus(true); }
+        if (!this.opts.dontfocus) { this.setFocus(true); }
     },
 
     // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee
