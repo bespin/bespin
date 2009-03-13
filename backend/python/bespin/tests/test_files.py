@@ -464,8 +464,7 @@ def test_bad_files_and_directories():
     location = bigmac.location
     assert (location / "tmp" / "foo").exists()
     
-def test_file_search():
-    _init_data()
+def _setup_search_data():
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     for name in [
         "foo/bar",
@@ -478,6 +477,11 @@ def test_file_search():
         "many/files"
     ]:
         bigmac.save_file(name, "hi")
+    return bigmac
+    
+def test_file_search():
+    _init_data()
+    bigmac = _setup_search_data()
     _run_search_tests(bigmac.search_files)
     
 def _run_search_tests(search_func):
@@ -507,6 +511,13 @@ def _run_search_tests(search_func):
         "bespin/rocks",
         "foo/some_other",
         "some/deeply/nested/file/here"
+    ]
+    
+    result = search_func("me")
+    assert result == [
+        "foo/some_other",
+        "some/deeply/nested/file/here",
+        "many/files"
     ]
 
 # -------
@@ -662,18 +673,7 @@ def test_quota_limits_on_the_web():
     
 def test_search_from_the_web():
     _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    for name in [
-        "foo/bar",
-        "whiz/bang",
-        "ding/dong",
-        "foo/some_other",
-        "some/deeply/nested/file/here",
-        "whiz/cheez",
-        "bespin/rocks",
-        "many/files"
-    ]:
-        bigmac.save_file(name, "hi")
+    bigmac = _setup_search_data()
     resp = app.get("/file/search/bigmac")
     assert resp.content_type == "application/json"
     def run_search(q):

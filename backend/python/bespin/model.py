@@ -863,8 +863,28 @@ class Project(object):
         for f in location.walkfiles():
             f = location.relpathto(f)
             if main_search.search(f):
-                match_list.append(f)
-        return sorted(match_list)
+                match_list.append(_SearchMatch(query, f))
+        return [str(match) for match in sorted(match_list)]
+        
+
+class _SearchMatch(object):
+    """Comparable objects that store the result of a file search match"""
+    def __init__(self, query, match):
+        # if the query string is directly in there, boost the score
+        if query in match:
+            self.score = 1
+        else:
+            self.score = 0
+        self.match = match
+    
+    def __cmp__(self, other):
+        diff = cmp(other.score, self.score)
+        if diff:
+            return diff
+        return cmp(self.match, other.match)
+    
+    def __str__(self):
+        return str(self.match)
 
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles
