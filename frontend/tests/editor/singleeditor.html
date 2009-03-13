@@ -40,15 +40,13 @@
 	<script>
         var _editorComponent;
         
-//        dojo.require("bespin.editor.Component");
-
         // Loads and configures the objects that the editor needs
-        window.onload = function() {
+        dojo.addOnLoad(function() {
             _editorComponent = new bespin.editor.Component('editor', {
                 syntax: "js",
                 loadfromdiv: true
             });
-        };
+        });
         
         function copyToTextarea() {
             dojo.byId('inandout').value = _editorComponent.getContent();
@@ -73,7 +71,7 @@ function flubber() {
 }</div>
 
     <div style="padding: 20px">
-    <b>Play with the editor</b><br>
+    <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
     Enter syntax type and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
     Push a new setting: <input type="text" id="key" value=""> <input type="text" id="value" value=""> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
 
