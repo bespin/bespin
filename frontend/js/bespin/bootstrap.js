@@ -103,14 +103,37 @@ dojo.mixin(bespin.bootstrap, {
         this.doResize();
     },
 
+    showFilelist: function() {
+        var filelist =  dojo.byId('filelist');
+        var editor = dojo.byId("editor");
+        
+        if (bespin.get('toolbar').showFiles) {                
+            filelist.style.display = "block";
+            editor.style.left = bespin.get('filelist').getWidth()+'px';
+        } else {
+            filelist.style.display = "none";
+            editor.style.left = "0px";
+        }
+        
+        this.doResize();
+    },
+
     // ** {{{ doResize() }}} **
     //
     // When a user resizes the window, deal with resizing the canvas and repaint
     doResize: function() {
         var d = dojo.coords('status');
+        
+        if (bespin.get('toolbar').showFiles) {
+            filelist = bespin.get('filelist');
+            filelist.fitAndRepaint();
+            editor.style.left = filelist.getWidth()+'px';
+        }
+        
         dojo.attr('projectLabel', { width: d.w, height: d.h });
 
-        bespin.get('editor').paint();
+        bespin.get('editor').paint();        
+        _scene.render();
     }
 })
 
@@ -118,10 +141,13 @@ dojo.mixin(bespin.bootstrap, {
 //
 // Loads and configures the objects that the editor needs
 dojo.addOnLoad(function() {
+    bespin.register('quickopen', new bespin.editor.quickopen.API('quickopen'));
+
     var editor = bespin.register('editor', new bespin.editor.API('editor'));
     var editSession = bespin.register('editSession', new bespin.client.session.EditSession(editor));
     var server = bespin.register('server', new bespin.client.Server());
     var files = bespin.register('files', new bespin.client.FileSystem());
+    var filelist = bespin.register('filelist', new bespin.editor.filelist.UI('filelist'));
 
     bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
 

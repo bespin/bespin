@@ -324,6 +324,19 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/close', project, path);
         this.request('POST', url, null, { call: callback });
     },
+    
+    // ** {{{ searchFiles(project, searchstring, callback) }}}
+    //
+    // Search for files within the given project
+    // 
+    // * {{{project}}} is the project to look from
+    // * {{{searchstring}}} to compare files with
+    // * {{{callback}}} fires after the file is closed
+    searchFiles: function(project, searchkey, callback) {
+        var url = bespin.util.path.combine('/file/search', project+'?q='+escape(searchkey));
+        var opts = { call: callback, evalJSON: true, log: "Listing searchfiles for: " + project + ", searchkey: " + searchkey};
+        this.request('GET', url, null, opts);
+    },
 
     // == EDIT ==
 
