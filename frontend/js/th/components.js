@@ -58,6 +58,7 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.max = parms.max || 100;
         this.extent = parms.extent || 0.1;
         this.increment = parms.increment || 2;
+        this.style = parms.style || {};
 
         this.up = new th.components.Button();
         this.down = new th.components.Button();
@@ -68,6 +69,20 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.bus.bind("click", this.down, this.scrolldown, this);
         this.bus.bind("mousedrag", this.bar, this.onmousedrag, this);
         this.bus.bind("mouseup", this.bar, this.onmouseup, this);
+    },
+
+    loadImages: function(path, name) {
+        function loadImg(url) {
+            var img = new Image();
+            img.src = url;
+            return img;            
+        }
+        // getting the images for the scrollbar
+        this.style.scrollUpArrow = loadImg(path + name + '_up_arrow.png');
+        this.style.scrollHandleTopImage = loadImg(path + name + '_top.png');
+        this.style.scrollHandleMiddleImage = loadImg(path + name + '_middle.png');
+        this.style.scrollHandleBottomImage = loadImg(path + name + '_bottom.png');
+        this.style.scrollDownArrow = loadImg(path + name + '_down_arrow.png');
     },
 
     onmousedrag: function(e) {

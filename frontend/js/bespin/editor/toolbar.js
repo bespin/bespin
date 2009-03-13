@@ -88,9 +88,11 @@ dojo.declare("bespin.editor.Toolbar", null, {
         files: function(toolbar, el) {
             var files = dojo.byId(el) || dojo.byId("toolbar_files");
             dojo.connect(files, 'click', function() {
-                toolbar._showFiles = !toolbar._showFiles;
-                files.src = "images/" + ( (toolbar._showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
-                bespin.bootstrap.recalcLayout();
+                toolbar.showFiles = !toolbar.showFiles;
+                files.src = "images/" + ( (toolbar.showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
+                //console.log('viewFiles!!!');
+                //bespin.bootstrap.recalcLayout();
+                bespin.bootstrap.showFilelist();
             });
             dojo.connect(files, 'mouseover', function() {
                 files.style.cursor = "pointer";

@@ -39,8 +39,8 @@ dojo.declare("th.helpers.EventHelpers", null, {
     wrapEvent: function(e, root) {
         // compute the canvas-local coordinates
         var coords = dojo.coords(this.canvas, true);
-        var x = e.clientX - coords.l;
-        var y = e.clientY - coords.t;
+        var x = e.clientX - coords.x;
+        var y = e.clientY - coords.y;
         
         var component = root.getComponentForPosition(x, y, true);
         e.thComponent = component;
@@ -59,8 +59,8 @@ dojo.declare("th.helpers.EventHelpers", null, {
 
         // compute the canvas-local coordinates
         var coords = dojo.coords(this.canvas, true);
-        var x = e.clientX - coords.l;
-        var y = e.clientY - coords.t;
+        var x = e.clientX - coords.x;
+        var y = e.clientY - coords.y;
    
         var nxy = { x: x, y: y };
 
