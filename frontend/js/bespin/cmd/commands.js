@@ -478,7 +478,8 @@ bespin.cmd.commands.add({
                     ? "The command named '" + command + "' is at version " + theCommand.version 
                     : "The command named '" + command + "' is a core command in Bespin version " + bespin.versionNumber;
             }
-        } else {
+        }
+        else {
             version = bespinVersion;
         }
         self.showInfo(version);
@@ -869,3 +870,163 @@ bespin.cmd.commands.add({
         }
     }
 });
+
+// ** {{{Command: follow}}} **
+bespin.cmd.commands.add({
+    name: 'follow',
+    takes: ['username ...'],
+    preview: 'add to the list of users we are following, or (with no args) list the current set',
+    completeText: 'username(s) of person(s) to follow',
+    usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var usernames = args.split(" ");
+        if (usernames.length == 1 && usernames[0] == "") {
+            usernames = [];
+        }
+        if (usernames.length == 0) {
+            bespin.publish("bespin:network:followers");
+        }
+        else {
+            bespin.publish("bespin:network:follow", [ usernames ]);
+        }
+    }
+});
+
+// ** {{{Command: unfollow}}} **
+bespin.cmd.commands.add({
+    name: 'unfollow',
+    takes: ['username ...'],
+    preview: 'remove from the list of users we are following',
+    completeText: 'username(s) of person(s) to stop following',
+    usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var usernames = args.split(" ");
+        if (usernames.length == 1 && usernames[0] == "") {
+            usernames = [];
+        }
+        if (usernames.length == 0) {
+            self.showInfo('Please specify the users to cease following');
+        }
+        else {
+            bespin.publish("bespin:network:unfollow", [ usernames ]);
+        }
+    }
+});
+
+// ** {{{Command: group}}} **
+bespin.cmd.commands.add({
+    name: 'group',
+    preview: 'Collect the people you follow into groups, and display the existing groups',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var args = args.split(" ");
+        if (args.length == 1 && args[0] == "") {
+            args = [];
+        }
+        if (args.length == 0) {
+            bespin.publish("bespin:groups:list:all");
+        }
+        else if (args.length == 1) {
+            bespin.publish("bespin:groups:list", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] == "-r" || args[1] == "--remove") {
+                bespin.publish("bespin:groups:remove:all", [ args[0] ]);
+            }
+            else {
+                self.showInfo('Syntax error - You must specify what you want to do with your group.');
+            }
+        }
+        else if (args.length > 2) {
+            var group = args.shift();
+            var command = args.shift();
+            if (command == "-a" || command == "--add") {
+                bespin.publish("bespin:groups:add", [ group, args ]);
+            }
+            else if (command == "-r" || command == "--remove") {
+                args.shift();
+                bespin.publish("bespin:groups:remove", [ group, args ]);
+            }
+            else {
+                self.showInfo('Syntax error - To manipulate a group you must use add/remove');
+            }
+        }
+    }
+});
+
+// ** {{{Command: test}}} **
+bespin.cmd.commands.add({
+    name: 'test',
+    preview: 'Run some automated end to end tests',
+    script: [
+        { send:"echo hello", expect:/^hello$/ },
+        { send:"echo pass", expect:/ss/ }
+    ],
+    // ** {{{_setup}}}
+    _setup: function(self, onComplete) {
+        this.originalShowInfo = self.showInfo;
+        var that = this;
+        bespin.get('server').request('POST', '/test/setup/', null, {
+            call:onComplete,
+            onFailure:function(xhr) {
+                that._cleanup(self, "_setup() failed. Maybe due to: " + xhr.responseText);
+            }
+        });
+    },
+    // ** {{{_cleanup}}}
+    _cleanup: function(self, reason) {
+        self.showInfo = this.originalShowInfo;
+        self.showInfo(reason);
+        bespin.get('server').request('POST', '/test/setup/', null, {
+            call:function() {
+                console.log("Server cleanup completed")
+            },
+            onFailure:function(xhr) {
+                self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
+            }
+        });
+    },
+    // ** {{{_runNextElement}}}
+    _runNextElement: function(self, script, index) {
+        console.log("_runNextElement", index);
+        if (index >= script.length) {
+            this._cleanup(self, "Finished running tests");
+            return;
+        }
+        var element = script[index];
+        var that = this;
+        self.showInfo = function(html, autohide) {
+            var info = dojo.byId('info')
+            info.innerHTML = html;
+            var text = info.textContent;
+            if (element.expect.test(text)) {
+                that._runNextElement(self, script, index + 1);
+            }
+            else {
+                console.log("Expected:", element.expect, "but received:", html);
+                that._cleanup(self, "Expected: '" + element.expect + "' but received: '" + html + "'");
+            }
+        };
+        self.executeCommand(element.send);
+    },
+    // ** {{{execute}}}
+    execute: function(self) {
+        this._setup(self, function() {
+            this._runNextElement(self, this.script, 0);
+        });
+    }
+});
+
+// ** {{{Command: echo}}} **
+bespin.cmd.commands.add({
+    name: 'echo',
+    takes: ['message ...'],
+    preview: 'A test echo command',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        self.showInfo(args);
+    }
+});
+

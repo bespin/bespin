@@ -410,3 +410,107 @@ bespin.events.defaultScope = function() {
 
     return bespin.events._defaultScope;
 };
+
+// ** {{{ Event: bespin:network:followers }}} **
+// Get a list of our followers
+bespin.subscribe("bespin:network:followers", function() {
+    bespin.get('server').followers({
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Following " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:network:follow }}} **
+// Add to the list of users that we follow
+bespin.subscribe("bespin:network:follow", function(usernames) {
+    bespin.get('server').follow(usernames, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Following " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:network:unfollow }}} **
+// Remove users from the list that we follow
+bespin.subscribe("bespin:network:unfollow", function(usernames) {
+    bespin.get('server').unfollow(usernames, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Following " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:groups:list:all }}} **
+// Get a list of our groups
+bespin.subscribe("bespin:groups:list:all", function() {
+    bespin.get('server').groupListAll({
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Known groups " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve groups. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:groups:list }}} **
+// Get a list of group members
+bespin.subscribe("bespin:groups:list", function(group) {
+    bespin.get('server').groupList(group, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:groups:remove:all }}} **
+// Remove a group and all its members
+bespin.subscribe("bespin:groups:remove:all", function(group) {
+    bespin.get('server').groupRemoveAll(group, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Removed group " + group });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:groups:add }}} **
+// Add to members of a group
+bespin.subscribe("bespin:groups:add", function(group, users) {
+    bespin.get('server').groupAdd(group, users, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to add to group members. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:groups:remove }}} **
+// Add to members of a group
+bespin.subscribe("bespin:groups:remove", function(group, users) {
+    bespin.get('server').groupRemove(group, users, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to remove to group members. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
