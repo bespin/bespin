@@ -855,9 +855,8 @@ class Project(object):
     def search_files(self, query):
         """Scans the files for filenames that match the queries."""
         match_list = []
-        # XXX this needs to escape parts of the query that
-        # will look like regular expression characters
-        search_re = ".*".join(query)
+        escaped_query = [re.escape(char) for char in query]
+        search_re = ".*".join(escaped_query)
         main_search = re.compile(search_re)
         location = self.location
         for f in location.walkfiles():

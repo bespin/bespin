@@ -474,7 +474,8 @@ def _setup_search_data():
         "some/deeply/nested/file/here",
         "whiz/cheez",
         "bespin/rocks",
-        "many/files"
+        "many/files",
+        "cool+one"
     ]:
         bigmac.save_file(name, "hi")
     return bigmac
@@ -488,6 +489,7 @@ def _run_search_tests(search_func):
     result = search_func("")
     assert result == [
         "bespin/rocks",
+        "cool+one",
         "ding/dong",
         "foo/bar",
         "foo/some_other",
@@ -500,6 +502,7 @@ def _run_search_tests(search_func):
     result = search_func("o")
     assert result == [
         "bespin/rocks",
+        "cool+one",
         "ding/dong",
         "foo/bar",
         "foo/some_other",
@@ -518,6 +521,11 @@ def _run_search_tests(search_func):
         "foo/some_other",
         "some/deeply/nested/file/here",
         "many/files"
+    ]
+    
+    result = search_func("+")
+    assert result == [
+        "cool+one"
     ]
 
 # -------
