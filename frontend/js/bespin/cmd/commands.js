@@ -706,18 +706,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: doctype}}} **
-bespin.cmd.commands.add({
-    name: 'doctype',
-    takes: ['section'], // part on the Wiki
-    preview: 'grab the doctype info for a section',
-    completeText: 'can you give me the Doctype wiki section?',
-    hidden: true,
-    execute: function(self, section) {
-        //TODO grab the HTML: http://code.google.com/p/doctype/wiki/SectionElement?show=content
-    }
-});
-
 // ** {{{Command: trim}}} **
 bespin.cmd.commands.add({
     name: 'trim',
