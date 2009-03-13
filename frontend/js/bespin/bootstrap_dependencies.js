@@ -65,6 +65,11 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
 
+dojo.require("bespin.mobwrite.core");
+dojo.require("bespin.mobwrite.diff");
+dojo.require("bespin.mobwrite.form");
+dojo.require("bespin.mobwrite.integrate");
+
 dojo.require("th.helpers"); // -- Thunderhead... hooooo
 dojo.require("th.css");
 dojo.require("th.th");
