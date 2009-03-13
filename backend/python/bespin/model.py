@@ -852,7 +852,7 @@ class Project(object):
         self.name = new_name
         self.location = new_location
         
-    def search_files(self, query):
+    def search_files(self, query, limit=20):
         """Scans the files for filenames that match the queries."""
         match_list = []
         escaped_query = [re.escape(char) for char in query]
@@ -863,7 +863,8 @@ class Project(object):
             f = location.relpathto(f)
             if main_search.search(f):
                 match_list.append(_SearchMatch(query, f))
-        return [str(match) for match in sorted(match_list)]
+        all_results = [str(match) for match in sorted(match_list)]
+        return all_results[:limit]
         
 
 class _SearchMatch(object):
