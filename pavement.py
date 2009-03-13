@@ -493,6 +493,7 @@ def editbespin(options):
     
     location = path.getcwd().parent.abspath()
     user.file_location = location
+    user.recompute_files()
     session.commit()
     bespinsettings_loc = location / "BespinSettings"
     if not bespinsettings_loc.exists():
