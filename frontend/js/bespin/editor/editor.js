@@ -360,7 +360,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.rowLengthCache = [];
 
-        this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
+        this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
+        this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
@@ -435,7 +436,7 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup");         
         dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
               
-        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), 250);
+        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
 
     // col is -1 if user clicked in gutter; clicking below last line maps to last line
@@ -548,7 +549,7 @@ dojo.declare("bespin.editor.UI", null, {
             ui.editor.paint();
         }
 
-        setTimeout(function() { ui.toggleCursor(ui); }, 250);
+        setTimeout(function() { ui.toggleCursor(ui); }, ui.toggleCursorFrequency);
     },
 
     ensureCursorVisible: function() {
