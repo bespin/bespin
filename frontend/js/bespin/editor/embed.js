@@ -12,9 +12,6 @@
         loadScript("../../js/dojo/dojo.js");
     }
 
-    // -- Load the Editor component itself
-    loadScript("../../js/bespin/editor/component.js");
-
     // -- Load up the embeddable editor component
     dojo.require("bespin.editor.Component");
 })();
