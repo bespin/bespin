@@ -233,7 +233,10 @@ def file_search(request, response):
     user = request.user
     query = request.GET.get("q", "")
     limit = request.GET.get("limit", 20)
-    limit = int(limit)
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 20
     project_name = request.kwargs['project_name']
     
     project = model.get_project(user, user, project_name)
