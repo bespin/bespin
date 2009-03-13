@@ -3,19 +3,19 @@ dependencies = {
         {
             name: "../index_all.js",
             dependencies: [
-                "bespin.user.dependencies"
+                "bespin.page.index.dependencies"
             ]
         },
         {
             name: "../editor_all.js",
             dependencies: [
-                "bespin.bootstrap_dependencies"
+                "bespin.page.editor.dependencies"
             ]
         },
         {
             name: "../dashboard_all.js",
             dependencies: [
-                "bespin.dashboard.dependencies"
+                "bespin.page.dashboard.dependencies"
             ]
         }
     ],

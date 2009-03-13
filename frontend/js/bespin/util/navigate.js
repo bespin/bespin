@@ -22,7 +22,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-
 dojo.provide("bespin.util.navigate");
 
 dojo.require("bespin.client.settings");
@@ -35,7 +34,7 @@ dojo.require("bespin.client.settings");
 //
 // new up an object that will return public methods and hide private ones
 
-(function(){
+(function() {
 
     // ** {{{ Yup, you can be private }}} **
     //
@@ -78,8 +77,8 @@ dojo.require("bespin.client.settings");
 
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
-            var selectedPath = bespin.dashboard.tree.getSelectedPath(true);
-            if (selectedPath) args.push('fromDashboardPath='+selectedPath);
+            var selectedPath = bespin.page.dashboard.tree.getSelectedPath(true);
+            if (selectedPath)   args.push('fromDashboardPath='+selectedPath);
 
             if (args.length > 0) url += args.join("&");
 

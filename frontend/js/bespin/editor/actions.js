@@ -134,7 +134,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     selectAll: function(args) {
         // do nothing with an empty doc
-        if (this.editor.model.isEmpty()) return;
+        if (this.editor.model.getMaxCols == 0) return;
 
         args.startPos = { col: 0, row: 0 };
         args.endPos = { col: this.editor.model.getRowLength(this.editor.model.getRowCount() - 1), row: this.editor.model.getRowCount() - 1 };
@@ -336,7 +336,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (selectionObject) {
             var selectionText = this.editor.model.getChunk(selectionObject);
             if (selectionText) {
-                bespin.util.clipboard.Manual.copy(selectionText);
+                bespin.editor.clipboard.Manual.copy(selectionText);
             }
         }
     },
@@ -391,7 +391,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     pasteFromClipboard: function(args) {
-        var clipboard = (args.clipboard) ? args.clipboard : bespin.util.clipboard.Manual.data();
+        var clipboard = (args.clipboard) ? args.clipboard : bespin.editor.clipboard.Manual.data();
         if (clipboard === undefined) return; // darn it clipboard!
         args.chunk = clipboard;
         this.insertChunk(args);

@@ -21,7 +21,7 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 dojo.provide("bespin.user.dependencies");
 
 dojo.require("dojo.cookie");
