@@ -851,6 +851,20 @@ class Project(object):
         old_location.rename(new_location)
         self.name = new_name
         self.location = new_location
+        
+    def search_files(self, query):
+        """Scans the files for filenames that match the queries."""
+        match_list = []
+        # XXX this needs to escape parts of the query that
+        # will look like regular expression characters
+        search_re = ".*".join(query)
+        main_search = re.compile(search_re)
+        location = self.location
+        for f in location.walkfiles():
+            f = location.relpathto(f)
+            if main_search.search(f):
+                match_list.append(f)
+        return sorted(match_list)
 
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles

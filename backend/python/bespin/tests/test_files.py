@@ -32,6 +32,7 @@ import tarfile
 import zipfile
 from datetime import datetime, timedelta
 import shutil
+from urllib import urlencode
 
 from webtest import TestApp
 import simplejson
@@ -462,6 +463,51 @@ def test_bad_files_and_directories():
     assert not foopath.exists()
     location = bigmac.location
     assert (location / "tmp" / "foo").exists()
+    
+def test_file_search():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    for name in [
+        "foo/bar",
+        "whiz/bang",
+        "ding/dong",
+        "foo/some_other",
+        "some/deeply/nested/file/here",
+        "whiz/cheez",
+        "bespin/rocks",
+        "many/files"
+    ]:
+        bigmac.save_file(name, "hi")
+    _run_search_tests(bigmac.search_files)
+    
+def _run_search_tests(search_func):
+    result = search_func("")
+    assert result == [
+        "bespin/rocks",
+        "ding/dong",
+        "foo/bar",
+        "foo/some_other",
+        "many/files",
+        "some/deeply/nested/file/here",
+        "whiz/bang",
+        "whiz/cheez"
+    ]
+    
+    result = search_func("o")
+    assert result == [
+        "bespin/rocks",
+        "ding/dong",
+        "foo/bar",
+        "foo/some_other",
+        "some/deeply/nested/file/here"
+    ]
+    
+    result = search_func("os")
+    assert result == [
+        "bespin/rocks",
+        "foo/some_other",
+        "some/deeply/nested/file/here"
+    ]
 
 # -------
 # Web tests
@@ -613,4 +659,26 @@ def test_quota_limits_on_the_web():
         assert resp.body == "Over quota"
     finally:
         model.QUOTA_UNITS = old_units
+    
+def test_search_from_the_web():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    for name in [
+        "foo/bar",
+        "whiz/bang",
+        "ding/dong",
+        "foo/some_other",
+        "some/deeply/nested/file/here",
+        "whiz/cheez",
+        "bespin/rocks",
+        "many/files"
+    ]:
+        bigmac.save_file(name, "hi")
+    resp = app.get("/file/search/bigmac")
+    assert resp.content_type == "application/json"
+    def run_search(q):
+        resp = app.get("/file/search/bigmac?%s" % urlencode([('q', q)]))
+        assert resp.content_type == "application/json"
+        return simplejson.loads(resp.body)
+    _run_search_tests(run_search)
     
