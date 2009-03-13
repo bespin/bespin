@@ -28,6 +28,26 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
+        this.fileLabel = new th.components.Label({ text: "Find Files", style: { color: "white", font: "8pt Tahoma" } });
+        this.fileLabel.oldPaint = this.fileLabel.paint;
+        this.fileLabel.paint = function(ctx) {
+            var d = this.d();
+
+            ctx.fillStyle = "rgb(51, 50, 46)";
+            ctx.fillRect(0, 0, d.b.w, 1);
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+
+            var gradient = ctx.createLinearGradient(0, 2, 0, d.b.h - 2);
+            gradient.addColorStop(0, "#343029");
+            gradient.addColorStop(1, "#161613");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+            
+            this.oldPaint(ctx);
+        };
+
         this.list = new th.components.List({ allowDeselection: false, style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" } });
 
         var renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) } });
@@ -47,11 +67,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         list.oldGetRenderer = list.getRenderer;
         list.getRenderer = function(rctx) {
             var label = list.oldGetRenderer(rctx);
-            if (rctx.item.lastFolder) {
-                label.attributes.text = rctx.item.name + ' - ' + rctx.item.lastFolder;                
-            } else {
-                label.attributes.text = rctx.item.name;                
-            }
+            label.attributes.text = rctx.item.name;
             return label;
         }
         
@@ -61,7 +77,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         this.scrollbar.scrollable = list;
 
         this.pathLabel = new th.components.Label({ style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" }, text: "Select item!" });
-        this.add([ this.list, this.scrollbar, this.pathLabel]);
+        this.add([ this.fileLabel, this.list, this.scrollbar, this.pathLabel]);
 
         // this is a closed container
         delete this.add;
@@ -72,103 +88,82 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         var d = this.d();
 
         var y = d.i.t;
+        var lh = this.fileLabel.getPreferredHeight(d.b.w);
+        this.fileLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
+        y = 45;
 
         lh = this.pathLabel.getPreferredHeight(d.b.w);
 
-        y = 28;
         var sw = 14;
         var sh = d.b.h - d.i.b - y - lh;
+        this.scrollbar.bounds = { x: d.b.w - d.i.r - sw, height: sh - 2, y: y, width: sw };
+
         var innerWidth = d.b.w - d.i.w - sw;
+ 
+        this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: sh - 2 };
         
-        this.list.bounds = { x: d.i.l, y: y, width: innerWidth + sw, height: sh - 1 };
         this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };
     },
     
-    paintSelf: function(ctx) {        
-        ctx.fillStyle = "#86857F";
-        ctx.fillRect(0, 0, 220, 28);
-        
-        ctx.lineWidth = 2;
+    paintSelf: function(ctx) {
+        ctx.lineWidth = 1;
         ctx.strokeStyle = "black";
-        ctx.beginPath();              
-        ctx.moveTo(0, 28);
-        ctx.lineTo(220, 28);
-        var y = this.list.bounds.y + this.list.bounds.height + 1;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, 44)
+        ctx.lineTo(220, 44);
+        var y = this.list.bounds.y + this.list.bounds.height+1;
         ctx.moveTo(0, y);
         ctx.lineTo(220, y);
         ctx.closePath();
+        
         ctx.stroke();
     }
 });
 
 dojo.declare("bespin.editor.quickopen.API", null, {
-    constructor: function() {                
+    constructor: function(container) {        
+        this.container = dojo.byId(container);
+
+        dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' width='220' height='270' moz-opaque='true' tabindex='-1'></canvas>";        
+        this.canvas = dojo.byId('quickopen_canvas');
+        this.input = dojo.byId('quickopen_text');
+        
+        var scene = new th.Scene(this.canvas);  
+        this.panel = new bespin.editor.quickopen.Panel();
+        this.panel.list.items = [{name: 'test'}];
+        scene.root.add(this.panel);        
+        this.scene = scene;
+        
+        this.isVisible = false;
         this.lastText = '';
         this.requestFinished = true;
         this.preformNewRequest = false;
         
-        // create the Window!
-        this.panel = new bespin.editor.quickopen.Panel();
-        this.window = new th.Window({
-            title: 'Find Files', 
-            top: 100, 
-            left: 200, 
-            width: 220, 
-            height: 270, 
-            userPanel: this.panel,
-            containerId: 'quickopen',
-            closeOnClickOutside: true, 
-        });
-        this.window.centerUp(); // center the window, but more a "human" center
-
-        // add the input field to the window
-        var input = document.createElement("input");
-        input.type = "text";
-        input.id = 'quickopen_text';
-        this.window.container.appendChild(input);
-        this.input = input;
-        
         // item selected in the list => show full path in label
-        this.window.scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
+        scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
             this.panel.pathLabel.attributes.text = e.item.filename;
-            this.window.layoutAndRender();
+            this.layoutAndRender();
         }));
         
         // item double clicked => load this file
-        this.window.scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
+        scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
             var item = this.panel.list.selected;
             if (!item)  return;
             
-            // save the current file and load up the new one
             bespin.publish("bespin:editor:savefile", {});
             bespin.publish("bespin:editor:openfile", { filename: item.filename });
             
-            // adds the new opened file to the top of the openSessionFiles
-            if (this.openSessionFiles.indexOf(item.filename) != -1) {
-                this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1)
-            }                
-            this.openSessionFiles.unshift(item.filename);
-            
             this.toggle();
         }));
-                
-        // handle ARROW_UP and ARROW_DOWN to select items in the list and other stuff
-        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-            if (!this.window.isVisible) return;
-            
-            var key = bespin.util.keys.Key;
-            
-            if (e.keyCode == key.ARROW_UP) {
-                this.panel.list.moveSelectionUp();
-                dojo.stopEvent(e);
-            } else if (e.keyCode == key.ARROW_DOWN) {
-                this.panel.list.moveSelectionDown();
-                dojo.stopEvent(e);
-            } else if (e.keyCode == key.ENTER) {
-                this.window.scene.bus.fire("dblclick", {}, this.panel.list);     
-            } else if (e.keyCode == 'O'.charCodeAt() && e.altKey) {
+        
+        // hides quickopen if the users clicks outside the quickopen.container
+        dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
+            if (!this.isVisible) return;
+
+            var d = dojo.coords(this.container);
+            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
                 this.toggle();
-                dojo.stopEvent(e);
             }
         }));
         
@@ -195,52 +190,41 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     
     toggle: function() {
         var quickopen = bespin.get('quickopen');
-        quickopen.window.toggle();
+        quickopen.isVisible = !quickopen.isVisible;
         
-        if (quickopen.window.isVisible) {
-            quickopen.showFiles(quickopen.openSessionFiles);
+        if (quickopen.isVisible) {
+            quickopen.container.style.display = 'block';
             quickopen.input.value = '';
             quickopen.input.focus();
+            quickopen.layoutAndRender();
         } else {
+            quickopen.container.style.display = 'none';
             quickopen.lastText = '';
             quickopen.input.blur();
         }
     },
     
-    showFiles: function(files, sortFiles) {
-        sortFiles = sortFiles || false;
-        var items = new Array();
-        var sortedItems = new Array();
+    layoutAndRender: function() {
         var quickopen = bespin.get('quickopen');
-        var lastFolder;
-        var name;
-        var path;
-        var lastSlash;
+        quickopen.scene.layout();
+        quickopen.scene.render();
+    },
+    
+    showFiles: function(files, sortFiles) {
+        var items = new Array();
+        var quickopen = bespin.get('quickopen'); 
         var file;
-        
-        // for the moment there are only 12 files displayed...
-        files = files.slice(0, 12);        
+        sortFiles = sortFiles || false;
+                
+        files = files.slice(0, 20);
+                
         for (var x = 0; x < files.length; x++) {                
             file = files[x];
-            lastSlash = file.lastIndexOf("/");
-            path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
-            name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
+            var lastSlash = file.lastIndexOf("/");
+            var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
+            var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-            // look at the array if there is an entry with the same name => adds folder to it!
-            lastFolder = false;
-            for (var y = items.length - 1; y != -1 ; y--) {
-                if (items[y].name == name) {
-                    if (!items[y].lastFolder) {
-                        lastFolder = items[y].filename.split('/');
-                        items[y].lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                        
-                    }
-                    
-                    lastFolder = file.split('/');
-                    lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                   
-                    break;
-                }
-            }
-            items.push({name: name, filename: file, lastFolder: lastFolder});
+            items.push({name: name, filename: file});                
         }
         
         if (sortFiles) {
@@ -256,7 +240,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             quickopen.panel.list.selectItemByText(items[0].name);
             quickopen.panel.pathLabel.attributes.text = items[0].filename;
         }
-        quickopen.window.layoutAndRender();
+        quickopen.layoutAndRender();
     },
     
     displayResult: function(files) {
@@ -268,12 +252,12 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (quickopen.preformNewRequest) {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
+            console.log('## Search files: ' + quickopen.input.value);
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.value, quickopen.displayResult);
         }
     },
     
-    displaySessions: function(sessions) {
-        var quickopen =  bespin.get('quickopen');        
+    displaySessions: function(sessions) {        
         var currentProject = bespin.get('editSession').project;
         var currentFile = bespin.get('editSession').path;
         var items = new Array();
@@ -290,18 +274,17 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             items.push(currentFile);
         }
         
-        quickopen.showFiles(items, true);
-        quickopen.openSessionFiles = items;                        
+        bespin.get('quickopen').showFiles(items, true);                    
     },
     
     handleKeys: function(e) {
-        if (this.window.isVisible) return true; // in the command line!
-
-        if (e.keyCode == 'O'.charCodeAt() && e.altKey) { // send to command line
+        if (e.keyChar == 't' && (e.ctrlKey || e.metaKey)) { // send to command line
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
             return true;
         }
+                
+        if (this.isVisible) return true; // in the command line!
     }
 });

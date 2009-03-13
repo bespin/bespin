@@ -277,6 +277,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeydown: function(e) {
         var handled = bespin.get('commandLine').handleCommandLineFocus(e);
+        handled = bespin.get('quickopen').handleKeys(e) || handled;
         if (handled) return false;
 
         var args = { event: e,
@@ -307,6 +308,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeypress: function(e) {
         var handled = bespin.get('commandLine').handleCommandLineFocus(e);
+        handled = bespin.get('quickopen').handleKeys(e) || handled;
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
@@ -696,7 +698,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
-
+        
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");

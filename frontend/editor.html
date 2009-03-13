@@ -48,7 +48,7 @@
         <a href="javascript:bespin.util.navigate.dashboard()" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
         <!-- coming soon -->
-        <!--<img id="toolbar_files" src="images/icn_files_off.png" alt="Files" title="Show Files">-->
+        <img id="toolbar_files" src="images/icn_files_off.png" alt="Files" title="Show Files">
         <!--<img id="toolbar_target_browsers" src="images/icn_target_off.png" alt="Target Browsers" title="Show Target Browsers">-->
 
         <span id="selected_browsers"></span>
@@ -73,7 +73,10 @@
         <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser" style="padding-right: 20px">
         <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
     </div>
-    <div id="editor"></div>
+	<div id="centerpanel">
+		<div id="filelist"></div>
+    	<div id="editor"></div>
+	</div>
     <div id="footer">
         <table cellpadding="0">
             <tr>
@@ -87,6 +90,9 @@
             </tr>
         </table>
     </div>
+	<div id="quickopen">
+		<input id="quickopen_text" type="text">
+	</div>
     <div id="files">
         <div id="files_find">
             <div id="files_find_text">Quick Find</div>
