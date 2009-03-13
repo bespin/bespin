@@ -509,6 +509,12 @@ def _run_search_tests(search_func):
         "some/deeply/nested/file/here"
     ]
     
+    result = search_func("o", 2)
+    assert result == [
+        "bespin/rocks",
+        "cool+one"
+    ]
+    
     result = search_func("os")
     assert result == [
         "bespin/rocks",
@@ -684,8 +690,9 @@ def test_search_from_the_web():
     bigmac = _setup_search_data()
     resp = app.get("/file/search/bigmac")
     assert resp.content_type == "application/json"
-    def run_search(q):
-        resp = app.get("/file/search/bigmac?%s" % urlencode([('q', q)]))
+    def run_search(q, limit=20):
+        resp = app.get("/file/search/bigmac?%s" 
+            % urlencode([('q', q), ('limit', limit)]))
         assert resp.content_type == "application/json"
         return simplejson.loads(resp.body)
     _run_search_tests(run_search)
