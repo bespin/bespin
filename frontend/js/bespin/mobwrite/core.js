@@ -22,6 +22,7 @@
  * @author fraser@google.com (Neil Fraser)
  */
 
+dojo.provide("bespin.mobwrite.core");
 
 /**
  * Singleton class containing all MobWrite code.
@@ -113,7 +114,7 @@ mobwrite.timeoutInterval = 30000;
  * Shortest interval (in milliseconds) between connections.
  * @type {number}
  */
-mobwrite.minSyncInterval = 1000;
+mobwrite.minSyncInterval = 500;
 
 
 /**
@@ -128,7 +129,7 @@ mobwrite.maxSyncInterval = 10000;
  * This value is modified later as traffic rates are established.
  * @type {number}
  */
-mobwrite.syncInterval = 2000;
+mobwrite.syncInterval = 1000;
 
 
 /**
@@ -615,7 +616,7 @@ mobwrite.syncRun2_ = function(text) {
     mobwrite.syncInterval /= 2;
   } else {
     // Let the ping interval creep up.
-    mobwrite.syncInterval += 1000;
+    mobwrite.syncInterval += 500;
   }
   // Keep the syncs constrained between 1 and 10 seconds.
   mobwrite.syncInterval =

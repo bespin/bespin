@@ -23,6 +23,8 @@
  * @author fraser@google.com (Neil Fraser)
  */
 
+dojo.provide("bespin.mobwrite.diff");
+
 /**
  * Class containing the diff, match and patch methods.
  * @constructor
