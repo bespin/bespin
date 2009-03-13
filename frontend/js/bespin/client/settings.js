@@ -490,7 +490,18 @@ dojo.declare("bespin.client.settings.Events", null, {
                 });
             }
         });
-        
+
+        // ** {{{ Event: bespin:settings:set:cursorblink }}} **
+        // 
+        // The frequency of the cursor blink in milliseconds (defaults to 250)
+        bespin.subscribe("bespin:settings:set:cursorblink", function(event) {
+            var ms = parseInt(event.value); // get the number of milliseconds
+
+            if (ms) {
+                editor.ui.toggleCursorFrequency = ms;
+            }
+        });
+
         // ** {{{ Event: bespin:settings:init }}} **
         // 
         // If we are opening up a new file
