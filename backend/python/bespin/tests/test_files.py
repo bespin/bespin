@@ -146,7 +146,7 @@ def test_amount_used_can_be_recomputed():
     # open the file, to cause a status file to be created
     bigmac.get_file("secrets")
     macgyver.amount_used = 0
-    macgyver.recompute_used()
+    macgyver.recompute_files()
     assert macgyver.amount_used == starting_point
     
 def test_retrieve_file_obj():
@@ -487,6 +487,7 @@ def test_file_search():
     
 def _run_search_tests(search_func):
     result = search_func("")
+    print result
     assert result == [
         "bespin/rocks",
         "cool+one",
