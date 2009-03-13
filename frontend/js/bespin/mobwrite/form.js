@@ -22,6 +22,7 @@
  * @author fraser@google.com (Neil Fraser)
  */
 
+dojo.provide("bespin.mobwrite.form");
 
 // FORM
 

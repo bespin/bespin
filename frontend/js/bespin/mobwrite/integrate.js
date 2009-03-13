@@ -1,4 +1,6 @@
 
+dojo.provide("bespin.mobwrite.integrate");
+
 // BESPIN
 
 /**
