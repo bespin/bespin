@@ -232,10 +232,12 @@ def listfiles(request, response):
 def file_search(request, response):
     user = request.user
     query = request.GET.get("q", "")
+    limit = request.GET.get("limit", 20)
+    limit = int(limit)
     project_name = request.kwargs['project_name']
     
     project = model.get_project(user, user, project_name)
-    result = project.search_files(query)
+    result = project.search_files(query, limit)
     
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
