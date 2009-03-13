@@ -86,60 +86,67 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
 
     layout: function() {
         var d = this.d();
+        d.i.l += 1;
+        d.b.w -= 2;
 
         var y = d.i.t;
         var lh = this.fileLabel.getPreferredHeight(d.b.w);
         this.fileLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
-        y = 45;
+        y = 47;
 
         lh = this.pathLabel.getPreferredHeight(d.b.w);
 
         var sw = 14;
         var sh = d.b.h - d.i.b - y - lh;
-        this.scrollbar.bounds = { x: d.b.w - d.i.r - sw, height: sh - 2, y: y, width: sw };
-
         var innerWidth = d.b.w - d.i.w - sw;
- 
-        this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: sh - 2 };
         
-        this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };
+        // this.scrollbar.bounds = { x: d.b.w - d.i.r - sw, height: sh - 2, y: y, width: sw }; 
+        // this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: sh - 2 };
+        // this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };
+
+        this.list.bounds = { x: d.i.l, y: y, width: innerWidth + sw, height: sh - 2 };
+        this.pathLabel.bounds = { x: d.i.l, y: y + sh - 1, width: innerWidth + sw, height: lh };
     },
     
     paintSelf: function(ctx) {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "black";
+        var y = Math.abs(this.list.bounds.y + this.list.bounds.height + 1);
         
-        ctx.beginPath();
-        ctx.moveTo(0, 44)
-        ctx.lineTo(220, 44);
-        var y = this.list.bounds.y + this.list.bounds.height+1;
+        ctx.fillStyle = "#D5D0C0";
+        ctx.fillRect(0, 14, 220, 46);
+        
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "black";
+        ctx.beginPath();              
         ctx.moveTo(0, y);
         ctx.lineTo(220, y);
+        ctx.moveTo(0, 47);
+        ctx.lineTo(220, 47);
         ctx.closePath();
-        
         ctx.stroke();
+        
+        ctx.strokeStyle = "#2E1F1A";
+        ctx.strokeRect(0, 0, 220, 269);
     }
 });
 
 dojo.declare("bespin.editor.quickopen.API", null, {
     constructor: function(container) {        
+        this.isVisible = false;
+        this.lastText = '';
+        this.requestFinished = true;
+        this.preformNewRequest = false;
         this.container = dojo.byId(container);
 
+        // create the UI
         dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' width='220' height='270' moz-opaque='true' tabindex='-1'></canvas>";        
         this.canvas = dojo.byId('quickopen_canvas');
         this.input = dojo.byId('quickopen_text');
-        
         var scene = new th.Scene(this.canvas);  
         this.panel = new bespin.editor.quickopen.Panel();
         this.panel.list.items = [{name: 'test'}];
         scene.root.add(this.panel);        
         this.scene = scene;
-        
-        this.isVisible = false;
-        this.lastText = '';
-        this.requestFinished = true;
-        this.preformNewRequest = false;
-        
+                
         // item selected in the list => show full path in label
         scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
             this.panel.pathLabel.attributes.text = e.item.filename;
@@ -153,7 +160,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             
             bespin.publish("bespin:editor:savefile", {});
             bespin.publish("bespin:editor:openfile", { filename: item.filename });
-            
             this.toggle();
         }));
         
@@ -164,6 +170,25 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             var d = dojo.coords(this.container);
             if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
                 this.toggle();
+            } else {
+                this.input.focus();
+                dojo.stopEvent(e);
+            }
+        }));
+        
+        // handle ARROW_UP and ARROW_DOWN to select items in the list
+        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
+            var key = bespin.util.keys.Key;
+            if (!this.isVisible) return;
+            
+            if (e.keyCode == key.ARROW_UP) {
+                this.panel.list.moveSelectionUp();
+                dojo.stopEvent(e);
+            } else if (e.keyCode == key.ARROW_DOWN) {
+                this.panel.list.moveSelectionDown();
+                dojo.stopEvent(e);
+            } else if (e.keyCode == key.ENTER) {
+                this.scene.bus.fire("dblclick", {}, this.panel.list);     
             }
         }));
         
@@ -177,7 +202,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 } else {
                     this.preformNewRequest = true;
                 }
-                
                 this.lastText = this.input.value;
             }
         }));
@@ -194,6 +218,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         if (quickopen.isVisible) {
             quickopen.container.style.display = 'block';
+            quickopen.container.style.top = Math.round((window.innerHeight - 270) * 0.25) + 'px';
+            quickopen.container.style.left = Math.round((window.innerWidth - 220) / 2) + 'px';
             quickopen.input.value = '';
             quickopen.input.focus();
             quickopen.layoutAndRender();
@@ -216,7 +242,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         var file;
         sortFiles = sortFiles || false;
                 
-        files = files.slice(0, 20);
+        files = files.slice(0, 12);
                 
         for (var x = 0; x < files.length; x++) {                
             file = files[x];
@@ -252,7 +278,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (quickopen.preformNewRequest) {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
-            console.log('## Search files: ' + quickopen.input.value);
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.value, quickopen.displayResult);
         }
     },
@@ -278,7 +303,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
     
     handleKeys: function(e) {
-        if (e.keyChar == 't' && (e.ctrlKey || e.metaKey)) { // send to command line
+        if (e.keyChar == 't' && (e.ctrlKey || e.metaKey)) { // open quickopen
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
