@@ -470,11 +470,6 @@ def groupRemove(request, response):
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
 
-def _respond_json(response, data):
-    response.body = simplejson.dumps(groups)
-    response.content_type = "text/plain"
-    return response()
-
 @expose(r'^/group/add/(?P<group>.+)/$', 'POST')
 def groupAdd(request, response):
     group = request.kwargs['group']
@@ -483,6 +478,11 @@ def groupAdd(request, response):
         request.user_manager.add_group_members(request.user, group, other_user)
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
+
+def _respond_json(response, data):
+    response.body = simplejson.dumps(groups)
+    response.content_type = "text/plain"
+    return response()
 
 def _lookup_usernames(user_manager, usernames):
     def lookup_username(username):
@@ -498,6 +498,18 @@ def _users_followed_response(user_manager, user, response):
     list = map(lambda connection: connection.followed.username, list)
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
+
+@expose(r'^/mobwrite/$', 'POST')
+def mobwrite(request, response):
+    handler = RequestHandler()
+    question = urllib.unquote(request.body)
+    if (question.find("q=") != 0):
+        raise BadRequest("Missing q=") 
+    question = question[2:]
+    answer = handler.parseRequest(question)
+    response.body = answer + "\n\n"
+    response.content_type = "text/plain"
+    return response()
 
 def db_middleware(app):
     def wrapped(environ, start_response):
