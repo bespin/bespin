@@ -402,7 +402,7 @@ dojo.declare("bespin.client.Server", null, {
             var userCall = opts.call;
             opts.call = function(text, xhr) {
                 userCall(text, xhr);
-                document.fire("bespin:project:imported", {
+                bespin.publish("bespin:project:imported", {
                     project: project,
                     url: url
                 });

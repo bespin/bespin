@@ -27,19 +27,22 @@
 <html>
 <head>
     <title>The Bespin Editor Component</title>
+    <!-- <link type="text/css" rel="stylesheet" href="css/editor.css"> -->
     <style type="text/css">*:focus { outline: 0; }</style>
 
     <!-- begin script tags -->
-	<script>
-		var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+	<script type="text/javascript">
+		var djConfig = { isDebug: false, debugAtAllCosts: false };
 	</script>   
 
-    <script src="../../js/dojo/dojo.js"></script>
-    <script src="../../js/bespin/editor/embed.js"></script>
+	<script type="text/javascript" src="../../js/dojo/dojo.js"></script>
+    <!-- <script type="text/javascript" src="../../js/bespin/editor/component.js"></script> -->
 	
-	<script>
+	<script type="text/javascript">
         var _editorComponent;
         
+        dojo.require("bespin.editor.Component");
+
         // Loads and configures the objects that the editor needs
         dojo.addOnLoad(function() {
             _editorComponent = new bespin.editor.Component('editor', {
@@ -64,20 +67,13 @@
 </head>
 <body>
     <h3>Sample Editor as a Component</h3>
-    <div id="editor" style="margin: 0; padding: 0; border: 0; height: 300px; border: 10px solid #ddd; -moz-border-radius: 10px; -webkit-border-radius: 10px;">var foo = "whee";
+    <div id="editor" style="margin: 0; padding: 0; border: 0; height: 300px; border: 8px solid #ddd; -moz-border-radius: 10px; -webkit-border-radius: 10px;">var foo = "whee";</div>
 
-function flubber() {
-    return "tweeble";
-}</div>
-
-    <div style="padding: 20px">
-    <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
     Enter syntax type and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
-    Push a new setting: <input type="text" id="key" value="strictlines"> <input type="text" id="value" value="on"> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
+    Push a new setting: <input type="text" id="key" value=""> <input type="text" id="value" value=""> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
 
-    <textarea id="inandout" cols="100" rows="10"></textarea><br>
+    <textarea id="inandout" cols="100" rows="10"></textarea>
     <input type="button" value="Copy to Textarea" onclick="copyToTextarea()">
     <input type="button" value="Copy to Editor" onclick="copyToEditor()">
-    </div>
 </body>
 </html>
