@@ -21,17 +21,16 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
-dojo.provide("bespin.cmd.editorcommands");
 
-// = Editor Commands =
-//
-// This array stores all of the editor commands. 
+dojo.provide("bespin.page.index.dependencies");
 
-(function() {
-    var keys = []; 
-    for (var i in bespin.cmd.commands.store){
-        keys.push(i);
-    }  
-    bespin.cmd.editorcommands.Commands = keys;  
-})();
+dojo.require("dojo.cookie");
+dojo.require("dijit._base.place");
+
+dojo.require("bespin.bespin");
+dojo.require("bespin.util.navigate");
+dojo.require("bespin.client.server");
+dojo.require("bespin.user.utils");
+dojo.require("bespin.user.register");
+
+dojo.require("bespin.page.index.init");

@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.bootstrap");
+dojo.provide("bespin.page.editor.init");
 
 // = Bootstrap =
 //
@@ -41,7 +41,7 @@ var _projectLabel;
 var _fileLabel;
 var _scene;
 
-dojo.mixin(bespin.bootstrap, {
+dojo.mixin(bespin.page.editor, {
     // ** {{{ whenLoggedIn(userinfo) }}} **
     //
     // * {{{userinfo}}} is an object containing user specific info (project etc)
@@ -126,7 +126,7 @@ dojo.addOnLoad(function() {
     bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
 
     // Force a login just in case the user session isn't around
-    server.currentuser(bespin.bootstrap.whenLoggedIn, bespin.bootstrap.whenNotLoggedIn);
+    server.currentuser(bespin.page.editor.whenLoggedIn, bespin.page.editor.whenNotLoggedIn);
 
     // Set the version info
     bespin.displayVersion();
@@ -134,10 +134,10 @@ dojo.addOnLoad(function() {
     // Get going when settings are loaded
     bespin.subscribe("bespin:settings:loaded", function(event) {
         bespin.get('settings').loadSession();  // load the last file or what is passed in
-        bespin.bootstrap.doResize();
+        bespin.page.editor.doResize();
     });
 
-    dojo.connect(window, 'resize', bespin.bootstrap, "doResize");
+    dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 
     _scene = new th.Scene(dojo.byId("projectLabel"));
 

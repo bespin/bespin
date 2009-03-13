@@ -73,7 +73,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(collab, 'click', function() {
                 toolbar.showCollab = !toolbar.showCollab;
                 collab.src = "images/" + ( (toolbar.showCollab) ? "icn_collab_on.png" : (toolbar.showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
-                bespin.bootstrap.recalcLayout();
+                bespin.page.editor.recalcLayout();
             });
             dojo.connect(collab, 'mouseover', function() {
                 collab.style.cursor = "pointer";
@@ -90,7 +90,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(files, 'click', function() {
                 toolbar._showFiles = !toolbar._showFiles;
                 files.src = "images/" + ( (toolbar._showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
-                bespin.bootstrap.recalcLayout();
+                bespin.page.editor.recalcLayout();
             });
             dojo.connect(files, 'mouseover', function() {
                 files.style.cursor = "pointer";
@@ -119,7 +119,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(target, 'click', function() {
                 toolbar._showTarget = !toolbar._showTarget;
                 target.src = "images/" + ( (toolbar._showTarget) ? "icn_target_on.png" : "icn_target_off.png" );
-                bespin.bootstrap.recalcLayout();
+                bespin.page.editor.recalcLayout();
             });
             dojo.connect(target, 'mouseover', function() {
                 target.style.cursor = "pointer";

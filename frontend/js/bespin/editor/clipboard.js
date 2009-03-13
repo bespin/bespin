@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.util.clipboard");
+dojo.provide("bespin.editor.clipboard");
 
 // = Clipboard =
 //
@@ -30,11 +30,11 @@ dojo.provide("bespin.util.clipboard");
 // If using WebKit (I know, feature detection would be nicer, but e.clipboardData is deep) use DOMEvents
 // Else try the bad tricks.
 
-// ** {{{ bespin.util.clipboard }}} **
+// ** {{{ bespin.editor.clipboard }}} **
 //
 // The factory that is used to install, and setup the adapter that does the work
 
-dojo.mixin(bespin.util.clipboard, {
+dojo.mixin(bespin.editor.clipboard, {
     // ** {{{ install }}} **
     //
     // Given a clipboard adapter implementation, save it, an call install() on it
@@ -50,20 +50,20 @@ dojo.mixin(bespin.util.clipboard, {
     // else install the default.
     setup: function(editor) {
         if (dojo.isWebKit) {
-            this.install(editor, new bespin.util.clipboard.DOMEvents());
+            this.install(editor, new bespin.editor.clipboard.DOMEvents());
         } else {
-            this.install(editor, new bespin.util.clipboard.HiddenWorld());
+            this.install(editor, new bespin.editor.clipboard.HiddenWorld());
         }
     }
 });
 
-// ** {{{ bespin.util.clipboard.DOMEvents }}} **
+// ** {{{ bespin.editor.clipboard.DOMEvents }}} **
 //
 // This adapter configures the DOMEvents that only WebKit seems to do well right now.
 // There is trickery involved here. The before event changes focus to the hidden
 // copynpaster text input, and then the real event does its thing and we focus back
 
-dojo.declare("bespin.util.clipboard.DOMEvents", null, {
+dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
     install: function(editor) {
         
         // * Configure the hidden copynpaster element
@@ -151,11 +151,11 @@ dojo.declare("bespin.util.clipboard.DOMEvents", null, {
     }
 });
 
-// ** {{{ bespin.util.clipboard.HiddenWorld }}} **
+// ** {{{ bespin.editor.clipboard.HiddenWorld }}} **
 //
 // Exclusively grab the C, X, and V key combos and use a hidden textarea to move data around
 
-dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
+dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
     install: function(editor) {
 
         // * Configure the hidden copynpaster element
@@ -225,12 +225,12 @@ dojo.declare("bespin.util.clipboard.HiddenWorld", null, {
     }
 });
 
-// ** {{{ bespin.util.clipboard.EditorOnly }}} **
+// ** {{{ bespin.editor.clipboard.EditorOnly }}} **
 //
 // Turn on the key combinations to access the Bespin.Clipboard.Manual class which basically only works
 // with the editor only. Not in favour.
 
-dojo.declare("bespin.util.clipboard.EditorOnly", null, {
+dojo.declare("bespin.editor.clipboard.EditorOnly", null, {
     install: function() {
         var copyArgs = bespin.util.keys.fillArguments("CMD C");
         copyArgs.action = "copySelection";
@@ -249,7 +249,7 @@ dojo.declare("bespin.util.clipboard.EditorOnly", null, {
 // ** {{{ Bespin.Clipboard.Manual }}} **
 //
 // The ugly hack that tries to use XUL to get work done, but will probably fall through to in-app copy/paste only        
-bespin.util.clipboard.Manual = function() {
+bespin.editor.clipboard.Manual = function() {
     var clipdata;
     
     return {

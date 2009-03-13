@@ -24,7 +24,7 @@
 
 dojo.provide("bespin.editor.editor");
 
-dojo.require("bespin.util.clipboard");
+dojo.require("bespin.editor.clipboard");
 
 // = Editor =
 //
@@ -380,16 +380,17 @@ dojo.declare("bespin.editor.UI", null, {
                             bottom: Math.floor(this.NIB_WIDTH / 2) };
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
-        this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
-        this.charWidth;         // set first time a paint occurs
-        this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
-        this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
-        this.nibup;             // rect
-        this.nibdown;           // rect
-        this.nibleft;           // rect
-        this.nibright;          // rect
+        //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
+        //this.charWidth;         // set first time a paint occurs
+        //this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
+        //this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
 
-        this.selectMouseDownPos;        // position when the user moused down
+        //this.nibup;             // rect
+        //this.nibdown;           // rect
+        //this.nibleft;           // rect
+        //this.nibright;          // rect
+
+        //this.selectMouseDownPos;        // position when the user moused down
 
         this.xoffset = 0;       // number of pixels to translate the canvas for scrolling
         this.yoffset = 0;
@@ -1350,7 +1351,7 @@ dojo.declare("bespin.editor.API", null, {
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
 
-        bespin.util.clipboard.setup(this); // setup the clipboard
+        bespin.editor.clipboard.setup(this); // setup the clipboard
 
         this.paint();
 

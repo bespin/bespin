@@ -22,11 +22,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-dojo.provide("bespin.dashboard.events");
+dojo.provide("bespin.page.dashboard.events");
 
 // After a project is imported or created, do a list
 bespin.subscribe("bespin:project:imported", function(event) {
-    bespin.dashboard.refreshProjects(); // get projects
+    bespin.page.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:set", function(event) {
@@ -34,17 +34,17 @@ bespin.subscribe("bespin:project:set", function(event) {
     
     if (!event.fromDashboardItemSelected) {
         // selects the project in the tree and fire the itemselected event    
-        bespin.dashboard.tree.lists[0].selectItemByText(event.project);
-        bespin.dashboard.tree.itemSelected({thComponent: bespin.dashboard.tree.lists[0], item: bespin.dashboard.tree.lists[0].selected});
+        bespin.page.dashboard.tree.lists[0].selectItemByText(event.project);
+        bespin.page.dashboard.tree.itemSelected({thComponent: bespin.page.dashboard.tree.lists[0], item: bespin.page.dashboard.tree.lists[0].selected});
     }
 });
 
 bespin.subscribe("bespin:project:create", function(event) {
-    bespin.dashboard.refreshProjects(); // get projects
+    bespin.page.dashboard.refreshProjects(); // get projects
 });
 
 bespin.subscribe("bespin:project:delete", function(event) {
-    bespin.dashboard.refreshProjects(); // get projects
+    bespin.page.dashboard.refreshProjects(); // get projects
 });
 
 // ** {{{ Event: bespin:session:status }}} **

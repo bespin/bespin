@@ -22,9 +22,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.dashboard.components");
+dojo.provide("bespin.page.dashboard.components");
 
-dojo.declare("bespin.dashboard.components.BespinBorder", th.Border, {
+dojo.declare("bespin.page.dashboard.components.BespinBorder", th.Border, {
     getInsets: function() {
         return { left: 1, right: 1, bottom: 1, top: 1 };
     },
@@ -46,7 +46,7 @@ dojo.declare("bespin.dashboard.components.BespinBorder", th.Border, {
     }
 });
 
-dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Panel, {
+dojo.declare("bespin.page.dashboard.components.BespinSessionPanel", th.components.Panel, {
     constructor: function(parms) {
         this.filename = new th.components.Label({ style: { color: "white" } });
         this.path = new th.components.Label({ style: { color: "rgb(210, 210, 210)" } });
@@ -65,7 +65,7 @@ dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Pan
             });
         }
 
-        this.style.border = new bespin.dashboard.components.BespinBorder();
+        this.style.border = new bespin.page.dashboard.components.BespinBorder();
         this.style.backgroundColor = "rgb(67, 65, 58)";
 
         this.preferredSizes = [ 13, 9, 8, 8, 8 ];
@@ -169,7 +169,7 @@ dojo.declare("bespin.dashboard.components.BespinSessionPanel", th.components.Pan
     } 
 });
 
-dojo.declare("bespin.dashboard.components.BespinProjectPanelFooter", th.components.Panel, {
+dojo.declare("bespin.page.dashboard.components.BespinProjectPanelFooter", th.components.Panel, {
     constructor: function(parms) {
         this.add = new th.components.Button();
 
@@ -199,7 +199,7 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanelFooter", th.componen
     }
 });
 
-dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Panel, {
+dojo.declare("bespin.page.dashboard.components.BespinProjectPanel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
@@ -227,7 +227,7 @@ dojo.declare("bespin.dashboard.components.BespinProjectPanel", th.components.Pan
 
         this.splitter = new th.components.Splitter({ orientation: th.HORIZONTAL });
 
-        this.footer = new bespin.dashboard.components.BespinProjectPanelFooter();
+        this.footer = new bespin.page.dashboard.components.BespinProjectPanelFooter();
 
         this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
 

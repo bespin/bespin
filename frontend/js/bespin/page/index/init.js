@@ -20,18 +20,26 @@
  * Contributor(s):
  *   Bespin Team (bespin@mozilla.com)
  *
- * ***** END LICENSE BLOCK ***** */
- 
-dojo.provide("bespin.cmd.editorcommands");
+ * ***** END LICENSE BLOCK ***** */ 
 
-// = Editor Commands =
+dojo.provide("bespin.page.index.init");  
+
+// = Index / Home page =
 //
-// This array stores all of the editor commands. 
+// This file is the code to load up the index.html / home page
 
 (function() {
-    var keys = []; 
-    for (var i in bespin.cmd.commands.store){
-        keys.push(i);
-    }  
-    bespin.cmd.editorcommands.Commands = keys;  
+    var server = bespin.register('server', new bespin.client.Server());
+    var utils = bespin.user.utils;
+    var webpieces = bespin.util.webpieces;
+
+    dojo.addOnLoad(function() {
+        bespin.displayVersion();
+        server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
+		webpieces.fillScreenOverlay();
+    });
+
+    dojo.connect(window, "resize", function() {
+        webpieces.fillScreenOverlay();
+    });
 })();

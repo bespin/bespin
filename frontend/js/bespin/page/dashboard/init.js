@@ -22,13 +22,12 @@
  *
  * ***** END LICENSE BLOCK ***** */ 
 
-dojo.provide("bespin.dashboard.dashboard");  
+dojo.provide("bespin.page.dashboard.init");  
 
 // = Dashboard =
 //
 // This file is the dashboard code that is loaded via script src
 // from /dashboard.html.
-//
 
 (function() {
     var heightDiff;
@@ -38,7 +37,7 @@ dojo.provide("bespin.dashboard.dashboard");
     var infoPanel;
     var currentProject;
     var go = bespin.util.navigate; // short cut static method 
-    var bd = bespin.dashboard;
+    var bd = bespin.page.dashboard;
 
     var server;
     var settings;
@@ -46,7 +45,7 @@ dojo.provide("bespin.dashboard.dashboard");
     var files;
     var commandLine;
     
-    dojo.mixin(bespin.dashboard, {
+    dojo.mixin(bespin.page.dashboard, {
         tree: null,
         lastSelectedPath: null,
         
@@ -116,7 +115,7 @@ dojo.provide("bespin.dashboard.dashboard");
                     var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
                     var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-                    var panel = new bespin.dashboard.components.BespinSessionPanel({ filename: name, project: project, path: path });
+                    var panel = new bespin.page.dashboard.components.BespinSessionPanel({ filename: name, project: project, path: path });
                     infoPanel.add(panel);
                     panel.bus.bind("dblclick", panel, function(e) {
                         var newTab = e.shiftKey;
@@ -362,7 +361,7 @@ dojo.provide("bespin.dashboard.dashboard");
 
         scene.bus.bind("itemSelected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
-            bespin.dashboard.lastSelectedPath = pathSelected;
+            bespin.page.dashboard.lastSelectedPath = pathSelected;
             location.hash = '#path=' + pathSelected;
         })
 
@@ -390,7 +389,7 @@ dojo.provide("bespin.dashboard.dashboard");
         // provide history for the dashboard
         bespin.subscribe("bespin:url:changed", function(e) {
             var pathSelected =  (new bespin.client.settings.URL()).get('path');
-            bespin.dashboard.restorePath(pathSelected);
+            bespin.page.dashboard.restorePath(pathSelected);
         });
     });
 })();
