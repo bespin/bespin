@@ -28,7 +28,7 @@ dojo.provide("bespin.cmd.editorcommands");
 //
 // This array stores all of the editor commands. 
 
-(function(){     
+(function() {
     var keys = []; 
     for (var i in bespin.cmd.commands.store){
         keys.push(i);

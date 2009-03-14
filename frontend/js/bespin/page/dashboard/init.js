@@ -119,7 +119,7 @@ dojo.provide("bespin.page.dashboard.init");
                     infoPanel.add(panel);
                     panel.bus.bind("dblclick", panel, function(e) {
                         var newTab = e.shiftKey;
-                        go.editor(e.thComponent.session.project, e.thComponent.session.path + (e.thComponent.session.path != '' ? '/' : '' ) + e.thComponent.session.filename, newTab);
+                        go.editor(e.thComponent.session.project, e.thComponent.session.path + "/" + e.thComponent.session.filename, newTab);
                     });
                 }
             }

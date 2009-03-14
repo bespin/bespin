@@ -26,8 +26,8 @@ dojo.provide("bespin.user.register");
 
 // Login, logout and registration functions for the Bespin front page.
 
-(function(){
-    var svr = new bespin.client.Server(); 
+(function() {
+    var server = bespin.get('server') || bespin.register('server', new bespin.client.Server());
     var utils = bespin.user.utils;
     var webpieces = bespin.util.webpieces;
     
@@ -48,7 +48,7 @@ dojo.provide("bespin.user.register");
                     }
                 }
 
-                svr.login(dojo.byId("username").value, dojo.byId("password").value, 
+                server.login(dojo.byId("username").value, dojo.byId("password").value, 
                     foundValue, 
                     utils.whenLoginSucceeded,
                     utils.whenLoginFailed);
@@ -58,7 +58,7 @@ dojo.provide("bespin.user.register");
         },
 
         logout: function() {
-            svr.logout(); 
+            server.logout(); 
             dojo.style('logged_in', 'display', 'none');
             dojo.style('not_logged_in', 'display', 'block');
         }    
@@ -95,11 +95,11 @@ dojo.provide("bespin.user.register");
         },
         hideForm: function() {
             webpieces.hideCenterPopup(dojo.byId('centerpopup'));
-            svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
+            server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
         },
         send: function() {
             this.hideForm();
-            svr.signup(dojo.byId("register_username").value, 
+            server.signup(dojo.byId("register_username").value, 
                 dojo.byId("register_password").value, 
                 dojo.byId('register_email').value, 
                 utils.whenLoginSucceeded, 
@@ -109,15 +109,5 @@ dojo.provide("bespin.user.register");
         cancel: function() { 
             this.hideForm();
         }
-    });  
-
-    dojo.addOnLoad(function() {
-        bespin.displayVersion();
-        svr.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
-		webpieces.fillScreenOverlay();
-    });
-
-    dojo.connect(window, "resize", function() {
-        webpieces.fillScreenOverlay();
     });
 })();
