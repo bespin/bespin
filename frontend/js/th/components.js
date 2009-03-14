@@ -724,6 +724,36 @@ dojo.declare("th.components.List", th.Container, {
 
         return true;
     },
+    
+    moveSelectionUp: function() {
+        if (!this.selected || this.items.length == 0) return;
+        
+        var x = 0;
+        while (this.items[x] != this.selected) {
+            x ++;
+        }
+        
+        if (x != 0) {
+            this.selected = this.items[x - 1];
+            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+            this.repaint();           
+        }
+    },
+     
+    moveSelectionDown: function() {
+        if (!this.selected || this.items.length == 0) return;
+
+        var x = 0;
+        while (this.items[x] != this.selected) {
+            x ++;
+        }
+
+        if (x != this.items.length - 1) {
+            this.selected = this.items[x + 1];
+            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+            this.repaint();           
+        }
+    },
 
     getItemForPosition: function(pos) {
         pos.y += this.scrollTop - (this.label ? this.label.height : 0);
