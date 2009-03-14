@@ -259,8 +259,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
             dojo.stopEvent(e);
             return true;
-        } else {
-            console.debug([e.charCode, e.keyCode, e.altKey]);
         }
     }
 });
