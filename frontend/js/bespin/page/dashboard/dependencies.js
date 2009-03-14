@@ -22,61 +22,38 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-dojo.provide("bespin.bootstrap_dependencies");	
+dojo.provide("bespin.page.dashboard.dependencies");
 
-dojo.require("dojo.cookie");
+dojo.require("dojo.cookie"); 
 
-dojo.require("bespin.bespin");
-dojo.require("bespin.events");                                                                
+dojo.require("bespin.bespin"); 
+dojo.require("bespin.events");
 
 dojo.require("bespin.util.canvas");
-dojo.require("bespin.util.keys");
+dojo.require("bespin.util.keys"); 
 dojo.require("bespin.util.navigate");
 dojo.require("bespin.util.path");
 dojo.require("bespin.util.tokenobject");
-dojo.require("bespin.util.util");
-dojo.require("bespin.util.mousewheelevent");
 dojo.require("bespin.util.urlbar");
 
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");
-dojo.require("bespin.client.status");
 dojo.require("bespin.client.server");
 dojo.require("bespin.client.session");
 
-dojo.require("th.helpers"); // -- Thunderhead... hooooo
+dojo.require("bespin.cmd.commandline");
+dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.dashboardcommands");
+
+// -- Thunderhead hoooooo
+dojo.require("th.helpers");
 dojo.require("th.css");
 dojo.require("th.th");
 dojo.require("th.models");
 dojo.require("th.borders");
 dojo.require("th.components");
 
-dojo.require("bespin.editor.actions");
-dojo.require("bespin.editor.events");
-dojo.require("bespin.editor.cursor");
-dojo.require("bespin.editor.editor");
-dojo.require("bespin.editor.model");
-dojo.require("bespin.editor.toolbar");
-dojo.require("bespin.editor.themes");
-dojo.require("bespin.editor.undo");
-dojo.require("bespin.editor.filelist");
-dojo.require("bespin.editor.quickopen");
-
-dojo.require("bespin.util.clipboard");
-
-dojo.require("bespin.syntax.syntax");
-dojo.require("bespin.syntax.javascript");
-dojo.require("bespin.syntax.css");
-dojo.require("bespin.syntax.html");
-dojo.require("bespin.syntax.php");
-
-dojo.require("bespin.cmd.commandline");
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.editorcommands");
-
-dojo.require("bespin.mobwrite.core");
-dojo.require("bespin.mobwrite.diff");
-dojo.require("bespin.mobwrite.form");
-dojo.require("bespin.mobwrite.integrate");
-
-dojo.require("bespin.bootstrap");
+// -- The main dashboard subsystems
+dojo.require("bespin.page.dashboard.components");
+dojo.require("bespin.page.dashboard.events");
+dojo.require("bespin.page.dashboard.init");

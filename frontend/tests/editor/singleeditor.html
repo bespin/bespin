@@ -1,0 +1,83 @@
+<!--
+    ***** BEGIN LICENSE BLOCK *****
+    Version: MPL 1.1
+
+    The contents of this file are subject to the Mozilla Public License Version
+    1.1 (the "License"); you may not use this file except in compliance with
+    the License. You may obtain a copy of the License at
+    http://www.mozilla.org/MPL/
+
+    Software distributed under the License is distributed on an "AS IS" basis,
+    WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+    for the specific language governing rights and limitations under the
+    License.
+
+    The Original Code is Bespin.
+
+    The Initial Developer of the Original Code is Mozilla.
+    Portions created by the Initial Developer are Copyright (C) 2009
+    the Initial Developer. All Rights Reserved.
+
+    Contributor(s):
+        Bespin Team (bespin@mozilla.com)
+
+    ***** END LICENSE BLOCK *****
+-->
+<!doctype html>
+<html>
+<head>
+    <title>The Bespin Editor Component</title>
+    <style type="text/css">*:focus { outline: 0; }</style>
+
+    <!-- begin script tags -->
+	<script>
+		var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+	</script>   
+
+    <script src="../../js/dojo/dojo.js"></script>
+    <script src="../../js/bespin/editor/embed.js"></script>
+	
+	<script>
+        var _editorComponent;
+        
+        // Loads and configures the objects that the editor needs
+        dojo.addOnLoad(function() {
+            _editorComponent = new bespin.editor.Component('editor', {
+                syntax: "js",
+                loadfromdiv: true
+            });
+        });
+        
+        function copyToTextarea() {
+            dojo.byId('inandout').value = _editorComponent.getContent();
+        }
+
+        function copyToEditor() {
+            _editorComponent.setContent(dojo.byId('inandout').value);
+        }
+        
+        function setSyntax(value) {
+            bespin.publish("bespin:settings:syntax", { language: value });
+        }
+	</script>
+    <!-- end script tags -->
+</head>
+<body>
+    <h3>Sample Editor as a Component</h3>
+    <div id="editor" style="margin: 0; padding: 0; border: 0; height: 300px; border: 10px solid #ddd; -moz-border-radius: 10px; -webkit-border-radius: 10px;">var foo = "whee";
+
+function flubber() {
+    return "tweeble";
+}</div>
+
+    <div style="padding: 20px">
+    <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
+    Enter syntax type and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
+    Push a new setting: <input type="text" id="key" value="strictlines"> <input type="text" id="value" value="on"> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
+
+    <textarea id="inandout" cols="100" rows="10"></textarea><br>
+    <input type="button" value="Copy to Textarea" onclick="copyToTextarea()">
+    <input type="button" value="Copy to Editor" onclick="copyToEditor()">
+    </div>
+</body>
+</html>
