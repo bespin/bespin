@@ -119,7 +119,7 @@ dojo.provide("bespin.page.editor.init");
     //
     // Loads and configures the objects that the editor needs
     dojo.addOnLoad(function() {
-        bespin.register('quickopen', new bespin.editor.quickopen.API('quickopen'));
+        bespin.register('quickopen', new bespin.editor.quickopen.API());
         var editor = bespin.register('editor', new bespin.editor.API('editor'));
         var editSession = bespin.register('editSession', new bespin.client.session.EditSession(editor));
         var server = bespin.register('server', new bespin.client.Server());
