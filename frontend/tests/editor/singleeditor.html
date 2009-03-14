@@ -73,7 +73,7 @@ function flubber() {
     <div style="padding: 20px">
     <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
     Enter syntax type and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
-    Push a new setting: <input type="text" id="key" value=""> <input type="text" id="value" value=""> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
+    Push a new setting: <input type="text" id="key" value="strictlines"> <input type="text" id="value" value="on"> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
 
     <textarea id="inandout" cols="100" rows="10"></textarea><br>
     <input type="button" value="Copy to Textarea" onclick="copyToTextarea()">
