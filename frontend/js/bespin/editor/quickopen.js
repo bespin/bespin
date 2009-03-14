@@ -24,11 +24,152 @@
 
 dojo.provide("bespin.editor.quickopen");
 
+dojo.declare("bespin.editor.quickopen.WindowBar", th.Container, {
+    constructor: function(parms) {
+        if (!parms) parms = {};
+         
+        function loadImg(url) {
+            var img = new Image();
+            img.src = url;
+            return img;            
+        }
+
+        this.imgBackgroundRight = loadImg('../images/window_top_right.png');
+        this.imgBackgroundMiddle = loadImg('../images/window_top_middle.png');
+        this.imgBackgroundLeft = loadImg('../images/window_top_left.png');
+
+        this.label = new th.components.Label({ text: parms.title || 'NO TEXT', style: { color: "white", font: "8pt Tahoma" } });
+        this.label.getInsets = function(){
+            return { top: 4, left: 6};
+        }
+
+        this.imgCloseButton = loadImg('../images/icn_close_x.png');
+        this.closeButton = new th.components.Button({style: { backgroundImage: this.imgCloseButton}});
+
+        this.add(this.label, this.closeButton);
+
+        this.bus.bind('mousedown', this.closeButton, dojo.hitch(this, function() {
+            this.parentWindow.toggle();
+        }));
+    },
+    
+    getPreferredHeight: function() {
+        return 21;
+    },
+    
+    layout: function() {
+        var d = this.d();
+        var lh = this.label.getPreferredHeight(d.b.w - 30);
+        this.label.bounds = { y: 0, x: 3, height: lh, width: d.b.w - 20 };
+        this.closeButton.bounds = { x: d.b.w -14, y: 6 , height: 8, width: 8};
+    },
+    
+    paint: function(ctx) {
+        var d = this.d();
+        
+        ctx.drawImage(this.imgBackgroundLeft, 0, 0);
+        ctx.drawImage(this.imgBackgroundMiddle, 3, 0, d.b.w - 6, 21);
+        ctx.drawImage(this.imgBackgroundRight, d.b.w - 3, 0);
+        
+        this.label.paint(ctx);
+        ctx.drawImage(this.imgCloseButton, d.b.w -14 , 6);            
+    }
+});
+
+dojo.declare("bespin.editor.quickopen.WindowPanel", th.components.Panel, {
+    constructor: function(userPanel) {
+        if (!userPanel) {
+            console.error('The "userPanel" must be given!');
+            return;
+        }
+        
+        this.userPanel = userPanel;
+        this.windowBar = new bespin.editor.quickopen.WindowBar({title: this.title});
+        this.add([this.windowBar, this.userPanel]);
+        
+        // this is a closed container
+        delete this.add;
+        delete this.remove;
+    },
+    
+    layout: function() {
+        var d = this.d();
+        this.width = d.b.w;
+        this.height = d.b.h;
+        var y = this.windowBar.getPreferredHeight();
+        this.windowBar.bounds = { x: 0, y: 0 , height: y, width: d.b.w };
+        this.userPanel.bounds = { x: 1, y: y , height: d.b.h - y - 1, width: d.b.w - 2 };
+    },
+    
+    paintSelf: function(ctx) {
+        //var d = this.d();
+        // draws the background of the window and the border        
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "black";
+        
+        ctx.strokeStyle = "#2E1F1A";
+        ctx.strokeRect(0, 0, this.width, this.height);
+    }
+})
+
+dojo.declare("bespin.editor.quickopen.Window", null, {
+    constructor: function(newId, parms) {        
+        if (dojo.byId(newId)) {
+            console.error('There is already a element with the id "'+newId+'"!');
+        }
+                
+        parms = parms || {};
+        this.width = parms.width || 200;
+        this.height = parms.height || 300;
+        this.title = parms.title || 'NO TITLE GIVEN!';
+        this.isVisible = false;
+        
+        if (!parms.userPanel) {
+            console.error('The "userPanel" must be given!');
+            return;
+        }
+        
+        // insert the HTML to the document for the new window and create the scene
+        dojo.byId('popup_insert_point').innerHTML += '<div id="'+newId+'" class="popupWindow"></div>';
+        this.container = dojo.byId(newId);
+        dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
+        this.container.mozopaque = 'true';
+
+        this.container.innerHTML = "<canvas id='"+newId+"_canvas'></canvas>";
+        this.canvas = dojo.byId(newId + '_canvas');
+        dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
+        this.canvas.mozopaque = 'true';
+        
+        this.scene = new th.Scene(this.canvas);
+        this.windowPanel = new bespin.editor.quickopen.WindowPanel();        
+        this.scene.root.add(this.windowPanel); 
+        
+        this.toggle();
+        this.scene.layout();
+        this.scene.render();
+    }, 
+         
+    toggle: function() {
+        this.isVisible = !this.isVisible;
+               
+        if (this.isVisible) {
+            this.container.style.display = 'block';
+        } else {
+            this.container.style.display = 'none';
+        }
+    },
+    
+    layoutAndRender: function() {
+        this.scene.layout();
+        this.scene.render();
+    },
+})
+
 dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
-        var imgFileLabel = new Image();
+        /*var imgFileLabel = new Image();
         imgFileLabel.src = '../images/files_pop_top.png';
         this.fileLabel = new th.components.Label({ text: "Find Files", style: { color: "white", font: "8pt Tahoma" } });
         this.fileLabel.oldPaint = this.fileLabel.paint;
@@ -36,7 +177,8 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
             var d = this.d();
             ctx.drawImage(imgFileLabel, -8, -7);
             this.oldPaint(ctx);
-        };
+        };*/
+        this.fileLabel = new bespin.editor.quickopen.WindowBar({ text: 'Find Files'});
 
         this.list = new th.components.List({ allowDeselection: false, style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" } });
 
@@ -81,7 +223,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
 
         var y = d.i.t;
         var lh = this.fileLabel.getPreferredHeight(d.b.w);
-        this.fileLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
+        this.fileLabel.bounds = { y: y, x: d.i.l - 1, height: lh, width: d.b.w + 2 };
         y = 47;
 
         lh = this.pathLabel.getPreferredHeight(d.b.w);
@@ -115,7 +257,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         ctx.stroke();
         
         ctx.strokeStyle = "#2E1F1A";
-        ctx.strokeRect(0, 0, 220, 269);
+        ctx.strokeRect(0, 20, 220, 269);
     }
 });
 
@@ -127,13 +269,14 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         this.requestFinished = true;
         this.preformNewRequest = false;
         
-        dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' width='220' height='270' moz-opaque='true' tabindex='-1'></canvas>";        
+        dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' moz-opaque='true' tabindex='-1'></canvas>";        
         this.canvas = dojo.byId('quickopen_canvas');
+        dojo.attr(this.canvas, {width:'220', height: '270' });
         this.input = dojo.byId('quickopen_text');
         
         var scene = new th.Scene(this.canvas);  
         this.panel = new bespin.editor.quickopen.Panel();
-        this.panel.list.items = [{name: 'test'}];
+        this.panel.fileLabel.parentWindow = this;
         scene.root.add(this.panel);        
         this.scene = scene;
         
@@ -181,7 +324,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {
                 this.scene.bus.fire("dblclick", {}, this.panel.list);     
-            } else if (e.keyCode == ' '.charCodeAt() && e.ctrlKey) {
+            } else if ((e.keyCode == ' '.charCodeAt() && e.ctrlKey) || e.keyCode == key.ESCAPE) {
                 this.toggle();
                 dojo.stopEvent(e);
             }
