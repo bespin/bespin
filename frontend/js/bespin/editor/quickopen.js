@@ -24,161 +24,9 @@
 
 dojo.provide("bespin.editor.quickopen");
 
-dojo.declare("bespin.editor.quickopen.WindowBar", th.Container, {
-    constructor: function(parms) {
-        if (!parms) parms = {};
-         
-        function loadImg(url) {
-            var img = new Image();
-            img.src = url;
-            return img;            
-        }
-
-        this.imgBackgroundRight = loadImg('../images/window_top_right.png');
-        this.imgBackgroundMiddle = loadImg('../images/window_top_middle.png');
-        this.imgBackgroundLeft = loadImg('../images/window_top_left.png');
-
-        this.label = new th.components.Label({ text: parms.title || 'NO TEXT', style: { color: "white", font: "8pt Tahoma" } });
-        this.label.getInsets = function(){
-            return { top: 4, left: 6};
-        }
-
-        this.imgCloseButton = loadImg('../images/icn_close_x.png');
-        this.closeButton = new th.components.Button({style: { backgroundImage: this.imgCloseButton}});
-
-        this.add(this.label, this.closeButton);
-
-        this.bus.bind('mousedown', this.closeButton, dojo.hitch(this, function() {
-            this.parentWindow.toggle();
-        }));
-    },
-    
-    getPreferredHeight: function() {
-        return 21;
-    },
-    
-    layout: function() {
-        var d = this.d();
-        var lh = this.label.getPreferredHeight(d.b.w - 30);
-        this.label.bounds = { y: 0, x: 3, height: lh, width: d.b.w - 20 };
-        this.closeButton.bounds = { x: d.b.w -14, y: 6 , height: 8, width: 8};
-    },
-    
-    paint: function(ctx) {
-        var d = this.d();
-        
-        ctx.drawImage(this.imgBackgroundLeft, 0, 0);
-        ctx.drawImage(this.imgBackgroundMiddle, 3, 0, d.b.w - 6, 21);
-        ctx.drawImage(this.imgBackgroundRight, d.b.w - 3, 0);
-        
-        this.label.paint(ctx);
-        ctx.drawImage(this.imgCloseButton, d.b.w -14 , 6);            
-    }
-});
-
-dojo.declare("bespin.editor.quickopen.WindowPanel", th.components.Panel, {
-    constructor: function(userPanel) {
-        if (!userPanel) {
-            console.error('The "userPanel" must be given!');
-            return;
-        }
-        
-        this.userPanel = userPanel;
-        this.windowBar = new bespin.editor.quickopen.WindowBar({title: this.title});
-        this.add([this.windowBar, this.userPanel]);
-        
-        // this is a closed container
-        delete this.add;
-        delete this.remove;
-    },
-    
-    layout: function() {
-        var d = this.d();
-        this.width = d.b.w;
-        this.height = d.b.h;
-        var y = this.windowBar.getPreferredHeight();
-        this.windowBar.bounds = { x: 0, y: 0 , height: y, width: d.b.w };
-        this.userPanel.bounds = { x: 1, y: y , height: d.b.h - y - 1, width: d.b.w - 2 };
-    },
-    
-    paintSelf: function(ctx) {
-        //var d = this.d();
-        // draws the background of the window and the border        
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "black";
-        
-        ctx.strokeStyle = "#2E1F1A";
-        ctx.strokeRect(0, 0, this.width, this.height);
-    }
-})
-
-dojo.declare("bespin.editor.quickopen.Window", null, {
-    constructor: function(newId, parms) {        
-        if (dojo.byId(newId)) {
-            console.error('There is already a element with the id "'+newId+'"!');
-        }
-                
-        parms = parms || {};
-        this.width = parms.width || 200;
-        this.height = parms.height || 300;
-        this.title = parms.title || 'NO TITLE GIVEN!';
-        this.isVisible = false;
-        
-        if (!parms.userPanel) {
-            console.error('The "userPanel" must be given!');
-            return;
-        }
-        
-        // insert the HTML to the document for the new window and create the scene
-        dojo.byId('popup_insert_point').innerHTML += '<div id="'+newId+'" class="popupWindow"></div>';
-        this.container = dojo.byId(newId);
-        dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
-        this.container.mozopaque = 'true';
-
-        this.container.innerHTML = "<canvas id='"+newId+"_canvas'></canvas>";
-        this.canvas = dojo.byId(newId + '_canvas');
-        dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
-        this.canvas.mozopaque = 'true';
-        
-        this.scene = new th.Scene(this.canvas);
-        this.windowPanel = new bespin.editor.quickopen.WindowPanel();        
-        this.scene.root.add(this.windowPanel); 
-        
-        this.toggle();
-        this.scene.layout();
-        this.scene.render();
-    }, 
-         
-    toggle: function() {
-        this.isVisible = !this.isVisible;
-               
-        if (this.isVisible) {
-            this.container.style.display = 'block';
-        } else {
-            this.container.style.display = 'none';
-        }
-    },
-    
-    layoutAndRender: function() {
-        this.scene.layout();
-        this.scene.render();
-    },
-})
-
 dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
-
-        /*var imgFileLabel = new Image();
-        imgFileLabel.src = '../images/files_pop_top.png';
-        this.fileLabel = new th.components.Label({ text: "Find Files", style: { color: "white", font: "8pt Tahoma" } });
-        this.fileLabel.oldPaint = this.fileLabel.paint;
-        this.fileLabel.paint = function(ctx) {
-            var d = this.d();
-            ctx.drawImage(imgFileLabel, -8, -7);
-            this.oldPaint(ctx);
-        };*/
-        this.fileLabel = new bespin.editor.quickopen.WindowBar({ text: 'Find Files'});
 
         this.list = new th.components.List({ allowDeselection: false, style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" } });
 
@@ -209,7 +57,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         this.scrollbar.scrollable = list;
 
         this.pathLabel = new th.components.Label({ style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" }, text: "Select item!" });
-        this.add([ this.fileLabel, this.list, this.scrollbar, this.pathLabel]);
+        this.add([ this.list, this.scrollbar, this.pathLabel]);
 
         // this is a closed container
         delete this.add;
@@ -218,76 +66,62 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
 
     layout: function() {
         var d = this.d();
-        d.i.l += 1;
-        d.b.w -= 2;
 
         var y = d.i.t;
-        var lh = this.fileLabel.getPreferredHeight(d.b.w);
-        this.fileLabel.bounds = { y: y, x: d.i.l - 1, height: lh, width: d.b.w + 2 };
-        y = 47;
 
         lh = this.pathLabel.getPreferredHeight(d.b.w);
 
+        y = 28;
         var sw = 14;
         var sh = d.b.h - d.i.b - y - lh;
         var innerWidth = d.b.w - d.i.w - sw;
         
-        // this.scrollbar.bounds = { x: d.b.w - d.i.r - sw, height: sh - 2, y: y, width: sw }; 
-        // this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: sh - 2 };
-        // this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };
-
-        this.list.bounds = { x: d.i.l, y: y, width: innerWidth + sw, height: sh - 2 };
-        this.pathLabel.bounds = { x: d.i.l, y: y + sh - 1, width: innerWidth + sw, height: lh };
+        this.list.bounds = { x: d.i.l, y: y, width: innerWidth + sw, height: sh - 1 };
+        this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };
     },
     
-    paintSelf: function(ctx) {
-        var y = Math.abs(this.list.bounds.y + this.list.bounds.height + 1);
-        
+    paintSelf: function(ctx) {        
         ctx.fillStyle = "#86857F";
-        ctx.fillRect(0, 10, 220, 46);
+        ctx.fillRect(0, 0, 220, 28);
         
         ctx.lineWidth = 2;
         ctx.strokeStyle = "black";
         ctx.beginPath();              
+        ctx.moveTo(0, 28);
+        ctx.lineTo(220, 28);
+        var y = this.list.bounds.y + this.list.bounds.height + 1;
         ctx.moveTo(0, y);
         ctx.lineTo(220, y);
-        ctx.moveTo(0, 47);
-        ctx.lineTo(220, 47);
         ctx.closePath();
         ctx.stroke();
-        
-        ctx.strokeStyle = "#2E1F1A";
-        ctx.strokeRect(0, 20, 220, 269);
     }
 });
 
 dojo.declare("bespin.editor.quickopen.API", null, {
-    constructor: function(container) {        
-        this.container = dojo.byId(container);
-        this.isVisible = false;
+    constructor: function() {                
         this.lastText = '';
         this.requestFinished = true;
         this.preformNewRequest = false;
         
-        dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' moz-opaque='true' tabindex='-1'></canvas>";        
-        this.canvas = dojo.byId('quickopen_canvas');
-        dojo.attr(this.canvas, {width:'220', height: '270' });
-        this.input = dojo.byId('quickopen_text');
-        
-        var scene = new th.Scene(this.canvas);  
+        // create the Window!
         this.panel = new bespin.editor.quickopen.Panel();
-        this.panel.fileLabel.parentWindow = this;
-        scene.root.add(this.panel);        
-        this.scene = scene;
+        this.window = new th.Window('test_win', { top: 100, left: 200, width: 220, height: 270, title: 'Find Files', userPanel: this.panel});
+        this.window.centerUp(); // center the window, but more a "human" center
+        
+        var input = document.createElement("input");
+        input.type = "text";
+        input.id = 'quickopen_text';
+        this.window.container.appendChild(input);
+        this.input = input;
         
         // item selected in the list => show full path in label
-        scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
+        this.window.scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
             this.panel.pathLabel.attributes.text = e.item.filename;
-            this.layoutAndRender();
+            this.window.layoutAndRender();
         }));
         
         // item double clicked => load this file
-        scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
+        this.window.scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
             var item = this.panel.list.selected;
             if (!item)  return;
             
@@ -296,23 +130,10 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             
             this.toggle();
         }));
-        
-        // hides quickopen if the users clicks outside the quickopen.container
-        dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
-            if (!this.isVisible) return;
-
-            var d = dojo.coords(this.container);
-            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
-                this.toggle();
-            } else {
-                this.input.focus();
-                dojo.stopEvent(e);
-            }
-        }));
-        
-        // handle ARROW_UP and ARROW_DOWN to select items in the list
+                
+        // handle ARROW_UP and ARROW_DOWN to select items in the list and other stuff
         dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-            if (!this.isVisible) return;
+            if (!this.window.isVisible) return;
             
             var key = bespin.util.keys.Key;
             
@@ -323,8 +144,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 this.panel.list.moveSelectionDown();
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {
-                this.scene.bus.fire("dblclick", {}, this.panel.list);     
-            } else if ((e.keyCode == ' '.charCodeAt() && e.ctrlKey) || e.keyCode == key.ESCAPE) {
+                this.window.scene.bus.fire("dblclick", {}, this.panel.list);     
+            } else if (e.keyCode == 'O'.charCodeAt() && e.altKey) {
                 this.toggle();
                 dojo.stopEvent(e);
             }
@@ -353,26 +174,15 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     
     toggle: function() {
         var quickopen = bespin.get('quickopen');
-        quickopen.isVisible = !quickopen.isVisible;
+        quickopen.window.toggle();
         
-        if (quickopen.isVisible) {
-            quickopen.container.style.display = 'block';
-            quickopen.container.style.top = Math.round((window.innerHeight - 270) * 0.25) + 'px';
-            quickopen.container.style.left = Math.round((window.innerWidth - 220) / 2) + 'px';
+        if (quickopen.window.isVisible) {
             quickopen.input.value = '';
             quickopen.input.focus();
-            quickopen.layoutAndRender();
         } else {
-            quickopen.container.style.display = 'none';
             quickopen.lastText = '';
             quickopen.input.blur();
         }
-    },
-    
-    layoutAndRender: function() {
-        var quickopen = bespin.get('quickopen');
-        quickopen.scene.layout();
-        quickopen.scene.render();
     },
     
     showFiles: function(files, sortFiles) {
@@ -405,7 +215,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             quickopen.panel.list.selectItemByText(items[0].name);
             quickopen.panel.pathLabel.attributes.text = items[0].filename;
         }
-        quickopen.layoutAndRender();
+        quickopen.window.layoutAndRender();
     },
     
     displayResult: function(files) {
@@ -442,13 +252,15 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
     
     handleKeys: function(e) {
-        if (this.isVisible) return true; // in the command line!
+        if (this.window.isVisible) return true; // in the command line!
 
-        if (e.charCode == ' '.charCodeAt() && e.ctrlKey) { // send to command line
+        if (e.keyCode == 'O'.charCodeAt() && e.altKey) { // send to command line
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
             return true;
+        } else {
+            console.debug([e.charCode, e.keyCode, e.altKey]);
         }
     }
 });
