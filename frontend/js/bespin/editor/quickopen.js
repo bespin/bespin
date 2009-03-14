@@ -181,7 +181,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {
                 this.scene.bus.fire("dblclick", {}, this.panel.list);     
-            } else if (e.keyCode == 'T'.charCodeAt() && (e.ctrlKey || e.metaKey)) {
+            } else if (e.keyCode == ' '.charCodeAt() && e.ctrlKey) {
                 this.toggle();
                 dojo.stopEvent(e);
             }
@@ -274,7 +274,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (quickopen.preformNewRequest) {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
-            console.log('## Search files: ' + quickopen.input.value);
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.value, quickopen.displayResult);
         }
     },
@@ -302,7 +301,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     handleKeys: function(e) {
         if (this.isVisible) return true; // in the command line!
 
-        if (e.charCode == 't'.charCodeAt() && (e.ctrlKey || e.metaKey)) { // send to command line
+        if (e.charCode == ' '.charCodeAt() && e.ctrlKey) { // send to command line
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
