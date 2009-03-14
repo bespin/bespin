@@ -60,6 +60,7 @@ dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
+dojo.require("bespin.editor.filelist");
 dojo.require("bespin.editor.quickopen");
 
 dojo.require("bespin.syntax.syntax");
