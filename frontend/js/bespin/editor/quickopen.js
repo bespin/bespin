@@ -28,23 +28,13 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
     constructor: function(parms) {
         if (!parms) parms = {};
 
+        var imgFileLabel = new Image();
+        imgFileLabel.src = '../images/files_pop_top.png';
         this.fileLabel = new th.components.Label({ text: "Find Files", style: { color: "white", font: "8pt Tahoma" } });
         this.fileLabel.oldPaint = this.fileLabel.paint;
         this.fileLabel.paint = function(ctx) {
             var d = this.d();
-
-            ctx.fillStyle = "rgb(51, 50, 46)";
-            ctx.fillRect(0, 0, d.b.w, 1);
-
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-
-            var gradient = ctx.createLinearGradient(0, 2, 0, d.b.h - 2);
-            gradient.addColorStop(0, "#343029");
-            gradient.addColorStop(1, "#161613");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
-            
+            ctx.drawImage(imgFileLabel, -8, -7);
             this.oldPaint(ctx);
         };
 
@@ -111,8 +101,8 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
     paintSelf: function(ctx) {
         var y = Math.abs(this.list.bounds.y + this.list.bounds.height + 1);
         
-        ctx.fillStyle = "#D5D0C0";
-        ctx.fillRect(0, 14, 220, 46);
+        ctx.fillStyle = "#86857F";
+        ctx.fillRect(0, 10, 220, 46);
         
         ctx.lineWidth = 2;
         ctx.strokeStyle = "black";
@@ -131,22 +121,22 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
 
 dojo.declare("bespin.editor.quickopen.API", null, {
     constructor: function(container) {        
+        this.container = dojo.byId(container);
         this.isVisible = false;
         this.lastText = '';
         this.requestFinished = true;
         this.preformNewRequest = false;
-        this.container = dojo.byId(container);
-
-        // create the UI
+        
         dojo.byId(container).innerHTML += "<canvas id='quickopen_canvas' width='220' height='270' moz-opaque='true' tabindex='-1'></canvas>";        
         this.canvas = dojo.byId('quickopen_canvas');
         this.input = dojo.byId('quickopen_text');
+        
         var scene = new th.Scene(this.canvas);  
         this.panel = new bespin.editor.quickopen.Panel();
         this.panel.list.items = [{name: 'test'}];
         scene.root.add(this.panel);        
         this.scene = scene;
-                
+        
         // item selected in the list => show full path in label
         scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
             this.panel.pathLabel.attributes.text = e.item.filename;
@@ -160,6 +150,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             
             bespin.publish("bespin:editor:savefile", {});
             bespin.publish("bespin:editor:openfile", { filename: item.filename });
+            
             this.toggle();
         }));
         
@@ -178,8 +169,9 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // handle ARROW_UP and ARROW_DOWN to select items in the list
         dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-            var key = bespin.util.keys.Key;
             if (!this.isVisible) return;
+            
+            var key = bespin.util.keys.Key;
             
             if (e.keyCode == key.ARROW_UP) {
                 this.panel.list.moveSelectionUp();
@@ -189,6 +181,9 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {
                 this.scene.bus.fire("dblclick", {}, this.panel.list);     
+            } else if (e.keyCode == 'T'.charCodeAt() && (e.ctrlKey || e.metaKey)) {
+                this.toggle();
+                dojo.stopEvent(e);
             }
         }));
         
@@ -202,6 +197,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 } else {
                     this.preformNewRequest = true;
                 }
+                
                 this.lastText = this.input.value;
             }
         }));
@@ -278,6 +274,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (quickopen.preformNewRequest) {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
+            console.log('## Search files: ' + quickopen.input.value);
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.value, quickopen.displayResult);
         }
     },
@@ -303,13 +300,13 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
     
     handleKeys: function(e) {
-        if (e.keyChar == 't' && (e.ctrlKey || e.metaKey)) { // open quickopen
+        if (this.isVisible) return true; // in the command line!
+
+        if (e.charCode == 't'.charCodeAt() && (e.ctrlKey || e.metaKey)) { // send to command line
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
             return true;
         }
-                
-        if (this.isVisible) return true; // in the command line!
     }
 });
