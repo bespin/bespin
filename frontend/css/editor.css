@@ -61,6 +61,7 @@ img {
 #quickopen {
     position: absolute;
     margin: 0;
+    padding: 0;
     top: 100px;
     left: 80px;
     bottom: 33px;
@@ -69,10 +70,7 @@ img {
     width:  220px;
     display: none;
     background-color: #8F8D88;
-    background: url("../images/background_white_50.png");
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
-    padding: 10px;
+    border: 3px solid white;
 }
 
 #quickopen_text {
@@ -81,8 +79,8 @@ img {
     height: 15px;
     margin: 0;
     padding: 0;
-    top: 32px;
-    left: 15px;
+    top: 20px;
+    left: 5px;
     color: black;
 }
 
