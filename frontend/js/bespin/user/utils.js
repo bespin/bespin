@@ -39,7 +39,7 @@ dojo.mixin(bespin.user.utils, {
         bespin.util.webpieces.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
     },
 
-    whenUsernameInUs: function() {
+    whenUsernameInUse: function() {
         bespin.util.webpieces.showStatus("The username is taken. Please choose another.");
     },
 
