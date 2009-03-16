@@ -445,33 +445,42 @@ dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
 });
 
 dojo.declare("th.Window", null, {
-    constructor: function(newId, parms) {        
-        if (dojo.byId(newId)) {
-            console.error('There is already a element with the id "'+newId+'"!');
-        }
-                
+    constructor: function(parms) {        
         parms = parms || {};
+        
+        this.containerId = parms.containerId || false;
         this.width = parms.width || 200;
         this.height = parms.height || 300;
         this.title = parms.title || 'NO TITLE GIVEN!';
         this.y = parms.top || 50;
         this.x = parms.left || 50;
-        
         this.isVisible = false;
+        this.closeOnClickOutside = !!parms.closeOnClickOutside;
+
+        // some things must be given
+        if(!parms.containerId) {
+            console.error('The "containerId" must be given!');
+            return;            
+        }
         
+        if (dojo.byId(this.containerId)) {
+            console.error('There is already a element with the id "'+this.containerId+'"!');
+            return;
+        }
+                
         if (!parms.userPanel) {
             console.error('The "userPanel" must be given!');
             return;
         }
         
         // insert the HTML to the document for the new window and create the scene
-        dojo.byId('popup_insert_point').innerHTML += '<div id="'+newId+'" class="popupWindow"></div>';
-        this.container = dojo.byId(newId);
+        dojo.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
+        this.container = dojo.byId(this.containerId);
         dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
         this.container['moz-opaque'] = 'true';
 
-        this.container.innerHTML = "<canvas id='"+newId+"_canvas'></canvas>";
-        this.canvas = dojo.byId(newId + '_canvas');
+        this.container.innerHTML = "<canvas id='"+this.containerId+"_canvas'></canvas>";
+        this.canvas = dojo.byId(this.containerId + '_canvas');
         dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
         
         this.scene = new th.Scene(this.canvas);
@@ -485,7 +494,7 @@ dojo.declare("th.Window", null, {
         
         // close the window, if the user clicks outside the window
         dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
-            if (!this.isVisible) return;
+            if (!this.isVisible || !this.closeOnClickOutside) return;
 
             var d = dojo.coords(this.container);
             if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
