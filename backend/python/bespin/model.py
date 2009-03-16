@@ -176,17 +176,16 @@ class User(Base):
     def statusfile(self):
         return self.get_location() / ".bespin-status.json"
         
-    def recompute_used(self):
+    def recompute_files(self):
         """Recomputes how much space the user has used."""
-        userdir = self.get_location()
-        
         total = 0
         # add up all of the directory contents
         # by only looking at directories, we skip
         # over our metadata files
-        for directory in userdir.dirs():
-            total += _get_space_used(directory)
-            
+        for proj in self.projects:
+            additional, files = _get_file_list(proj.location)
+            total += additional
+            proj._save_file_list(files)
         self.amount_used = total
 
     def mark_opened(self, file_obj, mode):
@@ -556,11 +555,24 @@ class File(object):
     def __repr__(self):
         return "File: %s" % (self.name)
         
+def _get_file_list(directory):
+    total = 0
+    files = []
+    for f in directory.walkfiles():
+        if ".hg" in f or ".svn" in f or ".bzr" in f or ".git" in f:
+            continue
+        total += f.size
+        files.append(directory.relpathto(f))
+    return total, files
+
 def _get_space_used(directory):
     total = 0
     for f in directory.walkfiles():
+        if ".hg" in f or ".svn" in f or ".bzr" in f or ".git" in f:
+            continue
         total += f.size
     return total
+
 
 class Project(object):
     """Provides access to the files in a project."""
@@ -626,6 +638,7 @@ class Project(object):
             size_delta = saved_size - file.saved_size
         else:
             size_delta = saved_size
+            self._search_cache.write_bytes("%s\n" % destpath, append=True)
         file.save(contents)
         self.owner.amount_used += size_delta
         return file
@@ -851,6 +864,48 @@ class Project(object):
         old_location.rename(new_location)
         self.name = new_name
         self.location = new_location
+        
+    @property
+    def _search_cache(self):
+        return self.location.parent / (".%s_filelist" % (self.name))
+        
+    def _save_file_list(self, files):
+        cache_file = self._search_cache
+        cache_file.write_bytes("\n".join(files))
+        
+    def search_files(self, query, limit=20):
+        """Scans the files for filenames that match the queries."""
+        match_list = []
+        escaped_query = [re.escape(char) for char in query]
+        search_re = ".*".join(escaped_query)
+        main_search = re.compile(search_re)
+        location = self.location
+        files = self._search_cache.lines(retain=False)
+        for f in files:
+            if main_search.search(f):
+                match_list.append(_SearchMatch(query, f))
+        all_results = [str(match) for match in sorted(match_list)]
+        return all_results[:limit]
+        
+
+class _SearchMatch(object):
+    """Comparable objects that store the result of a file search match"""
+    def __init__(self, query, match):
+        # if the query string is directly in there, boost the score
+        if query in match:
+            self.score = 1
+        else:
+            self.score = 0
+        self.match = match
+    
+    def __cmp__(self, other):
+        diff = cmp(other.score, self.score)
+        if diff:
+            return diff
+        return cmp(self.match, other.match)
+    
+    def __str__(self):
+        return str(self.match)
 
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles

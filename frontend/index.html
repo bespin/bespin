@@ -30,13 +30,13 @@
     <link type="text/css" rel="stylesheet" href="css/index.css"/>
 
     <!-- begin script tags -->
-    <script type="text/javascript">
-        var djConfig = { parseOnLoad: true, isDebug: true, debugAtAllCosts: true };
-    </script>
-    <script type="text/javascript" src="js/dojo/dojo.js"></script>
-    <script type="text/javascript">
-        dojo.require("bespin.user.dependencies");
-    </script>
+	<script type="text/javascript">
+		var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+	</script>   
+	<script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
+	<script type="text/javascript">
+		dojo.require("bespin.page.index.dependencies");
+	</script>
     <!-- end script tags -->
 </head>
 <body>
@@ -184,7 +184,7 @@
 
 <div id="footer" align="center">&copy; 2009 Mozilla. All rights reserved.</div>
 
-<div id="opaque" style="display: none;"></div>
+<div id="overlay" style="display: none;"></div>
 <canvas id="testcanvas" style="display: none"></canvas>
 </body>
 </html>

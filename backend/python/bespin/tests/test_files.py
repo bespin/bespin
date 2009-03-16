@@ -32,6 +32,7 @@ import tarfile
 import zipfile
 from datetime import datetime, timedelta
 import shutil
+from urllib import urlencode
 
 from webtest import TestApp
 import simplejson
@@ -145,7 +146,7 @@ def test_amount_used_can_be_recomputed():
     # open the file, to cause a status file to be created
     bigmac.get_file("secrets")
     macgyver.amount_used = 0
-    macgyver.recompute_used()
+    macgyver.recompute_files()
     assert macgyver.amount_used == starting_point
     
 def test_retrieve_file_obj():
@@ -462,6 +463,77 @@ def test_bad_files_and_directories():
     assert not foopath.exists()
     location = bigmac.location
     assert (location / "tmp" / "foo").exists()
+    
+def _setup_search_data():
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    for name in [
+        "foo/bar",
+        "whiz/bang",
+        "ding/dong",
+        "foo/some_other",
+        "some/deeply/nested/file/here",
+        "whiz/cheez",
+        "bespin/rocks",
+        "many/files",
+        "cool+one"
+    ]:
+        bigmac.save_file(name, "hi")
+    return bigmac
+    
+def test_file_search():
+    _init_data()
+    bigmac = _setup_search_data()
+    _run_search_tests(bigmac.search_files)
+    
+def _run_search_tests(search_func):
+    result = search_func("")
+    print result
+    assert result == [
+        "bespin/rocks",
+        "cool+one",
+        "ding/dong",
+        "foo/bar",
+        "foo/some_other",
+        "many/files",
+        "some/deeply/nested/file/here",
+        "whiz/bang",
+        "whiz/cheez"
+    ]
+    
+    result = search_func("o")
+    assert result == [
+        "bespin/rocks",
+        "cool+one",
+        "ding/dong",
+        "foo/bar",
+        "foo/some_other",
+        "some/deeply/nested/file/here"
+    ]
+    
+    result = search_func("o", 2)
+    assert result == [
+        "bespin/rocks",
+        "cool+one"
+    ]
+    
+    result = search_func("os")
+    assert result == [
+        "bespin/rocks",
+        "foo/some_other",
+        "some/deeply/nested/file/here"
+    ]
+    
+    result = search_func("me")
+    assert result == [
+        "foo/some_other",
+        "some/deeply/nested/file/here",
+        "many/files"
+    ]
+    
+    result = search_func("+")
+    assert result == [
+        "cool+one"
+    ]
 
 # -------
 # Web tests
@@ -613,4 +685,19 @@ def test_quota_limits_on_the_web():
         assert resp.body == "Over quota"
     finally:
         model.QUOTA_UNITS = old_units
+    
+def test_search_from_the_web():
+    _init_data()
+    bigmac = _setup_search_data()
+    resp = app.get("/file/search/bigmac")
+    assert resp.content_type == "application/json"
+    def run_search(q, limit=20):
+        resp = app.get("/file/search/bigmac?%s" 
+            % urlencode([('q', q), ('limit', limit)]))
+        assert resp.content_type == "application/json"
+        return simplejson.loads(resp.body)
+    _run_search_tests(run_search)
+    
+    # illegal limits are turned into the default
+    resp = app.get("/file/search/bigmac?limit=foo")
     

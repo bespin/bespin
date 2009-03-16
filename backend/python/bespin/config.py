@@ -86,6 +86,7 @@ def set_profile(profile):
         # will be HTTP
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
+        c.default_quota=10000
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)

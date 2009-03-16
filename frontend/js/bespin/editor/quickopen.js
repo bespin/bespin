@@ -47,11 +47,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         list.oldGetRenderer = list.getRenderer;
         list.getRenderer = function(rctx) {
             var label = list.oldGetRenderer(rctx);
-            if (rctx.item.lastFolder) {
-                label.attributes.text = rctx.item.name + ' - ' + rctx.item.lastFolder;                
-            } else {
-                label.attributes.text = rctx.item.name;                
-            }
+            label.attributes.text = rctx.item.name;
             return label;
         }
         
@@ -109,19 +105,9 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // create the Window!
         this.panel = new bespin.editor.quickopen.Panel();
-        this.window = new th.Window({
-            title: 'Find Files', 
-            top: 100, 
-            left: 200, 
-            width: 220, 
-            height: 270, 
-            userPanel: this.panel,
-            containerId: 'quickopen',
-            closeOnClickOutside: true, 
-        });
+        this.window = new th.Window('test_win', { top: 100, left: 200, width: 220, height: 270, title: 'Find Files', userPanel: this.panel});
         this.window.centerUp(); // center the window, but more a "human" center
-
-        // add the input field to the window
+        
         var input = document.createElement("input");
         input.type = "text";
         input.id = 'quickopen_text';
@@ -139,15 +125,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             var item = this.panel.list.selected;
             if (!item)  return;
             
-            // save the current file and load up the new one
             bespin.publish("bespin:editor:savefile", {});
             bespin.publish("bespin:editor:openfile", { filename: item.filename });
-            
-            // adds the new opened file to the top of the openSessionFiles
-            if (this.openSessionFiles.indexOf(item.filename) != -1) {
-                this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1)
-            }                
-            this.openSessionFiles.unshift(item.filename);
             
             this.toggle();
         }));
@@ -198,7 +177,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         quickopen.window.toggle();
         
         if (quickopen.window.isVisible) {
-            quickopen.showFiles(quickopen.openSessionFiles);
             quickopen.input.value = '';
             quickopen.input.focus();
         } else {
@@ -208,39 +186,20 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
     
     showFiles: function(files, sortFiles) {
-        sortFiles = sortFiles || false;
         var items = new Array();
-        var sortedItems = new Array();
-        var quickopen = bespin.get('quickopen');
-        var lastFolder;
-        var name;
-        var path;
-        var lastSlash;
+        var quickopen = bespin.get('quickopen'); 
         var file;
-        
-        // for the moment there are only 12 files displayed...
-        files = files.slice(0, 12);        
+        sortFiles = sortFiles || false;
+                
+        files = files.slice(0, 12);
+                
         for (var x = 0; x < files.length; x++) {                
             file = files[x];
-            lastSlash = file.lastIndexOf("/");
-            path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
-            name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
+            var lastSlash = file.lastIndexOf("/");
+            var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
+            var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-            // look at the array if there is an entry with the same name => adds folder to it!
-            lastFolder = false;
-            for (var y = items.length - 1; y != -1 ; y--) {
-                if (items[y].name == name) {
-                    if (!items[y].lastFolder) {
-                        lastFolder = items[y].filename.split('/');
-                        items[y].lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                        
-                    }
-                    
-                    lastFolder = file.split('/');
-                    lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                   
-                    break;
-                }
-            }
-            items.push({name: name, filename: file, lastFolder: lastFolder});
+            items.push({name: name, filename: file});                
         }
         
         if (sortFiles) {
@@ -272,8 +231,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }
     },
     
-    displaySessions: function(sessions) {
-        var quickopen =  bespin.get('quickopen');        
+    displaySessions: function(sessions) {        
         var currentProject = bespin.get('editSession').project;
         var currentFile = bespin.get('editSession').path;
         var items = new Array();
@@ -290,8 +248,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             items.push(currentFile);
         }
         
-        quickopen.showFiles(items, true);
-        quickopen.openSessionFiles = items;                        
+        bespin.get('quickopen').showFiles(items, true);                    
     },
     
     handleKeys: function(e) {

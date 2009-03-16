@@ -75,7 +75,17 @@ dojo.provide("bespin.page.editor.init");
             var collab = dojo.byId("collab");
             var target = dojo.byId("target_browsers");
 
-            var move = [ subheader, footer ];
+            var move = [ subheader, footer, editor ];
+
+            if (bespin.get('toolbar').showFiles) {
+                files.style.display = "block";
+                dojo.forEach(move, function(item) { item.style.left = "201px"; });
+            } else {
+                files.style.display = "none";
+                dojo.forEach(move, function(item) { item.style.left = "0"; });
+            }
+
+            move.pop();   // editor shouldn't have its right-hand side set
 
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";

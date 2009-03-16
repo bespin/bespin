@@ -26,3 +26,4 @@ backend/python/BespinServer.egg-info
 *.tmproj
 ext/
 build/
+man/

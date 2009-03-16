@@ -24,6 +24,8 @@
 
 dojo.provide("bespin.user.utils");
 
+dojo.require("bespin.util.webpieces");
+
 // = Utility functions for the Bespin front page =
 //
 // Dealing with login on the front page of the site and beyond
@@ -34,16 +36,11 @@ dojo.mixin(bespin.user.utils, {
     },
 
     whenLoginFailed: function() {
-        bespin.user.utils.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
+        bespin.util.webpieces.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
     },
 
-    whenUsernameInUs: function() {
-        bespin.user.utils.showStatus("The username is taken. Please choose another.");
-    },
-
-    showStatus: function(msg) {
-        dojo.byId("status").innerHTML = msg;
-        dojo.style('status', 'display', 'block');
+    whenUsernameInUse: function() {
+        bespin.util.webpieces.showStatus("The username is taken. Please choose another.");
     },
 
     whenAlreadyLoggedIn: function(userinfo) {
@@ -53,40 +50,6 @@ dojo.mixin(bespin.user.utils, {
 
     whenNotAlreadyLoggedIn: function() {
         dojo.style('not_logged_in', 'display', 'block');
-    },
-
-    showCenterPopup: function(el) {
-        dojo.style('opaque', 'display', 'block');
-        dojo.style(el, 'display', 'block');
-
-        // retrieve required dimensions
-        var elDims = dojo.coords(el);
-        var browserDims = dijit.getViewport();
-        
-        // calculate the center of the page using the browser and element dimensions
-        var y = (browserDims.h - elDims.h) / 2;
-        var x = (browserDims.w - elDims.w) / 2;
-
-        // set the style of the element so it is centered
-        dojo.style(el, {
-            position: 'absolute',
-            top: y + 'px',
-            left: x + 'px'
-        });
-    },
-
-    hideCenterPopup: function(el) {
-        dojo.style(el, 'display', 'none');
-        dojo.style('opaque', 'display', 'none');
-    },
-
-    // take the overlay and make sure it stretches on the entire height of the screen
-    fillScreenOverlay: function() {
-	    var coords = dojo.coords(document.body);
-	    
-	    if (coords.h) {
-            dojo.style(dojo.byId('opaque'), 'height', coords.h + "px");
-        }
     },
 
     // make sure that the browser can do our wicked shizzle
@@ -104,7 +67,7 @@ dojo.mixin(bespin.user.utils, {
 
     showingBrowserCompatScreen: function() {
        if (!this.checkBrowserAbility()) { // if you don't have the ability
-            this.showCenterPopup(dojo.byId('browser_not_compat'));
+            bespin.util.webpieces.showCenterPopup(dojo.byId('browser_not_compat'));
 
             return true;
         } else {

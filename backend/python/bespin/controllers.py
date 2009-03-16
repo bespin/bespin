@@ -228,6 +228,24 @@ def listfiles(request, response):
     response.body = simplejson.dumps(result)
     return response()
     
+@expose(r'^/file/search/(?P<project_name>.*)$', 'GET')
+def file_search(request, response):
+    user = request.user
+    query = request.GET.get("q", "")
+    limit = request.GET.get("limit", 20)
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 20
+    project_name = request.kwargs['project_name']
+    
+    project = model.get_project(user, user, project_name)
+    result = project.search_files(query, limit)
+    
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(result)
+    return response()
+    
 def _populate_stats(item, result):
     if isinstance(item, model.File):
         result['size'] = item.saved_size

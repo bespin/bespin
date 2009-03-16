@@ -443,3 +443,103 @@ dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
         this.repaint();
     }
 });
+
+dojo.declare("th.Window", null, {
+    constructor: function(newId, parms) {        
+        if (dojo.byId(newId)) {
+            console.error('There is already a element with the id "'+newId+'"!');
+        }
+                
+        parms = parms || {};
+        this.width = parms.width || 200;
+        this.height = parms.height || 300;
+        this.title = parms.title || 'NO TITLE GIVEN!';
+        this.y = parms.top || 50;
+        this.x = parms.left || 50;
+        
+        this.isVisible = false;
+        
+        if (!parms.userPanel) {
+            console.error('The "userPanel" must be given!');
+            return;
+        }
+        
+        // insert the HTML to the document for the new window and create the scene
+        dojo.byId('popup_insert_point').innerHTML += '<div id="'+newId+'" class="popupWindow"></div>';
+        this.container = dojo.byId(newId);
+        dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
+        this.container['moz-opaque'] = 'true';
+
+        this.container.innerHTML = "<canvas id='"+newId+"_canvas'></canvas>";
+        this.canvas = dojo.byId(newId + '_canvas');
+        dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
+        
+        this.scene = new th.Scene(this.canvas);
+        this.windowPanel = new th.components.WindowPanel(parms.title, parms.userPanel);
+        this.windowPanel.windowBar.parentWindow = this;  
+        this.scene.root.add(this.windowPanel);
+        
+        this.move(this.x, this.y);
+        
+        // add some listeners for closing the window
+        
+        // close the window, if the user clicks outside the window
+        dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
+            if (!this.isVisible) return;
+
+            var d = dojo.coords(this.container);
+            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
+                this.toggle();
+            } else {
+                dojo.stopEvent(e);
+            }
+        }));
+        
+        // close the window, if the user pressed ESCAPE
+        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
+            if (!this.isVisible) return;
+            
+            if(e.keyCode == bespin.util.keys.Key.ESCAPE) {
+                this.toggle();
+                dojo.stopEvent(e);
+            }
+        }));
+    }, 
+         
+    toggle: function() {
+        this.isVisible = !this.isVisible;
+        
+        this.scene.bus.fire("toggle", {}, this);
+        
+        if (this.isVisible) {
+            this.container.style.display = 'block';
+            this.layoutAndRender();
+        } else {
+            this.container.style.display = 'none';
+        }
+    },
+    
+    layoutAndRender: function() {
+        this.scene.layout();
+        this.scene.render();
+    },
+    
+    centerUp: function() {
+        this.move(Math.round((window.innerWidth - this.width) * 0.5), Math.round((window.innerHeight - this.height) * 0.25));
+    },
+    
+    center: function() {
+        this.move(Math.round((window.innerWidth - this.width) * 0.5), Math.round((window.innerHeight - this.height) * 0.5));
+    },
+    
+    move: function(x, y) {
+        this.y = y;
+        this.x = x;
+        this.container.style.top = y + 'px';
+        this.container.style.left = x + 'px';
+    },
+    
+    getPosition: function() {
+        return { x: this.x, y: this.y };
+    }
+});

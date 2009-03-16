@@ -24,7 +24,7 @@
 
 dojo.provide("bespin.editor.editor");
 
-dojo.require("bespin.util.clipboard");
+dojo.require("bespin.editor.clipboard");
 
 // = Editor =
 //
@@ -276,8 +276,21 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
+        // -- Short cut for IF a command line is installed
+        var commandLine = bespin.get('commandLine');
+        var quickopen = bespin.get('quickopen');
+        var handled = false;
+        
+        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
+            handled = true;
+        }
+        
+        if (quickopen && quickopen.handleKeys(e)) {
+            handled = true;
+        }
+        
         if (handled) return false;
+        // -- End of commandLine short cut
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
@@ -306,15 +319,28 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        var handled = bespin.get('commandLine').handleCommandLineFocus(e);
+        // -- Short cut for IF a command line is installed
+        var commandLine = bespin.get('commandLine');
+        var quickopen = bespin.get('quickopen');
+        var handled = false;
+        
+        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
+            handled = true;
+        }
+        
+        if (quickopen && quickopen.handleKeys(e)) {
+            handled = true;
+        }
+        
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
-        if (e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
+        if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             dojo.stopEvent(e);
             return false;
         }
+        // -- End of commandLine short cut
 
         // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
         // on some platforms and keyboardlayouts (german?). This is not working for "^"
@@ -360,7 +386,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.rowLengthCache = [];
 
-        this.toggleCursorFullRepaintCounter = 0;    // tracks how many cursor toggles since the last full repaint
+        this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
+        this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
@@ -380,16 +407,17 @@ dojo.declare("bespin.editor.UI", null, {
                             bottom: Math.floor(this.NIB_WIDTH / 2) };
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
-        this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
-        this.charWidth;         // set first time a paint occurs
-        this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
-        this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
-        this.nibup;             // rect
-        this.nibdown;           // rect
-        this.nibleft;           // rect
-        this.nibright;          // rect
+        //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
+        //this.charWidth;         // set first time a paint occurs
+        //this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
+        //this.firstVisibleRow;   // first row that is visible in the editor; set each time a paint occurs
 
-        this.selectMouseDownPos;        // position when the user moused down
+        //this.nibup;             // rect
+        //this.nibdown;           // rect
+        //this.nibleft;           // rect
+        //this.nibright;          // rect
+
+        //this.selectMouseDownPos;        // position when the user moused down
 
         this.xoffset = 0;       // number of pixels to translate the canvas for scrolling
         this.yoffset = 0;
@@ -434,7 +462,7 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup");         
         dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
               
-        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), 250);
+        setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
 
     // col is -1 if user clicked in gutter; clicking below last line maps to last line
@@ -547,7 +575,7 @@ dojo.declare("bespin.editor.UI", null, {
             ui.editor.paint();
         }
 
-        setTimeout(function() { ui.toggleCursor(ui); }, 250);
+        setTimeout(function() { ui.toggleCursor(ui); }, ui.toggleCursorFrequency);
     },
 
     ensureCursorVisible: function() {
@@ -649,14 +677,16 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.oldkeydown) dojo.disconnect(this.oldkeydown);
         if (this.oldkeypress) dojo.disconnect(this.oldkeypress);
 
-        this.oldkeydown = dojo.hitch(listener, "onkeydown");
+        this.oldkeydown  = dojo.hitch(listener, "onkeydown");
         this.oldkeypress = dojo.hitch(listener, "onkeypress");
+        
+        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : document;
 
-        dojo.connect(document, "keydown", this, "oldkeydown");
-        dojo.connect(document, "keypress", this, "oldkeypress");
+        dojo.connect(scope, "keydown", this, "oldkeydown");
+        dojo.connect(scope, "keypress", this, "oldkeypress");
 
         // Modifiers, Key, Action
-        
+
         listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
         listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
@@ -696,7 +726,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
-
+        
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
@@ -708,7 +738,7 @@ dojo.declare("bespin.editor.UI", null, {
         return parseInt(dojo.style(this.editor.canvas.parentNode, "width"));
     },
 
-    getHeight: function() {   
+    getHeight: function() {
         return parseInt(dojo.style(this.editor.canvas.parentNode, "height"));
     },
 
@@ -1325,7 +1355,7 @@ dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
         this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
 
-        if (!opts) opts = {};
+        this.opts = opts || {};
 
         this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel();
@@ -1350,11 +1380,11 @@ dojo.declare("bespin.editor.API", null, {
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
 
-        bespin.util.clipboard.setup(this); // setup the clipboard
+        bespin.editor.clipboard.setup(this); // setup the clipboard
 
         this.paint();
 
-        if (!opts.dontfocus) { this.setFocus(true); }
+        if (!this.opts.dontfocus) { this.setFocus(true); }
     },
 
     // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee

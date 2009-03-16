@@ -156,7 +156,7 @@ bespin.subscribe("bespin:commands:load", function(event) {
 
     bespin.get('files').loadFile(bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
         try {
-            eval('bespin.get("commandLine").addCommands([' + file.content.replace(/\n/g, "") + '])');
+            eval('bespin.get("commandLine").addCommands([' + file.content + '])');
         } catch (e) {
             bespin.publish("bespin:cmdline:showinfo", { msg: "Something is wrong about the command:<br><br>" + e });
         }

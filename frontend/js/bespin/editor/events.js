@@ -182,17 +182,11 @@ dojo.declare("bespin.editor.Events", null, {
         // Then change the window title, and change the URL hash area
         bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
             var project = event.project || bespin.get('editSession').project; 
-            var file = event.file;
+            var filename = event.file.name;
 
-            var filename = file.name;
+            bespin.publish("bespin:editor:titlechange", { filename: filename });
 
-            _projectLabel.attributes.text = bespin.get('editSession').project;
-            _fileLabel.attributes.text = filename;
-            _scene.render();
-
-            bespin.publish("bespin:editor:titlechange", { filename: file.name });
-
-            bespin.publish("bespin:url:change", { project: project, path: file.name });
+            bespin.publish("bespin:url:change", { project: project, path: filename });
         });
 
         // ** {{{ Event: bespin:editor:urlchange }}} **

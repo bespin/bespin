@@ -58,6 +58,7 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.max = parms.max || 100;
         this.extent = parms.extent || 0.1;
         this.increment = parms.increment || 2;
+        this.style = parms.style || {};
 
         this.up = new th.components.Button();
         this.down = new th.components.Button();
@@ -68,6 +69,20 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.bus.bind("click", this.down, this.scrolldown, this);
         this.bus.bind("mousedrag", this.bar, this.onmousedrag, this);
         this.bus.bind("mouseup", this.bar, this.onmouseup, this);
+    },
+
+    loadImages: function(path, name) {
+        function loadImg(url) {
+            var img = new Image();
+            img.src = url;
+            return img;            
+        }
+        // getting the images for the scrollbar
+        this.style.scrollUpArrow = loadImg(path + name + '_up_arrow.png');
+        this.style.scrollHandleTopImage = loadImg(path + name + '_top.png');
+        this.style.scrollHandleMiddleImage = loadImg(path + name + '_middle.png');
+        this.style.scrollHandleBottomImage = loadImg(path + name + '_bottom.png');
+        this.style.scrollDownArrow = loadImg(path + name + '_down_arrow.png');
     },
 
     onmousedrag: function(e) {
@@ -708,6 +723,36 @@ dojo.declare("th.components.List", th.Container, {
         }
 
         return true;
+    },
+    
+    moveSelectionUp: function() {
+        if (!this.selected || this.items.length == 0) return;
+        
+        var x = 0;
+        while (this.items[x] != this.selected) {
+            x ++;
+        }
+        
+        if (x != 0) {
+            this.selected = this.items[x - 1];
+            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+            this.repaint();           
+        }
+    },
+     
+    moveSelectionDown: function() {
+        if (!this.selected || this.items.length == 0) return;
+
+        var x = 0;
+        while (this.items[x] != this.selected) {
+            x ++;
+        }
+
+        if (x != this.items.length - 1) {
+            this.selected = this.items[x + 1];
+            this.bus.fire("itemselected", { container: this, item: this.selected }, this); 
+            this.repaint();           
+        }
     },
 
     getItemForPosition: function(pos) {
@@ -1613,4 +1658,117 @@ dojo.declare("th.components.Scrollbar2", th.Container, {
 
         this.inherited(arguments);
     }     
+});
+
+dojo.declare("th.components.WindowBar", th.Container, {
+    constructor: function(parms) {
+        if (!parms) parms = {};
+         
+        function loadImg(url) {
+            var img = new Image();
+            img.src = url;
+            return img;            
+        }
+
+        this.imgBackgroundRight = loadImg('../images/window_top_right.png');
+        this.imgBackgroundMiddle = loadImg('../images/window_top_middle.png');
+        this.imgBackgroundLeft = loadImg('../images/window_top_left.png');
+
+        this.label = new th.components.Label({ text: parms.title || 'NO TEXT', style: { color: "white", font: "8pt Tahoma" } });
+        this.label.getInsets = function(){
+            return { top: 4, left: 6};
+        }
+
+        this.imgCloseButton = loadImg('../images/icn_close_x.png');
+        this.closeButton = new th.components.Button({style: { backgroundImage: this.imgCloseButton}});
+
+        this.add(this.label, this.closeButton);
+
+        this.bus.bind('mousedown', this.closeButton, dojo.hitch(this, function() {
+            this.parentWindow.toggle();
+            delete this.startValue;
+        }));
+        
+        // make the window dragable :)
+        this.bus.bind("mousedown", this, this.onmousedown, this);
+        this.bus.bind("mouseup", this, this.onmouseup, this);
+        // this event is connected to the window itself, as sometimes the mouse gets outside the WindowBar, event the 
+        // mouse is still pressed. This version is working even then right.
+        dojo.connect(window, "mousemove", dojo.hitch(this, this.onmousemove));  
+    },
+
+    onmousedown: function(e) {
+        this.startValue = { mouse: { x: e.clientX, y: e.clientY }, window: this.parentWindow.getPosition() };
+    },
+
+    onmousemove: function(e) {
+        if (this.startValue) {
+            var s = this.startValue;
+            var x = s.window.x - (s.mouse.x - e.clientX);
+            var y = s.window.y - (s.mouse.y - e.clientY);
+            this.parentWindow.move(x, y);
+            
+            dojo.stopEvent(e);
+        }
+    },
+
+    onmouseup: function(e) {
+        delete this.startValue;
+    },
+    
+    getPreferredHeight: function() {
+        return 21;
+    },
+    
+    layout: function() {
+        var d = this.d();
+        var lh = this.label.getPreferredHeight(d.b.w - 30);
+        this.label.bounds = { y: 0, x: 3, height: lh, width: d.b.w - 20 };
+        this.closeButton.bounds = { x: d.b.w -14, y: 6 , height: 8, width: 8};
+    },
+    
+    paint: function(ctx) {
+        var d = this.d();
+        
+        ctx.drawImage(this.imgBackgroundLeft, 0, 0);
+        ctx.drawImage(this.imgBackgroundMiddle, 3, 0, d.b.w - 6, 21);
+        ctx.drawImage(this.imgBackgroundRight, d.b.w - 3, 0);
+        
+        this.label.paint(ctx);
+        ctx.drawImage(this.imgCloseButton, d.b.w -14 , 6);            
+    }
+});
+
+dojo.declare("th.components.WindowPanel", th.components.Panel, {
+    constructor: function(title, userPanel) {
+        if (!userPanel) {
+            console.error('The "userPanel" must be given!');
+            return;
+        }
+        
+        this.userPanel = userPanel;
+        this.windowBar = new th.components.WindowBar({title: title});
+        this.add([this.windowBar, this.userPanel]);
+        
+        // this is a closed container
+        delete this.add;
+        delete this.remove;
+    },
+    
+    layout: function() {
+        var d = this.d();
+        this.width = d.b.w;
+        this.height = d.b.h;
+        var y = this.windowBar.getPreferredHeight();
+        this.windowBar.bounds = { x: 0, y: 0 , height: y, width: d.b.w };
+        this.userPanel.bounds = { x: 1, y: y , height: d.b.h - y - 1, width: d.b.w - 2 };
+    },
+    
+    paintSelf: function(ctx) {      
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "black";
+        
+        ctx.strokeStyle = "#2E1F1A";
+        ctx.strokeRect(0, 0, this.width, this.height);
+    }
 });
