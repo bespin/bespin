@@ -52,13 +52,13 @@ TIMEOUT = 2.0
 DMP = dmp_module.diff_match_patch()
 
 # Choose from: CRITICAL, ERROR, WARNING, INFO, DEBUG
-logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.DEBUG)
 
 # create logger
 log = logging.getLogger("mobwrite")
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.WARNING)
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 log.addHandler(ch)
