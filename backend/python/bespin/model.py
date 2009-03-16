@@ -167,7 +167,7 @@ class User(Base):
     def projects(self):
         location = self.get_location()
         result = [Project(self, name.basename(), location / name) 
-                for name in location.listdir()
+                for name in location.dirs()
                 if not name.basename().startswith(".")]
         result = sorted(result, key=lambda item: item.name)
         return result
