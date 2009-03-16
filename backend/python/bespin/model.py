@@ -372,30 +372,30 @@ class UserManager(object):
         if (rows == 0):
             raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
 
-    def get_groups(user):
+    def get_groups(self, user):
         """ """
         groups = self.session.query(Group).filter_by(owner_id=user.id).all()
         return groups
 
-    def get_group_members(user, groupname):
+    def get_group_members(self, user, groupname):
         """ """
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id).all()
         return members
 
-    def remove_all_group_members(user, groupname):
+    def remove_all_group_members(self, user, groupname):
         """ """
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id).delete()
         pass
 
-    def remove_group_members(user, groupname, other_user):
+    def remove_group_members(self, user, groupname, other_user):
         """ """
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id, user_id=other_user.id).delete()
         pass
 
-    def add_group_members(user, groupname, other_user):
+    def add_group_members(self, user, groupname, other_user):
         """ """
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         self.session.add(GroupMember(group_id=group.id, user_id=other_user.id))

@@ -497,7 +497,7 @@ def groupAdd(request, response):
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
 
-def _respond_json(response, data):
+def _respond_json(response, groups):
     response.body = simplejson.dumps(groups)
     response.content_type = "text/plain"
     return response()
@@ -526,6 +526,25 @@ def mobwrite(request, response):
     question = question[2:]
     answer = handler.parseRequest(question)
     response.body = answer + "\n\n"
+    response.content_type = "text/plain"
+    return response()
+
+test_users = [ "ev", "tom", "mattb", "zuck" ]
+
+@expose(r'^/test/setup/$', 'POST')
+def mobwrite(request, response):
+    user_manager = request.user_manager
+    for name in test_users:
+        user = user_manager.get_user(name)
+        if (user == None):
+            user = user_manager.create_user(name, name, name)
+    response.body = ""
+    response.content_type = "text/plain"
+    return response()
+
+@expose(r'^/test/cleanup/$', 'POST')
+def mobwrite(request, response):
+    response.body = ""
     response.content_type = "text/plain"
     return response()
 
