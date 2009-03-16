@@ -30,7 +30,7 @@ dojo.provide("bespin.editor.toolbar");
 // Such examples are collaboration views, file browser, undo/redo, cut/copy/paste and more.
 
 dojo.declare("bespin.editor.Toolbar", null, {
-    DEFAULT_TOOLBAR: ["collaboration", "files", "dashboard", "target_browsers", "save",
+    DEFAULT_TOOLBAR: ["collaboration", "dashboard", "target_browsers", "save",
                       "close", "undo", "redo", "preview", "fontsize"],
     FONT_SIZES: {
         1: 8,  // small
@@ -82,23 +82,6 @@ dojo.declare("bespin.editor.Toolbar", null, {
             dojo.connect(collab, 'mouseout', function() {
                 collab.style.cursor = "default";
                 collab.src = "images/icn_collab_off.png";
-            });
-        },
-
-        files: function(toolbar, el) {
-            var files = dojo.byId(el) || dojo.byId("toolbar_files");
-            dojo.connect(files, 'click', function() {
-                toolbar._showFiles = !toolbar._showFiles;
-                files.src = "images/" + ( (toolbar._showFiles) ? "icn_files_on.png" : "icn_files_off.png" );
-                bespin.page.editor.recalcLayout();
-            });
-            dojo.connect(files, 'mouseover', function() {
-                files.style.cursor = "pointer";
-                files.src = "images/icn_files_on.png";
-            });
-            dojo.connect(files, 'mouseout', function() {
-                files.style.cursor = "default";
-                files.src = "images/icn_files_off.png";
             });
         },
 
