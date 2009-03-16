@@ -43,7 +43,7 @@ dojo.provide("bespin.client.session");
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {        
         this.editor = editor;
-        this.collaborate = true;
+        this.collaborate = false;
     },
 
     setUserinfo: function(userinfo) {
