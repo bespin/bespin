@@ -473,11 +473,23 @@ dojo.declare("th.Window", null, {
             return;
         }
         
+        if (!dojo.byId('popup_insert_point')) {
+            // there is no place to add the popups => create one
+            for (var x = 0; x < document.childNodes.length; x++) {
+                if (document.childNodes[x].nodeType == 1) {
+                    // thats the place to add the pop_insert_point
+                    var popupParent = document.createElement("div");
+                    popupParent.id = 'popup_insert_point';
+                    document.childNodes[x].appendChild(popupParent);
+                    break;
+                }
+            }
+        }
+        
         // insert the HTML to the document for the new window and create the scene
         dojo.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
         this.container = dojo.byId(this.containerId);
         dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
-        this.container['moz-opaque'] = 'true';
 
         this.container.innerHTML = "<canvas id='"+this.containerId+"_canvas'></canvas>";
         this.canvas = dojo.byId(this.containerId + '_canvas');
