@@ -105,9 +105,19 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // create the Window!
         this.panel = new bespin.editor.quickopen.Panel();
-        this.window = new th.Window('test_win', { top: 100, left: 200, width: 220, height: 270, title: 'Find Files', userPanel: this.panel});
+        this.window = new th.Window({
+            title: 'Find Files', 
+            top: 100, 
+            left: 200, 
+            width: 220, 
+            height: 270, 
+            userPanel: this.panel,
+            containerId: 'quickopen',
+            closeOnClickOutside: true, 
+        });
         this.window.centerUp(); // center the window, but more a "human" center
-        
+
+        // add the input field to the window
         var input = document.createElement("input");
         input.type = "text";
         input.id = 'quickopen_text';
