@@ -433,7 +433,7 @@ def dojo(options):
     if not destfile.exists():
         info("Downloading Dojo to " + destfile)
         datafile = urllib2.urlopen(download_url)
-        output_file = open(destfile, "w")
+        output_file = open(destfile, "wb")
         output_file.write(datafile.read())
         output_file.close()
         datafile.close()
