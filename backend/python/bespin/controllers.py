@@ -41,7 +41,7 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model
-from bespin.mobwrite.mobwrite_daemon import RequestHandler
+#from bespin.mobwrite.mobwrite_daemon import RequestHandler
 import urllib
 
 log = logging.getLogger("bespin.controllers")
@@ -517,17 +517,17 @@ def _users_followed_response(user_manager, user, response):
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
 
-@expose(r'^/mobwrite/$', 'POST')
-def mobwrite(request, response):
-    handler = RequestHandler()
-    question = urllib.unquote(request.body)
-    if (question.find("q=") != 0):
-        raise BadRequest("Missing q=") 
-    question = question[2:]
-    answer = handler.parseRequest(question)
-    response.body = answer + "\n\n"
-    response.content_type = "text/plain"
-    return response()
+#@expose(r'^/mobwrite/$', 'POST')
+#def mobwrite(request, response):
+#    handler = RequestHandler()
+#    question = urllib.unquote(request.body)
+#    if (question.find("q=") != 0):
+#        raise BadRequest("Missing q=") 
+#    question = question[2:]
+#    answer = handler.parseRequest(question)
+#    response.body = answer + "\n\n"
+#    response.content_type = "text/plain"
+#    return response()
 
 test_users = [ "ev", "tom", "mattb", "zuck" ]
 
