@@ -47,6 +47,24 @@ bespin.cmd.commands.get = function(commandname) {
     return bespin.cmd.commands.store[commandname];
 };
 
+// ** {{{Command: bespin.cmd.commands.toArgArray}}} **
+// Helper for when you have a command that needs to get a hold of it's params
+// as an array for processing
+bespin.cmd.commands.toArgArray = function(args) {
+    if (args == null) {
+        return [];
+    }
+    else {
+        var spliten = args.split(" ");
+        if (spliten.length == 1 && spliten[0] == "") {
+            return [];
+        }
+        else {
+            return spliten;
+        }
+    }
+};
+
 // == Start adding commands to the store ==
 //
 
@@ -892,10 +910,8 @@ bespin.cmd.commands.add({
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
     // ** {{{execute}}}
     execute: function(self, args) {
-        var usernames = args.split(" ");
-        if (usernames.length == 1 && usernames[0] == "") {
-            usernames = [];
-        }
+        var usernames = bespin.cmd.commands.toArgArray(args);
+
         if (usernames.length == 0) {
             bespin.publish("bespin:network:followers");
         }
@@ -914,10 +930,8 @@ bespin.cmd.commands.add({
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
     // ** {{{execute}}}
     execute: function(self, args) {
-        var usernames = args.split(" ");
-        if (usernames.length == 1 && usernames[0] == "") {
-            usernames = [];
-        }
+        var usernames = bespin.cmd.commands.toArgArray(args);
+
         if (usernames.length == 0) {
             self.showInfo('Please specify the users to cease following');
         }
@@ -933,10 +947,8 @@ bespin.cmd.commands.add({
     preview: 'Collect the people you follow into groups, and display the existing groups',
     // ** {{{execute}}}
     execute: function(self, args) {
-        var args = args.split(" ");
-        if (args.length == 1 && args[0] == "") {
-            args = [];
-        }
+        args = bespin.cmd.commands.toArgArray(args);
+
         if (args.length == 0) {
             bespin.publish("bespin:groups:list:all");
         }
@@ -973,8 +985,9 @@ bespin.cmd.commands.add({
     name: 'test',
     preview: 'Run some automated end to end tests',
     script: [
-        { send:"echo hello", expect:/^hello$/ },
-        { send:"echo pass", expect:/ss/ }
+        { send:"echo Starting", expect:/^Starting$/ },
+        { send:"follow", expect:/sds/ },
+        { send:"echo Finished", expect:/^Finished$/ }
     ],
     // ** {{{_setup}}}
     _setup: function(self, onComplete) {
@@ -991,7 +1004,7 @@ bespin.cmd.commands.add({
     _cleanup: function(self, reason) {
         self.showInfo = this.originalShowInfo;
         self.showInfo(reason);
-        bespin.get('server').request('POST', '/test/setup/', null, {
+        bespin.get('server').request('POST', '/test/cleanup/', null, {
             call:function() {
                 console.log("Server cleanup completed")
             },
@@ -1017,16 +1030,20 @@ bespin.cmd.commands.add({
                 that._runNextElement(self, script, index + 1);
             }
             else {
-                console.log("Expected:", element.expect, "but received:", html);
-                that._cleanup(self, "Expected: '" + element.expect + "' but received: '" + html + "'");
+                console.error("Test failure at index:", index);
+                console.log("Command: ", element.send);
+                console.log("Expected: ", element.expect.source);
+                console.log("Received:", text);
+                that._cleanup(self, "Test failure at index: " + index + "<br/>Command: '" + element.send + "'<br/>Expected: /" + element.expect.source + "/<br/>Received: '" + text + "'");
             }
         };
         self.executeCommand(element.send);
     },
     // ** {{{execute}}}
     execute: function(self) {
+        var that = this;
         this._setup(self, function() {
-            this._runNextElement(self, this.script, 0);
+            that._runNextElement(self, that.script, 0);
         });
     }
 });
