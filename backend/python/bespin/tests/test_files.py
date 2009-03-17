@@ -467,14 +467,14 @@ def test_bad_files_and_directories():
 def _setup_search_data():
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     for name in [
-        "foo/bar",
-        "whiz/bang",
-        "ding/dong",
-        "foo/some_other",
-        "some/deeply/nested/file/here",
-        "whiz/cheez",
-        "bespin/rocks",
-        "many/files",
+        "foo_bar",
+        "whiz_bang",
+        "ding_dong",
+        "foo_some_other",
+        "some_deeply_nested_file_here",
+        "whiz_cheez",
+        "bespin_rocks",
+        "many_files",
         "cool+one"
     ]:
         bigmac.save_file(name, "hi")
@@ -489,45 +489,45 @@ def _run_search_tests(search_func):
     result = search_func("")
     print result
     assert result == [
-        "bespin/rocks",
+        "bespin_rocks",
         "cool+one",
-        "ding/dong",
-        "foo/bar",
-        "foo/some_other",
-        "many/files",
-        "some/deeply/nested/file/here",
-        "whiz/bang",
-        "whiz/cheez"
+        "ding_dong",
+        "foo_bar",
+        "foo_some_other",
+        "many_files",
+        "some_deeply_nested_file_here",
+        "whiz_bang",
+        "whiz_cheez"
     ]
     
     result = search_func("o")
     assert result == [
-        "bespin/rocks",
+        "bespin_rocks",
         "cool+one",
-        "ding/dong",
-        "foo/bar",
-        "foo/some_other",
-        "some/deeply/nested/file/here"
+        "ding_dong",
+        "foo_bar",
+        "foo_some_other",
+        "some_deeply_nested_file_here"
     ]
     
     result = search_func("o", 2)
     assert result == [
-        "bespin/rocks",
+        "bespin_rocks",
         "cool+one"
     ]
     
     result = search_func("os")
     assert result == [
-        "bespin/rocks",
-        "foo/some_other",
-        "some/deeply/nested/file/here"
+        "bespin_rocks",
+        "foo_some_other",
+        "some_deeply_nested_file_here"
     ]
     
     result = search_func("me")
     assert result == [
-        "foo/some_other",
-        "some/deeply/nested/file/here",
-        "many/files"
+        "foo_some_other",
+        "some_deeply_nested_file_here",
+        "many_files"
     ]
     
     result = search_func("+")
