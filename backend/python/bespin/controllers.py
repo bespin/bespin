@@ -513,7 +513,7 @@ def _lookup_usernames(user_manager, usernames):
 
 def _users_followed_response(user_manager, user, response):
     list = user_manager.users_i_follow(user)
-    list = connection.followed.username for connection in list
+    list = [connection.followed.username for connection in list]
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
 
