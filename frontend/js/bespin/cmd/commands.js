@@ -665,9 +665,9 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'import',
     takes: ['url', 'project'],
-    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename',
-    completeText: 'url (to an archive zip | tgz), optional project name',
-    usage: "[url of archive] [projectname]<br><br><em>(projectname optional. Will be taken from the URL if not provided)</em>",
+    preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename<br>If no URL is given to import, a file upload box will be shown to import.',
+    completeText: 'url (to an archive zip | tgz) and/or project name',
+    usage: "[url of archive] [projectname]<br><br><em>If only a URL is given, the projectname will be implied<br><br>If only a project name is given, a file upload window will be shown to upload.</em>",
     // ** {{{calculateProjectName}}}
     //
     // Given a URL, work out the project name as a default
@@ -686,6 +686,50 @@ bespin.cmd.commands.add({
     isURL: function(url) {
         return (url && (/^http(:|s:)/.test(url))); 
     },
+    upload: function(project) {
+        // use the center popup and inject a form in that points to the right place.
+        var el = dojo.byId('centerpopup');
+
+        el.innerHTML = "<div id='upload-container'><form method='POST' name='upload' id='upload' enctype='multipart/form-data'><div id='upload-header'>Import project via upload <img id='upload-close' src='images/icn_close_x.png' align='right'></div><div id='upload-content'><div id='upload-status'></div><p>Browse to find the project archive that you wish to archive<br>and then click on the <code>Upload</code> button.</p><center><input type='file' id='filedata' name='filedata' accept='application/zip,application/x-gzip'> <input type='submit' value='Upload'></center></div></form></div>";
+          
+        dojo.require("dijit._base.place");
+        dojo.require("bespin.util.webpieces");
+
+        dojo.require("dojo.io.iframe"); 
+
+        dojo.connect(dojo.byId('upload'), "submit", function() {
+            dojo.byId('upload-status').innerHTML = 'Importing file into new project ' + project;
+            dojo.io.iframe.send({
+                url: '/project/import/' + project,
+                form: dojo.byId('upload'),
+                method: 'POST',
+                handleAs: 'text',
+                preventCache: true,
+                contentType: "multipart/form-data",
+                load: function(data, ioArg) {
+                    dojo.byId('upload-status').innerHTML = 'Thanks for uploading the file!';
+                },
+                error: function(error, ioArg) {
+                    setTimeout(function() {
+                        bespin.get('files').projects(function(projectNames) {
+                            if (dojo.some(projectNames, function(testProject) { return project + '/' == testProject.name; })) {
+                                dojo.byId('upload-status').innerHTML = 'Archive imported and project ' + project + ' has been created!';
+                            } else {
+                                dojo.byId('upload-status').innerHTML = 'Error uploading the file. Sorry, try again!';                                  
+                            }
+                        });
+                    }, 100);
+                }
+            });
+        });
+
+        bespin.util.webpieces.showCenterPopup(el);
+
+        dojo.byId("overlay").onclick = dojo.byId("upload-close").onclick = function() {
+            bespin.util.webpieces.hideCenterPopup(el);
+        };
+    },
+
     // ** {{{execute}}}
     //
     // Can be called in three ways:
@@ -709,18 +753,19 @@ bespin.cmd.commands.add({
             url = args.url;
             args.project = url;
             args.url = project;
-        // * Make sure that a URL came along at some point
+        // * Make sure that a URL came along at some point, else call up an upload box
         } else if (!this.isURL(args.url)) {
-            self.showUsage(this);
-            return;            
+            var project = args.url; // only a project has been passed in
+            this.upload(project);
+        } else {
+        // * A project and URL are here and available to do a URL based import
+            project = args.project;
+            url = args.url;
+
+            self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
+
+            bespin.publish("bespin:project:import", { project: project, url: url });
         }
-        
-        project = args.project;
-        url = args.url;
-
-        self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
-
-        bespin.publish("bespin:project:import", { project: project, url: url });
     }
 });
 

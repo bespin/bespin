@@ -5,15 +5,6 @@ body {
 	background-color: #3d3b34;
 }
 
-img {
-    border: none;
-}
-
-#header {
-    height: 32px;
-    background-image: url("../images/toolbar_main_bg.gif");
-}
-
 #subheader {
     height: 32px;
     margin: 0;
@@ -35,10 +26,6 @@ img {
     right: 0px;
     left: 0px;
     z-index: -1;
-}
-
-#logo {
-    margin-right: 30px;
 }
 
 #projects {
@@ -231,33 +218,6 @@ ul#sessionslist li ul li {
     font-size: 12pt;
 }
 
-body {
-    padding: 0;
-    margin: 0;
-}
-
-#prompt {
-    width: 11px;
-}
-
-#promptimg {
-    margin-top: 6px;
-    padding-right: 4px;
-}
-
-#commandline {
-    width: 100%;
-}
-
-#command {
-    border: 0;
-    background: none;
-    color: #DDDDDD;
-    font-size: 12pt;
-    font-family: Calibri, Arial, sans-serif;
-    width: 100%;
-}
-
 #message {
     font-size: 14px;
     font-family: Calibri, Arial, sans-serif;
@@ -267,27 +227,6 @@ body {
 #message a {
     color: #777777;
     text-decoration: none;
-}
-
-#info {
-    position: absolute;
-    bottom: 32px;
-    left: 51px;
-    padding: 20px 40px 10px 30px;
-    width: 431px;
-    color: #999;
-    background-image: url("../images/info_popup.png");
-    background-repeat: no-repeat;
-}
-
-#info u {
-    color: #999;
-    text-decoration: none;
-    font-family: Calibri, Arial, sans-serif;
-}
-
-#info b {
-	color: #ddd;
 }
 
 #footer_bar {
@@ -310,22 +249,3 @@ body {
     color: #DDDDDD;
     padding-left: 2px;
 }
-
-#version {
-    float: right;
-    padding: 8px;
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12px;
-    color: #aaa;
-}
-
-#version a {
-    text-decoration: none;
-    color: #aaa;
-}
-
-.versionnumber {
-    color: #777;
-}
-
-*:focus { outline: 0; }
