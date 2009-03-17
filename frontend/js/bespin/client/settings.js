@@ -408,9 +408,6 @@ dojo.declare("bespin.client.settings.Events", null, {
             } else if (syntaxSetting == 'off') {
                 editor.language = 'off';
             }
-            bespin.publish("bespin:editor:languagechange", {
-                language: editor.language
-            })
         });
 
         // ** {{{ Event: bespin:settings:set:collaborate }}} **

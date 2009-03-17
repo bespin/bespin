@@ -90,7 +90,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         
         var editor = bespin.get("editor");
         if(!editor.language) {
-            bespin.subscribe("bespin:editor:languagechange", function () {
+            // we should not start until the language was set once
+            bespin.subscribe("bespin:settings:syntax", function () {
                 self.start()
             })
             return;
