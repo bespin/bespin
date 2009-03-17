@@ -473,7 +473,7 @@ dojo.declare("th.Window", null, {
             return;
         }
         
-        if (!dojo.byId('popup_insert_point')) {
+        /*if (!dojo.byId('popup_insert_point')) {
             // there is no place to add the popups => create one
             for (var x = 0; x < document.childNodes.length; x++) {
                 if (document.childNodes[x].nodeType == 1) {
@@ -484,7 +484,7 @@ dojo.declare("th.Window", null, {
                     break;
                 }
             }
-        }
+        }*/
         
         // insert the HTML to the document for the new window and create the scene
         dojo.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
