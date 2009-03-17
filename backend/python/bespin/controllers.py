@@ -505,7 +505,7 @@ def _respond_json(response, groups):
 def _lookup_usernames(user_manager, usernames):
     def lookup_username(username):
         user = user_manager.get_user(username)
-        if (user == None):
+        if user == None:
             # TODO: XSS injection hole here, we should have some policy
             raise BadRequest("Username not found: %s" % username)
         return user
@@ -513,7 +513,7 @@ def _lookup_usernames(user_manager, usernames):
 
 def _users_followed_response(user_manager, user, response):
     list = user_manager.users_i_follow(user)
-    list = map(lambda connection: connection.followed.username, list)
+    list = connection.followed.username for connection in list
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
 
