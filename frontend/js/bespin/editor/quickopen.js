@@ -47,7 +47,11 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         list.oldGetRenderer = list.getRenderer;
         list.getRenderer = function(rctx) {
             var label = list.oldGetRenderer(rctx);
-            label.attributes.text = rctx.item.name;
+            if (rctx.item.lastFolder) {
+                label.attributes.text = rctx.item.name + ' - ' + rctx.item.lastFolder;                
+            } else {
+                label.attributes.text = rctx.item.name;                
+            }
             return label;
         }
         
@@ -204,20 +208,39 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
     
     showFiles: function(files, sortFiles) {
-        var items = new Array();
-        var quickopen = bespin.get('quickopen'); 
-        var file;
         sortFiles = sortFiles || false;
-                
-        files = files.slice(0, 12);
-                
+        var items = new Array();
+        var sortedItems = new Array();
+        var quickopen = bespin.get('quickopen');
+        var lastFolder;
+        var name;
+        var path;
+        var lastSlash;
+        var file;
+        
+        // for the moment there are only 12 files displayed...
+        files = files.slice(0, 12);        
         for (var x = 0; x < files.length; x++) {                
             file = files[x];
-            var lastSlash = file.lastIndexOf("/");
-            var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
-            var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
+            lastSlash = file.lastIndexOf("/");
+            path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
+            name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-            items.push({name: name, filename: file});                
+            // look at the array if there is an entry with the same name => adds folder to it!
+            lastFolder = false;
+            for (var y = items.length - 1; y != -1 ; y--) {
+                if (items[y].name == name) {
+                    if (!items[y].lastFolder) {
+                        lastFolder = items[y].filename.split('/');
+                        items[y].lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                        
+                    }
+                    
+                    lastFolder = file.split('/');
+                    lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                   
+                    break;
+                }
+            }
+            items.push({name: name, filename: file, lastFolder: lastFolder});
         }
         
         if (sortFiles) {
