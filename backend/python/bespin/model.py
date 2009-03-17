@@ -882,7 +882,7 @@ class Project(object):
         location = self.location
         files = self._search_cache.lines(retain=False)
         for f in files:
-            if main_search.search(f):
+            if main_search.search(path_obj(f).basename()):
                 match_list.append(_SearchMatch(query, f))
         all_results = [str(match) for match in sorted(match_list)]
         return all_results[:limit]
