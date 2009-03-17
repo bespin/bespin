@@ -407,7 +407,10 @@ dojo.declare("bespin.client.settings.Events", null, {
                 editor.language = language;
             } else if (syntaxSetting == 'off') {
                 editor.language = 'off';
-            } 
+            }
+            bespin.publish("bespin:editor:languagechange", {
+                language: editor.language
+            })
         });
 
         // ** {{{ Event: bespin:settings:set:collaborate }}} **
@@ -544,9 +547,9 @@ dojo.declare("bespin.client.settings.Events", null, {
         // 
         // Check for auto load
         bespin.subscribe("bespin:settings:init", function(event) {
-            if (settings.isOn(settings.get('autoconfig'))) {
+            //if (settings.isOn(settings.get('autoconfig'))) {
                 bespin.publish("bespin:editor:config:run");
-            }
+            //}
         });
 
         // ** {{{ Event: bespin:settings:init }}} **

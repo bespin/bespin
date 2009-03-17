@@ -934,6 +934,15 @@ bespin.cmd.commands.add({
     }
 });
 
+//** {{{Command: outline}}} **
+bespin.cmd.commands.add({
+    name: 'outline',
+    preview: 'show outline of source code',
+    execute: function(self) {
+        bespin.publish("bespin:parser:showoutline")
+    }
+})
+
 // ** {{{Command: follow}}} **
 bespin.cmd.commands.add({
     name: 'follow',
@@ -944,7 +953,6 @@ bespin.cmd.commands.add({
     // ** {{{execute}}}
     execute: function(self, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
-
         if (usernames.length == 0) {
             bespin.publish("bespin:network:followers");
         }

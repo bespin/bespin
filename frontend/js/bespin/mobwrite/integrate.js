@@ -47,6 +47,7 @@ mobwrite.shareBespinObj.prototype.setClientText = function(text) {
     // this.element.value = text;
     // this.fireChange(this.element);
     this._editSession.editor.model.insertDocument(text);
+    bespin.publish("bespin:editor:document:changed")
 };
 
 /**

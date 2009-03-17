@@ -119,3 +119,7 @@ img {
 #info b {
 	color: #ddd;
 }
+
+#info a {
+	color: #999;
+}

@@ -106,6 +106,12 @@ options(
                             % (options.dojo.version, options.dojo.version),
         destination=path('frontend/js'),
         source=False
+    ),
+    jsparser=Bunch(
+        download_urls=[
+          "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsdefs.js?raw=1",
+          "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsparse.js?raw=1"
+        ]
     )
 )
 
@@ -465,7 +471,29 @@ def dojo(options):
         f = dojotar.extractfile(member)
         destpath.write_bytes(f.read())
         f.close()
+
+"""
+Cannot be used because jsparse needed to be slightly patched
+@task
+@cmdopts([('source', 's', "Grab JSParser from trunk :)")])
+def jsparser(options):
+    download_urls = options.jsparser.download_urls
     
+    for download_url in download_urls:
+        destfile = path(urlparse(download_url).path)
+        destdir  = path("frontend/js/jsparse")
+        destfile = destdir / destfile.basename()
+        if not destdir.exists():
+            destdir.makedirs()
+            
+        if not destfile.exists():
+            info("Downloading JSParser to " + destfile)
+            datafile = urllib2.urlopen(download_url)
+            output_file = open(destfile, "w")
+            output_file.write(datafile.read())
+            output_file.close()
+            datafile.close()"""
+            
 @task
 @cmdopts([('user=', 'u', 'User to set up for Bespin editing')])
 def editbespin(options):
@@ -500,4 +528,3 @@ def editbespin(options):
         project = model.get_project(user, user, "BespinSettings", create=True)
         project.install_template('usertemplate')
     info("User %s set up to access directory %s" % (user, location))
-    
