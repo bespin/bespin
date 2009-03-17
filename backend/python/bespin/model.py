@@ -876,9 +876,13 @@ class Project(object):
     def search_files(self, query, limit=20):
         """Scans the files for filenames that match the queries."""
         match_list = []
+        
+        # make the query lower case so that the match boosting
+        # in _SearchMatch can use it
+        query = query.lower()
         escaped_query = [re.escape(char) for char in query]
         search_re = ".*".join(escaped_query)
-        main_search = re.compile(search_re)
+        main_search = re.compile(search_re, re.I)
         location = self.location
         files = self._search_cache.lines(retain=False)
         for f in files:
@@ -892,7 +896,7 @@ class _SearchMatch(object):
     """Comparable objects that store the result of a file search match"""
     def __init__(self, query, match):
         # if the query string is directly in there, boost the score
-        if query in match:
+        if query in match.lower():
             self.score = 1
         else:
             self.score = 0
