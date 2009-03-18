@@ -13,5 +13,5 @@
     }
 
     // -- Load up the embeddable editor component
-    dojo.require("bespin.editor.Component");
+    dojo.require("bespin.editor.component");
 })();
