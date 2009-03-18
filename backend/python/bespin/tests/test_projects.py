@@ -306,3 +306,12 @@ def test_rename_project():
     # that exists
     app.post("/project/rename/foobar/", "bigmac", status=409)
     
+def test_install_template_from_the_web():
+    _init_data()
+    app.post("/project/template/bigmac/", "/etc/passwd", status=400)
+    app.post("/project/template/bigmac/", "../foo", status=400)
+    app.post("/project/template/bigmac/", "ttemplate")
+    resp = app.get("/file/list/bigmac/")
+    files = simplejson.loads(resp.body)
+    assert files[0]['name'] == "newfile-bigmac.js"
+    

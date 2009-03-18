@@ -228,6 +228,19 @@ def listfiles(request, response):
     response.body = simplejson.dumps(result)
     return response()
     
+@expose(r'^/project/template/(?P<project_name>.*)/$', 'POST')
+def install_template(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    template_name = request.body
+    if "/" in template_name or "." in template_name:
+        raise BadRequest("Template names cannot include '/' or '.'")
+    project = model.get_project(user, user, project_name, create=True)
+    project.install_template(template_name)
+    response.content_type = "text/plain"
+    response.body = ""
+    return response()
+    
 @expose(r'^/file/search/(?P<project_name>.*)$', 'GET')
 def file_search(request, response):
     user = request.user
