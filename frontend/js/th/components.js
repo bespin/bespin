@@ -161,9 +161,9 @@ dojo.declare("th.components.Scrollbar", th.Container, {
     paint: function(ctx) {
         if (this.max < 0) return;
 
-        var top = this.styles["-th-vscroll-top-image"];
-        var mid = this.styles["-th-vscroll-middle-image"];
-        var bot = this.styles["-th-vscroll-bottom-image"];
+        var top = this.styles["-th-vertical-top-image"];
+        var mid = this.styles["-th-vertical-middle-image"];
+        var bot = this.styles["-th-vertical-bottom-image"];
 
         // paint the track
         if (top) ctx.drawImage(top, 1, this.up.bounds.height);
@@ -228,14 +228,14 @@ dojo.declare("th.components.ResizeNib", th.Component, {
             var x = Math.floor((d.b.w / 2) - (bw / 2));
             var y = 7;
 
-            ctx.fillStyle = "rgb(185, 180, 158)";
+            ctx.fillStyle = this.styles["-th-vertical-bar-shadow-color"];
             for (var i = 0; i < 3; i++) {
                 ctx.fillRect(x, y, bw, 1);
                 y += 3;
             }
 
             y = 8;
-            ctx.fillStyle = "rgb(10, 10, 8)";
+            ctx.fillStyle = this.styles["-th-vertical-bar-color"];
             for (var i = 0; i < 3; i++) {
                 ctx.fillRect(x, y, bw, 1);
                 y += 3;
