@@ -124,7 +124,7 @@ def required():
     if not pip.exists():
         # try Windows version
         pip = path("Scripts") / "pip"
-    sh("%s install -U -r requirements.txt" % pip)
+    sh('%s install -U --install-option="--install-data=backend/python/installed-package-data" -r requirements.txt' % pip)
     
     call_pavement('backend/python/pavement.py', 'develop')
         
