@@ -260,13 +260,20 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     bus: th.global_event_bus,
 
     constructor: function(canvas) {
+        this.canvas = canvas;
+
+        // whether this scene completely repaints on each render or does something smarter. this is experimental.
+        this.smartRedraw = false;
+
+        // aliasing global resources to be a member; not yet clear how components will typically get access to resources, whether
+        // through scene or the global
         this.resources = th.global_resources;
+
+        // has this scene registered a render callback? this is done if render() invoked before resources are all loaded
         this.resourceCallbackRegistered = false;
 
         // if the resource loading process hasn't started, start it!
         if (!this.resources.loaded && !this.resources.loading) this.resources.load();
-
-        this.canvas = canvas;
 
         dojo.connect(window, "resize", dojo.hitch(this, function() {
             this.render();
@@ -373,8 +380,9 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
                 parent = parent.parent;
             }
             
-            if (this.smartRedraw === undefined)
+            if (!this.smartRedraw) {
                 ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
+            }
             ctx.beginPath();
             ctx.rect(0, 0, component.bounds.width, component.bounds.height);
             ctx.closePath();
@@ -427,11 +435,11 @@ dojo.declare("th.Component", th.helpers.ComponentHelpers, {
         return (this.border) ? this.border.getInsets() : this.emptyInsets();
     },
     
-    paint: function(ctx) {
-        console.log("default component paint");
-    },
+    paint: function(ctx) {},
     
     repaint: function() {
+        // todo: at present, there are some race conditions that cause painting to be invoked before a scene is ready, so this
+        // check is necessary to bail. We need to work out better rules for scenes and components, etc.
         if (!this.getScene()) return;
         
         this.getScene().paint(this);
