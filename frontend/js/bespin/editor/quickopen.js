@@ -142,14 +142,29 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             // save the current file and load up the new one
             bespin.publish("bespin:editor:savefile", {});
             bespin.publish("bespin:editor:openfile", { filename: item.filename });
-            
+                        
             // adds the new opened file to the top of the openSessionFiles
             if (this.openSessionFiles.indexOf(item.filename) != -1) {
                 this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1)
             }                
             this.openSessionFiles.unshift(item.filename);
             
-            this.toggle();
+            this.window.toggle();
+        }));
+        
+        // listen to the bus, whether the window got toggled
+        this.window.scene.bus.bind("toggle", this.window, dojo.hitch(this, function(e) {            
+            if (e.isVisible) {
+                this.showFiles(this.openSessionFiles);
+                this.input.value = '';
+                this.input.focus();
+                // the editor has no longer the focus
+                bespin.get('editor').focus = false;
+            } else {
+                this.lastText = '';
+                this.input.blur();
+                bespin.get('editor').focus = true;
+            } 
         }));
                 
         // handle ARROW_UP and ARROW_DOWN to select items in the list and other stuff
@@ -167,7 +182,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             } else if (e.keyCode == key.ENTER) {
                 this.window.scene.bus.fire("dblclick", {}, this.panel.list);     
             } else if (this.keyRunsMe(e)) {
-                this.toggle();
+                this.window.toggle();
                 dojo.stopEvent(e);
             }
         }));
@@ -192,21 +207,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
     },
-    
-    toggle: function() {
-        var quickopen = bespin.get('quickopen');
-        quickopen.window.toggle();
         
-        if (quickopen.window.isVisible) {
-            quickopen.showFiles(quickopen.openSessionFiles);
-            quickopen.input.value = '';
-            quickopen.input.focus();
-        } else {
-            quickopen.lastText = '';
-            quickopen.input.blur();
-        }
-    },
-    
     showFiles: function(files, sortFiles) {
         sortFiles = sortFiles || false;
         var items = new Array();
@@ -302,7 +303,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (this.window.isVisible) return true; // in the command line!
 
         if (this.keyRunsMe(e)) { // send to command line
-            bespin.get('quickopen').toggle();
+            bespin.get('quickopen').window.toggle();
 
             dojo.stopEvent(e);
             return true;

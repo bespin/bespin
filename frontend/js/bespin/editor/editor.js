@@ -285,10 +285,6 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
             handled = true;
         }
         
-        if (quickopen && quickopen.handleKeys(e)) {
-            handled = true;
-        }
-        
         if (handled) return false;
         // -- End of commandLine short cut
 
@@ -327,11 +323,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
             handled = true;
         }
-        
-        if (quickopen && quickopen.handleKeys(e)) {
-            handled = true;
-        }
-        
+                
         if (handled) return false;
         
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
@@ -1407,6 +1399,19 @@ dojo.declare("bespin.editor.API", null, {
     // helper
     getCursorPos: function() {
         return this.cursorManager.getScreenPosition();
+    },
+    
+    // restore the state of the editor
+    resetView: function(data) {
+        this.cursorManager.moveCursor(data.cursor);
+        this.setSelection(data.selection);
+        this.ui.yoffset = data.offset.y;
+        this.ui.xoffset = data.offset.x;
+        this.paint();
+    },
+    
+    getCurrentView: function() {
+        return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection};
     },
 
     // helper to get text

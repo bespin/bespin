@@ -640,15 +640,15 @@ dojo.declare("th.Window", null, {
          
     toggle: function() {
         this.isVisible = !this.isVisible;
-        
-        this.scene.bus.fire("toggle", {}, this);
-        
+                
         if (this.isVisible) {
             this.container.style.display = 'block';
             this.layoutAndRender();
         } else {
             this.container.style.display = 'none';
         }
+        
+        this.scene.bus.fire("toggle", {isVisible: this.isVisible}, this);
     },
     
     layoutAndRender: function() {
