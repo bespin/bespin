@@ -1,97 +1,170 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-<head>
-  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-  <link rel="stylesheet" type="text/css" href="code-illuminated/docs.css" />
-  <title>Bespin Documentation</title>
-</head>
-<body>
-<div id="content">
-<div id="overview" class="documentation" style="display: none;">
-
-    <h1>Bespin</h1>
-    <p><b>Overview</b></p>
-
-    <p>We are documenting the Bespin code as <a href="http://www.toolness.com/wp/?p=441">beautifully</a> as we can. For the front end JavaScript and Web code we are using the <a href="http://code.google.com/p/code-illuminated/">code illuminated tool</a> created by Atul Varma.</p>
-
-    <p>Here is what we've got for documentation so far. We have split out the <a href="events.html">documentation for the Events API</a> which is something you will want to check out if you want a loosely coupled integration with Bespin.</p>
-
-    <h3>Bespin Front End Code</h3>
-
-    <b>Core Files</b>
-    <ul>
-        <li><a href="#code/bespin/bespin.js">Bespin Core</a></li>
-        <li><a href="#code/bespin/bootstrap.js">Editor Bootstrap Code</a></li>
-        <li><a href="#code/bespin/events.js">Core Editor Events and <code>Bespin.Events</code> Helper</a></li>
-    </ul>
-
-    <b>Client Code</b>
-    <ul>
-        <li><a href="#code/bespin/client/filesystem.js">FileSystem</a>: Remote File System</li>
-        <li><a href="#code/bespin/client/server.js">Server</a>: Implementation of the Bespin Server API</li>
-        <li><a href="#code/bespin/client/session.js">Session Module</a>: EditSession and SyncHelper</li>
-        <li><a href="#code/bespin/client/settings.js">Settings Module</a>: Settings core, and various stores</li>
-    </ul>
-
-    <b>Command Line</b>
-    <ul>
-        <li><a href="#code/bespin/cmd/commandline.js">CommandLine: The core command line module</a></li>
-        <li><a href="#code/bespin/cmd/commands.js">Commands</a>: The store that holds reused commands</li>
-        <li><a href="#code/bespin/cmd/dashboardcommands.js">Dashboard Commands</a></li>
-        <li><a href="#code/bespin/cmd/editorcommands.js">Editor Commands</a></li>
-  </ul>
-
-    <b>Dashboard</b>
-    <ul>
-        <li><a href="#code/bespin/dashboard/components.js">Dashboard Components</a>: Thunderhead components that the dashboard uses</li>
-        <li><a href="#code/bespin/dashboard/dashboard.js">Dashboard Core</a>: bootstrap of the dashboard page</li>
-        <li><a href="#code/bespin/dashboard/events.js">Dashboard Events</a>: definition of events that the dashboard publishes and subscribes to</li>
-    </ul>
+  <head>
+    <title>Jinja2 Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="_static/style.css" type="text/css">
+    <link rel="stylesheet" href="_static/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css">
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:   '',
+        VERSION:    '2.0'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/interface.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jinja.js"></script>
+    <link rel="contents" title="Global table of contents" href="contents.html">
+    <link rel="index" title="Global index" href="genindex.html">
+    <link rel="search" title="Search" href="search.html">
+    <link rel="top" title="Jinja2 v2.0 documentation" href="">
+    <link rel="next" title="Introduction" href="intro.html">
+    
+  </head>
+  <body>
+    <div id="content">
+      <div class="header">
+        <h1 class="heading"><a href=""
+          title="back to the documentation overview"><span>Jinja</span></a></h1>
+      </div>
+      <div class="relnav">
+        <a href="">Jinja2 Documentation</a>
+        | <a href="intro.html">Introduction &raquo;</a>
+      </div>
+      <div id="contentwrapper">
         
-    <b>Editor</b>
-    <ul>
-        <li><a href="#code/bespin/editor/actions.js">Editor Actions</a>: what the editor can do</li>
-        <li><a href="#code/bespin/editor/editor.js">Editor</a>: The meat. The Core. paint()</li>
-        <li><a href="#code/bespin/editor/events.js">Events</a>: definition of events that the editor publishes and subscribes to</li>
-        <li><a href="#code/bespin/editor/model.js">Model</a>: the document model the editor uses</li>
-        <li><a href="#code/bespin/editor/themes.js">Themes</a>: Current theming</li>
-        <li><a href="#code/bespin/editor/toolbar.js">Toolbar</a>: link external toolbar to the editor itself</li>
-        <li><a href="#code/bespin/editor/undo.js">Undo</a>: Manage the undo / redo queue</li>
-    </ul>
-
-    <b>Syntax Highlighting</b>
-    <ul>
-        <li><a href="#code/bespin/syntax/syntax.js">Syntax Highlighter</a>: The core driver (SyntaxModel) and engine resolver (EngineResolver)</li>
-        <li><a href="#code/bespin/syntax/javascript.js">JavaScript Syntax Engine</a> (also registered for Java. Sneaky huh.)</li>
-        <li><a href="#code/bespin/syntax/css.js">CSS Syntax Engine</a></li>
-        <li><a href="#code/bespin/syntax/html.js">HTML Syntax Engine</a></li>
-        <li><a href="#code/bespin/syntax/php.js">PHP Syntax Engine</a></li>
-        <li><a href="#code/bespin/syntax/arduino.js">Arduino Syntax Engine</a></li>
-    </ul>
-
-    <b>User</b>
-    <ul>
-        <li><a href="#code/bespin/user/register.js">Register</a>: Code for user registration on a bespin server</li>
-        <li><a href="#code/bespin/user/utils.js">Utils</a>: Handy utilities for dealing with the front page of a bespin server</li>
-    </ul>
-  
-    <b>Utilities</b>
-    <ul>
-        <li><a href="#code/bespin/util/canvas.js">Canvas</a>: shim it up, have the standard work all over</li>
-        <li><a href="#code/bespin/util/clipboard.js">Clipboard</a>: Handle the clipboard to copy and paste</li>
-        <li><a href="#code/bespin/util/keys.js">Key</a>: Key codes and simple handling</li>
-        <li><a href="#code/bespin/util/mousewheelevent.js">Mouse Wheel</a>: Wrap the mousewheel events to work cross browser, both vertical and horizontal</li>
-        <li><a href="#code/bespin/util/navigate.js">Navigate</a>: Shoot people around the Bespin URLs (a.k.a. location.href wrapper)</li>
-        <li><a href="#code/bespin/util/path.js">Path</a>: combine paths, get directories, and escape away</li>
-        <li><a href="#code/bespin/util/tokenobject.js">TokenObject</a>: split up a string into pieces</li>
-        <li><a href="#code/bespin/util/urlbar.js">URLBar</a>: will watch the hash location and fire an event when it changes</li>
-        <li><a href="#code/bespin/util/util.js">Util</a>: is the REAL grab bag. A lot of "what Prototype used to do that we liked", but more.</li>
-    </ul>
-
+  <div class="section" id="jinja2-documentation">
+<h1>Jinja2 Documentation<a class="headerlink" href="#jinja2-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This is the documentation for the Jinja2 general purpose templating language.
+Jinja2 is a library for Python 2.4 and onwards that is designed to be flexible,
+fast and secure.</p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference external" href="intro.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference external" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="intro.html#basic-api-usage">Basic API Usage</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference external" href="api.html#basics">Basics</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#unicode">Unicode</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#high-level-api">High Level API</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#notes-on-identifiers">Notes on Identifiers</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#undefined-types">Undefined Types</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#the-context">The Context</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#id1">Loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#id2">Bytecode Cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#utilities">Utilities</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#exceptions">Exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#custom-filters">Custom Filters</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#custom-tests">Custom Tests</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#the-global-namespace">The Global Namespace</a></li>
+<li class="toctree-l2"><a class="reference external" href="api.html#id3">Low Level API</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="sandbox.html">Sandbox</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="templates.html">Template Designer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference external" href="templates.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id1">Variables</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id2">Filters</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id3">Tests</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#whitespace-control">Whitespace Control</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#escaping">Escaping</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id4">Line Statements</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id5">Template Inheritance</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#html-escaping">HTML Escaping</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#list-of-control-structures">List of Control Structures</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#import-context-behavior">Import Context Behavior</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#id9">Expressions</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#list-of-builtin-filters">List of Builtin Filters</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#list-of-builtin-tests">List of Builtin Tests</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#list-of-global-functions">List of Global Functions</a></li>
+<li class="toctree-l2"><a class="reference external" href="templates.html#extensions">Extensions</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="extensions.html">Extensions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="extensions.html#adding-extensions">Adding Extensions</a></li>
+<li class="toctree-l2"><a class="reference external" href="extensions.html#id1">i18n Extension</a></li>
+<li class="toctree-l2"><a class="reference external" href="extensions.html#expression-statement">Expression Statement</a></li>
+<li class="toctree-l2"><a class="reference external" href="extensions.html#loop-controls">Loop Controls</a></li>
+<li class="toctree-l2"><a class="reference external" href="extensions.html#module-jinja2.ext">Writing Extensions</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="integration.html">Integration</a><ul>
+<li class="toctree-l2"><a class="reference external" href="integration.html#id1">Babel Integration</a></li>
+<li class="toctree-l2"><a class="reference external" href="integration.html#pylons">Pylons</a></li>
+<li class="toctree-l2"><a class="reference external" href="integration.html#textmate">TextMate</a></li>
+<li class="toctree-l2"><a class="reference external" href="integration.html#vim">Vim</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="switching.html">Switching from other Template Engines</a><ul>
+<li class="toctree-l2"><a class="reference external" href="switching.html#jinja1">Jinja1</a></li>
+<li class="toctree-l2"><a class="reference external" href="switching.html#django">Django</a></li>
+<li class="toctree-l2"><a class="reference external" href="switching.html#mako">Mako</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="tricks.html">Tips and Tricks</a><ul>
+<li class="toctree-l2"><a class="reference external" href="tricks.html#id1">Null-Master Fallback</a></li>
+<li class="toctree-l2"><a class="reference external" href="tricks.html#alternating-rows">Alternating Rows</a></li>
+<li class="toctree-l2"><a class="reference external" href="tricks.html#highlighting-active-menu-items">Highlighting Active Menu Items</a></li>
+<li class="toctree-l2"><a class="reference external" href="tricks.html#id2">Accessing the parent Loop</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-is-it-called-jinja">Why is it called Jinja?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#how-fast-is-it">How fast is it?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#how-compatible-is-jinja2-with-django">How Compatible is Jinja2 with Django?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#isn-t-it-a-terrible-idea-to-put-logic-into-templates">Isn&#8217;t it a terrible idea to put Logic into Templates?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-is-autoescaping-not-the-default">Why is Autoescaping not the Default?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-is-the-context-immutable">Why is the Context immutable?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#i-don-t-have-the-speedups-module-is-jinja-slower-now">I don&#8217;t have the _speedups Module.  Is Jinja slower now?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#my-tracebacks-look-weird-what-s-happening">My tracebacks look weird.  What&#8217;s happening?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-is-there-no-python-2-3-support">Why is there no Python 2.3 support?</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#version-2-2">Version 2.2</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#version-2-1">Version 2.1</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#version-2-0">Version 2.0</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#version-2-0rc1">Version 2.0rc1</a></li>
+</ul>
+</li>
+</ul>
+<p>If you can&#8217;t find the information you&#8217;re looking for, have a look at the
+index of try to find it using the search function:</p>
+<ul class="simple">
+<li><a class="reference external" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference external" href="search.html"><em>Search Page</em></a></li>
+</ul>
 </div>
-</div>
-</body>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js"></script>
-<script src="code-illuminated/wikicreole.js"></script>
-<script src="code-illuminated/docs.js"></script>
+
+
+      </div>
+    </div>
+    <div class="footer">
+      © Copyright 2008 by the <a href="http://pocoo.org/">Pocoo Team</a>,
+      documentation generated by <a href="http://sphinx.pocoo.org/">Sphinx</a>
+    </div>
+  </body>
 </html>

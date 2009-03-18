@@ -1,0 +1,5 @@
+Scrollbar {
+    -th-vscroll-top-image: url(/images/dash_vscroll_top.png);
+    -th-vscroll-middle-image: url(/images/dash_vscroll_middle.png);
+    -th-vscroll-bottom-image: url(/images/dash_vscroll_bottom.png);
+}

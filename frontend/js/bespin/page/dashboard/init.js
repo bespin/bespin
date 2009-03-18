@@ -260,9 +260,6 @@ dojo.provide("bespin.page.dashboard.init");
             scrollTopImage: dojo.byId("vscroll_track_top"),
             scrollMiddleImage: dojo.byId("vscroll_track_middle"),
             scrollBottomImage: dojo.byId("vscroll_track_bottom"),
-            scrollHandleTopImage: dojo.byId("vscroll_top"),
-            scrollHandleMiddleImage: dojo.byId("vscroll_middle"),
-            scrollHandleBottomImage: dojo.byId("vscroll_bottom"),
             scrollUpArrow: dojo.byId("vscroll_up_arrow"),
             scrollDownArrow: dojo.byId("vscroll_down_arrow")
         }});

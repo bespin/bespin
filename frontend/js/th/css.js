@@ -93,7 +93,7 @@ dojo.declare("th.css.CSSParser", null, {
     munge: function(str, full) {
         str = str
             .replace(this.REatcomment, '$1') // strip /*@ comments but leave the text (to let invalid CSS through)
-            .replace(this.REcomment_string, dojo.hitch(this, function (s, string) { // strip strings and escaped characters, leaving munged markers, and strip comments
+            .replace(this.REcomment_string, dojo.hitch(this, function(s, string) { // strip strings and escaped characters, leaving munged markers, and strip comments
                 if (!string) return '';
                 var replacement = '%s`'+(++this.uid)+'`s%';
                 this.munged[this.uid] = string.replace(/^\\/, ''); // strip the backslash now
@@ -122,7 +122,7 @@ dojo.declare("th.css.CSSParser", null, {
         var str = this.munged[index].replace(/(?:^\s*[{'"]\s*)|(?:\s*([^\\])[}'"]\s*$)/g, '$1'); // find the string and remove the surrounding braces or quotes
         str = this.munge(str); // make sure any internal braces or strings are escaped
         var parsed = {};   
-        dojo.forEach(str.split(';'), function (decl) {
+        dojo.forEach(str.split(';'), function(decl) {
             decl = decl.split(':');
             if (decl.length < 2) return;
             parsed[this.restore(decl[0])] = this.restore(decl[1]);

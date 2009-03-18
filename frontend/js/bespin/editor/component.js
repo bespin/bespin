@@ -1,4 +1,4 @@
-dojo.provide("bespin.editor.Component");
+dojo.provide("bespin.editor.component");
 
 dojo.require("bespin.bespin");
 

@@ -55,6 +55,7 @@ c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
+c.template_path = [path(__file__).dirname().abspath()]
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will

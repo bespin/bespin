@@ -487,7 +487,6 @@ def test_file_search():
     
 def _run_search_tests(search_func):
     result = search_func("")
-    print result
     assert result == [
         "bespin_rocks",
         "cool+one",
@@ -533,6 +532,14 @@ def _run_search_tests(search_func):
     result = search_func("+")
     assert result == [
         "cool+one"
+    ]
+    
+    result = search_func("ME")
+    print result
+    assert result == [
+        "foo_some_other",
+        "some_deeply_nested_file_here",
+        "many_files"
     ]
 
 # -------

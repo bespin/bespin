@@ -54,6 +54,7 @@ from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson
+import jinja2
 
 from bespin import config
 
@@ -643,22 +644,64 @@ class Project(object):
         self.owner.amount_used += size_delta
         return file
 
-    def install_template(self, template="template"):
-        """Installs a set of template files into a new project."""
+    def install_template(self, template="template", other_vars=None):
+        """Installs a set of template files into a new project.
+        
+        The template directory will be found by searching 
+        config.c.template_path to find a matching directory name.
+        The files inside of that directory will be installed into
+        the project, with the common root for the files chopped off.
+        
+        Additionally, filenames containing { will be treated as Jinja2
+        templates and the contents of files will be treated as Jinja2
+        templates. This means that the filenames can contain variables
+        that are substituted when the template is installed into the
+        user's project. The contents of the files can also have variables
+        and small amounts of logic.
+        
+        These Jinja2 templates automatically have "project" as a variable
+        (you might often want to use project.name). You can pass in
+        a dictionary for other_vars and those values will also be available
+        in the templates.
+        """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
-        source_dir = pkg_resources.resource_filename("bespin", template)
+        found = False
+        for p in config.c.template_path:
+            source_dir = path_obj(p) / template
+            if source_dir.isdir():
+                found = True
+                break
+        if not found:
+            raise FSException("Unknown project template: %s" % template)
+        
+        env = jinja2.Environment()
+        if other_vars is not None:
+            variables = other_vars
+        else:
+            variables = {}
+        
+        variables['project'] = self
+            
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
             destdir = dirpath[common_path_len:]
             if '.svn' in destdir:
                 continue
             for f in filenames:
-                if destdir:
-                    destpath = "%s/%s" % (destdir, f)
+                if "{" in f:
+                    temp = env.from_string(f)
+                    dest_f = temp.render(variables)
                 else:
-                    destpath = f
+                    dest_f = f
+                
+                if destdir:
+                    destpath = "%s/%s" % (destdir, dest_f)
+                else:
+                    destpath = dest_f
                 contents = open(os.path.join(dirpath, f)).read()
+                temp = env.from_string(contents)
+                contents = temp.render(variables)
                 self.save_file(destpath, contents)
                 
     def list_files(self, path=""):
@@ -876,9 +919,13 @@ class Project(object):
     def search_files(self, query, limit=20):
         """Scans the files for filenames that match the queries."""
         match_list = []
+        
+        # make the query lower case so that the match boosting
+        # in _SearchMatch can use it
+        query = query.lower()
         escaped_query = [re.escape(char) for char in query]
         search_re = ".*".join(escaped_query)
-        main_search = re.compile(search_re)
+        main_search = re.compile(search_re, re.I)
         location = self.location
         files = self._search_cache.lines(retain=False)
         for f in files:
@@ -892,7 +939,7 @@ class _SearchMatch(object):
     """Comparable objects that store the result of a file search match"""
     def __init__(self, query, match):
         # if the query string is directly in there, boost the score
-        if query in match:
+        if query in match.lower():
             self.score = 1
         else:
             self.score = 0

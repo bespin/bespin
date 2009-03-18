@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 
 from webtest import TestApp
 import simplejson
+from path import path
 
 from bespin import config, controllers, model
 
@@ -101,6 +102,27 @@ def test_template_installation():
     result = bigmac.list_files()
     result_names = [file.name for file in result]
     assert 'readme.txt' in result_names
+    
+def test_customized_template_installation():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    here = path(__file__).dirname().abspath()
+    config.c.template_path.append(here)
+    bigmac.install_template("ttemplate", other_vars={'answer': 42})
+    flist = bigmac.list_files()
+    fnlist = [f.name for f in bigmac.list_files()]
+    assert fnlist == ["newfile-bigmac.js"]
+    contents = flist[0].data
+    print contents
+    assert contents == """// bigmac
+// Created by MacGyver (who likes the number 42)
+// Who also has:
+
+// BespinSettings
+// SampleProject
+// bigmac
+
+alert("Welcome to bigmac");"""
     
 def test_common_base_selection():
     tests = [
