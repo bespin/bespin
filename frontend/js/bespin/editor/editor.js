@@ -449,10 +449,12 @@ dojo.declare("bespin.editor.UI", null, {
         this.yscrollbar.valueChanged = dojo.hitch(this, function() {
             this.yoffset = -this.yscrollbar.value;
             this.editor.paint();
-        }); 
-        dojo.connect(window, "mousemove", this.yscrollbar, "onmousemove"); 
-        dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup");         
-        dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
+        });
+
+        var scope = editor.opts.actsAsComponent ? editor.canvas : window;
+        dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove"); 
+        dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup");         
+        dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
               
         setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
