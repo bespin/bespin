@@ -65,7 +65,7 @@ options(
     version=Bunch(
         number="0.1.6",
         name="Nonchalant Nimbus+",
-        api="2"
+        api="3"
     ),
     build_top=path("build"),
     build_dir=lambda: options.build_top / "BespinServer",
