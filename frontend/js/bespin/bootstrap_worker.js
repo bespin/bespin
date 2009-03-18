@@ -1,5 +1,5 @@
 var __GLOBAL__ = this;
-onmessage = function (event) {
+onmessage = function(event) {
     var source = event.data;
     if(source.indexOf("// YOUcannotGuessMe") == 0) {
         __GLOBAL__.eval(source)
@@ -70,7 +70,7 @@ onmessage = function (event) {
             // Parse the text. If a key contains the string 'date' then
             // convert the value to a date.
 
-            myData = JSON.parse(text, function (key, value) {
+            myData = JSON.parse(text, function(key, value) {
                 return key.indexOf('date') >= 0 ? new Date(value) : value;
             });
 
@@ -94,13 +94,13 @@ onmessage = function (event) {
 
 if (!this.JSON) {
 
-    JSON = function () {
+    JSON = function() {
 
         function f(n) {    // Format integers to have at least two digits.
             return n < 10 ? '0' + n : n;
         }
 
-        Date.prototype.toJSON = function () {
+        Date.prototype.toJSON = function() {
 
 // Eventually, this method will be based on the date.toISOString method.
 
@@ -139,7 +139,7 @@ if (!this.JSON) {
 // Otherwise we must also replace the offending characters with safe sequences.
 
                 return r.test(value) ?
-                    '"' + value.replace(r, function (a) {
+                    '"' + value.replace(r, function(a) {
                         var c = m[a];
                         if (c) {
                             return c;
@@ -227,7 +227,7 @@ if (!this.JSON) {
 
         return {
             stringify: stringify,
-            parse: function (text, filter) {
+            parse: function(text, filter) {
                 var j;
 
                 function walk(k, v) {
@@ -543,17 +543,17 @@ Tokenizer.prototype = {
         return this.tokens[this.tokenIndex];
     },
 
-    match: function (tt) {
+    match: function(tt) {
         return this.get() == tt || this.unget();
     },
 
-    mustMatch: function (tt) {
+    mustMatch: function(tt) {
         if (!this.match(tt))
             throw this.newSyntaxError("Missing " + tokens[tt].toLowerCase());
         return this.token;
     },
 
-    peek: function () {
+    peek: function() {
         var tt, next;
         if (this.lookahead) {
             next = this.tokens[(this.tokenIndex + this.lookahead) & 3];
@@ -568,14 +568,14 @@ Tokenizer.prototype = {
         return tt;
     },
 
-    peekOnSameLine: function () {
+    peekOnSameLine: function() {
         this.scanNewlines = true;
         var tt = this.peek();
         this.scanNewlines = false;
         return tt;
     },
 
-    get: function () {
+    get: function() {
         var token;
         while (this.lookahead) {
             --this.lookahead;
@@ -658,12 +658,12 @@ Tokenizer.prototype = {
         return token.type;
     },
 
-    unget: function () {
+    unget: function() {
         if (++this.lookahead == 4) throw "PANIC: too much lookahead!";
         this.tokenIndex = (this.tokenIndex - 1) & 3;
     },
 
-    newSyntaxError: function (m) {
+    newSyntaxError: function(m) {
         var e = new SyntaxError(m, this.filename, this.lineno);
         e.line   = this.lineno;
         e.source = this.source;
@@ -692,7 +692,7 @@ function Script(t, x) {
 }
 
 // Node extends Array, which we extend slightly with a top-of-stack method.
-Array.prototype.top = function () {
+Array.prototype.top = function() {
         return this.length && this[this.length-1];
     }
 
@@ -719,7 +719,7 @@ Np.constructor = Node;
 Np.toSource = Object.prototype.toSource;
 
 // Always use push to add operands to an expression, to update start and end.
-Np.push = function (kid) {
+Np.push = function(kid) {
     if (kid.start < this.start)
         this.start = kid.start;
     if (this.end < kid.end)
@@ -734,13 +734,13 @@ function tokenstr(tt) {
     return /^\W/.test(t) ? opTypeNames[t] : t.toUpperCase();
 }
 
-Np.toString = function () {
+Np.toString = function() {
     var a = [];
     for (var i in this) {
         if (this.hasOwnProperty(i) && i != 'type' && i != 'target')
             a.push({id: i, value: this[i]});
     }
-    a.sort(function (a,b) { return (a.id < b.id) ? -1 : 1; });
+    a.sort(function(a,b) { return (a.id < b.id) ? -1 : 1; });
     const INDENTATION = "    ";
     var n = ++Node.indentLevel;
     var s = "{\n" + INDENTATION.repeat(n) + "type: " + tokenstr(this.type);
@@ -751,15 +751,15 @@ Np.toString = function () {
     return s;
 }
 
-Np.getSource = function () {
+Np.getSource = function() {
     return this.tokenizer.source.slice(this.start, this.end);
 };
 
 Np.__defineGetter__('filename',
-                    function () { return this.tokenizer.filename; });
+                    function() { return this.tokenizer.filename; });
 
 String.prototype.repeat =
-    function (n) {
+    function(n) {
         var s = "", t = this + s;
         while (--n >= 0)
             s += t;

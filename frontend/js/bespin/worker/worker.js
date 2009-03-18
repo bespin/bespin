@@ -26,7 +26,7 @@
 
 dojo.provide("bespin.worker.worker");
 
-(function () {
+(function() {
 var WORKER_COUNT = 1;
 var WORKER_INDEX = 0;
 var CALL_INDEX   = 0;
@@ -36,10 +36,10 @@ var USE_GEARS    = false;
 // a hash (#) url part that is extracted and evaled inside the worker
 // Sounds like a security hole, but maybe it is not.
 var JS_WORKER_SOURCE = "js/bespin/bootstrap_worker.js";
-var uriEncodeSource = function (source) {
+var uriEncodeSource = function(source) {
     return JS_WORKER_SOURCE+"#"+escape(source)
 }
-var uriDecodeSource = function (uri) {
+var uriDecodeSource = function(uri) {
     return unescape(uri.substr( (JS_WORKER_SOURCE+"#").length ))
 }
 
@@ -52,7 +52,7 @@ if(typeof Worker == "undefined") {
         
         var wp      = google.gears.factory.create('beta.workerpool');
         var workers = {};
-        Worker      = function (uri, source) { // The worker class, non standard second source para
+        Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
             
             this.id    = wp.createWorker(source)
@@ -60,14 +60,14 @@ if(typeof Worker == "undefined") {
         }
         
         Worker.prototype = { // we can post messages to the worker
-            postMessage: function (data) {
+            postMessage: function(data) {
                 wp.sendMessage(data, this.id)
             }
         }
         
         // upon receiving a message we call our onmessage callback
         // DOM-Message-Events are not supported
-        wp.onmessage = function (a, b, message) {
+        wp.onmessage = function(a, b, message) {
             var worker = workers[message.sender];
             var cb = worker.onmessage;
             if(cb) {
@@ -134,20 +134,20 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     },
     
     // We support pools of workers which share the load
-    __getWorker__: function () {
+    __getWorker__: function() {
         var index = WORKER_INDEX++ % this.__workerCount__ // round robin scheduling
         // TODO maintain a smarter queue based on which workers are actually idle
         return this.__workers__[index]
     },
     
     // Create N workers based on source
-    createWorkers: function (source) { // round robin scheduling
+    createWorkers: function(source) { // round robin scheduling
         var self    = this;
         var workers = [];
         
         // The standard callback choose a callback for the particular method using
         // the callIndex that is set upon sending the method
-        var cb = function (event) {
+        var cb = function(event) {
             var data  = event.data
             if(typeof data == "string") {
                 data = dojo.fromJson(data)
@@ -161,7 +161,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             }
         }
         
-        var onmessage = function (event) {
+        var onmessage = function(event) {
             var message = event.data
             if(typeof message == "string" && message.indexOf("log=") == 0) {
                 console.log("From Worker: "+message.substr(4))
@@ -177,7 +177,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             worker.onmessage = onmessage;
             source = "// YOUcannotGuessMe\n" + source
             if(!USE_GEARS) {
-                window.setTimeout(function () {
+                window.setTimeout(function() {
                     worker.postMessage(source)
                 },0)
             }
@@ -187,17 +187,17 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     },
     
     // create a shallow facade for object
-    createFacade: function (obj) {
+    createFacade: function(obj) {
         
         var facade = this;
         
         for(var prop in obj) {
             if(prop.charAt(0) != "_") { // supposedly we dont need "private" methods. Delete if assumption is wrong
-                (function () { // make a lexical scope
+                (function() { // make a lexical scope
                     var val    = obj[prop];
                     var method = prop
                     if(typeof val == "function") { // functions are replaced with code to call the worker
-                        facade[prop] = function () {
+                        facade[prop] = function() {
                              var self  = this;
                              var index = CALL_INDEX++ // each call gets a globally unique index
                              var paras = Array.prototype.slice.call(arguments);
@@ -215,7 +215,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                                  // No worker implementation available. Use an async call using
                                  // setTimeout instead
                                  var self = this;
-                                 window.setTimeout(function () {
+                                 window.setTimeout(function() {
                                      var retVal = self.__obj__[method].apply(self.__obj__, paras);
                                      var callback = self.__callbacks__[index];
                                      delete self.__callbacks__[index]
@@ -229,17 +229,17 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                              // callback will be part of the mutex
                              // paras is an array of extra paras for the callback
                              return {
-                                 and: function (context, mutex, paras, callback) {
+                                 and: function(context, mutex, paras, callback) {
                                      var func = arguments[arguments.length - 1] // always the last para
                                      if(mutex instanceof bespin.worker.Mutex) {
                                          mutex.start()
-                                         func = function () {
+                                         func = function() {
                                              callback.apply(this, arguments)
                                              mutex.stop()
                                          }
                                      }
                                      
-                                     self.__callbacks__[index] = function () {
+                                     self.__callbacks__[index] = function() {
                                          paras = Array.prototype.slice.call(arguments).concat(paras)
                                          func.apply(context, paras)
                                      }
@@ -256,7 +256,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     },
     
     // Determines whether there are functions (deeply) inside a JS object
-    hasFunctions: function (obj) {
+    hasFunctions: function(obj) {
         for(var i in obj) {
             var val = obj[i];
             if(typeof val == "function") {
@@ -272,13 +272,13 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     },
     
     // Recursively turn a JS object into its source including functions
-    serializeToPortableSource: function (obj) {
+    serializeToPortableSource: function(obj) {
         var self   = this;
         var source = "{\n"
         
         for(var prop in obj) {
             // console.log("Serializing "+prop);
-            (function () { // lexical scope
+            (function() { // lexical scope
                 if(prop == "_constructor") { // workaround for unserializable method in dojo
                     return                   // maybe replace with test for [native code] in string
                 }
@@ -309,15 +309,15 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         return source;
     },
     
-    createWorkerSource: function (obj, libs) {
-        var con = function (msg) {
+    createWorkerSource: function(obj, libs) {
+        var con = function(msg) {
             postMessage("log="+msg)
         }
         var source = "console = { log: "+con.toString()+" };\n"
             
         if(libs) {
             var quoted = [];
-            dojo.forEach(libs, function (lib) {
+            dojo.forEach(libs, function(lib) {
                 quoted.push("'"+lib+"'")
             })
             if(USE_GEARS) { // Although in Gears only emulated, for now only in Gears because of bug in Safari
@@ -328,7 +328,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         source += "var theObject = "+this.serializeToPortableSource(obj)
         
         // onmessage handler for use inside the worker
-        var onmessage  = function (event) {
+        var onmessage  = function(event) {
             var body         = event.data
             //console.log("Received "+body)
             var dataIsString = false;
@@ -406,9 +406,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         }
         
         if(USE_GEARS) { // For Gears we need to create a fake postMessage function
-            var gearsCB = function (a, b, message) {
+            var gearsCB = function(a, b, message) {
                 var sender = message.sender
-                postMessage = function (data) {
+                postMessage = function(data) {
                     wp.sendMessage(data, sender)
                 }
                 onmessage({ // call the onmessage function defined above
@@ -422,7 +422,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 var global = this;
                 var src = "";
                 var i = 0;
-                var load = function (url, callback) {
+                var load = function(url, callback) {
                     var request = google.gears.factory.create('beta.httprequest');
                     request.open('GET', url);
                     request.onreadystatechange = function() {
@@ -439,7 +439,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     request.send()
                 }
                 var urls = Array.prototype.splice.call(arguments, 0);
-                var loader = function () {
+                var loader = function() {
                     var url = urls.shift()
                     if(url) {
                         load(url, loader)
@@ -476,10 +476,10 @@ dojo.declare("bespin.worker.Mutex", null, {
         this.afterJobs = [];
         this.options   = options || {}
     },
-    start: function () {
+    start: function() {
         this.count = this.count + 1
     },
-    stop: function () {
+    stop: function() {
         this.count = this.count - 1
         if(this.count == 0) {
             if(this.options.onlyLast) {
@@ -496,8 +496,8 @@ dojo.declare("bespin.worker.Mutex", null, {
             this.afterJobs = []
         }
     },
-    after: function (context, func) {
-        this.afterJobs.push(function () {
+    after: function(context, func) {
+        this.afterJobs.push(function() {
             func.call(context)
         })
     }

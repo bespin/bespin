@@ -108,7 +108,7 @@ dojo.declare("bespin.editor.Actions", null, {
         return this.moveCursor("smartMoveRight", args);
     },
 
-    deleteWordLeft: function (args) {
+    deleteWordLeft: function(args) {
         this.deleteChunk({
             endPos: args.pos,
             pos: this.moveCursor("smartMoveLeft", args).pos
@@ -116,7 +116,7 @@ dojo.declare("bespin.editor.Actions", null, {
         return args;
     },
 
-    deleteWordRight: function (args) {
+    deleteWordRight: function(args) {
         this.deleteChunk({
             pos: args.pos,
             endPos: this.moveCursor("smartMoveRight", args).pos
