@@ -57,7 +57,6 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
         
         this.scrollbar = new th.components.Scrollbar({ attributes: { orientation: th.HORIZONTAL } });
         this.scrollbar.style.backgroundColor = "#413D35";
-        this.scrollbar.loadImages('../images/','dash_vscroll');
         this.scrollbar.scrollable = list;
 
         this.pathLabel = new th.components.Label({ style: { backgroundColor: "#D5D0C0", color: "black", font: "8pt Tahoma" }, text: "Select item!" });

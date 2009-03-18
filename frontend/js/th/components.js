@@ -71,17 +71,6 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.bus.bind("mouseup", this.bar, this.onmouseup, this);
     },
 
-    loadImages: function(path, name) {
-        function loadImg(url) {
-            var img = new Image();
-            img.src = url;
-            return img;
-        }
-        // getting the images for the scrollbar
-        this.style.scrollUpArrow = loadImg(path + name + '_up_arrow.png');
-        this.style.scrollDownArrow = loadImg(path + name + '_down_arrow.png');
-    },
-
     onmousedrag: function(e) {
         var currentPosition = (this.orientation == th.VERTICAL) ? e.clientY : e.clientX;
 
@@ -167,17 +156,17 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         if (this.max < 0) return;
 
         // paint the track
-        if (this.style.scrollTopImage) ctx.drawImage(this.style.scrollTopImage, 1, this.up.bounds.height);
-        if (this.style.scrollMiddleImage) ctx.drawImage(this.style.scrollMiddleImage, 1, this.up.bounds.height + this.style.scrollTopImage.height, this.style.scrollMiddleImage.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
-        if (this.style.scrollBottomImage) ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
+        if (this.styles["-th-vscroll-track-top-image"].scrollTopImage) ctx.drawImage(this.style.scrollTopImage, 1, this.up.bounds.height);
+        if (this.styles["-th-vscroll-track-middle-image"].scrollMiddleImage) ctx.drawImage(this.style.scrollMiddleImage, 1, this.up.bounds.height + this.style.scrollTopImage.height, this.style.scrollMiddleImage.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
+        if (this.styles["-th-vscroll-track-bottom-image"].scrollBottomImage) ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
 
         // propagate the styles to the children if not already there
         if (this.styles["-th-vscroll-top-image"] && !this.bar.style.topImage) {
             this.bar.style.topImage = this.styles["-th-vscroll-top-image"];
             this.bar.style.middleImage = this.styles["-th-vscroll-middle-image"];
             this.bar.style.bottomImage = this.styles["-th-vscroll-bottom-image"];;
-            this.up.style.backgroundImage = this.style.scrollUpArrow;
-            this.down.style.backgroundImage = this.style.scrollDownArrow;
+            this.up.style.backgroundImage = this.styles["-th-vscroll-up-image"];
+            this.down.style.backgroundImage = this.styles["-th-vscroll-down-image"];
         }
 
         this.inherited(arguments);
