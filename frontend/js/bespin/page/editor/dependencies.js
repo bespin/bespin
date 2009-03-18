@@ -22,12 +22,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.page.editor.dependencies");	
+dojo.provide("bespin.page.editor.dependencies");
 
 dojo.require("dojo.cookie");
 
 dojo.require("bespin.bespin");
-dojo.require("bespin.events");                                                                
+dojo.require("bespin.events");
 
 dojo.require("bespin.util.canvas");
 dojo.require("bespin.util.keys");
@@ -76,9 +76,5 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
 
-dojo.require("bespin.mobwrite.core");
-dojo.require("bespin.mobwrite.diff");
-dojo.require("bespin.mobwrite.form");
-dojo.require("bespin.mobwrite.integrate");
-
 dojo.require("bespin.page.editor.init");
+

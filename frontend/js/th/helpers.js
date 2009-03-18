@@ -101,8 +101,75 @@ dojo.declare("th.helpers.ComponentHelpers", null, {
 
     emptyInsets: function() {
         return { left: 0, right: 0, bottom: 0, top: 0 };
+    },
+
+    resolveCss: function() {
+        // right now, all components tie into the global resources bucket; this is fine for now but may need to be loaded from the scene
+        var resources = th.global_resources;
+
+        // build a map of declarations
+        var declarations = {};
+
+        // process the user agent styles first
+        var propertyName;
+        var sheetTypes = [ "userAgentCss", "userCss", "authorCss" ];
+        for (var i = 0; i < sheetTypes.length; i++) {
+            // css splits sheets into user agent, user, and author categories, each of which has different priority
+            // we'll implement this by having the same code take three passes, dynamically grabbing the appropriate CSS array
+            // from the Resources.
+            //
+            // this will have to change if we support !important as the user gets a final crack at overridding author sheets
+            var currentSheet = sheetTypes[i];
+            dojo.forEach(resources[currentSheet], function(css) {
+                for (var selector in css) {
+                    // a selector may be compound (e.g., foo, bar, car {}) so we split it out by comma to treat each piece of
+                    // the selector independently
+                    var selectorPieces = selector.split(",");
+                    for (var s = 0; s < selectorPieces.length; s++) {
+                        var selectorPiece = dojo.trim(selectorPieces[s]);
+
+                        // if this selector selects this component, let's add the rules to the declarations bucket
+                        if (this.matchesSelector(selectorPiece)) {
+                            var properties = css[selector];
+
+                            for (propertyName in properties) {
+                                declarations[propertyName] = properties[propertyName];
+                            }
+                        }
+                    }
+                }
+            }, this);
+        }
+
+        this.styles = declarations;
+    },
+
+    // only id and class selectors are supported at the moment
+    matchesSelector: function(selector) {
+        if (selector.indexOf("#") == 0) {
+            if (!this.id) return false;
+            return ("#" + this.id) == selector;
+        }
+
+        var classPieces = this.declaredClass.split(".");
+        var clazz = classPieces[classPieces.length - 1];
+
+        return (clazz.toLowerCase() == selector.toLowerCase());
+    },
+
+    // returns the "specificity" index of the selector. -1 means the first is less specific; 0 means they are equal, 1 means the first
+    // is more specific
+    getSpecificityIndex: function(selector, otherSelector) {
+        if (selector == otherSelector) return 0;
+
+        // if one of them is an id match, they win
+        if (selector.indexOf("#") == 0) return 1;
+        if (otherSelector.indexOf("#") == 0) return -1;
+
+        // for now, we only match on id and type, so 0 is the only option left
+        return 0;
     }
-}); 
+});
 
 dojo.declare("th.helpers.ContainerHelpers", null, {
     getScene: function() {
