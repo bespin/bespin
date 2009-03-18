@@ -166,7 +166,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {
                 this.window.scene.bus.fire("dblclick", {}, this.panel.list);     
-            } else if (e.keyCode == 'O'.charCodeAt() && e.altKey) {
+            } else if (this.keyRunsMe(e)) {
                 this.toggle();
                 dojo.stopEvent(e);
             }
@@ -294,10 +294,14 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         quickopen.openSessionFiles = items;                        
     },
     
+    keyRunsMe: function(e) {
+        return (e.keyCode == 'O'.charCodeAt() && e.altKey && !e.shiftKey);
+    },
+    
     handleKeys: function(e) {
         if (this.window.isVisible) return true; // in the command line!
 
-        if (e.keyCode == 'O'.charCodeAt() && e.altKey) { // send to command line
+        if (this.keyRunsMe(e)) { // send to command line
             bespin.get('quickopen').toggle();
 
             dojo.stopEvent(e);
