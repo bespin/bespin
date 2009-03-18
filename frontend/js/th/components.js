@@ -49,7 +49,7 @@ dojo.declare("th.components.Button", th.Component, {
         } else if (back) {
             ctx.drawImage(back, 0, 0);
         } else {
-            ctx.fillStyle = "red";
+            ctx.fillStyle = this.styles["background-color"] || "red";
             ctx.fillRect(0, 0, d.b.w, d.b.h);
         }
     }
@@ -176,8 +176,8 @@ dojo.declare("th.components.Scrollbar", th.Container, {
     
 dojo.declare("th.components.Panel", th.Container, {
     paintSelf: function(ctx) {
-        if (this.style.backgroundColor) {
-            ctx.fillStyle = this.style.backgroundColor;
+        if (this.styles["background-color"]) {
+            ctx.fillStyle = this.styles["background-color"];
 
             var x = 0;
             var y = 0;
