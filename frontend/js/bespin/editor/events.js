@@ -148,7 +148,6 @@ dojo.declare("bespin.editor.Events", null, {
         // * Tell the command line to show the fact that the file is saved
         //
         // TODO: Need to actually check saved status and know if the save worked
-
         bespin.subscribe("bespin:editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
@@ -173,6 +172,25 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.publish("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name, autohide: true });
         });
 
+        // ** {{{ Event: bespin:editor:moveandcenter }}} **
+        // 
+        // Observe a request to move the editor to a given location and center it
+        bespin.subscribe("bespin:editor:moveandcenter", function(event) {
+            var row = event.row; 
+
+            if (!row) return; // short circuit
+
+            var linenum = row - 1; // move it up a smidge
+
+            editor.cursorManager.moveCursor({ row: linenum, col: 0 });
+
+            // If the line that we are moving to is off screen, center it, else just move in place
+            if ( (linenum < editor.ui.firstVisibleRow) || (linenum >= editor.ui.firstVisibleRow + editor.ui.visibleRows) ) {
+                bespin.publish("bespin:editor:doaction", {
+                    action: 'moveCursorRowToCenter'
+                });
+            }
+        });
 
         // == Shell Events: Header, Chrome, etc ==
         //

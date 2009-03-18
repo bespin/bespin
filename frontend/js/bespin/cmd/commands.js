@@ -517,19 +517,20 @@ bespin.cmd.commands.add({
 // ** {{{Command: goto}}} **
 bespin.cmd.commands.add({
     name: 'goto',
-    takes: ['linenumber'],
-    preview: 'move it! make the editor head to your line number.',
-    completeText: 'add the line number to move to',
-    execute: function(self, linenumber) {
-        if (linenumber) {
-            var linenumAsInt = parseInt(linenumber, 10) - 1; // parse the line number as a decimal
+    takes: ['value'],
+    preview: 'move it! make the editor head to a line number or a function name.',
+    completeText: 'add the line number to move to, or the name of a function in the file',
+    execute: function(self, value) {
+        if (value) {
+            var linenum = parseInt(value, 10); // parse the line number as a decimal
             
-            self.editor.moveCursor({ row: linenumAsInt, col: 0 });
-            
-            // If the line that we are moving to is off screen, center it, else just move in place
-            if ( (linenumAsInt < self.editor.ui.firstVisibleRow) || (linenumAsInt >= self.editor.ui.firstVisibleRow+self.editor.ui.visibleRows) ) {
-                bespin.publish("bespin:editor:doaction", {
-                    action: 'moveCursorRowToCenter'
+            if (isNaN(linenum)) { // it's not a number, so for now it is a function name
+                bespin.publish("bespin:parser:gotofunction", {
+                    functionName: value
+                });                
+            } else {
+                bespin.publish("bespin:editor:moveandcenter", {
+                    row: linenum
                 });
             }
         }

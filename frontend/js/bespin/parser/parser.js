@@ -46,7 +46,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: bespin:parser:error }}} **
         // 
         // Parser found an error in the source code
-        bespin.subscribe("bespin:parser:error", function (error) {
+        bespin.subscribe("bespin:parser:error", function(error) {
             bespin.publish("bespin:cmdline:showinfo", { 
                 msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
                 autohide: true
@@ -56,29 +56,64 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: bespin:parser:showoutline }}} **
         // 
         // Show a window with a code structure outline of the current document
-        bespin.subscribe("bespin:parser:showoutline", function () {
+        bespin.subscribe("bespin:parser:showoutline", function() {
             var info = self.currentMetaInfo;
+            var html;
             
-            if(info) {
-                var html = '<u>Outline</u><br/><br/>'
-                html +='<div style="overflow:auto; max-height: 400px;" id="outlineInfo">'
-                if(info.noEngine) {
-                    html += 'No outline available for this document type.'
+            if (info) {
+                html = '<u>Outline</u><br/><br/>';
+                html +='<div style="overflow:auto; max-height: 400px;" id="outlineInfo">';
+                if (info.noEngine) {
+                    html += 'No outline available for this document type.';
                 } else {
-                    dojo.forEach(info.functions, function (func) { 
+                    dojo.forEach(info.functions, function(func) { 
                         var name = func.name;
-                        if(typeof name == "undefined") {
-                            name = "anonymous"
+                        if (typeof name == "undefined") {
+                            name = "anonymous";
                         }
-                        html += '<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+func.row+', col: 0 });bespin.publish(\'bespin:editor:doaction\', { action: \'moveCursorRowToCenter\' })">Function: '+name+'</a><br/>'
-                    })
+                        html += '<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+func.row+', col: 0 });bespin.publish(\'bespin:editor:doaction\', { action: \'moveCursorRowToCenter\' })">Function: '+name+'</a><br/>';
+                    });
                 }
-                html+='</div>'
+                html += '</div>';
                 bespin.publish("bespin:cmdline:showinfo", { 
                     msg: html
-                })
+                });
             }
-        })
+        });
+        
+        // ** {{{ Event: bespin:parser:showoutline }}} **
+        // 
+        // Show a window with a code structure outline of the current document
+        bespin.subscribe("bespin:parser:gotofunction", function(event) {
+            var functionName = event.functionName;
+            var html;
+
+            if (!functionName) {
+                bespin.publish("bespin:cmdline:showinfo", { msg: "Please pass me a valid function name." });
+                return;
+            }
+
+            var info = self.currentMetaInfo;
+            if (info) {
+                if (info.noEngine) {
+                    html = "Unable to find a function in this file type.";
+                } else {
+                    var matches = dojo.filter(info.functions, function(func) {
+                        return func.name == functionName
+                    });
+                    if (matches.length > 0) {
+                        var match = matches[0];
+                        
+                        bespin.publish("bespin:editor:moveandcenter", {
+                            row: match.row
+                        });
+                    } else {
+                        html = "Unable to find the function " + functionName + " in this file.";
+                    }
+                }
+            }
+            bespin.publish("bespin:cmdline:showinfo", { msg: html });
+        });
     },
     
     // ** {{{ start }}} **
@@ -89,7 +124,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         var self = this;
         
         var editor = bespin.get("editor");
-        if(!editor.language) {
+        if (!editor.language) {
             // we should not start until the language was set once
             bespin.subscribe("bespin:settings:syntax", function () {
                 self.start()
@@ -97,7 +132,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             return;
         }
         
-        if(!self._started) {
+        if (!self._started) {
             self._started = true;
             
             self.fetch();
@@ -126,17 +161,16 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         var self = this;
         
         // parsing is too slow to run in the UI thread
-        if(bespin.parser.AsyncEngineResolver.__hasWorkers__) {
+        if (bespin.parser.AsyncEngineResolver.__hasWorkers__) {
             
             var editor = bespin.get("editor");
             var type   = editor.language;
             
-            if(type) {
-                
+            if (type) { 
                 var source = editor.model.getDocument();
                 
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo").and(function (data) { 
-                    if(data.isError) {
+                    if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message
                         bespin.publish("bespin:parser:error", data)
@@ -259,7 +293,7 @@ bespin.parser.EngineResolver = function() {
       // A high level parse function that uses the {{{type}}} to get the engine, and asks it to parse
       parse: function(type, source, task) {
           var engine = this.resolve(type);
-          if(engine) {
+          if (engine) {
               return engine.parse(source, task);
           } else {
               return {
@@ -294,7 +328,7 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
     bespin.parser.EngineResolver,
     1, // just one worker please
     // we need these libs. Should probably move to a property of the JS engine
-    ["/js/jsparse/jsdefs.js", "/js/jsparse/jsparse.js"])
+    ["/js/jsparse/jsdefs.js", "/js/jsparse/jsparse.js"]);
 
 // As soon as a doc is opened we are a go
 bespin.subscribe("bespin:editor:openfile:opensuccess", function () {
