@@ -372,8 +372,9 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
                 child = parent;
                 parent = parent.parent;
             }
-             
-            ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
+            
+            if (this.smartRedraw === undefined)
+                ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
             ctx.beginPath();
             ctx.rect(0, 0, component.bounds.width, component.bounds.height);
             ctx.closePath();
