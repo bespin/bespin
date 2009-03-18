@@ -75,13 +75,10 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         function loadImg(url) {
             var img = new Image();
             img.src = url;
-            return img;            
+            return img;
         }
         // getting the images for the scrollbar
         this.style.scrollUpArrow = loadImg(path + name + '_up_arrow.png');
-        this.style.scrollHandleTopImage = loadImg(path + name + '_top.png');
-        this.style.scrollHandleMiddleImage = loadImg(path + name + '_middle.png');
-        this.style.scrollHandleBottomImage = loadImg(path + name + '_bottom.png');
         this.style.scrollDownArrow = loadImg(path + name + '_down_arrow.png');
     },
 
@@ -175,16 +172,16 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         if (this.style.scrollBottomImage) ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
 
         // propagate the styles to the children if not already there
-        if (this.style.scrollHandleTopImage && !this.bar.style.topImage) {
-            this.bar.style.topImage = this.style.scrollHandleTopImage;
-            this.bar.style.middleImage = this.style.scrollHandleMiddleImage;
-            this.bar.style.bottomImage = this.style.scrollHandleBottomImage;
+        if (this.styles["-th-vscroll-top-image"] && !this.bar.style.topImage) {
+            this.bar.style.topImage = this.styles["-th-vscroll-top-image"];
+            this.bar.style.middleImage = this.styles["-th-vscroll-middle-image"];
+            this.bar.style.bottomImage = this.styles["-th-vscroll-bottom-image"];;
             this.up.style.backgroundImage = this.style.scrollUpArrow;
             this.down.style.backgroundImage = this.style.scrollDownArrow;
         }
 
         this.inherited(arguments);
-    }     
+    }
 });
     
 dojo.declare("th.components.Panel", th.Container, {

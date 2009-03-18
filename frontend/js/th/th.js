@@ -32,6 +32,143 @@ dojo.mixin(th, {
     HORIZONTAL: "h"    
 });
 
+// ** {{{ Resources }}} **
+//
+// Loads those resources that are shared with all Scenes on the same page, like CSS and layout information.
+// Typically there is no need to instantiate this class; a Scene will do it automatically. However, for performance, you may
+// wish to eagerly instantiate an instance to request resources earlier in the page realization process.
+//
+// property cssLoaded
+dojo.declare("th.Resources", null, {
+    constructor: function() {
+        this.loading = false;
+
+        // an array containing objects that correspond to each matching stylesheet in the order specified
+        this.userAgentCss = [];
+        this.authorCss = [];
+        this.userCss = [];
+
+        this.blockUntilImagesLoaded = true;
+
+        // images
+        this.images = {};
+
+        // used during the CSS loading process; due to callbacks, this is pushed top-level so it can be shared across functions
+        this.sheetCount = 0;
+        this.currentSheet = 0;
+
+        // used during image loading process
+        this.imageCount = 0;
+        this.currentImage = 0;
+
+        this.loaded = false;    // are all the resources loaded, including CSS and other stuff?
+        this.cssLoaded = false; // are all the CSS sheets loaded?
+        this.imagesLoaded = false;  // are all the images references by the CSS loaded?
+
+        this.callbacks = [];
+    },
+
+    load: function() {
+        if (this.loaded) return;    // no re-loading
+        
+        this.loading = true;
+        this.parseCSS();
+    },
+
+    processImage: function() {
+        this.currentImage++;
+        if (this.imageCount == this.currentImage) {
+            this.imagesLoaded = true;
+            this.onLoaded();
+        }
+    },
+
+    onLoaded: function() {
+        if (this.cssLoaded && ((this.blockUntilImagesLoaded && this.imagesLoaded) || !this.blockUntilImagesLoaded)) {
+            this.loaded = true;
+            this.loading = false;
+            if (this.callbacks) {
+                dojo.forEach(this.callbacks, function(item) {
+                    // check if there is context; if so, execute the callback using the context
+                    if (item.context) {
+                        item.callback.apply(item.context);
+                    } else {
+                        item.callback();
+                    }
+                });
+            }
+        }
+    },
+
+    registerOnLoadCallback: function(callback, context) {
+        this.callbacks.push({ callback: callback, context: context });
+    },
+
+    parseCSS: function() {
+        var links = [];
+
+        // add default stylesheet; cheesy path at the moment, need to come up with a better way to approach this TODO
+        links.push({ url: "js/th/default.css", array: this.userAgentCss, index: 0 });
+
+        var s, l = document.getElementsByTagName('link'), counter = 0;
+		for (var i=0; i < l.length; i++){
+		    s = l[i];
+			if (s.rel.toLowerCase().indexOf('thstylesheet') >= 0 && s.href) {
+			    links.push({ url: s.href, array: this.authorCss, index: counter++ });
+			}
+		}
+
+        // this shouldn't happen; we should always have at least one userAgentCss otherwise things are going to be mighty sparse
+        if (links.length == 0) {
+            this.cssLoaded = true;
+            return this.onLoaded();
+        }
+
+        this.sheetCount = links.length;
+        dojo.forEach(links, function(link) {
+            dojo.xhrGet({
+                url: link.url,
+                load: dojo.hitch(this, function(response) {
+                    this.processCSS(response, link.array, link.index );
+                })
+            });
+        }, this);
+    },
+
+    processCSS: function(stylesheet, array, index) {
+        array[index] = new th.css.CSSParser().parse(stylesheet);
+
+        // load the images
+        for (var rule in array[index]) {
+            for (var property in array[index][rule]) {
+                var value = array[index][rule][property];
+                if (value.indexOf("url(") == 0 && value.indexOf(")") == value.length - 1) {
+                    var url = value.substring(4, value.length - 1);
+
+                    this.imageCount++;
+                    var image = new Image();
+
+                    if (this.blockUntilImagesLoaded) {
+                        this.imagesLoaded = false;
+                        dojo.connect(image, "onload", this, this.processImage);
+                    }
+
+                    image.src = url;
+                    this.images[value] = image;
+
+                    // swap out the value in the CSS with an image; not sure this is the right way to go
+                    array[index][rule][property] = image;
+                }
+            }
+        }
+
+        if (++this.currentSheet == this.sheetCount) {
+            this.cssLoaded = true;
+            this.onLoaded();
+        }
+    }
+});
+
 /*
     Event bus; all listeners and events pass through a single global instance of this class.
  */ 
@@ -42,6 +179,8 @@ dojo.declare("th.Bus", null, {
     },
 
     // register a listener with an event
+    // - event: string name of the event
+    // - selector: 
     bind: function(event, selector, listenerFn, listenerContext) {
         var listeners = this.events[event];
         if (!listeners) {
@@ -114,18 +253,19 @@ dojo.declare("th.Bus", null, {
 // create the global event bus
 th.global_event_bus = new th.Bus();
 
+// create the global resource loader loader
+th.global_resources = new th.Resources();
+
 dojo.declare("th.Scene", th.helpers.EventHelpers, { 
     bus: th.global_event_bus,
 
-    css: {},
-
-    sheetCount: 0,
-    currentSheet: 0,
-    cssLoaded: false,
-    renderRequested: false,
-    renderAllowed: true,
-
     constructor: function(canvas) {
+        this.resources = th.global_resources;
+        this.resourceCallbackRegistered = false;
+
+        // if the resource loading process hasn't started, start it!
+        if (!this.resources.loaded && !this.resources.loading) this.resources.load();
+
         this.canvas = canvas;
 
         dojo.connect(window, "resize", dojo.hitch(this, function() {
@@ -180,18 +320,18 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
 
             delete this.mouseDownComponent;
         }));
-
-        this.parseCSS();
     },
 
-    render: function(forceRendering) { 
-        if (!this.renderAllowed && !forceRendering) {
+    render: function() {
+        if (!this.resources.loaded) {
+            if (!this.resourceCallbackRegistered) {
+                this.resources.registerOnLoadCallback(this.render, this);
+                this.resourceCallbackRegistered = true;
+            }
+
             return;
         }
-        if (!this.cssLoaded) { 
-            this.renderRequested = true;
-            return;
-        }
+
         this.layout();
         this.paint();
     },
@@ -204,14 +344,16 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     paint: function(component) {
-        if (!this.cssLoaded) {
-            this.renderRequested = true;
+        if (!this.resources.loaded) {
+            if (!this.resourceCallbackRegistered) {
+                this.resources.registerOnLoadCallback(this.render, this);
+                this.resourceCallbackRegistered = true;
+            }
+
             return;
         }
 
         if (!component) component = this.root;
-
-        //if (component === this.root) console.log("root paint");
 
         if (component) {
             if (!component.opaque && component.parent) {
@@ -239,42 +381,6 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
             component.paint(ctx);  
             
             ctx.restore();
-        }
-    },
-
-    parseCSS: function() { 
-        var links = [];   
-        var s, l = document.getElementsByTagName('link');
-		for (var i=0; i < l.length; i++){ 
-		    s = l[i];
-			if (s.rel.toLowerCase().indexOf('stylesheet') >= 0&&s.href) {
-			    links.push(s.href);
-			}
-		} 
-        if (links.length == 0) {
-            this.cssLoaded = true;
-            return;
-        }
-        this.sheetCount = links.length;
-        dojo.forEach(links, function(link) {            
-            dojo.xhrGet({
-                url: link, 
-                load: dojo.hitch(this, function(response) {
-                    this.processCSS(response);
-                })
-            });
-        }, this);
-    },
-
-    processCSS: function(stylesheet) {
-        this.css = new th.css.CSSParser().parse(stylesheet, this.css);  
-
-        if (++this.currentSheet == this.sheetCount) {
-            this.cssLoaded = true;
-            if (this.renderRequested) {
-                this.render();
-                this.renderRequested = false;
-            }
         }
     }
 });
@@ -325,6 +431,8 @@ dojo.declare("th.Component", th.helpers.ComponentHelpers, {
     },
     
     repaint: function() {
+        if (!this.getScene()) return;
+        
         this.getScene().paint(this);
     }
 });
@@ -405,6 +513,7 @@ dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
             }
 
             ctx.save();
+            this.children[i].resolveCss();
             this.children[i].paint(ctx);
             ctx.restore();
 
@@ -439,6 +548,8 @@ dojo.declare("th.Container", [th.Component, th.helpers.ContainerHelpers], {
     },
 
     render: function() {
+        if (!th.global_resources.loaded) return;
+
         this.layoutTree();
         this.repaint();
     }
