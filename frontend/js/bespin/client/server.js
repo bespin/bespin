@@ -217,7 +217,7 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/at', project, (path || ''));
         if (lastOp) url += "?lastEdit=" + lastOp;
 
-        this.request('PUT', url, contents, { log: 'Saved file.' });
+        this.request('PUT', url, contents, { log: 'Saved file "'+project+'/'+path+'"' });
     },
 
     // ** {{{ loadFile(project, path, contents) }}}
