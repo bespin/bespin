@@ -27,3 +27,4 @@ backend/python/BespinServer.egg-info
 ext/
 build/
 man/
+backend/python/testfiles
