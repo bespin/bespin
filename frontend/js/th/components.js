@@ -32,16 +32,22 @@ dojo.declare("th.components.Button", th.Component, {
     paint: function(ctx) {
         var d = this.d();
 
-        if (this.style.topImage && this.style.middleImage && this.style.bottomImage) {
-            if (d.b.h >= this.style.topImage.height + this.style.bottomImage.height) {
-                ctx.drawImage(this.style.topImage, 0, 0);
-                if (d.b.h > this.style.topImage.height + this.style.bottomImage.height) {
-                    ctx.drawImage(this.style.middleImage, 0, this.style.topImage.height, this.style.middleImage.width, d.b.h - this.style.topImage.height - this.style.bottomImage.height);
+        var top = this.styles["-th-top-image"];
+        var mid = this.styles["-th-middle-image"];
+        var bot = this.styles["-th-bottom-image"];
+
+        var back = this.styles["background-image"];
+
+        if (top && mid && bot) {
+            if (d.b.h >= top.height + bot.height) {
+                ctx.drawImage(top, 0, 0);
+                if (d.b.h > top.height + bot.height) {
+                    ctx.drawImage(mid, 0, top.height, mid.width, d.b.h - top.height - bot.height);
                 }
-                ctx.drawImage(this.style.bottomImage, 0, d.b.h - this.style.bottomImage.height);
+                ctx.drawImage(bot, 0, d.b.h - bot.height);
             }
-        } else if (this.style.backgroundImage) {
-            ctx.drawImage(this.style.backgroundImage, 0, 0);
+        } else if (back) {
+            ctx.drawImage(back, 0, 0);
         } else {
             ctx.fillStyle = "red";
             ctx.fillRect(0, 0, d.b.w, d.b.h);
@@ -60,9 +66,9 @@ dojo.declare("th.components.Scrollbar", th.Container, {
         this.increment = parms.increment || 2;
         this.style = parms.style || {};
 
-        this.up = new th.components.Button();
-        this.down = new th.components.Button();
-        this.bar = new th.components.Button();
+        this.up = new th.components.Button({ className: "up" });
+        this.down = new th.components.Button({ className: "down" });
+        this.bar = new th.components.Button({ className: "bar" });
         this.add([ this.up, this.down, this.bar ]);
 
         this.bus.bind("click", this.up, this.scrollup, this);
@@ -155,19 +161,14 @@ dojo.declare("th.components.Scrollbar", th.Container, {
     paint: function(ctx) {
         if (this.max < 0) return;
 
-        // paint the track
-        if (this.styles["-th-vscroll-track-top-image"].scrollTopImage) ctx.drawImage(this.style.scrollTopImage, 1, this.up.bounds.height);
-        if (this.styles["-th-vscroll-track-middle-image"].scrollMiddleImage) ctx.drawImage(this.style.scrollMiddleImage, 1, this.up.bounds.height + this.style.scrollTopImage.height, this.style.scrollMiddleImage.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
-        if (this.styles["-th-vscroll-track-bottom-image"].scrollBottomImage) ctx.drawImage(this.style.scrollBottomImage, 1, this.down.bounds.y - this.style.scrollBottomImage.height);
+        var top = this.styles["-th-vscroll-top-image"];
+        var mid = this.styles["-th-vscroll-middle-image"];
+        var bot = this.styles["-th-vscroll-bottom-image"];
 
-        // propagate the styles to the children if not already there
-        if (this.styles["-th-vscroll-top-image"] && !this.bar.style.topImage) {
-            this.bar.style.topImage = this.styles["-th-vscroll-top-image"];
-            this.bar.style.middleImage = this.styles["-th-vscroll-middle-image"];
-            this.bar.style.bottomImage = this.styles["-th-vscroll-bottom-image"];;
-            this.up.style.backgroundImage = this.styles["-th-vscroll-up-image"];
-            this.down.style.backgroundImage = this.styles["-th-vscroll-down-image"];
-        }
+        // paint the track
+        if (top) ctx.drawImage(top, 1, this.up.bounds.height);
+        if (mid) ctx.drawImage(mid, 1, this.up.bounds.height + top.height, mid.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
+        if (bot) ctx.drawImage(bot, 1, this.down.bounds.y - bot.height);
 
         this.inherited(arguments);
     }
