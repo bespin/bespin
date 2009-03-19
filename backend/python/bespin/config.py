@@ -67,6 +67,8 @@ c.fslevels = 0
 
 c.max_import_file_size = 20000000
 
+c.log_requests_to_stdout = False
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
@@ -81,13 +83,15 @@ def set_profile(profile):
         root_log.setLevel(logging.DEBUG)
         handler = logging.handlers.RotatingFileHandler(
                     c.log_file)
-        root_log.addHandler(handler)
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        root_log.addHandler(handler)
+        
         # turn off the secure cookie, because localhost connections
         # will be HTTP
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
         c.default_quota=10000
+        c.log_requests_to_stdout = True
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)

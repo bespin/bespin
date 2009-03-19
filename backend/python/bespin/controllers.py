@@ -624,4 +624,8 @@ def make_app():
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
+    if c.log_requests_to_stdout:
+        from paste.translogger import TransLogger
+        app = TransLogger(app)
+        
     return app
