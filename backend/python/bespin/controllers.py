@@ -40,7 +40,7 @@ from webob import Request, Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
-from bespin import model
+from bespin import model, vcs
 #from bespin.mobwrite.mobwrite_daemon import RequestHandler
 import urllib
 
@@ -560,6 +560,24 @@ def mobwrite(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
+    
+@expose(r'^/vcs/(?P<project_name>.*)/', 'POST')
+def vcs_command(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    request_info = simplejson.loads(request.body)
+    args = request_info['command']
+    
+    # special support for clone/checkout
+    if args[0] == "clone" \
+       or (len(args) > 2 and " ".join(args[0:2]) in
+       ["hg clone", "bzr clone", "git clone", "svn checkout"]):
+        args.append(project_name)
+        output = vcs.clone(user, args)
+    
+    response.content_type = "application/json"
+    response.body = simplejson.dumps({'output' : output})
+    return response()
 
 def db_middleware(app):
     def wrapped(environ, start_response):
@@ -606,4 +624,8 @@ def make_app():
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
+    if c.log_requests_to_stdout:
+        from paste.translogger import TransLogger
+        app = TransLogger(app)
+        
     return app

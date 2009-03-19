@@ -518,5 +518,14 @@ dojo.declare("bespin.client.Server", null, {
     // Get a list of the users the current user is following
     groupRemove: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
+    },
+    
+    // ** {{{ vcs() }}}
+    // Run a Version Control System (VCS) command
+    vcs: function(project, command, opts) {
+        var command_obj = {command: command}
+        this.request('POST', '/vcs/' + project + '/',
+                     dojo.toJson(command_obj),
+                     opts || {});
     }
 });
