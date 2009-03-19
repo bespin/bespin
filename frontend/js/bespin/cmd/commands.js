@@ -1102,3 +1102,17 @@ bespin.cmd.commands.add({
     }
 });
 
+// VCS commands
+
+// ** {{{{Command: clone}}}} **
+bespin.cmd.commands.add({
+    name: 'clone',
+    takes: ['url', 'projectName'],
+    preview: 'checkout or clone the project into a new Bespin project',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var url = args[0];
+        var projectName = args[1];
+        server.vcs(projectName, ["clone", url], {evalJSON: true, log: true});
+    }
+});
