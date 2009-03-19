@@ -1,10 +1,12 @@
 from uvc.tests.util import mock_run_command
 from webtest import TestApp
 from uvc import hg
+import simplejson
 
 from bespin import vcs, config, controllers, model
 
 macgyver = None
+app = None
 
 def setup_module(module):
     global app
@@ -51,6 +53,23 @@ def test_run_an_hg_clone(run_command_params):
     command, working_dir = run_command_params
     
     assert isinstance(command, hg.clone)
+    assert working_dir == macgyver.file_location
+    assert output == clone_output
+    
+# Web tests
+
+@mock_run_command(clone_output)
+def test_run_an_hg_clone(run_command_params):
+    _init_data()
+    request = simplejson.dumps({'command' : ['clone', 'http://hg.mozilla.org/labs/bespin']})
+    resp = app.post("/vcs/bigmac/", request)
+    assert resp.content_type == "application/json"
+    output = simplejson.loads(resp.body)
+    assert 'output' in output
+    output = output['output']
+    command, working_dir = run_command_params
+    command_line = " ".join(command.get_command_line())
+    assert command_line == "hg clone http://hg.mozilla.org/labs/bespin bigmac"
     assert working_dir == macgyver.file_location
     assert output == clone_output
     
