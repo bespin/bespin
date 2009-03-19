@@ -1108,11 +1108,21 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'clone',
     takes: ['url', 'projectName'],
+    aliases: ['checkout'],
     preview: 'checkout or clone the project into a new Bespin project',
     // ** {{{execute}}}
     execute: function(self, args) {
+        if (!args.url || !args.projectName) {
+            self.showUsage();
+            return;
+        }
         bespin.get('server').vcs(args.projectName, 
                                 ["clone", args.url], 
-                                {evalJSON: true, log: true});
+                                {evalJSON: true, 
+                                call: function(response) {
+                                    bespin.publish("bespin:project:imported");
+                                    bespin.publish("bespin:cmdline:showinfo", { 
+                                        msg: 'New project created: project=' + args.projectName + ', output=' + response.output, autohide: false });
+                                }});
     }
 });
