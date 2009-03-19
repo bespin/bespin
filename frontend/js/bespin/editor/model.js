@@ -235,7 +235,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var row = this.getRowArray(startPos.row);
         endCol = (endPos.row == startPos.row) ? endPos.col : row.length;
         if (endCol > row.length) endCol = row.length;
-        this.deleteCharacters({ row: startPos.row, col: startCol}, endCol - startCol);
+        this.deleteCharacters({ row: startPos.row, col: startCol }, endCol - startCol);
 
         // get the end line
         if (startPos.row != endPos.row) {
@@ -243,7 +243,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             endCol = endPos.col;
             row = this.getRowArray(endPos.row);
             if (endCol > row.length) endCol = row.length;
-            this.deleteCharacters({ row: endPos.row, col: startCol}, endCol - startCol);
+            this.deleteCharacters({ row: endPos.row, col: startCol }, endCol - startCol);
         }
 
         // remove any lines in-between

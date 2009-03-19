@@ -1,12 +1,24 @@
 Scrollbar {
-    -th-vscroll-top-image: url(/images/dash_vscroll_top.png);
-    -th-vscroll-middle-image: url(/images/dash_vscroll_middle.png);
-    -th-vscroll-bottom-image: url(/images/dash_vscroll_bottom.png);
+    -th-vertical-top-image: url(/images/dash_vscroll_track_top.png);
+    -th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);
+    -th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);
+}
 
-    -th-vscroll-track-top-image: url(/images/dash_vscroll_track_top.png);
-    -th-vscroll-track-middle-image: url(/images/dash_vscroll_track_middle.png);
-    -th-vscroll-track-bottom-image: url(/images/dash_vscroll_track_bottom.png);
+Scrollbar > Button.bar {
+    -th-top-image: url(/images/dash_vscroll_top.png);
+    -th-middle-image: url(/images/dash_vscroll_middle.png);
+    -th-bottom-image: url(/images/dash_vscroll_bottom.png);
+}
 
-    -th-vscroll-up-image: url(/images/dash_vscroll_up_arrow.png);
-    -th-vscroll-down-image: url(/images/dash_vscroll_down_arrow.png);
+Scrollbar > Button.up {
+    background-image: url(/images/dash_vscroll_up_arrow.png);
+}
+
+Scrollbar > Button.down {
+    background-image: url(/images/dash_vscroll_down_arrow.png);
+}
+
+ResizeNib {
+    -th-vertical-bar-color: rgb(10, 10, 8);
+    -th-vertical-bar-shadow-color: rgb(185, 180, 158);
 }

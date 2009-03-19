@@ -413,6 +413,8 @@ dojo.declare("th.Component", th.helpers.ComponentHelpers, {
         if (!parms) parms = {};
         this.bounds = parms.bounds || {};
         this.style = parms.style || {};
+        this.styles = parms.styles || {};
+        this.className = parms.className;
         this.attributes = parms.attributes || {};
         this.id = parms.id;
         this.border = parms.border;

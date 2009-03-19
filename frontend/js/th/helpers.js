@@ -144,17 +144,74 @@ dojo.declare("th.helpers.ComponentHelpers", null, {
         this.styles = declarations;
     },
 
-    // only id and class selectors are supported at the moment
+    // only id and class selectors are supported at the moment. it is assumed the passed in value has already been trimmed.
     matchesSelector: function(selector) {
-        if (selector.indexOf("#") == 0) {
-            if (!this.id) return false;
-            return ("#" + this.id) == selector;
+        var s = selector.toLowerCase();
+
+        // universal selector
+        if (s == "*") return true;
+
+        // class selector
+        if (s.indexOf(".") == 0) {
+            if (!this.className) return false;
+            if (this.className.toLowerCase() == s.substring(1)) return true;
         }
 
-        var classPieces = this.declaredClass.split(".");
-        var clazz = classPieces[classPieces.length - 1];
+        // id selector
+        if (s.indexOf("#") == 0) {
+            if (!this.id) return false;
+            return ("#" + this.id) == s;
+        }
 
-        return (clazz.toLowerCase() == selector.toLowerCase());
+        // type selector
+        var classPieces = this.declaredClass.split(".");
+        var clazz = classPieces[classPieces.length - 1].toLowerCase();
+        if (clazz == s) return true;
+
+        // type selector / id hybrid
+        if (this.id && (s == (clazz + "#" + this.id))) return true;
+
+        // type selector / class hybrid
+        if (this.className && (s == (clazz + "." + this.className.toLowerCase()))) return true;
+
+        // simple child selector support, must be "SEL1 > SEL2"
+        if (s.indexOf(">") != -1) {
+            var ss = s.split(">");
+
+            if (ss.length != 2) {
+                console.log("unsupported child selector syntax; must be SEL1 > SEL2, was '" + selector + "'");
+                return false;
+            }
+
+            if (this.matchesSelector(dojo.trim(ss[1]))) {
+                if (!this.parent) return false;
+                return (this.parent.matchesSelector(dojo.trim(ss[0])));
+            }
+
+            return false;
+        }
+
+        // simple ancestor selector support, must be "SEL1 SEL2"
+        if (s.indexOf(" ") != -1) {
+            var ss = s.split(" ");
+
+            if (ss.length != 2) {
+                console.log("unsupported ancestor selector syntax; must be SEL1 SEL2, was '" + selector + "'");
+                return false;
+            }
+
+            if (this.matchesSelector(ss[1].trim())) {
+                var ancestor = this.parent;
+                while (ancestor) {
+                    if (ancestor.matchesSelector(ss[0].trim())) return true;
+                    ancestor = ancestor.parent;
+                }
+
+                return false;
+            }
+        }
+
+        return false;
     },
 
     // returns the "specificity" index of the selector. -1 means the first is less specific; 0 means they are equal, 1 means the first

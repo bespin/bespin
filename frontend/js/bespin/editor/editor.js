@@ -485,7 +485,7 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
         }
-        return { col: x, row: y };
+        return { row: y, col: x };
     },
 
     mouseDownSelect: function(e) {
@@ -596,7 +596,7 @@ dojo.declare("bespin.editor.UI", null, {
 
     handleFocus: function(e) {
         this.editor.model.clear();
-        this.editor.model.insertCharacters({ row: 0, col: 0}, e.type);
+        this.editor.model.insertCharacters({ row: 0, col: 0 }, e.type);
     },
     
     handleScrollBars: function(e) {
@@ -1354,7 +1354,7 @@ dojo.declare("bespin.editor.API", null, {
         this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel();
 
-        dojo.byId(container).innerHTML = "<canvas id='canvas' moz-opaque='true' tabindex='-1'></canvas>";        
+        dojo.byId(container).innerHTML = '<canvas id="canvas" moz-opaque="true" tabindex="-1"></canvas>';
         this.canvas = dojo.byId(container).firstChild;
         while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;  
 
@@ -1369,7 +1369,7 @@ dojo.declare("bespin.editor.API", null, {
 
         this.ui.installKeyListener(this.editorKeyListener);
 
-        this.model.insertCharacters({row: 0, col: 0}, " ");
+        this.model.insertCharacters({ row: 0, col: 0 }, " ");
 
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));  
@@ -1413,7 +1413,7 @@ dojo.declare("bespin.editor.API", null, {
     },
     
     getCurrentView: function() {
-        return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection};
+        return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
     },
 
     // helper to get text
