@@ -1111,8 +1111,8 @@ bespin.cmd.commands.add({
     preview: 'checkout or clone the project into a new Bespin project',
     // ** {{{execute}}}
     execute: function(self, args) {
-        var url = args[0];
-        var projectName = args[1];
-        server.vcs(projectName, ["clone", url], {evalJSON: true, log: true});
+        bespin.get('server').vcs(args.projectName, 
+                                ["clone", args.url], 
+                                {evalJSON: true, log: true});
     }
 });

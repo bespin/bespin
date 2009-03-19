@@ -53,13 +53,13 @@ def test_run_an_hg_clone(run_command_params):
     command, working_dir = run_command_params
     
     assert isinstance(command, hg.clone)
-    assert working_dir == macgyver.file_location
+    assert working_dir == macgyver.get_location()
     assert output == clone_output
     
 # Web tests
 
 @mock_run_command(clone_output)
-def test_run_an_hg_clone(run_command_params):
+def test_hg_clone_on_web(run_command_params):
     _init_data()
     request = simplejson.dumps({'command' : ['clone', 'http://hg.mozilla.org/labs/bespin']})
     resp = app.post("/vcs/bigmac/", request)
@@ -70,6 +70,5 @@ def test_run_an_hg_clone(run_command_params):
     command, working_dir = run_command_params
     command_line = " ".join(command.get_command_line())
     assert command_line == "hg clone http://hg.mozilla.org/labs/bespin bigmac"
-    assert working_dir == macgyver.file_location
+    assert working_dir == macgyver.get_location()
     assert output == clone_output
-    
