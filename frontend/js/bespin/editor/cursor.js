@@ -7,6 +7,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.position = { row: 0, col: 0 };
+        this.virtualCol = 0;
     },
 
     getScreenPosition: function() {
@@ -85,11 +86,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveUp: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
 
-        this.moveCursor({ row: oldPos.row - 1, col: oldPos.col });
+        this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
 
         if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
@@ -97,11 +100,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveDown: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
 
-        this.moveCursor({ row: Math.max(0, oldPos.row + 1) });
+        this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
 
         if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
@@ -123,7 +128,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveRight: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
-
+        
         // end of the line, so go to the start of the next line
         if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
             this.moveDown();
@@ -258,6 +263,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         if (newpos.col === undefined) newpos.col = this.position.col;
         if (newpos.row === undefined) newpos.row = this.position.row;
 
+        this.virtualCol = 0;
         var oldpos = this.position;
 
         var row = Math.min(newpos.row, this.editor.model.getRowCount() - 1); // last row if you go over
