@@ -128,7 +128,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         this.input = input;
         
         // item selected in the list => show full path in label
-        this.window.scene.bus.bind("itemSelected", this.panel.list, dojo.hitch(this, function(e) {
+        this.window.scene.bus.bind("itemselected", this.panel.list, dojo.hitch(this, function(e) {
             this.panel.pathLabel.attributes.text = e.item.filename;
             this.window.layoutAndRender();
         }));

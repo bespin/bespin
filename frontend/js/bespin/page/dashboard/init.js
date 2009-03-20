@@ -356,13 +356,13 @@ dojo.provide("bespin.page.dashboard.init");
             go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
         });
 
-        scene.bus.bind("itemSelected", tree, function(e) {
+        scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
             bespin.page.dashboard.lastSelectedPath = pathSelected;
             location.hash = '#path=' + pathSelected;
         })
 
-        scene.bus.bind("itemSelected", tree.lists[0], function(e) {
+        scene.bus.bind("itemselected", tree.lists[0], function(e) {
             currentProject = e.item.name;
             bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
         });
