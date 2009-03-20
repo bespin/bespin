@@ -75,7 +75,7 @@ dojo.provide("bespin.page.editor.init");
             var collab = dojo.byId("collab");
             var target = dojo.byId("target_browsers");
 
-            var move = [ subheader, footer ];
+            var move = [ subheader, footer, editor ];
 
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";
