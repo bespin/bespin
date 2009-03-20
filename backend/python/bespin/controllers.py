@@ -569,11 +569,12 @@ def vcs_command(request, response):
     args = request_info['command']
     
     # special support for clone/checkout
-    if args[0] == "clone" \
-       or (len(args) > 2 and " ".join(args[0:2]) in
-       ["hg clone", "bzr clone", "git clone", "svn checkout"]):
+    if vcs.is_new_project_command(args):
         args.append(project_name)
         output = vcs.clone(user, args)
+    else:
+        project = model.get_project(user, user, project_name)
+        output = vcs.run_command(user, project, args)
     
     response.content_type = "application/json"
     response.body = simplejson.dumps({'output' : output})
