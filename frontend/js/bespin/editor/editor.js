@@ -1412,6 +1412,14 @@ dojo.declare("bespin.editor.API", null, {
         this.paint();
     },
     
+    basicView: function() {
+        this.cursorManager.moveCursor({row: 0, col: 0});
+        this.setSelection(undefined);
+        this.ui.yoffset = 0;
+        this.ui.xoffset = 0;
+        this.paint();
+    },
+    
     getCurrentView: function() {
         return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
     },
