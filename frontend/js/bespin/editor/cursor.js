@@ -320,6 +320,11 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
 
         this.position = { row: row, col: newpos.col };
+        
+        // keeps the editor's cursor from blinking while moving it
+        var editorUI = bespin.get('editor').ui;
+        editorUI.showCursor = true;
+        editorUI.toggleCursorAllowed = false;
     },
 
     // Pass in a screen position; returns undefined if the postion is valid, otherwise returns closest left and right valid positions

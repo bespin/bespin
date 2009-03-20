@@ -380,6 +380,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
         this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
+        this.toggleCursorAllowed = true;         // is the cursor allowed to toggle? (used by cursorManager.moveCursor)
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
@@ -560,7 +561,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     toggleCursor: function(ui) {
-        ui.showCursor = !ui.showCursor;
+        if (ui.toggleCursorAllowed) {
+            ui.showCursor = !ui.showCursor;    
+        } else {
+            ui.toggleCursorAllowed = true;
+        }
 
         if (++this.toggleCursorFullRepaintCounter > 0) {
             this.toggleCursorFullRepaintCounter = 0;
