@@ -33,7 +33,7 @@ bespin.subscribe("bespin:project:set", function(event) {
     bespin.get('editSession').project = event.project; // set it in the session
     
     if (!event.fromDashboardItemSelected) {
-        // selects the project in the tree and fire the itemselected event    
+        // selects the project in the tree and fire the itemSelected event    
         bespin.page.dashboard.tree.lists[0].selectItemByText(event.project);
         bespin.page.dashboard.tree.itemSelected({thComponent: bespin.page.dashboard.tree.lists[0], item: bespin.page.dashboard.tree.lists[0].selected});
     }

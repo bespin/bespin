@@ -362,7 +362,7 @@ dojo.provide("bespin.page.dashboard.init");
             location.hash = '#path=' + pathSelected;
         })
 
-        scene.bus.bind("itemselected", tree.lists[0], function(e) {
+        scene.bus.bind("itemSelected", tree.lists[0], function(e) {
             currentProject = e.item.name;
             bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
         });
