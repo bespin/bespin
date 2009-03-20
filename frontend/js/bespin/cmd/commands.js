@@ -1110,7 +1110,7 @@ bespin.cmd.commands.add({
     takes: ['url', 'projectName'],
     aliases: ['checkout'],
     preview: 'checkout or clone the project into a new Bespin project',
-    // ** {{{execute}}}
+    // ** {{{execute}}} **
     execute: function(self, args) {
         if (!args.url || !args.projectName) {
             self.showUsage();
@@ -1119,10 +1119,96 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(args.projectName, 
                                 ["clone", args.url], 
                                 {evalJSON: true, 
-                                call: function(response) {
-                                    bespin.publish("bespin:project:imported");
-                                    bespin.publish("bespin:cmdline:showinfo", { 
-                                        msg: 'New project created: project=' + args.projectName + ', output=' + response.output, autohide: false });
-                                }});
+                                call: showOutput});
     }
+});
+
+function showOutput(response) {
+    var el = dojo.byId('centerpopup');
+    el.innerHTML = "<div style='background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto'><pre>" + response.output + "</pre></div>";
+    el.style.width = "80%";
+    el.style.height = "80%";
+    dojo.require("dijit._base.place");
+    dojo.require("bespin.util.webpieces");
+
+    bespin.util.webpieces.showCenterPopup(el);
+
+    dojo.byId("overlay").onclick = el.onclick = function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+    };        
+}
+
+// ** {{{Command: vcs}}} **
+bespin.cmd.commands.add({
+    name: 'vcs',
+    takes: ['*'],
+    preview: 'run any version control system command',
+    // ** {{{execute}}} **
+    execute: function(self, args) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                args._pieces, 
+                                {evalJSON: true, 
+                                call: showOutput});
+    }                                
+});
+
+// ** {{{Command: diff}}} **
+bespin.cmd.commands.add({
+    name: 'diff',
+    preview: 'Display the differences in the checkout out files',
+    // ** {{{execute}}} **
+    execute: function(self) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                ["diff"], 
+                                {evalJSON: true, 
+                                call: showOutput});
+    }                                
+});
+
+// ** {{{Command: commit}}} **
+bespin.cmd.commands.add({
+    name: 'commit',
+    takes: ['message'],
+    preview: 'Commit to the repository',
+    // ** {{{execute}}} **
+    execute: function(self, message) {
+        if (!message) {
+            self.showInfo("You must enter a log message");
+            return;
+        }
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                ['commit', '-m', 'message'], 
+                                {evalJSON: true, 
+                                call: showOutput});
+    }                                
 });

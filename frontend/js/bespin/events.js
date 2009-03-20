@@ -514,3 +514,15 @@ bespin.subscribe("bespin:groups:remove", function(group, users) {
         }
     });
 });
+
+// ** {{{ Event: bespin:window:newwindow }}} **
+// Display a new window
+bespin.subscribe("bespin:window:newwindow", function(event) {
+    var nw = window.open("", "_blank", "resizable=1,scrollbars=1,status=0");
+    var body = nw.document.body
+    if (event.pre) {
+        body.innerHTML = "<pre>" + event.content + "</pre>";
+    } else {
+        body.innerHTML = event.content;
+    }
+});
