@@ -10,29 +10,77 @@ dojo.declare("bespin.editor.CursorManager", null, {
         this.virtualCol = 0;
     },
 
+    // Here for backwards-compatibility only
     getScreenPosition: function() {
-        return this.position;
+        return this.getCursorPosition();
     },
 
-    getModelPosition: function() {
-        var pos = this.position;
+    // Returns 'this.position' or 'pos' from optional input 'modelPos'
+    getCursorPosition: function(modelPos) {
+        if(modelPos != undefined) {
+            var pos = bespin.editor.utils.copyPos(modelPos);
+            var line = this.editor.model.getRowArray(pos.row);
 
-        var line = this.editor.model.getRowArray(pos.row);
-        var tabspaces = 0;
-        var curCol = 0;
-        for (var i = 0; i < line.length; i++) {
-            if (line[i].charCodeAt(0) == 9) {
-                var toInsert = this.editor.tabstop - (curCol % this.editor.tabstop);
-                curCol += toInsert - 1;
-                tabspaces += toInsert - 1;
+            // Special tab handling
+            if(line.indexOf("\t") != -1) {
+//              console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+                var tabs = 0, nottabs = 0;
+
+                for (var i = 0; i < modelPos.col; i++) {
+                    if (line[i] == "\t") {
+                        pos.col += this.editor.tabstop - 1 - ( nottabs % this.editor.tabstop );
+                        tabs++;
+                        nottabs = 0;
+                    } else {
+                        nottabs++;
+                        tabs = 0;
+                    }
+//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
+                }
+
+//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
             }
-            curCol++;
-            if (curCol >= pos.col) break;
-        }
-        if (tabspaces > 0) {
-            return { row: pos.row, col: pos.col = pos.col - tabspaces };
+
+            return pos;
         } else {
-            return bespin.editor.utils.copyPos(pos);
+            return this.position;
+        }
+    },
+
+    // Returns 'modelPos' from optional input 'pos' or 'this.position'
+    getModelPosition: function(pos) {
+        pos = (pos != undefined) ? pos : this.position;
+        var modelPos = bespin.editor.utils.copyPos(pos);
+        var line = this.editor.model.getRowArray(pos.row);
+
+        // Special tab handling
+        if(line.indexOf("\t") != -1) {
+//          console.log( 'Model modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+            var tabs = 0, nottabs = 0;
+
+            for (var i = 0; i < modelPos.col; i++) {
+                if (line[i] == "\t") {
+                    modelPos.col -= this.editor.tabstop - 1 - ( nottabs % this.editor.tabstop );
+                    tabs++;
+                    nottabs = 0;
+                } else {
+                    nottabs++;
+                    tabs = 0;
+                }
+//              console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'modelPos.col: ' + modelPos.col );
+            }
+
+//          console.log( 'Model modelPos.col/pos.col end: ' + modelPos.col, pos.col );
+        }
+
+        return modelPos;
+    },
+
+    getCharacterLength: function(character) {
+        if(character == "\t") {
+            return (this.editor.tabstop - (this.position.col % this.editor.tabstop));
+        } else {
+            return 1;
         }
     },
 
@@ -308,6 +356,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var invalid = this.isInvalidCursorPosition(row, newpos.col);
         if (invalid) {
+            console.log('Comparing ' + oldpos.col + ' to ' + newpos.col + ' ...');
             console.log("invalid position: " + invalid.left + ", " + invalid.right);
             if (oldpos.col < newpos.col) {
                 newpos.col = invalid.right;
