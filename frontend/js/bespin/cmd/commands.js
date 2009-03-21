@@ -1119,24 +1119,12 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(args.projectName, 
                                 ["clone", args.url], 
                                 {evalJSON: true, 
-                                call: showOutput});
+                                call: function(response) {
+                                    bespin.publish("bespin:vcs:response", response);
+                                }});
     }
 });
 
-function showOutput(response) {
-    var el = dojo.byId('centerpopup');
-    el.innerHTML = "<div style='background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto'><pre>" + response.output + "</pre></div>";
-    el.style.width = "80%";
-    el.style.height = "80%";
-    dojo.require("dijit._base.place");
-    dojo.require("bespin.util.webpieces");
-
-    bespin.util.webpieces.showCenterPopup(el);
-
-    dojo.byId("overlay").onclick = el.onclick = function() {
-        bespin.util.webpieces.hideCenterPopup(el);
-    };        
-}
 
 // ** {{{Command: vcs}}} **
 bespin.cmd.commands.add({
@@ -1158,7 +1146,9 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 args._pieces, 
                                 {evalJSON: true, 
-                                call: showOutput});
+                                call: function(response) {
+                                    bespin.publish("bespin:vcs:response", response);
+                                }});
     }                                
 });
 
@@ -1181,7 +1171,9 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 ["diff"], 
                                 {evalJSON: true, 
-                                call: showOutput});
+                                call: function(response) {
+                                    bespin.publish("bespin:vcs:response", response);
+                                }});
     }                                
 });
 
@@ -1209,6 +1201,8 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 ['commit', '-m', 'message'], 
                                 {evalJSON: true, 
-                                call: showOutput});
+                                call: function(response) {
+                                    bespin.publish("bespin:vcs:response", response);
+                                }});
     }                                
 });
