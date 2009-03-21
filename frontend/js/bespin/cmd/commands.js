@@ -1144,7 +1144,7 @@ bespin.cmd.commands.add({
             return;
         }
         bespin.get('server').vcs(project, 
-                                args._pieces, 
+                                args.varargs, 
                                 {evalJSON: true, 
                                 call: function(response) {
                                     bespin.publish("bespin:vcs:response", response);
