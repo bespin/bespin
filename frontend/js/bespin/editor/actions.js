@@ -514,8 +514,9 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelection(args);
         } else {
             if (args.pos.col > 0) {
-                if (bespin.get('settings').get('tabsize') != 'tabs') {
-                    var tabWidth = parseInt(bespin.get('settings').get('tabsize'));
+                var settings = bespin.get('settings');
+                if (settings.get('tabsize') != 'tabs' && settings.isOn(settings.get('smartmove'))) {
+                    var tabWidth = parseInt(settings.get('tabsize'));
                     var freeSpaces = this.editor.cursorManager.getContinuousSpaceCount(args.pos.col, this.editor.cursorManager.getNextTablevelLeft(args.pos.col));
                     if (freeSpaces == tabWidth) {
                         var pos = args.pos;
@@ -539,6 +540,17 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelection(args);
         } else {
             if (args.pos.col < this.editor.model.getRowLength(args.pos.row)) {
+                var settings = bespin.get('settings');
+                if (settings.get('tabsize') != 'tabs' && settings.isOn(settings.get('smartmove'))) {
+                    var tabWidth = parseInt(settings.get('tabsize'));
+                    var freeSpaces = this.editor.cursorManager.getContinuousSpaceCount(args.pos.col, this.editor.cursorManager.getNextTablevelRight(args.pos.col));
+                    if (freeSpaces == tabWidth) {
+                        var pos = args.pos;
+                        this.editor.selection = { startPos: { row: pos.row, col: pos.col}, endPos: {row: pos.row, col: pos.col + tabWidth}};
+                        this.deleteSelection(args);
+                        return;
+                    }
+                }
                 this.deleteCharacter(args);   
             } else {
                 args.joinDirection = "down";
