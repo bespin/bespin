@@ -187,6 +187,17 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     getRowCount: function() {
         return this.rows.length;
     },
+    
+    // returns the numbers of white spaces from the beginning of the line
+    getRowLeadingWhitespaces: function(rowIndex) {
+         var row = this.getRowArray(rowIndex).join("");
+         var match = /^(\s+).*/.exec(row);
+         var leadingWhitespaces = 0;
+         if (match && match.length == 2) {
+             leadingWhitespaces = match[1].length;
+         }
+         return leadingWhitespaces;
+    },
 
     // returns a "chunk": a string representing a part of the document with \n characters representing end of line
     getChunk: function(selection) {

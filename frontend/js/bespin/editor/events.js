@@ -155,7 +155,7 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.publish("bespin:editor:openfile:savebefore", { filename: filename });
 
             // saves the current state of the editor to a cookie
-            dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'), dojo.toJson(bespin.get('editor').getCurrentView()));
+            dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'), dojo.toJson(bespin.get('editor').getCurrentView()), { expires: 7 });
 
             var file = {
                 name: filename,
@@ -209,6 +209,8 @@ dojo.declare("bespin.editor.Events", null, {
             var data = dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'));
             if (data) {
                 bespin.get('editor').resetView(dojo.fromJson(data));
+            } else {
+                bespin.get('editor').basicView();
             }
 
             bespin.publish("bespin:editor:titlechange", { filename: filename });

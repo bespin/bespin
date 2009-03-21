@@ -7,6 +7,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.position = { row: 0, col: 0 };
+        this.virtualCol = 0;
     },
 
     getScreenPosition: function() {
@@ -85,11 +86,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveUp: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
 
-        this.moveCursor({ row: oldPos.row - 1, col: oldPos.col });
+        this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
 
         if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
@@ -97,40 +100,79 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveDown: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
 
-        this.moveCursor({ row: Math.max(0, oldPos.row + 1) });
+        this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
 
         if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
-            this.moveToLineEnd();
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
     },
 
     moveLeft: function() {
+        var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-
+        
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+            var model = bespin.get('editor').model;
+            var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
+            var rowLength = model.getRowLength(oldPos.row);
+            var tabWidth = parseInt(settings.get('tabsize'));
+            
+            // this is for the case "striclines" is off AND the user moved the cursor to the right AND there is no real content
+            if (whiteChars == 0 && rowLength == 0 && oldPos.col > 0) {
+                whiteChars = oldPos.col;
+            }
+            
+            if (whiteChars >= oldPos.col && oldPos.col != 0) {
+                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabWidth) ? oldPos.col % tabWidth : tabWidth)) });  
+                return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+            } // else {
+            //  this case is handled by the code following    
+            //}
+        } 
+        
         // start of the line so move up
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col == 0)) {
+        if (settings.isOn(settings.get('strictlines')) && (this.position.col == 0)) {
             this.moveUp();
             if (oldPos.row > 0) this.moveToLineEnd();
         } else {
             this.moveCursor({ row: oldPos.row, col: Math.max(0, oldPos.col - 1) });
         }
-
+        
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
     },
 
     moveRight: function() {
+        var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-
+        
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+            var model = bespin.get('editor').model;
+            var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
+            var rowLength = model.getRowLength(oldPos.row);
+            var tabWidth = parseInt(settings.get('tabsize'));
+                        
+            if (whiteChars > oldPos.col || (whiteChars == 0 && rowLength == 0)) {
+                if (rowLength == 0) rowLength = oldPos.col + tabWidth;
+                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabWidth ? tabWidth - (oldPos.col % tabWidth) : tabWidth)) });  
+                return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+            }// else {
+            //  this case is handled by the code following    
+            //}    
+        }
+                
         // end of the line, so go to the start of the next line
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
+        if (settings.isOn(settings.get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
             this.moveDown();
             if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
         } else {
             this.moveCursor({ col: this.position.col + 1 });
         }
+
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
     },
@@ -258,6 +300,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         if (newpos.col === undefined) newpos.col = this.position.col;
         if (newpos.row === undefined) newpos.row = this.position.row;
 
+        this.virtualCol = 0;
         var oldpos = this.position;
 
         var row = Math.min(newpos.row, this.editor.model.getRowCount() - 1); // last row if you go over
@@ -277,6 +320,11 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
 
         this.position = { row: row, col: newpos.col };
+        
+        // keeps the editor's cursor from blinking while moving it
+        var editorUI = bespin.get('editor').ui;
+        editorUI.showCursor = true;
+        editorUI.toggleCursorAllowed = false;
     },
 
     // Pass in a screen position; returns undefined if the postion is valid, otherwise returns closest left and right valid positions
