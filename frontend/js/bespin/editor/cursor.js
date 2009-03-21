@@ -1,3 +1,26 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ * See the License for the specific language governing rights and
+ * limitations under the License.
+ *
+ * The Original Code is Bespin.
+ *
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bespin Team (bespin@mozilla.com)
+ *
+ * ***** END LICENSE BLOCK ***** */
 dojo.provide("bespin.editor.cursor");
 
 // ** {{{ bespin.editor.CursorManager }}} **
@@ -35,6 +58,44 @@ dojo.declare("bespin.editor.CursorManager", null, {
             return bespin.editor.utils.copyPos(pos);
         }
     },
+    
+    getContinuousSpaceCount: function(from, to, rowIndex) {
+        rowIndex = rowIndex || this.position.row;
+        var settings = bespin.get('settings');
+        var row = this.editor.model.getRowArray(rowIndex);
+        var delta = (from < to ? 1 : -1);
+        var length = row.length;
+        from = from + (delta == 1 ? 0 : -1);
+        to = to + (delta == 1 ? 0 : -1);
+        if (settings.isOn(settings.get('strictlines'))) {
+            from = Math.min(from, length);
+            to = Math.min(to, length);            
+        }
+        var count = 0;
+        for (var x = from; x != to; x += delta) {
+            if (x < length) {
+                if (row[x] != ' ') {
+                    break;
+                }   
+            }
+            count++;
+        }
+        return count;
+    },
+    
+    getNextTablevelLeft: function(col) {
+        var tabWidth = parseInt(bespin.get('settings').get('tabsize'));
+        col = col || this.position.col;
+        col--
+        return Math.floor(col / tabWidth) * tabWidth;
+    },
+    
+    getNextTablevelRight: function(col) {
+        var tabWidth = parseInt(bespin.get('settings').get('tabsize'));
+        col = col || this.position.col;
+        col++;
+        return Math.ceil(col / tabWidth) * tabWidth;
+    },
 
     moveToLineStart: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
@@ -52,8 +113,10 @@ dojo.declare("bespin.editor.CursorManager", null, {
             this.moveCursor({ col:  leadingWhitespaceLength });
         } else if (this.position.col == leadingWhitespaceLength) {
             this.moveCursor({ col: 0 });
-        } else {
+        } else if(leadingWhitespaceLength != this.editor.model.getRowLength(this.editor.cursorManager.getScreenPosition().row)){
             this.moveCursor({ col: leadingWhitespaceLength });
+        } else {
+            this.moveCursor({ col: 0 });
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
@@ -116,19 +179,10 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
-            var model = bespin.get('editor').model;
-            var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
-            var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
-            
-            // this is for the case "striclines" is off AND the user moved the cursor to the right AND there is no real content
-            if (whiteChars == 0 && rowLength == 0 && oldPos.col > 0) {
-                whiteChars = oldPos.col;
-            }
-            
-            if (whiteChars >= oldPos.col && oldPos.col != 0) {
-                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabWidth) ? oldPos.col % tabWidth : tabWidth)) });  
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {                
+            var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
+            if (freeSpaces == parseInt(bespin.get('settings').get('tabsize'))) {
+                this.moveCursor({ col: oldPos.col - freeSpaces });  
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             } // else {
             //  this case is handled by the code following    
@@ -146,19 +200,14 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
     },
 
-    moveRight: function() {
+    moveRight: function(newStuffInsert) {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
-            var model = bespin.get('editor').model;
-            var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
-            var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
-                        
-            if (whiteChars > oldPos.col || (whiteChars == 0 && rowLength == 0)) {
-                if (rowLength == 0) rowLength = oldPos.col + tabWidth;
-                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabWidth ? tabWidth - (oldPos.col % tabWidth) : tabWidth)) });  
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs' && !newStuffInsert) {
+            var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
+            if (freeSpaces == parseInt(bespin.get('settings').get('tabsize'))) {
+                this.moveCursor({ col: oldPos.col + freeSpaces })  
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             }// else {
             //  this case is handled by the code following    

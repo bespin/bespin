@@ -514,6 +514,16 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelection(args);
         } else {
             if (args.pos.col > 0) {
+                if (bespin.get('settings').get('tabsize') != 'tabs') {
+                    var tabWidth = parseInt(bespin.get('settings').get('tabsize'));
+                    var freeSpaces = this.editor.cursorManager.getContinuousSpaceCount(args.pos.col, this.editor.cursorManager.getNextTablevelLeft(args.pos.col));
+                    if (freeSpaces == tabWidth) {
+                        var pos = args.pos;
+                        this.editor.selection = { startPos: { row: pos.row, col: pos.col - tabWidth}, endPos: {row: pos.row, col: pos.col}};
+                        this.deleteSelection(args);
+                        return;
+                    }
+                }
                 this.editor.cursorManager.moveCursor({ col:  Math.max(0, args.pos.col - 1) });
                 args.pos.col -= 1;
                 this.deleteCharacter(args);
@@ -529,7 +539,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelection(args);
         } else {
             if (args.pos.col < this.editor.model.getRowLength(args.pos.row)) {
-                this.deleteCharacter(args);
+                this.deleteCharacter(args);   
             } else {
                 args.joinDirection = "down";
                 this.joinLine(args);
@@ -614,7 +624,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelectionAndInsertCharacter(args);
         } else {
             this.editor.model.insertCharacters(args.pos, args.newchar);
-            this.editor.cursorManager.moveRight();
+            this.editor.cursorManager.moveRight(true);
             this.repaint();
 
             // undo/redo
