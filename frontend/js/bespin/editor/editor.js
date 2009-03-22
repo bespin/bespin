@@ -1309,9 +1309,9 @@ dojo.declare("bespin.editor.UI", null, {
             if (lineText.charCodeAt(ti) == 9) {
                 // since the current character is a tab, we potentially need to insert some blank space between the tab character
                 // and the next tab stop
-                var toInsert = this.editor.tabstop - (ti % this.editor.tabstop);
+                var toInsert = this.editor.tabsize - (ti % this.editor.tabsize);
 
-                // create a spacer string representing the space between the tab and the tabstop
+                // create a spacer string representing the space between the tab and the tabsize
                 var spacer = "";
                 for (var si = 1; si < toInsert; si++) spacer += "-";
 
@@ -1350,7 +1350,17 @@ dojo.declare("bespin.editor.UI", null, {
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
-        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
+        this.tabsize = 4;       // tab stops every 4 columns; is replaced by the value in settings:tabwidth!
+
+        // set this.tabsize after the tabwidth has been changed
+        bespin.subscribe('bespin:settings:set:tabsize', dojo.hitch(this, function(event) {
+            this.tabsize = event.value; 
+        }));
+        
+        // set this.tabsize after the settings have been loaded
+        bespin.subscribe('bespin:settings:loaded', dojo.hitch(this, function() {            
+            this.tabsize = parseInt(bespin.get('settings').get('tabsize'));
+        }));
 
         this.opts = opts || {};
 
@@ -1361,10 +1371,9 @@ dojo.declare("bespin.editor.API", null, {
         this.canvas = dojo.byId(container).firstChild;
         while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;  
 
+        this.cursorManager = new bespin.editor.CursorManager(this);
         this.ui = new bespin.editor.UI(this);  
         this.theme = bespin.editor.themes['default'];
-
-        this.cursorManager = new bespin.editor.CursorManager(this);
 
         this.editorKeyListener = new bespin.editor.DefaultEditorKeyListener(this);
         this.undoManager = new bespin.editor.UndoManager(this);
