@@ -77,7 +77,7 @@ dojo.provide("bespin.user.register");
             dojo.byId('register_username_error').innerHTML = username_error.join(", ");
         },
         checkPassword: function() {
-            dojo.byId('register_password_error').innerHTML = (dojo.byId('register_password').value.length < 6) ? "Passwords must be at least 6 characters long" : "";
+            dojo.byId('register_password_error').innerHTML = ((dojo.byId('register_password').value.length < 6) || (dojo.byId('register_password').value.length > 20)) ? "Password must be between 6 and 20 characters" : "";
         },
         checkConfirm: function() {
             dojo.byId('register_confirm_error').innerHTML = (dojo.byId('register_password').value != dojo.byId('register_confirm').value) ? "Passwords do not match" : "";
@@ -98,13 +98,15 @@ dojo.provide("bespin.user.register");
             server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
         },
         send: function() {
-            this.hideForm();
-            server.signup(dojo.byId("register_username").value, 
-                dojo.byId("register_password").value, 
-                dojo.byId('register_email').value, 
-                utils.whenLoginSucceeded, 
-                utils.whenLoginFailed, 
-                utils.whenUsernameInUse);
+	    if((dojo.byId('register_password').value.length < 21) && (dojo.byId('register_password').value.length > 5) && (dojo.byId('register_password').value == dojo.byId('register_confirm').value)) {
+		this.hideForm();
+		server.signup(dojo.byId("register_username").value, 
+		    dojo.byId("register_password").value, 
+		    dojo.byId('register_email').value, 
+		    utils.whenLoginSucceeded, 
+		    utils.whenLoginFailed, 
+		    utils.whenUsernameInUse);
+	    }
         },
         cancel: function() { 
             this.hideForm();
