@@ -78,5 +78,9 @@ dojo.mixin(bespin.user.utils, {
     validateEmail: function(str) {
         var filter=/^([\w-+_]+(?:\.[\w-+_]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
         return filter.test(str);
+    },
+    
+    validatePassword: function(str) {
+        return (str.length > 5) && (str.length < 21);
     }
 });
