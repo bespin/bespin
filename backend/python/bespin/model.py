@@ -958,6 +958,9 @@ class _SearchMatch(object):
             self.score = 1
         else:
             self.score = 0
+        percent_match = float(len(query)) / len(match)
+        if percent_match >= 0.5:
+            self.score += 0.5
         self.match = match
     
     def __cmp__(self, other):

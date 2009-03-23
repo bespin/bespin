@@ -16,7 +16,8 @@ Getting Started
 
 *** NOTE FOR LINUX USERS: If you are running on a Linux system, you will 
 likely need a "python-dev" (on Ubuntu, possibly python-devel elsewhere) 
-package installed, if you do not already have it.
+package installed and either the libc-dev or libc6-dev package, if you 
+do not already have them.
 
 Run::
 
