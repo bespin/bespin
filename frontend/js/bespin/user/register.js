@@ -88,8 +88,10 @@ dojo.provide("bespin.user.register");
         showForm: function() {
             if (utils.showingBrowserCompatScreen()) return;
             dojo.style('logged_in', 'display', 'none');
-            dojo.style('not_logged_in', 'display', 'none');           
-            webpieces.showCenterPopup(dojo.byId('centerpopup'), true);  
+            dojo.style('not_logged_in', 'display', 'none');
+            dojo.style('overlay', 'display', 'block');
+            dojo.style('centerpopup', 'display', 'block');            
+            webpieces.showCenterPopup(dojo.byId('centerpopup'));  
         },
         hideForm: function() {
             webpieces.hideCenterPopup(dojo.byId('centerpopup'));
