@@ -47,7 +47,7 @@ bespin.subscribe("project:delete", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
 
-// ** {{{ Event: bespin:session:status }}} **
+// ** {{{ Event: session:status }}} **
 // 
 // Observe a request for session status
 bespin.subscribe("session:status", function(event) {
@@ -60,16 +60,16 @@ bespin.subscribe("session:status", function(event) {
         msg += ", you haven't select a project yet.";
     }
     
-    bespin.publish("cmdline:showinfo", { msg: msg });
+    bespin.publish("message", { msg: msg });
 });
 
-// ** {{{ Event: bespin:editor:newfile }}} **
+// ** {{{ Event: editor:newfile }}} **
 // 
 // Observe a request for a new file to be created
 bespin.subscribe("editor:newfile", function(event) {
     var project = event.project;
     if (!project) {
-        bespin.publish("cmdline:showinfo", { msg: 'The new file action requires a project' });
+        bespin.publish("message", { msg: 'The new file action requires a project' });
         return;
     }
     

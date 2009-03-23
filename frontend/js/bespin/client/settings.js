@@ -344,7 +344,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         var editSession = bespin.get('editSession');
         var editor = bespin.get('editor');
 
-        // ** {{{ Event: bespin:settings:set }}} **
+        // ** {{{ Event: settings:set }}} **
         // 
         // Watch for someone wanting to do a set operation
         bespin.subscribe("settings:set", function(event) {
@@ -354,7 +354,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             settings.set(key, value);
         });
 
-        // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
         // 
         // Change the session settings when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
@@ -367,7 +367,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (editSession.syncHelper) editSession.syncHelper.syncWithServer();
         });
 
-        // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
         // 
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
@@ -379,14 +379,14 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:set:syntax }}} **
+        // ** {{{ Event: settings:set:syntax }}} **
         // 
         // When the syntax setting is changed, tell the syntax system to change
         bespin.subscribe("settings:set:syntax", function(event) {
             bespin.publish("settings:syntax", { language: event.value, fromCommand: true });
         });
 
-        // ** {{{ Event: bespin:settings:syntax }}} **
+        // ** {{{ Event: settings:syntax }}} **
         // 
         // Given a new syntax command, change the editor.language        
         bespin.subscribe("settings:syntax", function(event) {
@@ -407,14 +407,14 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:set:collaborate }}} **
+        // ** {{{ Event: settings:set:collaborate }}} **
         // 
         // Turn on the collaboration system if set to be on
         bespin.subscribe("settings:set:collaborate", function(event) {
             editSession.collaborate = settings.isOn(event.value);
         });
 
-        // ** {{{ Event: bespin:settings:set:fontsize }}} **
+        // ** {{{ Event: settings:set:fontsize }}} **
         // 
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
@@ -422,7 +422,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
-        // ** {{{ Event: bespin:settings:set:theme }}} **
+        // ** {{{ Event: settings:set:theme }}} **
         // 
         // Change the Theme object used by the editor
         bespin.subscribe("settings:set:theme", function(event) {
@@ -436,14 +436,14 @@ dojo.declare("bespin.client.settings.Events", null, {
                         editor.theme = themeSettings;
                     }
                 } else {
-                    bespin.publish("cmdline:showinfo", {
+                    bespin.publish("message", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
                     });
                 }
             }
         });
 
-        // ** {{{ Event: bespin:settings:set:keybindings }}} **
+        // ** {{{ Event: settings:set:keybindings }}} **
         // 
         // Add in emacs key bindings
         bespin.subscribe("settings:set:keybindings", function(event) {
@@ -488,7 +488,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:set:cursorblink }}} **
+        // ** {{{ Event: settings:set:cursorblink }}} **
         // 
         // The frequency of the cursor blink in milliseconds (defaults to 250)
         bespin.subscribe("settings:set:cursorblink", function(event) {
@@ -499,7 +499,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
+        // ** {{{ Event: settings:init }}} **
         // 
         // If we are opening up a new file
         bespin.subscribe("settings:init", function(event) {
@@ -519,7 +519,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
+        // ** {{{ Event: settings:init }}} **
         // 
         // Setup the theme
         bespin.subscribe("settings:init", function(event) {
@@ -528,7 +528,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             });
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
+        // ** {{{ Event: settings:init }}} **
         // 
         // Setup the special keybindings
         bespin.subscribe("settings:init", function(event) {
@@ -537,7 +537,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             });
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
+        // ** {{{ Event: settings:init }}} **
         // 
         // Check for auto load
         bespin.subscribe("settings:init", function(event) {
@@ -546,7 +546,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
-        // ** {{{ Event: bespin:settings:init }}} **
+        // ** {{{ Event: settings:init }}} **
         // 
         // Setup the font size that the user has configured
         bespin.subscribe("settings:init", function(event) {

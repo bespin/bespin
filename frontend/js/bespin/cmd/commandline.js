@@ -79,7 +79,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return;
         }
 
-        bespin.publish("cmdline:executed", { command: command, args: argstr });
+        bespin.publish("command:executed", { command: command, args: argstr });
 
         command.execute(this, this.getArgs(argstr.split(' '), command));
         this.commandLine.value = ''; // clear after the command
@@ -95,7 +95,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (command.withKey) {             
             var args = bespin.util.keys.fillArguments(command.withKey);
 
-            args.action = "cmdline:execute;name=" + command.name;
+            args.action = "command:execute;name=" + command.name;
             bespin.publish("editor:bindkey", args);
         }   
 
@@ -438,41 +438,41 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
-        // ** {{{ Event: bespin:cmdline:showinfo }}} **
+        // ** {{{ Event: message }}} **
         // 
         // Observe when others want to show the info bar for the command line
-        bespin.subscribe("cmdline:showinfo", function(event) {
+        bespin.subscribe("message", function(event) {
             var msg = event.msg;
-            var autohide = event.autohide; 
+            var autohide = (event.tag == 'autohide');
             if (msg) commandline.showInfo(msg, autohide);
         });
 
-        // ** {{{ Event: bespin:cmdline:suppressinfo }}} **
+        // ** {{{ Event: cmdline:suppressinfo }}} **
         // 
         // Turn on info bar suppression
         bespin.subscribe("cmdline:suppressinfo", function(event) {
             commandline.suppressInfo = true;
         });
 
-        // ** {{{ Event: bespin:cmdline:unsuppressinfo }}} **
+        // ** {{{ Event: cmdline:unsuppressinfo }}} **
         // 
         // Turn off info bar suppression
         bespin.subscribe("cmdline:unsuppressinfo", function(event) {
             commandline.suppressInfo = false;
         });
 
-        // ** {{{ Event: bespin:cmdline:executed }}} **
+        // ** {{{ Event: command:executed }}} **
         // 
         // Once the command has been executed, do something.
         // In this case, save it for the history
-        bespin.subscribe("cmdline:executed", function(event) {
+        bespin.subscribe("command:executed", function(event) {
             commandline.commandLineHistory.add(event.command.name + " " + event.args); // only add to the history when a valid command
         });
         
-        // ** {{{ Event: bespin:cmdline:executed }}} **
+        // ** {{{ Event: command:executed }}} **
         // 
         // Once the command has been executed, do something.        
-        bespin.subscribe("cmdline:execute", function(event) {
+        bespin.subscribe("command:execute", function(event) {
             var command = event.name;
             var args    = event.args;
             if (command && args) { // if we have a command and some args
@@ -483,14 +483,14 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
         
         // -- Files
-        // ** {{{ Event: bespin:editor:openfile:openfail }}} **
+        // ** {{{ Event: editor:openfile:openfail }}} **
         // 
         // If an open file action failed, tell the user.
         bespin.subscribe("editor:openfile:openfail", function(event) {
             commandline.showInfo('Could not open file: ' + event.filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
         });
 
-        // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
         // 
         // The open file action worked, so tell the user
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
@@ -498,7 +498,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
 
         // -- Projects
-        // ** {{{ Event: bespin:project:set }}} **
+        // ** {{{ Event: project:set }}} **
         // 
         // When the project changes, alert the user
         bespin.subscribe("project:set", function(event) {

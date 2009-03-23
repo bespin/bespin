@@ -49,15 +49,15 @@
 
     <p><code>bespin.cmd.commandline.Events</code> houses the various events for the command line.</p>
 
-    <h2>cmdline:showinfo</h2>
+    <h2>message</h2>
     <p>
-        Observe when others want to show data in the info bar for the command line.
+        Send messages that can be shown in different ways. For example, the command line may display the message in an info window.
     </p>
     <p>
         With arguments:
         <ul>
             <li><code>msg</code>: The message to display in the info bar</li>
-            <li><code>autohide</code>: Optionally, hide the info bar after a short period</li>
+            <li><code>tag</code>: Type of message</li>
         </ul>
     </p>
 
@@ -71,7 +71,7 @@
         The info bar can start talking again, until someone asks it to suppress.
     </p>
 
-    <h2>cmdline:executed</h2>    
+    <h2>command:executed</h2>    
     <p>
         A given command has been executed.
     </p>
@@ -83,7 +83,7 @@
         </ul>        
     </p>    
 
-    <h2>cmdline:execute</h2>
+    <h2>command:execute</h2>
     <p>
         Go ahead and execute a command.
     </p>
@@ -95,7 +95,7 @@
         </ul>
     </p>
 
-    <h2>commands:load</h2>
+    <h2>command:load</h2>
     <p>
         Create a new command in your special command directory.
     </p>
@@ -106,7 +106,7 @@
         </ul>        
     </p>    
     
-    <h2>commands:edit</h2>
+    <h2>command:edit</h2>
     <p>
         Edit the given command.
     </p>
@@ -117,12 +117,12 @@
         </ul>        
     </p>    
 
-    <h2>commands:list</h2>
+    <h2>command:list</h2>
     <p>
         List the custom commands that a user has.
     </p>
 
-    <h2>commands:delete</h2>
+    <h2>command:delete</h2>
     <p>
         Delete the given command.
     </p>

@@ -35,7 +35,7 @@ dojo.provide("bespin.parser.parser");
 //
 // Saves Info about current source code 
 //
-// To get meta data about code subscribe to bespin:parser:metainfo and bespin:parser:error
+// To get meta data about code subscribe to parser:metainfo and parser:error
 dojo.declare("bespin.parser.CodeInfo", null, {
     constructor: function(source) {
         var self       = this;
@@ -43,17 +43,17 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         
         this.currentMetaInfo;
         
-        // ** {{{ Event: bespin:parser:error }}} **
+        // ** {{{ Event: parser:error }}} **
         // 
         // Parser found an error in the source code
         bespin.subscribe("parser:error", function(error) {
-            bespin.publish("cmdline:showinfo", { 
+            bespin.publish("message", { 
                 msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
-                autohide: true
+                tag: 'autohide'
             })
         })
         
-        // ** {{{ Event: bespin:parser:showoutline }}} **
+        // ** {{{ Event: parser:showoutline }}} **
         // 
         // Show a window with a code structure outline of the current document
         bespin.subscribe("parser:showoutline", function() {
@@ -71,17 +71,15 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                         if (typeof name == "undefined") {
                             name = "anonymous";
                         }
-                        html += '<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+func.row+', col: 0 });bespin.publish(\'bespin:editor:doaction\', { action: \'moveCursorRowToCenter\' })">Function: '+name+'</a><br/>';
+                        html += '<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+func.row+', col: 0 });bespin.publish(\'editor:doaction\', { action: \'moveCursorRowToCenter\' })">Function: '+name+'</a><br/>';
                     });
                 }
                 html += '</div>';
-                bespin.publish("cmdline:showinfo", { 
-                    msg: html
-                });
+                bespin.publish("message", { msg: html });
             }
         });
         
-        // ** {{{ Event: bespin:parser:showoutline }}} **
+        // ** {{{ Event: parser:showoutline }}} **
         // 
         // Show a window with a code structure outline of the current document
         bespin.subscribe("parser:gotofunction", function(event) {
@@ -89,7 +87,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var html;
 
             if (!functionName) {
-                bespin.publish("cmdline:showinfo", { msg: "Please pass me a valid function name." });
+                bespin.publish("message", { msg: "Please pass me a valid function name." });
                 return;
             }
 
@@ -112,7 +110,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     }
                 }
             }
-            bespin.publish("cmdline:showinfo", { msg: html });
+            bespin.publish("message", { msg: html });
         });
     },
     

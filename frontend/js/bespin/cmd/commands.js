@@ -364,7 +364,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("commands:load", { commandname: commandname });
+        bespin.publish("command:load", { commandname: commandname });
     }
 });
 
@@ -382,7 +382,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("commands:edit", { commandname: commandname });
+        bespin.publish("command:edit", { commandname: commandname });
     }
 });
 
@@ -391,7 +391,7 @@ bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(self) {
-        bespin.publish("commands:list");
+        bespin.publish("command:list");
     }
 });
 
@@ -408,7 +408,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("commands:delete", { commandname: commandname });
+        bespin.publish("command:delete", { commandname: commandname });
     }
 });
 

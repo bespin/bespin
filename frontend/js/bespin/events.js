@@ -34,7 +34,7 @@ dojo.require("bespin.util.util");
 // * {{{bespin.cmd.commandline.Events}}}
 // * {{{bespin.client.settings.Events}}}
 
-// ** {{{ Event: bespin:editor:titlechange }}} **
+// ** {{{ Event: editor:titlechange }}} **
 // 
 // Observe a title change event and then... change the document.title!
 bespin.subscribe("editor:titlechange", function(event) {
@@ -46,7 +46,7 @@ bespin.subscribe("editor:titlechange", function(event) {
     document.title = title;
 });
 
-// ** {{{ Event: bespin:editor:evalfile }}} **
+// ** {{{ Event: editor:evalfile }}} **
 // 
 // Load up the given file and try to run it
 bespin.subscribe("editor:evalfile", function(event) {
@@ -72,7 +72,7 @@ bespin.subscribe("editor:evalfile", function(event) {
     }, true);
 });
 
-// ** {{{ Event: bespin:editor:preview }}} **
+// ** {{{ Event: editor:preview }}} **
 // 
 // Preview the given file in a browser context
 bespin.subscribe("editor:preview", function(event) {
@@ -90,7 +90,7 @@ bespin.subscribe("editor:preview", function(event) {
     }
 });
 
-// ** {{{ Event: bespin:editor:closefile }}} **
+// ** {{{ Event: editor:closefile }}} **
 // 
 // Close the given file (wrt the session)
 bespin.subscribe("editor:closefile", function(event) {
@@ -104,11 +104,11 @@ bespin.subscribe("editor:closefile", function(event) {
         // if the current file, move on to a new one
         if (filename == editSession.path) bespin.publish("editor:newfile");    
 
-        bespin.publish("cmdline:showinfo", { msg: 'Closed file: ' + filename });
+        bespin.publish("message", { msg: 'Closed file: ' + filename });
     });
 });
 
-// ** {{{ Event: bespin:editor:config:run }}} **
+// ** {{{ Event: editor:config:run }}} **
 //
 // Load and execute the user's config file
 bespin.subscribe("editor:config:run", function(event) {
@@ -118,12 +118,12 @@ bespin.subscribe("editor:config:run", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:editor:config:edit }}} **
+// ** {{{ Event: editor:config:edit }}} **
 // 
 // Open the users special config file
 bespin.subscribe("editor:config:edit", function(event) {
     if (!bespin.userSettingsProject) {
-        bespin.publish("cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
@@ -133,24 +133,24 @@ bespin.subscribe("editor:config:edit", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:cmdline:executed }}} **
+// ** {{{ Event: command:executed }}} **
 // 
 // Set the last command in the status window
-bespin.subscribe("cmdline:executed", function(event) {
+bespin.subscribe("command:executed", function(event) {
     var commandname = event.command.name;
     var args        = event.args;
 
     dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
 });
 
-// ** {{{ Event: bespin:commands:load }}} **
+// ** {{{ Event: command:load }}} **
 // 
 // Create a new command in your special command directory
-bespin.subscribe("commands:load", function(event) {
+bespin.subscribe("command:load", function(event) {
     var commandname = event.commandname;
     
     if (!commandname) {
-        bespin.publish("cmdline:showinfo", { msg: "Please pass me a command name to load." });
+        bespin.publish("message", { msg: "Please pass me a command name to load." });
         return;
     }
 
@@ -158,24 +158,24 @@ bespin.subscribe("commands:load", function(event) {
         try {
             eval('bespin.get("commandLine").addCommands([' + file.content + '])');
         } catch (e) {
-            bespin.publish("cmdline:showinfo", { msg: "Something is wrong about the command:<br><br>" + e });
+            bespin.publish("message", { msg: "Something is wrong about the command:<br><br>" + e });
         }
     }, true);
 });
 
-// ** {{{ Event: bespin:commands:edit }}} **
+// ** {{{ Event: command:edit }}} **
 // 
 // Edit the given command
-bespin.subscribe("commands:edit", function(event) {
+bespin.subscribe("command:edit", function(event) {
     var commandname = event.commandname;
     
     if (!bespin.userSettingsProject) {
-        bespin.publish("cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
     if (!commandname) {
-        bespin.publish("cmdline:showinfo", { msg: "Please pass me a command name to edit." });
+        bespin.publish("message", { msg: "Please pass me a command name to edit." });
         return;
     }
     
@@ -186,12 +186,12 @@ bespin.subscribe("commands:edit", function(event) {
     });
 });
 
-// ** {{{ Event: bespin:commands:list }}} **
+// ** {{{ Event: command:list }}} **
 // 
 // List the custom commands that a user has
-bespin.subscribe("commands:list", function(event) {
+bespin.subscribe("command:list", function(event) {
     if (!bespin.userSettingsProject) {
-        bespin.publish("cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
@@ -208,26 +208,26 @@ bespin.subscribe("commands:list", function(event) {
             }), function(c) { return c.name.replace(/\.js$/, ''); }).join("<br>");
         }
         
-        bespin.publish("cmdline:showinfo", { msg: output });
+        bespin.publish("message", { msg: output });
     });
 });
 
-// ** {{{ Event: bespin:commands:delete }}} **
+// ** {{{ Event: command:delete }}} **
 // 
 // Delete the named command
-bespin.subscribe("commands:delete", function(event) {
+bespin.subscribe("command:delete", function(event) {
     var commandname = event.commandname;
     
     var editSession = bespin.get('editSession');
     var files = bespin.get('files');
 
     if (!bespin.userSettingsProject) {
-        bespin.publish("cmdline:showinfo", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
     if (!commandname) {
-        bespin.publish("cmdline:showinfo", { msg: "Please pass me a command name to delete." });
+        bespin.publish("message", { msg: "Please pass me a command name to delete." });
         return;
     }
 
@@ -235,16 +235,16 @@ bespin.subscribe("commands:delete", function(event) {
     
     files.removeFile(bespin.userSettingsProject, commandpath, function() {
         if (editSession.checkSameFile(bespin.userSettingsProject, commandpath)) bespin.get('editor').model.clear(); // only clear if deleting the same file
-        bespin.publish("cmdline:showinfo", { msg: 'Removed command: ' + commandname, autohide: true });
+        bespin.publish("message", { msg: 'Removed command: ' + commandname, tag: 'autohide' });
     }, function(xhr) {
-        bespin.publish("cmdline:showinfo", { 
+        bespin.publish("message", { 
             msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText, 
-            autohide: true 
+            tag: 'autohide'
         });
     });
 });
 
-// ** {{{ Event: bespin:directory:create }}} **
+// ** {{{ Event: directory:create }}} **
 // 
 // Create a new directory
 bespin.subscribe("directory:create", function(event) {
@@ -256,15 +256,15 @@ bespin.subscribe("directory:create", function(event) {
     
     files.makeDirectory(project, path, function() {
         if (path == '') bespin.publish("project:set", { project: project });
-        bespin.publish("cmdline:showinfo", { 
-            msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', autohide: true });
+        bespin.publish("message", { 
+            msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
-        bespin.publish("cmdline:showinfo", {
-            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']' + project, autohide: true });
+        bespin.publish("message", {
+            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']' + project, tag: 'autohide' });
     });
 });
 
-// ** {{{ Event: bespin:directory:delete }}} **
+// ** {{{ Event: directory:delete }}} **
 // 
 // Delete a directory
 bespin.subscribe("directory:delete", function(event) {
@@ -278,15 +278,15 @@ bespin.subscribe("directory:delete", function(event) {
     
     files.removeDirectory(project, path, function() {
         if (path == '/') bespin.publish("project:set", { project: '' }); // reset
-        bespin.publish("cmdline:showinfo", { 
-            msg: 'Successfully deleted directory: [project=' + project + ', path=' + path + ']', autohide: true });
+        bespin.publish("message", { 
+            msg: 'Successfully deleted directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
-        bespin.publish("cmdline:showinfo", {
-            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']', autohide: true });
+        bespin.publish("message", {
+            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     });
 });
 
-// ** {{{ Event: bespin:project:create }}} **
+// ** {{{ Event: project:create }}} **
 // 
 // Create a new project
 bespin.subscribe("project:create", function(event) {
@@ -295,7 +295,7 @@ bespin.subscribe("project:create", function(event) {
     bespin.publish("directory:create", { project: project });
 });
 
-// ** {{{ Event: bespin:project:delete }}} **
+// ** {{{ Event: project:delete }}} **
 // 
 // Delete a project
 bespin.subscribe("project:delete", function(event) {
@@ -305,7 +305,7 @@ bespin.subscribe("project:delete", function(event) {
     bespin.publish("directory:delete", { project: project });
 });
 
-// ** {{{ Event: bespin:project:rename }}} **
+// ** {{{ Event: project:rename }}} **
 // 
 // Rename a project
 bespin.subscribe("project:rename", function(event) {
@@ -318,13 +318,13 @@ bespin.subscribe("project:rename", function(event) {
             bespin.publish("project:set", { project: newProject });
         },
         onFailure: function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: 'Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>", autohide: true });
+            bespin.publish("message", { msg: 'Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>", tag: 'autohide' });
         }
     });
 });
 
 
-// ** {{{ Event: bespin:project:import }}} **
+// ** {{{ Event: project:import }}} **
 // 
 // Import a project
 bespin.subscribe("project:import", function(event) {
@@ -332,9 +332,9 @@ bespin.subscribe("project:import", function(event) {
     var url = event.url;
 
     bespin.get('server').importProject(project, url, { call: function() {
-        bespin.publish("cmdline:showinfo", { msg: "Project " + project + " imported from:<br><br>" + url, autohide: true });
+        bespin.publish("message", { msg: "Project " + project + " imported from:<br><br>" + url, tag: 'autohide' });
     }, onFailure: function(xhr) {
-        bespin.publish("cmdline:showinfo", { msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText });
+        bespin.publish("message", { msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText });
     }});
 });
 
@@ -352,8 +352,8 @@ bespin.subscribe("project:import", function(event) {
 //
 // Example events:
 //
-// * {{{bespin:cmdline:execute;name=ls,args=bespin}}}
-// * {{{bespin:cmdline:execute}}} 
+// * {{{command:execute;name=ls,args=bespin}}}
+// * {{{command:execute}}} 
     
 dojo.mixin(bespin.events, {
     toFire: function(eventString) {
@@ -411,132 +411,132 @@ bespin.events.defaultScope = function() {
     return bespin.events._defaultScope;
 };
 
-// ** {{{ Event: bespin:network:followers }}} **
+// ** {{{ Event: network:followers }}} **
 // Get a list of our followers
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Following " + data });
+            bespin.publish("message", { msg: "Following " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:network:follow }}} **
+// ** {{{ Event: network:follow }}} **
 // Add to the list of users that we follow
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Following " + data });
+            bespin.publish("message", { msg: "Following " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:network:unfollow }}} **
+// ** {{{ Event: network:unfollow }}} **
 // Remove users from the list that we follow
 bespin.subscribe("network:unfollow", function(usernames) {
     bespin.get('server').unfollow(usernames, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Following " + data });
+            bespin.publish("message", { msg: "Following " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:groups:list:all }}} **
+// ** {{{ Event: groups:list:all }}} **
 // Get a list of our groups
 bespin.subscribe("groups:list:all", function() {
     bespin.get('server').groupListAll({
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Known groups " + data });
+            bespin.publish("message", { msg: "Known groups " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve groups. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve groups. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:groups:list }}} **
+// ** {{{ Event: groups:list }}} **
 // Get a list of group members
 bespin.subscribe("groups:list", function(group) {
     bespin.get('server').groupList(group, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+            bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:groups:remove:all }}} **
+// ** {{{ Event: groups:remove:all }}} **
 // Remove a group and all its members
 bespin.subscribe("groups:remove:all", function(group) {
     bespin.get('server').groupRemoveAll(group, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Removed group " + group });
+            bespin.publish("message", { msg: "Removed group " + group });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:groups:add }}} **
+// ** {{{ Event: groups:add }}} **
 // Add to members of a group
 bespin.subscribe("groups:add", function(group, users) {
     bespin.get('server').groupAdd(group, users, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+            bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to add to group members. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to add to group members. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:groups:remove }}} **
+// ** {{{ Event: groups:remove }}} **
 // Add to members of a group
 bespin.subscribe("groups:remove", function(group, users) {
     bespin.get('server').groupRemove(group, users, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Members of " + group + ": " + data });
+            bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to remove to group members. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to remove to group members. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:share:list:all }}} **
+// ** {{{ Event: share:list:all }}} **
 // List all project shares
 bespin.subscribe("share:list:all", function() {
     bespin.get('server').shareListAll({
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Project sharing: " + data });
+            bespin.publish("message", { msg: "Project sharing: " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to list project shares. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to list project shares. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:share:list:project }}} **
+// ** {{{ Event: share:list:project }}} **
 // List sharing for a given project
 bespin.subscribe("share:list:project", function(project) {
     bespin.get('server').shareListProject(project, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Project sharing for " + project + ": " + data });
+            bespin.publish("message", { msg: "Project sharing for " + project + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
         }
     });
 });
@@ -546,88 +546,88 @@ bespin.subscribe("share:list:project", function(project) {
 bespin.subscribe("share:list:project:member", function(project, member) {
     bespin.get('server').shareListProjectMember(project, member, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Project sharing for " + project + ", " + member + ": " + data });
+            bespin.publish("message", { msg: "Project sharing for " + project + ", " + member + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:share:remove:all }}} **
+// ** {{{ Event: share:remove:all }}} **
 // Remove all sharing from a project
 bespin.subscribe("share:remove:all", function(project) {
     bespin.get('server').shareRemoveAll(project, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "All sharing removed from " + project });
+            bespin.publish("message", { msg: "All sharing removed from " + project });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to remove sharing permissions. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to remove sharing permissions. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:share:remove }}} **
+// ** {{{ Event: share:remove }}} **
 // Remove project sharing from a given member
 bespin.subscribe("share:remove", function(project, member) {
     bespin.get('server').shareRemove(project, member, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Removed sharing permission from " + member + " to " + project });
+            bespin.publish("message", { msg: "Removed sharing permission from " + member + " to " + project });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to remove sharing permission. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to remove sharing permission. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:share:add }}} **
+// ** {{{ Event: share:add }}} **
 // Add a member to the sharing list for a project
 bespin.subscribe("share:add", function(project, member, options) {
     bespin.get('server').shareAdd(project, member, options, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Adding sharing permission for " + member + " to " + project });
+            bespin.publish("message", { msg: "Adding sharing permission for " + member + " to " + project });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to add sharing permission. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to add sharing permission. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:viewme:list:all }}} **
+// ** {{{ Event: viewme:list:all }}} **
 // List all the members with view settings on me
 bespin.subscribe("viewme:list:all", function() {
     bespin.get('server').viewmeListAll({
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "All view settings: " + data });
+            bespin.publish("message", { msg: "All view settings: " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:viewme:list }}} **
+// ** {{{ Event: viewme:list }}} **
 // List the view settings for a given member
 bespin.subscribe("viewme:list", function(member) {
     bespin.get('server').viewmeList(member, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "View settings for " + member + ": " + data });
+            bespin.publish("message", { msg: "View settings for " + member + ": " + data });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
         }
     });
 });
 
-// ** {{{ Event: bespin:viewme:set }}} **
+// ** {{{ Event: viewme:set }}} **
 // Alter the view setting for a given member
 bespin.subscribe("viewme:set", function(member, value) {
     bespin.get('server').viewmeSet(member, value, {
         call:function(data) {
-            bespin.publish("cmdline:showinfo", { msg: "Changed view settings for " + member });
+            bespin.publish("message", { msg: "Changed view settings for " + member });
         },
         onFailure:function(xhr) {
-            bespin.publish("cmdline:showinfo", { msg: "Failed to change view setttings. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to change view setttings. Maybe due to: " + xhr.responseText });
         }
     });
 });

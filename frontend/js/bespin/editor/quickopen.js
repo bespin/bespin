@@ -202,7 +202,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }));
         
         // load the current opend files at startup
-        bespin.subscribe('bespin:settings:loaded', function() {            
+        bespin.subscribe('settings:loaded', function() {            
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
     },

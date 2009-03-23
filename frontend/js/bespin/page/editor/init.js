@@ -166,7 +166,7 @@ dojo.provide("bespin.page.editor.init");
         scene.render();
     });
 
-    // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+    // ** {{{ Event: editor:openfile:opensuccess }}} **
     // 
     // When a file is opened successfully change the project and file status area.
     // Then change the window title, and change the URL hash area

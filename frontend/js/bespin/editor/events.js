@@ -71,7 +71,7 @@ dojo.declare("bespin.editor.Events", null, {
             }
         });
         
-        // ** {{{ Event: bespin:editor:openfile }}} **
+        // ** {{{ Event: editor:openfile }}} **
         // 
         // Observe a request for a file to be opened and start the cycle:
         //
@@ -99,7 +99,7 @@ dojo.declare("bespin.editor.Events", null, {
             });
         });
 
-        // ** {{{ Event: bespin:editor:forceopenfile }}} **
+        // ** {{{ Event: editor:forceopenfile }}} **
         // 
         // Open an existing file, or create a new one.
         bespin.subscribe("editor:forceopenfile", function(event) {
@@ -119,7 +119,7 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.get('files').forceOpenFile(project, filename, content);
         });
 
-        // ** {{{ Event: bespin:editor:newfile }}} **
+        // ** {{{ Event: editor:newfile }}} **
         // 
         // Observe a request for a new file to be created
         bespin.subscribe("editor:newfile", function(event) {
@@ -135,7 +135,7 @@ dojo.declare("bespin.editor.Events", null, {
             });        
         });
 
-        // ** {{{ Event: bespin:editor:savefile }}} **
+        // ** {{{ Event: editor:savefile }}} **
         // 
         // Observe a request for a file to be saved and start the cycle:
         //
@@ -170,10 +170,10 @@ dojo.declare("bespin.editor.Events", null, {
 
             bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("cmdline:showinfo", { msg: 'Saved file: ' + file.name, autohide: true });
+            bespin.publish("message", { msg: 'Saved file: ' + file.name, tag: 'autohide' });
         });
 
-        // ** {{{ Event: bespin:editor:moveandcenter }}} **
+        // ** {{{ Event: editor:moveandcenter }}} **
         // 
         // Observe a request to move the editor to a given location and center it
         bespin.subscribe("editor:moveandcenter", function(event) {
@@ -195,7 +195,7 @@ dojo.declare("bespin.editor.Events", null, {
 
         // == Shell Events: Header, Chrome, etc ==
         //
-        // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
         // 
         // When a file is opened successfully change the project and file status area.
         // Then change the window title, and change the URL hash area
@@ -216,7 +216,7 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.publish("url:change", { project: project, path: filename });
         });
 
-        // ** {{{ Event: bespin:editor:urlchange }}} **
+        // ** {{{ Event: editor:urlchange }}} **
         // 
         // Observe a urlchange event and then... change the location hash
         bespin.subscribe("url:change", function(event) {
@@ -233,14 +233,14 @@ dojo.declare("bespin.editor.Events", null, {
             window.location.hash = pairs.join("&");
         });
 
-        // ** {{{ Event: bespin:url:changed }}} **
+        // ** {{{ Event: url:changed }}} **
         // 
         // Observe a request for session status
         bespin.subscribe("url:changed", function(event) {
             bespin.publish("editor:openfile", { filename: event.now.get('path') });
         });
 
-        // ** {{{ Event: bespin:session:status }}} **
+        // ** {{{ Event: session:status }}} **
         // 
         // Observe a request for session status
         bespin.subscribe("session:status", function(event) {
@@ -249,14 +249,14 @@ dojo.declare("bespin.editor.Events", null, {
             self.showInfo('Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project);
         });
 
-        // ** {{{ Event: bespin:cmdline:focus }}} **
+        // ** {{{ Event: cmdline:focus }}} **
         // 
         // If the command line is in focus, unset focus from the editor
         bespin.subscribe("cmdline:focus", function(event) {
             editor.setFocus(false);
         });
 
-        // ** {{{ Event: bespin:cmdline:blur }}} **
+        // ** {{{ Event: cmdline:blur }}} **
         // 
         // If the command line is blurred, take control in the editor
         bespin.subscribe("cmdline:blur", function(event) {
