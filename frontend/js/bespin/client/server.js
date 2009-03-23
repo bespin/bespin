@@ -518,5 +518,59 @@ dojo.declare("bespin.client.Server", null, {
     // Get a list of the users the current user is following
     groupRemove: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
+    },
+
+    // ** {{{ shareListAll() }}}
+    // List all project shares
+    shareListAll: function(opts) {
+        this.request('GET', '/share/list/all/', null, opts || {});
+    },
+
+    // ** {{{ shareListProject() }}}
+    // List sharing for a given project
+    shareListProject: function(project, opts) {
+        this.request('GET', '/share/list/' + project + '/', null, opts || {});
+    },
+
+    // ** {{{ shareListProjectMember() }}}
+    // List sharing for a given project and member
+    shareListProjectMember: function(project, member, opts) {
+        this.request('GET', '/share/list/' + project + '/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ shareRemoveAll() }}}
+    // Remove all sharing from a project
+    shareRemoveAll: function(project, opts) {
+        this.request('POST', '/share/remove/' + project + '/all/', null, opts || {});
+    },
+
+    // ** {{{ shareRemove() }}}
+    // Remove project sharing from a given member
+    shareRemove: function(project, member, opts) {
+        this.request('POST', '/share/remove/' + project + '/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ shareAdd() }}}
+    // Add a member to the sharing list for a project
+    shareAdd: function(project, member, options, opts) {
+        this.request('POST', '/share/add/' + project + '/' + member + '/', dojo.toJson(options), opts || {});
+    },
+
+    // ** {{{ viewmeListAll() }}}
+    // List all the members with view settings on me
+    viewmeListAll: function(opts) {
+        this.request('GET', '/viewme/list/all/', null, opts || {});
+    },
+
+    // ** {{{ viewmeList() }}}
+    // List the view settings for a given member
+    viewmeList: function(member, opts) {
+        this.request('GET', '/viewme/list/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ viewmeSet() }}}
+    // Alter the view setting for a given member
+    viewmeSet: function(member, value, opts) {
+        this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
     }
 });

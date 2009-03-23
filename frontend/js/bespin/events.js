@@ -514,3 +514,120 @@ bespin.subscribe("bespin:groups:remove", function(group, users) {
         }
     });
 });
+
+// ** {{{ Event: bespin:share:list:all }}} **
+// List all project shares
+bespin.subscribe("bespin:share:list:all", function() {
+    bespin.get('server').shareListAll({
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Project sharing: " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to list project shares. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:share:list:project }}} **
+// List sharing for a given project
+bespin.subscribe("bespin:share:list:project", function(project) {
+    bespin.get('server').shareListProject(project, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Project sharing for " + project + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: share:list:project:member }}} **
+// List sharing for a given project and member
+bespin.subscribe("bespin:share:list:project:member", function(project, member) {
+    bespin.get('server').shareListProjectMember(project, member, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Project sharing for " + project + ", " + member + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:share:remove:all }}} **
+// Remove all sharing from a project
+bespin.subscribe("bespin:share:remove:all", function(project) {
+    bespin.get('server').shareRemoveAll(project, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "All sharing removed from " + project });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to remove sharing permissions. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:share:remove }}} **
+// Remove project sharing from a given member
+bespin.subscribe("bespin:share:remove", function(project, member) {
+    bespin.get('server').shareRemove(project, member, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Removed sharing permission from " + member + " to " + project });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to remove sharing permission. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:share:add }}} **
+// Add a member to the sharing list for a project
+bespin.subscribe("bespin:share:add", function(project, member, options) {
+    bespin.get('server').shareAdd(project, member, options, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Adding sharing permission for " + member + " to " + project });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to add sharing permission. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:viewme:list:all }}} **
+// List all the members with view settings on me
+bespin.subscribe("bespin:viewme:list:all", function() {
+    bespin.get('server').viewmeListAll({
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "All view settings: " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:viewme:list }}} **
+// List the view settings for a given member
+bespin.subscribe("bespin:viewme:list", function(member) {
+    bespin.get('server').viewmeList(member, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "View settings for " + member + ": " + data });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
+        }
+    });
+});
+
+// ** {{{ Event: bespin:viewme:set }}} **
+// Alter the view setting for a given member
+bespin.subscribe("bespin:viewme:set", function(member, value) {
+    bespin.get('server').viewmeSet(member, value, {
+        call:function(data) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Changed view settings for " + member });
+        },
+        onFailure:function(xhr) {
+            bespin.publish("bespin:cmdline:showinfo", { msg: "Failed to change view setttings. Maybe due to: " + xhr.responseText });
+        }
+    });
+});

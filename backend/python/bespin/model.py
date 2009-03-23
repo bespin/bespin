@@ -406,6 +406,21 @@ class UserManager(object):
             raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
         pass
 
+    def get_sharing(project, member=None):
+        return [ "Not implemented", project, member ]
+
+    def remove_sharing(project, member=None):
+        return [ "Not implemented", project, member ]
+
+    def add_sharing(project, member, options):
+        return [ "Not implemented", project, member, options ]
+
+    def get_viewme(member=None):
+        return [ "Not implemented", member ]
+
+    def set_viewme(member, value):
+        return [ "Not implemented", member, value ]
+
 
 class Directory(object):
     def __init__(self, name):

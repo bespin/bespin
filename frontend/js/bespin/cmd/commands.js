@@ -1023,6 +1023,99 @@ bespin.cmd.commands.add({
     }
 });
 
+// ** {{{Command: share}}} **
+bespin.cmd.commands.add({
+    name: 'share',
+    preview: 'List and alter sharing for a project',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'share'
+            bespin.publish("bespin:share:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'share {project}'
+            bespin.publish("bespin:share:list:project", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] == "none") {
+                // i.e. 'share {project} none'
+                bespin.publish("bespin:share:remove:all", [ args[0] ]);
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone'
+                bespin.publish("share:list:project:member", [ args[0], args[1] ]);
+            }
+        }
+        else if (args.length == 3) {
+            if (args[2] == "none") {
+                // i.e. 'share {project} {user}|{group}|everyone none'
+                bespin.publish("bespin:share:remove", [ args[0], args[1] ]);
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'none\', \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
+                bespin.publish("bespin:share:add", [ args[0], args[1], [ args[2] ] ]);
+            }
+        }
+        else if (args.length == 4) {
+            if (args[3] != "loadany") {
+                this._syntaxError('Valid scope options are loadany or <blank>');
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
+                bespin.publish("bespin:share:add", [ args[0], args[1], [ args[2], args[3] ] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 4 arguments to \'share\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+    }
+});
+
+// ** {{{Command: viewme}}} **
+bespin.cmd.commands.add({
+    name: 'viewme',
+    preview: 'List and alter user\'s ability to see what I\'m working on',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'viewme'
+            bespin.publish("bespin:viewme:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'viewme {user|group}'
+            bespin.publish("bespin:viewme:list", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] != 'false' && args[1] != 'true' && args[1] != 'default') {
+                this._syntaxError('Valid viewme settings are {true|false|deafult}');
+            }
+            else {
+                bespin.publish("bespin:viewme:set", [ args[0], args[1] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 2 arguments to \'viewme\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
+    }
+});
+
 // ** {{{Command: test}}} **
 bespin.cmd.commands.add({
     name: 'test',
