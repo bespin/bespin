@@ -356,7 +356,7 @@ dojo.provide("bespin.page.dashboard.init");
             go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
         });
 
-        scene.bus.bind("itemSelected", tree, function(e) {
+        scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
             bespin.page.dashboard.lastSelectedPath = pathSelected;
             location.hash = '#path=' + pathSelected;
