@@ -262,7 +262,7 @@ dojo.declare("bespin.editor.Events", null, {
         // 
         // If the command line is blurred, take control in the editor
         bespin.subscribe("bespin:cmdline:blur", function(event) {
-            editor.setFocus(false);
+            editor.setFocus(true);
         });
     }
 });
