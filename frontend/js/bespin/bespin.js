@@ -58,13 +58,15 @@ dojo.mixin(bespin, {
     //
     // Given a topic and a set of parameters, publish onto the bus
     publish: function(topic, args) {
-        dojo.publish(topic, dojo.isArray(args) ? args : [ args || {} ]);
+        dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
 
     // ** {{{ subscribe }}} **
     //
     // Given a topic and a function, subscribe to the event
-    subscribe: dojo.subscribe,
+    subscribe: function(topic, callback) {
+        dojo.subscribe("bespin:" + topic, callback);
+    },
 
     // ** {{{ unsubscribe }}} **
     //
@@ -78,7 +80,7 @@ dojo.mixin(bespin, {
     //
     // Given an id and an object, register it inside of Bespin
     register: function(id, object) {
-        bespin.publish("bespin:component:register", { id: id, object: object });
+        bespin.publish("component:register", { id: id, object: object });
 
         this.registeredComponents[id] = object;
         

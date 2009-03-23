@@ -124,7 +124,7 @@ dojo.provide("bespin.page.editor.init");
         bespin.displayVersion();
 
         // Get going when settings are loaded
-        bespin.subscribe("bespin:settings:loaded", function(event) {
+        bespin.subscribe("settings:loaded", function(event) {
             bespin.get('settings').loadSession();  // load the last file or what is passed in
             bespin.page.editor.doResize();
         });
@@ -170,7 +170,7 @@ dojo.provide("bespin.page.editor.init");
     // 
     // When a file is opened successfully change the project and file status area.
     // Then change the window title, and change the URL hash area
-    bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+    bespin.subscribe("editor:openfile:opensuccess", function(event) {
         var project = event.project || bespin.get('editSession').project; 
         var filename = event.file.name;
 

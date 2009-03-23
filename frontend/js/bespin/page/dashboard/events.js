@@ -25,11 +25,11 @@
 dojo.provide("bespin.page.dashboard.events");
 
 // After a project is imported or created, do a list
-bespin.subscribe("bespin:project:imported", function(event) {
+bespin.subscribe("project:imported", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
 
-bespin.subscribe("bespin:project:set", function(event) {
+bespin.subscribe("project:set", function(event) {
     bespin.get('editSession').project = event.project; // set it in the session
     
     if (!event.fromDashboardItemSelected) {
@@ -39,18 +39,18 @@ bespin.subscribe("bespin:project:set", function(event) {
     }
 });
 
-bespin.subscribe("bespin:project:create", function(event) {
+bespin.subscribe("project:create", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
 
-bespin.subscribe("bespin:project:delete", function(event) {
+bespin.subscribe("project:delete", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
 
 // ** {{{ Event: bespin:session:status }}} **
 // 
 // Observe a request for session status
-bespin.subscribe("bespin:session:status", function(event) {
+bespin.subscribe("session:status", function(event) {
     var editSession = bespin.get('editSession');
     var msg = 'Hey ' + editSession.username;
     
@@ -60,16 +60,16 @@ bespin.subscribe("bespin:session:status", function(event) {
         msg += ", you haven't select a project yet.";
     }
     
-    bespin.publish("bespin:cmdline:showinfo", { msg: msg });
+    bespin.publish("cmdline:showinfo", { msg: msg });
 });
 
 // ** {{{ Event: bespin:editor:newfile }}} **
 // 
 // Observe a request for a new file to be created
-bespin.subscribe("bespin:editor:newfile", function(event) {
+bespin.subscribe("editor:newfile", function(event) {
     var project = event.project;
     if (!project) {
-        bespin.publish("bespin:cmdline:showinfo", { msg: 'The new file action requires a project' });
+        bespin.publish("cmdline:showinfo", { msg: 'The new file action requires a project' });
         return;
     }
     

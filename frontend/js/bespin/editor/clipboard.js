@@ -234,15 +234,15 @@ dojo.declare("bespin.editor.clipboard.EditorOnly", null, {
     install: function() {
         var copyArgs = bespin.util.keys.fillArguments("CMD C");
         copyArgs.action = "copySelection";
-        bespin.publish("bespin:editor:bindkey", copyArgs);
+        bespin.publish("editor:bindkey", copyArgs);
 
         var pasteArgs = bespin.util.keys.fillArguments("CMD V");
         pasteArgs.action = "pasteFromClipboard";
-        bespin.publish("bespin:editor:bindkey", pasteArgs);
+        bespin.publish("editor:bindkey", pasteArgs);
 
         var cutArgs = bespin.util.keys.fillArguments("CMD X");
         cutArgs.action = "cutSelection";
-        bespin.publish("bespin:editor:bindkey", cutArgs);
+        bespin.publish("editor:bindkey", cutArgs);
     }
 });
 

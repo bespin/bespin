@@ -46,8 +46,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: bespin:parser:error }}} **
         // 
         // Parser found an error in the source code
-        bespin.subscribe("bespin:parser:error", function(error) {
-            bespin.publish("bespin:cmdline:showinfo", { 
+        bespin.subscribe("parser:error", function(error) {
+            bespin.publish("cmdline:showinfo", { 
                 msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
                 autohide: true
             })
@@ -56,7 +56,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: bespin:parser:showoutline }}} **
         // 
         // Show a window with a code structure outline of the current document
-        bespin.subscribe("bespin:parser:showoutline", function() {
+        bespin.subscribe("parser:showoutline", function() {
             var info = self.currentMetaInfo;
             var html;
             
@@ -75,7 +75,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     });
                 }
                 html += '</div>';
-                bespin.publish("bespin:cmdline:showinfo", { 
+                bespin.publish("cmdline:showinfo", { 
                     msg: html
                 });
             }
@@ -84,12 +84,12 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: bespin:parser:showoutline }}} **
         // 
         // Show a window with a code structure outline of the current document
-        bespin.subscribe("bespin:parser:gotofunction", function(event) {
+        bespin.subscribe("parser:gotofunction", function(event) {
             var functionName = event.functionName;
             var html;
 
             if (!functionName) {
-                bespin.publish("bespin:cmdline:showinfo", { msg: "Please pass me a valid function name." });
+                bespin.publish("cmdline:showinfo", { msg: "Please pass me a valid function name." });
                 return;
             }
 
@@ -104,7 +104,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if (matches.length > 0) {
                         var match = matches[0];
                         
-                        bespin.publish("bespin:editor:moveandcenter", {
+                        bespin.publish("editor:moveandcenter", {
                             row: match.row
                         });
                     } else {
@@ -112,7 +112,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     }
                 }
             }
-            bespin.publish("bespin:cmdline:showinfo", { msg: html });
+            bespin.publish("cmdline:showinfo", { msg: html });
         });
     },
     
@@ -126,7 +126,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         var editor = bespin.get("editor");
         if (!editor.language) {
             // we should not start until the language was set once
-            bespin.subscribe("bespin:settings:syntax", function() {
+            bespin.subscribe("settings:syntax", function() {
                 self.start()
             })
             return;
@@ -140,7 +140,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var timeout;
             
             // rerun parser every time the doc changes
-            bespin.subscribe("bespin:editor:document:changed", function() {
+            bespin.subscribe("editor:document:changed", function() {
                 
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
@@ -173,10 +173,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message
-                        bespin.publish("bespin:parser:error", data)
+                        bespin.publish("parser:error", data)
                     } else {
                         // publish custome event for new meta info
-                        bespin.publish("bespin:parser:metainfo", data)
+                        bespin.publish("parser:metainfo", data)
                         self.currentMetaInfo = data;
                     }
                 })
@@ -331,7 +331,7 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
     ["/js/jsparse/jsdefs.js", "/js/jsparse/jsparse.js"]);
 
 // As soon as a doc is opened we are a go
-bespin.subscribe("bespin:editor:openfile:opensuccess", function() {
+bespin.subscribe("editor:openfile:opensuccess", function() {
     bespin.register("parser", new bespin.parser.CodeInfo())
     bespin.get("parser").start()
 })

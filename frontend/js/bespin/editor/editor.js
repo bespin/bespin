@@ -728,7 +728,7 @@ dojo.declare("bespin.editor.UI", null, {
         
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
