@@ -247,8 +247,8 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'deleteproject',
     takes: ['projectname'],
-    preview: 'delete a new project',
-    usage: '[newprojectname]',
+    preview: 'delete a project',
+    usage: '[projectname]',
     execute: function(self, projectname) {
         if (!projectname) {
             self.showUsage(this);
