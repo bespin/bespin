@@ -135,7 +135,11 @@ dojo.declare("bespin.editor.Actions", null, {
 
     selectAll: function(args) {
         // do nothing with an empty doc
+<<<<<<< local
+        if (this.editor.model.isEmpty()) return;
+=======
         if (this.model.isEmpty()) return;
+>>>>>>> other
 
         args.startPos = { row: 0, col: 0 };
         args.endPos = { row: this.model.getRowCount() - 1, col: this.editor.ui.getRowScreenLength(this.model.getRowCount() - 1) };
