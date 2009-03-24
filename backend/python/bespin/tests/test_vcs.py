@@ -50,9 +50,10 @@ def test_run_an_hg_clone(run_command_params):
     _init_data()
     cmd = "clone http://hg.mozilla.org/labs/bespin bespin".split()
     output = vcs.clone(macgyver, cmd)
-    command, working_dir = run_command_params
+    command, context = run_command_params
     
     assert isinstance(command, hg.clone)
+    working_dir = context.working_dir
     assert working_dir == macgyver.get_location()
     assert output == clone_output
 
@@ -74,7 +75,9 @@ def test_run_a_diff(run_command_params):
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     cmd = ["diff"]
     output = vcs.run_command(macgyver, bigmac, cmd)
-    command, working_dir = run_command_params
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
     
     assert isinstance(command, hg.diff)
     assert working_dir == bigmac.location
@@ -91,7 +94,10 @@ def test_hg_clone_on_web(run_command_params):
     output = simplejson.loads(resp.body)
     assert 'output' in output
     output = output['output']
-    command, working_dir = run_command_params
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
     command_line = " ".join(command.get_command_line())
     assert command_line == "hg clone http://hg.mozilla.org/labs/bespin bigmac"
     assert working_dir == macgyver.get_location()
@@ -110,7 +116,10 @@ def test_hg_diff_on_web(run_command_params):
     output = simplejson.loads(resp.body)
     assert 'output' in output
     output = output['output']
-    command, working_dir = run_command_params
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
     command_line = " ".join(command.get_command_line())
     assert command_line == "hg diff"
     assert working_dir == bigmac.location

@@ -3,12 +3,16 @@ from uvc.main import is_new_project_command
 
 def clone(user, args):
     """Clones or checks out the repository using the command provided."""
-    command = main.convert(args)
-    output = main.run_command(command, user.get_location())
+    working_dir = user.get_location()
+    context = main.SecureContext(working_dir)
+    command = main.convert(context, args)
+    output = main.run_command(command, context)
     return str(output)
     
 def run_command(user, project, args):
     working_dir = project.location
+    
+    context = main.SecureContext(working_dir)
     
     if args and args[0] in main.dialects:
         dialect = None
@@ -17,6 +21,6 @@ def run_command(user, project, args):
     else:
         dialect = None
         
-    command = main.convert(args, dialect)
-    output = main.run_command(command, working_dir)
+    command = main.convert(context, args, dialect)
+    output = main.run_command(command, context)
     return str(output)
