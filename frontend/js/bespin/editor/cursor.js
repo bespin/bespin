@@ -164,11 +164,11 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
+            var tabWidth = parseInt(settings.get('tabsize') || bespin.defaultTabSize);
             
             // this is for the case "striclines" is off AND the user moved the cursor to the right AND there is no real content
             if (whiteChars == 0 && rowLength == 0 && oldPos.col > 0) {
@@ -198,11 +198,11 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
+            var tabWidth = parseInt(settings.get('tabsize') || bespin.defaultTabSize);
                         
             if (whiteChars > oldPos.col || (whiteChars == 0 && rowLength == 0)) {
                 if (rowLength == 0) rowLength = oldPos.col + tabWidth;

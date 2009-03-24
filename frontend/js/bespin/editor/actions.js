@@ -138,7 +138,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.model.isEmpty()) return;
 
         args.startPos = { row: 0, col: 0 };
-        args.endPos = { row: this.model.getRowCount() - 1, col: this.model.getRowLength(this.model.getRowCount() - 1) };
+        args.endPos = { row: this.model.getRowCount() - 1, col: this.editor.ui.getRowScreenLength(this.model.getRowCount() - 1) };
 
         this.select(args);
     },
@@ -239,7 +239,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var fakeSelection = args.fakeSelection || false;
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var realTabs = (bespin.get('settings').get('tabsize') == 'tabs');
+        var realTabs = (bespin.get('settings').get('tabmode') == 'tabs');
         if (!realTabs) {
             var tabWidth = parseInt(bespin.get('settings').get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
             var tabWidthCount = tabWidth;
@@ -544,7 +544,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.selection) {
             this.deleteSelection(args);
         } else {
-            if (args.pos.col < this.model.getRowLength(args.pos.row)) {
+            if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
                 this.deleteCharacter(args);
             } else {
                 args.joinDirection = "down";
