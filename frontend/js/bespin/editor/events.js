@@ -31,15 +31,13 @@ dojo.provide("bespin.editor.events");
 // Handle custom events aimed at, and for the editor
 dojo.declare("bespin.editor.Events", null, {
     constructor: function(editor) {
-        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
-            var file = event.file;
-
-            editor.model.insertDocument(file.content);
+        bespin.subscribe("editor:openfile:opensuccess", function(event) {
+            editor.model.insertDocument(event.file.content);
             editor.cursorManager.moveCursor({ row: 0, col: 0 });
         });
 
         // -- fire an event here and you can run any editor action
-        bespin.subscribe("bespin:editor:doaction", function(event) {
+        bespin.subscribe("editor:doaction", function(event) {
             var action = event.action;
             var args   = event.args || bespin.editor.utils.buildArgs();
 
@@ -47,7 +45,7 @@ dojo.declare("bespin.editor.Events", null, {
         });
 
         // -- fire an event to setup any new or replace actions
-        bespin.subscribe("bespin:editor:setaction", function(event) {
+        bespin.subscribe("editor:setaction", function(event) {
             var action = event.action;
             var code   = event.code;
             if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
@@ -55,7 +53,7 @@ dojo.declare("bespin.editor.Events", null, {
 
         // -- add key listeners
         // e.g. bindkey ctrl b moveCursorLeft
-        bespin.subscribe("bespin:editor:bindkey", function(event) {
+        bespin.subscribe("editor:bindkey", function(event) {
             var modifiers = event.modifiers || '';
             if (!event.key) return;
 
@@ -73,7 +71,7 @@ dojo.declare("bespin.editor.Events", null, {
             }
         });
         
-        // ** {{{ Event: bespin:editor:openfile }}} **
+        // ** {{{ Event: editor:openfile }}} **
         // 
         // Observe a request for a file to be opened and start the cycle:
         //
@@ -81,7 +79,7 @@ dojo.declare("bespin.editor.Events", null, {
         // * Ask the file system to load a file (loadFile)
         // * If the file is loaded send an opensuccess event
         // * If the file fails to load, send an openfail event
-        bespin.subscribe("bespin:editor:openfile", function(event) {
+        bespin.subscribe("editor:openfile", function(event) {
             var filename = event.filename;
             var editSession = bespin.get('editSession');
             var files = bespin.get('files');
@@ -90,21 +88,21 @@ dojo.declare("bespin.editor.Events", null, {
 
             if (editSession.checkSameFile(project, filename)) return; // short circuit
 
-            bespin.publish("bespin:editor:openfile:openbefore", { project: project, filename: filename });
+            bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
             files.loadFile(project, filename, function(file) {
                 if (!file) {
-                    bespin.publish("bespin:editor:openfile:openfail", { project: project, filename: filename });
+                    bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
-                    bespin.publish("bespin:editor:openfile:opensuccess", { project: project, file: file });
+                    bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
                 }
             });
         });
 
-        // ** {{{ Event: bespin:editor:forceopenfile }}} **
+        // ** {{{ Event: editor:forceopenfile }}} **
         // 
         // Open an existing file, or create a new one.
-        bespin.subscribe("bespin:editor:forceopenfile", function(event) {
+        bespin.subscribe("editor:forceopenfile", function(event) {
             var filename = event.filename;
             var project  = event.project;
             var content  = event.content || " ";
@@ -121,15 +119,15 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.get('files').forceOpenFile(project, filename, content);
         });
 
-        // ** {{{ Event: bespin:editor:newfile }}} **
+        // ** {{{ Event: editor:newfile }}} **
         // 
         // Observe a request for a new file to be created
-        bespin.subscribe("bespin:editor:newfile", function(event) {
+        bespin.subscribe("editor:newfile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var newfilename = event.newfilename || "new.txt";
 
             bespin.get('files').newFile(project, newfilename, function() {
-                bespin.publish("bespin:editor:openfile:opensuccess", { file: {
+                bespin.publish("editor:openfile:opensuccess", { file: {
                     name: newfilename,
                     content: " ",
                     timestamp: new Date().getTime()
@@ -137,7 +135,7 @@ dojo.declare("bespin.editor.Events", null, {
             });        
         });
 
-        // ** {{{ Event: bespin:editor:savefile }}} **
+        // ** {{{ Event: editor:savefile }}} **
         // 
         // Observe a request for a file to be saved and start the cycle:
         //
@@ -148,11 +146,11 @@ dojo.declare("bespin.editor.Events", null, {
         // * Tell the command line to show the fact that the file is saved
         //
         // TODO: Need to actually check saved status and know if the save worked
-        bespin.subscribe("bespin:editor:savefile", function(event) {
+        bespin.subscribe("editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
 
-            bespin.publish("bespin:editor:openfile:savebefore", { filename: filename });
+            bespin.publish("editor:openfile:savebefore", { filename: filename });
 
             // saves the current state of the editor to a cookie
             dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'), dojo.toJson(bespin.get('editor').getCurrentView()), { expires: 7 });
@@ -170,15 +168,15 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.get('files').saveFile(project, file); // it will save asynchronously.
             // TODO: Here we need to add in closure to detect errors and thus fire different success / error
 
-            bespin.publish("bespin:editor:titlechange", { filename: filename });
+            bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("bespin:cmdline:showinfo", { msg: 'Saved file: ' + file.name, autohide: true });
+            bespin.publish("message", { msg: 'Saved file: ' + file.name, tag: 'autohide' });
         });
 
-        // ** {{{ Event: bespin:editor:moveandcenter }}} **
+        // ** {{{ Event: editor:moveandcenter }}} **
         // 
         // Observe a request to move the editor to a given location and center it
-        bespin.subscribe("bespin:editor:moveandcenter", function(event) {
+        bespin.subscribe("editor:moveandcenter", function(event) {
             var row = event.row; 
 
             if (!row) return; // short circuit
@@ -189,7 +187,7 @@ dojo.declare("bespin.editor.Events", null, {
 
             // If the line that we are moving to is off screen, center it, else just move in place
             if ( (linenum < editor.ui.firstVisibleRow) || (linenum >= editor.ui.firstVisibleRow + editor.ui.visibleRows) ) {
-                bespin.publish("bespin:editor:doaction", {
+                bespin.publish("editor:doaction", {
                     action: 'moveCursorRowToCenter'
                 });
             }
@@ -197,11 +195,11 @@ dojo.declare("bespin.editor.Events", null, {
 
         // == Shell Events: Header, Chrome, etc ==
         //
-        // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
         // 
         // When a file is opened successfully change the project and file status area.
         // Then change the window title, and change the URL hash area
-        bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+        bespin.subscribe("editor:openfile:opensuccess", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.file.name;
 
@@ -213,15 +211,15 @@ dojo.declare("bespin.editor.Events", null, {
                 bespin.get('editor').basicView();
             }
 
-            bespin.publish("bespin:editor:titlechange", { filename: filename });
+            bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("bespin:url:change", { project: project, path: filename });
+            bespin.publish("url:change", { project: project, path: filename });
         });
 
-        // ** {{{ Event: bespin:editor:urlchange }}} **
+        // ** {{{ Event: editor:urlchange }}} **
         // 
         // Observe a urlchange event and then... change the location hash
-        bespin.subscribe("bespin:url:change", function(event) {
+        bespin.subscribe("url:change", function(event) {
             var hashArguments = dojo.queryToObject(location.hash.substring(1));
             hashArguments.project = event.project;
             hashArguments.path    = event.path;
@@ -235,33 +233,33 @@ dojo.declare("bespin.editor.Events", null, {
             window.location.hash = pairs.join("&");
         });
 
-        // ** {{{ Event: bespin:url:changed }}} **
+        // ** {{{ Event: url:changed }}} **
         // 
         // Observe a request for session status
-        bespin.subscribe("bespin:url:changed", function(event) {
-            bespin.publish("bespin:editor:openfile", { filename: event.now.get('path') });
+        bespin.subscribe("url:changed", function(event) {
+            bespin.publish("editor:openfile", { filename: event.now.get('path') });
         });
 
-        // ** {{{ Event: bespin:session:status }}} **
+        // ** {{{ Event: session:status }}} **
         // 
         // Observe a request for session status
-        bespin.subscribe("bespin:session:status", function(event) {
+        bespin.subscribe("session:status", function(event) {
             var editSession = bespin.get('editSession');
             var file = editSession.path || 'a new scratch file';
             self.showInfo('Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project);
         });
 
-        // ** {{{ Event: bespin:cmdline:focus }}} **
+        // ** {{{ Event: cmdline:focus }}} **
         // 
         // If the command line is in focus, unset focus from the editor
-        bespin.subscribe("bespin:cmdline:focus", function(event) {
+        bespin.subscribe("cmdline:focus", function(event) {
             editor.setFocus(false);
         });
 
-        // ** {{{ Event: bespin:cmdline:blur }}} **
+        // ** {{{ Event: cmdline:blur }}} **
         // 
         // If the command line is blurred, take control in the editor
-        bespin.subscribe("bespin:cmdline:blur", function(event) {
+        bespin.subscribe("cmdline:blur", function(event) {
             editor.setFocus(true);
         });
     }
