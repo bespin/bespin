@@ -742,11 +742,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     getTopOffset: function() {
-        return this.editor.canvas.parentNode.offsetTop;
+        return dojo.coords(this.editor.canvas.parentNode).y || this.editor.canvas.parentNode.offsetTop;
     },
 
     getLeftOffset: function() {
-        return this.editor.canvas.parentNode.offsetLeft;
+        return dojo.coords(this.editor.canvas.parentNode).x || this.editor.canvas.parentNode.offsetLeft;
     },
 
     getCharWidth: function(ctx) {
