@@ -14,13 +14,13 @@
 
     <p>Our goal is to have a loosely coupled API that makes it as easy for people to extend and work with Bespin. One of the ways we are accomplish this is by having a simple publish/subscribe structure to work with.</p>
 
-    <p>This page will attempt to clearly define the various events. You may of course create your own events. If you do so, we hope that you follow a convention such as: <code>bespin:plugin:[nameofplugin]:[event][optional:subevent]</code>, e.g. <code>bespin:svn:checkout</code>.</p>
+    <p>This page will attempt to clearly define the various events. You may of course create your own events. If you do so, we hope that you follow a convention such as: <code>plugin:[nameofplugin]:[event][optional:subevent]</code>, e.g. <code>svn:checkout</code>.</p>
 
     <p>Some of the core events are configured in <a href="#code/bespin/events.js">the bespin.events.* module</a>. Then others go into the module specific events. It is recommended to place events into the scope of a module where possible. You will notice this pattern frequently in our code, where we register a FooEvents object, give it a scope, and it can then wire up the events there and then as it has access to the objects needed... in scope.</p>
 
     <h1 style="border-bottom: 1px solid #ccc">Directory Events</h1>
 
-    <h2>bespin:directory:create</h2>
+    <h2>directory:create</h2>
     <p>
         Create a new directory.
     </p>
@@ -32,7 +32,7 @@
         </ul>        
     </p>    
 
-    <h2>bespin:directory:delete</h2>
+    <h2>directory:delete</h2>
     <p>
         Delete a directory.
     </p>
@@ -49,29 +49,29 @@
 
     <p><code>bespin.cmd.commandline.Events</code> houses the various events for the command line.</p>
 
-    <h2>bespin:cmdline:showinfo</h2>
+    <h2>message</h2>
     <p>
-        Observe when others want to show data in the info bar for the command line.
+        Send messages that can be shown in different ways. For example, the command line may display the message in an info window.
     </p>
     <p>
         With arguments:
         <ul>
             <li><code>msg</code>: The message to display in the info bar</li>
-            <li><code>autohide</code>: Optionally, hide the info bar after a short period</li>
+            <li><code>tag</code>: Type of message</li>
         </ul>
     </p>
 
-    <h2>bespin:cmdline:suppressinfo</h2>
+    <h2>cmdline:suppressinfo</h2>
     <p>
         Tell the info bar to be quiet until we tell it to unsuppress (below).
     </p>
 
-    <h2>bespin:cmdline:unsuppressinfo</h2>
+    <h2>cmdline:unsuppressinfo</h2>
     <p>
         The info bar can start talking again, until someone asks it to suppress.
     </p>
 
-    <h2>bespin:cmdline:executed</h2>    
+    <h2>command:executed</h2>    
     <p>
         A given command has been executed.
     </p>
@@ -83,7 +83,7 @@
         </ul>        
     </p>    
 
-    <h2>bespin:cmdline:execute</h2>
+    <h2>command:execute</h2>
     <p>
         Go ahead and execute a command.
     </p>
@@ -95,7 +95,7 @@
         </ul>
     </p>
 
-    <h2>bespin:commands:load</h2>
+    <h2>command:load</h2>
     <p>
         Create a new command in your special command directory.
     </p>
@@ -106,7 +106,7 @@
         </ul>        
     </p>    
     
-    <h2>bespin:commands:edit</h2>
+    <h2>command:edit</h2>
     <p>
         Edit the given command.
     </p>
@@ -117,12 +117,12 @@
         </ul>        
     </p>    
 
-    <h2>bespin:commands:list</h2>
+    <h2>command:list</h2>
     <p>
         List the custom commands that a user has.
     </p>
 
-    <h2>bespin:commands:delete</h2>
+    <h2>command:delete</h2>
     <p>
         Delete the given command.
     </p>
@@ -136,7 +136,7 @@
 
     <h1 style="border-bottom: 1px solid #ccc">Project Events</h1>
 
-    <h2>bespin:project:create</h2>
+    <h2>project:create</h2>
     <p>
         Create a new project.
     </p>
@@ -147,7 +147,7 @@
         </ul>        
     </p>    
 
-    <h2>bespin:project:delete</h2>
+    <h2>project:delete</h2>
     <p>
         Delete an existing project.
     </p>
@@ -158,7 +158,7 @@
         </ul>        
     </p>    
 
-    <h2>bespin:project:rename</h2>
+    <h2>project:rename</h2>
     <p>
         Rename an existing project.
     </p>
@@ -170,7 +170,7 @@
         </ul>        
     </p>    
 
-    <h2>bespin:project:import</h2>
+    <h2>project:import</h2>
     <p>
         Import a project.
     </p>
@@ -182,7 +182,7 @@
         </ul>        
     </p>
     
-    <h2>bespin:project:set</h2>
+    <h2>project:set</h2>
     <p>
         The project being looked at has changed (stored in the session scope).
     </p>
@@ -198,7 +198,7 @@
 
     <p></p>
 
-    <h2>bespin:editor:titlechange</h2>
+    <h2>editor:titlechange</h2>
     <p>
         Observe a title change event and then... change the document.title!
     </p>
@@ -210,7 +210,7 @@
         </ul>
     </p>
     
-    <h2>bespin:editor:preview</h2>    
+    <h2>editor:preview</h2>    
     <p>
         Preview the given file in a browser context
     </p>
@@ -222,7 +222,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:openfile</h2>
+    <h2>editor:openfile</h2>
     <p>
         Observe a request for a file to be opened and start the cycle:
         <ul>
@@ -240,7 +240,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:openfile:opensuccess</h2>
+    <h2>editor:openfile:opensuccess</h2>
     <p>
         A sub-event of openfile, fired when the open was successful.
     </p>
@@ -252,7 +252,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:openfile:openfail</h2>
+    <h2>editor:openfile:openfail</h2>
     <p>
         A sub-event of openfile, fired when the open was a failure.
     </p>
@@ -264,7 +264,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:openfile:openbefore</h2>
+    <h2>editor:openfile:openbefore</h2>
     <p>
         A sub-event of openfile, fired when the file is just about to be opened, giving you time to do something.
     </p>
@@ -276,7 +276,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:forceopenfile</h2>
+    <h2>editor:forceopenfile</h2>
     <p>
         Open an existing file, or create a new one.
     </p>
@@ -289,7 +289,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:newfile</h2>
+    <h2>editor:newfile</h2>
     <p>
         Create a new file
     </p>
@@ -301,7 +301,7 @@
         </ul>        
     </p>
 
-    <h2>bespin:editor:savefile</h2>
+    <h2>editor:savefile</h2>
     <p>
         Save a file
     </p>
@@ -313,7 +313,7 @@
         </ul>        
     </p>
     
-    <h2>bespin:editor:closefile</h2>
+    <h2>editor:closefile</h2>
     <p>
         Close the given file (wrt the session)
     </p>
@@ -325,22 +325,22 @@
         </ul>
     </p>
     
-    <h2>bespin:url:change</h2>
+    <h2>url:change</h2>
     <p>
         Cause the #hashInfo to change.
     </p>
 
-    <h2>bespin:url:changed</h2>
+    <h2>url:changed</h2>
     <p>
         The #hashInfo has changed, so let people know.
     </p>
     
-    <h2>bespin:session:status</h2>    
+    <h2>session:status</h2>    
     <p>
         Request the session status.
     </p>
     
-    <h2>bespin:component:register</h2>
+    <h2>component:register</h2>
     <p>
         When a component is registered with Bespin, this event is fired with the info.
     </p>
@@ -356,9 +356,9 @@
 
     <p><code>bespin.client.settings.Events</code> houses a bunch of settings events.</p>
 
-    <h2>bespin:settings:set</h2>
+    <h2>settings:set</h2>
     <p>
-        Set a new setting. When run, a special <code>bespin:settings:set:SETTING_NAME</code> will be fired that you can catch.
+        Set a new setting. When run, a special <code>settings:set:SETTING_NAME</code> will be fired that you can catch.
     </p>
     <p>
         With arguments:
@@ -368,7 +368,7 @@
         </ul>
     </p>
 
-    <h2>bespin:settings:syntax</h2>
+    <h2>settings:syntax</h2>
     <p>
         Given a new syntax command, change the editor.language.
     </p>
@@ -380,7 +380,7 @@
         </ul>
     </p>
 
-    <h2>bespin:settings:init</h2>
+    <h2>settings:init</h2>
     <p>
         The settings system has loaded, so do pre-initialization.
     </p>

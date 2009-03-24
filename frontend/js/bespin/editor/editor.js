@@ -380,6 +380,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
         this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
+        this.toggleCursorAllowed = true;         // is the cursor allowed to toggle? (used by cursorManager.moveCursor)
 
         // these two canvases are used as buffers for the scrollbar images, which are then composited onto the
         // main code view. we could have saved ourselves some misery by just prerendering slices of the scrollbars and
@@ -560,7 +561,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     toggleCursor: function(ui) {
-        ui.showCursor = !ui.showCursor;
+        if (ui.toggleCursorAllowed) {
+            ui.showCursor = !ui.showCursor;    
+        } else {
+            ui.toggleCursorAllowed = true;
+        }
 
         if (++this.toggleCursorFullRepaintCounter > 0) {
             this.toggleCursorFullRepaintCounter = 0;
@@ -723,7 +728,7 @@ dojo.declare("bespin.editor.UI", null, {
         
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
@@ -737,11 +742,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     getTopOffset: function() {
-        return this.editor.canvas.parentNode.offsetTop;
+        return dojo.coords(this.editor.canvas.parentNode).y || this.editor.canvas.parentNode.offsetTop;
     },
 
     getLeftOffset: function() {
-        return this.editor.canvas.parentNode.offsetLeft;
+        return dojo.coords(this.editor.canvas.parentNode).x || this.editor.canvas.parentNode.offsetLeft;
     },
 
     getCharWidth: function(ctx) {
@@ -1409,6 +1414,14 @@ dojo.declare("bespin.editor.API", null, {
         this.setSelection(data.selection);
         this.ui.yoffset = data.offset.y;
         this.ui.xoffset = data.offset.x;
+        this.paint();
+    },
+    
+    basicView: function() {
+        this.cursorManager.moveCursor({row: 0, col: 0});
+        this.setSelection(undefined);
+        this.ui.yoffset = 0;
+        this.ui.xoffset = 0;
         this.paint();
     },
     

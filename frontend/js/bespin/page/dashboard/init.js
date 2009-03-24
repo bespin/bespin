@@ -356,7 +356,7 @@ dojo.provide("bespin.page.dashboard.init");
             go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
         });
 
-        scene.bus.bind("itemSelected", tree, function(e) {
+        scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
             bespin.page.dashboard.lastSelectedPath = pathSelected;
             location.hash = '#path=' + pathSelected;
@@ -364,7 +364,7 @@ dojo.provide("bespin.page.dashboard.init");
 
         scene.bus.bind("itemselected", tree.lists[0], function(e) {
             currentProject = e.item.name;
-            bespin.publish("bespin:project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
+            bespin.publish("project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
         });
 
         // setup the command line
@@ -384,7 +384,7 @@ dojo.provide("bespin.page.dashboard.init");
         server.currentuser(bd.loggedIn, bd.notLoggedIn);   
         
         // provide history for the dashboard
-        bespin.subscribe("bespin:url:changed", function(e) {
+        bespin.subscribe("url:changed", function(e) {
             var pathSelected =  (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });

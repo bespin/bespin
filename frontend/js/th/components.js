@@ -1055,7 +1055,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         }
         
         // fire the event AFTER some items maybe got deselected
-        this.bus.fire('itemSelected', {e: e}, this);
+        this.bus.fire('itemselected', {e: e}, this);
 
         if (path.length < this.lists.length) {
             // user selected an item in a previous list; must ditch the subsequent lists

@@ -134,7 +134,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     selectAll: function(args) {
         // do nothing with an empty doc
-        if (this.editor.model.getMaxCols == 0) return;
+        if (this.editor.model.isEmpty()) return;
 
         args.startPos = { row: 0, col: 0 };
         args.endPos = { row: this.editor.model.getRowCount() - 1, col: this.editor.model.getRowLength(this.editor.model.getRowCount() - 1) };
@@ -180,6 +180,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
         this.editor.model.insertCharacters({row: args.modelPos.row, col: args.modelPos.col}, tab);
         this.editor.cursorManager.moveCursor({row: args.modelPos.row, col: args.modelPos.col + tabWidth});
+        delete this.editor.selection;
 
         var linetext = this.editor.model.getRowArray(args.modelPos.row).join("");
         // linetext = linetext.replace(/\t/g, "TAB");
@@ -202,6 +203,7 @@ dojo.declare("bespin.editor.Actions", null, {
         
         this.editor.model.deleteCharacters({ row: args.pos.row, col: args.pos.col }, tabWidth);
         this.editor.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
+        delete this.editor.selection;
         
         this.repaint();
         
@@ -223,35 +225,40 @@ dojo.declare("bespin.editor.Actions", null, {
         var fakeSelection = args.fakeSelection || false;
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
-        var tabWidthCount = tabWidth;
-        var tab = "";
-        while (tabWidthCount-- > 0) {
-            tab += " ";
+        var realTabs = (bespin.get('settings').get('tabsize') == 'tabs');
+        if (!realTabs) {
+            var tabWidth = parseInt(bespin.get('settings').get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+            var tabWidthCount = tabWidth;
+            var tab = "";
+            while (tabWidthCount-- > 0) {
+                tab += " ";
+            }   
+        } else {
+            tab = "\t";
         }
 
         for (var y = startRow; y <= endRow; y++) {
             if (!historyIndent) {
-                var row = this.editor.model.getRowArray(y).join("");
-                var match = /^(\s+).*/.exec(row);
-                var leadingWhitespaceLength = 0;
-                if (match && match.length == 2) {
-                    leadingWhitespaceLength = match[1].length;
+                if (!realTabs) {
+                    var leadingWhitespaceLength = this.editor.model.getRowLeadingWhitespaces(y);
+                    var charsToInsert = (leadingWhitespaceLength % tabWidth ? tabWidth - (leadingWhitespaceLength % tabWidth) : tabWidth);
+                } else {
+                    // in the case of "real" tabs we just insert the tabs
+                    var charsToInsert = 1;
                 }
-                var charsToInsert = (leadingWhitespaceLength % tabWidth ? tabWidth - (leadingWhitespaceLength % tabWidth) : tabWidth);
                 this.editor.model.insertCharacters({ row: y, col: 0 }, tab.substring(0, charsToInsert));
-                newHistoryIndent.push(charsToInsert);
+                newHistoryIndent.push(charsToInsert);                    
             } else {
                 this.editor.model.insertCharacters({ row: y, col: 0 }, tab.substring(0, historyIndent[y - startRow]));
             } 
         }
-
+		
         if (!fakeSelection) {
-            selection.startPos.col += (historyIndent ? historyIndent[0] : tab.length);
-            selection.endPos.col += (historyIndent ? historyIndent[historyIndent.length-1] : tab.length);
+            selection.startPos.col += (historyIndent ? historyIndent[0] : charsToInsert);
+            selection.endPos.col += (historyIndent ? historyIndent[historyIndent.length-1] : charsToInsert);
             this.editor.setSelection(selection);
         }
-        args.pos.col += (historyIndent ? historyIndent[historyIndent.length-1] : tab.length);
+        args.pos.col += (historyIndent ? historyIndent[historyIndent.length-1] : charsToInsert);
         this.editor.cursorManager.moveCursor({ col: args.pos.col });
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
         this.repaint();
@@ -265,7 +272,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));        
     },
 
-    unindent: function(args) {
+    unindent: function(args) {    
         var historyIndent = args.historyIndent || false;
         if (!historyIndent) {
             var newHistoryIndent = [];
@@ -278,19 +285,20 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var tabWidth = parseInt(_settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabWidth = parseInt(bespin.get('settings').get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
 
         for (var y = startRow; y <= endRow; y++) {
             if (historyIndent) {
                 var charsToDelete = historyIndent[y - startRow];
             } else {
-                var row = this.editor.model.getRowArray(y).join("");
-                var match = /^(\s+).*/.exec(row);
-                var leadingWhitespaceLength = 0;
-                if (match && match.length == 2) {
-                    leadingWhitespaceLength = match[1].length;
+                var leadingWhitespaceLength = this.editor.model.getRowLeadingWhitespaces(y);
+                if (selection && (selection.startPos.col != selection.endPos.col || selection.startPos.row != selection.endPos.row)) {
+                    // make the indent go to a n times of the tabwidth only if there is a selection
+                    var charsToDelete = leadingWhitespaceLength >= tabWidth ? (leadingWhitespaceLength % tabWidth ? leadingWhitespaceLength % tabWidth : tabWidth) : leadingWhitespaceLength;                                   
+                } else {
+                    charsToDelete = Math.min(tabWidth, leadingWhitespaceLength);
                 }
-                var charsToDelete = leadingWhitespaceLength >= tabWidth ? (leadingWhitespaceLength % tabWidth ? leadingWhitespaceLength % tabWidth : tabWidth) : leadingWhitespaceLength;               
+
                 newHistoryIndent.push(charsToDelete);
             }
 

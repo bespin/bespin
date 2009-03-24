@@ -55,7 +55,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
 
         if (this.syncHelper) this.syncHelper.undo();
         
-        bespin.publish("bespin:editor:document:changed")
+        bespin.publish("editor:document:changed")
     },
 
     redo: function() {
@@ -68,7 +68,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
 
         if (this.syncHelper) this.syncHelper.redo();
         
-        bespin.publish("bespin:editor:document:changed")
+        bespin.publish("editor:document:changed")
     },
 
     addUndoOperation: function(item) {
@@ -88,8 +88,8 @@ dojo.declare("bespin.editor.UndoManager", null, {
 
         if (this.syncHelper) this.syncHelper.queueUndoOp(item);
         
-        bespin.publish("bespin:editor:undooperation")
-        bespin.publish("bespin:editor:document:changed")
+        bespin.publish("editor:undooperation")
+        bespin.publish("editor:document:changed")
     }
 });
 

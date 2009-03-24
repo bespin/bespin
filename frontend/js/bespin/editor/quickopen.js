@@ -139,8 +139,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             if (!item)  return;
             
             // save the current file and load up the new one
-            bespin.publish("bespin:editor:savefile", {});
-            bespin.publish("bespin:editor:openfile", { filename: item.filename });
+            bespin.publish("editor:savefile", {});
+            bespin.publish("editor:openfile", { filename: item.filename });
                         
             // adds the new opened file to the top of the openSessionFiles
             if (this.openSessionFiles.indexOf(item.filename) != -1) {
@@ -202,7 +202,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }));
         
         // load the current opend files at startup
-        bespin.subscribe('bespin:settings:loaded', function() {            
+        bespin.subscribe('settings:loaded', function() {            
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
     },

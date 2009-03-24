@@ -75,7 +75,7 @@ dojo.provide("bespin.page.editor.init");
             var collab = dojo.byId("collab");
             var target = dojo.byId("target_browsers");
 
-            var move = [ subheader, footer ];
+            var move = [ subheader, footer, editor ];
 
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";
@@ -124,7 +124,7 @@ dojo.provide("bespin.page.editor.init");
         bespin.displayVersion();
 
         // Get going when settings are loaded
-        bespin.subscribe("bespin:settings:loaded", function(event) {
+        bespin.subscribe("settings:loaded", function(event) {
             bespin.get('settings').loadSession();  // load the last file or what is passed in
             bespin.page.editor.doResize();
         });
@@ -166,11 +166,11 @@ dojo.provide("bespin.page.editor.init");
         scene.render();
     });
 
-    // ** {{{ Event: bespin:editor:openfile:opensuccess }}} **
+    // ** {{{ Event: editor:openfile:opensuccess }}} **
     // 
     // When a file is opened successfully change the project and file status area.
     // Then change the window title, and change the URL hash area
-    bespin.subscribe("bespin:editor:openfile:opensuccess", function(event) {
+    bespin.subscribe("editor:openfile:opensuccess", function(event) {
         var project = event.project || bespin.get('editSession').project; 
         var filename = event.file.name;
 

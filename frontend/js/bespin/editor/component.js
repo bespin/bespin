@@ -68,7 +68,7 @@ dojo.declare("bespin.editor.Component", null, {
         }
 
         if (opts.syntax) { // -- turn on syntax highlighting
-            bespin.publish("bespin:settings:syntax", { language: opts.syntax });
+            bespin.publish("settings:syntax", { language: opts.syntax });
         }
         
         if (!opts.dontstealfocus) {
@@ -85,7 +85,7 @@ dojo.declare("bespin.editor.Component", null, {
     },
     
     set: function(key, value) {
-        bespin.publish("bespin:settings:set", {
+        bespin.publish("settings:set", {
            key: key,
            value: value 
         });
