@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" type="text/css" href="code-illuminated/docs.css" />
+  <title>Bespin Documentation: Embed Editor Component</title>
+</head>
+<body>
+<div id="content">
+<div id="overview" class="documentation">
+
+    <h1>Bespin</h1>
+    <p><b>Embed Component</b></p>
+
+    <p>We want to make it as easy as possible to embed a <a href="#code/bespin/editor/component.js">Bespin Editor component</a>.</p>
+    
+    <a href="http://almaer.com/blog/embedding-and-reusing-the-bespin-editor-component"><img src="http://almaer.com/blog/uploads/editorcomponent.png" border="0"></a>
+
+    <h1 style="border-bottom: 1px solid #ccc">Usage</h1>
+
+    <h2>Loading up the Bespin Embed Code</h2>
+    
+    <p>
+        To use the editor component you need to obviously load up the editor. Optionally, you can preload Dojo, else the embed code will load it up automatically:
+        
+        <pre>
+            &lt;script src="path/to/js/dojo/dojo.js"&gt;&lt;/script&gt;
+            &lt;script src="path/to/js/bespin/editor/embed.js"&gt;&lt;/script&gt;
+        </pre>
+    </p>
+
+    <h2>Creating the component</h2>
+    <p>
+        To create the component you need to "new up" the Object, and pass in the container element id, and the options.
+        
+        <pre>
+        window.onload = function() {
+            ed = new bespin.editor.Component('editor', {
+                language: "js",
+                loadfromdiv: true
+            });
+        };
+        </pre>
+        
+        If you have chosen to load Dojo already, then you can <code>dojo.addOnLoad</code> instead.
+    </p>
+    
+    <h2>Editor Creation Options<h2>
+    <p>
+        There are a set of options that you can pass in when you create the component:
+        <ul>
+            <li><code>loadfromdiv</code>: Take the innerHTML from the given div and load it into the editor</li>
+            <li><code>content</code>: Feed the editor the string as the initial content (loadfromdiv trumps this)</li>
+            <li><code>language</code>: The given syntax highlighter language to turn on (not people language!)</li>
+            <li><code>dontstealfocus</code>: by default the component will steal focus when it loads, but you can change that by setting this to true</li>
+        </ul>        
+    </p>    
+
+    <h2>Editor Methods</h2>
+    <p>
+        Once you have an editor, you can call methods directly on it to get work done (below) or you can <a href="events.html">fire events to it</a>.
+        
+        <ul>
+            <li><code>getContent</code>: Returns the contents of the editor</li>
+            <li><code>setContent</code>: Takes the content and inserts it fresh into the document</li>
+            <li><code>setFocus</code>: If you pass in true, focus will be set on the editor, if false, it will not.</li>
+            <li><code>setLineNumber</code>: Pass in the line number to jump to (and refresh)</li>
+            <li><code>set</code>: Talk to the Bespin settings structure and pass in the key/value</li>
+            <li><code>bindKey</code>: Given the options that should contain a modifier, key, and action.
+            For example,
+            <pre>
+            { 
+               modifiers: "ctrl",
+               key: "b",
+               action: "moveCursorLeft"
+            }
+            </pre>
+            </li>
+        </ul>
+    </p>
+
+</div>
+</div>
+</body>
+</html>
