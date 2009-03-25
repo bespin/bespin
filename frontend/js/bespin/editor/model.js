@@ -79,15 +79,15 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // will insert blank spaces if passed col is past the end of passed row
-    insertCharacters: function(modelPos, string) {
-        var row = this.getRowArray(modelPos.row);
-        while (row.length < modelPos.col) row.push(" ");
+    insertCharacters: function(pos, string) {
+        var row = this.getRowArray(pos.row);
+        while (row.length < pos.col) row.push(" ");
 
-        var newrow = (modelPos.col > 0) ? row.splice(0, modelPos.col) : [];
+        var newrow = (pos.col > 0) ? row.splice(0, pos.col) : [];
         newrow = newrow.concat(string.split(""));
-        this.rows[modelPos.row] = newrow.concat(row);
+        this.rows[pos.row] = newrow.concat(row);
 
-        this.setRowDirty(modelPos.row);
+        this.setRowDirty(pos.row);
     },
 
     getDocument: function() {
@@ -129,13 +129,13 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // will silently adjust the length argument if invalid
-    deleteCharacters: function(modelPos, length) {
-        var row = this.getRowArray(modelPos.row);
-        var diff = (modelPos.col + length - 1) - row.length;
+    deleteCharacters: function(pos, length) {
+        var row = this.getRowArray(pos.row);
+        var diff = (pos.col + length - 1) - row.length;
         if (diff > 0) length -= diff;
         if (length > 0) {
-            this.setRowDirty(modelPos.row);
-            return row.splice(modelPos.col, length).join("");
+            this.setRowDirty(pos.row);
+            return row.splice(pos.col, length).join("");
         }
         return "";
     },
@@ -151,8 +151,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
-    splitRow: function(modelPos, autoindentAmount) {
-        var row = this.getRowArray(modelPos.row);
+    splitRow: function(pos, autoindentAmount) {
+        var row = this.getRowArray(pos.row);
 
         var newRow;
         if (autoindentAmount > 0) {
@@ -161,14 +161,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             newRow = [];
         }
 
-        if (modelPos.col < row.length) {
-            newRow = newRow.concat(row.splice(modelPos.col));
+        if (pos.col < row.length) {
+            newRow = newRow.concat(row.splice(pos.col));
         }
 
-        if (modelPos.row == (this.rows.length - 1)) {
+        if (pos.row == (this.rows.length - 1)) {
             this.rows.push(newRow);
         } else {
-            var newRows = this.rows.splice(0, modelPos.row + 1);
+            var newRows = this.rows.splice(0, pos.row + 1);
             newRows.push(newRow);
             newRows = newRows.concat(this.rows);
             this.rows = newRows;
@@ -189,20 +189,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
     
     // returns the numbers of white spaces from the beginning of the line
-    // '\t' are counted as white spaces with with = editor.tabsize
     getRowLeadingWhitespaces: function(rowIndex) {
-        var row = this.getRowArray(rowIndex).join("");
-        var tabsize = bespin.get('editor').tabsize;
-        var match = /^(\s+).*/.exec(row);
-        var leadingWhitespaces = 0;
-        if (match && match.length == 2) {
-            // search for tabs!
-            match = match[1].split("");
-            for (var x = 0; x < match.length; x++) {
-                leadingWhitespaces += (match[x] == '\t' ? tabsize : 1);
-            }
-        }
-        return leadingWhitespaces;
+         var row = this.getRowArray(rowIndex).join("");
+         var match = /^(\s+).*/.exec(row);
+         var leadingWhitespaces = 0;
+         if (match && match.length == 2) {
+             leadingWhitespaces = match[1].length;
+         }
+         return leadingWhitespaces;
     },
 
     // returns a "chunk": a string representing a part of the document with \n characters representing end of line
@@ -273,20 +267,20 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // inserts the chunk and returns the ending position
-    insertChunk: function(modelPos, chunk) {
+    insertChunk: function(pos, chunk) {
         var lines = chunk.split("\n");
-        var cModelPos = bespin.editor.utils.copyPos(modelPos);
+        var cpos = bespin.editor.utils.copyPos(pos);
         for (var i = 0; i < lines.length; i++) {
-            this.insertCharacters(cModelPos, lines[i]);
-            cModelPos.col = cModelPos.col + lines[i].length;
+            this.insertCharacters(cpos, lines[i]);
+            cpos.col = cpos.col + lines[i].length;
 
             if (i < lines.length - 1) {
-                this.splitRow(cModelPos);
-                cModelPos.col = 0;
-                cModelPos.row = cModelPos.row + 1;
+                this.splitRow(cpos);
+                cpos.col = 0;
+                cpos.row = cpos.row + 1;
             }
         }
-        return cModelPos;
+        return cpos;
     },
     
     findBefore: function(row, col, comparator) {

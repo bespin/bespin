@@ -510,8 +510,8 @@ def groupAdd(request, response):
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
 
-def _respond_json(response, groups):
-    response.body = simplejson.dumps(groups)
+def _respond_json(response, data):
+    response.body = simplejson.dumps(data)
     response.content_type = "text/plain"
     return response()
 
@@ -530,6 +530,70 @@ def _users_followed_response(user_manager, user, response):
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
 
+@expose(r'^/share/list/all/$', 'GET')
+def shareListAll(request, response):
+    "List all project shares"
+    return _respond_json(response, [ "Not implemented" ])
+
+@expose(r'^/share/list/(?P<project>.+)/$', 'GET')
+def shareListProject(request, response):
+    "List sharing for a given project"
+    project = request.kwargs['project']
+    data = request.user_manager.get_sharing(project)
+    return _respond_json(response, data)
+
+@expose(r'^/share/list/(?P<project>.+)/(?P<member>.+)/$', 'GET')
+def shareListProjectMember(request, response):
+    "List sharing for a given project and member"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    data = request.user_manager.get_sharing(project, member)
+    return _respond_json(response, data)
+
+@expose(r'^/share/remove/(?P<project>.+)/all/$', 'POST')
+def shareRemoveAll(request, response):
+    "Remove all sharing from a project"
+    project = request.kwargs['project']
+    data = request.user_manager.remove_sharing(project)
+    return _respond_json(response, data)
+
+@expose(r'^/share/remove/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+def shareRemove(request, response):
+    "Remove project sharing from a given member"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    data = request.user_manager.remove_sharing(project, member)
+    return _respond_json(response, data)
+
+@expose(r'^/share/add/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+def shareAdd(request, response):
+    "Add a member to the sharing list for a project"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    options = simplejson.loads(request.body)
+    data = request.user_manager.add_sharing(project, member, options)
+    return _respond_json(response, [ "Not implemented", project, member, options ])
+
+@expose(r'^/viewme/list/all/$', 'GET')
+def viewmeListAll(request, response):
+    "List all the members with view settings on me"
+    data = request.user_manager.get_viewme()
+    return _respond_json(response, [ "Not implemented" ])
+
+@expose(r'^/viewme/list/(?P<member>.+)/$', 'GET')
+def viewmeList(request, response):
+    "List the view settings for a given member"
+    member = request.kwargs['member']
+    data = request.user_manager.get_viewme(member)
+    return _respond_json(response, [ "Not implemented", member ])
+
+@expose(r'^/viewme/set/(?P<member>.+)/(?P<value>.+)/$', 'POST')
+def viewmeSet(request, response):
+    "Alter the view setting for a given member"
+    member = request.kwargs['member']
+    value = request.kwargs['value']
+    data = request.user_manager.set_viewme(member, value)
+    return _respond_json(response, [ "Not implemented", member, value ])
 #@expose(r'^/mobwrite/$', 'POST')
 #def mobwrite(request, response):
 #    handler = RequestHandler()

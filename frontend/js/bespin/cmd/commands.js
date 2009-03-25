@@ -194,7 +194,7 @@ bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(self) {
-        bespin.publish("bespin:session:status");
+        bespin.publish("session:status");
     }
 });
 
@@ -206,7 +206,7 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(self, projectname) {
         if (projectname) {
-            bespin.publish("bespin:project:set", { project: projectname });
+            bespin.publish("project:set", { project: projectname });
         } else {
             self.executeCommand('status');
         }
@@ -239,7 +239,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:create", { project: projectname });
+        bespin.publish("project:create", { project: projectname });
     }
 });
 
@@ -254,7 +254,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:delete", { project: projectname });
+        bespin.publish("project:delete", { project: projectname });
     }
 });
 
@@ -269,7 +269,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:project:rename", { currentProject: args.currentProject, newProject: args.newProject });
+        bespin.publish("project:rename", { currentProject: args.currentProject, newProject: args.newProject });
     }
 });
 
@@ -288,7 +288,7 @@ bespin.cmd.commands.add({
         var opts = { path: args.path };
         if (args.projectname) opts.project = args.projectname;
         
-        bespin.publish("bespin:directory:create", opts);
+        bespin.publish("directory:create", opts);
     }
 });
 
@@ -300,7 +300,7 @@ bespin.cmd.commands.add({
     completeText: 'add the filename to save as, or use the current file',
     withKey: "CMD S",
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:savefile", {
+        bespin.publish("editor:savefile", {
             filename: filename
         });
     }
@@ -314,7 +314,7 @@ bespin.cmd.commands.add({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:openfile", {
+        bespin.publish("editor:openfile", {
             filename: filename
         });
     }
@@ -327,7 +327,7 @@ bespin.cmd.commands.add({
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
     execute: function(self, filename) {
-        bespin.publish("bespin:editor:preview", {
+        bespin.publish("editor:preview", {
             filename: filename
         });
     }
@@ -339,7 +339,7 @@ bespin.cmd.commands.add({
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(self) {
-        bespin.publish("bespin:editor:config:edit");
+        bespin.publish("editor:config:edit");
     }
 });
 
@@ -348,7 +348,7 @@ bespin.cmd.commands.add({
     name: 'runconfig',
     preview: 'run your config file',
     execute: function(self) {
-        bespin.publish("bespin:editor:config:run");
+        bespin.publish("editor:config:run");
     }
 });
 
@@ -364,7 +364,7 @@ bespin.cmd.commands.add({
             self.showUsage(this);
             return;
         }
-        bespin.publish("bespin:commands:load", { commandname: commandname });
+        bespin.publish("command:load", { commandname: commandname });
     }
 });
 
@@ -382,7 +382,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:edit", { commandname: commandname });
+        bespin.publish("command:edit", { commandname: commandname });
     }
 });
 
@@ -391,7 +391,7 @@ bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(self) {
-        bespin.publish("bespin:commands:list");
+        bespin.publish("command:list");
     }
 });
 
@@ -408,7 +408,7 @@ bespin.cmd.commands.add({
             return;
         }
         
-        bespin.publish("bespin:commands:delete", { commandname: commandname });
+        bespin.publish("command:delete", { commandname: commandname });
     }
 });
 
@@ -425,7 +425,7 @@ bespin.cmd.commands.add({
             args.newfilename = args.filename;
             delete args.filename;
         }
-        bespin.publish("bespin:editor:newfile", args || {});
+        bespin.publish("editor:newfile", args || {});
     }
 });
 
@@ -433,11 +433,13 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'rm',
     aliases: ['remove', 'del'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'remove the file',
-    completeText: 'add the filename to remove',
-    execute: function(self, filename) {
-        var project = bespin.get('editSession').project;
+    completeText: 'add the filename to remove, and optionally a specific project at the end',
+    execute: function(self, args) {
+        var project = args.project || bespin.get('editSession').project;
+        var filename = args.filename;
+        
         if (!project) {
             self.showInfo("rm only works with the project is set.");
             return;            
@@ -465,7 +467,7 @@ bespin.cmd.commands.add({
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
     execute: function(self, args) {
-        bespin.publish("bespin:editor:closefile", args);
+        bespin.publish("editor:closefile", args);
     }
 });
 
@@ -525,11 +527,11 @@ bespin.cmd.commands.add({
             var linenum = parseInt(value, 10); // parse the line number as a decimal
             
             if (isNaN(linenum)) { // it's not a number, so for now it is a function name
-                bespin.publish("bespin:parser:gotofunction", {
+                bespin.publish("parser:gotofunction", {
                     functionName: value
                 });                
             } else {
-                bespin.publish("bespin:editor:moveandcenter", {
+                bespin.publish("editor:moveandcenter", {
                     row: linenum
                 });
             }
@@ -611,7 +613,7 @@ bespin.cmd.commands.add({
     preview: 'execute any editor action',
     hidden: true,
     execute: function(self, actionname) {
-        bespin.publish("bespin:editor:doaction", {
+        bespin.publish("editor:doaction", {
             action: actionname
         });
     }
@@ -765,7 +767,7 @@ bespin.cmd.commands.add({
 
             self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
-            bespin.publish("bespin:project:import", { project: project, url: url });
+            bespin.publish("project:import", { project: project, url: url });
         }
     }
 });
@@ -809,7 +811,7 @@ bespin.cmd.commands.add({
     execute: function(self, args) {
         if (args.modifiers == "none") args.modifiers = '';
 
-        bespin.publish("bespin:editor:bindkey", args);
+        bespin.publish("editor:bindkey", args);
     }
 });
 
@@ -941,7 +943,7 @@ bespin.cmd.commands.add({
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
     execute: function(self) {
-        bespin.publish("bespin:parser:showoutline");
+        bespin.publish("parser:showoutline");
     }
 })
 
@@ -956,10 +958,10 @@ bespin.cmd.commands.add({
     execute: function(self, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
-            bespin.publish("bespin:network:followers");
+            bespin.publish("network:followers");
         }
         else {
-            bespin.publish("bespin:network:follow", [ usernames ]);
+            bespin.publish("network:follow", [ usernames ]);
         }
     }
 });
@@ -979,7 +981,7 @@ bespin.cmd.commands.add({
             self.showInfo('Please specify the users to cease following');
         }
         else {
-            bespin.publish("bespin:network:unfollow", [ usernames ]);
+            bespin.publish("network:unfollow", [ usernames ]);
         }
     }
 });
@@ -993,14 +995,14 @@ bespin.cmd.commands.add({
         args = bespin.cmd.commands.toArgArray(args);
 
         if (args.length == 0) {
-            bespin.publish("bespin:groups:list:all");
+            bespin.publish("groups:list:all");
         }
         else if (args.length == 1) {
-            bespin.publish("bespin:groups:list", [ args[0] ]);
+            bespin.publish("groups:list", [ args[0] ]);
         }
         else if (args.length == 2) {
             if (args[1] == "-r" || args[1] == "--remove") {
-                bespin.publish("bespin:groups:remove:all", [ args[0] ]);
+                bespin.publish("groups:remove:all", [ args[0] ]);
             }
             else {
                 self.showInfo('Syntax error - You must specify what you want to do with your group.');
@@ -1010,16 +1012,109 @@ bespin.cmd.commands.add({
             var group = args.shift();
             var command = args.shift();
             if (command == "-a" || command == "--add") {
-                bespin.publish("bespin:groups:add", [ group, args ]);
+                bespin.publish("groups:add", [ group, args ]);
             }
             else if (command == "-r" || command == "--remove") {
                 args.shift();
-                bespin.publish("bespin:groups:remove", [ group, args ]);
+                bespin.publish("groups:remove", [ group, args ]);
             }
             else {
                 self.showInfo('Syntax error - To manipulate a group you must use add/remove');
             }
         }
+    }
+});
+
+// ** {{{Command: share}}} **
+bespin.cmd.commands.add({
+    name: 'share',
+    preview: 'List and alter sharing for a project',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'share'
+            bespin.publish("share:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'share {project}'
+            bespin.publish("share:list:project", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] == "none") {
+                // i.e. 'share {project} none'
+                bespin.publish("share:remove:all", [ args[0] ]);
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone'
+                bespin.publish("share:list:project:member", [ args[0], args[1] ]);
+            }
+        }
+        else if (args.length == 3) {
+            if (args[2] == "none") {
+                // i.e. 'share {project} {user}|{group}|everyone none'
+                bespin.publish("share:remove", [ args[0], args[1] ]);
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'none\', \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
+                bespin.publish("share:add", [ args[0], args[1], [ args[2] ] ]);
+            }
+        }
+        else if (args.length == 4) {
+            if (args[3] != "loadany") {
+                this._syntaxError('Valid scope options are loadany or <blank>');
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
+                bespin.publish("share:add", [ args[0], args[1], [ args[2], args[3] ] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 4 arguments to \'share\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+    }
+});
+
+// ** {{{Command: viewme}}} **
+bespin.cmd.commands.add({
+    name: 'viewme',
+    preview: 'List and alter user\'s ability to see what I\'m working on',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'viewme'
+            bespin.publish("viewme:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'viewme {user|group}'
+            bespin.publish("viewme:list", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] != 'false' && args[1] != 'true' && args[1] != 'default') {
+                this._syntaxError('Valid viewme settings are {true|false|deafult}');
+            }
+            else {
+                bespin.publish("viewme:set", [ args[0], args[1] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 2 arguments to \'viewme\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
 

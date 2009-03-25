@@ -475,7 +475,8 @@ def _setup_search_data():
         "whiz_cheez",
         "bespin_rocks",
         "many_files",
-        "cool+one"
+        "cool+one",
+        "some_1"
     ]:
         bigmac.save_file(name, "hi")
     return bigmac
@@ -494,6 +495,7 @@ def _run_search_tests(search_func):
         "foo_bar",
         "foo_some_other",
         "many_files",
+        "some_1",
         "some_deeply_nested_file_here",
         "whiz_bang",
         "whiz_cheez"
@@ -506,6 +508,7 @@ def _run_search_tests(search_func):
         "ding_dong",
         "foo_bar",
         "foo_some_other",
+        "some_1",
         "some_deeply_nested_file_here"
     ]
     
@@ -525,6 +528,7 @@ def _run_search_tests(search_func):
     result = search_func("me")
     assert result == [
         "foo_some_other",
+        "some_1",
         "some_deeply_nested_file_here",
         "many_files"
     ]
@@ -535,12 +539,28 @@ def _run_search_tests(search_func):
     ]
     
     result = search_func("ME")
-    print result
     assert result == [
         "foo_some_other",
+        "some_1",
         "some_deeply_nested_file_here",
         "many_files"
     ]
+    
+    result = search_func("so")
+    assert result == [
+        "foo_some_other",
+        "some_1",
+        "some_deeply_nested_file_here",
+        "bespin_rocks"
+    ]
+    result = search_func("som")
+    print result
+    assert result == [
+        "some_1",
+        "foo_some_other",
+        "some_deeply_nested_file_here"
+    ]
+    
 
 # -------
 # Web tests

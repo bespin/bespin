@@ -50,7 +50,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 onSuccess();
             },
             elseFailed: function() {
-                bespin.publish("bespin:cmdline:showinfo", { msg: 'The file ' + path + ' already exists my friend.'});
+                bespin.publish("message", { msg: 'The file ' + path + ' already exists my friend.'});
             }
         });
     },
@@ -88,14 +88,14 @@ dojo.declare("bespin.client.FileSystem", null, {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
                 if (!content) content = " ";
-                bespin.publish("bespin:editor:newfile", {
+                bespin.publish("editor:newfile", {
                     project: project,
                     newfilename: path,
                     content: content
                 });
             },
             elseFailed: function() {
-                bespin.publish("bespin:editor:openfile", {
+                bespin.publish("editor:openfile", {
                     project: project,
                     filename: path
                 });

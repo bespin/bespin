@@ -289,7 +289,8 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         // -- End of commandLine short cut
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
+                     modelPos: this.editor.cursorManager.getModelPosition() };
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -343,7 +344,8 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         }
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
+                     modelPos: this.editor.cursorManager.getModelPosition() };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
@@ -726,7 +728,7 @@ dojo.declare("bespin.editor.UI", null, {
         
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
@@ -740,11 +742,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     getTopOffset: function() {
-        return this.editor.canvas.parentNode.offsetTop;
+        return dojo.coords(this.editor.canvas.parentNode).y || this.editor.canvas.parentNode.offsetTop;
     },
 
     getLeftOffset: function() {
-        return this.editor.canvas.parentNode.offsetLeft;
+        return dojo.coords(this.editor.canvas.parentNode).x || this.editor.canvas.parentNode.offsetLeft;
     },
 
     getCharWidth: function(ctx) {
@@ -820,8 +822,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
         // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
-        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -1309,9 +1311,9 @@ dojo.declare("bespin.editor.UI", null, {
             if (lineText.charCodeAt(ti) == 9) {
                 // since the current character is a tab, we potentially need to insert some blank space between the tab character
                 // and the next tab stop
-                var toInsert = this.editor.tabsize - (ti % this.editor.tabsize);
+                var toInsert = this.editor.tabstop - (ti % this.editor.tabstop);
 
-                // create a spacer string representing the space between the tab and the tabsize
+                // create a spacer string representing the space between the tab and the tabstop
                 var spacer = "";
                 for (var si = 1; si < toInsert; si++) spacer += "-";
 
@@ -1336,9 +1338,9 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     // returns the maximum number of display columns across all rows
-    getMaxCols: function() {
+    getMaxCols: function(firstRow, lastRow) {
         var cols = 0;
-        for (var i = 0; i < this.editor.model.getRowCount(); i++) {
+        for (var i = firstRow; i <= lastRow; i++) {
             cols = Math.max(cols, this.getRowScreenLength(i));
         }
         return cols;
@@ -1350,17 +1352,7 @@ dojo.declare("bespin.editor.UI", null, {
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
-        this.tabsize = 4;       // tab stops every 4 columns; is replaced by the value in settings:tabwidth!
-
-        // set this.tabsize after the tabwidth has been changed
-        bespin.subscribe('bespin:settings:set:tabsize', dojo.hitch(this, function(event) {
-            this.tabsize = event.value; 
-        }));
-        
-        // set this.tabsize after the settings have been loaded
-        bespin.subscribe('bespin:settings:loaded', dojo.hitch(this, function() {            
-            this.tabsize = parseInt(bespin.get('settings').get('tabsize'));
-        }));
+        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
 
         this.opts = opts || {};
 
@@ -1371,9 +1363,10 @@ dojo.declare("bespin.editor.API", null, {
         this.canvas = dojo.byId(container).firstChild;
         while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;  
 
-        this.cursorManager = new bespin.editor.CursorManager(this);
         this.ui = new bespin.editor.UI(this);  
         this.theme = bespin.editor.themes['default'];
+
+        this.cursorManager = new bespin.editor.CursorManager(this);
 
         this.editorKeyListener = new bespin.editor.DefaultEditorKeyListener(this);
         this.undoManager = new bespin.editor.UndoManager(this);
@@ -1412,7 +1405,7 @@ dojo.declare("bespin.editor.API", null, {
 
     // helper
     getCursorPos: function() {
-        return this.cursorManager.getCursorPosition();
+        return this.cursorManager.getScreenPosition();
     },
     
     // restore the state of the editor
