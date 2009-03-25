@@ -186,7 +186,7 @@ def test_keychain_creation():
     assert credentials['ssh_key'] == identity
     assert credentials['type'] == "ssh"
     
-    kc.delete_ssh_key("SSH ID")
+    kc.delete_ssh_identity("SSH ID")
     assert "SSH ID" not in kc.ssh_key_names
     
     credentials = kc.get_credentials_for_project(bigmac)
@@ -207,6 +207,29 @@ def test_keychain_creation():
     kc = vcs.KeyChain(macgyver, "foobar")
     credentials = kc.get_credentials_for_project(bigmac)
     assert credentials is None
+
+def test_keychain_add_name_twice():
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
+    kc.add_ssh_identity("SSH ID", identity)
+    try:
+        kc.add_ssh_identity("SSH ID", identity)
+        assert False, "Expected ConflictError for existing identity"
+    except model.ConflictError:
+        pass
+    
+    kc.delete_ssh_identity("SSH ID")
+    kc.add_ssh_identity("SSH ID", identity)
+    
+def test_keychain_refer_to_nonexistent_identity():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    kc = vcs.KeyChain(macgyver, "foobar")
+    try:
+        kc.set_ssh_for_project(bigmac, "BAD ID")
+        assert False, "Expected a not found error for bad SSH ID"
+    except model.FileNotFound:
+        pass
     
 def test_vcs_auth_set_password_on_web():
     _init_data()
@@ -233,3 +256,20 @@ def test_vcs_auth_set_ssh_newkey_on_web():
     assert credentials['type'] == 'ssh'
     assert credentials['ssh_key'] == identity
     
+def test_vcs_auth_set_ssh_key_on_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+
+    kc = vcs.KeyChain(macgyver, "foobar")
+    kc.add_ssh_identity("SSH ID", identity)
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials is None
+    kc.save()
+    
+    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar",
+                    type="ssh", name="SSH ID"))
+
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'ssh'
+    assert credentials['ssh_key'] == identity

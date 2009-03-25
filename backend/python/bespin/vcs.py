@@ -3,6 +3,8 @@ import simplejson
 from uvc import main
 from uvc.main import is_new_project_command
 
+from bespin import model
+
 def clone(user, args):
     """Clones or checks out the repository using the command provided."""
     working_dir = user.get_location()
@@ -42,9 +44,12 @@ class KeyChain(object):
         with the name provided."""
         kcdata = self.kcdata
         ssh_keys = kcdata.setdefault("ssh_keys", {})
+        if name in ssh_keys:
+            raise model.ConflictError("SSH identity '%s' already exists" %
+                                name)
         ssh_keys[name] = key
     
-    def delete_ssh_key(self, ssh_key_name):
+    def delete_ssh_identity(self, ssh_key_name):
         """Removes the key named ssh_key_name from this keychain.
         This will also remove the credentials information for
         any project that was using this key."""
@@ -101,6 +106,8 @@ class KeyChain(object):
         should be used as the credentials for the project
         given."""
         kcdata = self.kcdata
+        if ssh_key_name not in self.ssh_key_names:
+            raise model.FileNotFound("No SSH identity named: %s" % ssh_key_name)
         projects = kcdata.setdefault("projects", {})
         projects[project.full_name] = dict(type="ssh", ssh_key=ssh_key_name)
     
