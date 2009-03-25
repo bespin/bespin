@@ -79,15 +79,15 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // will insert blank spaces if passed col is past the end of passed row
-    insertCharacters: function(pos, string) {
-        var row = this.getRowArray(pos.row);
-        while (row.length < pos.col) row.push(" ");
+    insertCharacters: function(modelPos, string) {
+        var row = this.getRowArray(modelPos.row);
+        while (row.length < modelPos.col) row.push(" ");
 
-        var newrow = (pos.col > 0) ? row.splice(0, pos.col) : [];
+        var newrow = (modelPos.col > 0) ? row.splice(0, modelPos.col) : [];
         newrow = newrow.concat(string.split(""));
-        this.rows[pos.row] = newrow.concat(row);
+        this.rows[modelPos.row] = newrow.concat(row);
 
-        this.setRowDirty(pos.row);
+        this.setRowDirty(modelPos.row);
     },
 
     getDocument: function() {
@@ -129,13 +129,13 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // will silently adjust the length argument if invalid
-    deleteCharacters: function(pos, length) {
-        var row = this.getRowArray(pos.row);
-        var diff = (pos.col + length - 1) - row.length;
+    deleteCharacters: function(modelPos, length) {
+        var row = this.getRowArray(modelPos.row);
+        var diff = (modelPos.col + length - 1) - row.length;
         if (diff > 0) length -= diff;
         if (length > 0) {
-            this.setRowDirty(pos.row);
-            return row.splice(pos.col, length).join("");
+            this.setRowDirty(modelPos.row);
+            return row.splice(modelPos.col, length).join("");
         }
         return "";
     },
@@ -151,8 +151,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
-    splitRow: function(pos, autoindentAmount) {
-        var row = this.getRowArray(pos.row);
+    splitRow: function(modelPos, autoindentAmount) {
+        var row = this.getRowArray(modelPos.row);
 
         var newRow;
         if (autoindentAmount > 0) {
@@ -161,14 +161,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             newRow = [];
         }
 
-        if (pos.col < row.length) {
-            newRow = newRow.concat(row.splice(pos.col));
+        if (modelPos.col < row.length) {
+            newRow = newRow.concat(row.splice(modelPos.col));
         }
 
-        if (pos.row == (this.rows.length - 1)) {
+        if (modelPos.row == (this.rows.length - 1)) {
             this.rows.push(newRow);
         } else {
-            var newRows = this.rows.splice(0, pos.row + 1);
+            var newRows = this.rows.splice(0, modelPos.row + 1);
             newRows.push(newRow);
             newRows = newRows.concat(this.rows);
             this.rows = newRows;
@@ -267,20 +267,20 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // inserts the chunk and returns the ending position
-    insertChunk: function(pos, chunk) {
+    insertChunk: function(modelPos, chunk) {
         var lines = chunk.split("\n");
-        var cpos = bespin.editor.utils.copyPos(pos);
+        var cModelPos = bespin.editor.utils.copyPos(modelPos);
         for (var i = 0; i < lines.length; i++) {
-            this.insertCharacters(cpos, lines[i]);
-            cpos.col = cpos.col + lines[i].length;
+            this.insertCharacters(cModelPos, lines[i]);
+            cModelPos.col = cModelPos.col + lines[i].length;
 
             if (i < lines.length - 1) {
-                this.splitRow(cpos);
-                cpos.col = 0;
-                cpos.row = cpos.row + 1;
+                this.splitRow(cModelPos);
+                cModelPos.col = 0;
+                cModelPos.row = cModelPos.row + 1;
             }
         }
-        return cpos;
+        return cModelPos;
     },
     
     findBefore: function(row, col, comparator) {
