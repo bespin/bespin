@@ -976,7 +976,8 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
-            var lineText = this.getRowString(currentLine);
+            var lineMetadata = this.getRowMetadata(currentLine);
+            var lineText = lineMetadata.lineText;
 
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
@@ -1011,6 +1012,46 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
 
+            // paint tab information, if applicable
+            if (lineMetadata.tabExpansions.length > 0) {
+                for (var i = 0; i < lineMetadata.tabExpansions.length; i++) {
+                    var expansion = lineMetadata.tabExpansions[i];
+
+                    // the starting x position of the tab character; the existing value of y is fine
+                    var lx = x + (expansion.start * this.charWidth);
+
+                    // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
+                    var showTabSpace = bespin.get("settings").isSettingOn("tabspacecolored");
+                    if (showTabSpace) {
+                        var sw = (expansion.end - expansion.start) * this.charWidth;
+                        ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
+                        ctx.fillRect(lx, y, sw, this.lineHeight);
+                    }
+
+                    // the center of the current character position's bounding rectangle
+                    var cy = y + (this.lineHeight / 2);
+                    var cx = lx + (this.charWidth / 2);
+
+                    // the width and height of the triangle to draw representing the tab
+                    var tw = 4;
+                    var th = 6;
+
+                    // the origin of the triangle
+                    var tx = parseInt(cx - (tw / 2));
+                    var ty = parseInt(cy - (th / 2));
+
+                    // draw the rectangle
+                    ctx.beginPath();
+                    ctx.fillStyle = this.editor.theme["plain"] || "white";
+                    ctx.moveTo(tx, ty);
+                    ctx.lineTo(tx, ty + th);
+                    ctx.lineTo(tx + tw, ty + parseInt(th / 2));
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+
             if (!refreshCanvas) {
                 ctx.drawImage(this.verticalScrollCanvas, verticalx + Math.abs(this.xoffset), Math.abs(this.yoffset));
                 ctx.restore();
@@ -1018,6 +1059,7 @@ dojo.declare("bespin.editor.UI", null, {
 
             y += this.lineHeight;
         }
+
 
         // paint the cursor
         if (this.editor.focus) {
@@ -1299,9 +1341,15 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.fill();
     },
 
-    // returns a string that represents the row; converts tab characters to spaces
-    getRowString: function(row) {
-        var lineText = this.editor.model.getRowArray(row).join("");
+    // returns various metadata about the row, mainly concerning tab information
+    getRowMetadata: function(row) {
+        // contains the row metadata; this object is returned at the end of the function
+        var meta = { tabExpansions: [] };
+
+        var rowArray = this.editor.model.getRowArray(row);
+        var lineText = rowArray.join("");
+        meta.lineTextWithoutTabExpansion = lineText;
+        meta.lineLengthWithoutTabExpansion = rowArray.length;
 
         // check for tabs and handle them
         for (var ti = 0; ti < lineText.length; ti++) {
@@ -1313,7 +1361,7 @@ dojo.declare("bespin.editor.UI", null, {
 
                 // create a spacer string representing the space between the tab and the tabstop
                 var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += "-";
+                for (var si = 1; si < toInsert; si++) spacer += " ";
 
                 // split the row string into the left half and the right half (eliminating the tab character) in preparation for
                 // creating a new row string
@@ -1321,14 +1369,22 @@ dojo.declare("bespin.editor.UI", null, {
                 var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
 
                 // create the new row string; the blank space essentially replaces the tab character
-                lineText = left + ">" + spacer + right;
+                lineText = left + " " + spacer + right;
+                meta.tabExpansions.push({ start: left.length, end: left.length + spacer.length + 1 });
 
                 // increment the column counter to correspond to the new space
                 ti += toInsert - 1;
             }
         }
 
-        return lineText;
+        meta.lineText = lineText;
+
+        return meta;
+    },
+
+    // returns metadata bout the a string that represents the row; converts tab characters to spaces
+    getRowString: function(row) {
+        return this.getRowMetadata(row).lineText;
     },
 
     getRowScreenLength: function(row) {

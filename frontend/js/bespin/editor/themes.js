@@ -55,6 +55,7 @@ bespin.editor.themes.coffee = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#392A25",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -109,6 +110,7 @@ bespin.editor.themes.white = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -161,6 +163,7 @@ bespin.editor.themes.black = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
