@@ -625,7 +625,7 @@ def mobwrite(request, response):
     response.content_type = "text/plain"
     return response()
     
-@expose(r'^/vcs/(?P<project_name>.*)/', 'POST')
+@expose(r'^/vcs/(?P<project_name>.*)/$', 'POST')
 def vcs_command(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
@@ -642,6 +642,52 @@ def vcs_command(request, response):
     
     response.content_type = "application/json"
     response.body = simplejson.dumps({'output' : output})
+    return response()
+
+@expose(r'^/keychain/setauth/(?P<project_name>.*)$', 'POST')
+def keychain_setauth(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    project = model.get_project(user, user, project_name)
+    
+    try:
+        kcpass = request.POST['kcpass']
+        atype = request.POST['type']
+    except KeyError:
+        raise BadRequest("Request must include kcpass and type.")
+    
+    
+    keychain = vcs.KeyChain(user, kcpass)
+    
+    if atype == "password":
+        try:
+            username = request.POST['username']
+            password = request.POST['password']
+        except KeyError:
+            raise BadRequest("Request must include username and password")
+        
+        keychain.set_credentials_for_project(project, username, password)
+    elif atype == "ssh":
+        try:
+            name = request.POST['name']
+        except KeyError:
+            raise BadRequest("Request must include name for SSH identity")
+        
+        try:
+            # are we adding a new identity to the keychain?
+            ssh_key = request.POST['ssh_key']
+            keychain.add_ssh_identity(name, ssh_key)
+        except KeyError:
+            pass
+            
+        keychain.set_ssh_for_project(project, name)
+    else:
+        raise BadRequest("auth type must be ssh or password")
+        
+    keychain.save()
+    
+    response.content_type = "text/plain"
+    response.body = ""
     return response()
 
 def db_middleware(app):

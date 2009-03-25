@@ -126,12 +126,9 @@ def test_hg_diff_on_web(run_command_params):
     assert working_dir == bigmac.location
     assert output == diff_output
 
-def test_keychain_creation():
-    _init_data()
-    kc = vcs.KeyChain(macgyver, "foobar")
-    # passphrase for this key is This is the passphrase.
-    # (maybe "This is my passphrase.")
-    identity = \
+# passphrase for this key is This is the passphrase.
+# (maybe "This is my passphrase.")
+identity = \
 """-----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: DES-EDE3-CBC,F6FA99F7A13B52B2
@@ -163,6 +160,10 @@ F6C48kaeMueW8rjvyr4EJgLbrTqeZAZQ0Fft8A1dhHVOeRgsKlHnKDCOoaYeFqVV
 C9QncGOvIaQzwXO/yrIEtEJinKzf+CIXB58WCsUwDoxSszo56fOpvA==
 -----END RSA PRIVATE KEY-----
 """
+
+def test_keychain_creation():
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
     kc.add_ssh_identity("SSH ID", identity)
     
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
@@ -206,4 +207,29 @@ C9QncGOvIaQzwXO/yrIEtEJinKzf+CIXB58WCsUwDoxSszo56fOpvA==
     kc = vcs.KeyChain(macgyver, "foobar")
     credentials = kc.get_credentials_for_project(bigmac)
     assert credentials is None
+    
+def test_vcs_auth_set_password_on_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar", 
+                            type="password", username="macG", 
+                            password="coolpass"))
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'password'
+    assert credentials['username'] == 'macG'
+    assert credentials['password'] == 'coolpass'
+    
+def test_vcs_auth_set_ssh_newkey_on_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar",
+                    type="ssh", name="SSH ID", ssh_key=identity))
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    assert kc.ssh_key_names == ["SSH ID"]
+    
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'ssh'
+    assert credentials['ssh_key'] == identity
     
