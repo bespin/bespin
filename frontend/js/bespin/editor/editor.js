@@ -1406,7 +1406,7 @@ dojo.declare("bespin.editor.UI", null, {
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
-        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
+        this.tabstop = bespin.get("settings").get("tabsize") || 4;       // tab stops every 4 columns
 
         this.opts = opts || {};
 
