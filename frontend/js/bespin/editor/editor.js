@@ -1021,7 +1021,7 @@ dojo.declare("bespin.editor.UI", null, {
                     var lx = x + (expansion.start * this.charWidth);
 
                     // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
-                    var showTabSpace = bespin.get("settings").isSettingOn("tabspacecolored");
+                    var showTabSpace = bespin.get("settings").isSettingOn("tabshowspace");
                     if (showTabSpace) {
                         var sw = (expansion.end - expansion.start) * this.charWidth;
                         ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
