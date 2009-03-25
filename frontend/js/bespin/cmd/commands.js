@@ -433,11 +433,13 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'rm',
     aliases: ['remove', 'del'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'remove the file',
-    completeText: 'add the filename to remove',
-    execute: function(self, filename) {
-        var project = bespin.get('editSession').project;
+    completeText: 'add the filename to remove, and optionally a specific project at the end',
+    execute: function(self, args) {
+        var project = args.project || bespin.get('editSession').project;
+        var filename = args.filename;
+        
         if (!project) {
             self.showInfo("rm only works with the project is set.");
             return;            

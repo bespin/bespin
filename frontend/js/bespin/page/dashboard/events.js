@@ -67,13 +67,14 @@ bespin.subscribe("session:status", function(event) {
 // 
 // Observe a request for a new file to be created
 bespin.subscribe("editor:newfile", function(event) {
-    var project = event.project;
+    var project = event.project || bespin.get('editSession').project; 
+
     if (!project) {
         bespin.publish("message", { msg: 'The new file action requires a project' });
         return;
     }
-    
+
     var newfilename = event.newfilename || "new.txt";
-    
+
     bespin.util.navigate.editor(project, newfilename);
 });
