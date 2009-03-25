@@ -2,6 +2,7 @@ from uvc.tests.util import mock_run_command
 from webtest import TestApp
 from uvc import hg
 import simplejson
+from path import path
 
 from bespin import vcs, config, controllers, model
 
@@ -124,3 +125,85 @@ def test_hg_diff_on_web(run_command_params):
     assert command_line == "hg diff"
     assert working_dir == bigmac.location
     assert output == diff_output
+
+def test_keychain_creation():
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
+    # passphrase for this key is This is the passphrase.
+    # (maybe "This is my passphrase.")
+    identity = \
+"""-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: DES-EDE3-CBC,F6FA99F7A13B52B2
+
+oldSAS2sPwmqPNN4Tqz+t7ECOtsht9rHFvdae2EPfy2zF4JF171iueXFfR9ijbwu
+TpkYIoV0rQGyKgroAH1HllkO5MdMGD1LasbKdAd76XsC5bsUDM3oFt08zOO5kcmx
+r6Zo8Lkc/sEoNOk5RvVMGEdPbEk+0XNR9/vvYUTia0Pe3SE+hq3kk0mQRsTDhDwz
+0ygxfMa+GDvJUBsM1DPQBHmH7nRLgXSMRiLdqdEKZ1D0HSt2plTuj0wjrJal671U
+mDppExH/l1U1tYacHk75apS5K/NEgQT+cf4mWXB6JNQVbn1GlAIiR7BMyufGdMmR
+O+zvr0ihh5T5hKFbU+Ht6z3CDafovnB9sCrDdwExaiKfxkiWyRR95JcDEFbD2m9j
+svKwm02dC1+KMfvVT28Kf14uamGgnl4oILXMlLXgnogAVvRnRtwLmPtIvY3cbidQ
+OQYVNTFwRtE6Spzk6x0DBmNiiPKYzy8YV/QGokUrYoOs50+sAEPb3szSn2zPkqkh
+CjflCMb1F0JTV60Y+08AafIhGxK0IadGGxgmsIjdcjy/46TELmXsKjI3C3zUB5kp
+6Vg3nzLZRLEszRmZABlMu+Y/Jrtq87c4l7eDZ2W8KV85NqlMLOTDqEnOiWbForKh
+eAOn/3+HfZ/KRCGaabk/AbaOfo09QQOOz+HhCEJ3qjJ7dd2lBylldGZzcQqyKQce
+u9TLs1+FKwfj6PVUHEVnzEQVOU/oARh5nNlnrl5qSh+y5t6Xm2+eCmG3X3U5/rrt
+5mTJZkv/RVEDKt5EjHPo0xWfYCMEcpf2nwSoHigoCrt6IIykztWn6ZAPh94cN4Bh
+zAPd1EKp4pFri3z7EXl3swmJR1Dv7WWf8LBQu310gxKcOPh8GJdWipYCwePfclLy
+QpfsaxTKO1K/9+0EKsNCDUNq7PCcniuwLAj+l3Il1SK8lphWsuENkyYYxn+cdef5
+fIWAEUllfGmSIl+pFCQukoZ3gpdZn/7P+hbTk1DnEF9IatQCBXLUsqAo80batoUe
+SD3N6V00vSTNTRx03n+Omef32Hib8zxXdjthzbW9VIVHa84bE4VmKqPcvvU9d5+x
+QI3rU/0SjyR5HZIwYul+dQVA+WCMHiLuAf/jKKd1QlWM/zMWa3zY8DdnL8rGM5wR
+DLOGFrRDz3kd0oYlj0QXmQyurdua2OZgnmav3srciWDR3SU9gxOMTqMGmkfDUih7
+ONDMgRrtgtV7LqGXkzWCxy6fByL7QPgTi+Xr9XVsQU0LLT8QKjXA+ResDHtrDd7U
++aE2rEMFJOOFI91bU47xOZsd4XyNsOGN0rmgYqiN5/qTbHsM1W6VUUU8R/FiUMHh
+1+pgoRndjWmd+nnVfVmHWXcjdi+U7fWZIBEcEPT41/NwCHpBhIb87Ki9baGvbr3M
+E2QCDTPFHHHWIPdTNphNm8nZSayg6QXe6PQ07Wd1hH1oELwhVixv4xwzBVizyvVA
+F6C48kaeMueW8rjvyr4EJgLbrTqeZAZQ0Fft8A1dhHVOeRgsKlHnKDCOoaYeFqVV
+C9QncGOvIaQzwXO/yrIEtEJinKzf+CIXB58WCsUwDoxSszo56fOpvA==
+-----END RSA PRIVATE KEY-----
+"""
+    kc.add_ssh_identity("SSH ID", identity)
+    
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    
+    kc.set_ssh_for_project(bigmac, "SSH ID")
+    kc.save()
+    kcfile = path(macgyver.get_location()) / ".bespin-keychain"
+    assert kcfile.exists()
+    
+    # make sure the file is encrypted
+    text = kcfile.bytes()
+    assert "SSH ID" not in text
+    assert "RSA PRIVATE KEY" not in text
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    keys = kc.ssh_key_names
+    assert keys == ["SSH ID"]
+    
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['ssh_key'] == identity
+    assert credentials['type'] == "ssh"
+    
+    kc.delete_ssh_key("SSH ID")
+    assert "SSH ID" not in kc.ssh_key_names
+    
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials is None
+    
+    kc.set_credentials_for_project(bigmac, "macG", "coolpass")
+    kc.save()
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'password'
+    assert credentials['username'] == 'macG'
+    assert credentials['password'] == 'coolpass'
+    
+    kc.delete_credentials_for_project(bigmac)
+    kc.save()
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials is None
+    

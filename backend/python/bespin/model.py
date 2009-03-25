@@ -601,6 +601,10 @@ class Project(object):
     @property
     def short_name(self):
         return self.name + "/"
+    
+    @property
+    def full_name(self):
+        return self.owner.uuid + "/" + self.name
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
