@@ -289,8 +289,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         // -- End of commandLine short cut
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -344,8 +343,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         }
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
@@ -822,7 +820,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
         // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
-        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
         var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
@@ -1405,7 +1403,7 @@ dojo.declare("bespin.editor.API", null, {
 
     // helper
     getCursorPos: function() {
-        return this.cursorManager.getScreenPosition();
+        return this.cursorManager.getCursorPosition();
     },
     
     // restore the state of the editor
