@@ -17,12 +17,12 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     // Returns 'this.position' or 'pos' from optional input 'modelPos'
     getCursorPosition: function(modelPos) {
-        if(modelPos != undefined) {
+        if (modelPos != undefined) {
             var pos = bespin.editor.utils.copyPos(modelPos);
             var line = this.editor.model.getRowArray(pos.row);
 
             // Special tab handling
-            if(line.indexOf("\t") != -1) {
+            if (line.indexOf("\t") != -1) {
 //              console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
                 var tabs = 0, nottabs = 0;
 
@@ -54,7 +54,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var line = this.editor.model.getRowArray(pos.row);
 
         // Special tab handling
-        if(line.indexOf("\t") != -1) {
+        if (line.indexOf("\t") != -1) {
 //          console.log( 'Model modelPos.col/pos.col begin: ', modelPos.col, pos.col );
             var tabs = 0, nottabs = 0;
 
@@ -77,7 +77,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     },
 
     getCharacterLength: function(character) {
-        if(character == "\t") {
+        if (character == "\t") {
             return (this.editor.tabstop - (this.position.col % this.editor.tabstop));
         } else {
             return 1;

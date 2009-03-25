@@ -820,8 +820,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
         // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
-        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -1336,9 +1336,9 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     // returns the maximum number of display columns across all rows
-    getMaxCols: function() {
+    getMaxCols: function(firstRow, lastRow) {
         var cols = 0;
-        for (var i = 0; i < this.editor.model.getRowCount(); i++) {
+        for (var i = firstRow; i <= lastRow; i++) {
             cols = Math.max(cols, this.getRowScreenLength(i));
         }
         return cols;
