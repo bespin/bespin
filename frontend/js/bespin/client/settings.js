@@ -67,7 +67,8 @@ dojo.declare("bespin.client.settings.Core", null, {
             'fontsize': '10',
             'autocomplete': 'off',
             'collaborate': 'off',
-            'syntax': 'auto'
+            'syntax': 'auto',
+            'tabshownib': 'on'
         };
     },
 
