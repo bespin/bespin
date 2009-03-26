@@ -161,18 +161,18 @@ dojo.declare("bespin.editor.Actions", null, {
         }
 
         var tab = args.tab;
-        var tabWidth = args.tabWidth;
+        var tabsize = args.tabsize;
 
-        if (!tab || !tabWidth) {
+        if (!tab || !tabsize) {
             var realTabs = (settings.get('tabmode') == 'tabs');
             if (realTabs) {
                 // do something tabby
                 tab = "\t";
-                tabWidth = this.editor.cursorManager.getCharacterLength(tab);
+                tabsize = this.editor.cursorManager.getCharacterLength(tab);
             } else {
                 tab = "";
-                tabWidth = parseInt(settings.get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
-                var tabWidthCount = tabWidth;
+                tabsize = this.editor.getTabSize();
+                var tabWidthCount = tabsize;
                 while (tabWidthCount-- > 0) {
                     tab += " ";
                 }
@@ -180,7 +180,7 @@ dojo.declare("bespin.editor.Actions", null, {
         }
 
         this.model.insertCharacters(this.editor.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
-        this.editor.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tabWidth });
+        this.editor.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tabsize });
 
         delete this.editor.selection;
 
@@ -198,7 +198,7 @@ dojo.declare("bespin.editor.Actions", null, {
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
             tab: tab,
-            tabWidth: tabWidth
+            tabsize: tabsize
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
@@ -206,9 +206,9 @@ dojo.declare("bespin.editor.Actions", null, {
     
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
-        var tabWidth = args.tabWidth;
+        var tabsize = args.tabsize;
         
-        this.model.deleteCharacters(this.editor.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tabWidth);
+        this.model.deleteCharacters(this.editor.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tabsize);
         this.editor.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
 
         delete this.editor.selection;
@@ -223,7 +223,7 @@ dojo.declare("bespin.editor.Actions", null, {
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
             tab: args.tab,
-            tabWidth: args.tabWidth
+            tabsize: args.tabsize
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
@@ -240,9 +240,10 @@ dojo.declare("bespin.editor.Actions", null, {
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
         var realTabs = (bespin.get('settings').get('tabmode') == 'tabs');
+        var tabsize = this.editor.getTabSize();
+
         if (!realTabs) {
-            var tabWidth = parseInt(bespin.get('settings').get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
-            var tabWidthCount = tabWidth;
+            var tabWidthCount = tabsize;
             var tab = "";
             while (tabWidthCount-- > 0) {
                 tab += " ";
@@ -255,7 +256,7 @@ dojo.declare("bespin.editor.Actions", null, {
             if (!historyIndent) {
                 if (!realTabs) {
                     var leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
-                    var charsToInsert = (leadingWhitespaceLength % tabWidth ? tabWidth - (leadingWhitespaceLength % tabWidth) : tabWidth);
+                    var charsToInsert = (leadingWhitespaceLength % tabsize ? tabsize - (leadingWhitespaceLength % tabsize) : tabsize);
                 } else {
                     // in the case of "real" tabs we just insert the tabs
                     var charsToInsert = 1;
@@ -299,7 +300,7 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var tabWidth = parseInt(bespin.get('settings').get('tabsize') || bespin.defaultTabSize);   // TODO: global needs fixing
+        var tabsize = this.editor.getTabSize();
 
         for (var y = startRow; y <= endRow; y++) {
             if (historyIndent) {
@@ -307,10 +308,10 @@ dojo.declare("bespin.editor.Actions", null, {
             } else {
                 var leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
                 if (selection && (selection.startPos.col != selection.endPos.col || selection.startPos.row != selection.endPos.row)) {
-                    // make the indent go to a n times of the tabwidth only if there is a selection
-                    var charsToDelete = leadingWhitespaceLength >= tabWidth ? (leadingWhitespaceLength % tabWidth ? leadingWhitespaceLength % tabWidth : tabWidth) : leadingWhitespaceLength;                                   
+                    // make the indent go to a n times of the tabsize only if there is a selection
+                    var charsToDelete = leadingWhitespaceLength >= tabsize ? (leadingWhitespaceLength % tabsize ? leadingWhitespaceLength % tabsize : tabsize) : leadingWhitespaceLength;                                   
                 } else {
-                    charsToDelete = Math.min(tabWidth, leadingWhitespaceLength);
+                    charsToDelete = Math.min(tabsize, leadingWhitespaceLength);
                 }
 
                 newHistoryIndent.push(charsToDelete);
