@@ -578,8 +578,8 @@ dojo.declare("bespin.editor.UI", null, {
     ensureCursorVisible: function() {
         if ((!this.lineHeight) || (!this.charWidth)) return;    // can't do much without these
 
-        var y = this.lineHeight * this.editor.cursorManager.getScreenPosition().row;
-        var x = this.charWidth * this.editor.cursorManager.getScreenPosition().col;
+        var y = this.lineHeight * this.editor.cursorManager.getCursorPosition().row;
+        var x = this.charWidth * this.editor.cursorManager.getCursorPosition().col;
 
         var cheight = this.getHeight();
         var cwidth = this.getWidth() - this.GUTTER_WIDTH;
@@ -821,7 +821,7 @@ dojo.declare("bespin.editor.UI", null, {
         // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
         // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
         //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getCursorPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -875,14 +875,14 @@ dojo.declare("bespin.editor.UI", null, {
             var dirty = ed.model.getDirtyRows();
 
             // if the cursor has changed rows since the last paint, consider the previous row dirty
-            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorManager.getScreenPosition().row)) dirty[this.lastCursorPos.row] = true;
+            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorManager.getCursorPosition().row)) dirty[this.lastCursorPos.row] = true;
 
             // we always repaint the current line
-            dirty[ed.cursorManager.getScreenPosition().row] = true;
+            dirty[ed.cursorManager.getCursorPosition().row] = true;
         }
 
         // save this state for the next paint attempt (see above for usage)
-        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getScreenPosition());
+        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getCursorPosition());
 
         // if we're doing a full repaint...
         if (refreshCanvas) {
@@ -1065,20 +1065,20 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.editor.focus) {
             if (this.showCursor) {
                 if (ed.theme.cursorType == "underline") {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
                     y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, this.charWidth, 3);
                 } else {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-                    y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, this.lineHeight);
                 }
             }
         } else {
-            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-            y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+            y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
 
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;

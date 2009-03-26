@@ -10,11 +10,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
         this.virtualCol = 0;
     },
 
-    // Here for backwards-compatibility only
-    getScreenPosition: function() {
-        return this.getCursorPosition();
-    },
-
     // Returns 'this.position' or 'pos' from optional input 'modelPos'
     getCursorPosition: function(modelPos) {
         if (modelPos != undefined) {
@@ -90,7 +85,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveToLineStart: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
 
-        var line = this.editor.ui.getRowString(this.editor.cursorManager.getScreenPosition().row);
+        var line = this.editor.ui.getRowString(this.editor.cursorManager.getCursorPosition().row);
         var match = /^(\s+).*/.exec(line);
         var leadingWhitespaceLength = 0;
 
