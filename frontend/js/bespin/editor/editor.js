@@ -959,7 +959,14 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
 
-            if ((currentLine % 2) == 0) {
+            // if highlight line is on, paint the highlight color
+            var settings = bespin.get('settings');
+            if ( (dojo.isObject(settings) && settings.isSettingOn('highlightline')) &&
+                 (currentLine == ed.cursorManager.getCursorPosition().row) ) {
+                ctx.fillStyle = theme.highlightCurrentLineColor;
+                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+            // if not on highlight, see if we need to paint the zebra
+            } else if ((currentLine % 2) == 0) {
                 ctx.fillStyle = theme.zebraStripeColor;
                 ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
             }
