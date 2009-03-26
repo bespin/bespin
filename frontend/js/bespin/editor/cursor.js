@@ -354,15 +354,17 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var invalid = this.isInvalidCursorPosition(row, newpos.col);
         if (invalid) {
-            // console.log('Comparing ' + oldpos.col + ' to ' + newpos.col + ' ...');
-            // console.log("invalid position: " + invalid.left + ", " + invalid.right);
-            if (oldpos.col < newpos.col) {
+            // console.log('Comparing (' + oldpos.row + ',' + oldpos.col + ') to (' + newpos.row + ',' + newpos.col + ') ...');
+            // console.log("invalid position: " + invalid.left + ", " + invalid.right + "; half: " + invalid.half);
+        	if (oldpos.row != newpos.row) {
+        		newpos.col = invalid.right;
+        	} else if (oldpos.col < newpos.col) {
                 newpos.col = invalid.right;
             } else if (oldpos.col > newpos.col) {
                 newpos.col = invalid.left;
             } else {
                 // default
-                newpos.col = invalid.left;
+                newpos.col = invalid.right;
             }
         }
 
@@ -387,7 +389,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
                 // if the passed column is in the whitespace between the tab and the tab stop, it's an invalid position
                 if ((col > curCol) && (col < (curCol + toInsert))) {
-                    return { left: curCol, right: curCol + toInsert };
+                    return { left: curCol, right: curCol + toInsert, half: toInsert / 2 };
                 }
 
                 curCol += toInsert - 1;
