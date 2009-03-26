@@ -1035,7 +1035,7 @@ dojo.declare("bespin.editor.UI", null, {
                         ctx.fillRect(lx, y, sw, this.lineHeight);
                     }
 
-                    var showTabNib = bespin.get("settings").isSettingOn("tabshownib");
+                    var showTabNib = bespin.get("settings").isSettingOn("tabarrow");
                     if (showTabNib) {
                         // the center of the current character position's bounding rectangle
                         var cy = y + (this.lineHeight / 2);
