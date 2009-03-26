@@ -1035,26 +1035,29 @@ dojo.declare("bespin.editor.UI", null, {
                         ctx.fillRect(lx, y, sw, this.lineHeight);
                     }
 
-                    // the center of the current character position's bounding rectangle
-                    var cy = y + (this.lineHeight / 2);
-                    var cx = lx + (this.charWidth / 2);
+                    var showTabNib = bespin.get("settings").isSettingOn("tabshownib");
+                    if (showTabNib) {
+                        // the center of the current character position's bounding rectangle
+                        var cy = y + (this.lineHeight / 2);
+                        var cx = lx + (this.charWidth / 2);
 
-                    // the width and height of the triangle to draw representing the tab
-                    var tw = 4;
-                    var th = 6;
+                        // the width and height of the triangle to draw representing the tab
+                        var tw = 4;
+                        var th = 6;
 
-                    // the origin of the triangle
-                    var tx = parseInt(cx - (tw / 2));
-                    var ty = parseInt(cy - (th / 2));
+                        // the origin of the triangle
+                        var tx = parseInt(cx - (tw / 2));
+                        var ty = parseInt(cy - (th / 2));
 
-                    // draw the rectangle
-                    ctx.beginPath();
-                    ctx.fillStyle = this.editor.theme["plain"] || "white";
-                    ctx.moveTo(tx, ty);
-                    ctx.lineTo(tx, ty + th);
-                    ctx.lineTo(tx + tw, ty + parseInt(th / 2));
-                    ctx.closePath();
-                    ctx.fill();
+                        // draw the rectangle
+                        ctx.beginPath();
+                        ctx.fillStyle = this.editor.theme["plain"] || "white";
+                        ctx.moveTo(tx, ty);
+                        ctx.lineTo(tx, ty + th);
+                        ctx.lineTo(tx + tw, ty + parseInt(th / 2));
+                        ctx.closePath();
+                        ctx.fill();
+                    }
                 }
             }
 
