@@ -135,8 +135,10 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // item double clicked => load this file
         this.window.scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
+            if (!e.isVisible) return; // short circuit if the popup isn't up
+            
             var item = this.panel.list.selected;
-            if (!item) return;
+            if (!item) return; // short circuit if we don't have an item to click on
             
             // save the current file and load up the new one
             bespin.publish("editor:savefile", {});
