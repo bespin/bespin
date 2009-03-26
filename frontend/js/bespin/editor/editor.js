@@ -1340,6 +1340,17 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.closePath();
         ctx.fill();
     },
+    
+    // be gentle trying to get the tabstop from settings
+    getTabStop: function() {
+        var settings = bespin.get("settings");
+        var tabstop = 4; // default
+        if (dojo.isObject(settings)) {
+            var tabsize = parseInt(settings.get("tabsize"));
+            if (tabsize > 0) tabstop = tabsize;
+        }
+        return tabstop;
+    },
 
     // returns various metadata about the row, mainly concerning tab information
     getRowMetadata: function(row) {
@@ -1348,6 +1359,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         var rowArray = this.editor.model.getRowArray(row);
         var lineText = rowArray.join("");
+        var tabstop = this.getTabStop();
+
         meta.lineTextWithoutTabExpansion = lineText;
         meta.lineLengthWithoutTabExpansion = rowArray.length;
 
@@ -1357,7 +1370,7 @@ dojo.declare("bespin.editor.UI", null, {
             if (lineText.charCodeAt(ti) == 9) {
                 // since the current character is a tab, we potentially need to insert some blank space between the tab character
                 // and the next tab stop
-                var toInsert = this.editor.tabstop - (ti % this.editor.tabstop);
+                var toInsert = tabstop - (ti % tabstop);
 
                 // create a spacer string representing the space between the tab and the tabstop
                 var spacer = "";
@@ -1406,8 +1419,6 @@ dojo.declare("bespin.editor.UI", null, {
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
-        this.tabstop = bespin.get("settings").get("tabsize") || 4;       // tab stops every 4 columns
-
         this.opts = opts || {};
 
         this.container = dojo.byId(container);
