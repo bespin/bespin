@@ -76,7 +76,30 @@ bespin.editor.themes.coffee = {
     important: "#990000",
     sizes: "#990000",
     cssclass: "#BF9464",
-    cssid: "#46a8ed"
+    cssid: "#46a8ed",  
+       
+    // Codemirror additions (TODO: better color choice)
+    
+    atom: "#aa4444",
+    variable: "#00cccc",
+    variabledef: "#4422cc",
+    localvariable: "#cc2277",
+    property: "#66bb33", 
+    operator: "#88bbff",  
+    
+    // XML and HTML
+    processing: "#999999",
+    entity: "#AA2222",
+    error: "#FF0000",
+    text: "#00BB00",
+    
+    // PHP
+    "compile-time-constant": "#776088", 
+    "predefined-constant": "#33CC33",
+    "reserved-language-construct": "#00FF00", 
+    "predefined-function": "#22FF22", 
+    "predefined-class": "#22FF22"
+    
 };
 
 // ** Coffee Zebra Theme **
@@ -130,7 +153,10 @@ bespin.editor.themes.white = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d"
+    cssid: "#bdae9d",  
+    
+    // Codemirror additions
+    // TODO
 };
 
 // ** White Zebra Theme **
@@ -185,7 +211,10 @@ bespin.editor.themes.black = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d"
+    cssid: "#bdae9d",        
+    
+    // Codemirror additions
+    // TODO:
 };
 
 // ** Black Zebra Theme **

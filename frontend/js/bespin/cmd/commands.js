@@ -160,6 +160,18 @@ bespin.cmd.commands.add({
         }
 });
 
+// ** {{{Command: unset}}} **
+bespin.cmd.commands.add({
+        name: 'unset',
+        takes: ['key'],
+        preview: 'unset a setting entirely',
+        completeText: 'add a key for the setting to delete entirely',
+        execute: function(self, key) {
+            self.settings.unset(key);
+            self.showInfo("Unset the setting for " + key + ".");
+        }
+});
+
 // ** {{{Command: files (ls, list)}}} **
 bespin.cmd.commands.add({
     name: 'files',
