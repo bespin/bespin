@@ -1,9 +1,37 @@
+"""Manages the interaction with version control systems. UVC is responsible
+for handling the main interaction. This code manages the keychain which
+contains a user's credentials for the remote side of a VCS.
+
+The PyCrypto code used to encrypt the keychain is based on the example
+from here:
+
+http://www.codekoala.com/blog/2009/mar/16/aes-encryption-python-using-pycrypto/
+"""
+import os
+
 from path import path
 import simplejson
 from uvc import main
 from uvc.main import is_new_project_command
+from Crypto.Cipher import AES
 
-from bespin import model
+from bespin import model, config
+
+# the block size for the cipher object; must be 16, 24, or 32 for AES
+BLOCK_SIZE = 32
+
+# the character used for padding--with a block cipher such as AES, the value
+# you encrypt must be a multiple of BLOCK_SIZE in length.  This character is
+# used to ensure that your value is always a multiple of BLOCK_SIZE
+PADDING = '{'
+
+# one-liner to sufficiently pad the text to be encrypted
+pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
+
+# one-liners to encrypt/encode and decrypt/decode a string
+# encrypt with AES, encode with base64
+EncodeAES = lambda c, s: c.encrypt(pad(s)).encode("base64")
+DecodeAES = lambda c, e: c.decrypt(e.decode("base64")).rstrip(PADDING)
 
 def clone(user, args):
     """Clones or checks out the repository using the command provided."""
@@ -83,7 +111,11 @@ class KeyChain(object):
                 self._kcdata = {}
             else:
                 text = kcfile.bytes()
-                text = text.decode("base64")
+                
+                # create a cipher object using the random secret
+                cipher = AES.new(config.c.keychain_secret)
+                text = DecodeAES(cipher, text)
+                
                 self._kcdata = simplejson.loads(text)
         return self._kcdata
     
@@ -98,7 +130,11 @@ class KeyChain(object):
         if self._kcdata is None:
             return
         newdata = simplejson.dumps(self.kcdata)
-        newdata = newdata.encode("base64")
+        
+        # create a cipher object using the random secret
+        cipher = AES.new(config.c.keychain_secret)
+        newdata = EncodeAES(cipher, newdata)
+        
         self.kcfile.write_bytes(newdata)
         
     def set_ssh_for_project(self, project, ssh_key_name):

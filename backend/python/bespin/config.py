@@ -49,6 +49,7 @@ c = Bunch()
 c.dburl = None
 c.secret = "This is the phrase that is used for secret stuff."
 c.pw_secret = "This phrase encrypts passwords."
+c.keychain_secret = "This phrase is for keychain encryption."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
@@ -98,6 +99,8 @@ def activate_profile():
     c.fsroot = path(c.fsroot)
     if not c.fsroot.exists:
         c.fsroot.makedirs()
+    from bespin import vcs
+    c.keychain_secret = vcs.pad(c.keychain_secret[:31])
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
