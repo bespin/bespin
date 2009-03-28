@@ -423,17 +423,19 @@ class UserManager(object):
 
 
 class Directory(object):
-    def __init__(self, name):
+    def __init__(self, project, name):
         if "../" in name:
             raise BadValue("Relative directories are not allowed")
         
         # chop off any leading slashes
         while name and name.startswith("/"):
             name = name[1:]
-
+        
         if not name.endswith("/"):
             name += "/"
         self.name = name
+        
+        self.location = project.location / name
     
     @property
     def short_name(self):
@@ -747,7 +749,7 @@ class Project(object):
         result = []
         for name in names:
             if name.isdir():
-                result.append(Directory(self.location.relpathto(name)))
+                result.append(Directory(self, self.location.relpathto(name)))
             else:
                 result.append(File(self, self.location.relpathto(name)))
         
@@ -779,12 +781,13 @@ class Project(object):
         If the path is empty, the project will be deleted."""
         # deleting the project?
         if not path or path.endswith("/"):
+            dir_obj = Directory(self, path)
             if not path:
                 location = self.location
                 if not location.exists():
                     raise FileNotFound("Project %s does not exist" % (self.name))
             else:
-                location = self.location / path
+                location = dir_obj.location
                 if not location.exists():
                     raise FileNotFound("Directory %s in project %s does not exist" %
                             (path, self.name))
