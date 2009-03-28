@@ -64,7 +64,7 @@ class KeyChain(object):
     
     def __init__(self, user, password):
         self.user = user
-        self.password = password
+        self.password = pad(password[:31])
         self._kcdata = None
     
     def add_ssh_identity(self, name, key):
@@ -113,7 +113,7 @@ class KeyChain(object):
                 text = kcfile.bytes()
                 
                 # create a cipher object using the random secret
-                cipher = AES.new(config.c.keychain_secret)
+                cipher = AES.new(self.password)
                 text = DecodeAES(cipher, text)
                 
                 self._kcdata = simplejson.loads(text)
@@ -132,7 +132,7 @@ class KeyChain(object):
         newdata = simplejson.dumps(self.kcdata)
         
         # create a cipher object using the random secret
-        cipher = AES.new(config.c.keychain_secret)
+        cipher = AES.new(self.password)
         newdata = EncodeAES(cipher, newdata)
         
         self.kcfile.write_bytes(newdata)
