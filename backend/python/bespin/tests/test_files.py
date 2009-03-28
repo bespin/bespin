@@ -593,7 +593,20 @@ def _run_search_tests(search_func):
         "foo_some_other",
         "some_deeply_nested_file_here"
     ]
-    
+
+def test_project_rename_should_be_secure():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    p = path('/tmp/foo')
+    try:
+        try:
+            bigmac.rename("/tmp/foo")
+            assert not p.exists()
+        except model.BadValue:
+            pass
+    finally:
+        if p.exists():
+            p.rmdir()
 
 # -------
 # Web tests

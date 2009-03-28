@@ -929,6 +929,7 @@ class Project(object):
     def rename(self, new_name):
         """Renames this project to new_name, assuming there is
         not already another project with that name."""
+        _check_identifiers("Project name", new_name)
         old_location = self.location
         new_location = self.location.parent / new_name
         if new_location.exists():
