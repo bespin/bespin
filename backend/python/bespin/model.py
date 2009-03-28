@@ -685,6 +685,8 @@ class Project(object):
         """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
+        if "/" in template or "." in template:
+            raise BadValue("Template names cannot include '/' or '.'")
         found = False
         for p in config.c.template_path:
             source_dir = path_obj(p) / template

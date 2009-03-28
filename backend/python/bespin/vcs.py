@@ -89,7 +89,6 @@ class KeyChain(object):
             pass
         
         projects = kcdata.setdefault("projects", {})
-        print "projects: ", projects
         for pname, project in list(projects.items()):
             if project['type'] == 'ssh' and \
                 project['ssh_key'] == ssh_key_name:
