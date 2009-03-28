@@ -463,6 +463,23 @@ def test_bad_files_and_directories():
     assert not foopath.exists()
     location = bigmac.location
     assert (location / "tmp" / "foo").exists()
+
+def test_bad_directory_names():
+    _init_data()
+    p = path("/tmp/onlydirs/")
+    assert not p.exists()
+    p.makedirs()
+    try:
+        (p / "dir2").mkdir()
+        (p / "dir3").mkdir()
+        bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+        try:
+            files = bigmac.list_files(p)
+            assert False, "Expected exception for absolute dir"
+        except model.BadValue:
+            pass
+    finally:
+        p.rmtree()
     
 def _setup_search_data():
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)

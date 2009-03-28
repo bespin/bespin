@@ -424,6 +424,13 @@ class UserManager(object):
 
 class Directory(object):
     def __init__(self, name):
+        if "../" in name:
+            raise BadValue("Relative directories are not allowed")
+        
+        # chop off any leading slashes
+        while name and name.startswith("/"):
+            name = name[1:]
+
         if not name.endswith("/"):
             name += "/"
         self.name = name
