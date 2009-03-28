@@ -303,8 +303,8 @@ class GroupSharing(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
 
-bad_characters = "<>| '\"/"
-invalid_chars = re.compile(r'[%s]' % bad_characters)
+bad_characters = r'\W'
+invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
     if invalid_chars.search(value):
