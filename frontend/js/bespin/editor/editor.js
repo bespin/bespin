@@ -235,7 +235,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         this.editor = editor;
         this.actions = editor.ui.actions;
         this.skipKeypress = false;
-
+        this.handleKeys = true;
         this.defaultKeyMap = {};
 
         // Allow for multiple key maps to be defined
