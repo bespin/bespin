@@ -67,7 +67,9 @@ dojo.declare("bespin.client.settings.Core", null, {
             'fontsize': '10',
             'autocomplete': 'off',
             'collaborate': 'off',
-            'syntax': 'auto'
+            'language': 'auto',
+            'syntaxengine': 'simple',
+            'tabarrow': 'on'
         };
     },
 
@@ -239,7 +241,7 @@ dojo.declare("bespin.client.settings.Server", null, {
 
     unset: function(key) {
         delete this.settings[key];
-        this.unsetSetting(key);
+        this.server.unsetSetting(key);
     }
 });
 
@@ -375,24 +377,24 @@ dojo.declare("bespin.client.settings.Events", null, {
             var type = split[split.length - 1]; 
 
             if (type) {
-                bespin.publish("settings:syntax", { language: type });
+                bespin.publish("settings:language", { language: type });
             }
         });
 
-        // ** {{{ Event: settings:set:syntax }}} **
+        // ** {{{ Event: settings:set:language }}} **
         // 
         // When the syntax setting is changed, tell the syntax system to change
-        bespin.subscribe("settings:set:syntax", function(event) {
-            bespin.publish("settings:syntax", { language: event.value, fromCommand: true });
+        bespin.subscribe("settings:set:language", function(event) {
+            bespin.publish("settings:language", { language: event.value, fromCommand: true });
         });
 
-        // ** {{{ Event: settings:syntax }}} **
+        // ** {{{ Event: settings:language }}} **
         // 
-        // Given a new syntax command, change the editor.language        
-        bespin.subscribe("settings:syntax", function(event) {
+        // Given a new language command, change the editor.language        
+        bespin.subscribe("settings:language", function(event) {
             var language = event.language;
             var fromCommand = event.fromCommand;
-            var syntaxSetting = settings.get('syntax') || "off";
+            var languageSetting = settings.get('language') || "off";
 
             if (language == editor.language) return; // already set to be that language
 
@@ -400,9 +402,9 @@ dojo.declare("bespin.client.settings.Events", null, {
                 var split = window.location.hash.split('.');
                 var type = split[split.length - 1];                
                 if (type) editor.language = type;
-            } else if (bespin.util.include(['auto', 'on'], syntaxSetting) || fromCommand) {
+            } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
-            } else if (syntaxSetting == 'off') {
+            } else if (languageSetting == 'off') {
                 editor.language = 'off';
             }
         });

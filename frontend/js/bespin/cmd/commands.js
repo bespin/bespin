@@ -160,6 +160,18 @@ bespin.cmd.commands.add({
         }
 });
 
+// ** {{{Command: unset}}} **
+bespin.cmd.commands.add({
+        name: 'unset',
+        takes: ['key'],
+        preview: 'unset a setting entirely',
+        completeText: 'add a key for the setting to delete entirely',
+        execute: function(self, key) {
+            self.settings.unset(key);
+            self.showInfo("Unset the setting for " + key + ".");
+        }
+});
+
 // ** {{{Command: files (ls, list)}}} **
 bespin.cmd.commands.add({
     name: 'files',
@@ -433,11 +445,13 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'rm',
     aliases: ['remove', 'del'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'remove the file',
-    completeText: 'add the filename to remove',
-    execute: function(self, filename) {
-        var project = bespin.get('editSession').project;
+    completeText: 'add the filename to remove, and optionally a specific project at the end',
+    execute: function(self, args) {
+        var project = args.project || bespin.get('editSession').project;
+        var filename = args.filename;
+        
         if (!project) {
             self.showInfo("rm only works with the project is set.");
             return;            

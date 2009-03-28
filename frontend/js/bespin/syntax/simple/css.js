@@ -26,10 +26,10 @@
 //
 // You can guess what this does. ;-)
 
-dojo.provide("bespin.syntax.css");
+dojo.provide("bespin.syntax.simple.css");
 
 
-// ** {{{ bespin.syntax.CSSSyntaxEngine }}} **
+// ** {{{ bespin.syntax.simple.CSS }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
 // does the right thing for key/value pairs, #000000, and the like.
@@ -50,7 +50,7 @@ bespin.syntax.Constants = {
     COLOR_OR_ID: "color_or_id"
 };
 
-dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
+dojo.declare("bespin.syntax.simple.CSS", null, {
     keywords: ['ascent', 'azimuth', 'background-attachment', 'background-color', 'background-image', 'background-position',
         'background-repeat', 'background', 'baseline', 'bbox', 'border-collapse', 'border-color', 'border-spacing', 'border-style',
         'border-top', 'border-right', 'border-bottom', 'border-left', 'border-top-color', 'border-right-color', 'border-bottom-color',
@@ -264,4 +264,4 @@ dojo.declare("bespin.syntax.CSSSyntaxEngine", null, {
 });
 
 // Register this puppy
-bespin.syntax.EngineResolver.register(new bespin.syntax.CSSSyntaxEngine(), ['css']);
+bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.CSS(), ['css']);

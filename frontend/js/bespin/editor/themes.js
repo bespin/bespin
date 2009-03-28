@@ -35,6 +35,7 @@ bespin.editor.themes.coffee = {
     lineNumberColor: "#e5c138",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#2A211C",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#526DA5",
@@ -55,6 +56,7 @@ bespin.editor.themes.coffee = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#392A25",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -74,7 +76,30 @@ bespin.editor.themes.coffee = {
     important: "#990000",
     sizes: "#990000",
     cssclass: "#BF9464",
-    cssid: "#46a8ed"
+    cssid: "#46a8ed",  
+       
+    // Codemirror additions (TODO: better color choice)
+    
+    atom: "#aa4444",
+    variable: "#00cccc",
+    variabledef: "#4422cc",
+    localvariable: "#cc2277",
+    property: "#66bb33", 
+    operator: "#88bbff",  
+    
+    // XML and HTML
+    processing: "#999999",
+    entity: "#AA2222",
+    error: "#FF0000",
+    text: "#00BB00",
+    
+    // PHP
+    "compile-time-constant": "#776088", 
+    "predefined-constant": "#33CC33",
+    "reserved-language-construct": "#00FF00", 
+    "predefined-function": "#22FF22", 
+    "predefined-class": "#22FF22"
+    
 };
 
 // ** Coffee Zebra Theme **
@@ -89,6 +114,7 @@ bespin.editor.themes.white = {
     lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#FFFFFF",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "#000000",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#4d97ff",
@@ -109,6 +135,7 @@ bespin.editor.themes.white = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -126,7 +153,10 @@ bespin.editor.themes.white = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d"
+    cssid: "#bdae9d",  
+    
+    // Codemirror additions
+    // TODO
 };
 
 // ** White Zebra Theme **
@@ -141,6 +171,7 @@ bespin.editor.themes.black = {
     lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#000000", //"#111111",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#243b75",
@@ -161,6 +192,7 @@ bespin.editor.themes.black = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -179,7 +211,10 @@ bespin.editor.themes.black = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d"
+    cssid: "#bdae9d",        
+    
+    // Codemirror additions
+    // TODO:
 };
 
 // ** Black Zebra Theme **

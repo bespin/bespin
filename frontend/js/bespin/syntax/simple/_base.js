@@ -22,27 +22,19 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Syntax Highlighting =
+// = Simple Syntax Highlighting =
 //
-// Module for dealing with the syntax highlighting.
-//
-// The core model talks to specific engines to do the work and then packages it up to send to the editor.
+// Not prepared for running in a worker thread.
+// Woul be more overhead than benefit for auch a simple highlighter
 
-dojo.provide("bespin.syntax.syntax");
+dojo.provide("bespin.syntax.simple._base");
 
 
-// ** {{{ bespin.syntax.Model }}} **
+// ** {{{ bespin.syntax.simple.Model }}} **
 //
 // Tracks syntax highlighting data on a per-line basis.
-
-dojo.declare("bespin.syntax.Model", null, {
-    constructor: function(editor) {
-        this.editor = editor;
-        this.lineCache = [];
-        this.lineMetaInfo = [];
-        this.syntaxType = "";
-    },
-
+dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
+    lineMetaInfo:  [],
     // ** {{{ Meta Info }}} **
     //
     // We store meta info on the lines, such as the fact that it is in a multiline comment
@@ -54,51 +46,10 @@ dojo.declare("bespin.syntax.Model", null, {
         return this.lineMetaInfo[lineNumber];
     },
 
-    // ** {{{ Caching }}} **
-    //
-    // Optionally, keep a cache of the highlighted model
-    invalidateCache: function(lineNumber) {
-        delete this.lineCache[lineNumber];
-    },
-
-    invalidateEntireCache: function() {
-        this.lineCache = [];
-    },
-
-    addToCache: function(lineNumber, line) {
-        this.lineCache[lineNumber] = line;
-    },
-
-    getFromCache: function(lineNumber) {
-        return this.lineCache[lineNumber];
-    },
-
-    mergeSyntaxResults: function(regions) {
-        // TO BE COMPLETED
-        // This function has to take the regions and take sub pieces and tie them into the full line
-        // For example, imagine an HTML engine that sees <script>....</script>
-        // It will pass .... into the JavaScript engine and take those results with a base of 0 and return the real location
-        var base = 0;
-        for (var i = 0; i < regions.length; i++) {
-            var region = region[i];
-            //base += region.
-        }
-    },
-
-    // -- Main API
-    // ** {{{ getSyntaxStyles }}} **
-    //
-    // This is the main API.
-    //
-    // Given the line number and syntax type (e.g. css, js, html) hunt down the engine, ask it to syntax highlight, and return the regions
-    getSyntaxStyles: function(lineText, lineNumber, syntaxType) {
-        if (this.syntaxType != syntaxType) {
-            this.invalidateEntireCache();
-            this.engine = bespin.syntax.EngineResolver.resolve(syntaxType);
-            this.syntaxType = syntaxType;
-        } else { // Possible for caching to be real here
-            // var cached = this.getFromCache(lineNumber);
-            // if (cached) return cached;
+    getSyntaxStylesPerLine: function(lineText, lineNumber, language) {
+        if (this.language != language) {
+            this.engine = bespin.syntax.simple.Resolver.resolve(language);
+            this.language = language;
         }
 
         // Get the row contents as one string
@@ -112,14 +63,14 @@ dojo.declare("bespin.syntax.Model", null, {
         // we have the ability to have subtypes within the main parser
         // E.g. HTML can have JavaScript or CSS within
         if (typeof this.engine['innertypes'] == "function") {
-            var syntaxTypes = this.engine.innertypes(lineText);
+            var languages = this.engine.innertypes(lineText);
 
-            for (var i = 0; i < syntaxTypes.length; i++) {
-                var type = syntaxTypes[i];
+            for (var i = 0; i < languages.length; i++) {
+                var type = languages[i];
                 meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
                 var pieceRegions = [];
-                var fromResolver = bespin.syntax.EngineResolver.highlight(type.type, lineText.substring(type.start, type.stop), meta);
-                if (fromResolver.meta && (i == syntaxTypes.length - 1) ){
+                var fromResolver = bespin.syntax.simple.Resolver.highlight(type.type, lineText.substring(type.start, type.stop), meta);
+                if (fromResolver.meta && (i == languages.length - 1) ){
                     this.setLineMetaInfo(lineNumber, fromResolver.meta);
                 }
                 pieceRegions.push(fromResolver);
@@ -132,18 +83,15 @@ dojo.declare("bespin.syntax.Model", null, {
             syntaxResult.regions.push(result.regions);
         }
 
-        this.addToCache(lineNumber, syntaxResult);
         return syntaxResult;
     }
 });
 
-// ** {{{ bespin.Ssntax.EngineResolver }}} **
-//
-// The resolver holds the engines that are available to do the actual syntax highlighting
-//
-// It holds a default engine that returns the line back in the clear
 
-bespin.syntax.EngineResolver = function() {
+// ** {{{ bespin.syntax.simple.Resolver }}} **
+//
+// The resolver holds the engines per language that are available to do the actual syntax highlighting
+bespin.syntax.simple.Resolver = new function() {
   var engines = {};
 
   // ** {{{ NoopSyntaxEngine }}} **
@@ -165,14 +113,14 @@ bespin.syntax.EngineResolver = function() {
       // ** {{{ highlight }}} **
       //
       // A high level highlight function that uses the {{{type}}} to get the engine, and asks it to highlight
-      highlight: function(type, line, meta) {
-          this.resolve(type).highlight(line, meta);
+      highlight: function(type, line, meta, lineNumber) {
+          this.resolve(type).highlight(line, meta, lineNumber);
       },
 
       // ** {{{ register }}} **
       //
       // Engines register themselves,
-      // e.g. {{{Bespin.Syntax.EngineResolver.register(new Bespin.Syntax.CSSSyntaxEngine(), ['css']);}}}
+      // e.g. {{{bespin.syntax.EngineResolver.register(new bespin.syntax.CSSSyntaxEngine(), ['css']);}}}
       register: function(syntaxEngine, types) {
           for (var i = 0; i < types.length; i++) {
               engines[types[i]] = syntaxEngine;

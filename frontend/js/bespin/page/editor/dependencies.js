@@ -62,11 +62,19 @@ dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
 dojo.require("bespin.editor.quickopen");
 
-dojo.require("bespin.syntax.syntax");
-dojo.require("bespin.syntax.javascript");
-dojo.require("bespin.syntax.css");
-dojo.require("bespin.syntax.html");
-dojo.require("bespin.syntax.php");
+dojo.require("bespin.syntax.base"); 
+dojo.require("bespin.syntax.simple._base"); 
+dojo.require("bespin.syntax.simple.javascript");
+dojo.require("bespin.syntax.simple.css");
+dojo.require("bespin.syntax.simple.html");
+dojo.require("bespin.syntax.simple.php");
+dojo.require("bespin.syntax.codemirror._base");
+dojo.require("bespin.syntax.codemirror.javascript");
+dojo.require("bespin.syntax.codemirror.css");
+dojo.require("bespin.syntax.codemirror.xml");
+dojo.require("bespin.syntax.codemirror.html"); 
+dojo.require("bespin.syntax.codemirror.php_base");
+dojo.require("bespin.syntax.codemirror.php");
 
 dojo.require("bespin.worker.worker");
 
@@ -77,4 +85,3 @@ dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
 
 dojo.require("bespin.page.editor.init");
-
