@@ -581,5 +581,12 @@ dojo.declare("bespin.client.Server", null, {
         this.request('POST', '/vcs/' + project + '/',
                      dojo.toJson(command_obj),
                      opts || {});
+    },
+    
+    // ** {{{ setauth() }}}
+    // Sets authentication for a project
+    setauth: function(project, form, opts) {
+        this.request('POST', '/keychain/setauth/' + project + '/',
+                    dojo.formToQuery(form), opts || {});
     }
 });

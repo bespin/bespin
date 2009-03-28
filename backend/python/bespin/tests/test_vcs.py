@@ -234,7 +234,7 @@ def test_keychain_refer_to_nonexistent_identity():
 def test_vcs_auth_set_password_on_web():
     _init_data()
     bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
-    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar", 
+    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar", 
                             type="password", username="macG", 
                             password="coolpass"))
     kc = vcs.KeyChain(macgyver, "foobar")
@@ -246,7 +246,7 @@ def test_vcs_auth_set_password_on_web():
 def test_vcs_auth_set_ssh_newkey_on_web():
     _init_data()
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
-    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar",
+    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar",
                     type="ssh", name="SSH ID", ssh_key=identity))
     
     kc = vcs.KeyChain(macgyver, "foobar")
@@ -266,7 +266,7 @@ def test_vcs_auth_set_ssh_key_on_web():
     assert credentials is None
     kc.save()
     
-    resp = app.post("/keychain/setauth/bigmac", dict(kcpass="foobar",
+    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar",
                     type="ssh", name="SSH ID"))
 
     kc = vcs.KeyChain(macgyver, "foobar")

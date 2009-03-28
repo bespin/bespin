@@ -24,6 +24,8 @@
 
 dojo.provide("bespin.util.webpieces");
 
+dojo.require("dijit._base.place");
+
 // = Utility functions for Web snippets =
 //
 // There are little widgets and components that we want to reuse

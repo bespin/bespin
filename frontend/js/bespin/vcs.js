@@ -22,7 +22,45 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.cmd.commands");
+dojo.provide("bespin.vcs");
+
+dojo.require("bespin.util.webpieces");
+dojo.require("bespin.cmd.commands");
+
+bespin.vcs.setProjectPassword = function(project) {
+    var el = dojo.byId('centerpopup');
+    
+    el.innerHTML = '<form method="POST" id="vcsauth">'
+            + '<table><tbody><tr><td>Keychain password</td><td>'
+            + '<input type="password" name="kcpass"></td></tr>'
+            + '<tr><td>Username</td><td><input type="text" name="username">'
+            + '</td></tr><tr><td>Password</td><td>'
+            + '<input type="password" name="password">'
+            + '</td></tr><tr><td>&nbsp;</td><td>'
+            + '<input type="hidden" name="type" value="password">'
+            + '<input type="button" id="vcsauthsubmit" value="Save">'
+            + '<input type="button" id="vcsauthcancel" value="Cancel">'
+            + '</td></tr></tbody></table></form>';
+    
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+    });
+    
+    dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+        bespin.get("server").setauth(project, "vcsauth", 
+            {
+                call: function() {
+                    bespin.publish("message", {msg: "Password saved for " + project});
+                },
+                onFailure: function(xhr) {
+                    bespin.publish("message", {msg: "Password save failed: " + xhr.responseText});
+                }
+            })
+    });
+    
+    bespin.util.webpieces.showCenterPopup(el);
+}
 
 // = Commands =
 // Version Control System-related commands
@@ -129,9 +167,25 @@ bespin.cmd.commands.add({
     }                                
 });
 
-bespin.cmd.command.add({
-    name: "auth",
+bespin.cmd.commands.add({
+    name: "authset",
     takes: ['type', 'project'],
     preview: "Setup authentication for the given project<br>Type can be 'ssh' or 'password'",
-    
-})
+    execute: function(self, args) {
+        var project = args.project;
+        if (!project) {
+            bespin.withComponent('editSession', function(editSession) {
+                project = editSession.project;
+            });
+        }
+        
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+
+        if (args.type == "password") {
+            bespin.vcs.setProjectPassword(project);
+        }
+    }
+});

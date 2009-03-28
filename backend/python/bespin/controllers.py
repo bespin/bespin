@@ -644,7 +644,7 @@ def vcs_command(request, response):
     response.body = simplejson.dumps({'output' : output})
     return response()
 
-@expose(r'^/keychain/setauth/(?P<project_name>.*)$', 'POST')
+@expose(r'^/keychain/setauth/(?P<project_name>.*)/$', 'POST')
 def keychain_setauth(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
