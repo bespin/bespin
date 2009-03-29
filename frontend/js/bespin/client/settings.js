@@ -68,6 +68,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'autocomplete': 'off',
             'collaborate': 'off',
             'language': 'auto',
+            'strictlines': 'on',
             'syntaxengine': 'simple',
             'tabarrow': 'on'
         };
@@ -147,10 +148,8 @@ dojo.declare("bespin.client.settings.Core", null, {
 dojo.declare("bespin.client.settings.InMemory", null, {
     constructor: function(parent) {
         this.parent = parent;
-
-        this.settings = this.parent.defaultSettings();
-
-        bespin.publish("settings:loaded");
+        this.settings = this.parent.defaultSettings(); 
+        bespin.publish("settings:loaded"); 
     },
 
     set: function(key, value) {
@@ -218,6 +217,7 @@ dojo.declare("bespin.client.settings.Server", null, {
     constructor: function(parent) {
         this.parent = parent;
         this.server = bespin.get('server');
+        this.settings = this.parent.defaultSettings(); // seed defaults just for now!
 
         // TODO: seed the settings  
         this.server.listSettings(dojo.hitch(this, function(settings) {
@@ -390,11 +390,11 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         // ** {{{ Event: settings:language }}} **
         // 
-        // Given a new language command, change the editor.language        
+        // Given a new language command, change the editor.language
         bespin.subscribe("settings:language", function(event) {
             var language = event.language;
             var fromCommand = event.fromCommand;
-            var languageSetting = settings.get('language') || "off";
+            var languageSetting = settings.get('language') || "auto";
 
             if (language == editor.language) return; // already set to be that language
 
@@ -556,5 +556,14 @@ dojo.declare("bespin.client.settings.Events", null, {
                 value: settings.get('fontsize')
             });
         });        
+
+        // ** {{{ Event: settings:init }}} **
+        // 
+        // Setup the syntax engine if set
+        bespin.subscribe("settings:init", function(event) {
+            bespin.publish("settings:set:syntaxengine", {
+                value: settings.get('syntaxengine')
+            });
+        });
     }
 });
