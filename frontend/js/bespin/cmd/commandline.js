@@ -269,7 +269,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 // Handle key bindings for the command line
 
 dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
-    constructor: function(cl) {        
+    constructor: function(cl) {
+        var settings = bespin.get("settings");
+                
         // -- Tie to the commandLine element itself     
         dojo.connect(cl.commandLine, "onfocus", cl, function() {
             bespin.publish("cmdline:focus");
@@ -288,7 +290,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
-                    var isAutoComplete = bespin.get('settings').isSettingOn('autocomplete');
+                    var isAutoComplete = (settings && settings.isSettingOn('autocomplete'));
                     if (isAutoComplete && completions.length == 1) { // if only one just set the value
                         command = this.commands[commandString] || this.commands[this.aliases[commandString]];
 

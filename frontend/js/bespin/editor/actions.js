@@ -153,7 +153,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertTab: function(args) {
-        var settings = bespin.get('settings');
+        var settings = bespin.get("settings");
         
         if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
@@ -164,7 +164,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var tabsize = args.tabsize;
 
         if (!tab || !tabsize) {
-            var realTabs = (settings.get('tabmode') == 'tabs');
+            var realTabs = (settings && (settings.get('tabmode') == 'tabs'));
             if (realTabs) {
                 // do something tabby
                 tab = "\t";
@@ -188,7 +188,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // linetext = linetext.replace(/\t/g, "TAB");
         // console.log(linetext);
 
-        this.repaint(args.modelPos.row);
+        this.repaint(args.pos.row);
         
         // undo/redo
         args.action = "insertTab";
@@ -231,6 +231,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // TODO: this is likely now broken
     indent: function(args) {
+        var settings = bespin.get("settings");
         var historyIndent = args.historyIndent || false;    
         if (!historyIndent) {
             var newHistoryIndent = [];
@@ -239,7 +240,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var fakeSelection = args.fakeSelection || false;
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var realTabs = (bespin.get('settings').get('tabmode') == 'tabs');
+        var realTabs = (settings && (settings.get('tabmode') == 'tabs'));
         var tabsize = this.editor.getTabSize();
 
         if (!realTabs) {
@@ -424,11 +425,12 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.selection) {
             this.deleteSelectionAndInsertChunk(args);
         } else {
-            var oldPos = bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition());
-            var pos = this.model.insertChunk(this.editor.cursorManager.getModelPosition(oldPos), args.chunk);
+            var pos = bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition());
+            var startPosRow = pos.row;
+            pos = this.model.insertChunk(this.editor.cursorManager.getModelPosition(pos), args.chunk);
             pos = this.editor.cursorManager.getCursorPosition(pos);
             this.editor.cursorManager.moveCursor(pos);
-            this.repaint(oldPos.row);
+            this.repaint(startPosRow);
 
             // undo/redo
             args.action = "insertChunk";
@@ -571,7 +573,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     newline: function(args) {
-        var autoindentAmount = bespin.get('settings').get('autoindent') ? bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row)) : 0;
+        var settings = bespin.get("settings");
+        var autoindentAmount = (settings && settings.get('autoindent')) ? bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row)) : 0;
         this.model.splitRow(this.editor.cursorManager.getModelPosition(args.pos), autoindentAmount);
         this.editor.cursorManager.moveCursor({ row: this.editor.cursorManager.getCursorPosition().row + 1, col: autoindentAmount });
 

@@ -51,7 +51,6 @@
 
 dojo.provide("bespin.syntax.codemirror._base");
 
-
 // ** {{{ bespin.syntax.codemirror.Model }}} **
 //
 // Tracks syntax highlighting data on a per-visible-lines basis.
@@ -543,4 +542,12 @@ dojo.declare("bespin.syntax.codemirror.Base", null, {
 
         return lineInfos;
     }
-});
+}); 
+
+// -- Add core syntax files here, can load others later
+dojo.require("bespin.syntax.codemirror.javascript");
+dojo.require("bespin.syntax.codemirror.css");
+dojo.require("bespin.syntax.codemirror.xml");
+dojo.require("bespin.syntax.codemirror.html");
+dojo.require("bespin.syntax.codemirror.php_base");
+dojo.require("bespin.syntax.codemirror.php");

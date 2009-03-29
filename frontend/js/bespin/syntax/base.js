@@ -111,10 +111,10 @@ bespin.syntax.Resolver = (function() {
                 }
                 if (engine.worker) {
                     model = new bespin.worker.WorkerFacade(bespin.syntax[name].Model());
-                    dojo.mixin(model, { workerEnabled: true });
+                    model.workerEnabled = true;
                 } else {
                     model = new bespin.syntax[name].Model();
-                    dojo.mixin(model, { workerEnabled: false });
+                    model.workerEnabled = false;
                 }
             } else {
                 console.log("no such engine: ", name);

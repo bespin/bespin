@@ -369,8 +369,22 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 // Holds the UI. The editor itself, the syntax highlighter, the actions, and more
 dojo.declare("bespin.editor.UI", null, {
     constructor: function(editor) {
-        this.editor = editor;
-        this.syntaxModel = bespin.syntax.Resolver.setEngine("simple").getModel();
+        this.editor = editor; 
+
+        var settings = bespin.get("settings");
+        var syntaxEngine = (settings) ? settings.get("syntaxengine") : "simple";
+        this.syntaxModel = bespin.syntax.Resolver.setEngine(syntaxEngine).getModel();
+        bespin.subscribe("settings:set:syntaxengine", dojo.hitch(this, function(evt){
+            var name = evt.value || "simple";
+
+            dojo.require("bespin.syntax." + name + "._base");
+
+            this.syntaxModel = bespin.syntax.Resolver.setEngine(name).getModel();
+        }));
+        
+        this.selectionHelper = new bespin.editor.SelectionHelper(editor);
+        this.actions = new bespin.editor.Actions(editor);
+
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
 
@@ -456,17 +470,11 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel"); 
               
         setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
-
-        bespin.subscribe("settings:loaded", dojo.hitch(this, function(evt){
-           this.syntaxModel = bespin.syntax.Resolver.setEngine(bespin.get("settings").get("syntaxengine") || "simple").getModel();
-        }));
-        bespin.subscribe("settings:set:syntaxengine", dojo.hitch(this, function(evt){
-            this.syntaxModel = bespin.syntax.Resolver.setEngine(evt.value).getModel();
-        }));
     },
 
     // col is -1 if user clicked in gutter; clicking below last line maps to last line
     convertClientPointToCursorPoint: function(pos) {
+        var settings = bespin.get("settings");
         var x, y;
 
         if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
@@ -483,7 +491,7 @@ dojo.declare("bespin.editor.UI", null, {
             x = Math.floor(tx / this.charWidth);
             
             // With strictlines turned on, don't select past the end of the line
-            if (bespin.get('settings').isSettingOn('strictlines')) {
+            if ((settings && settings.isSettingOn('strictlines'))) {
                 var maxcol = this.getRowScreenLength(y);
 
                 if (x >= maxcol) {
@@ -954,6 +962,7 @@ dojo.declare("bespin.editor.UI", null, {
             var ri; // counter variable used for the same loop
             var regionlen;  // length of the text in the region; used in the same loop
             var tx, tw;
+            var settings = bespin.get("settings");
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
                 x = this.GUTTER_WIDTH;
 
@@ -979,9 +988,8 @@ dojo.declare("bespin.editor.UI", null, {
                 }
 
                 // if highlight line is on, paint the highlight color
-                var settings = bespin.get('settings');
-                if ( (dojo.isObject(settings) && settings.isSettingOn('highlightline')) &&
-                     (currentLine == ed.cursorManager.getCursorPosition().row) ) {
+                if ((settings && settings.isSettingOn('highlightline')) &&
+                        (currentLine == ed.cursorManager.getCursorPosition().row)) {
                     ctx.fillStyle = theme.highlightCurrentLineColor;
                     ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
                 // if not on highlight, see if we need to paint the zebra
@@ -1037,14 +1045,14 @@ dojo.declare("bespin.editor.UI", null, {
                         var lx = x + (expansion.start * this.charWidth);
 
                         // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
-                        var showTabSpace = bespin.get("settings").isSettingOn("tabshowspace");
+                        var showTabSpace = settings && settings.isSettingOn("tabshowspace");
                         if (showTabSpace) {
                             var sw = (expansion.end - expansion.start) * this.charWidth;
                             ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
                             ctx.fillRect(lx, y, sw, this.lineHeight);
                         }
 
-                        var showTabNib = bespin.get("settings").isSettingOn("tabarrow");
+                        var showTabNib = settings && settings.isSettingOn("tabarrow");
                         if (showTabNib) {
                             // the center of the current character position's bounding rectangle
                             var cy = y + (this.lineHeight / 2);
@@ -1300,7 +1308,7 @@ dojo.declare("bespin.editor.UI", null, {
             } else {
                 console.error("arrgh, invalid syntax results !!!");
             }
-        }
+        } 
     },
 
     paintScrollbar: function(ctx, scrollbar) {
@@ -1462,7 +1470,7 @@ dojo.declare("bespin.editor.API", null, {
 
         dojo.byId(container).innerHTML = '<canvas id="canvas" moz-opaque="true" tabindex="-1"></canvas>';
         this.canvas = dojo.byId(container).firstChild;
-        while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;  
+        while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;
 
         this.ui = new bespin.editor.UI(this);  
         this.theme = bespin.editor.themes['default'];
@@ -1534,7 +1542,7 @@ dojo.declare("bespin.editor.API", null, {
     getTabSize: function() {
         var settings = bespin.get("settings");
         var size = bespin.defaultTabSize; // default
-        if (dojo.isObject(settings)) {
+        if (settings) {
             var tabsize = parseInt(settings.get("tabsize"));
             if (tabsize > 0) size = tabsize;
         }

@@ -314,7 +314,7 @@ bespin.subscribe("project:rename", function(event) {
     if ( (!currentProject || !newProject) || (currentProject == newProject) ) return;
     
     bespin.get('server').renameProject(currentProject, newProject, {
-        call: function() {
+        onSuccess: function() {
             bespin.publish("project:set", { project: newProject });
         },
         onFailure: function(xhr) {
@@ -331,7 +331,7 @@ bespin.subscribe("project:import", function(event) {
     var project = event.project;
     var url = event.url;
 
-    bespin.get('server').importProject(project, url, { call: function() {
+    bespin.get('server').importProject(project, url, { onSuccess: function() {
         bespin.publish("message", { msg: "Project " + project + " imported from:<br><br>" + url, tag: 'autohide' });
     }, onFailure: function(xhr) {
         bespin.publish("message", { msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText });
@@ -415,10 +415,10 @@ bespin.events.defaultScope = function() {
 // Get a list of our followers
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Following " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
@@ -428,10 +428,10 @@ bespin.subscribe("network:followers", function() {
 // Add to the list of users that we follow
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Following " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
@@ -441,10 +441,10 @@ bespin.subscribe("network:follow", function(usernames) {
 // Remove users from the list that we follow
 bespin.subscribe("network:unfollow", function(usernames) {
     bespin.get('server').unfollow(usernames, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Following " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve followers. Maybe due to: " + xhr.responseText });
         }
     });
@@ -454,10 +454,10 @@ bespin.subscribe("network:unfollow", function(usernames) {
 // Get a list of our groups
 bespin.subscribe("groups:list:all", function() {
     bespin.get('server').groupListAll({
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Known groups " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve groups. Maybe due to: " + xhr.responseText });
         }
     });
@@ -467,10 +467,10 @@ bespin.subscribe("groups:list:all", function() {
 // Get a list of group members
 bespin.subscribe("groups:list", function(group) {
     bespin.get('server').groupList(group, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
         }
     });
@@ -480,10 +480,10 @@ bespin.subscribe("groups:list", function(group) {
 // Remove a group and all its members
 bespin.subscribe("groups:remove:all", function(group) {
     bespin.get('server').groupRemoveAll(group, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Removed group " + group });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve group members. Maybe due to: " + xhr.responseText });
         }
     });
@@ -493,10 +493,10 @@ bespin.subscribe("groups:remove:all", function(group) {
 // Add to members of a group
 bespin.subscribe("groups:add", function(group, users) {
     bespin.get('server').groupAdd(group, users, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to add to group members. Maybe due to: " + xhr.responseText });
         }
     });
@@ -506,10 +506,10 @@ bespin.subscribe("groups:add", function(group, users) {
 // Add to members of a group
 bespin.subscribe("groups:remove", function(group, users) {
     bespin.get('server').groupRemove(group, users, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Members of " + group + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to remove to group members. Maybe due to: " + xhr.responseText });
         }
     });
@@ -519,10 +519,10 @@ bespin.subscribe("groups:remove", function(group, users) {
 // List all project shares
 bespin.subscribe("share:list:all", function() {
     bespin.get('server').shareListAll({
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Project sharing: " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to list project shares. Maybe due to: " + xhr.responseText });
         }
     });
@@ -532,10 +532,10 @@ bespin.subscribe("share:list:all", function() {
 // List sharing for a given project
 bespin.subscribe("share:list:project", function(project) {
     bespin.get('server').shareListProject(project, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Project sharing for " + project + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
         }
     });
@@ -545,10 +545,10 @@ bespin.subscribe("share:list:project", function(project) {
 // List sharing for a given project and member
 bespin.subscribe("share:list:project:member", function(project, member) {
     bespin.get('server').shareListProjectMember(project, member, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Project sharing for " + project + ", " + member + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to list project sharing. Maybe due to: " + xhr.responseText });
         }
     });
@@ -558,10 +558,10 @@ bespin.subscribe("share:list:project:member", function(project, member) {
 // Remove all sharing from a project
 bespin.subscribe("share:remove:all", function(project) {
     bespin.get('server').shareRemoveAll(project, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "All sharing removed from " + project });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to remove sharing permissions. Maybe due to: " + xhr.responseText });
         }
     });
@@ -571,10 +571,10 @@ bespin.subscribe("share:remove:all", function(project) {
 // Remove project sharing from a given member
 bespin.subscribe("share:remove", function(project, member) {
     bespin.get('server').shareRemove(project, member, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Removed sharing permission from " + member + " to " + project });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to remove sharing permission. Maybe due to: " + xhr.responseText });
         }
     });
@@ -584,10 +584,10 @@ bespin.subscribe("share:remove", function(project, member) {
 // Add a member to the sharing list for a project
 bespin.subscribe("share:add", function(project, member, options) {
     bespin.get('server').shareAdd(project, member, options, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Adding sharing permission for " + member + " to " + project });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to add sharing permission. Maybe due to: " + xhr.responseText });
         }
     });
@@ -597,10 +597,10 @@ bespin.subscribe("share:add", function(project, member, options) {
 // List all the members with view settings on me
 bespin.subscribe("viewme:list:all", function() {
     bespin.get('server').viewmeListAll({
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "All view settings: " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
         }
     });
@@ -610,10 +610,10 @@ bespin.subscribe("viewme:list:all", function() {
 // List the view settings for a given member
 bespin.subscribe("viewme:list", function(member) {
     bespin.get('server').viewmeList(member, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "View settings for " + member + ": " + data });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve view settings. Maybe due to: " + xhr.responseText });
         }
     });
@@ -623,10 +623,10 @@ bespin.subscribe("viewme:list", function(member) {
 // Alter the view setting for a given member
 bespin.subscribe("viewme:set", function(member, value) {
     bespin.get('server').viewmeSet(member, value, {
-        call:function(data) {
+        onSuccess: function(data) {
             bespin.publish("message", { msg: "Changed view settings for " + member });
         },
-        onFailure:function(xhr) {
+        onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to change view setttings. Maybe due to: " + xhr.responseText });
         }
     });

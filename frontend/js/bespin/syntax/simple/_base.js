@@ -135,3 +135,9 @@ bespin.syntax.simple.Resolver = new function() {
       }
   };
 }();
+
+// -- Add core syntax files here, can load others later
+dojo.require("bespin.syntax.simple.javascript");
+dojo.require("bespin.syntax.simple.css");
+dojo.require("bespin.syntax.simple.html");
+dojo.require("bespin.syntax.simple.php");
