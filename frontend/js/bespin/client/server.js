@@ -50,10 +50,10 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{payload}}} is what to send up for POST requests
     // * {{{options}}} is how you pass in various callbacks.
     //   options['evalJSON'] = true or false to auto eval
-    //   options['call'] = the main callback
-    //   options['log'] = just log the following
+    //   options['onSuccess'] = the main success callback
     //   options['onFailure'] = call for general failures
     //   options['on' + STATUS CODE] = call for specific failures
+    //   options['log'] = just log the following
     request: function(method, url, payload, options) {
         var xhr = new XMLHttpRequest();
 
@@ -80,8 +80,8 @@ dojo.declare("bespin.client.Server", null, {
                             }
                         }
                         
-                        if (dojo.isFunction(options['call'])) {
-                            options['call'](response, xhr);
+                        if (dojo.isFunction(options['onSuccess'])) {
+                            options['onSuccess'](response, xhr);
                         } else if (options['log']) {
                             console.log(options['log']);
                         }
@@ -116,7 +116,7 @@ dojo.declare("bespin.client.Server", null, {
 
     // == USER ==
 
-    // ** {{{ login(user, pass, token, callback, notloggedin) }}}
+    // ** {{{ login(user, pass, token, onSuccess, notloggedin) }}}
     //
     // Try to login to the backend system.
     // 
@@ -127,14 +127,14 @@ dojo.declare("bespin.client.Server", null, {
     login: function(user, pass, token, onSuccess, onFailure) {
         var url = "/register/login/" + user;
         this.request('POST', url, "password=" + escape(pass), { 
-            call: onSuccess,
+            onSuccess: onSuccess,
             on401: onFailure,
             log: 'Login complete.',
-            headers: { 'DoubleSubmitCookie':token }
+            headers: { 'DoubleSubmitCookie': token }
         });
     },
 
-    // ** {{{ signup(user, pass, email, callback, notloggedin, userconflict) }}}
+    // ** {{{ signup(user, pass, email, onSuccess, notloggedin, userconflict) }}}
     //
     // Signup / Register the user to the backend system
     // 
@@ -148,31 +148,31 @@ dojo.declare("bespin.client.Server", null, {
         var url = "/register/new/" + user;
         this.request('POST', url, 
 			"password=" + escape(pass) + "&email=" + escape(email), { 
-			call: onSuccess, on401: notloggedin, on409: userconflict,
+			onSuccess: onSuccess, on401: notloggedin, on409: userconflict,
 			log: 'Login complete.' 
 		});
 	},
 
-    // ** {{{ logout(callback) }}}
+    // ** {{{ logout(onSuccess) }}}
     //
     // Logout from the backend
     // 
-    // * {{{callback}}} fires after the logout attempt
-    logout: function(callback) {
+    // * {{{onSuccess}}} fires after the logout attempt
+    logout: function(onSuccess) {
         var url = "/register/logout/";
-        this.request('POST', url, null, { log: 'Logout complete.', call: callback });
+        this.request('POST', url, null, { log: 'Logout complete.', onSuccess: onSuccess });
     },
 
-    // ** {{{ currentuser(callback, notloggedin) }}}
+    // ** {{{ currentuser(onSuccess, notloggedin) }}}
     //
     // Return info on the current logged in user
     // 
-    // * {{{callback}}} fires after the user attempt
+    // * {{{onSuccess}}} fires after the user attempt
     // * {{{notloggedin}}} fires if the user isn't logged in
-    currentuser: function(callback, notloggedin) {
+    currentuser: function(onSuccess, notloggedin) {
         var url = "/register/userinfo/";
         return this.request('GET', url, null, 
-                { call: callback, on401: notloggedin, evalJSON: true });
+                { onSuccess: onSuccess, on401: notloggedin, evalJSON: true });
     },
 
     // == FILES ==
@@ -188,19 +188,19 @@ dojo.declare("bespin.client.Server", null, {
     list: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var url = bespin.util.path.combine('/file/list/', project, path || '/');
-        var opts = { call: onSuccess, evalJSON: true, log: "Listing files in: " + url };
+        var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing files in: " + url };
         if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
 
         this.request('GET', url, null, opts);
     },
 
-    // ** {{{ projects(callback) }}}
+    // ** {{{ projects(onSuccess) }}}
     //
     // Return the list of projects that you have access too
     // 
-    // * {{{callback}}} gets fired with the project list
-    projects: function(callback) {
-        this.request('GET', '/file/list/', null, { call: callback, evalJSON: true });
+    // * {{{onSuccess}}} gets fired with the project list
+    projects: function(onSuccess) {
+        this.request('GET', '/file/list/', null, { onSuccess: onSuccess, evalJSON: true });
     },
 
     // ** {{{ saveFile(project, path, contents, lastOp) }}}
@@ -209,7 +209,7 @@ dojo.declare("bespin.client.Server", null, {
     // 
     // * {{{project}}} is the project to save
     // * {{{path}}} is the path to save to
-    // * {{{callback}}} fires after the save returns
+    // * {{{contents}}} fires after the save returns
     // * {{{lastOp}}} contains the last edit operation
     saveFile: function(project, path, contents, lastOp) {
         if (!project || !path) return;
@@ -217,7 +217,7 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/at', project, (path || ''));
         if (lastOp) url += "?lastEdit=" + lastOp;
 
-        this.request('PUT', url, contents, { log: 'Saved file "'+project+'/'+path+'"' });
+        this.request('PUT', url, contents, { log: 'Saved file "' + project + '/' + path+ '"' });
     },
 
     // ** {{{ loadFile(project, path, contents) }}}
@@ -226,13 +226,13 @@ dojo.declare("bespin.client.Server", null, {
     // 
     // * {{{project}}} is the project to load from
     // * {{{path}}} is the path to load
-    // * {{{callback}}} fires after the file is loaded
-    loadFile: function(project, path, callback) {
+    // * {{{onSuccess}}} fires after the file is loaded
+    loadFile: function(project, path, onSuccess) {
         var project = project || '';
         var path = path || '';
         var url = bespin.util.path.combine('/file/at', project, path);
 
-        this.request('GET', url, null, { call: callback });
+        this.request('GET', url, null, { onSuccess: onSuccess });
     },
 
     // ** {{{ removeFile(project, path, onSuccess, onFailure) }}}
@@ -247,7 +247,7 @@ dojo.declare("bespin.client.Server", null, {
         var project = project || '';
         var path = path || '';
         var url = bespin.util.path.combine('/file/at', project, path);
-        var opts = { call: onSuccess };
+        var opts = { onSuccess: onSuccess };
         if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
         
         this.request('DELETE', url, null, opts);
@@ -267,7 +267,7 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combineAsDirectory('/file/at', project, (path || ''));
         var opts = {};
         if (dojo.isFunction(onSuccess)) {
-            opts.call = onSuccess;
+            opts.onSuccess = onSuccess;
         } else {
             opts['log'] = "Made a directory: [project=" + project + ", path=" + path + "]";
         }
@@ -291,7 +291,7 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combineAsDirectory('/file/at', project, path);
         var opts = {};
         if (dojo.isFunction(onSuccess)) {
-            opts.call = onSuccess;
+            opts.onSuccess = onSuccess;
         } else {
             opts['log'] = "Removed directory: [project=" + project + ", path=" + path + "]";
         }
@@ -300,70 +300,70 @@ dojo.declare("bespin.client.Server", null, {
         this.request('DELETE', url, null, opts);
     },
 
-     // ** {{{ listOpen(callback) }}}
+     // ** {{{ listOpen(onSuccess) }}}
      //
      // Returns JSON with the key of filename, and the value of an array of usernames:
      // { "foo.txt": ["ben"], "SomeAjaxApp/foo.txt": ["dion"] }
      // 
-     // * {{{callback}}} fires after listing the open files
-    listOpen: function(callback) {
+     // * {{{onSuccess}}} fires after listing the open files
+    listOpen: function(onSuccess) {
         this.request('GET', '/file/listopen/', null, {
-            call: callback, evalJSON: true, log: 'List open files.' 
+            onSuccess: onSuccess, evalJSON: true, log: 'List open files.' 
         });
     },
 
-    // ** {{{ closeFile(project, path, callback) }}}
+    // ** {{{ closeFile(project, path, onSuccess) }}}
     //
     // Close the given file (remove from open sessions)
     // 
     // * {{{project}}} is the project to close from
     // * {{{path}}} is the path to close
-    // * {{{callback}}} fires after the file is closed
-    closeFile: function(project, path, callback) {
+    // * {{{onSuccess}}} fires after the file is closed
+    closeFile: function(project, path, onSuccess) {
         var path = path || '';
         var url = bespin.util.path.combine('/file/close', project, path);
-        this.request('POST', url, null, { call: callback });
+        this.request('POST', url, null, { onSuccess: onSuccess });
     },
     
-    // ** {{{ searchFiles(project, searchstring, callback) }}}
+    // ** {{{ searchFiles(project, searchstring, onSuccess) }}}
     //
     // Search for files within the given project
     // 
     // * {{{project}}} is the project to look from
     // * {{{searchstring}}} to compare files with
-    // * {{{callback}}} fires after the file is closed
-    searchFiles: function(project, searchkey, callback) {
+    // * {{{onSuccess}}} fires after the file is closed
+    searchFiles: function(project, searchkey, onSuccess) {
         var url = bespin.util.path.combine('/file/search', project+'?q='+escape(searchkey));
-        var opts = { call: callback, evalJSON: true, log: "Listing searchfiles for: " + project + ", searchkey: " + searchkey};
+        var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing searchfiles for: " + project + ", searchkey: " + searchkey};
         this.request('GET', url, null, opts);
     },
 
     // == EDIT ==
 
-    // ** {{{ editActions(project, path, callback) }}}
+    // ** {{{ editActions(project, path, onSuccess) }}}
     //
     // Get the list of edit actions
     // 
     // * {{{project}}} is the project to edit from
     // * {{{path}}} is the path to edit
-    // * {{{callback}}} fires after the edit is done
-    editActions: function(project, path, callback) {
+    // * {{{onSuccess}}} fires after the edit is done
+    editActions: function(project, path, onSuccess) {
         var path = path || '';
         var url = bespin.util.path.combine('/edit/list', project, path);
-        this.request('GET', url, null, { call: callback, log: "Edit Actions Complete." });
+        this.request('GET', url, null, { onSuccess: onSuccess, log: "Edit Actions Complete." });
     },
 
-    // ** {{{ editAfterActions(project, path, callback) }}}
+    // ** {{{ editAfterActions(project, path, onSuccess) }}}
     //
     // Get the list of edit after actions
     // 
     // * {{{project}}} is the project to edit from
     // * {{{path}}} is the path to edit
-    // * {{{callback}}} fires after the edit is done
-    editAfterActions: function(project, path, index, callback) {
+    // * {{{onSuccess}}} fires after the edit is done
+    editAfterActions: function(project, path, index, onSuccess) {
         var path = path || '';
         var url = bespin.util.path.combine('/edit/recent', index, project, path);
-        this.request('GET', url, null, { call: callback, log: "Edit After Actions Complete." });
+        this.request('GET', url, null, { onSuccess: onSuccess, log: "Edit After Actions Complete." });
     },
 
     // ** {{{ doAction(project, path, actions) }}}
@@ -379,7 +379,7 @@ dojo.declare("bespin.client.Server", null, {
 
         var sp = "[" + actions.join(",") + "]";
 
-        this.request('PUT', url, sp, { call: function(){} });
+        this.request('PUT', url, sp, { onSuccess: function(){} });
     },
 
     // == PROJECTS ==
@@ -412,8 +412,8 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{archivetype}}} is either zip | tgz
     importProject: function(project, url, opts) {
         if (opts) { // wrap the import success call in an event to say that the import is complete
-            var userCall = opts.call;
-            opts.call = function(text, xhr) {
+            var userCall = opts.onSuccess;
+            opts.onSuccess = function(text, xhr) {
                 userCall(text, xhr);
                 bespin.publish("project:imported", {
                     project: project,
@@ -446,30 +446,30 @@ dojo.declare("bespin.client.Server", null, {
     // * POST /settings/ with HTTP POST DATA (in standard form post syntax) to set the value for a collection of settings (all values are strings)
     // * DELETE /settings/[setting] to delete a single setting
 
-    listSettings: function(callback) {
-        if (typeof callback == "function") {
-            this.request('GET', '/settings/', null, { call: callback, evalJSON: true });
+    listSettings: function(onSuccess) {
+        if (typeof onSuccess == "function") {
+            this.request('GET', '/settings/', null, { onSuccess: onSuccess, evalJSON: true });
         }
     },
 
-    getSetting: function(name, callback) {
-        if (typeof callback == "function") {
-            this.request('GET', '/settings/' + name, null, { call: callback });
+    getSetting: function(name, onSuccess) {
+        if (typeof onSuccess == "function") {
+            this.request('GET', '/settings/' + name, null, { onSuccess: onSuccess });
         }
     },
     
-    setSetting: function(name, value, callback) {
+    setSetting: function(name, value, onSuccess) {
         var settings = {};
         settings[name] = value;
-        this.setSettings(settings, (callback || function(){}));
+        this.setSettings(settings, (onSuccess || function(){}));
     },
     
-    setSettings: function(settings, callback) {
-        this.request('POST', '/settings/', dojo.objectToQuery(settings), { call: (callback || function(){}) });
+    setSettings: function(settings, onSuccess) {
+        this.request('POST', '/settings/', dojo.objectToQuery(settings), { onSuccess: (onSuccess || function(){}) });
     },
     
-    unsetSetting: function(name, callback) {
-        this.request('DELETE', '/settings/' + name, null, { call: (callback || function(){}) });
+    unsetSetting: function(name, onSuccess) {
+        this.request('DELETE', '/settings/' + name, null, { onSuccess: (onSuccess || function(){}) });
     },
 
     // ** {{{ follows(opts) }}}

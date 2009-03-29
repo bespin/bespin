@@ -1144,8 +1144,8 @@ bespin.cmd.commands.add({
         this.originalShowInfo = self.showInfo;
         var that = this;
         bespin.get('server').request('POST', '/test/setup/', null, {
-            call:onComplete,
-            onFailure:function(xhr) {
+            onSuccess: onSuccess,
+            onFailure: function(xhr) {
                 that._cleanup(self, "_setup() failed. Maybe due to: " + xhr.responseText);
             }
         });
@@ -1155,10 +1155,10 @@ bespin.cmd.commands.add({
         self.showInfo = this.originalShowInfo;
         self.showInfo(reason);
         bespin.get('server').request('POST', '/test/cleanup/', null, {
-            call:function() {
+            onSuccess: function() {
                 console.log("Server cleanup completed")
             },
-            onFailure:function(xhr) {
+            onFailure: function(xhr) {
                 self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
             }
         });
