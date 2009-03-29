@@ -82,12 +82,14 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:openfile", function(event) {
             var filename = event.filename;
             var editSession = bespin.get('editSession');
-            var files = bespin.get('files');
+            var files = bespin.get('files'); 
 
             var project  = event.project || editSession.project;
 
-            if (editSession.checkSameFile(project, filename)) return; // short circuit
-
+            if (editSession.checkSameFile(project, filename)) {
+                return; // short circuit
+            }
+            
             bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
             files.loadFile(project, filename, function(file) {

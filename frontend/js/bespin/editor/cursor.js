@@ -131,12 +131,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
     },
 
     moveUp: function() {
+        var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
 
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+        if ((settings && settings.isOn(settings.get('strictlines'))) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
             this.moveToLineEnd();   // this sets this.virtulaCol = 0!
             this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
@@ -145,12 +146,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
     },
 
     moveDown: function() {
+        var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
 
-        if (bespin.get("settings").isOn(bespin.get("settings").get('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+        if ((settings && settings.isOn(settings.get('strictlines'))) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
             this.moveToLineEnd();   // this sets this.virtulaCol = 0!
             this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
@@ -161,58 +163,58 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveLeft: function() {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
+
+        if (settings && settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
             var tabsize = this.editor.getTabSize();
-            
+
             // this is for the case "striclines" is off AND the user moved the cursor to the right AND there is no real content
             if (whiteChars == 0 && rowLength == 0 && oldPos.col > 0) {
                 whiteChars = oldPos.col;
             }
-            
+
             if (whiteChars >= oldPos.col && oldPos.col != 0) {
-                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabsize) ? oldPos.col % tabsize : tabsize)) });  
+                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabsize) ? oldPos.col % tabsize : tabsize)) });
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             } // else {
-            //  this case is handled by the code following    
+            //  this case is handled by the code following
             //}
-        } 
-        
+        }
+
         // start of the line so move up
-        if (settings.isOn(settings.get('strictlines')) && (this.position.col == 0)) {
+        if (settings && settings.isOn(settings.get('strictlines')) && (this.position.col == 0)) {
             this.moveUp();
             if (oldPos.row > 0) this.moveToLineEnd();
         } else {
             this.moveCursor({ row: oldPos.row, col: Math.max(0, oldPos.col - 1) });
         }
-        
+
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
     },
 
     moveRight: function() {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
+
+        if (settings && settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
             var tabsize = this.editor.getTabSize();
-                        
+
             if (whiteChars > oldPos.col || (whiteChars == 0 && rowLength == 0)) {
                 if (rowLength == 0) rowLength = oldPos.col + tabsize;
-                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabsize ? tabsize - (oldPos.col % tabsize) : tabsize)) });  
+                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabsize ? tabsize - (oldPos.col % tabsize) : tabsize)) });
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             }// else {
-            //  this case is handled by the code following    
-            //}    
+            //  this case is handled by the code following
+            //}
         }
-                
+
         // end of the line, so go to the start of the next line
-        if (settings.isOn(settings.get('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
+        if ((settings && settings.isOn(settings.get('strictlines'))) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
             this.moveDown();
             if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
         } else {
@@ -367,7 +369,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
 
         this.position = { row: row, col: newpos.col };
-        
+
         // keeps the editor's cursor from blinking while moving it
         var editorUI = bespin.get('editor').ui;
         editorUI.showCursor = true;

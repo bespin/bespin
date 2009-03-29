@@ -27,11 +27,8 @@ dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
 
-dojo.require("bespin.syntax.syntax");
-dojo.require("bespin.syntax.javascript");
-dojo.require("bespin.syntax.css");
-dojo.require("bespin.syntax.html");
-dojo.require("bespin.syntax.php");
+dojo.require("bespin.syntax.base"); 
+dojo.require("bespin.syntax.simple._base");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
@@ -68,11 +65,12 @@ dojo.declare("bespin.editor.Component", null, {
         } else if (opts.content) {
             initialcontent = opts.content;
         }
-
+        
         this.editor = bespin.register('editor', opts.editor || new bespin.editor.API(container, opts));
         this.editSession = bespin.register('editSession', opts.editSession || new bespin.client.session.EditSession(this.editor));
         this.server = bespin.register('server', opts.server || new bespin.client.Server());
         this.files = bespin.register('files', opts.files || new bespin.client.FileSystem());
+        
         bespin.register('settings', opts.settings || new bespin.client.settings.Core(bespin.client.settings.InMemory));
 
         dojo.connect(window, 'resize', opts.resize || dojo.hitch(this, function() {
