@@ -135,12 +135,14 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // item double clicked => load this file
         this.window.scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
+            if (!e.isVisible) return; // short circuit if the popup isn't up
+            
             var item = this.panel.list.selected;
-            if (!item)  return;
+            if (!item) return; // short circuit if we don't have an item to click on
             
             // save the current file and load up the new one
-            bespin.publish("bespin:editor:savefile", {});
-            bespin.publish("bespin:editor:openfile", { filename: item.filename });
+            bespin.publish("editor:savefile", {});
+            bespin.publish("editor:openfile", { filename: item.filename });
                         
             // adds the new opened file to the top of the openSessionFiles
             if (this.openSessionFiles.indexOf(item.filename) != -1) {
@@ -202,7 +204,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }));
         
         // load the current opend files at startup
-        bespin.subscribe('bespin:settings:loaded', function() {            
+        bespin.subscribe('settings:loaded', function() {            
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
     },

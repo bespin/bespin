@@ -94,7 +94,7 @@
       </tr>
       <tr>
         <th>Password:</th>
-        <td><input type="password" id="register_password" maxlength="20" onchange="bespin.user.register.checkPassword();"/></td>
+        <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
       </tr>
       <tr>
         <td class="register_error" colspan="2">
@@ -122,7 +122,7 @@
       <tr>
         <th>&nbsp;</th>
         <th>
-          <input type="button" class="darkButton" value="Cancel >" onclick="bespin.user.register.cancel();"/>
+          <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.cancel();"/>
           <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
         </th>
         <td><div id="register_register_error"></div></td>

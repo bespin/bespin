@@ -35,7 +35,7 @@ dojo.mixin(bespin.util.urlbar, {
         var hash = document.location.hash;
         if (this.last != hash) {
             var urlchange = new bespin.client.settings.URL(hash);
-            bespin.publish("bespin:url:changed", { was: this.last, now: urlchange });
+            bespin.publish("url:changed", { was: this.last, now: urlchange });
             this.last = hash;
         }
     }

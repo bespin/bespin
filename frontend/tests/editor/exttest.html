@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>bespin</title>
+	
+    <link rel="stylesheet" type="text/css" href="http://extjs.com/deploy/dev/resources/css/ext-all.css" />
+    
+ 	<link rel="stylesheet" type="text/css" href="http://extjs.com/deploy/dev/resources/css/xtheme-aero.css" /><!-- LIBS -->
+ 	<script type="text/javascript" src="http://extjs.com/deploy/dev/adapter/ext/ext-base.js"></script>
+
+ 	<!-- ENDLIBS -->
+
+
+    <script type="text/javascript" src="http://extjs.com/deploy/dev/ext-all.js"></script>
+
+    <script src="../../js/dojo/dojo.js"></script>
+    <script src="../../js/bespin/editor/embed.js"></script>
+
+	<script type="text/javascript">
+	/*
+	 * Ext JS Library 2.2.1
+	 * Copyright(c) 2006-2009, Ext JS, LLC.
+	 * licensing@extjs.com
+	 * 
+	 * http://extjs.com/license
+	 */
+	
+	Ext.onReady(function(){
+
+	
+		// second tabs built from JS
+		var tabs2 = new Ext.TabPanel({
+			renderTo: document.body,
+			activeTab: 0,
+			width:600,
+			height:500,
+			plain:true,
+			defaults:{autoScroll: false},
+			items:[{
+					title: 'Normal Tab',
+					html: '<div id="editor" style="height:100%;"></div>'
+				}
+			]
+		});
+		
+		load();
+	});
+	
+	function load()
+	{
+		var editor= new bespin.editor.Component('editor', {
+			language: 'js',
+			content: 'function() {\n  alert("foo");\n}'
+		});
+	}
+	</script>
+</head>
+
+<body>
+<br />
+<br />
+<br />
+<br />
+
+</body>
+</html>
+

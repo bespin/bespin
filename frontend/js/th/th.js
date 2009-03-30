@@ -375,7 +375,13 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
             var parent = component.parent;
             var child = component;
             while (parent) {
-                ctx.translate(child.bounds.x, child.bounds.y);
+                try {
+                    ctx.translate(child.bounds.x, child.bounds.y);
+                } catch (e) {
+                    console.log("translate error (" + child.type + ")");
+                    console.log(child.bounds);
+                    return;
+                }
                 child = parent;
                 parent = parent.parent;
             }

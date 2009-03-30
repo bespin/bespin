@@ -10,36 +10,82 @@ dojo.declare("bespin.editor.CursorManager", null, {
         this.virtualCol = 0;
     },
 
-    getScreenPosition: function() {
-        return this.position;
+    // Returns 'this.position' or 'pos' from optional input 'modelPos'
+    getCursorPosition: function(modelPos) {
+        if (modelPos != undefined) {
+            var pos = bespin.editor.utils.copyPos(modelPos);
+            var line = this.editor.model.getRowArray(pos.row);
+            var tabsize = this.editor.getTabSize();
+
+            // Special tab handling
+            if (line.indexOf("\t") != -1) {
+//              console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+                var tabs = 0, nottabs = 0;
+
+                for (var i = 0; i < modelPos.col; i++) {
+                    if (line[i] == "\t") {
+                        pos.col += tabsize - 1 - ( nottabs % tabsize );
+                        tabs++;
+                        nottabs = 0;
+                    } else {
+                        nottabs++;
+                        tabs = 0;
+                    }
+//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
+                }
+
+//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
+            }
+
+            return pos;
+        } else {
+            return this.position;
+        }
     },
 
-    getModelPosition: function() {
-        var pos = this.position;
-
+    // Returns 'modelPos' from optional input 'pos' or 'this.position'
+    getModelPosition: function(pos) {
+        pos = (pos != undefined) ? pos : this.position;
+        var modelPos = bespin.editor.utils.copyPos(pos);
         var line = this.editor.model.getRowArray(pos.row);
-        var tabspaces = 0;
-        var curCol = 0;
-        for (var i = 0; i < line.length; i++) {
-            if (line[i].charCodeAt(0) == 9) {
-                var toInsert = this.editor.tabstop - (curCol % this.editor.tabstop);
-                curCol += toInsert - 1;
-                tabspaces += toInsert - 1;
+        var tabsize = this.editor.getTabSize();
+
+        // Special tab handling
+        if (line.indexOf("\t") != -1) {
+//          console.log( 'Model modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+            var tabs = 0, nottabs = 0;
+
+            for (var i = 0; i < modelPos.col; i++) {
+                if (line[i] == "\t") {
+                    modelPos.col -= tabsize - 1 - ( nottabs % tabsize );
+                    tabs++;
+                    nottabs = 0;
+                } else {
+                    nottabs++;
+                    tabs = 0;
+                }
+//              console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'modelPos.col: ' + modelPos.col );
             }
-            curCol++;
-            if (curCol >= pos.col) break;
+
+//          console.log( 'Model modelPos.col/pos.col end: ' + modelPos.col, pos.col );
         }
-        if (tabspaces > 0) {
-            return { row: pos.row, col: pos.col = pos.col - tabspaces };
+
+        return modelPos;
+    },
+
+    getCharacterLength: function(character) {
+        if (character == "\t") {
+            var tabsize = this.editor.getTabSize();
+            return (tabsize - (this.position.col % tabsize));
         } else {
-            return bespin.editor.utils.copyPos(pos);
+            return 1;
         }
     },
 
     moveToLineStart: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
 
-        var line = this.editor.ui.getRowString(this.editor.cursorManager.getScreenPosition().row);
+        var line = this.editor.ui.getRowString(this.editor.cursorManager.getCursorPosition().row);
         var match = /^(\s+).*/.exec(line);
         var leadingWhitespaceLength = 0;
 
@@ -116,11 +162,11 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
+            var tabsize = this.editor.getTabSize();
             
             // this is for the case "striclines" is off AND the user moved the cursor to the right AND there is no real content
             if (whiteChars == 0 && rowLength == 0 && oldPos.col > 0) {
@@ -128,7 +174,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
             }
             
             if (whiteChars >= oldPos.col && oldPos.col != 0) {
-                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabWidth) ? oldPos.col % tabWidth : tabWidth)) });  
+                this.moveCursor({ col: Math.max(0, oldPos.col - ((oldPos.col % tabsize) ? oldPos.col % tabsize : tabsize)) });  
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             } // else {
             //  this case is handled by the code following    
@@ -150,15 +196,15 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings.isOn(settings.get('smartmove')) && settings.get('tabsize') != 'tabs') {
+        if (settings.isOn(settings.get('smartmove')) && settings.get('tabmode') != 'tabs') {
             var model = bespin.get('editor').model;
             var whiteChars = model.getRowLeadingWhitespaces(oldPos.row);
             var rowLength = model.getRowLength(oldPos.row);
-            var tabWidth = parseInt(settings.get('tabsize'));
+            var tabsize = this.editor.getTabSize();
                         
             if (whiteChars > oldPos.col || (whiteChars == 0 && rowLength == 0)) {
-                if (rowLength == 0) rowLength = oldPos.col + tabWidth;
-                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabWidth ? tabWidth - (oldPos.col % tabWidth) : tabWidth)) });  
+                if (rowLength == 0) rowLength = oldPos.col + tabsize;
+                this.moveCursor({ col: Math.min(rowLength, oldPos.col + (oldPos.col % tabsize ? tabsize - (oldPos.col % tabsize) : tabsize)) });  
                 return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
             }// else {
             //  this case is handled by the code following    
@@ -308,7 +354,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var invalid = this.isInvalidCursorPosition(row, newpos.col);
         if (invalid) {
-            console.log("invalid position: " + invalid.left + ", " + invalid.right);
+            // console.log('Comparing ' + oldpos.col + ' to ' + newpos.col + ' ...');
+            // console.log("invalid position: " + invalid.left + ", " + invalid.right);
             if (oldpos.col < newpos.col) {
                 newpos.col = invalid.right;
             } else if (oldpos.col > newpos.col) {
@@ -336,7 +383,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         for (var i = 0; i < rowArray.length; i++) {
             if (rowArray[i].charCodeAt(0) == 9) {
                 // if current character in the array is a tab, work out the white space between here and the tab stop
-                var toInsert = this.editor.tabstop - (curCol % this.editor.tabstop);
+                var toInsert = this.editor.getTabSize() - (curCol % this.editor.getTabSize());
 
                 // if the passed column is in the whitespace between the tab and the tab stop, it's an invalid position
                 if ((col > curCol) && (col < (curCol + toInsert))) {

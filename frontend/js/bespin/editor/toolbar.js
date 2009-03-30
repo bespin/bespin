@@ -125,7 +125,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             dojo.connect(save, 'click', function() {
-                bespin.publish("bespin:editor:savefile");
+                bespin.publish("editor:savefile");
             });
         },
 
@@ -140,7 +140,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             dojo.connect(close, 'click', function() {
-                bespin.publish("bespin:editor:closefile");
+                bespin.publish("editor:closefile");
             });
         },
 
@@ -187,7 +187,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             dojo.connect(preview, 'click', function() {
-                bespin.publish("bespin:editor:preview"); // use default file
+                bespin.publish("editor:preview"); // use default file
             });
         },
 
@@ -205,7 +205,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             // Change the font size between the small, medium, and large settings
             dojo.connect(fontsize, 'click', function() {
                 toolbar.currentFontSize = (toolbar.currentFontSize > 2) ? 1 : toolbar.currentFontSize + 1;
-                bespin.publish("bespin:settings:set:fontsize", [{ value: toolbar.FONT_SIZES[toolbar.currentFontSize] }]);
+                bespin.publish("settings:set:fontsize", [{ value: toolbar.FONT_SIZES[toolbar.currentFontSize] }]);
             });
         }
     }

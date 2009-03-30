@@ -289,8 +289,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         // -- End of commandLine short cut
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         this.skipKeypress = false;
         this.returnValue = false;
 
@@ -344,8 +343,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         }
 
         var args = { event: e,
-                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getScreenPosition()),
-                     modelPos: this.editor.cursorManager.getModelPosition() };
+                     pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         var actions = this.editor.ui.actions;
 
         // Only allow ascii through
@@ -580,8 +578,8 @@ dojo.declare("bespin.editor.UI", null, {
     ensureCursorVisible: function() {
         if ((!this.lineHeight) || (!this.charWidth)) return;    // can't do much without these
 
-        var y = this.lineHeight * this.editor.cursorManager.getScreenPosition().row;
-        var x = this.charWidth * this.editor.cursorManager.getScreenPosition().col;
+        var y = this.lineHeight * this.editor.cursorManager.getCursorPosition().row;
+        var x = this.charWidth * this.editor.cursorManager.getCursorPosition().col;
 
         var cheight = this.getHeight();
         var cwidth = this.getWidth() - this.GUTTER_WIDTH;
@@ -728,7 +726,7 @@ dojo.declare("bespin.editor.UI", null, {
         
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "bespin:editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
@@ -742,11 +740,11 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     getTopOffset: function() {
-        return this.editor.canvas.parentNode.offsetTop;
+        return dojo.coords(this.editor.canvas.parentNode).y || this.editor.canvas.parentNode.offsetTop;
     },
 
     getLeftOffset: function() {
-        return this.editor.canvas.parentNode.offsetLeft;
+        return dojo.coords(this.editor.canvas.parentNode).x || this.editor.canvas.parentNode.offsetLeft;
     },
 
     getCharWidth: function(ctx) {
@@ -822,8 +820,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         // virtual width *should* be based on every line in the model; however, with the introduction of tab support, calculating
         // the width of a line is now expensive, so for the moment we will only calculate the width of the visible rows
-        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getScreenPosition.col) + 2);       // full width based on content plus a little padding
-        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getScreenPosition().col) + 2);
+        //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
+        var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getCursorPosition().col) + 2);
 
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
@@ -877,14 +875,14 @@ dojo.declare("bespin.editor.UI", null, {
             var dirty = ed.model.getDirtyRows();
 
             // if the cursor has changed rows since the last paint, consider the previous row dirty
-            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorManager.getScreenPosition().row)) dirty[this.lastCursorPos.row] = true;
+            if ((this.lastCursorPos) && (this.lastCursorPos.row != ed.cursorManager.getCursorPosition().row)) dirty[this.lastCursorPos.row] = true;
 
             // we always repaint the current line
-            dirty[ed.cursorManager.getScreenPosition().row] = true;
+            dirty[ed.cursorManager.getCursorPosition().row] = true;
         }
 
         // save this state for the next paint attempt (see above for usage)
-        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getScreenPosition());
+        this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getCursorPosition());
 
         // if we're doing a full repaint...
         if (refreshCanvas) {
@@ -961,7 +959,14 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
 
-            if ((currentLine % 2) == 0) {
+            // if highlight line is on, paint the highlight color
+            var settings = bespin.get('settings');
+            if ( (dojo.isObject(settings) && settings.isSettingOn('highlightline')) &&
+                 (currentLine == ed.cursorManager.getCursorPosition().row) ) {
+                ctx.fillStyle = theme.highlightCurrentLineColor;
+                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+            // if not on highlight, see if we need to paint the zebra
+            } else if ((currentLine % 2) == 0) {
                 ctx.fillStyle = theme.zebraStripeColor;
                 ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
             }
@@ -978,7 +983,8 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
-            var lineText = this.getRowString(currentLine);
+            var lineMetadata = this.getRowMetadata(currentLine);
+            var lineText = lineMetadata.lineText;
 
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
@@ -1013,6 +1019,49 @@ dojo.declare("bespin.editor.UI", null, {
                 }
             }
 
+            // paint tab information, if applicable
+            if (lineMetadata.tabExpansions.length > 0) {
+                for (var i = 0; i < lineMetadata.tabExpansions.length; i++) {
+                    var expansion = lineMetadata.tabExpansions[i];
+
+                    // the starting x position of the tab character; the existing value of y is fine
+                    var lx = x + (expansion.start * this.charWidth);
+
+                    // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
+                    var showTabSpace = bespin.get("settings").isSettingOn("tabshowspace");
+                    if (showTabSpace) {
+                        var sw = (expansion.end - expansion.start) * this.charWidth;
+                        ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
+                        ctx.fillRect(lx, y, sw, this.lineHeight);
+                    }
+
+                    var showTabNib = bespin.get("settings").isSettingOn("tabarrow");
+                    if (showTabNib) {
+                        // the center of the current character position's bounding rectangle
+                        var cy = y + (this.lineHeight / 2);
+                        var cx = lx + (this.charWidth / 2);
+
+                        // the width and height of the triangle to draw representing the tab
+                        var tw = 4;
+                        var th = 6;
+
+                        // the origin of the triangle
+                        var tx = parseInt(cx - (tw / 2));
+                        var ty = parseInt(cy - (th / 2));
+
+                        // draw the rectangle
+                        ctx.beginPath();
+                        ctx.fillStyle = this.editor.theme["plain"] || "white";
+                        ctx.moveTo(tx, ty);
+                        ctx.lineTo(tx, ty + th);
+                        ctx.lineTo(tx + tw, ty + parseInt(th / 2));
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
+
+
             if (!refreshCanvas) {
                 ctx.drawImage(this.verticalScrollCanvas, verticalx + Math.abs(this.xoffset), Math.abs(this.yoffset));
                 ctx.restore();
@@ -1021,24 +1070,25 @@ dojo.declare("bespin.editor.UI", null, {
             y += this.lineHeight;
         }
 
+
         // paint the cursor
         if (this.editor.focus) {
             if (this.showCursor) {
                 if (ed.theme.cursorType == "underline") {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
                     y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, this.charWidth, 3);
                 } else {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-                    y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, this.lineHeight);
                 }
             }
         } else {
-            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getScreenPosition().col * this.charWidth;
-            y = (ed.cursorManager.getScreenPosition().row * this.lineHeight);
+            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+            y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
 
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
             ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
@@ -1301,9 +1351,17 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.fill();
     },
 
-    // returns a string that represents the row; converts tab characters to spaces
-    getRowString: function(row) {
-        var lineText = this.editor.model.getRowArray(row).join("");
+    // returns various metadata about the row, mainly concerning tab information
+    getRowMetadata: function(row) {
+        // contains the row metadata; this object is returned at the end of the function
+        var meta = { tabExpansions: [] };
+
+        var rowArray = this.editor.model.getRowArray(row);
+        var lineText = rowArray.join("");
+        var tabsize = this.editor.getTabSize();
+
+        meta.lineTextWithoutTabExpansion = lineText;
+        meta.lineLengthWithoutTabExpansion = rowArray.length;
 
         // check for tabs and handle them
         for (var ti = 0; ti < lineText.length; ti++) {
@@ -1311,11 +1369,11 @@ dojo.declare("bespin.editor.UI", null, {
             if (lineText.charCodeAt(ti) == 9) {
                 // since the current character is a tab, we potentially need to insert some blank space between the tab character
                 // and the next tab stop
-                var toInsert = this.editor.tabstop - (ti % this.editor.tabstop);
+                var toInsert = tabsize - (ti % tabsize);
 
                 // create a spacer string representing the space between the tab and the tabstop
                 var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += "-";
+                for (var si = 1; si < toInsert; si++) spacer += " ";
 
                 // split the row string into the left half and the right half (eliminating the tab character) in preparation for
                 // creating a new row string
@@ -1323,14 +1381,22 @@ dojo.declare("bespin.editor.UI", null, {
                 var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
 
                 // create the new row string; the blank space essentially replaces the tab character
-                lineText = left + ">" + spacer + right;
+                lineText = left + " " + spacer + right;
+                meta.tabExpansions.push({ start: left.length, end: left.length + spacer.length + 1 });
 
                 // increment the column counter to correspond to the new space
                 ti += toInsert - 1;
             }
         }
 
-        return lineText;
+        meta.lineText = lineText;
+
+        return meta;
+    },
+
+    // returns metadata bout the a string that represents the row; converts tab characters to spaces
+    getRowString: function(row) {
+        return this.getRowMetadata(row).lineText;
     },
 
     getRowScreenLength: function(row) {
@@ -1352,8 +1418,6 @@ dojo.declare("bespin.editor.UI", null, {
 // The root object. This is the API that others should be able to use
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
-        this.tabstop = 4;       // tab stops every 4 columns; TODO: make this a setting
-
         this.opts = opts || {};
 
         this.container = dojo.byId(container);
@@ -1405,7 +1469,7 @@ dojo.declare("bespin.editor.API", null, {
 
     // helper
     getCursorPos: function() {
-        return this.cursorManager.getScreenPosition();
+        return this.cursorManager.getCursorPosition();
     },
     
     // restore the state of the editor
@@ -1427,6 +1491,17 @@ dojo.declare("bespin.editor.API", null, {
     
     getCurrentView: function() {
         return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
+    },
+    
+    // be gentle trying to get the tabstop from settings
+    getTabSize: function() {
+        var settings = bespin.get("settings");
+        var size = bespin.defaultTabSize; // default
+        if (dojo.isObject(settings)) {
+            var tabsize = parseInt(settings.get("tabsize"));
+            if (tabsize > 0) size = tabsize;
+        }
+        return size;
     },
 
     // helper to get text

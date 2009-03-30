@@ -35,6 +35,7 @@ bespin.editor.themes.coffee = {
     lineNumberColor: "#e5c138",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#2A211C",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#526DA5",
@@ -55,6 +56,7 @@ bespin.editor.themes.coffee = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#392A25",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -89,6 +91,7 @@ bespin.editor.themes.white = {
     lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#FFFFFF",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "#000000",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#4d97ff",
@@ -109,6 +112,7 @@ bespin.editor.themes.white = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -141,6 +145,7 @@ bespin.editor.themes.black = {
     lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#000000", //"#111111",
+    highlightCurrentLineColor: "#3a312b",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#243b75",
@@ -161,6 +166,7 @@ bespin.editor.themes.black = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
+    tabSpace: "#E0D4CB",
 
     // syntax definitions
     plain: "#bdae9d",
