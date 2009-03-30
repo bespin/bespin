@@ -1036,44 +1036,46 @@ dojo.declare("bespin.editor.UI", null, {
                     }
                 }
 
-                // paint tab information, if applicable
-                if (lineMetadata.tabExpansions.length > 0) {
-                    for (var i = 0; i < lineMetadata.tabExpansions.length; i++) {
-                        var expansion = lineMetadata.tabExpansions[i];
+                // paint tab information, if applicable and the information should be displayed
+                if (settings && (settings.isSettingOn("tabarrow") || settings.isSettingOn("tabshowspace"))) {
+                    if (lineMetadata[currentLine].tabExpansions.length > 0) {
+                        for (var i = 0; i < lineMetadata[currentLine].tabExpansions.length; i++) {
+                            var expansion = lineMetadata[currentLine].tabExpansions[i];
 
-                        // the starting x position of the tab character; the existing value of y is fine
-                        var lx = x + (expansion.start * this.charWidth);
+                            // the starting x position of the tab character; the existing value of y is fine
+                            var lx = x + (expansion.start * this.charWidth);
 
-                        // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
-                        var showTabSpace = settings && settings.isSettingOn("tabshowspace");
-                        if (showTabSpace) {
-                            var sw = (expansion.end - expansion.start) * this.charWidth;
-                            ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
-                            ctx.fillRect(lx, y, sw, this.lineHeight);
-                        }
+                            // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
+                            var showTabSpace = settings && settings.isSettingOn("tabshowspace");
+                            if (showTabSpace) {
+                                var sw = (expansion.end - expansion.start) * this.charWidth;
+                                ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
+                                ctx.fillRect(lx, y, sw, this.lineHeight);
+                            }
 
-                        var showTabNib = settings && settings.isSettingOn("tabarrow");
-                        if (showTabNib) {
-                            // the center of the current character position's bounding rectangle
-                            var cy = y + (this.lineHeight / 2);
-                            var cx = lx + (this.charWidth / 2);
+                            var showTabNib = settings && settings.isSettingOn("tabarrow");
+                            if (showTabNib) {
+                                // the center of the current character position's bounding rectangle
+                                var cy = y + (this.lineHeight / 2);
+                                var cx = lx + (this.charWidth / 2);
 
-                            // the width and height of the triangle to draw representing the tab
-                            var tw = 4;
-                            var th = 6;
+                                // the width and height of the triangle to draw representing the tab
+                                var tw = 4;
+                                var th = 6;
 
-                            // the origin of the triangle
-                            var tx = parseInt(cx - (tw / 2));
-                            var ty = parseInt(cy - (th / 2));
+                                // the origin of the triangle
+                                var tx = parseInt(cx - (tw / 2));
+                                var ty = parseInt(cy - (th / 2));
 
-                            // draw the rectangle
-                            ctx.beginPath();
-                            ctx.fillStyle = this.editor.theme["plain"] || "white";
-                            ctx.moveTo(tx, ty);
-                            ctx.lineTo(tx, ty + th);
-                            ctx.lineTo(tx + tw, ty + parseInt(th / 2));
-                            ctx.closePath();
-                            ctx.fill();
+                                // draw the rectangle
+                                ctx.beginPath();
+                                ctx.fillStyle = this.editor.theme["plain"] || "white";
+                                ctx.moveTo(tx, ty);
+                                ctx.lineTo(tx, ty + th);
+                                ctx.lineTo(tx + tw, ty + parseInt(th / 2));
+                                ctx.closePath();
+                                ctx.fill();
+                            }
                         }
                     }
                 }
@@ -1283,25 +1285,23 @@ dojo.declare("bespin.editor.UI", null, {
             if (!showRightScrollNib) this.nibright = new Rect();
         });
 
+        var lineMetadata = [];
         var lines = [];
+        for (var i = (this.syntaxModel.workerEnabled ? 0 :  this.firstVisibleRow); i < this.editor.model.getRowCount(); i++) {
+            // Possible optimizations:
+            // - sent only initally (or when switching to worker based syntax engine) all rows,
+            // - afterwords sent only dirty rows
+            // - run getRowString() on worker 
+            lineMetadata[i] = this.getRowMetadata(i); 
+            lines[i] = lineMetadata[i].lineText;
+        }
+        
         if (this.syntaxModel.workerEnabled) {
-            for (var i = 0; i < this.editor.model.getRowCount(); i++) {
-                // Possible optimizations:
-                // - sent only initally (or when switching to worker based syntax engine) all rows,
-                // - afterwords sent only dirty rows
-                // - run getRowString() on worker 
-                var lineMetadata = this.getRowMetadata(i); 
-                lines[i] = lineMetadata.lineText;
-            }
             this.syntaxModel.getSyntaxStyles(lines, this.firstVisibleRow, lastLineToRender, this.editor.language).and(
                 this, null, [], function (lineInfos) {
                     innerPaint(lineInfos);
             });
         } else {
-            for (var i = this.firstVisibleRow; i <= lastLineToRender; i++) {
-                var lineMetadata = this.getRowMetadata(i);  
-                lines[i] = lineMetadata.lineText;
-            }
             var lineInfos = this.syntaxModel.getSyntaxStyles(lines, this.firstVisibleRow, lastLineToRender, this.editor.language);
             if (lineInfos) {
                 innerPaint(lineInfos);
