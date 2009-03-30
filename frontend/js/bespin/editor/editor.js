@@ -1472,10 +1472,9 @@ dojo.declare("bespin.editor.API", null, {
         this.canvas = dojo.byId(container).firstChild;
         while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;
 
+        this.cursorManager = new bespin.editor.CursorManager(this);
         this.ui = new bespin.editor.UI(this);  
         this.theme = bespin.editor.themes['default'];
-
-        this.cursorManager = new bespin.editor.CursorManager(this);
 
         this.editorKeyListener = new bespin.editor.DefaultEditorKeyListener(this);
         this.undoManager = new bespin.editor.UndoManager(this);
