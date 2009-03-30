@@ -54,7 +54,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
         this.redoStack.push(item);
 
         if (this.syncHelper) this.syncHelper.undo();
-        
+
         bespin.publish("editor:document:changed")
     },
 

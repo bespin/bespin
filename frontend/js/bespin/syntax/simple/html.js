@@ -19,65 +19,59 @@
  *
  * Contributor(s):
  *   Bespin Team (bespin@mozilla.com)
- *   Olle Jonsson (olle.jonsson@gmail.com)
- *   Peter Neubauer (peter@neubauer.se)
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Arduino Syntax Highlighting Implementation =
+// = HTML Syntax Highlighting Implementation =
 //
-// Module for syntax highlighting Arduino PDE files.
+// Module for syntax highlighting HTML.
 
-dojo.provide("bespin.syntax.arduino");
+dojo.provide("bespin.syntax.simple.html");
 
-// ** {{{ bespin.syntax.ArduinoSyntaxEngine }}} **
+// ** {{{ bespin.syntax.simple.HTML }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
-// lumped into one last bucket.
+// supports keywords and the like, but doesn't actually understand HTML as it should.
 
-bespin.syntax.ArduinoConstants = {
-    C_STYLE_COMMENT: "c-comment",
-    LINE_COMMENT: "comment",
+bespin.syntax.HTMLConstants = {
+    HTML_STYLE_COMMENT: "comment",
     STRING: "string",
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
     OTHER: "plain"
 };
 
-dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
-    keywords: 'HIGH LOW INPUT OUTPUT SERIAL DISPLAY  DEC BIN HEX OCT BYTE PI HALF_PI  TWO_PI LSBFIRST MSBFIRST CHANGE FALLING  RISING DEFAULT  EXTERNAL INTERAL ' +
-    'boolean  byte case char class default  do double else false float for if int long new null private  protected public return short signed static switch this throw try true unsigned void while word ' +
-    'abs acos asin atan atan2 ceil constrain cos degrees exp floor log map max min radians  random randomSeed round sin sq sqrt tan ' +
-    'bitRead bitWrite bitSet bitClear bit highByte lowByte ' +
-    'analogReference  analogRead analogWrite attachInterrupt  detachInterrupt  delay delayMicroseconds digitalWrite digitalRead interrupts millis micros noInterrupts pinMode  pulseIn  shiftOut ' +
-    'Serial begin read print println  available flush ' +
-    'setup loop'.split(" "),
 
-    punctuation: '{ } > < / + - % * . , ; ( ) ? : = " \''.split(" "),
+dojo.declare("bespin.syntax.simple.HTML", null, {
+    keywordRegex: "/*(html|head|body|doctype|link|script|div|span|img|h1|h2|h3|h4|h5|h6|ul|li|ol|blockquote)",
 
-    highlight: function(line, meta) {           
+    punctuation: '< > = " \'',
+
+    highlight: function(line, meta) {
         if (!meta) meta = {};
 
-        var K = bespin.syntax.ArduinoConstants;    // aliasing the constants for shorter reference ;-)
+        var K = bespin.syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
 
         var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
-        var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
+        var currentStyle = (meta.inMultilineComment) ? K.HTML_STYLE_COMMENT : undefined;
         var currentRegion = {}; // should always have a start property for a non-blank buffer
         var buffer = "";
 
         // these properties are related to the parser state above but are special cases
         var stringChar = "";    // the character used to start the current string
-        var multiline = meta.inMultilineComment;
+        var multiline = meta.inMultilineComment;  // this line contains an unterminated multi-line comment
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
-            if (currentStyle == K.C_STYLE_COMMENT) {
-                if (c == "/" && /\*$/.test(buffer)) { // has the c-style comment just ended?
+            if (currentStyle == K.HTML_STYLE_COMMENT) {
+                if (c == ">" && bespin.util.endsWith(buffer, "--") &&
+                        ! (/<!--/.test(buffer) && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
+                        ! (/<!---/.test(buffer)  && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
+                        ) { // has the multiline comment just ended?
                     currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
@@ -96,7 +90,7 @@ dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
                 // check if we're in a string
                 if (currentStyle == K.STRING) {
                     // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
-                    if ( ! (c == stringChar && !/\\$/.test(buffer))) { 
+                    if ( ! (c == stringChar && !/\\$/.test(buffer))) {
                         if (buffer == "") currentRegion = { start: i };
                         buffer += c;
                         continue;
@@ -108,7 +102,7 @@ dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
                     currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (this.keywords.indexOf(buffer) != -1) {
+                        if (buffer.match(this.keywordRegex)) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
                         } else {
@@ -123,27 +117,14 @@ dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
                 }
 
                 if (this.isPunctuation(c)) {
-                    if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
-                        // remove the previous region in the punctuation bucket, which is a forward slash
-                        regions[K.PUNCTUATION].pop();
-
-                        // we are in a c-style comment
+                    if (c == "<" && (line.length > i + 3) && (line.substring(i, i + 4) == "<!--")) {
+                        // we are in a multiline comment
                         multiline = true;
-                        currentStyle = K.C_STYLE_COMMENT;
-                        currentRegion = { start: i - 1 };
-                        buffer = "/*";
+                        currentStyle = K.HTML_STYLE_COMMENT;
+                        currentRegion = { start: i };
+                        buffer = "<!--";
+                        i += 3;
                         continue;
-                    }
-
-                    // check for a line comment; this ends the parsing for the rest of the line
-                    if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
-                        currentRegion = { start: i - 1, stop: line.length };
-                        currentStyle = K.LINE_COMMENT;
-                        this.addRegion(regions, currentStyle, currentRegion);
-                        buffer = "";
-                        currentStyle = undefined;
-                        currentRegion = {};
-                        break;      // once we get a line comment, we're done!
                     }
 
                     // add an ad-hoc region for just this one punctuation character
@@ -194,4 +175,4 @@ dojo.declare("bespin.syntax.ArduinoSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.ArduinoSyntaxEngine(), ['pde']);
+bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.HTML(), ['html', 'htm', 'xml', 'xhtml', 'shtml']);

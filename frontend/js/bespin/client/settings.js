@@ -67,7 +67,9 @@ dojo.declare("bespin.client.settings.Core", null, {
             'fontsize': '10',
             'autocomplete': 'off',
             'collaborate': 'off',
-            'syntax': 'auto',
+            'language': 'auto',
+            'strictlines': 'on',
+            'syntaxengine': 'simple',
             'tabarrow': 'on'
         };
     },
@@ -146,10 +148,8 @@ dojo.declare("bespin.client.settings.Core", null, {
 dojo.declare("bespin.client.settings.InMemory", null, {
     constructor: function(parent) {
         this.parent = parent;
-
-        this.settings = this.parent.defaultSettings();
-
-        bespin.publish("settings:loaded");
+        this.settings = this.parent.defaultSettings(); 
+        bespin.publish("settings:loaded"); 
     },
 
     set: function(key, value) {
@@ -217,6 +217,7 @@ dojo.declare("bespin.client.settings.Server", null, {
     constructor: function(parent) {
         this.parent = parent;
         this.server = bespin.get('server');
+        this.settings = this.parent.defaultSettings(); // seed defaults just for now!
 
         // TODO: seed the settings  
         this.server.listSettings(dojo.hitch(this, function(settings) {
@@ -240,7 +241,7 @@ dojo.declare("bespin.client.settings.Server", null, {
 
     unset: function(key) {
         delete this.settings[key];
-        this.unsetSetting(key);
+        this.server.unsetSetting(key);
     }
 });
 
@@ -376,24 +377,24 @@ dojo.declare("bespin.client.settings.Events", null, {
             var type = split[split.length - 1]; 
 
             if (type) {
-                bespin.publish("settings:syntax", { language: type });
+                bespin.publish("settings:language", { language: type });
             }
         });
 
-        // ** {{{ Event: settings:set:syntax }}} **
+        // ** {{{ Event: settings:set:language }}} **
         // 
         // When the syntax setting is changed, tell the syntax system to change
-        bespin.subscribe("settings:set:syntax", function(event) {
-            bespin.publish("settings:syntax", { language: event.value, fromCommand: true });
+        bespin.subscribe("settings:set:language", function(event) {
+            bespin.publish("settings:language", { language: event.value, fromCommand: true });
         });
 
-        // ** {{{ Event: settings:syntax }}} **
+        // ** {{{ Event: settings:language }}} **
         // 
-        // Given a new syntax command, change the editor.language        
-        bespin.subscribe("settings:syntax", function(event) {
+        // Given a new language command, change the editor.language
+        bespin.subscribe("settings:language", function(event) {
             var language = event.language;
             var fromCommand = event.fromCommand;
-            var syntaxSetting = settings.get('syntax') || "off";
+            var languageSetting = settings.get('language') || "auto";
 
             if (language == editor.language) return; // already set to be that language
 
@@ -401,9 +402,9 @@ dojo.declare("bespin.client.settings.Events", null, {
                 var split = window.location.hash.split('.');
                 var type = split[split.length - 1];                
                 if (type) editor.language = type;
-            } else if (bespin.util.include(['auto', 'on'], syntaxSetting) || fromCommand) {
+            } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
-            } else if (syntaxSetting == 'off') {
+            } else if (languageSetting == 'off') {
                 editor.language = 'off';
             }
         });
@@ -555,5 +556,14 @@ dojo.declare("bespin.client.settings.Events", null, {
                 value: settings.get('fontsize')
             });
         });        
+
+        // ** {{{ Event: settings:init }}} **
+        // 
+        // Setup the syntax engine if set
+        bespin.subscribe("settings:init", function(event) {
+            bespin.publish("settings:set:syntaxengine", {
+                value: settings.get('syntaxengine')
+            });
+        });
     }
 });

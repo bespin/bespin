@@ -133,7 +133,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         var editor = bespin.get("editor");
         if (!editor.language) {
             // we should not start until the language was set once
-            bespin.subscribe("settings:syntax", function() {
+            bespin.subscribe("settings:language", function() {
                 self.start()
             })
             return;

@@ -135,7 +135,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         
         // item double clicked => load this file
         this.window.scene.bus.bind("dblclick", this.panel.list, dojo.hitch(this, function(e) {
-            if (!e.isVisible) return; // short circuit if the popup isn't up
+            if (!this.window.isVisible) return; // short circuit if the popup isn't up
             
             var item = this.panel.list.selected;
             if (!item) return; // short circuit if we don't have an item to click on
@@ -170,7 +170,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 
         // handle ARROW_UP and ARROW_DOWN to select items in the list and other stuff
         dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-            if (!this.window.isVisible) return;
+            if (!this.window.isVisible) return; // short circuit if the popup isn't up
             
             var key = bespin.util.keys.Key;
             

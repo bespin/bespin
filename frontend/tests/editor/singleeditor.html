@@ -32,14 +32,14 @@
     <!-- begin script tags -->
 	<script>
 		var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
-	</script>   
+	</script>
 
     <!-- script src="../../js/dojo/dojo.js"></script -->
     <script src="../../js/bespin/editor/embed.js"></script>
 
 	<script>
         var _editorComponent;
-        
+
         // Loads and configures the objects that the editor needs
         // You can use dojo.addOnLoad(...); but for that you will need to load up dojo.js first
         window.onload = function() {
@@ -48,7 +48,7 @@
                 loadfromdiv: true
             });
         };
-        
+
         function copyToTextarea() {
             dojo.byId('inandout').value = _editorComponent.getContent();
         }
@@ -56,9 +56,9 @@
         function copyToEditor() {
             _editorComponent.setContent(dojo.byId('inandout').value);
         }
-        
+
         function setSyntax(value) {
-            bespin.publish("settings:syntax", { language: value });
+            bespin.publish("settings:language", { language: value });
         }
 	</script>
     <!-- end script tags -->
@@ -73,7 +73,7 @@ function flubber() {
 
     <div style="padding: 20px">
     <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
-    Enter syntax type and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
+    Enter language and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
     Push a new setting: <input type="text" id="key" value="strictlines"> <input type="text" id="value" value="on"> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
 
     <textarea id="inandout" cols="100" rows="10"></textarea><br>

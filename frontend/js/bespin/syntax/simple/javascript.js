@@ -26,9 +26,9 @@
 //
 // Module for syntax highlighting JavaScript.
 
-dojo.provide("bespin.syntax.javascript");
+dojo.provide("bespin.syntax.simple.javascript");
 
-// ** {{{ bespin.syntax.JavaScriptSyntaxEngine }}} **
+// ** {{{ bespin.syntax.simple.JavaScript }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
 // supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
@@ -43,7 +43,7 @@ bespin.syntax.JavaScriptConstants = {
     OTHER: "plain"
 };
 
-dojo.declare("bespin.syntax.JavaScriptSyntaxEngine", null, {
+dojo.declare("bespin.syntax.simple.JavaScript", null, {
     keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
                     'default delete do double else enum export extends false final finally float ' +
                     'for function goto if implements import in instanceof int interface long native ' +
@@ -190,4 +190,4 @@ dojo.declare("bespin.syntax.JavaScriptSyntaxEngine", null, {
 });
 
 // Register
-bespin.syntax.EngineResolver.register(new bespin.syntax.JavaScriptSyntaxEngine(), ['js', 'javascript', 'ecmascript', 'jsm', 'java']);
+bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.JavaScript(), ['js', 'javascript', 'ecmascript', 'jsm', 'java']);
