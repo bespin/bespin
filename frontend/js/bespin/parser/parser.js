@@ -47,8 +47,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // 
         // Parser found an error in the source code
         bespin.subscribe("bespin:parser:error", function(error) {
+            var msg = 'Syntax error: ' + error.message + ' on line ' + error.row;
+            console.log(msg)
             bespin.publish("bespin:cmdline:showinfo", { 
-                msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
+                msg: msg,
                 autohide: true
             })
         })
@@ -204,18 +206,18 @@ dojo.declare("bespin.parser.JavaScript", null, {
         
         // we are actually an array of nodes
         if(node.length) {
-            this._walk(callback, node, tree, i)
+            this._walk(callback, node, tree, index)
         }
         
         // all these properties can be sub trees
         if(node.expression) {
-            this._walk(callback, node.expression, tree, i)
+            this._walk(callback, node.expression, tree, index)
         }
         if(node.body) {
-            this._walk(callback, node.body, tree, i)
+            this._walk(callback, node.body, tree, index)
         }
         if(node.value) {
-            this._walk(callback, node.value, tree, i)
+            this._walk(callback, node.value, tree, index)
         }
     },
     
@@ -224,6 +226,18 @@ dojo.declare("bespin.parser.JavaScript", null, {
         if(tree.length) {
             for(var i = 0; i < tree.length; ++i) {
                 var node = tree[i];
+                
+                if(i > 0) {
+                    if(node.value == "declare") {
+                        console.log("Found declare")
+                        if(tree[i-1].value == "dojo") {
+                            console.log("found dojo "+index)
+                            if(parent[index+1] && parent[index+1][0]) {
+                                console.log("Class "+parent[index+1][0].value)
+                            }
+                        }
+                    }
+                }
             
                 this._visitNode(callback, tree, node, parent, i)
             }
