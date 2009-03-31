@@ -286,6 +286,7 @@ class UserSharing(Base):
     owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
     project_name = Column(String(128))
     invited_user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    invited_name = relation(User, primaryjoin=User.id==invited_user_id)
     edit = Column(Boolean, default=False)
     loadany = Column(Boolean, default=False)    
 
@@ -298,6 +299,7 @@ class GroupSharing(Base):
     owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
     project_name = Column(String(128))
     invited_group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'))
+    invited_name = relation(Group, primaryjoin=Group.id==invited_group_id)
     edit = Column(Boolean, default=False)
     loadany = Column(Boolean, default=False)    
 
@@ -345,15 +347,21 @@ class UserManager(object):
         return self.session.query(User).filter_by(username=username).first()
         
     def users_i_follow(self, following_user):
-        """ """
+        """Retrieve a list of the users that someone follows.
+        
+        Note this currently returns a list of Connections, we will probably
+        change this to return a list of Users soon."""
         return self.session.query(Connection).filter_by(following=following_user).all()
 
     def users_following_me(self, followed_user):
-        """ """
+        """Retrieve a list of the users that someone is following
+        
+        Note this currently returns a list of Connections, we will probably
+        change this to return a list of Users soon."""
         return self.session.query(Connection).filter_by(followed=followed_user).all()
 
     def follow(self, following_user, followed_user):
-        """ """
+        """Add a follow connection between 2 users"""
         if (followed_user == following_user):
             raise ConflictError("You can't follow yourself")
 
@@ -366,7 +374,7 @@ class UserManager(object):
             raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
 
     def unfollow(self, following_user, followed_user):
-        """ """
+        """Remove a follow connection between 2 users"""
         following_user_name = following_user.username;
         followed_user_name = followed_user.username;
         rows = self.session.query(Connection).filter_by(followed=followed_user, following=following_user).delete()
@@ -374,30 +382,39 @@ class UserManager(object):
             raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
 
     def get_groups(self, user):
-        """ """
+        """Retrieve a list of the groups created by a given user.
+        
+        Note this currently returns a list of Groups, we will probably change
+        this to return a list of group names in the future"""
         groups = self.session.query(Group).filter_by(owner_id=user.id).all()
         return groups
 
     def get_group_members(self, user, groupname):
-        """ """
+        """Retrieve a list of the members of a given users group"""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id).all()
         return members
 
     def remove_all_group_members(self, user, groupname):
-        """ """
+        """Remove all the members of a given group
+
+        TODO: Surely this should simply delete the group???"""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id).delete()
         pass
 
     def remove_group_members(self, user, groupname, other_user):
-        """ """
+        """Remove members from a given users group.
+
+        TODO: check on how this works"""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id, user_id=other_user.id).delete()
         pass
 
     def add_group_members(self, user, groupname, other_user):
-        """ """
+        """Add members from a given users group.
+
+        TODO: check on how this works"""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         self.session.add(GroupMember(group_id=group.id, user_id=other_user.id))
         try:
@@ -406,19 +423,63 @@ class UserManager(object):
             raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
         pass
 
-    def get_sharing(project, member=None):
+    def get_sharing(self, user, project=None, member=None):
+        """Retrieve a list of the shares made by a given user"""
+        shares = []
+        def add_shares(sharing_list):
+            for sharing in sharing_list:
+                shares.append({
+                    'owner':user.username,
+                    'project':sharing.project_name,
+                    'type':'user',
+                    'recipient':sharing.invited_name,
+                    'edit':sharing.edit,
+                    'loadany':sharing.loadany
+                })
+        if member != None:
+            if _is_group(user, member):
+                group = _get_group(member)
+                list = self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
+                    .all()
+                add_shares(list)
+            else:
+                user = get_user(member)
+                list = self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=user.id) \
+                    .all()
+                add_shares(list)
+            pass
+        elif project != None:
+            list = self.session.query(UserSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name) \
+                    .all()
+            add_shares(list)
+            list = self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name) \
+                    .all()
+            add_shares(list)
+        else:
+            list = self.session.query(UserSharing) \
+                    .filter_by(owner_id=user.id) \
+                    .all()
+            add_shares(list)
+            list = self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id) \
+                    .all()
+            add_shares(list)
         return [ "Not implemented", project, member ]
 
-    def remove_sharing(project, member=None):
+    def remove_sharing(self, user, project, member=None):
         return [ "Not implemented", project, member ]
 
-    def add_sharing(project, member, options):
+    def add_sharing(self, user, project, member, options):
         return [ "Not implemented", project, member, options ]
 
-    def get_viewme(member=None):
+    def get_viewme(self, user, member=None):
         return [ "Not implemented", member ]
 
-    def set_viewme(member, value):
+    def set_viewme(self, user, member, value):
         return [ "Not implemented", member, value ]
 
 
