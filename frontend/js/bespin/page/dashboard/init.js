@@ -329,7 +329,7 @@ dojo.provide("bespin.page.dashboard.init");
             tree.bounds = { x: d.i.l, y: d.i.t, width: d.b.w - d.i.w, height: d.b.h - d.i.h };
         };
 
-        infoPanel = new th.components.ExpandingInfoPanel({ style: { backgroundColor: "rgb(61, 59, 52)" } });
+        infoPanel = new th.components.ExpandingInfoPanel();
 
         var splitPanel = new th.components.SplitPanel({ id: "splitPanel", attributes: {
             orientation: th.VERTICAL,

@@ -22,3 +22,7 @@ ResizeNib {
     -th-vertical-bar-color: rgb(10, 10, 8);
     -th-vertical-bar-shadow-color: rgb(185, 180, 158);
 }
+
+ExpandingInfoPanel {
+    background-color: rgb(61, 59, 52);
+}
