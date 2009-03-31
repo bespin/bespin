@@ -118,6 +118,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     },
 
     getCharacterLength: function(character) {
+    	if (character.length > 1) return;
         if (character == "\t") {
             var tabsize = this.editor.getTabSize();
             return (tabsize - (this.position.col % tabsize));
@@ -438,6 +439,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
 
         this.position = { row: row, col: newpos.col };
+        // console.log('Position: (' + this.position.row + ', ' + this.position.col + ')', '[' + this.getModelPosition().col + ']');
 
         // keeps the editor's cursor from blinking while moving it
         var editorUI = bespin.get('editor').ui;

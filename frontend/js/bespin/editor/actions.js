@@ -171,11 +171,11 @@ dojo.declare("bespin.editor.Actions", null, {
                 tabsize = this.cursorManager.getCharacterLength(tab);
             } else {
                 tab = "";
-                tabsize = this.editor.getTabSize();   
-                var tabSizeCount = tabsize;
+                var tabSizeCount = this.editor.getTabSize();
                 while (tabSizeCount-- > 0) {
                     tab += " ";
                 }
+                tabsize = tab.length;
                 if (settings && settings.isSettingOn('smartmove')) {
                     leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(args.pos.row);
                     tabsize = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
@@ -196,8 +196,7 @@ dojo.declare("bespin.editor.Actions", null, {
             action: "removeTab",
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
-            tab: tab,
-            tabsize: tabsize
+            tab: tab
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
@@ -205,10 +204,8 @@ dojo.declare("bespin.editor.Actions", null, {
     
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
-        var tabsize = args.tabsize;
-        
         delete this.editor.selection;
-        this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tabsize);
+        this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), args.tab.length);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
         this.repaint(args.pos.row);
         
@@ -220,8 +217,7 @@ dojo.declare("bespin.editor.Actions", null, {
             undoInsertTab: true,
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
-            tab: args.tab,
-            tabsize: args.tabsize
+            tab: args.tab
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
