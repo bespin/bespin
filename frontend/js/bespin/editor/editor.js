@@ -1025,7 +1025,7 @@ dojo.declare("bespin.editor.UI", null, {
                         var currentColumn = 0; // current column, inclusive
                         for (var si = 0; si < styleArray.length; si++) {
                             var range = styleArray[si];
-                            if (style == 'plain' && !range.start && !range.end) continue; // make sure undefined isn't passed in!
+                            if (style == 'plain' && range.start === undefined && range.end === undefined) continue; // make sure undefined isn't passed in!
 
                             for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
                             thisLine += lineInfo.text.substring(range.start, range.stop);
