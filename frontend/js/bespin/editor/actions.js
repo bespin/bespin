@@ -162,31 +162,30 @@ dojo.declare("bespin.editor.Actions", null, {
         }
 
         var tab = args.tab;
-        var tabsize = args.tabsize;
+        var tablength = this.cursorManager.getCharacterLength("\t");
 
-        if (!tab || !tabsize) {
+        if (!tab || !tablength) {
             if (settings && settings.isSettingOn('tabmode')) {
                 // do something tabby
                 tab = "\t";
-                tabsize = this.cursorManager.getCharacterLength(tab);
             } else {
                 tab = "";
-                var tabSizeCount = this.editor.getTabSize();
+                var tabSizeCount = tablength;
                 while (tabSizeCount-- > 0) {
                     tab += " ";
                 }
-                tabsize = tab.length;
+                tablength = tab.length;
                 if (settings && settings.isSettingOn('smartmove')) {
-                    leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(args.pos.row);
-                    tabsize = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
-                    tab = tab.substring(0, tabsize);
+                    leadingWhitespaceLength = this.cursorManager.getLeadingWhitespace(args.pos.row);
+                    tablength = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
+                    tab = tab.substring(0, tablength);
                 }
             }
         }
 
         delete this.editor.selection;
         this.model.insertCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
-        this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tabsize });
+        this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tablength });
         this.repaint(args.pos.row);
         
         // undo/redo
@@ -249,17 +248,17 @@ dojo.declare("bespin.editor.Actions", null, {
         for (var y = startRow; y <= endRow; y++) {
             if (!historyIndent) {
                 if (tab != '\t') {
-                    leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
+                    leadingWhitespaceLength = this.cursorManager.getLeadingWhitespace(y);
                     charsToInsertLength = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
                     charsToInsert = tab.substring(0, charsToInsertLength);
                 } else {
                     // in the case of "real" tabs we just insert the tabs
                     charsToInsert = '\t';
                 }
-                this.model.insertCharacters({ row: y, col: 0 }, charsToInsert);
+                this.model.insertCharacters(this.cursorManager.getModelPosition({ row: y, col: 0 }), charsToInsert);
                 newHistoryIndent.push(charsToInsert);
             } else {
-                this.model.insertCharacters({ row: y, col: 0 }, historyIndent[y - startRow]);
+                this.model.insertCharacters(this.cursorManager.getModelPosition({ row: y, col: 0 }), historyIndent[y - startRow]);
             } 
         }
 
@@ -308,7 +307,7 @@ dojo.declare("bespin.editor.Actions", null, {
                     charsToDelete = 1;
                     charsWidth = this.editor.getTabSize();
                 } else {
-                    var leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
+                    var leadingWhitespaceLength = this.cursorManager.getLeadingWhitespace(y);
                     charsToDelete = this.cursorManager.getContinuousSpaceCount(0, this.editor.getTabSize());
                     charsWidth = charsToDelete;
                 }
@@ -581,9 +580,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
     deleteCharacter: function(args) {
         if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
-            args.pos = this.cursorManager.getModelPosition(args.pos);
-            var deleted = this.model.deleteCharacters(args.pos, 1);
-            this.repaint(args.pos.row);
+            var modelPos = this.cursorManager.getModelPosition(args.pos);
+            var deleted = this.model.deleteCharacters(modelPos, 1);
+            this.repaint(modelPos.row);
 
             // undo/redo
             args.action = "deleteCharacter";

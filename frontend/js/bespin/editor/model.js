@@ -183,23 +183,6 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         return this.rows.length;
     },
     
-    // returns the numbers of white spaces from the beginning of the line
-    // '\t' are counted as white spaces with with = editor.tabsize
-    getRowLeadingWhitespaces: function(rowIndex) {
-        var row = this.getRowArray(rowIndex).join("");
-        var tabsize = bespin.get('editor').getTabSize();
-        var match = /^(\s+).*/.exec(row);
-        var leadingWhitespaces = 0;
-        if (match && match.length == 2) {
-            // search for tabs!
-            match = match[1].split("");
-            for (var x = 0; x < match.length; x++) {
-                leadingWhitespaces += (match[x] == '\t' ? tabsize : 1);
-            }
-        }
-        return leadingWhitespaces;
-    },
-
     // returns a "chunk": a string representing a part of the document with \n characters representing end of line
     getChunk: function(selection) {
         var startPos = selection.startPos;

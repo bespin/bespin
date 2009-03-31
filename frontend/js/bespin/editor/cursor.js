@@ -108,20 +108,17 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var count = 0;
         str = str.split("");
         for (var x = 0; x < str.length; x++) {
-            if (str[x] == "\t") {
-                count += this.editor.getTabSize();
-            } else {
-                count ++;
-            }
+			count += this.getCharacterLength(str[x]);
         }
         return count;
     },
 
-    getCharacterLength: function(character) {
+    getCharacterLength: function(character, column) {
     	if (character.length > 1) return;
+    	if (column == undefined) column = this.position.col;
         if (character == "\t") {
             var tabsize = this.editor.getTabSize();
-            return (tabsize - (this.position.col % tabsize));
+            return (tabsize - (column % tabsize));
         } else {
             return 1;
         }
@@ -156,18 +153,32 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return count;
     },
     
+    // returns the numbers of white spaces from the beginning of the line
+    // tabs are counted as whitespace
+    getLeadingWhitespace: function(rowIndex) {
+        var row = this.editor.model.getRowArray(rowIndex).join("");
+        var match = /^(\s+).*/.exec(row);
+        var leadingWhitespace = 0;
+        if (match && match.length == 2) {
+            // search for tabs!
+            match = match[1].split("");
+            for (var x = 0; x < match.length; x++) {
+                leadingWhitespace += this.getCharacterLength(match[x], x);
+            }
+        }
+        return leadingWhitespace;
+    },
+
     getNextTablevelLeft: function(col) {
-        var tabsize = this.editor.getTabSize();
+        var tablength = this.getCharacterLength("\t");
         col = col || this.position.col;
-        col--
-        return Math.floor(col / tabsize) * tabsize;
+        return col - tablength;
     },
     
     getNextTablevelRight: function(col) {
-        var tabsize = this.editor.getTabSize();
+        var tablength = this.getCharacterLength("\t");
         col = col || this.position.col;
-        col++;
-        return Math.ceil(col / tabsize) * tabsize;
+        return col + tablength;
     },
 
     moveToLineStart: function() {
