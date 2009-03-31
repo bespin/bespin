@@ -206,27 +206,27 @@ dojo.declare("bespin.parser.JavaScript", null, {
         this._walk(callback, tree, null, null)
     },
     
-    _visitNode: function(callback, tree, node, parent, index) {
-        callback.call(this, node, tree, index)
+    _visitNode: function(callback, tree, node, parent, index, depth) {
+        callback.call(this, node, tree, index, 0)
         
         // we are actually an array of nodes
         if(node.length) {
-            this._walk(callback, node, tree, index)
+            this._walk(callback, node, tree, index, depth)
         }
         
         // all these properties can be sub trees
         if(node.expression) {
-            this._walk(callback, node.expression, tree, index)
+            this._walk(callback, node.expression, tree, index, depth)
         }
         if(node.body) {
-            this._walk(callback, node.body, tree, index)
+            this._walk(callback, node.body, tree, index, depth)
         }
         if(node.value) {
-            this._walk(callback, node.value, tree, index)
+            this._walk(callback, node.value, tree, index, depth)
         }
     },
     
-    _walk: function(callback, tree, parent, index) {
+    _walk: function(callback, tree, parent, index, depth) {
         if(typeof tree == "string") return
         if(tree.length) {
             for(var i = 0; i < tree.length; ++i) {
@@ -238,17 +238,27 @@ dojo.declare("bespin.parser.JavaScript", null, {
                         if(tree[i-1].value == "dojo") {
                             console.log("found dojo "+index)
                             if(parent[index+1] && parent[index+1][0]) {
-                                console.log("Class "+parent[index+1][0].value)
+                                console.log("Class "+parent[index+1][0].value + " - "+depth)
+                            }
+                        }
+                    } else {
+                        if(node.value == "publish") {
+                            console.log("Found publish")
+                            if(tree[i-1].value == "bespin") {
+                                console.log("found bespin "+index)
+                                if(parent[index+1] && parent[index+1][0]) {
+                                    console.log("Class "+parent[index+1][0].value + " - "+depth)
+                                }
                             }
                         }
                     }
                 }
             
-                this._visitNode(callback, tree, node, parent, i)
+                this._visitNode(callback, tree, node, parent, i, depth+1)
             }
         } else {
             // we are not an array of nodes, so we are a node
-            this._visitNode(callback, tree, tree, parent, 0)
+            this._visitNode(callback, tree, tree, parent, 0, depth)
         }
     },
     
