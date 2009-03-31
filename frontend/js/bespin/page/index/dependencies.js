@@ -25,7 +25,6 @@
 dojo.provide("bespin.page.index.dependencies");
 
 dojo.require("dojo.cookie");
-dojo.require("dijit._base.place");
 
 dojo.require("bespin.bespin");
 dojo.require("bespin.util.navigate");
