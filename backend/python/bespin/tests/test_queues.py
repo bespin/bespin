@@ -62,6 +62,7 @@ def test_using_stupid_queue():
     assert item.message == dict(command=["log"],
                 user="10",
                 working_dir="other/dir")
+    sq.close()
     
 def job_handler(qi):
     assert qi.id == job_handler.id
@@ -73,14 +74,33 @@ def test_sync_queueing():
     config.c.async_jobs = False
     
     job_handler.message = dict(answer=42, 
-        question="what do you get if you multiply six by nine?")
+        question="what do you get if you multiply six by nine?",
+        execute="bespin.tests.test_queues:job_handler")
     job_handler.queue = "vcs"
     job_handler.called = False
     job_handler.id = None
-        
-    id = queue.enqueue("vcs", 
-        "bespin.tests.test_queues:job_handler",
-        job_handler.message)
-    assert id is None
+    
+    try:    
+        id = queue.enqueue("vcs", job_handler.message)
+        assert id is None
+        assert job_handler.called
+    finally:
+        config.c.async_jobs = True
+    
+def test_async_queueing():
+    job_handler.message = dict(data=[1,2,3],
+        execute="bespin.tests.test_queues:job_handler")
+    job_handler.queue = "vcs"
+    job_handler.called = False
+
+    id = queue.enqueue("vcs", job_handler.message)
+    assert id > 0
+    job_handler.id = id
+    sq = queue.StupidQueue()
+    cursor = sq.conn.execute("select count(*) from queue")
+    cursor.close()
+    qi = sq._get_item("vcs")
+    assert qi is not None
+    queue.run_queue_item(qi)
     assert job_handler.called
     
