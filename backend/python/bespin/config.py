@@ -56,6 +56,7 @@ c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
+c.async_jobs = True
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
@@ -75,6 +76,7 @@ def set_profile(profile):
         c.dburl = "sqlite://"
         c.fsroot = os.path.abspath("%s/../testfiles" 
                         % os.path.dirname(__file__))
+        c.async_jobs = False
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
         c.fsroot = os.path.abspath("%s/../../../devfiles" 
@@ -92,6 +94,8 @@ def set_profile(profile):
         c.use_uuid_as_dir_identifier = False
         c.default_quota=10000
         c.log_requests_to_stdout = True
+        
+        c.async_jobs = False
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
