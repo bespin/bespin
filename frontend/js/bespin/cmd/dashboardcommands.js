@@ -33,6 +33,6 @@ bespin.cmd.dashboardcommands.Commands = [
     'import', 'export', 'alias', 'history', 'mkdir', 'newfile', 'rm',
     'createproject', 'deleteproject', 'renameproject', 'status',
     'follow', 'unfollow', 'group', 'share', 'viewme', 'test', 'echo',
-    'vcs', 'clone', 'authset'
+    'vcs', 'clone', 'authset', 'commit', 'diff'
 ];
 

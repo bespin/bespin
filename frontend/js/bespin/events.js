@@ -632,9 +632,3 @@ bespin.subscribe("viewme:set", function(member, value) {
     });
 });
 
-// ** {{{ Event: bespin:vcs:response }}} **
-// Handle a response from a version control system command
-bespin.subscribe("bespin:vcs:response", function(event) {
-    dojo.require("bespin.util.webpieces");
-    bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
-});
