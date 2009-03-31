@@ -175,11 +175,6 @@ dojo.declare("bespin.editor.Actions", null, {
                     tab += " ";
                 }
                 tablength = tab.length;
-                if (settings && settings.isSettingOn('smartmove')) {
-                    leadingWhitespaceLength = this.cursorManager.getLeadingWhitespace(args.pos.row);
-                    tablength = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
-                    tab = tab.substring(0, tablength);
-                }
             }
         }
 
