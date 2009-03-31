@@ -168,7 +168,7 @@ dojo.declare("bespin.editor.Actions", null, {
             if (settings && settings.isSettingOn('tabmode')) {
                 // do something tabby
                 tab = "\t";
-                tabsize = 1;
+                tabsize = this.cursorManager.getCharacterLength(tab);
             } else {
                 tab = "";
                 tabsize = this.editor.getTabSize();   
