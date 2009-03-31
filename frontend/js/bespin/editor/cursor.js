@@ -102,26 +102,34 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return selection;
     },
 
-    // Returns the length of a given string. This takes '\t' in account!
-    getStringLength: function(str) {
-        if (!str || str.length == 0) return 0;
-        var count = 0;
-        str = str.split("");
-        for (var x = 0; x < str.length; x++) {
-			count += this.getCharacterLength(str[x]);
-        }
-        return count;
-    },
-
     getCharacterLength: function(character, column) {
-    	if (character.length > 1) return;
-    	if (column == undefined) column = this.position.col;
+        if (character.length > 1) return;
+        if (column == undefined) column = this.position.col;
         if (character == "\t") {
             var tabsize = this.editor.getTabSize();
             return (tabsize - (column % tabsize));
         } else {
             return 1;
         }
+    },
+
+    // Returns the length of a given string. This takes '\t' in account!
+    getStringLength: function(str) {
+        if (!str || str.length == 0) return 0;
+        var count = 0;
+        str = str.split("");
+        for (var x = 0; x < str.length; x++) {
+            count += this.getCharacterLength(str[x], count);
+        }
+        return count;
+    },
+    
+    // returns the numbers of white spaces from the beginning of the line
+    // tabs are counted as whitespace
+    getLeadingWhitespace: function(rowIndex) {
+        var row = this.editor.model.getRowArray(rowIndex).join("");
+        var match = /^(\s+).*/.exec(row);
+        return (match && match.length == 2 ? this.getStringLength(match[1]) : 0);
     },
     
     // Returns the numbers of white spaces (NOT '\t'!!!) in a row
@@ -153,37 +161,23 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return count;
     },
     
-    // returns the numbers of white spaces from the beginning of the line
-    // tabs are counted as whitespace
-    getLeadingWhitespace: function(rowIndex) {
-        var row = this.editor.model.getRowArray(rowIndex).join("");
-        var match = /^(\s+).*/.exec(row);
-        var leadingWhitespace = 0;
-        if (match && match.length == 2) {
-            // search for tabs!
-            match = match[1].split("");
-            for (var x = 0; x < match.length; x++) {
-                leadingWhitespace += this.getCharacterLength(match[x], x);
-            }
-        }
-        return leadingWhitespace;
-    },
-
     getNextTablevelLeft: function(col) {
-        var tablength = this.getCharacterLength("\t");
+        var tabsize = this.editor.getTabSize();
         col = col || this.position.col;
-        return col - tablength;
+        col--;
+        return Math.floor(col / tabsize) * tabsize;
     },
     
     getNextTablevelRight: function(col) {
-        var tablength = this.getCharacterLength("\t");
+        var tabsize = this.editor.getTabSize();
         col = col || this.position.col;
-        return col + tablength;
+        col++;
+        return Math.ceil(col / tabsize) * tabsize;
     },
 
     moveToLineStart: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        var leadingWhitespaceLength = this.editor.model.getRowLeadingWhitespaces(oldPos.row);
+        var leadingWhitespaceLength = this.getLeadingWhitespace(oldPos.row);
 
         if (this.position.col == 0) {
             this.moveCursor({ col:  leadingWhitespaceLength });
@@ -437,9 +431,9 @@ dojo.declare("bespin.editor.CursorManager", null, {
         if (invalid) {
             // console.log('Comparing (' + oldpos.row + ',' + oldpos.col + ') to (' + newpos.row + ',' + newpos.col + ') ...');
             // console.log("invalid position: " + invalid.left + ", " + invalid.right + "; half: " + invalid.half);
-        	if (oldpos.row != newpos.row) {
-        		newpos.col = invalid.right;
-        	} else if (oldpos.col < newpos.col) {
+            if (oldpos.row != newpos.row) {
+                newpos.col = invalid.right;
+            } else if (oldpos.col < newpos.col) {
                 newpos.col = invalid.right;
             } else if (oldpos.col > newpos.col) {
                 newpos.col = invalid.left;
