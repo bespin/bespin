@@ -99,7 +99,7 @@ options(
         dburl=None
     ),
     dojo=Bunch(
-        version="1.3.0rc1",
+        version="1.3.0",
         download_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s.tar.gz"
                             % (options.dojo.version, options.dojo.version),
         src_url=lambda:"http://download.dojotoolkit.org/release-%s/dojo-release-%s-src.tar.gz"

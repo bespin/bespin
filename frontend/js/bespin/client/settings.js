@@ -70,6 +70,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'language': 'auto',
             'strictlines': 'on',
             'syntaxengine': 'simple',
+            'preview': 'window',
             'tabarrow': 'on'
         };
     },

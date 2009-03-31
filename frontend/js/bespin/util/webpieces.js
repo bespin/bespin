@@ -24,14 +24,18 @@
 
 dojo.provide("bespin.util.webpieces");
 
+dojo.require("dijit._base.place"); 
+
 // = Utility functions for Web snippets =
 //
 // There are little widgets and components that we want to reuse
 
 dojo.mixin(bespin.util.webpieces, {
     // -- Center Popup
-    showCenterPopup: function(el) {
-        this.showOverlay();
+    showCenterPopup: function(el, isModal) {
+        if (isModal) {
+            this.showOverlay();
+        }
         dojo.style(el, 'display', 'block');
 
         // retrieve required dimensions
@@ -57,7 +61,7 @@ dojo.mixin(bespin.util.webpieces, {
 
     // -- Overlay
     
-    showOverlay: function() {
+    showOverlay: function() { 
         dojo.style('overlay', 'display', 'block');
     },
 
@@ -79,5 +83,4 @@ dojo.mixin(bespin.util.webpieces, {
         dojo.byId("status").innerHTML = msg;
         dojo.style('status', 'display', 'block');
     }
-
 });
