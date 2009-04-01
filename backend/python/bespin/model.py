@@ -49,7 +49,7 @@ import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
-                    DateTime, func, UniqueConstraint)
+                    DateTime, func, UniqueConstraint, Text)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -99,6 +99,14 @@ class Connection(Base):
 
     followed_viewable = Column(Boolean, default=False)
 
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
+    when = Column(DateTime, default=datetime.now)
+    message = Column(Text)
+
 class User(Base):
     __tablename__ = "users"
     
@@ -112,6 +120,7 @@ class User(Base):
     amount_used = Column(Integer, default=0)
     file_location = Column(String(200))
     everyone_viewable = Column(Boolean, default=False)
+    messages = relation(Message, order_by=Message.when, backref="user")
     
     i_follow = relation(Connection,
                         primaryjoin=Connection.following_id==id,
@@ -263,6 +272,11 @@ class User(Base):
         statusinfo = simplejson.loads(statusinfo)
         return statusinfo.get("open", {})
         
+    def publish(self, message_obj):
+        data = simplejson.dumps(message_obj)
+        message = Message(user=self, message=data)
+        self.messages.append(message)
+
 class Group(Base):
     __tablename__ = "groups"
 
@@ -420,7 +434,13 @@ class UserManager(object):
 
     def set_viewme(member, value):
         return [ "Not implemented", member, value ]
-
+        
+    def pop_messages(self, user):
+        messages = []
+        for message in user.messages:
+            messages.append(message.message)
+            self.session.delete(message)
+        return messages
 
 class Directory(object):
     def __init__(self, project, name):

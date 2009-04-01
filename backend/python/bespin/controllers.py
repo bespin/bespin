@@ -688,6 +688,18 @@ def keychain_setauth(request, response):
     response.body = ""
     return response()
 
+@expose("^/messages/$", 'POST')
+def messages(request, response):
+    user = request.user
+    user_manager = request.user_manager
+    messages = user_manager.pop_messages(user)
+    body = u"[" + ",".join(messages) + \
+            "]"
+    
+    response.content_type = "application/json"
+    response.body = body.encode("utf8")
+    return response()
+
 def db_middleware(app):
     def wrapped(environ, start_response):
         from bespin import model
