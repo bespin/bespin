@@ -1,0 +1,61 @@
+<html>
+<head>
+<title>Piece Parser</title>
+</head>
+
+<body>
+	
+	<script>
+	function getPieces(input) {
+	    var pieces = [];
+	    var inParens = false;
+	    var currentCharacter;
+	    var currentPiece = "";
+	    
+	    for (var x = 0; x < input.length; x++) {
+	        currentCharacter = input[x];
+	        
+	        if (currentCharacter == ',') {
+	            if (!inParens) {
+	                pieces.push(currentPiece.trim()); // need to use a trim that works cross browser
+	                currentPiece = "";
+	                continue;
+	            }
+	        } else if (currentCharacter == '(') {
+	            inParens = true;
+	        } else if (currentCharacter == ')') {
+	            inParens = false;
+	        }
+	        currentPiece += currentCharacter;
+	    }
+	    
+	    pieces.push(currentPiece.trim()); // get the last piece too
+	    
+	    return pieces;
+	}
+
+	function calculate() {
+		var input = document.getElementById("input").value;		
+		var pieces = getPieces(input);
+		
+		console.log(pieces);
+
+		document.getElementById("results").value = pieces;
+	}
+	</script>
+	
+	<table cellspacing="6">
+		<tr valign="top">
+			<td>Input String</td><td><input type="text" id="input" value="one, rgb(123, 123, 13), two, three" size="50"></td>
+		</tr>
+		<tr valign="top">
+			<td>Results</td><td><textarea id="results" disabled="true" cols="50"></textarea></td>
+		</tr>
+		<tr valign="top">
+			<td colspan="2"><input type="button" onclick="calculate()" value="Calculate"/></td>
+		</tr>
+	</table>
+	
+	
+</body>
+</html>
