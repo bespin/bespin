@@ -60,6 +60,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var info = self.currentMetaInfo;
             var html;
             
+            var patterns = self.getCodePatterns();
+            
             if (info) {
                 html = '<u>Outline</u><br/><br/>';
                 html +='<div style="overflow:auto; max-height: 400px;" id="outlineInfo">';
@@ -68,13 +70,19 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 } else {
                     dojo.forEach(info.outline, function(ele) {
                         var type = ele.type;
+                        var kind = type;
                         var name = ele.name;
+                        var pattern = patterns[type];
+                        if(pattern) {
+                            if("declaration" in pattern) kind = pattern.declaration;
+                            if("description" in pattern) kind = pattern.description;
+                        }
                         if (typeof name == "undefined") {
                             return
                         }
                         var indent = "";
                         for(var i = 0; i < ele.depth; i++) indent += "&nbsp;";
-                        html += indent+'<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+ele.row+', col: 0 });bespin.publish(\'editor:doaction\', { action: \'moveCursorRowToCenter\' })">'+type+': '+name+'</a><br/>';
+                        html += indent+kind+': <a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+ele.row+', col: 0 });bespin.publish(\'editor:doaction\', { action: \'moveCursorRowToCenter\' })">'+name+'</a><br/>';
                     });
                 }
                 html += '</div>';
@@ -158,13 +166,16 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     getCodePatterns: function () {        
         return {
             dojoClass: {
-                declaration: "dojo.declare"
+                declaration: "dojo.declare",
+                description: "Class"
             },
             bespinEventPublish: {
-                declaration: "bespin.publish"
+                declaration: "bespin.publish",
+                description: "Publish"
             },
             bespinEventSubscription: {
-                declaration: "bespin.subscribe"
+                declaration: "bespin.subscribe",
+                description: "Subscribe to"
             },
             jooseClass: {
                 declaration: "Class"
