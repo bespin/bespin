@@ -739,6 +739,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
         
+        listener.bindKeyString("CTRL SHIFT",Key.U,this.actions.selectionUpperCase);
+        listener.bindKeyString("CTRL SHIFT",Key.L,this.actions.selectionLowerCase);
+        
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
