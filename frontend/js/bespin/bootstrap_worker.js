@@ -30,13 +30,13 @@ if(typeof importScripts == "undefined") {
     // make sure we eval scripts in requested order
     __GLOBAL__.__evalScriptFromImport = function (index, source) {
         loaded[index] = source;
-        console.log("Received script "+index + ". ")
+        // console.log("Received script "+index + ". ")
         for(var i = nextLoad; i < loaded.length; ++i) {
             if(loaded[i]) {
                 nextLoad = i+1;
-                console.log("Evalling "+i)
+                // console.log("Evalling "+i)
                 __GLOBAL__.eval(loaded[i])
-                console.log("evaled "+i)
+                // console.log("evaled "+i)
             } else {
                 break
             }

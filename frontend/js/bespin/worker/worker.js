@@ -164,7 +164,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         var loadScript = function (index, url) {
             var worker = this;
             bespin.get("server").request('GET', url, null, { 
-                call: function (src) {
+                onSuccess: function (src) {
                     worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src)
                 } 
             });
