@@ -32,8 +32,10 @@ dojo.require("dijit._base.place");
 
 dojo.mixin(bespin.util.webpieces, {
     // -- Center Popup
-    showCenterPopup: function(el) {
-        this.showOverlay();
+    showCenterPopup: function(el, isModal) {
+        if (isModal) {
+            this.showOverlay();
+        }
         dojo.style(el, 'display', 'block');
 
         // retrieve required dimensions
@@ -59,7 +61,7 @@ dojo.mixin(bespin.util.webpieces, {
 
     // -- Overlay
     
-    showOverlay: function() {
+    showOverlay: function() { 
         dojo.style('overlay', 'display', 'block');
     },
 
@@ -106,5 +108,4 @@ dojo.mixin(bespin.util.webpieces, {
             bespin.util.webpieces.hideCenterPopup(el);
         };        
     }
-
 });

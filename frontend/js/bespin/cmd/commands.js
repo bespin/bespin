@@ -738,11 +738,19 @@ bespin.cmd.commands.add({
             });
         });
 
-        bespin.util.webpieces.showCenterPopup(el);
-
-        dojo.byId("overlay").onclick = dojo.byId("upload-close").onclick = function() {
+        bespin.util.webpieces.showCenterPopup(el, true);
+        
+        // TODO: refactor this block into webpieces if popup is modal
+        // pass the uploadClose DOM element as parameter to showCenterPopup
+        var uploadClose, overlay;
+        var hideCenterPopup = function(){
+            el.removeChild(el.firstChild); 
             bespin.util.webpieces.hideCenterPopup(el);
+            dojo.disconnect(uploadClose);
+            dojo.disconnect(overlay);            
         };
+        uploadClose = dojo.connect(dojo.byId("upload-close"), "onclick", hideCenterPopup);
+        overlay = dojo.connect(dojo.byId("overlay"), "onclick", hideCenterPopup);
     },
 
     // ** {{{execute}}}

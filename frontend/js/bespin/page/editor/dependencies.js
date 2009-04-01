@@ -37,6 +37,7 @@ dojo.require("bespin.util.tokenobject");
 dojo.require("bespin.util.util");
 dojo.require("bespin.util.mousewheelevent");
 dojo.require("bespin.util.urlbar");
+dojo.require("bespin.util.webpieces"); 
 
 dojo.require("bespin.client.filesystem");
 dojo.require("bespin.client.settings");

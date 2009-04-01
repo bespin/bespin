@@ -39,6 +39,15 @@ body {
     cursor: text !important;
 }
 
+#preview {
+    position: absolute;
+    top: 32px;
+    bottom:33px;
+    right: 0px;
+    left: 0px;
+    z-index: -1;
+}
+
 #filelist {
     position: absolute;
     margin: 0;
@@ -58,7 +67,7 @@ body {
     background: url("../images/background_white_50.png");
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
-    padding: 10px;    
+    padding: 10px;
     -moz-opaque: true;
 }
 

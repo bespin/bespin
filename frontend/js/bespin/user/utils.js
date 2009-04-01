@@ -67,7 +67,7 @@ dojo.mixin(bespin.user.utils, {
 
     showingBrowserCompatScreen: function() {
        if (!this.checkBrowserAbility()) { // if you don't have the ability
-            bespin.util.webpieces.showCenterPopup(dojo.byId('browser_not_compat'));
+            bespin.util.webpieces.showCenterPopup(dojo.byId('browser_not_compat'), true);
 
             return true;
         } else {

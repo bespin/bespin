@@ -73,20 +73,68 @@ bespin.subscribe("editor:evalfile", function(event) {
 });
 
 // ** {{{ Event: editor:preview }}} **
-// 
+//
 // Preview the given file in a browser context
 bespin.subscribe("editor:preview", function(event) {
     var editSession = bespin.get('editSession');
     var filename = event.filename || editSession.path;  // default to current page
-    var project  = event.project  || editSession.project; 
+    var project  = event.project  || editSession.project;
+    var url = bespin.util.path.combine("preview/at", project, filename);
+    var settings = bespin.get("settings");
 
     // Make sure to save the file first
     bespin.publish("editor:savefile", {
         filename: filename
     });
 
-    if (filename) {
-        window.open(bespin.util.path.combine("preview/at", project, filename));
+    if (settings && filename) {
+        var type = settings.get("preview");
+        if (type == "inline") {
+            var preview = dojo.byId("preview");
+            var subheader = dojo.byId("subheader");
+            var editor = dojo.byId("editor");
+            if (dojo.style(preview, "display") == "none") {
+                dojo.style(editor, "display", "none");
+                dojo.style(subheader, "display", "none");
+                dojo.style(preview, "display", "block");
+                var inlineIframe = dojo.create("iframe", {
+                    frameBorder: 0,
+                    src: url,
+                    style: "border:0; width:100%; height:100%; background-color: white; display:block"
+                }, preview);
+                var esc = dojo.connect(document, "onkeypress", function(e) {
+                    var key = e.keyCode || e.charCode;
+                    if (key == dojo.keys.ESCAPE) {
+                        preview.removeChild(inlineIframe);
+                        dojo.style(preview, "display", "none");
+                        dojo.style(subheader, "display", "block");
+                        dojo.style(editor, "display", "block"); 
+                        dojo.disconnect(esc); 
+                }
+            });
+            }
+        } else if (type == "iphone") {
+            var centerpopup = dojo.byId("centerpopup");
+            if (dojo.byId("iphoneIframe") == null) {
+                var iphoneIframe = dojo.create("iframe", {
+                    id: "iphoneIframe",
+                    frameBorder: 0,
+                    src: url,
+                    style: "border:0; width:320px; height:460px; background-color: white; display:block"
+                }, centerpopup);
+                bespin.util.webpieces.showCenterPopup(centerpopup);
+                var esc = dojo.connect(document, "onkeypress", function(e) {
+                    var key = e.keyCode || e.charCode;
+                    if (key == dojo.keys.ESCAPE) {
+                        centerpopup.removeChild(iphoneIframe);
+                        bespin.util.webpieces.hideCenterPopup(centerpopup);
+                        dojo.disconnect(esc);
+                    }
+                });
+            }
+        } else {
+            window.open(url);
+        }
     }
 });
 

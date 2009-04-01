@@ -173,7 +173,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 }
             }
         }
-
         return matches;
     },
 
@@ -286,7 +285,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         
         dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
             var command;
-            if (e.keyChar >= "A".charCodeAt() && e.keyChar < "Z".charCodeAt()) { // only real letters
+            if (e.keyCode >= "A".charCodeAt() && e.keyCode < "Z".charCodeAt()) { // only real letters
                 var completions = this.findCompletions(dojo.byId('command').value);
                 var commandString = completions[0];
                 if (completions.length > 0) {
