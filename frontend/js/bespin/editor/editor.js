@@ -738,10 +738,10 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
-        
-        listener.bindKeyString("CTRL SHIFT",Key.U,this.actions.selectionUpperCase);
-        listener.bindKeyString("CTRL SHIFT",Key.L,this.actions.selectionLowerCase);
-        
+
+        listener.bindKeyString("CTRL SHIFT", Key.U, this.actions.selectionUpperCase);
+        listener.bindKeyString("CTRL SHIFT", Key.L, this.actions.selectionLowerCase);
+
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
@@ -1028,7 +1028,6 @@ dojo.declare("bespin.editor.UI", null, {
                         var currentColumn = 0; // current column, inclusive
                         for (var si = 0; si < styleArray.length; si++) {
                             var range = styleArray[si];
-                            if (range.start === undefined && range.end === undefined) continue; // make sure undefined isn't passed in!
 
                             for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
                             thisLine += lineInfo.text.substring(range.start, range.stop);
@@ -1471,7 +1470,7 @@ dojo.declare("bespin.editor.API", null, {
         this.opts = opts || {};
 
         this.container = dojo.byId(container);
-        this.model = new bespin.editor.DocumentModel();
+        this.model = new bespin.editor.DocumentModel(this);
 
         dojo.byId(container).innerHTML = '<canvas id="canvas" moz-opaque="true" tabindex="-1"></canvas>';
         this.canvas = dojo.byId(container).firstChild;

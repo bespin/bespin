@@ -341,7 +341,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         // The iterator object.
         var parser = {next: next, copy: copy};
 
-        function next(){
+        function next() {
             // Start by performing any 'lexical' actions (adjusting the
             // lexical variable), or the operations below will be working
             // with the wrong lexical state.
@@ -413,7 +413,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         function copy(){
             var _context = context, _lexical = lexical, _cc = cc.concat([]), _tokenState = tokens.state;
 
-            return function copyParser(input){
+            return function copyParser(input) {
                 context = _context;
                 lexical = _lexical;
                 cc = _cc.concat([]); // copies the array
@@ -425,7 +425,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
 
         // Helper function for pushing a number of actions onto the cc
         // stack in reverse order.
-        function push(fs){
+        function push(fs) {
             for (var i = fs.length - 1; i >= 0; i--) {
                 cc.push(fs[i]);
             }
@@ -434,18 +434,18 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         // cont and pass are used by the action functions to add other
         // actions to the stack. cont will cause the current token to be
         // consumed, pass will leave it for the next action.
-        function cont(){
+        function cont() {
             push(arguments);
             consume = true;
         }
 
-        function pass(){
+        function pass() {
             push(arguments);
             consume = false;
         }
 
         // Used to change the style of the current token.
-        function mark(style){
+        function mark(style) {
             marked = style;
         }
 
@@ -455,12 +455,12 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Pop off the current scope.
-        function popcontext(){
+        function popcontext() {
             context = context.prev;
         }
 
         // Register a variable in the current scope.
-        function register(varname){
+        function register(varname) {
             if (context){
                 mark("js-variabledef");
                 context.vars[varname] = true;
@@ -468,7 +468,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Check whether a variable is defined in the current scope.
-        function inScope(varname){
+        function inScope(varname) {
             var cursor = context;
             while (cursor) {
                 if (cursor.vars[varname]) {
@@ -489,7 +489,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Pop off the current lexical context.
-        function poplex(){
+        function poplex() {
             lexical = lexical.prev;
         }
         poplex.lex = true;
@@ -510,13 +510,13 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Looks for a statement, and then calls itself.
-        function statements(type){
+        function statements(type) {
             return pass(statement, statements);
         }
 
         // Dispatches various types of statements based on the type of the
         // current token.
-        function statement(type){
+        function statement(type) {
             if (type == "var") {
                 cont(pushlex("vardef"), vardef1, expect(";"), poplex);
             } else if (type == "keyword a") {
@@ -545,7 +545,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Dispatch expression types.
-        function expression(type){
+        function expression(type) {
             if (self.AtomicTypes.hasOwnProperty(type)) {
                 cont(maybeoperator);
             } else if (type == "function") {
@@ -566,7 +566,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         // Called for places where operators, function calls, or
         // subscripts are valid. Will skip on to the next action if none
         // is found.
-        function maybeoperator(type){
+        function maybeoperator(type) {
             if (type == "operator") {
                 cont(expression);
             } else if (type == "(") {
@@ -580,7 +580,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
 
         // When a statement starts with a variable name, it might be a
         // label. If no colon follows, it's a regular statement.
-        function maybelabel(type){
+        function maybelabel(type) {
             if (type == ":") {
                 cont(poplex, statement);
             } else {
@@ -590,7 +590,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
 
         // Property names need to have their style adjusted -- the
         // tokenizer thinks they are variables.
-        function property(type){
+        function property(type) {
             if (type == "variable") {
                 mark("js-property");
                 cont();
@@ -598,7 +598,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // This parses a property and its value in an object literal.
-        function objprop(type){
+        function objprop(type) {
             if (type == "variable") {
                 mark("js-property");
             }
@@ -609,7 +609,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
 
         // Parses a comma-separated list of the things that are recognized
         // by the 'what' argument.
-        function commasep(what, end){
+        function commasep(what, end) {
             function proceed(type) {
                 if (type == ",") {
                     cont(what, proceed);
@@ -629,7 +629,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // Look for statements until a closing brace is found.
-        function block(type){
+        function block(type) {
             if (type == "}") {
                 cont();
             } else {
@@ -640,8 +640,8 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         // Variable definitions are split into two actions -- 1 looks for
         // a name or the end of the definition, 2 looks for an '=' sign or
         // a comma.
-        function vardef1(type, value){
-            if (type == "variable"){
+        function vardef1(type, value) {
+            if (type == "variable") {
                 register(value);
                 cont(vardef2);
             } else {
@@ -649,8 +649,8 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
             }
         }
 
-        function vardef2(type){
-            if (type == "operator") {
+        function vardef2(type, value) {
+            if (value == "=") {
                 cont(expression, vardef2);
             } else if (type == ",") {
                 cont(vardef1);
@@ -658,21 +658,31 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
         }
 
         // For loops.
-        function forspec1(type){
+        function forspec1(type) {
             if (type == "var") {
                 cont(vardef1, forspec2);
             } else if (type == ";") {
                 pass(forspec2);
+            } else if (type == "variable") {
+                cont(formaybein);
             } else {
-                cont(expression, forspec2);
+                pass(forspec2);
+            }
+        } 
+
+        function formaybein(type, value) {
+            if (value == "in") {
+                cont(expression);
+            } else {
+                cont(maybeoperator, forspec2);
             }
         }
-
-        function forspec2(type){
-            if (type == ",") {
-                cont(forspec1);
-            } else if (type == ";") {
+        
+        function forspec2(type, value) {
+            if (type == ";") {
                 cont(forspec3);
+            }else if (value == "in") {
+                cont(expression);
             } else {
                 cont(expression, expect(";"), forspec3);
             }
@@ -688,7 +698,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
 
         // A function definition creates a new context, and the variables
         // in its argument list have to be added to this context.
-        function functiondef(type, value){
+        function functiondef(type, value) {
             if (type == "variable") {
                 register(value);
                 cont(functiondef);
@@ -697,7 +707,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
             }
         }
 
-        function funarg(type, value){
+        function funarg(type, value) {
             if (type == "variable"){register(value); cont();}
         }
 

@@ -102,28 +102,34 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return selection;
     },
 
+    getCharacterLength: function(character, column) {
+        if (character.length > 1) return;
+        if (column == undefined) column = this.position.col;
+        if (character == "\t") {
+            var tabsize = this.editor.getTabSize();
+            return (tabsize - (column % tabsize));
+        } else {
+            return 1;
+        }
+    },
+
     // Returns the length of a given string. This takes '\t' in account!
     getStringLength: function(str) {
         if (!str || str.length == 0) return 0;
         var count = 0;
         str = str.split("");
         for (var x = 0; x < str.length; x++) {
-            if (str[x] == "\t") {
-                count += this.editor.getTabSize();
-            } else {
-                count ++;
-            }
+            count += this.getCharacterLength(str[x], count);
         }
         return count;
     },
-
-    getCharacterLength: function(character) {
-        if (character == "\t") {
-            var tabsize = this.editor.getTabSize();
-            return (tabsize - (this.position.col % tabsize));
-        } else {
-            return 1;
-        }
+    
+    // returns the numbers of white spaces from the beginning of the line
+    // tabs are counted as whitespace
+    getLeadingWhitespace: function(rowIndex) {
+        var row = this.editor.model.getRowArray(rowIndex).join("");
+        var match = /^(\s+).*/.exec(row);
+        return (match && match.length == 2 ? this.getStringLength(match[1]) : 0);
     },
     
     // Returns the numbers of white spaces (NOT '\t'!!!) in a row
@@ -158,7 +164,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     getNextTablevelLeft: function(col) {
         var tabsize = this.editor.getTabSize();
         col = col || this.position.col;
-        col--
+        col--;
         return Math.floor(col / tabsize) * tabsize;
     },
     
@@ -171,7 +177,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveToLineStart: function() {
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        var leadingWhitespaceLength = this.editor.model.getRowLeadingWhitespaces(oldPos.row);
+        var leadingWhitespaceLength = this.getLeadingWhitespace(oldPos.row);
 
         if (this.position.col == 0) {
             this.moveCursor({ col:  leadingWhitespaceLength });
@@ -423,19 +429,22 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var invalid = this.isInvalidCursorPosition(row, newpos.col);
         if (invalid) {
-            // console.log('Comparing ' + oldpos.col + ' to ' + newpos.col + ' ...');
-            // console.log("invalid position: " + invalid.left + ", " + invalid.right);
-            if (oldpos.col < newpos.col) {
+            // console.log('Comparing (' + oldpos.row + ',' + oldpos.col + ') to (' + newpos.row + ',' + newpos.col + ') ...');
+            // console.log("invalid position: " + invalid.left + ", " + invalid.right + "; half: " + invalid.half);
+            if (oldpos.row != newpos.row) {
+                newpos.col = invalid.right;
+            } else if (oldpos.col < newpos.col) {
                 newpos.col = invalid.right;
             } else if (oldpos.col > newpos.col) {
                 newpos.col = invalid.left;
             } else {
                 // default
-                newpos.col = invalid.left;
+                newpos.col = invalid.right;
             }
         }
 
         this.position = { row: row, col: newpos.col };
+        // console.log('Position: (' + this.position.row + ', ' + this.position.col + ')', '[' + this.getModelPosition().col + ']');
 
         // keeps the editor's cursor from blinking while moving it
         var editorUI = bespin.get('editor').ui;
@@ -456,7 +465,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
                 // if the passed column is in the whitespace between the tab and the tab stop, it's an invalid position
                 if ((col > curCol) && (col < (curCol + toInsert))) {
-                    return { left: curCol, right: curCol + toInsert };
+                    return { left: curCol, right: curCol + toInsert, half: toInsert / 2 };
                 }
 
                 curCol += toInsert - 1;
