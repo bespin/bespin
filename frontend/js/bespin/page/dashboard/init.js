@@ -388,5 +388,8 @@ dojo.provide("bespin.page.dashboard.init");
             var pathSelected =  (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });
+        
+        // Set up message retrieval
+        server.processMessages();
     });
 })();

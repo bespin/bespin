@@ -164,6 +164,9 @@ dojo.provide("bespin.page.editor.init");
         };
 
         scene.render();
+        
+        // Set up message retrieval
+        server.processMessages();
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **
