@@ -66,12 +66,15 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 if (info.noEngine) {
                     html += 'No outline available for this document type.';
                 } else {
-                    dojo.forEach(info.functions, function(func) { 
-                        var name = func.name;
+                    dojo.forEach(info.outline, function(ele) {
+                        var type = ele.type;
+                        var name = ele.name;
                         if (typeof name == "undefined") {
-                            name = "anonymous";
+                            return
                         }
-                        html += '<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+func.row+', col: 0 });bespin.publish(\'editor:doaction\', { action: \'moveCursorRowToCenter\' })">Function: '+name+'</a><br/>';
+                        var indent = "";
+                        for(var i = 0; i < ele.depth; i++) indent += "&nbsp;";
+                        html += indent+'<a href="javascript:bespin.get(\'editor\').cursorManager.moveCursor({ row: '+ele.row+', col: 0 });bespin.publish(\'editor:doaction\', { action: \'moveCursorRowToCenter\' })">'+type+': '+name+'</a><br/>';
                     });
                 }
                 html += '</div>';
@@ -152,6 +155,32 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         }
     },
     
+    getCodePatterns: function () {        
+        return {
+            dojoClass: {
+                declaration: "dojo.declare"
+            },
+            bespinEventPublish: {
+                declaration: "bespin.publish"
+            },
+            bespinEventSubscription: {
+                declaration: "bespin.subscribe"
+            },
+            jooseClass: {
+                declaration: "Class"
+            },
+            jooseModule: {
+                declaration: "Module"
+            },
+            jooseType: {
+                declaration: "Type"
+            },
+            jooseRole: {
+                declaration: "Role"
+            }
+        }
+    },
+    
     // ** {{{ fetch }}} **
     //
     // Ask the parser for meta info (once)
@@ -167,7 +196,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             if (type) { 
                 var source = editor.model.getDocument();
                 
-                bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo").and(function(data) { 
+                bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
                     if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message
@@ -225,8 +254,6 @@ dojo.declare("bespin.parser.JavaScript", null, {
         }
     },
     
-    
-    
     _walk: function(callback, tree, parentStack, indexStack) {
         if(typeof tree == "string") return
         if(tree.length) {
@@ -244,69 +271,107 @@ dojo.declare("bespin.parser.JavaScript", null, {
         }
     },
     
-    getMetaInfo: function(tree) {
+    getMetaInfo: function(tree, codePatterns) {
         var funcs = [];
+        var info = [];
+        
+        // preprocess for speed
+        for(var type in codePatterns) {
+            var ns = codePatterns[type].declaration.split(".");
+            var indicator = ns.pop();
+            codePatterns[type]._indicator = indicator;
+            codePatterns[type]._ns        = ns;
+        }
+        
+        var FUNCTION = 74; // from narcissus
+        var OBJECT_LITERAL_KEY = 56;
+        
         this.walk(tree, function(node, parentStack, indexStack) {
             var depth = parentStack.length;
             var tree  = parentStack.top();
             var index = indexStack.top();
+            var row   = node.lineno - 1;
             
-            if(node.type == 74) { // 74 is the magic number for functions
+            // find function
+            if(node.type == FUNCTION) {
                 var name = node.name;
                 if(name == null && tree && index > 0) {
                     // if we have no name. Look up the tree and check for the value
                     // this catches this case: { name: function() {} }
                     var pred = tree[index-1]
-                    name = pred.value;
+                    if(pred.type == OBJECT_LITERAL_KEY) {
+                        name = pred.value;
+                    }
                 }
-                funcs.push({
-                    name: name,
-                    row: node.lineno - 1,
-                })
-            }
-            
-            if(depth <= 1) return;
-            
-            var parent = parentStack[parentStack.length-1]
-            var parentIndex = indexStack[indexStack.length-1]
-            
-            var parentParent = parentStack[parentStack.length-2]
-            var parentParentIndex = indexStack[indexStack.length-2]
-                                               
-            var analyze = function (type, ns, indicator) {
-                if(parentIndex >= 0) {
-                    if(node.value == indicator) {
-                        console.log("Found "+indicator)
-                        
-                        for(var i = 0; i < ns.length; ++i) {
-                            var ele = ns[i];
-                            if(parent[parentIndex-1] && parent[parentIndex-1].value == ns) {
-                                parent = parentStack[parentStack.length-(1 + i + 1)];
-                                parentIndex = indexStack[indexStack.length-(1 + i + 1) ];
-                            } else {
-                                return // FAIL
+                var fn = {
+                    type:  "function",
+                    name:  name,
+                    row:   row,
+                    depth: depth
+                }
+                funcs.push(fn)
+                info.push(fn)
+            } else {
+                
+                // now it gets complicated
+                // we look up the stack to see whether this is a declaration of the form
+                // thing.declare("NAME", ...)
+                
+                var parent = parentStack[parentStack.length-1];
+                var parentIndex = indexStack[indexStack.length-1];
+                                                   
+                var analyze = function (type, ns, indicator) {
+                    if(parentIndex >= 0) {
+                        if(node.value == indicator) { // identifiy a candidate (aka, we found "declare")
+                            // console.log("Found "+indicator)
+                            
+                            // if the indicator is namespaced, check the ancestors
+                            for(var i = 0; i < ns.length; ++i) {
+                                var ele = ns[i];
+                                // up one level
+                                if(parent[parentIndex-1] && parent[parentIndex-1].value == ns) {
+                                    parent = parentStack[parentStack.length-(1 + i + 1)];
+                                    parentIndex = indexStack[indexStack.length-(1 + i + 1) ];
+                                    // console.log("NS "+ns)
+                                } else {
+                                    return // FAIL
+                                }
                             }
-                        }
-                        if(parent[parentIndex+1] && parent[parentIndex+1][0]) {
-                            console.log(type+": "+parent[parentIndex+1][0].value + " - "+depth)
+                            
+                            // candidate is valid
+                            if(parent[parentIndex+1] && parent[parentIndex+1][0]) {
+                                var name = parent[parentIndex+1][0].value;
+                                // console.log(type+": "+name + " - "+depth);
+                                
+                                info.push({
+                                    type:  type,
+                                    name:  name,
+                                    row:   row,
+                                    depth: depth
+                                });
+                                return true;
+                            }
                         }
                     }
                 }
+                
+                // walk through code patterns and check them against the current tree
+                for(var type in codePatterns) {
+                    var pattern = codePatterns[type];
+                    if(analyze(type, pattern._ns, pattern._indicator)) {
+                        break // if we find something, it cannot be anything else
+                    }
+                }
             }
-            
-            analyze("Class", ["dojo"], "declare");
-            analyze("Event Publish", ["bespin"], "publish");
-            analyze("Event Subscribe", ["bespin"], "subscribe");
-            analyze("Joose Module", [], "Module");
-            analyze("Joose Class", [], "Class");
         })
         
         return {
-            functions: funcs
+            functions: funcs,
+            outline:   info
         }
     },
 
-    parse: function(source, task) {
+    parse: function(source, task, codePatterns) {
         var tree;
         try {
             // parse is global function from narcissus
@@ -322,7 +387,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         }
         
         if(task) { // if we have a task, execute that instead
-            return this[task](tree);
+            return this[task](tree, codePatterns);
         }
         
         return tree;
@@ -341,10 +406,10 @@ bespin.parser.EngineResolver = function() {
       // ** {{{ parse }}} **
       //
       // A high level parse function that uses the {{{type}}} to get the engine, and asks it to parse
-      parse: function(type, source, task) {
+      parse: function(type, source, task, codePatterns) {
           var engine = this.resolve(type);
           if (engine) {
-              return engine.parse(source, task);
+              return engine.parse(source, task, codePatterns);
           } else {
               return {
                   noEngine: true
