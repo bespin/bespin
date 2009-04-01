@@ -29,7 +29,8 @@ dojo.provide("bespin.editor.model");
 // The editor has a model of the data that it works with. 
 // This representation is encapsulated in Bespin.Editor.DocumentModel
 dojo.declare("bespin.editor.DocumentModel", null, {
-    constructor: function() {
+    constructor: function(editor) {
+        this.editor = editor;
         this.rows = [];
     },
 
@@ -55,7 +56,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         return this.dirtyRows[row];
     },
 
-    setRowArray: function(rowIndex, row) {
+    setRowArray: function(rowIndex, row) {  // invalidate
         if (!dojo.isArray(row)) {
             row = row.split('');
         }
@@ -83,6 +84,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         this.rows[modelPos.row] = newrow.concat(row);
 
         this.setRowDirty(modelPos.row);
+        this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
     },
 
     getDocument: function() {
@@ -130,6 +132,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         if (diff > 0) length -= diff;
         if (length > 0) {
             this.setRowDirty(modelPos.row);
+            this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
+
             return row.splice(modelPos.col, length).join("");
         }
         return "";
@@ -147,7 +151,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
     splitRow: function(modelPos, autoindentAmount) {
-        var row = this.getRowArray(modelPos.row);
+        this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
+
+        var row = this.getRowArray(modelPos.row); 
 
         var newRow;
         if (autoindentAmount > 0) {
@@ -167,12 +173,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             newRows.push(newRow);
             newRows = newRows.concat(this.rows);
             this.rows = newRows;
-        }
+        } 
     },
 
     // joins the passed row with the row beneath it
     joinRow: function(rowIndex) {
-        if (rowIndex >= this.rows.length - 1) return;
+        this.editor.ui.syntaxModel.invalidateCache(rowIndex); 
+
+        if (rowIndex >= this.rows.length - 1) return;        
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);
@@ -182,7 +190,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     getRowCount: function() {
         return this.rows.length;
     },
-    
+
     // returns a "chunk": a string representing a part of the document with \n characters representing end of line
     getChunk: function(selection) {
         var startPos = selection.startPos;
@@ -223,6 +231,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var startPos = selection.startPos;
         var endPos = selection.endPos;
 
+        this.editor.ui.syntaxModel.invalidateCache(startPos.row);
+
         var startCol, endCol;
 
         // get the first line
@@ -252,6 +262,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // inserts the chunk and returns the ending position
     insertChunk: function(modelPos, chunk) {
+        this.editor.ui.syntaxModel.invalidateCache(modelPos.row);  
+
         var lines = chunk.split("\n");
         var cModelPos = bespin.editor.utils.copyPos(modelPos);
         for (var i = 0; i < lines.length; i++) {
@@ -263,10 +275,11 @@ dojo.declare("bespin.editor.DocumentModel", null, {
                 cModelPos.col = 0;
                 cModelPos.row = cModelPos.row + 1;
             }
-        }
+        } 
+
         return cModelPos;
     },
-    
+
     findBefore: function(row, col, comparator) {
         var line = this.getRowArray(row);
         if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
@@ -274,19 +287,19 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only
         };
-        
+
         while (col > 0) {
             var letter = line[col];
             if (!letter) continue;
-            
+
             if (comparator(letter)) {
                 col++; // move it back
                 break;
             }
-            
+
             col--;
         }
-        
+
         return { row: row, col: col };
     },
 
@@ -306,7 +319,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
             if (comparator(letter)) break;
         }
-        
+
         return { row: row, col: col };
     }
 });

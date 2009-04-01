@@ -181,7 +181,7 @@ dojo.declare("bespin.editor.Actions", null, {
         delete this.editor.selection;
         this.model.insertCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tablength });
-        this.repaint(args.pos.row);
+        this.repaint();
         
         // undo/redo
         args.action = "insertTab";
@@ -201,7 +201,7 @@ dojo.declare("bespin.editor.Actions", null, {
         delete this.editor.selection;
         this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), args.tab.length);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
-        this.repaint(args.pos.row);
+        this.repaint();
         
         // undo/redo
         args.action = "removeTab";
@@ -264,7 +264,7 @@ dojo.declare("bespin.editor.Actions", null, {
             args.pos.col += delta;//(historyIndent[historyIndent.length-1] == '\t' ? this.editor.getTabSize() : historyIndent[historyIndent.length-1].length);
         }
         this.cursorManager.moveCursor({ col: args.pos.col });
-        this.repaint(startRow);
+        this.repaint();
 
         // undo/redo
         args.action = "indent";
@@ -329,7 +329,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.setSelection(selection);
         }
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
-        this.repaint(startRow);
+        this.repaint();
         
         // undo/redo
         args.action = "unindent";
@@ -418,11 +418,10 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelectionAndInsertChunk(args);
         } else {
             var pos = bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition());
-            var startPosRow = pos.row;
             pos = this.model.insertChunk(this.cursorManager.getModelPosition(pos), args.chunk);
             pos = this.cursorManager.getCursorPosition(pos);
             this.cursorManager.moveCursor(pos);
-            this.repaint(startPosRow);
+            this.repaint();
 
             // undo/redo
             args.action = "insertChunk";
@@ -438,7 +437,7 @@ dojo.declare("bespin.editor.Actions", null, {
     deleteChunk: function(args) {
         var chunk = this.model.deleteChunk({ startPos: this.cursorManager.getModelPosition(args.pos), endPos: this.cursorManager.getModelPosition(args.endPos) });
         this.cursorManager.moveCursor(args.pos);
-        this.repaint(args.pos.row);
+        this.repaint();
 
         // undo/redo
         args.action = "deleteChunk";
@@ -454,15 +453,13 @@ dojo.declare("bespin.editor.Actions", null, {
     //    this.repaint();
     //},
 
-    joinLine: function(args) { 
-        var invalidCacheRow = args.pos.row; 
+    joinLine: function(args) {
         if (args.joinDirection == "up") {
             if (args.pos.row == 0) return;
 
             var newcol = this.editor.ui.getRowScreenLength(args.pos.row - 1);
             this.model.joinRow(args.pos.row - 1);
             this.cursorManager.moveCursor({ row: args.pos.row - 1, col: newcol });
-            invalidCacheRow--; 
         } else {
             if (args.pos.row >= this.model.getRowCount() - 1) return;
 
@@ -476,7 +473,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         
-        this.repaint(invalidCacheRow);
+        this.repaint();
     },
 
     killLine: function(args) {
@@ -503,7 +500,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection(undefined);
         this.cursorManager.moveCursor(startPos);
-        this.repaint(startPos.row);
+        this.repaint();
 
         return chunk;
     },
@@ -520,7 +517,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection({ startPos: args.pos, endPos: endPos });
         this.cursorManager.moveCursor(endPos);
-        this.repaint(args.pos.row);
+        this.repaint();
     },
 
     backspace: function(args) {
@@ -577,7 +574,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
             var modelPos = this.cursorManager.getModelPosition(args.pos);
             var deleted = this.model.deleteCharacters(modelPos, 1);
-            this.repaint(modelPos.row);
+            this.repaint();
 
             // undo/redo
             args.action = "deleteCharacter";
@@ -601,7 +598,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
-        this.repaint(args.pos.row);
+        this.repaint();
     },
 
     // it seems kinda silly, but when you have a region selected and you insert a character, I have a separate action that is invoked.
@@ -653,7 +650,7 @@ dojo.declare("bespin.editor.Actions", null, {
         } else {
             this.model.insertCharacters(this.cursorManager.getModelPosition(args.pos), args.newchar);
             this.cursorManager.moveRight(true);
-            this.repaint(args.pos.row);
+            this.repaint();
 
             // undo/redo
             args.action = "insertCharacter";
@@ -676,11 +673,8 @@ dojo.declare("bespin.editor.Actions", null, {
         this.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
-    repaint: function(invalidCacheRow) {
-        if (!this.ignoreRepaints) {  
-            if (invalidCacheRow) {
-                this.editor.ui.syntaxModel.invalidateCache(invalidCacheRow);  
-            }
+    repaint: function() {
+        if (!this.ignoreRepaints) {
             this.editor.ui.ensureCursorVisible();
             this.editor.paint();
         }
