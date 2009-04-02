@@ -152,7 +152,7 @@ dojo.declare("bespin.editor.Events", null, {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
 
-            bespin.publish("editor:openfile:savebefore", { filename: filename });
+            bespin.publish("editor:savefile:before", { filename: filename });
 
             // saves the current state of the editor to a cookie
             dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'), dojo.toJson(bespin.get('editor').getCurrentView()), { expires: 7 });

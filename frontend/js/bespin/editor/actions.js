@@ -689,16 +689,16 @@ dojo.declare("bespin.editor.Actions", null, {
                 args.selectionObject = this.editor.getSelection();
             }
             var selection = this.model.getChunk(args.selectionObject);
-			var stringArray=selection.split("\n");
-			for(i in stringArray) {
-				if(args.stringCase==="l") {
-					stringArray[i]=stringArray[i].toLowerCase();
+			var stringArray = selection.split("\n");
+			for (i in stringArray) {
+				if (args.stringCase ==="l") {
+					stringArray[i] = stringArray[i].toLowerCase();
 				}
 				else {
-					stringArray[i]=stringArray[i].toUpperCase();
+					stringArray[i] = stringArray[i].toUpperCase();
 				}
 			}
-			var outText=stringArray.join("\n");
+			var outText = stringArray.join("\n");
             this.model.deleteChunk(args.selectionObject);
             this.model.insertChunk(args.selectionObject.startPos, outText);
             this.select(args.selectionObject);

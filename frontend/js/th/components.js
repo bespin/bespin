@@ -954,7 +954,7 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
         var list = this.createList(children);
         list.id = "list " + (this.lists.length + 1);
 
-        this.bus.bind("click", list, this.itemSelected, this);
+        this.bus.bind("itemselected", list, this.itemSelected, this);
         var tree = this;
         this.bus.bind("dblclick", list, function(e) {
             tree.bus.fire("dblclick", e, tree);
@@ -1048,6 +1048,8 @@ dojo.declare("th.components.HorizontalTree", th.Container, {
             path.push(this.lists[i].selected);
             if (this.lists[i] == list) {
                 for (var j = i + 1; j < this.lists.length && this.lists[j].selected; j++) {
+                    // saves the last selected item if the user want's to get back to this tree via arrows again
+                    this.lists[j - 1].selected.lastSelected = this.lists[j].selected.name
                     delete this.lists[j].selected;
                 }
                 break;
