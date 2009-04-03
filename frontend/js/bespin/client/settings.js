@@ -502,6 +502,21 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
+        // ** {{{ Event: settings:set:trimonsave }}} **
+        // 
+        // Run the trim command before saving the file
+        var _trimOnSave; // store the subscribe handler away
+
+        bespin.subscribe("settings:set:trimonsave", function(event) {
+            if (settings.isOn(event.value)) {
+                _trimOnSave = bespin.subscribe("editor:savefile:before", function(event) {
+                    bespin.publish("command:execute", { name: "trim" });
+                });
+            } else {
+                bespin.unsubscribe(_trimOnSave);
+            }
+        });        
+
         // ** {{{ Event: settings:init }}} **
         // 
         // If we are opening up a new file
@@ -566,5 +581,15 @@ dojo.declare("bespin.client.settings.Events", null, {
                 value: settings.get('syntaxengine')
             });
         });
+
+        // ** {{{ Event: settings:init }}} **
+        // 
+        // Set trimonsave
+        bespin.subscribe("settings:init", function(event) {
+            bespin.publish("settings:set:trimonsave", {
+                value: settings.get('trimonsave')
+            });
+        });
+
     }
 });

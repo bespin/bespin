@@ -535,7 +535,7 @@ dojo.declare("bespin.syntax.codemirror.Base", null, {
 
             if (token.lineNumber > lastLineToRender) {
                 throw self.StopIteration;
-            } else if (token.lineNumber >= firstLineToRender) {
+            } else if ((token.lineNumber >= firstLineToRender) && (token.value != "\n")) {
                 self.updateLineInfos(lineInfos, token);
             }
         });
@@ -551,3 +551,4 @@ dojo.require("bespin.syntax.codemirror.xml");
 dojo.require("bespin.syntax.codemirror.html");
 dojo.require("bespin.syntax.codemirror.php_base");
 dojo.require("bespin.syntax.codemirror.php");
+dojo.require("bespin.syntax.codemirror.python");
