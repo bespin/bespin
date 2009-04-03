@@ -1499,11 +1499,12 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee
-    getSelection: function() {
-        if (!this.selection) return undefined;
+    getSelection: function(selection) {
+        selection = (selection != undefined) ? selection : this.selection;
+        if (!selection) return undefined;
 
-        var startPos = this.selection.startPos;
-        var endPos = this.selection.endPos;
+        var startPos = selection.startPos;
+        var endPos = selection.endPos;
 
         // ensure that the start position is always before than the end position
         if ((endPos.row < startPos.row) || ((endPos.row == startPos.row) && (endPos.col < startPos.col))) {
@@ -1512,14 +1513,24 @@ dojo.declare("bespin.editor.API", null, {
             endPos = foo;
         }
 
-        return { startPos: bespin.editor.utils.copyPos(startPos), endPos: bespin.editor.utils.copyPos(endPos) }
+        return {
+            startPos: bespin.editor.utils.copyPos(startPos),
+            endPos: bespin.editor.utils.copyPos(endPos),
+            startModelPos: this.getModelPos(startPos),
+            endModelPos: this.getModelPos(endPos)
+        };
     },
 
     // helper
-    getCursorPos: function() {
-        return this.cursorManager.getCursorPosition();
+    getCursorPos: function(modelPos) {
+        return this.cursorManager.getCursorPosition(modelPos);
     },
-    
+
+    // helper
+    getModelPos: function(pos) {
+        return this.cursorManager.getModelPosition(pos);
+    },
+
     // restore the state of the editor
     resetView: function(data) {
         this.cursorManager.moveCursor(data.cursor);
@@ -1528,7 +1539,7 @@ dojo.declare("bespin.editor.API", null, {
         this.ui.xoffset = data.offset.x;
         this.paint();
     },
-    
+
     basicView: function() {
         this.cursorManager.moveCursor({row: 0, col: 0});
         this.setSelection(undefined);
@@ -1536,11 +1547,11 @@ dojo.declare("bespin.editor.API", null, {
         this.ui.xoffset = 0;
         this.paint();
     },
-    
+
     getCurrentView: function() {
         return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
     },
-    
+
     // be gentle trying to get the tabstop from settings
     getTabSize: function() {
         var settings = bespin.get("settings");
