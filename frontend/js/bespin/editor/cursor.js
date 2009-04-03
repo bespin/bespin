@@ -96,12 +96,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return modelPos;
     },
     
-    getModelSelection: function(selection) {
-        selection.startPos = this.getModelPosition(selection.startPos);
-        selection.endPos = this.getModelPosition(selection.endPos);
-        return selection;
-    },
-
     getCharacterLength: function(character, column) {
         if (character.length > 1) return;
         if (column == undefined) column = this.position.col;
