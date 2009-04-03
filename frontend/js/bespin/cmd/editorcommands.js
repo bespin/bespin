@@ -34,6 +34,8 @@ dojo.require("bespin.vcs");
     var keys = []; 
     for (var i in bespin.cmd.commands.store){
         keys.push(i);
-    }  
+    }
+  keys.push("dogfood");
+  keys.push("git");
     bespin.cmd.editorcommands.Commands = keys;  
 })();
