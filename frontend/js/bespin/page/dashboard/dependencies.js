@@ -45,6 +45,7 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.vcs");
 dojo.require("bespin.git");
+dojo.require("bespin.dogfood");
 dojo.require("bespin.cmd.dashboardcommands");
 
 // -- Thunderhead hoooooo
