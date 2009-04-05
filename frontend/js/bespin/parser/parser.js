@@ -163,7 +163,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     clearTimeout(timeout);
                 }
                 timeout = setTimeout(function() {
-                    console.log("Syntax-Check")
                     self.fetch();
                 }, 400)
             }
@@ -173,7 +172,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
-                console.log("stop")
                 bespin.unsubscribe(onChange)
                 self._started = false;
             })
@@ -482,7 +480,6 @@ bespin.subscribe("editor:openfile:opensuccess", function() {
     // 
     // Start parsing the document
     bespin.subscribe("parser:start", function () {
-        console.log("start")
         bespin.get("parser").start();
     })
 })
