@@ -8,6 +8,8 @@ from here:
 http://www.codekoala.com/blog/2009/mar/16/aes-encryption-python-using-pycrypto/
 """
 import os
+import tempfile
+import random
 
 from path import path
 import simplejson
@@ -67,39 +69,26 @@ class KeyChain(object):
         self.password = pad(password[:31])
         self._kcdata = None
     
-    def add_ssh_identity(self, name, key):
-        """Adds the provided SSH key to the keychain, identifying it
-        with the name provided."""
+    def get_ssh_key(self):
+        """Returns the SSH public key for this key chain. If necessary,
+        this function will generate a new key pair."""
         kcdata = self.kcdata
-        ssh_keys = kcdata.setdefault("ssh_keys", {})
-        if name in ssh_keys:
-            raise model.ConflictError("SSH identity '%s' already exists" %
-                                name)
-        ssh_keys[name] = key
-    
-    def delete_ssh_identity(self, ssh_key_name):
-        """Removes the key named ssh_key_name from this keychain.
-        This will also remove the credentials information for
-        any project that was using this key."""
-        kcdata = self.kcdata
-        ssh_keys = kcdata.setdefault("ssh_keys", {})
-        try:
-            del ssh_keys[ssh_key_name]
-        except KeyError:
-            pass
+        if "ssh" in kcdata:
+            return kcdata['ssh']['public']
         
-        projects = kcdata.setdefault("projects", {})
-        for pname, project in list(projects.items()):
-            if project['type'] == 'ssh' and \
-                project['ssh_key'] == ssh_key_name:
-                del projects[pname]
-
-    @property
-    def ssh_key_names(self):
-        """The names given to the SSH keys stored in the keychain"""
-        kcdata = self.kcdata
-        ssh_keys = kcdata.setdefault("ssh_keys", {})
-        return sorted(ssh_keys.keys())
+        tdir = tempfile.mkdtemp()
+        try:
+            filename = str(random.randint(10, 20000000))
+            destfile = path(tdir) / filename
+            os.system("ssh-keygen -N '' -f %s > /dev/null" % (destfile))
+            private_key = destfile.bytes()
+            pubkeyfile = destfile + ".pub"
+            pubkey = pubkeyfile.bytes()
+        finally:
+            path(tdir).rmtree()
+        
+        kcdata['ssh'] = dict(public=pubkey, private=private_key)
+        return pubkey
     
     @property
     def kcdata(self):
@@ -136,15 +125,17 @@ class KeyChain(object):
         
         self.kcfile.write_bytes(newdata)
         
-    def set_ssh_for_project(self, project, ssh_key_name):
-        """Stores that the SSH key provided by ssh_key_name
+    def set_ssh_for_project(self, project):
+        """Stores that the SSH key in this keychain
         should be used as the credentials for the project
-        given."""
+        given. If there is no SSH key, one will be
+        generated. The SSH public key will be
+        returned."""
         kcdata = self.kcdata
-        if ssh_key_name not in self.ssh_key_names:
-            raise model.FileNotFound("No SSH identity named: %s" % ssh_key_name)
+        pubkey = self.get_ssh_key()
         projects = kcdata.setdefault("projects", {})
-        projects[project.full_name] = dict(type="ssh", ssh_key=ssh_key_name)
+        projects[project.full_name] = dict(type="ssh")
+        return pubkey
     
     def set_credentials_for_project(self, project, username, password):
         """Sets up username/password authentication for the
@@ -174,8 +165,7 @@ class KeyChain(object):
         
             # for SSH, we need to change the SSH key name into the key itself.
             if value['type'] == "ssh":
-                ssh_keys = kcdata['ssh_keys']
-                value['ssh_key'] = ssh_keys[value['ssh_key']]
+                value['ssh_private_key'] = kcdata['ssh']['private']
         
         return value
     

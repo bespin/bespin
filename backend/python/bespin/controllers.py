@@ -666,19 +666,7 @@ def keychain_setauth(request, response):
         
         keychain.set_credentials_for_project(project, username, password)
     elif atype == "ssh":
-        try:
-            name = request.POST['name']
-        except KeyError:
-            raise BadRequest("Request must include name for SSH identity")
-        
-        try:
-            # are we adding a new identity to the keychain?
-            ssh_key = request.POST['ssh_key']
-            keychain.add_ssh_identity(name, ssh_key)
-        except KeyError:
-            pass
-            
-        keychain.set_ssh_for_project(project, name)
+        keychain.set_ssh_for_project(project)
     else:
         raise BadRequest("auth type must be ssh or password")
         
