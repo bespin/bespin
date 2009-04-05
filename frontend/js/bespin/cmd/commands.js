@@ -963,7 +963,12 @@ bespin.cmd.commands.add({
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
     execute: function(self) {
-        bespin.publish("parser:showoutline");
+        var settings = bespin.get("settings");
+        if(settings.isOff(settings.get("syntaxcheck"))) {
+            bespin.publish("message", { msg: "Please enable the syntaxcheck feature with 'set syntaxcheck on' to activate the outline view." });
+        } else {
+            bespin.publish("parser:showoutline");
+        }
     }
 })
 
