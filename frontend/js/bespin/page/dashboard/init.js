@@ -48,6 +48,7 @@ dojo.provide("bespin.page.dashboard.init");
     dojo.mixin(bespin.page.dashboard, {
         tree: null,
         lastSelectedPath: null,
+        urlTimeout: null,
         
         sizeCanvas: function(canvas) {
             if (!heightDiff) {
@@ -358,8 +359,15 @@ dojo.provide("bespin.page.dashboard.init");
 
         scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
-            bespin.page.dashboard.lastSelectedPath = pathSelected;
-            location.hash = '#path=' + pathSelected;
+            var db = bespin.page.dashboard;
+            // this keeps the url to be changed if the file path changes to frequently
+            if (db.urlTimeout) {
+                clearTimeout(db.urlTimeout);
+            }
+            db.urlTimeout = setTimeout(dojo.hitch(pathSelected, function () {
+                bespin.page.dashboard.lastSelectedPath = this;
+                location.hash = '#path=' + this;
+            }), 300);
         })
 
         scene.bus.bind("itemselected", tree.lists[0], function(e) {
@@ -388,6 +396,44 @@ dojo.provide("bespin.page.dashboard.init");
             var pathSelected =  (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });
+        
+        // provide arrow navigation to dashboard
+        dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
+            var key = bespin.util.keys.Key;
+            var path = this.getSelectedPath();
+            // things to make life much more easy :)
+            var index = path.length - 1;
+            var list = this.lists[index];
+            var listNext = (this.lists.length > index ? this.lists[index + 1] : false);
+            var listPre = (index != 0 ? this.lists[index - 1] : false)
+            
+            switch (e.keyCode) {
+                case key.ARROW_LEFT:
+                    if (!listPre) break;
+                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
+                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
+                    break;
+                case key.ARROW_RIGHT:
+                    if (!listNext) break;
+                    if (list.selected.lastSelected) {
+                        listNext.selectItemByText(list.selected.lastSelected);
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    } else {   
+                        listNext.selected = listNext.items[0];
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    }
+                    break;
+                case key.ARROW_UP:
+                    list.moveSelectionUp();
+                    break;
+                case key.ARROW_DOWN:
+                    list.moveSelectionDown();
+                    break;
+                case key.ENTER: 
+                    this.bus.fire("dblclick", e, tree);
+                    break;
+            }
+        }));
         
         // Set up message retrieval
         server.processMessages();

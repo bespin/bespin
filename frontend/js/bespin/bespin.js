@@ -65,7 +65,7 @@ dojo.mixin(bespin, {
     //
     // Given a topic and a function, subscribe to the event
     subscribe: function(topic, callback) {
-        dojo.subscribe("bespin:" + topic, callback);
+        return dojo.subscribe("bespin:" + topic, callback);
     },
 
     // ** {{{ unsubscribe }}} **

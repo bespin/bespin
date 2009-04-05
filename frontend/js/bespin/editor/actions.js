@@ -162,32 +162,26 @@ dojo.declare("bespin.editor.Actions", null, {
         }
 
         var tab = args.tab;
-        var tabsize = args.tabsize;
+        var tablength = this.cursorManager.getCharacterLength("\t");
 
-        if (!tab || !tabsize) {
+        if (!tab || !tablength) {
             if (settings && settings.isSettingOn('tabmode')) {
                 // do something tabby
                 tab = "\t";
-                tabsize = 1;
             } else {
                 tab = "";
-                tabsize = this.editor.getTabSize();   
-                var tabSizeCount = tabsize;
+                var tabSizeCount = tablength;
                 while (tabSizeCount-- > 0) {
                     tab += " ";
                 }
-                if (settings && settings.isSettingOn('smartmove')) {
-                    leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(args.pos.row);
-                    tabsize = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
-                    tab = tab.substring(0, tabsize);
-                }
+                tablength = tab.length;
             }
         }
 
         delete this.editor.selection;
         this.model.insertCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
-        this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tabsize });
-        this.repaint(args.pos.row);
+        this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tablength });
+        this.repaint();
         
         // undo/redo
         args.action = "insertTab";
@@ -196,8 +190,7 @@ dojo.declare("bespin.editor.Actions", null, {
             action: "removeTab",
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
-            tab: tab,
-            tabsize: tabsize
+            tab: tab
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
@@ -205,12 +198,10 @@ dojo.declare("bespin.editor.Actions", null, {
     
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
-        var tabsize = args.tabsize;
-        
         delete this.editor.selection;
-        this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tabsize);
+        this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), args.tab.length);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
-        this.repaint(args.pos.row);
+        this.repaint();
         
         // undo/redo
         args.action = "removeTab";
@@ -220,8 +211,7 @@ dojo.declare("bespin.editor.Actions", null, {
             undoInsertTab: true,
             queued: args.queued,
             pos: bespin.editor.utils.copyPos(args.pos),
-            tab: args.tab,
-            tabsize: args.tabsize
+            tab: args.tab
         };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
@@ -229,17 +219,16 @@ dojo.declare("bespin.editor.Actions", null, {
 
     indent: function(args) {
         var historyIndent = args.historyIndent || false;    
-        if (!historyIndent) {
-            var newHistoryIndent = [];
-        }
+        var useHistoryIndent = !!historyIndent;
+        if (!historyIndent) historyIndent = new Array();
         var settings = bespin.get('settings');
         var selection = args.selection || this.editor.getSelection();
         var fakeSelection = args.fakeSelection || false;
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
+        var endRowLength = this.cursorManager.getStringLength(this.model.getRowArray(endRow).join(""));
+        var cursorRowLength = this.cursorManager.getStringLength(this.model.getRowArray(args.pos.row).join(""));
         var charsToInsert;
-        var charsToInsertLength;
-        var leadingWhitespaceLength;
         var tab = '';
         if (settings && settings.isSettingOn('tabmode')) {
             tab = "\t";
@@ -251,30 +240,31 @@ dojo.declare("bespin.editor.Actions", null, {
         }
 
         for (var y = startRow; y <= endRow; y++) {
-            if (!historyIndent) {
-                if (tab != '\t') {
-                    leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
-                    charsToInsertLength = this.cursorManager.getNextTablevelRight(leadingWhitespaceLength) - leadingWhitespaceLength;
-                    charsToInsert = tab.substring(0, charsToInsertLength);
-                } else {
-                    // in the case of "real" tabs we just insert the tabs
-                    charsToInsert = '\t';
-                }
-                this.model.insertCharacters({ row: y, col: 0 }, charsToInsert);
-                newHistoryIndent.push(charsToInsert);
+            if (useHistoryIndent) {
+                charsToInsert = historyIndent[y - startRow];
+            } else if (tab != '\t') {
+                charsToInsert = this.cursorManager.getLeadingWhitespace(y);
+                charsToInsert = this.cursorManager.getNextTablevelRight(charsToInsert) - charsToInsert;
+                charsToInsert = tab.substring(0, charsToInsert);
             } else {
-                this.model.insertCharacters({ row: y, col: 0 }, historyIndent[y - startRow]);
-            } 
+                // in the case of "real" tabs we just insert the tabs
+                charsToInsert = '\t';
+            }
+            this.model.insertCharacters(this.cursorManager.getModelPosition({ row: y, col: 0 }), charsToInsert);
+            historyIndent[y - startRow] = charsToInsert;
         }
 
+        var delta = this.cursorManager.getStringLength(this.model.getRowArray(args.pos.row).join("")) - cursorRowLength;
         if (!fakeSelection) {
-            selection.endPos.col += this.cursorManager.getStringLength(charsToInsert);
+            args.pos.col += delta;
+            selection.endPos.col += this.cursorManager.getStringLength(this.model.getRowArray(endRow).join("")) - endRowLength;
+            console.debug(selection.endPos);
             this.editor.setSelection(selection);
+        } else {
+            args.pos.col += delta;//(historyIndent[historyIndent.length-1] == '\t' ? this.editor.getTabSize() : historyIndent[historyIndent.length-1].length);
         }
-        args.pos.col += this.cursorManager.getStringLength(historyIndent ? (historyIndent[historyIndent.length-1]) : charsToInsert);
         this.cursorManager.moveCursor({ col: args.pos.col });
-        historyIndent = historyIndent ? historyIndent : newHistoryIndent;
-        this.repaint(startRow);
+        this.repaint();
 
         // undo/redo
         args.action = "indent";
@@ -298,25 +288,25 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         var startRow = selection.startPos.row;
         var endRow = selection.endPos.row;
-        var row;
+        var endRowLength = this.cursorManager.getStringLength(this.model.getRowArray(endRow).join(""));
+        var row = false;
         var charsToDelete;
         var charsWidth;
 
         for (var y = startRow; y <= endRow; y++) {
             if (historyIndent) {
                 charsToDelete = historyIndent[y - startRow].length;
-                charsWidth = this.cursorManager.getStringLength(historyIndent[y - startRow]);
+                charsWidth = (historyIndent[y - startRow] == '\t' ? this.editor.getTabSize() : historyIndent[y - startRow].length);
             } else {
                 row = this.model.getRowArray(y);
                 if (row.length > 0 && row[0] == '\t') {
                     charsToDelete = 1;
                     charsWidth = this.editor.getTabSize();
                 } else {
-                    var leadingWhitespaceLength = this.model.getRowLeadingWhitespaces(y);
-                    charsToDelete = this.cursorManager.getContinuousSpaceCount(0, this.editor.getTabSize());
+                    var leadingWhitespaceLength = this.cursorManager.getLeadingWhitespace(y);
+                    charsToDelete = this.cursorManager.getContinuousSpaceCount(0, this.editor.getTabSize(), y);
                     charsWidth = charsToDelete;
                 }
-
                 newHistoryIndent.push(row.join("").substring(0, charsToDelete));
             }
 
@@ -327,10 +317,10 @@ dojo.declare("bespin.editor.Actions", null, {
                 selection.startPos.col = Math.max(0, selection.startPos.col - charsWidth);
             }
             if (y == endRow) {
-                selection.endPos.col = Math.max(0, selection.endPos.col - charsWidth);
-            }
-            if (y == args.pos.row) {
-                args.pos.col = Math.max(0, args.pos.col - charsWidth);
+                if (!row) row = this.model.getRowArray(y);
+                var delta = endRowLength - this.cursorManager.getStringLength(row.join(""));
+                selection.endPos.col = Math.max(0, selection.endPos.col - delta);
+                args.pos.col = Math.max(0, args.pos.col - delta);
             }
         }
         this.cursorManager.moveCursor({ col: args.pos.col });
@@ -339,7 +329,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.setSelection(selection);
         }
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
-        this.repaint(startRow);
+        this.repaint();
         
         // undo/redo
         args.action = "unindent";
@@ -428,11 +418,10 @@ dojo.declare("bespin.editor.Actions", null, {
             this.deleteSelectionAndInsertChunk(args);
         } else {
             var pos = bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition());
-            var startPosRow = pos.row;
             pos = this.model.insertChunk(this.cursorManager.getModelPosition(pos), args.chunk);
             pos = this.cursorManager.getCursorPosition(pos);
             this.cursorManager.moveCursor(pos);
-            this.repaint(startPosRow);
+            this.repaint();
 
             // undo/redo
             args.action = "insertChunk";
@@ -448,7 +437,7 @@ dojo.declare("bespin.editor.Actions", null, {
     deleteChunk: function(args) {
         var chunk = this.model.deleteChunk({ startPos: this.cursorManager.getModelPosition(args.pos), endPos: this.cursorManager.getModelPosition(args.endPos) });
         this.cursorManager.moveCursor(args.pos);
-        this.repaint(args.pos.row);
+        this.repaint();
 
         // undo/redo
         args.action = "deleteChunk";
@@ -464,15 +453,13 @@ dojo.declare("bespin.editor.Actions", null, {
     //    this.repaint();
     //},
 
-    joinLine: function(args) { 
-        var invalidCacheRow = args.pos.row; 
+    joinLine: function(args) {
         if (args.joinDirection == "up") {
             if (args.pos.row == 0) return;
 
             var newcol = this.editor.ui.getRowScreenLength(args.pos.row - 1);
             this.model.joinRow(args.pos.row - 1);
             this.cursorManager.moveCursor({ row: args.pos.row - 1, col: newcol });
-            invalidCacheRow--; 
         } else {
             if (args.pos.row >= this.model.getRowCount() - 1) return;
 
@@ -486,7 +473,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         
-        this.repaint(invalidCacheRow);
+        this.repaint();
     },
 
     killLine: function(args) {
@@ -513,7 +500,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection(undefined);
         this.cursorManager.moveCursor(startPos);
-        this.repaint(startPos.row);
+        this.repaint();
 
         return chunk;
     },
@@ -530,7 +517,7 @@ dojo.declare("bespin.editor.Actions", null, {
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection({ startPos: args.pos, endPos: endPos });
         this.cursorManager.moveCursor(endPos);
-        this.repaint(args.pos.row);
+        this.repaint();
     },
 
     backspace: function(args) {
@@ -585,9 +572,9 @@ dojo.declare("bespin.editor.Actions", null, {
 
     deleteCharacter: function(args) {
         if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
-            args.pos = this.cursorManager.getModelPosition(args.pos);
-            var deleted = this.model.deleteCharacters(args.pos, 1);
-            this.repaint(args.pos.row);
+            var modelPos = this.cursorManager.getModelPosition(args.pos);
+            var deleted = this.model.deleteCharacters(modelPos, 1);
+            this.repaint();
 
             // undo/redo
             args.action = "deleteCharacter";
@@ -611,7 +598,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
-        this.repaint(args.pos.row);
+        this.repaint();
     },
 
     // it seems kinda silly, but when you have a region selected and you insert a character, I have a separate action that is invoked.
@@ -663,7 +650,7 @@ dojo.declare("bespin.editor.Actions", null, {
         } else {
             this.model.insertCharacters(this.cursorManager.getModelPosition(args.pos), args.newchar);
             this.cursorManager.moveRight(true);
-            this.repaint(args.pos.row);
+            this.repaint();
 
             // undo/redo
             args.action = "insertCharacter";
@@ -686,11 +673,51 @@ dojo.declare("bespin.editor.Actions", null, {
         this.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
-    repaint: function(invalidCacheRow) {
-        if (!this.ignoreRepaints) {  
-            if (invalidCacheRow) {
-                this.editor.ui.syntaxModel.invalidateCache(invalidCacheRow);  
+    selectionUpperCase: function(args) {
+        args.stringCase = 'u';
+        return this.selectionChangeCase(args);
+    },
+
+    selectionLowerCase: function(args) {
+        args.stringCase = 'l';
+        return this.selectionChangeCase(args);
+    },
+
+    selectionChangeCase: function(args) {
+        if (this.editor.selection) {
+            if (!args.selectionObject) {
+                args.selectionObject = this.editor.getSelection();
             }
+            var selection = this.model.getChunk(args.selectionObject);
+			var stringArray = selection.split("\n");
+			for (i in stringArray) {
+				if (args.stringCase ==="l") {
+					stringArray[i] = stringArray[i].toLowerCase();
+				}
+				else {
+					stringArray[i] = stringArray[i].toUpperCase();
+				}
+			}
+			var outText = stringArray.join("\n");
+            this.model.deleteChunk(args.selectionObject);
+            this.model.insertChunk(args.selectionObject.startPos, outText);
+            this.select(args.selectionObject);
+            args.action = "selectionChangeCase";
+            var redoOperation = args;
+            var undoArgs = { action: "undoSelectionChangeCase", selectionObject: args.selectionObject, text: selection };
+            var undoOperation = undoArgs;
+            this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+        }
+    },
+
+    undoSelectionChangeCase: function(args) {
+        this.model.deleteChunk(args.selectionObject);
+        this.model.insertCharacters(args.selectionObject.startPos, args.text);
+        this.select(args.selectionObject);
+    },
+
+    repaint: function() {
+        if (!this.ignoreRepaints) {
             this.editor.ui.ensureCursorVisible();
             this.editor.paint();
         }

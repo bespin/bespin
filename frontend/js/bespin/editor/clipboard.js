@@ -72,14 +72,22 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
-        
+
+        // * Defensively stop doing copy/cut/paste magic if you are in the command line
+        var stopAction = function(e) {
+            return e.target.id == "command";
+        }
+
         // Copy
         this.beforecopyHandle = dojo.connect(document, "beforecopy", function(e) {
+            if (stopAction(e)) return;
             e.preventDefault();
             copynpaster.focus();
         });
 
         this.copyHandle = dojo.connect(document, "copy", function(e) {
+            if (stopAction(e)) return;
+
             var selectionText = editor.getSelectionAsText();
             
             if (selectionText && selectionText != '') {
@@ -92,11 +100,15 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Cut
         this.beforecutHandle = dojo.connect(document, "beforecut", function(e) {
+            if (stopAction(e)) return;
+
             e.preventDefault();
             copynpaster.focus();
         });
 
         this.cutHandle = dojo.connect(document, "cut", function(e) {
+            if (stopAction(e)) return;
+
             var selectionObject = editor.getSelection();
 
             if (selectionObject) {
@@ -114,11 +126,15 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Paste
         this.beforepasteHandle = dojo.connect(document, "beforepaste", function(e) {
+            if (stopAction(e)) return;
+
             e.preventDefault();
             copynpaster.focus();
         });
 
         this.pasteHandle = dojo.connect(document, "paste", function(e) {
+            if (stopAction(e)) return;
+
             e.preventDefault();
             var args = bespin.editor.utils.buildArgs();    
             args.chunk = e.clipboardData.getData('text/plain');

@@ -84,13 +84,13 @@ bespin.editor.themes.coffee = {
     variable: "#00cccc",
     variabledef: "#4422cc",
     localvariable: "#cc2277",
-    property: "#66bb33", 
-    operator: "#88bbff",  
+    property: "#66bb33",
+    operator: "#88bbff",
+    error: "#FF0000", 
     
     // XML and HTML
     processing: "#999999",
     entity: "#AA2222",
-    error: "#FF0000",
     text: "#00BB00",
     
     // PHP
@@ -98,8 +98,14 @@ bespin.editor.themes.coffee = {
     "predefined-constant": "#33CC33",
     "reserved-language-construct": "#00FF00", 
     "predefined-function": "#22FF22", 
-    "predefined-class": "#22FF22"
+    "predefined-class": "#22FF22",
     
+    // Python
+    literal: "#DD4411",
+    identifier: "#22FF22", 
+    func: "#2200FF",  
+    type: "#8822FF",
+    decorator: "#2222FF"
 };
 
 // ** Coffee Zebra Theme **
