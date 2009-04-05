@@ -132,6 +132,12 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     start: function() {
         var self = this;
         
+        // if we are not supposed to run, don't run
+        var settings = bespin.get("settings");
+        if(settings.isOff(settings.get("syntaxcheck"))) {
+            return
+        }
+        
         var editor = bespin.get("editor");
         if (!editor.language) {
             // we should not start until the language was set once
@@ -149,7 +155,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var timeout;
             
             // rerun parser every time the doc changes
-            bespin.subscribe("editor:document:changed", function() {
+            var rerun = function() {
                 
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
@@ -157,8 +163,19 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     clearTimeout(timeout);
                 }
                 timeout = setTimeout(function() {
+                    console.log("Syntax-Check")
                     self.fetch();
                 }, 400)
+            }
+            var onChange =  bespin.subscribe("editor:document:changed", rerun)
+            
+            // ** {{{ Event: parser:stop }}} **
+            // 
+            // Stop parsing the document
+            bespin.subscribe("parser:stop", function () {
+                console.log("stop")
+                bespin.unsubscribe(onChange)
+                self._started = false;
             })
         }
     },
@@ -460,4 +477,13 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
 bespin.subscribe("editor:openfile:opensuccess", function() {
     bespin.register("parser", new bespin.parser.CodeInfo())
     bespin.get("parser").start()
+    
+    // ** {{{ Event: parser:start }}} **
+    // 
+    // Start parsing the document
+    bespin.subscribe("parser:start", function () {
+        console.log("start")
+        bespin.get("parser").start();
+    })
 })
+
