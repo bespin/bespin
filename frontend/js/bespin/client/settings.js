@@ -64,6 +64,8 @@ dojo.declare("bespin.client.settings.Core", null, {
     defaultSettings: function() {
         return {
             'tabsize': '2',
+            'tabmode': 'off',
+            'tabarrow': 'on',
             'fontsize': '10',
             'autocomplete': 'off',
             'collaborate': 'off',
@@ -71,7 +73,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'strictlines': 'on',
             'syntaxengine': 'simple',
             'preview': 'window',
-            'tabarrow': 'on'
+            'smartmove': 'on',
         };
     },
 
