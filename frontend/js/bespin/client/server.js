@@ -583,6 +583,13 @@ dojo.declare("bespin.client.Server", null, {
                      opts || {});
     },
     
+    // ** {{{ clone() }}}
+    // Clone a remote repository
+    clone: function(data, opts) {
+        this.request('POST', '/vcs/clone/',
+                    data, opts || {});
+    },
+    
     // ** {{{ setauth() }}}
     // Sets authentication for a project
     setauth: function(project, form, opts) {

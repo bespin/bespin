@@ -27,6 +27,94 @@ dojo.provide("bespin.vcs");
 dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
 
+bespin.vcs.standardHandler = {
+    onSuccess: function(response) {
+        bespin.publish("vcs:response", response);
+    },
+    onFailure: function(response) {
+        bespin.publish("vcs:error", response);
+    }
+};
+
+bespin.vcs.clone = function(url) {
+    var el = dojo.byId('centerpopup');
+    
+    el.innerHTML = '<form method="POST" id="vcsauth">'
+            + '<table><tbody><tr><td>Keychain password</td><td>'
+            + '<input type="password" name="kcpass" id="kcpass"></td></tr>'
+            + '<tr><td>URL</td>'
+            + '<td><input type="text" name="source" value="' + url + '" style="width: 85%"></td></tr>'
+            + '<tr><td style="width: 25%">Project name (defaults to last part of URL path)</td>'
+            + '<td><input type="text" name="dest" value=""></td></tr>'
+            + '<tr><td>Authentication</td><td><select name="remoteauth" id="remoteauth">'
+            + '<option value="">None (read-only access to the remote repo)</option>'
+            + '<option value="write">Only for writing</option>'
+            + '<option value="both">For reading and writing</option>'
+            + '</select></td></tr>'
+            + '<tr id="push_row" style="display:none" class="authfields"><td>Push to URL</td>'
+            + '<td><input type="text" name="push" style="width: 85%"></td></tr>'
+            + '<tr id="authtype_row" style="display:none" class="authfields"><td>Authentication type</td>'
+            + '<td><select name="authtype" id="authtype">'
+            + '<option value="ssh">SSH</option>'
+            + '<option value="password">Username/Password</option>'
+            + '</select></td></tr>'
+            + '<tr id="username_row" style="display:none" class="authfields"><td>Username</td>'
+            + '<td><input type="text" name="username">'
+            + '</td></tr>'
+            + '<tr id="password_row" style="display:none" class="authfields userfields"><td>Password</td><td>'
+            + '<input type="password" name="password">'
+            + '</td></tr><tr><td>&nbsp;</td><td>'
+            + '<input type="button" id="vcsauthsubmit" value="Clone">'
+            + '<input type="button" id="vcsauthcancel" value="Cancel">'
+            + '</td></tr></tbody></table></form>';
+    
+    dojo.connect(dojo.byId("remoteauth"), "onchange", function() {
+        var newval = dojo.byId("remoteauth").value;
+        if (newval == "") {
+            dojo.query("tr.authfields").style("display", "none");
+        } else {
+            dojo.query("tr.authfields").style("display", "table-row");
+            if (dojo.byId("authtype").value == "ssh") {
+                dojo.query("tr.userfields").style("display", "none");
+            }
+        }
+    });
+    
+    dojo.connect(dojo.byId("authtype"), "onchange", function() {
+        var newval = dojo.byId("authtype").value;
+        if (newval == "ssh") {
+            dojo.query("tr.userfields").style("display", "none");
+        } else {
+            dojo.query("tr.userfields").style("display", "table-row");
+        }
+    });
+    
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+    });
+    
+    dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+        var data = dojo.formToObject("vcsauth");
+        // prune out unnecessary values
+        if (data.remoteauth == "") {
+            delete data.push;
+            delete data.authtype;
+            delete data.username;
+            delete data.password;
+        } else {
+            if (data.authtype == "ssh") {
+                delete data.password;
+            }
+        }
+        data = dojo.objectToQuery(data);
+        bespin.get('server').clone(data, bespin.vcs.standardHandler);
+    });
+    
+    bespin.util.webpieces.showCenterPopup(el, true);
+    dojo.byId("kcpass").focus();
+};
+
 bespin.vcs.setProjectPassword = function(project) {
     var el = dojo.byId('centerpopup');
     
@@ -98,21 +186,13 @@ bespin.vcs.getKeychainPassword = function(callback) {
 // ** {{{{Command: clone}}}} **
 bespin.cmd.commands.add({
     name: 'clone',
-    takes: ['url', 'projectName'],
+    takes: ['url'],
     aliases: ['checkout'],
     preview: 'checkout or clone the project into a new Bespin project',
     // ** {{{execute}}} **
-    execute: function(self, args) {
-        if (!args.url || !args.projectName) {
-            self.showUsage();
-            return;
-        }
-        bespin.get('server').vcs(args.projectName, 
-                                ["clone", args.url], 
-                                {evalJSON: true, 
-                                onSuccess: function(response) {
-                                    bespin.publish("vcs:response", response);
-                                }});
+    execute: function(self, url) {
+        url = url || "";
+        bespin.vcs.clone(url);
     }
 });
 
@@ -248,4 +328,10 @@ bespin.cmd.commands.add({
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
     bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
+});
+
+// ** {{{ Event: bespin:vcs:error }}} **
+// Handle a negative response from a version control system command
+bespin.subscribe("vcs:error", function(event) {
+    bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.responseText + "</pre>");
 });

@@ -106,11 +106,12 @@ dojo.mixin(bespin.util.webpieces, {
         dojo.require("bespin.util.webpieces");
 
         bespin.util.webpieces.showCenterPopup(el);
-
-        dojo.byId("overlay").onclick = el.onclick = function() {
+        
+        var connection = dojo.connect(el, "onclick", function() {
             bespin.util.webpieces.hideCenterPopup(el);
             el.style.width = oldwidth;
             el.style.height = oldheight;
-        };        
+            dojo.disconnect(connection);
+        });
     }
 });
