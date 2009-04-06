@@ -45,7 +45,8 @@ EncodeAES = lambda c, s: c.encrypt(pad(s)).encode("base64")
 DecodeAES = lambda c, e: c.decrypt(e.decode("base64")).rstrip(PADDING)
 
 def clone(user, source, dest=None, push=None, remoteauth="write",
-            authtype=None, username=None, password=None, kcpass=""):
+            authtype=None, username=None, password=None, kcpass="",
+            vcs="hg"):
     """Clones or checks out the repository using the command provided."""
     working_dir = user.get_location()
     
@@ -61,6 +62,11 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
     keychain = KeyChain(user, kcpass)
     keyfile = None
     
+    if vcs:
+        dialect = main.get_dialect(vcs)
+    else:
+        dialect = None
+    
     if authtype:
         auth['type'] = authtype
         if authtype == "ssh":
@@ -71,7 +77,7 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
     
     try:
         context = main.SecureContext(working_dir, auth)
-        command = main.convert(context, args)
+        command = main.convert(context, args, dialect)
         output = main.run_command(command, context)
     finally:
         if keyfile:

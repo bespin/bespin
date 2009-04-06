@@ -578,7 +578,7 @@ dojo.declare("bespin.client.Server", null, {
     // Run a Version Control System (VCS) command
     vcs: function(project, command, opts) {
         var command_obj = {command: command}
-        this.request('POST', '/vcs/' + project + '/',
+        this.request('POST', '/vcs/command/' + project + '/',
                      dojo.toJson(command_obj),
                      opts || {});
     },

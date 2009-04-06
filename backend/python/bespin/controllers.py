@@ -618,7 +618,6 @@ def testCleanup(request, response):
 @expose(r'^/vcs/clone/$', 'POST')
 def vcs_clone(request, response):
     user = request.user
-    print "POST: ", request.POST
     output = vcs.clone(user, **dict(request.POST))
     response.content_type = "application/json"
     response.body = simplejson.dumps(dict(output=output))

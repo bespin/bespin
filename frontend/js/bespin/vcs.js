@@ -28,6 +28,7 @@ dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
 
 bespin.vcs.standardHandler = {
+    evalJSON: true,
     onSuccess: function(response) {
         bespin.publish("vcs:response", response);
     },
@@ -226,6 +227,31 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'diff',
     preview: 'Display the differences in the checkout out files',
+    // ** {{{execute}}} **
+    execute: function(self) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                ["diff"], 
+                                {evalJSON: true, 
+                                onSuccess: function(response) {
+                                    bespin.publish("vcs:response", response);
+                                }});
+    }                                
+});
+
+// ** {{{Command: update}}} **
+bespin.cmd.commands.add({
+    name: 'update',
+    preview: 'Update your working copy from the remote repository',
     // ** {{{execute}}} **
     execute: function(self) {
         var project;
