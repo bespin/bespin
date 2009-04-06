@@ -687,6 +687,19 @@ def keychain_setauth(request, response):
     response.content_type = "application/json"
     response.body = body
     return response()
+    
+@expose("^/vcs/getkey/$", 'POST')
+def get_ssh_key(request, response):
+    user = request.user
+    try:
+        kcpass = request.POST['kcpass']
+    except KeyError:
+        raise BadRequest("Keychain password (kcpass) is required")
+        
+    keychain = vcs.KeyChain(user, kcpass)
+    response.content_type = "application/x-ssh-key"
+    response.body = keychain.get_ssh_key()[0]
+    return response()
 
 @expose("^/messages/$", 'POST')
 def messages(request, response):

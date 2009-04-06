@@ -276,3 +276,9 @@ def test_vcs_auth_set_should_have_good_remote_auth_value():
     resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar",
                     type="ssh", remoteauth="foo"), status=400)
     
+def test_vcs_get_ssh_key_from_web():
+    _init_data()
+    resp = app.post("/vcs/getkey/", dict(kcpass="foobar"))
+    assert resp.content_type == "application/x-ssh-key"
+    assert resp.body.startswith("ssh-rsa")
+    
