@@ -193,32 +193,32 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // returns a "chunk": a string representing a part of the document with \n characters representing end of line
     getChunk: function(selection) {
-        var startPos = selection.startPos;
-        var endPos = selection.endPos;
+        var startModelPos = selection.startModelPos;
+        var endModelPos = selection.endModelPos;
 
-        var startCol, endCol;
+        var startModelCol, endModelCol;
         var chunk = "";
 
         // get the first line
-        startCol = startPos.col;
-        var row = this.getRowArray(startPos.row);
-        endCol = (endPos.row == startPos.row) ? endPos.col : row.length;
-        if (endCol > row.length) endCol = row.length;
-        chunk += row.join("").substring(startCol, endCol);
+        startModelCol = startModelPos.col;
+        var row = this.getRowArray(startModelPos.row);
+        endModelCol = (endModelPos.row == startModelPos.row) ? endModelPos.col : row.length;
+        if (endModelCol > row.length) endModelCol = row.length;
+        chunk += row.join("").substring(startModelCol, endModelCol);
 
         // get middle lines, if any
-        for (var i = startPos.row + 1; i < endPos.row; i++) {
+        for (var i = startModelPos.row + 1; i < endModelPos.row; i++) {
             chunk += "\n";
             chunk += this.getRowArray(i).join("");
         }
 
         // get the end line
-        if (startPos.row != endPos.row) {
-            startCol = 0;
-            endCol = endPos.col;
-            row = this.getRowArray(endPos.row);
-            if (endCol > row.length) endCol = row.length;
-            chunk += "\n" + row.join("").substring(startCol, endCol);
+        if (startModelPos.row != endModelPos.row) {
+            startModelCol = 0;
+            endModelCol = endModelPos.col;
+            row = this.getRowArray(endModelPos.row);
+            if (endModelCol > row.length) endModelCol = row.length;
+            chunk += "\n" + row.join("").substring(startModelCol, endModelCol);
         }
 
         return chunk;
@@ -228,34 +228,34 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     deleteChunk: function(selection) {
         var chunk = this.getChunk(selection);
 
-        var startPos = selection.startPos;
-        var endPos = selection.endPos;
+        var startModelPos = selection.startModelPos;
+        var endModelPos = selection.endModelPos;
 
-        this.editor.ui.syntaxModel.invalidateCache(startPos.row);
+        this.editor.ui.syntaxModel.invalidateCache(startModelPos.row);
 
-        var startCol, endCol;
+        var startModelCol, endModelCol;
 
         // get the first line
-        startCol = startPos.col;
-        var row = this.getRowArray(startPos.row);
-        endCol = (endPos.row == startPos.row) ? endPos.col : row.length;
-        if (endCol > row.length) endCol = row.length;
-        this.deleteCharacters({ row: startPos.row, col: startCol }, endCol - startCol);
+        startModelCol = startModelPos.col;
+        var row = this.getRowArray(startModelPos.row);
+        endModelCol = (endModelPos.row == startModelPos.row) ? endModelPos.col : row.length;
+        if (endModelCol > row.length) endModelCol = row.length;
+        this.deleteCharacters({ row: startModelPos.row, col: startModelCol }, endModelCol - startModelCol);
 
         // get the end line
-        if (startPos.row != endPos.row) {
-            startCol = 0;
-            endCol = endPos.col;
-            row = this.getRowArray(endPos.row);
-            if (endCol > row.length) endCol = row.length;
-            this.deleteCharacters({ row: endPos.row, col: startCol }, endCol - startCol);
+        if (startModelPos.row != endModelPos.row) {
+            startModelCol = 0;
+            endModelCol = endModelPos.col;
+            row = this.getRowArray(endModelPos.row);
+            if (endModelCol > row.length) endModelCol = row.length;
+            this.deleteCharacters({ row: endModelPos.row, col: startModelCol }, endModelCol - startModelCol);
         }
 
         // remove any lines in-between
-        if ((endPos.row - startPos.row) > 1) this.deleteRows(startPos.row + 1, endPos.row - startPos.row - 1);
+        if ((endModelPos.row - startModelPos.row) > 1) this.deleteRows(startModelPos.row + 1, endModelPos.row - startModelPos.row - 1);
 
         // join the rows
-        if (endPos.row != startPos.row) this.joinRow(startPos.row);
+        if (endModelPos.row != startModelPos.row) this.joinRow(startModelPos.row);
 
         return chunk;
     },

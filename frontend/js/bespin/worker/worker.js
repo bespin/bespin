@@ -161,13 +161,35 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             }
         }
         
+        var loadScript = function (index, url) {
+            var worker = this;
+            bespin.get("server").request('GET', url, null, { 
+                onSuccess: function (src) {
+                    worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src)
+                } 
+            });
+        }
+        
         var onmessage = function(event) {
             var message = event.data
-            if(typeof message == "string" && message.indexOf("log=") == 0) {
-                console.log("From Worker: "+message.substr(4))
-            } else {
-                cb.call(this, event)
+            if(typeof message == "string") {
+                if(message.indexOf("log=") == 0) {
+                    console.log("From Worker: "+message.substr(4))
+                    return
+                }
+                else
+                if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
+                    var json = message.substr("__IMPORT_SCRIPT__".length)
+                    var paras = dojo.fromJson(json)
+                    loadScript.apply(this, paras)
+                    return
+                }
+                else {
+                    message = dojo.fromJson(message)
+                }
             }
+            cb.call(this, event)
+            
         }
         
         for(var i = 0; i < this.__workerCount__;i++) {
@@ -320,9 +342,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             dojo.forEach(libs, function(lib) {
                 quoted.push("'"+lib+"'")
             })
-            if(USE_GEARS) { // Although in Gears only emulated, for now only in Gears because of bug in Safari
-                source += "if(typeof importScripts != 'undefined') importScripts("+quoted.join(", ")+");\n"
-            }
+            source += "importScripts("+quoted.join(", ")+");\n"
         }
             
         source += "var theObject = "+this.serializeToPortableSource(obj)
@@ -333,6 +353,16 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             //console.log("Received "+body)
             var dataIsString = false;
             if(typeof body == "string") { // if the data is a string, assume that it is JSON
+                if(body.indexOf("__IMPORT_SCRIPT__") == 0) {
+                    var source = body.substr("__IMPORT_SCRIPT__".length);
+                    var match = source.match(/^\/\/(\d+)/)
+                    if(match) {
+                        var index = parseInt(match[1], 10);
+                        __evalScriptFromImport(index, source)
+                        
+                    }
+                    return
+                }
                 dataIsString = true;
                 try {
                     body = JSON.parse(body)
@@ -418,6 +448,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             
             source += "\nvar wp = google.gears.workerPool; wp.onmessage = "+gearsCB.toString()+"\n";
             
+            // emulate importScripts in Gears.
             var importScripts = function importScripts () {
                 var global = this;
                 var src = "";
