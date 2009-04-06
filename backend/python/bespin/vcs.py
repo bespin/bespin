@@ -19,6 +19,15 @@ from Crypto.Cipher import AES
 
 from bespin import model, config
 
+# remote repository requires authentication for read and write
+AUTH_BOTH = "both"
+
+# remote repository requires authentication only for writing
+AUTH_WRITE = "write"
+
+# project property used to save the authentication type for a project
+AUTH_PROPERTY = "remote_auth"
+
 # the block size for the cipher object; must be 16, 24, or 32 for AES
 BLOCK_SIZE = 32
 
@@ -112,7 +121,7 @@ class KeyChain(object):
         """Return path object pointing to the keychain file on disk"""
         return path(self.user.get_location()) / ".bespin-keychain"
         
-    def save(self):
+    def _save(self):
         """Saves the new state of the keychain to the keychain file."""
         # the keychain data has not even been loaded, so we can move on.
         if self._kcdata is None:
@@ -125,25 +134,39 @@ class KeyChain(object):
         
         self.kcfile.write_bytes(newdata)
         
-    def set_ssh_for_project(self, project):
+    def set_ssh_for_project(self, project, remote_auth):
         """Stores that the SSH key in this keychain
         should be used as the credentials for the project
         given. If there is no SSH key, one will be
         generated. The SSH public key will be
-        returned."""
+        returned. remote_auth should be one of vcs.AUTH_BOTH
+        when authentication is required for read and write
+        and vcs.AUTH_WRITE when authentication is only
+        required for writing to the remote repository."""
         kcdata = self.kcdata
         pubkey = self.get_ssh_key()
         projects = kcdata.setdefault("projects", {})
         projects[project.full_name] = dict(type="ssh")
+        
+        self._save()
+        metadata = project.metadata
+        metadata[AUTH_PROPERTY] = remote_auth
+        metadata.close()
         return pubkey
     
-    def set_credentials_for_project(self, project, username, password):
+    def set_credentials_for_project(self, project, remote_auth, username, 
+                                    password):
         """Sets up username/password authentication for the
         given project."""
         kcdata = self.kcdata
         projects = kcdata.setdefault("projects", {})
         projects[project.full_name] = dict(type="password",
             username=username, password=password)
+            
+        self._save()
+        metadata = project.metadata
+        metadata[AUTH_PROPERTY] = remote_auth
+        metadata.close()
         
     def get_credentials_for_project(self, project):
         """Returns a dictionary with the user's information for
@@ -179,4 +202,10 @@ class KeyChain(object):
             del projects[project.full_name]
         except KeyError:
             pass
+        
+        self._save()
+        metadata = project.metadata
+        del metadata[AUTH_PROPERTY]
+        metadata.close()
+
         

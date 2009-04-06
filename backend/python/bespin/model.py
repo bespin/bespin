@@ -685,6 +685,7 @@ class ProjectMetadata(object):
         """Close the metadata database."""
         if self._connection:
             self._connection.close()
+            self._connection = None
         
     def __del__(self):
         self.close()

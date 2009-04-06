@@ -90,7 +90,7 @@ def test_run_a_diff(run_command_params):
 def test_hg_clone_on_web(run_command_params):
     _init_data()
     request = simplejson.dumps({'command' : ['clone', 'http://hg.mozilla.org/labs/bespin']})
-    resp = app.post("/vcs/bigmac/", request)
+    resp = app.post("/vcs/command/bigmac/", request)
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
     assert 'output' in output
@@ -111,7 +111,7 @@ def test_hg_diff_on_web(run_command_params):
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     
     request = simplejson.dumps({'command' : ['diff']})
-    resp = app.post("/vcs/bigmac/", request)
+    resp = app.post("/vcs/command/bigmac/", request)
     
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
@@ -135,11 +135,13 @@ def test_keychain_creation():
     
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
     
-    kc.set_ssh_for_project(bigmac)
+    kc.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
     
-    kc.save()
     kcfile = path(macgyver.get_location()) / ".bespin-keychain"
     assert kcfile.exists()
+    metadata = bigmac.metadata
+    assert metadata['remote_auth'] == vcs.AUTH_BOTH
+    metadata.close()
     
     # make sure the file is encrypted
     text = kcfile.bytes()
@@ -157,9 +159,15 @@ def test_keychain_creation():
     kc.delete_credentials_for_project(bigmac)
     credentials = kc.get_credentials_for_project(bigmac)
     assert credentials is None
+    metadata = bigmac.metadata
+    try:
+        value = metadata['remote_auth']
+        assert False, "expected remote_auth key to be removed from project"
+    except KeyError:
+        pass
+    metadata.close()
     
-    kc.set_credentials_for_project(bigmac, "macG", "coolpass")
-    kc.save()
+    kc.set_credentials_for_project(bigmac, vcs.AUTH_WRITE, "macG", "coolpass")
     
     kc = vcs.KeyChain(macgyver, "foobar")
     credentials = kc.get_credentials_for_project(bigmac)
@@ -168,7 +176,6 @@ def test_keychain_creation():
     assert credentials['password'] == 'coolpass'
     
     kc.delete_credentials_for_project(bigmac)
-    kc.save()
     
     kc = vcs.KeyChain(macgyver, "foobar")
     credentials = kc.get_credentials_for_project(bigmac)
@@ -177,24 +184,39 @@ def test_keychain_creation():
 def test_vcs_auth_set_password_on_web():
     _init_data()
     bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
-    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar", 
+    resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar", 
                             type="password", username="macG", 
-                            password="coolpass"))
+                            password="coolpass",
+                            remoteauth="write"))
     kc = vcs.KeyChain(macgyver, "foobar")
     credentials = kc.get_credentials_for_project(bigmac)
     assert credentials['type'] == 'password'
     assert credentials['username'] == 'macG'
     assert credentials['password'] == 'coolpass'
+    metadata = bigmac.metadata
+    assert metadata[vcs.AUTH_PROPERTY] == vcs.AUTH_WRITE
+    metadata.close()
     
 def test_vcs_auth_set_ssh_newkey_on_web():
     _init_data()
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
-    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar",
-                    type="ssh"))
+    resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar",
+                    type="ssh", remoteauth="both"))
+    assert resp.content_type == "application/json"
+    assert "ssh-rsa" in resp.body
     
     kc = vcs.KeyChain(macgyver, "foobar")
     
     credentials = kc.get_credentials_for_project(bigmac)
     assert credentials['type'] == 'ssh'
     assert "RSA PRIVATE KEY" in credentials['ssh_private_key']
+    metadata = bigmac.metadata
+    assert metadata[vcs.AUTH_PROPERTY] == vcs.AUTH_BOTH
+    metadata.close()
+    
+def test_vcs_auth_set_should_have_good_remote_auth_value():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar",
+                    type="ssh", remoteauth="foo"), status=400)
     

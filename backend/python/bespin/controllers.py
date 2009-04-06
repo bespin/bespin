@@ -623,7 +623,7 @@ def mobwrite(request, response):
     response.content_type = "text/plain"
     return response()
     
-@expose(r'^/vcs/(?P<project_name>.*)/$', 'POST')
+@expose(r'^/vcs/command/(?P<project_name>.*)/$', 'POST')
 def vcs_command(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
@@ -642,7 +642,7 @@ def vcs_command(request, response):
     response.body = simplejson.dumps({'output' : output})
     return response()
 
-@expose(r'^/keychain/setauth/(?P<project_name>.*)/$', 'POST')
+@expose(r'^/vcs/setauth/(?P<project_name>.*)/$', 'POST')
 def keychain_setauth(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
@@ -651,11 +651,16 @@ def keychain_setauth(request, response):
     try:
         kcpass = request.POST['kcpass']
         atype = request.POST['type']
+        remote_auth = request.POST['remoteauth']
     except KeyError:
-        raise BadRequest("Request must include kcpass and type.")
-    
-    
+        raise BadRequest("Request must include kcpass, type and remoteauth.")
+        
+    if remote_auth != vcs.AUTH_WRITE and remote_auth != vcs.AUTH_BOTH:
+        raise BadRequest("Remote auth type must be %s or %s" % 
+                        (vcs.AUTH_WRITE, vcs.AUTH_BOTH))
     keychain = vcs.KeyChain(user, kcpass)
+    
+    body = ""
     
     if atype == "password":
         try:
@@ -664,16 +669,15 @@ def keychain_setauth(request, response):
         except KeyError:
             raise BadRequest("Request must include username and password")
         
-        keychain.set_credentials_for_project(project, username, password)
+        keychain.set_credentials_for_project(project, remote_auth, username, 
+                                             password)
     elif atype == "ssh":
-        keychain.set_ssh_for_project(project)
+        body = keychain.set_ssh_for_project(project, remote_auth)
     else:
         raise BadRequest("auth type must be ssh or password")
         
-    keychain.save()
-    
-    response.content_type = "text/plain"
-    response.body = ""
+    response.content_type = "application/json"
+    response.body = body
     return response()
 
 @expose("^/messages/$", 'POST')
