@@ -315,3 +315,39 @@ def test_install_template_from_the_web():
     files = simplejson.loads(resp.body)
     assert files[0]['name'] == "newfile-bigmac.js"
     
+def test_basic_project_metadata_use():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    metadata = bigmac.metadata
+    try:
+        value = metadata['remote_auth']
+        assert False, "should have gotten key error for unset value"
+    except KeyError:
+        pass
+    
+    metadata['remote_auth'] = "both"
+    metadata.close()
+    
+    bigmac = get_project(macgyver, macgyver, "bigmac")
+    metadata = bigmac.metadata
+    # this should re-open the database and retrieve the value
+    value = metadata['remote_auth']
+    assert value == "both"
+    
+    metadata['remote_auth'] = "write"
+    metadata.close()
+    
+    bigmac = get_project(macgyver, macgyver, "bigmac")
+    metadata = bigmac.metadata
+    # this should re-open the database and retrieve the value
+    value = metadata['remote_auth']
+    assert value == "write"
+    
+    del metadata['remote_auth']
+    
+    try:
+        value = metadata['remote_auth']
+        assert False, "expected key to be gone from DB"
+    except KeyError:
+        pass
+    

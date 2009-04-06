@@ -42,6 +42,7 @@ from uuid import uuid4
 import shutil
 import subprocess
 import itertools
+import sqlite3
 
 from path import path as path_obj
 from pathutils import LockError as PULockError, Lock, LockFile
@@ -618,6 +619,75 @@ def _get_space_used(directory):
         total += f.size
     return total
 
+class ProjectMetadata(object):
+    """Provides access to Bespin-specific project information.
+    This metadata is stored in an sqlite database in the user's
+    metadata area."""
+    
+    def __init__(self, project):
+        self.project_name = project.name
+        self.project_location = project.location
+        self.filename = self.project_location / ".." / \
+                        (".%s_metadata" % self.project_name)
+        self._connection = None
+        
+    @property
+    def connection(self):
+        """Opens the database. This is generally done automatically
+        by the methods that use the DB."""
+        if self._connection:
+            return self._connection
+            
+        is_new = not self.filename.exists()
+        
+        conn = sqlite3.connect(self.filename)
+        self._connection = conn
+        
+        if is_new:
+            c = conn.cursor()
+            c.execute('''create table keyvalue (
+    key text primary key,
+    value text
+)''')
+            conn.commit()
+            c.close()
+        return conn
+        
+    def __getitem__(self, key):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("""select value from keyvalue where key=?""", (key,))
+        value = None
+        for row in c:
+            value = row[0]
+        c.close()
+        if value is None:
+            raise KeyError("%s not found" % key)
+        return value
+    
+    def __setitem__(self, key, value):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("delete from keyvalue where key=?", (key,))
+        c.execute("""insert into keyvalue (key, value) values (?, ?) """,
+                    (key, value))
+        conn.commit()
+        c.close()
+    
+    def __delitem__(self, key):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("delete from keyvalue where key=?", (key,))
+        conn.commit()
+        c.close()
+        
+    def close(self):
+        """Close the metadata database."""
+        if self._connection:
+            self._connection.close()
+        
+    def __del__(self):
+        self.close()
 
 class Project(object):
     """Provides access to the files in a project."""
@@ -626,6 +696,14 @@ class Project(object):
         self.owner = owner
         self.name = name
         self.location = location
+    
+    @property
+    def metadata(self):
+        try:
+            return self._metadata
+        except AttributeError:
+            self._metadata = ProjectMetadata(self)
+            return self._metadata
     
     @property
     def short_name(self):
