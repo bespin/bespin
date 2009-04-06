@@ -124,6 +124,39 @@ def test_hg_clone_on_web(run_command_params):
     assert metadata['remote_auth'] == vcs.AUTH_BOTH
     assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
     metadata.close()
+    
+@mock_run_command(clone_output, create_dir="bespin")
+def test_hg_clone_on_web_with_ssh(run_command_params):
+    _init_data()
+    resp = app.post("/vcs/clone/",
+            dict(source="http://hg.mozilla.org/labs/bespin",
+                push="ssh://hg.mozilla.org/labs/bespin",
+                remoteauth="both",
+                authtype="ssh",
+                kcpass="foobar"
+                ))
+    assert resp.content_type == "application/json"
+    output = simplejson.loads(resp.body)
+    assert 'output' in output
+    output = output['output']
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
+    command_line = command.get_command_line()
+    assert command_line[0:3] == ["hg", "clone", "-e"]
+    assert command_line[3].startswith("ssh -i")
+    assert command_line[4] == "http://hg.mozilla.org/labs/bespin"
+    assert command_line[5] == "bespin"
+    assert working_dir == macgyver.get_location()
+    assert output == clone_output
+    
+    bespin = model.get_project(macgyver, macgyver, "bespin")
+    metadata = bespin.metadata
+    assert metadata['remote_auth'] == vcs.AUTH_BOTH
+    assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
+    metadata.close()
+    
 
 @mock_run_command(diff_output)
 def test_hg_diff_on_web(run_command_params):
@@ -150,9 +183,10 @@ def test_hg_diff_on_web(run_command_params):
 def test_keychain_creation():
     _init_data()
     kc = vcs.KeyChain(macgyver, "foobar")
-    key = kc.get_ssh_key()
+    public_key, private_key = kc.get_ssh_key()
     
-    assert key.startswith("ssh-rsa")
+    assert public_key.startswith("ssh-rsa")
+    assert "RSA PRIVATE KEY" in private_key
     
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
     
@@ -170,8 +204,9 @@ def test_keychain_creation():
     assert "ssh-rsa" not in text
     
     kc = vcs.KeyChain(macgyver, "foobar")
-    key2 = kc.get_ssh_key()
-    assert key2 == key
+    public_key2, private_key2 = kc.get_ssh_key()
+    assert public_key2 == public_key
+    assert private_key2 == private_key
     
     credentials = kc.get_credentials_for_project(bigmac)
     assert "RSA PRIVATE KEY" in credentials['ssh_private_key']

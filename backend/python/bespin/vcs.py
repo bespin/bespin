@@ -57,16 +57,28 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
         auth['username'] = username
     if password:
         auth['password'] = password
+
+    keychain = KeyChain(user, kcpass)
+    keyfile = None
+    
     if authtype:
         auth['type'] = authtype
-        
-    context = main.SecureContext(working_dir, auth)
-    command = main.convert(context, args)
-    output = main.run_command(command, context)
+        if authtype == "ssh":
+            public_key, private_key = keychain.get_ssh_key()
+            keyfile = TempSSHKeyFile()
+            keyfile.store(public_key, private_key)
+            auth['key'] = keyfile.filename
+    
+    try:
+        context = main.SecureContext(working_dir, auth)
+        command = main.convert(context, args)
+        output = main.run_command(command, context)
+    finally:
+        if keyfile:
+            keyfile.delete()
     
     project = model.get_project(user, user, command.dest)
     
-    keychain = KeyChain(user, kcpass)
     if authtype == "ssh":
         keychain.set_ssh_for_project(project, remoteauth)
     elif authtype == "password":
@@ -96,6 +108,28 @@ def run_command(user, project, args):
     output = main.run_command(command, context)
     return str(output)
     
+class TempSSHKeyFile(object):
+    def __init__(self):
+        self.tdir = path(tempfile.mkdtemp())
+        self.filename = self.tdir / str(random.randint(10, 20000000))
+        
+    def create_key(self):
+        destfile = self.filename
+        os.system("ssh-keygen -N '' -f %s > /dev/null" % (destfile))
+        private_key = destfile.bytes()
+        pubkeyfile = destfile + ".pub"
+        pubkey = pubkeyfile.bytes()
+        return pubkey, private_key
+        
+    def store(self, public_key, private_key):
+        destfile = self.filename
+        destfile.write_bytes(private_key)
+        pubkeyfile = destfile + ".pub"
+        pubkeyfile.write_bytes(public_key)
+        
+    def delete(self):
+        self.tdir.rmtree()
+    
 class KeyChain(object):
     """The KeyChain holds the user's credentials for remote
     repositories. These credentials are stored in an encrypted
@@ -107,25 +141,20 @@ class KeyChain(object):
         self._kcdata = None
     
     def get_ssh_key(self):
-        """Returns the SSH public key for this key chain. If necessary,
+        """Returns the SSH key pair for this key chain. If necessary,
         this function will generate a new key pair."""
         kcdata = self.kcdata
         if "ssh" in kcdata:
-            return kcdata['ssh']['public']
+            return kcdata['ssh']['public'], kcdata['ssh']['private']
         
-        tdir = tempfile.mkdtemp()
+        sshkeyfile = TempSSHKeyFile()
         try:
-            filename = str(random.randint(10, 20000000))
-            destfile = path(tdir) / filename
-            os.system("ssh-keygen -N '' -f %s > /dev/null" % (destfile))
-            private_key = destfile.bytes()
-            pubkeyfile = destfile + ".pub"
-            pubkey = pubkeyfile.bytes()
+            pubkey, private_key = sshkeyfile.create_key()
         finally:
-            path(tdir).rmtree()
-        
+            sshkeyfile.delete()
+            
         kcdata['ssh'] = dict(public=pubkey, private=private_key)
-        return pubkey
+        return pubkey, private_key
     
     @property
     def kcdata(self):

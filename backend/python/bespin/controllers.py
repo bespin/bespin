@@ -679,7 +679,8 @@ def keychain_setauth(request, response):
         keychain.set_credentials_for_project(project, remote_auth, username, 
                                              password)
     elif atype == "ssh":
-        body = keychain.set_ssh_for_project(project, remote_auth)
+        # set the project to use the SSH key and return the public key
+        body = keychain.set_ssh_for_project(project, remote_auth)[0]
     else:
         raise BadRequest("auth type must be ssh or password")
         
