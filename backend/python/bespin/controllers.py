@@ -40,7 +40,7 @@ from webob import Request, Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
-from bespin import model
+from bespin import model, vcs
 #from bespin.mobwrite.mobwrite_daemon import RequestHandler
 import urllib
 
@@ -233,8 +233,6 @@ def install_template(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     template_name = request.body
-    if "/" in template_name or "." in template_name:
-        raise BadRequest("Template names cannot include '/' or '.'")
     project = model.get_project(user, user, project_name, create=True)
     project.install_template(template_name)
     response.content_type = "text/plain"
@@ -624,6 +622,71 @@ def mobwrite(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
+    
+@expose(r'^/vcs/(?P<project_name>.*)/$', 'POST')
+def vcs_command(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    request_info = simplejson.loads(request.body)
+    args = request_info['command']
+    
+    # special support for clone/checkout
+    if vcs.is_new_project_command(args):
+        args.append(project_name)
+        output = vcs.clone(user, args)
+    else:
+        project = model.get_project(user, user, project_name)
+        output = vcs.run_command(user, project, args)
+    
+    response.content_type = "application/json"
+    response.body = simplejson.dumps({'output' : output})
+    return response()
+
+@expose(r'^/keychain/setauth/(?P<project_name>.*)/$', 'POST')
+def keychain_setauth(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    project = model.get_project(user, user, project_name)
+    
+    try:
+        kcpass = request.POST['kcpass']
+        atype = request.POST['type']
+    except KeyError:
+        raise BadRequest("Request must include kcpass and type.")
+    
+    
+    keychain = vcs.KeyChain(user, kcpass)
+    
+    if atype == "password":
+        try:
+            username = request.POST['username']
+            password = request.POST['password']
+        except KeyError:
+            raise BadRequest("Request must include username and password")
+        
+        keychain.set_credentials_for_project(project, username, password)
+    elif atype == "ssh":
+        keychain.set_ssh_for_project(project)
+    else:
+        raise BadRequest("auth type must be ssh or password")
+        
+    keychain.save()
+    
+    response.content_type = "text/plain"
+    response.body = ""
+    return response()
+
+@expose("^/messages/$", 'POST')
+def messages(request, response):
+    user = request.user
+    user_manager = request.user_manager
+    messages = user_manager.pop_messages(user)
+    body = u"[" + ",".join(messages) + \
+            "]"
+    
+    response.content_type = "application/json"
+    response.body = body.encode("utf8")
+    return response()
 
 def db_middleware(app):
     def wrapped(environ, start_response):
@@ -670,4 +733,8 @@ def make_app():
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
+    if c.log_requests_to_stdout:
+        from paste.translogger import TransLogger
+        app = TransLogger(app)
+        
     return app

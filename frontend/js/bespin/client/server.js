@@ -572,5 +572,47 @@ dojo.declare("bespin.client.Server", null, {
     // Alter the view setting for a given member
     viewmeSet: function(member, value, opts) {
         this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
+    },
+    
+    // ** {{{ vcs() }}}
+    // Run a Version Control System (VCS) command
+    vcs: function(project, command, opts) {
+        var command_obj = {command: command}
+        this.request('POST', '/vcs/' + project + '/',
+                     dojo.toJson(command_obj),
+                     opts || {});
+    },
+    
+    // ** {{{ setauth() }}}
+    // Sets authentication for a project
+    setauth: function(project, form, opts) {
+        this.request('POST', '/keychain/setauth/' + project + '/',
+                    dojo.formToQuery(form), opts || {});
+    },
+    
+    // ** {{{ processMessages() }}}
+    // Starts up message retrieve for this user. Call this only once.
+    processMessages: function() {
+        var server = this;
+        function doProcessMessages() {
+            server.request('POST', '/messages/', null,
+                {
+                    evalJSON: true,
+                    onSuccess: function(messages) {
+                        for (var i=0; i < messages.length; i++) {
+                            var message = messages[i];
+                            var eventName = message.eventName;
+                            if (eventName) {
+                                bespin.publish(eventName, message);
+                            }
+                        }
+                        setTimeout(doProcessMessages, 1000);
+                    },
+                    onFailure: function(message) {
+                        setTimeout(doProcessMessages, 1000);
+                    }
+                });
+        }
+        doProcessMessages();
     }
 });

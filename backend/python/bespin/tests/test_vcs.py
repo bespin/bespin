@@ -1,0 +1,200 @@
+from uvc.tests.util import mock_run_command
+from webtest import TestApp
+from uvc import hg
+import simplejson
+from path import path
+
+from bespin import vcs, config, controllers, model
+
+macgyver = None
+app = None
+
+def setup_module(module):
+    global app
+    config.set_profile('test')
+    app = controllers.make_app()
+    app = TestApp(app)
+    
+def _init_data():
+    global macgyver
+    config.activate_profile()
+    
+    fsroot = config.c.fsroot
+    if fsroot.exists() and fsroot.basename() == "testfiles":
+        fsroot.rmtree()
+    fsroot.makedirs()
+    
+    app.reset()
+    
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
+    s = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = model.UserManager(s)
+    
+    app.post("/register/new/MacGyver", 
+        dict(password="richarddean", email="rich@sg1.com"))
+        
+    macgyver = user_manager.get_user("MacGyver")
+
+
+clone_output = """requesting all changes
+adding changesets
+adding manifests
+adding file changes
+added 9 changesets with 39 changes to 10 files
+updating working directory
+10 files updated, 0 files merged, 0 files removed, 0 files unresolved
+"""
+
+@mock_run_command(clone_output)
+def test_run_an_hg_clone(run_command_params):
+    _init_data()
+    cmd = "clone http://hg.mozilla.org/labs/bespin bespin".split()
+    output = vcs.clone(macgyver, cmd)
+    command, context = run_command_params
+    
+    assert isinstance(command, hg.clone)
+    working_dir = context.working_dir
+    assert working_dir == macgyver.get_location()
+    assert output == clone_output
+
+diff_output = """diff -r ff44251fbb1e uvc/main.py
+--- a/uvc/main.py	Thu Mar 19 11:55:30 2009 -0400
++++ b/uvc/main.py	Fri Mar 20 15:01:07 2009 -0400
+@@ -1,4 +1,5 @@
+ "Implements the uvc command processing."
++# Copyright 2009 Mozilla Corporation
+ 
+ import sys
+ import os
+"""
+
+@mock_run_command(diff_output)
+def test_run_a_diff(run_command_params):
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    cmd = ["diff"]
+    output = vcs.run_command(macgyver, bigmac, cmd)
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
+    assert isinstance(command, hg.diff)
+    assert working_dir == bigmac.location
+    assert output == diff_output
+    
+# Web tests
+
+@mock_run_command(clone_output)
+def test_hg_clone_on_web(run_command_params):
+    _init_data()
+    request = simplejson.dumps({'command' : ['clone', 'http://hg.mozilla.org/labs/bespin']})
+    resp = app.post("/vcs/bigmac/", request)
+    assert resp.content_type == "application/json"
+    output = simplejson.loads(resp.body)
+    assert 'output' in output
+    output = output['output']
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
+    command_line = " ".join(command.get_command_line())
+    assert command_line == "hg clone http://hg.mozilla.org/labs/bespin bigmac"
+    assert working_dir == macgyver.get_location()
+    assert output == clone_output
+
+@mock_run_command(diff_output)
+def test_hg_diff_on_web(run_command_params):
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    
+    request = simplejson.dumps({'command' : ['diff']})
+    resp = app.post("/vcs/bigmac/", request)
+    
+    assert resp.content_type == "application/json"
+    output = simplejson.loads(resp.body)
+    assert 'output' in output
+    output = output['output']
+    command, context = run_command_params
+    
+    working_dir = context.working_dir
+    
+    command_line = " ".join(command.get_command_line())
+    assert command_line == "hg diff"
+    assert working_dir == bigmac.location
+    assert output == diff_output
+
+def test_keychain_creation():
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
+    key = kc.get_ssh_key()
+    
+    assert key.startswith("ssh-rsa")
+    
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    
+    kc.set_ssh_for_project(bigmac)
+    
+    kc.save()
+    kcfile = path(macgyver.get_location()) / ".bespin-keychain"
+    assert kcfile.exists()
+    
+    # make sure the file is encrypted
+    text = kcfile.bytes()
+    assert "RSA PRIVATE KEY" not in text
+    assert "ssh-rsa" not in text
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    key2 = kc.get_ssh_key()
+    assert key2 == key
+    
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert "RSA PRIVATE KEY" in credentials['ssh_private_key']
+    assert credentials['type'] == "ssh"
+    
+    kc.delete_credentials_for_project(bigmac)
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials is None
+    
+    kc.set_credentials_for_project(bigmac, "macG", "coolpass")
+    kc.save()
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'password'
+    assert credentials['username'] == 'macG'
+    assert credentials['password'] == 'coolpass'
+    
+    kc.delete_credentials_for_project(bigmac)
+    kc.save()
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials is None
+
+def test_vcs_auth_set_password_on_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar", 
+                            type="password", username="macG", 
+                            password="coolpass"))
+    kc = vcs.KeyChain(macgyver, "foobar")
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'password'
+    assert credentials['username'] == 'macG'
+    assert credentials['password'] == 'coolpass'
+    
+def test_vcs_auth_set_ssh_newkey_on_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    resp = app.post("/keychain/setauth/bigmac/", dict(kcpass="foobar",
+                    type="ssh"))
+    
+    kc = vcs.KeyChain(macgyver, "foobar")
+    
+    credentials = kc.get_credentials_for_project(bigmac)
+    assert credentials['type'] == 'ssh'
+    assert "RSA PRIVATE KEY" in credentials['ssh_private_key']
+    

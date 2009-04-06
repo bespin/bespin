@@ -434,5 +434,8 @@ dojo.provide("bespin.page.dashboard.init");
                     break;
             }
         }));
+        
+        // Set up message retrieval
+        server.processMessages();
     });
 })();

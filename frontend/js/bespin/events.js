@@ -679,3 +679,4 @@ bespin.subscribe("viewme:set", function(member, value) {
         }
     });
 });
+

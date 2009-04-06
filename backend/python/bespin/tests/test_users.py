@@ -203,3 +203,25 @@ def test_username_with_bad_characters():
                     dict(password="foo", email="thinga@majig"), status=400)
     resp = app.post("/register/new/..", 
                     dict(password="foo", email="thinga@majig"), status=400)
+
+def test_messages_sent_from_server_to_user():
+    _clear_db()
+    app = controllers.make_app()
+    app = TestApp(app)
+    resp = app.post("/register/new/macgyver",
+        dict(password="foo", email="macgyver@ducttape.macgyver"))
+    s, user_manager = _get_user_manager()
+    macgyver = user_manager.get_user("macgyver")
+    assert len(macgyver.messages) == 0
+    macgyver.publish(dict(my="message"))
+    s.commit()
+    resp = app.post("/messages/")
+    assert resp.content_type == "application/json"
+    data = simplejson.loads(resp.body)
+    assert len(data) == 1
+    assert data[0] == dict(my="message")
+    
+    # the message should be consumed
+    resp = app.post("/messages/")
+    data = simplejson.loads(resp.body)
+    assert len(data) == 0

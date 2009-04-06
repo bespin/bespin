@@ -49,7 +49,7 @@ import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
-                    DateTime, func, UniqueConstraint)
+                    DateTime, func, UniqueConstraint, Text)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -99,6 +99,14 @@ class Connection(Base):
 
     followed_viewable = Column(Boolean, default=False)
 
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
+    when = Column(DateTime, default=datetime.now)
+    message = Column(Text)
+
 class User(Base):
     __tablename__ = "users"
     
@@ -112,6 +120,7 @@ class User(Base):
     amount_used = Column(Integer, default=0)
     file_location = Column(String(200))
     everyone_viewable = Column(Boolean, default=False)
+    messages = relation(Message, order_by=Message.when, backref="user")
     
     i_follow = relation(Connection,
                         primaryjoin=Connection.following_id==id,
@@ -263,6 +272,11 @@ class User(Base):
         statusinfo = simplejson.loads(statusinfo)
         return statusinfo.get("open", {})
         
+    def publish(self, message_obj):
+        data = simplejson.dumps(message_obj)
+        message = Message(user=self, message=data)
+        self.messages.append(message)
+
 class Group(Base):
     __tablename__ = "groups"
 
@@ -303,8 +317,8 @@ class GroupSharing(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
 
-bad_characters = "<>| '\"/"
-invalid_chars = re.compile(r'[%s]' % bad_characters)
+bad_characters = r'\W'
+invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
     if invalid_chars.search(value):
@@ -420,13 +434,28 @@ class UserManager(object):
 
     def set_viewme(member, value):
         return [ "Not implemented", member, value ]
-
+        
+    def pop_messages(self, user):
+        messages = []
+        for message in user.messages:
+            messages.append(message.message)
+            self.session.delete(message)
+        return messages
 
 class Directory(object):
-    def __init__(self, name):
+    def __init__(self, project, name):
+        if "../" in name:
+            raise BadValue("Relative directories are not allowed")
+        
+        # chop off any leading slashes
+        while name and name.startswith("/"):
+            name = name[1:]
+        
         if not name.endswith("/"):
             name += "/"
         self.name = name
+        
+        self.location = project.location / name
     
     @property
     def short_name(self):
@@ -601,6 +630,10 @@ class Project(object):
     @property
     def short_name(self):
         return self.name + "/"
+    
+    @property
+    def full_name(self):
+        return self.owner.uuid + "/" + self.name
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
@@ -681,6 +714,8 @@ class Project(object):
         """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
+        if "/" in template or "." in template:
+            raise BadValue("Template names cannot include '/' or '.'")
         found = False
         for p in config.c.template_path:
             source_dir = path_obj(p) / template
@@ -734,7 +769,7 @@ class Project(object):
         result = []
         for name in names:
             if name.isdir():
-                result.append(Directory(self.location.relpathto(name)))
+                result.append(Directory(self, self.location.relpathto(name)))
             else:
                 result.append(File(self, self.location.relpathto(name)))
         
@@ -766,12 +801,13 @@ class Project(object):
         If the path is empty, the project will be deleted."""
         # deleting the project?
         if not path or path.endswith("/"):
+            dir_obj = Directory(self, path)
             if not path:
                 location = self.location
                 if not location.exists():
                     raise FileNotFound("Project %s does not exist" % (self.name))
             else:
-                location = self.location / path
+                location = dir_obj.location
                 if not location.exists():
                     raise FileNotFound("Directory %s in project %s does not exist" %
                             (path, self.name))
@@ -913,6 +949,7 @@ class Project(object):
     def rename(self, new_name):
         """Renames this project to new_name, assuming there is
         not already another project with that name."""
+        _check_identifiers("Project name", new_name)
         old_location = self.location
         new_location = self.location.parent / new_name
         if new_location.exists():

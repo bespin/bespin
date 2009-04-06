@@ -45,7 +45,11 @@ options(
         version=VERSION,
         packages=find_packages(),
         package_data=find_package_data('bespin', 'bespin', 
-                                only_in_packages=False)
+                                only_in_packages=False),
+        entry_points="""
+[console_scripts]
+bespin_worker=bespin.queue:process_queue
+"""
     )
 )
 
