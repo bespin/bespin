@@ -714,7 +714,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
-        this.model.insertChunk(args.selectionObject.startPos, args.text);
+        this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
     },
 
