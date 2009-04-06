@@ -44,12 +44,40 @@ pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
 EncodeAES = lambda c, s: c.encrypt(pad(s)).encode("base64")
 DecodeAES = lambda c, e: c.decrypt(e.decode("base64")).rstrip(PADDING)
 
-def clone(user, args):
+def clone(user, source, dest=None, push=None, remoteauth="write",
+            authtype=None, username=None, password=None, kcpass=""):
     """Clones or checks out the repository using the command provided."""
     working_dir = user.get_location()
-    context = main.SecureContext(working_dir)
+    
+    args = ["clone", source]
+    if dest:
+        args.append(dest)
+    auth = {}
+    if username:
+        auth['username'] = username
+    if password:
+        auth['password'] = password
+    if authtype:
+        auth['type'] = authtype
+        
+    context = main.SecureContext(working_dir, auth)
     command = main.convert(context, args)
     output = main.run_command(command, context)
+    
+    project = model.get_project(user, user, command.dest)
+    
+    keychain = KeyChain(user, kcpass)
+    if authtype == "ssh":
+        keychain.set_ssh_for_project(project, remoteauth)
+    elif authtype == "password":
+        keychain.set_credentials_for_project(project, remoteauth, username, 
+                password)
+    
+    if push:
+        metadata = project.metadata
+        metadata['push'] = push
+        metadata.close()
+        
     return str(output)
     
 def run_command(user, project, args):

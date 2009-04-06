@@ -46,17 +46,24 @@ updating working directory
 10 files updated, 0 files merged, 0 files removed, 0 files unresolved
 """
 
-@mock_run_command(clone_output)
+@mock_run_command(clone_output, "bespin")
 def test_run_an_hg_clone(run_command_params):
     _init_data()
-    cmd = "clone http://hg.mozilla.org/labs/bespin bespin".split()
-    output = vcs.clone(macgyver, cmd)
+    output = vcs.clone(macgyver, source="http://hg.mozilla.org/labs/bespin")
     command, context = run_command_params
     
     assert isinstance(command, hg.clone)
     working_dir = context.working_dir
     assert working_dir == macgyver.get_location()
     assert output == clone_output
+    assert str(command) == "clone http://hg.mozilla.org/labs/bespin bespin"
+    
+    bespin = model.get_project(macgyver, macgyver, "bespin")
+    metadata = bespin.metadata
+    
+    assert 'remote_auth' not in metadata
+    assert 'push' not in metadata
+    metadata.close()
 
 diff_output = """diff -r ff44251fbb1e uvc/main.py
 --- a/uvc/main.py	Thu Mar 19 11:55:30 2009 -0400
@@ -86,11 +93,19 @@ def test_run_a_diff(run_command_params):
     
 # Web tests
 
-@mock_run_command(clone_output)
+@mock_run_command(clone_output, create_dir="bigmac")
 def test_hg_clone_on_web(run_command_params):
     _init_data()
-    request = simplejson.dumps({'command' : ['clone', 'http://hg.mozilla.org/labs/bespin']})
-    resp = app.post("/vcs/command/bigmac/", request)
+    resp = app.post("/vcs/clone/",
+            dict(source="http://hg.mozilla.org/labs/bespin",
+                dest="bigmac",
+                push="ssh://hg.mozilla.org/labs/bespin",
+                remoteauth="both",
+                authtype="password",
+                username="someuser",
+                password="theirpass",
+                kcpass="foobar"
+                ))
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
     assert 'output' in output
@@ -100,9 +115,15 @@ def test_hg_clone_on_web(run_command_params):
     working_dir = context.working_dir
     
     command_line = " ".join(command.get_command_line())
-    assert command_line == "hg clone http://hg.mozilla.org/labs/bespin bigmac"
+    assert command_line == "hg clone http://someuser:theirpass@hg.mozilla.org/labs/bespin bigmac"
     assert working_dir == macgyver.get_location()
     assert output == clone_output
+    
+    bigmac = model.get_project(macgyver, macgyver, "bigmac")
+    metadata = bigmac.metadata
+    assert metadata['remote_auth'] == vcs.AUTH_BOTH
+    assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
+    metadata.close()
 
 @mock_run_command(diff_output)
 def test_hg_diff_on_web(run_command_params):

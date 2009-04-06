@@ -623,6 +623,14 @@ def mobwrite(request, response):
     response.content_type = "text/plain"
     return response()
     
+@expose(r'^/vcs/clone/$', 'POST')
+def vcs_clone(request, response):
+    user = request.user
+    output = vcs.clone(user, **dict(request.POST))
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(dict(output=output))
+    return response()
+    
 @expose(r'^/vcs/command/(?P<project_name>.*)/$', 'POST')
 def vcs_command(request, response):
     user = request.user
@@ -632,8 +640,7 @@ def vcs_command(request, response):
     
     # special support for clone/checkout
     if vcs.is_new_project_command(args):
-        args.append(project_name)
-        output = vcs.clone(user, args)
+        raise BadRequest("Use /vcs/clone/ to create a new project")
     else:
         project = model.get_project(user, user, project_name)
         output = vcs.run_command(user, project, args)

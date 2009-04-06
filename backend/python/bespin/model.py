@@ -619,7 +619,7 @@ def _get_space_used(directory):
         total += f.size
     return total
 
-class ProjectMetadata(object):
+class ProjectMetadata(dict):
     """Provides access to Bespin-specific project information.
     This metadata is stored in an sqlite database in the user's
     metadata area."""
