@@ -1478,7 +1478,7 @@ dojo.declare("bespin.editor.API", null, {
 
         this.cursorManager = new bespin.editor.CursorManager(this);
         this.ui = new bespin.editor.UI(this);  
-        this.theme = bespin.editor.themes['default'];
+        this.theme = bespin.themes['default'];
 
         this.editorKeyListener = new bespin.editor.DefaultEditorKeyListener(this);
         this.undoManager = new bespin.editor.UndoManager(this);
