@@ -22,14 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.themes");  
+dojo.provide("bespin.themes.default");  
 
 // = Themes =
 //
 // The editor can be styled with Themes. This will become CSS soon, but for now is JSON
 
 // ** Coffee Theme **
-bespin.editor.themes.coffee = {
+bespin.themes.coffee = {
     backgroundStyle: "#2A211C",
     gutterStyle: "#4c4a41",
     lineNumberColor: "#e5c138",
@@ -109,12 +109,12 @@ bespin.editor.themes.coffee = {
 };
 
 // ** Coffee Zebra Theme **
-bespin.editor.themes.coffeezebra = {};
-dojo.mixin(bespin.editor.themes.coffeezebra, bespin.editor.themes.coffee);
-bespin.editor.themes.coffeezebra.zebraStripeColor = '#FFFFFF';
+bespin.themes.coffeezebra = {};
+dojo.mixin(bespin.themes.coffeezebra, bespin.themes.coffee);
+bespin.themes.coffeezebra.zebraStripeColor = '#FFFFFF';
 
 // ** White Theme **
-bespin.editor.themes.white = {
+bespin.themes.white = {
     backgroundStyle: "#FFFFFF",
     gutterStyle: "#d2d2d2",
     lineNumberColor: "#888888",
@@ -166,12 +166,12 @@ bespin.editor.themes.white = {
 };
 
 // ** White Zebra Theme **
-bespin.editor.themes.whitezebra = {};
-dojo.mixin(bespin.editor.themes.whitezebra, bespin.editor.themes.white); 
-bespin.editor.themes.whitezebra.zebraStripeColor = '#EAEAEA';
+bespin.themes.whitezebra = {};
+dojo.mixin(bespin.themes.whitezebra, bespin.themes.white); 
+bespin.themes.whitezebra.zebraStripeColor = '#EAEAEA';
 
 // ** Black Theme **
-bespin.editor.themes.black = {
+bespin.themes.black = {
     backgroundStyle: "#000000",
     gutterStyle: "#d2d2d2",
     lineNumberColor: "#888888",
@@ -224,9 +224,9 @@ bespin.editor.themes.black = {
 };
 
 // ** Black Zebra Theme **
-bespin.editor.themes.blackzebra = {};
-dojo.mixin(bespin.editor.themes.blackzebra, bespin.editor.themes.black); 
-bespin.editor.themes.blackzebra.zebraStripeColor = '#111111';
+bespin.themes.blackzebra = {};
+dojo.mixin(bespin.themes.blackzebra, bespin.themes.black); 
+bespin.themes.blackzebra.zebraStripeColor = '#111111';
 
 // ** Setup the default **
-bespin.editor.themes['default'] = bespin.editor.themes.coffee;
+bespin.themes['default'] = bespin.themes.coffee;
