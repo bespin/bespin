@@ -87,6 +87,7 @@ dojo.mixin(bespin.util.webpieces, {
     // -- showContentOverlay displays the center screen overlay with
     // a scrolling pane for content.
     showContentOverlay: function(msg, options) {
+        options = options || {};
         var el = dojo.byId('centerpopup');
         var addTags = "";
         var endTags = "";
@@ -97,6 +98,8 @@ dojo.mixin(bespin.util.webpieces, {
         }
         
         el.innerHTML = "<div style='background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto'>" + addTags + msg + endTags + "</div>";
+        oldwidth = el.style.width;
+        oldheight = el.style.height;
         el.style.width = "80%";
         el.style.height = "80%";
         dojo.require("dijit._base.place");
@@ -106,6 +109,8 @@ dojo.mixin(bespin.util.webpieces, {
 
         dojo.byId("overlay").onclick = el.onclick = function() {
             bespin.util.webpieces.hideCenterPopup(el);
+            el.style.width = oldwidth;
+            el.style.height = oldheight;
         };        
     }
 });

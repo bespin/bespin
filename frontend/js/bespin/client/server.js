@@ -586,8 +586,14 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ setauth() }}}
     // Sets authentication for a project
     setauth: function(project, form, opts) {
-        this.request('POST', '/keychain/setauth/' + project + '/',
+        this.request('POST', '/vcs/setauth/' + project + '/',
                     dojo.formToQuery(form), opts || {});
+    },
+    
+    // ** {{{ getkey() }}}
+    // Retrieves the user's SSH public key that can be used for VCS functions
+    getkey: function(kcpass, opts) {
+        this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
     },
     
     // ** {{{ processMessages() }}}

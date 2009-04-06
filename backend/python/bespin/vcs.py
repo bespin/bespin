@@ -154,6 +154,7 @@ class KeyChain(object):
             sshkeyfile.delete()
             
         kcdata['ssh'] = dict(public=pubkey, private=private_key)
+        self._save()
         return pubkey, private_key
     
     @property
@@ -169,6 +170,9 @@ class KeyChain(object):
                 # create a cipher object using the random secret
                 cipher = AES.new(self.password)
                 text = DecodeAES(cipher, text)
+                
+                if not text.startswith("{"):
+                    raise model.NotAuthorized("Bad keychain password")
                 
                 self._kcdata = simplejson.loads(text)
         return self._kcdata

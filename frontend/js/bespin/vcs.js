@@ -50,7 +50,7 @@ bespin.vcs.setProjectPassword = function(project) {
         bespin.util.webpieces.hideCenterPopup(el);
         bespin.get("server").setauth(project, "vcsauth", 
             {
-                call: function() {
+                onSuccess: function() {
                     bespin.publish("message", {msg: "Password saved for " + project});
                 },
                 onFailure: function(xhr) {
@@ -59,7 +59,37 @@ bespin.vcs.setProjectPassword = function(project) {
             })
     });
     
-    bespin.util.webpieces.showCenterPopup(el);
+    bespin.util.webpieces.showCenterPopup(el, true);
+}
+
+bespin.vcs.getKeychainPassword = function(callback) {
+    var el = dojo.byId('centerpopup');
+    
+    el.innerHTML = '<form id="vcsauth">'
+            + '<table><tbody><tr><td>Keychain password</td><td>'
+            + '<input type="password" id="kcpass">'
+            + '</td></tr><tr><td>&nbsp;</td><td>'
+            + '<input type="button" id="vcsauthsubmit" value="Save">'
+            + '<input type="button" id="vcsauthcancel" value="Cancel">'
+            + '</td></tr></tbody></table></form>';
+    
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", function() {
+        bespin.util.webpieces.hideCenterPopup(el);
+    });
+    
+    function saveform() {
+        bespin.util.webpieces.hideCenterPopup(el);
+        var kcpass = dojo.byId("kcpass").value;
+        el.innerHTML = "";
+        callback(kcpass);
+        return false;
+    };
+    
+    dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", saveform);
+    dojo.connect(dojo.byId("vcsauth"), "onsubmit", saveform);
+    
+    bespin.util.webpieces.showCenterPopup(el, true);
+    dojo.byId("kcpass").focus();
 }
 
 // = Commands =
@@ -80,8 +110,8 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(args.projectName, 
                                 ["clone", args.url], 
                                 {evalJSON: true, 
-                                call: function(response) {
-                                    bespin.publish("bespin:vcs:response", response);
+                                onSuccess: function(response) {
+                                    bespin.publish("vcs:response", response);
                                 }});
     }
 });
@@ -106,8 +136,8 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 args.varargs, 
                                 {evalJSON: true, 
-                                call: function(response) {
-                                    bespin.publish("bespin:vcs:response", response);
+                                onSuccess: function(response) {
+                                    bespin.publish("vcs:response", response);
                                 }});
     }                                
 });
@@ -131,8 +161,8 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 ["diff"], 
                                 {evalJSON: true, 
-                                call: function(response) {
-                                    bespin.publish("bespin:vcs:response", response);
+                                onSuccess: function(response) {
+                                    bespin.publish("vcs:response", response);
                                 }});
     }                                
 });
@@ -161,8 +191,8 @@ bespin.cmd.commands.add({
         bespin.get('server').vcs(project, 
                                 ['commit', '-m', 'message'], 
                                 {evalJSON: true, 
-                                call: function(response) {
-                                    bespin.publish("bespin:vcs:response", response);
+                                onSuccess: function(response) {
+                                    bespin.publish("vcs:response", response);
                                 }});
     }                                
 });
@@ -190,9 +220,32 @@ bespin.cmd.commands.add({
     }
 });
 
+bespin.cmd.commands.add({
+    name: 'getkey',
+    preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
+    execute: function(self) {
+        bespin.vcs.getKeychainPassword(function(kcpass) {
+            bespin.get('server').getkey(kcpass, {
+                onSuccess: function(response) {
+                    bespin.util.webpieces.showContentOverlay(
+                        '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
+                        + response + '" id="sshkey" style="width: 95%">'
+                    );
+                    dojo.byId("sshkey").select()
+                },
+                on401: function(response) {
+                    self.showInfo("Bad keychain password.");
+                },
+                onFailure: function(response) {
+                    self.showInfo("getkey failed: " + response);
+                }
+            });
+        });
+    }
+});
+
 // ** {{{ Event: bespin:vcs:response }}} **
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
-    dojo.require("bespin.util.webpieces");
     bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
 });

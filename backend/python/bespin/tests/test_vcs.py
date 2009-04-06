@@ -91,6 +91,18 @@ def test_run_a_diff(run_command_params):
     assert working_dir == bigmac.location
     assert output == diff_output
     
+def test_bad_keychain_password():
+    _init_data()
+    keychain = vcs.KeyChain(macgyver, "foobar")
+    keychain.get_ssh_key()
+    
+    try:
+        keychain = vcs.KeyChain(macgyver, "blorg")
+        keychain.get_ssh_key()
+        assert False, "Expected exception for bad keychain password"
+    except model.NotAuthorized:
+        pass
+    
 # Web tests
 
 @mock_run_command(clone_output, create_dir="bigmac")
