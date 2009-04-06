@@ -132,6 +132,13 @@ class TempSSHKeyFile(object):
         destfile.write_bytes(private_key)
         pubkeyfile = destfile + ".pub"
         pubkeyfile.write_bytes(public_key)
+        self.fix_permissions()
+    
+    def fix_permissions(self):
+        destfile = self.filename
+        destfile.chmod(0600)
+        destfile = destfile + ".pub"
+        destfile.chmod(0600)
         
     def delete(self):
         self.tdir.rmtree()
