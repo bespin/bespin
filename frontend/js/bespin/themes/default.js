@@ -159,7 +159,7 @@ bespin.themes.white = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d",  
+    cssid: "#bdae9d"
     
     // Codemirror additions
     // TODO
@@ -217,7 +217,7 @@ bespin.themes.black = {
     value: "#BF9464",
     important: "#990000",
     cssclass: "#BF9464",
-    cssid: "#bdae9d",        
+    cssid: "#bdae9d"
     
     // Codemirror additions
     // TODO:

@@ -381,7 +381,7 @@ dojo.declare("bespin.editor.UI", null, {
 
             this.syntaxModel = bespin.syntax.Resolver.setEngine(name).getModel();
         }));
-        
+
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
 

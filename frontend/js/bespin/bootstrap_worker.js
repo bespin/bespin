@@ -6,9 +6,9 @@ var __GLOBAL__ = this;
 
 __GLOBAL__.console = {
     log: function (msg) {
-        postMessage("log="+msg)
+        postMessage("log="+msg);;
     }
-}
+};
     
 var internalMessageIdentifier = "__IMPORT_SCRIPT__";
 
@@ -21,9 +21,9 @@ if(typeof importScripts == "undefined") {
     __GLOBAL__.importScripts = function () {
         for(var i = 0; i < arguments.length; ++i) {
             var script = arguments[i];
-            postMessage(internalMessageIdentifier+"["+(SCRIPT_COUNT++)+", '"+script+"']")
+            postMessage(internalMessageIdentifier+"["+(SCRIPT_COUNT++)+", '"+script+"']");;
         }
-    }
+    };
     
     var loaded = [];
     var nextLoad = 0;
@@ -35,13 +35,13 @@ if(typeof importScripts == "undefined") {
             if(loaded[i]) {
                 nextLoad = i+1;
                 // console.log("Evalling "+i)
-                __GLOBAL__.eval(loaded[i])
+                __GLOBAL__.eval(loaded[i]);
                 // console.log("evaled "+i)
             } else {
-                break
+                break;
             }
         }
-    }
+    };
 }
 
 
@@ -50,16 +50,16 @@ onmessage = function(event) {
     var source = event.data;
     if(source.indexOf("// YOUcannotGuessMe") == 0) {
         if(EMULATE_LOAD) {
-            __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, source)
+            __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, source);
         } else {
-            __GLOBAL__.eval(source)
+            __GLOBAL__.eval(source);
         }
     } 
     
     else {
-        postMessage("Ignoring message: "+source)
+        postMessage("Ignoring message: "+source);
     }
-}
+};
 
 })();
 
