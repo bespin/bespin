@@ -73,7 +73,7 @@ bespin.vcs.clone = function(url) {
             + '<option value="both">For reading and writing</option>'
             + '</select></td></tr>'
             + '<tr id="push_row" style="display:none" class="authfields"><td>Push to URL</td>'
-            + '<td><input type="text" name="push" style="width: 85%"></td></tr>'
+            + '<td><input type="text" name="push" style="width: 85%" value="' + url + '"></td></tr>'
             + '<tr id="authtype_row" style="display:none" class="authfields"><td>Authentication type</td>'
             + '<td><select name="authtype" id="authtype">'
             + '<option value="ssh">SSH</option>'
@@ -419,29 +419,6 @@ bespin.cmd.commands.add({
                                 {command: ['commit', '-m', message]}, 
                                 bespin.vcs.standardHandler);
     }                                
-});
-
-bespin.cmd.commands.add({
-    name: "authset",
-    takes: ['type', 'project'],
-    preview: "Setup authentication for the given project<br>Type can be 'ssh' or 'password'",
-    execute: function(self, args) {
-        var project = args.project;
-        if (!project) {
-            bespin.withComponent('editSession', function(editSession) {
-                project = editSession.project;
-            });
-        }
-        
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-
-        if (args.type == "password") {
-            bespin.vcs.setProjectPassword(project);
-        }
-    }
 });
 
 bespin.cmd.commands.add({
