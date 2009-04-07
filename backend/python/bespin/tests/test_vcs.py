@@ -111,6 +111,21 @@ def test_provide_auth_info_to_update_command(run_command_params):
     assert command_line[3].startswith("ssh -i")
     assert len(command_line) == 4
     
+@mock_run_command(update_output)
+def test_dont_provide_auth_info_to_update_command(run_command_params):
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    keychain = vcs.KeyChain(macgyver, "foobar")
+    keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
+    
+    cmd = ["update"]
+    try:
+        output = vcs.run_command(macgyver, bigmac, cmd)
+        assert False, "Expected authorization problem for project requiring auth"
+    except model.NotAuthorized:
+        pass
+
 def test_bad_keychain_password():
     _init_data()
     keychain = vcs.KeyChain(macgyver, "foobar")

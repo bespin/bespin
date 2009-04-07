@@ -114,20 +114,16 @@ def run_command(user, project, args, kcpass=None):
     
     keyfile = None
     
-    print "CC %s (%s, %s)" % (command_class, command_class.reads_remote,
-        command_class.writes_remote)
     if command_class.reads_remote or command_class.writes_remote:
-        print "2"
         metadata = project.metadata
         remote_auth = metadata.get(AUTH_PROPERTY)
         metadata.close()
-        print "RA: ", remote_auth
         if command_class.writes_remote or remote_auth == AUTH_BOTH:
-            print "3"
+            if not kcpass:
+                raise model.NotAuthorized("Keychain password is required for this command.")
             keychain = KeyChain(user, kcpass)
             credentials = keychain.get_credentials_for_project(project)
             if credentials['type'] == 'ssh':
-                print "4"
                 keyfile = TempSSHKeyFile()
                 keyfile.store(credentials['ssh_public_key'], 
                               credentials['ssh_private_key'])
@@ -135,7 +131,6 @@ def run_command(user, project, args, kcpass=None):
             else:
                 auth = credentials
             context.auth = auth
-            print "AUTH SET TO", auth
                 
     try:
         command = command_class.from_args(context, args)
