@@ -31,3 +31,4 @@ backend/python/testfiles
 .pydevproject
 .project
 .settings/
+.externalToolBuilders/
