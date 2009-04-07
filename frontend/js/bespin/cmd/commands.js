@@ -1188,7 +1188,7 @@ bespin.cmd.commands.add({
         var element = script[index];
         var that = this;
         self.showInfo = function(html, autohide) {
-            var info = dojo.byId('info');;
+            var info = dojo.byId('info');
             info.innerHTML = html;
             var text = info.textContent;
             if (element.expect.test(text)) {
