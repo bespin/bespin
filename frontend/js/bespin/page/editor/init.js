@@ -101,6 +101,8 @@ dojo.provide("bespin.page.editor.init");
             var d = dojo.coords('status');
             dojo.attr('projectLabel', { width: d.w, height: d.h });
 
+            // Repaint the various canvas'
+            scene.paint();
             bespin.get('editor').paint();
         }
     })
