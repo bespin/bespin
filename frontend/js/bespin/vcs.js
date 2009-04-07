@@ -129,7 +129,16 @@ bespin.vcs.clone = function(url) {
             }
         }
         data = dojo.objectToQuery(data);
-        bespin.get('server').clone(data, bespin.vcs.standardHandler);
+        bespin.get('server').clone(data, {
+            evalJSON: true,
+            onSuccess: function(response) {
+                bespin.publish("project:create", {});
+                bespin.publish("vcs:response", response);
+            },
+            onFailure: function(response) {
+                bespin.publish("vcs:error", response);
+            }
+        });
     });
     
     bespin.util.webpieces.showCenterPopup(el, true);
