@@ -53,7 +53,7 @@ dojo.declare("bespin.editor.quickopen.Panel", th.components.Panel, {
                 label.attributes.text = rctx.item.name;                
             }
             return label;
-        }
+        };
         
         this.scrollbar = new th.components.Scrollbar({ attributes: { orientation: th.HORIZONTAL } });
         this.scrollbar.style.backgroundColor = "#413D35";
@@ -116,7 +116,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             height: 270, 
             userPanel: this.panel,
             containerId: 'quickopen',
-            closeOnClickOutside: true, 
+            closeOnClickOutside: true
         });
         this.window.centerUp(); // center the window, but more a "human" center
 
@@ -146,7 +146,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                         
             // adds the new opened file to the top of the openSessionFiles
             if (this.openSessionFiles.indexOf(item.filename) != -1) {
-                this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1)
+                this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1);
             }                
             this.openSessionFiles.unshift(item.filename);
             

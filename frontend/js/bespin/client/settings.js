@@ -597,11 +597,11 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:init", function(event) {
             bespin.subscribe("settings:set:syntaxcheck", function (data) {
                 if(settings.isOff(data.value)) {
-                    bespin.publish("parser:stop")
+                    bespin.publish("parser:stop");
                 } else {
-                    bespin.publish("parser:start")
+                    bespin.publish("parser:start");
                 }
-            })
+            });
             
             bespin.publish("settings:set:syntaxcheck", {
                 value: settings.get('syntaxcheck')

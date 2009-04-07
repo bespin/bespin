@@ -43,7 +43,6 @@ dojo.provide("bespin.client.session");
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {        
         this.editor = editor;
-        this.collaborate = false;
     },
 
     setUserinfo: function(userinfo) {
@@ -56,18 +55,16 @@ dojo.declare("bespin.client.session.EditSession", null, {
         return ((this.project == project) && (this.path == path));
     },
 
-    startSession: function(project, path, username) {
+    startSession: function(project, path, onSuccess) {
         this.project = project;
         this.path = path;
-        if (!this.username) this.username = username;
 
-        if (this.collaborate) {
-            // Extreme suckage: This starts a sync session with the server.
-            // All it's really doing is talking to a sync service which is totally
-            // separate from the file storage API. They need merging, and then we
-            // should be able to ditch whatever loads the text into the editor
-            mobwrite.share(bespin.get('editSession'));
-        }
+        mobwrite.share(this);
+
+        onSuccess({
+            name: path,
+            timestamp: new Date().getTime()
+        });
     },
 
     stopSession: function() {

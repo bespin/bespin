@@ -76,7 +76,7 @@ dojo.declare("bespin.editor.Events", null, {
         // Observe a request for a file to be opened and start the cycle:
         //
         // * Send event that you are opening up something (openbefore)
-        // * Ask the file system to load a file (loadFile)
+        // * Ask the file system to load a file (collaborateOnFile)
         // * If the file is loaded send an opensuccess event
         // * If the file fails to load, send an openfail event
         bespin.subscribe("editor:openfile", function(event) {
@@ -92,7 +92,7 @@ dojo.declare("bespin.editor.Events", null, {
             
             bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
-            files.loadFile(project, filename, function(file) {
+            files.collaborateOnFile(project, filename, function(file) {
                 if (!file) {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {

@@ -38,15 +38,15 @@ var USE_GEARS    = false;
 var JS_WORKER_SOURCE = "js/bespin/bootstrap_worker.js";
 var uriEncodeSource = function(source) {
     return JS_WORKER_SOURCE+"#"+escape(source)
-}
+};
 var uriDecodeSource = function(uri) {
     return unescape(uri.substr( (JS_WORKER_SOURCE+"#").length ))
-}
+};
 
 // If there is no Worker API (http://www.whatwg.org/specs/web-workers/current-work/) yet,
 // try to build one using Google Gears API
-if(typeof Worker == "undefined") {
-    BespinGearsInitializeGears() // this functions initializes Gears only if we need it
+if (typeof Worker == "undefined") {
+    BespinGearsInitializeGears(); // this functions initializes Gears only if we need it
     if(window.google && google.gears) {
         USE_GEARS   = true; // OK, gears is here
         
@@ -55,15 +55,15 @@ if(typeof Worker == "undefined") {
         Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
             
-            this.id    = wp.createWorker(source)
+            this.id = wp.createWorker(source);
             workers[this.id] = this;
-        }
+        };
         
         Worker.prototype = { // we can post messages to the worker
             postMessage: function(data) {
                 wp.sendMessage(data, this.id)
             }
-        }
+        };
         
         // upon receiving a message we call our onmessage callback
         // DOM-Message-Events are not supported
@@ -73,9 +73,9 @@ if(typeof Worker == "undefined") {
             if(cb) {
                 cb.call(worker, {
                     data: message.body
-                })
+                });
             }
-        }
+        };
     }
 }
 //** {{{ bespin.worker.Worker }}} **
@@ -111,33 +111,33 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         
         // Properties use __name__ notation to avoid conflicts with facade methods
     
-        this.__obj__ = obj
+        this.__obj__ = obj;
         
-        var callbacks = {}
+        var callbacks = {};
         this.__callbacks__ = callbacks;
         
         this.__workerCount__ = workerCount || WORKER_COUNT;
         
         // __hasWorkers__ is a public API of the facade
-        this.__hasWorkers__ = false
+        this.__hasWorkers__ = false;
         
         if(typeof Worker != "undefined") { // We have a Worker implementation
-            this.__hasWorkers__ = true
+            this.__hasWorkers__ = true;
             
             var source  = this.createWorkerSource(obj, libs);
             var workers = this.createWorkers(source);
             this.__workers__ = workers;
         }
         
-        this.createFacade(obj)
+        this.createFacade(obj);
         
     },
     
     // We support pools of workers which share the load
     __getWorker__: function() {
-        var index = WORKER_INDEX++ % this.__workerCount__ // round robin scheduling
+        var index = WORKER_INDEX++ % this.__workerCount__; // round robin scheduling
         // TODO maintain a smarter queue based on which workers are actually idle
-        return this.__workers__[index]
+        return this.__workers__[index];
     },
     
     // Create N workers based on source
@@ -148,24 +148,24 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         // The standard callback choose a callback for the particular method using
         // the callIndex that is set upon sending the method
         var cb = function(event) {
-            var data  = event.data
+            var data  = event.data;
             if(typeof data == "string") {
-                data = dojo.fromJson(data)
+                data = dojo.fromJson(data);
             }
             var index = data.callIndex;
             
             var callback = self.__callbacks__[index];
-            delete self.__callbacks__[index]
+            delete self.__callbacks__[index];
             if(callback) {
-                callback(data.returnValue)
+                callback(data.returnValue);
             }
-        }
+        };
         
         var loadScript = function (index, url) {
             var worker = this;
             bespin.get("server").request('GET', url, null, { 
                 onSuccess: function (src) {
-                    worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src)
+                    worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src);
                 } 
             });
         }

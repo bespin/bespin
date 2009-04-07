@@ -51,11 +51,11 @@ bespin.vcs.getRemoteauth = function(project, callback) {
     }
     // work from cache
     callback(cached);
-}
+};
 
 bespin.subscribe("vcs:remoteauthUpdate", function(event) {
     bespin.vcs._remoteauthCache[event.project] = event.remoteauth;
-})
+});
 
 bespin.vcs.clone = function(url) {
     var el = dojo.byId('centerpopup');
@@ -174,11 +174,11 @@ bespin.vcs.setProjectPassword = function(project) {
                 onFailure: function(xhr) {
                     bespin.publish("message", {msg: "Password save failed: " + xhr.responseText});
                 }
-            })
+            });
     });
     
     bespin.util.webpieces.showCenterPopup(el, true);
-}
+};
 
 // ** {{{ getKeychainPassword }}}
 // Presents the user with a dialog requesting their keychain
@@ -213,7 +213,7 @@ bespin.vcs.getKeychainPassword = function(callback) {
     
     bespin.util.webpieces.showCenterPopup(el, true);
     dojo.byId("kcpass").focus();
-}
+};
 
 // = Commands =
 // Version Control System-related commands
@@ -348,7 +348,7 @@ bespin.cmd.commands.add({
         
         var sendRequest = function(kcpass) {
             var command = {
-                command: ['update', '_BESPIN_REMOTE_URL'],
+                command: ['update', '_BESPIN_REMOTE_URL']
             };
             
             if (kcpass !== undefined) {
@@ -432,7 +432,7 @@ bespin.cmd.commands.add({
                         '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
                         + response + '" id="sshkey" style="width: 95%">'
                     );
-                    dojo.byId("sshkey").select()
+                    dojo.byId("sshkey").select();
                 },
                 on401: function(response) {
                     self.showInfo("Bad keychain password.");

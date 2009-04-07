@@ -383,7 +383,7 @@ dojo.declare("bespin.syntax.codemirror.XMLBase", bespin.syntax.codemirror.Base, 
                     return parser;
                 };
             }
-        }
+        };
     }
 });
 

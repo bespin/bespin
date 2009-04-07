@@ -972,7 +972,7 @@ bespin.cmd.commands.add({
     execute: function(self) {
         bespin.publish("parser:showoutline");
     }
-})
+});
 
 // ** {{{Command: follow}}} **
 bespin.cmd.commands.add({
@@ -1171,7 +1171,7 @@ bespin.cmd.commands.add({
         self.showInfo(reason);
         bespin.get('server').request('POST', '/test/cleanup/', null, {
             onSuccess: function() {
-                console.log("Server cleanup completed")
+                console.log("Server cleanup completed");
             },
             onFailure: function(xhr) {
                 self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
@@ -1188,7 +1188,7 @@ bespin.cmd.commands.add({
         var element = script[index];
         var that = this;
         self.showInfo = function(html, autohide) {
-            var info = dojo.byId('info')
+            var info = dojo.byId('info');
             info.innerHTML = html;
             var text = info.textContent;
             if (element.expect.test(text)) {

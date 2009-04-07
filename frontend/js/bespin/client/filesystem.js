@@ -55,26 +55,49 @@ dojo.declare("bespin.client.FileSystem", null, {
         });
     },
 
-    // ** {{{ bespin.client.FileSystem.loadFile(project, path, callback) }}}
+    // ** {{{ bespin.client.FileSystem.loadContents(project, path, callback) }}}
     //
-    // Load the file in the given project and path and get going
+    // Retrieve the contents of a file (in the given project and path) so we can
+    // perform some processing on it. Called by collaborateOnFile() if
+    // collaboration is turned off.
     //
     // * {{{project}}} is the name of the project that houses the file
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
-    // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
-    loadFile: function(project, path, onSuccess, dontStartSession) {
-        if (!dontStartSession) bespin.get('editSession').startSession(project, path);
-
+    loadContents: function(project, path, onLoad) {
         this.server.loadFile(project, path, function(content) {
-            if (/\n$/.test(content)) content = content.substr(0, content.length - 1);
+            if (/\n$/.test(content)) {
+                content = content.substr(0, content.length - 1);
+            }
 
-            onSuccess({
+            onLoad({
                 name: path,
                 content: content,
                 timestamp: new Date().getTime()
             });
         });
+    },
+
+    // ** {{{ bespin.client.FileSystem.collaborateOnFile(project, path, callback) }}}
+    //
+    // Load the file in the given project so we can begin editing it.
+    // This loads the file contents via collaboration, so the callback will not
+    // know what the
+    //
+    // * {{{project}}} is the name of the project that houses the file
+    // * {{{path}}} is the full path to load the file into
+    // * {{{onSuccess}}} is a callback to fire if the file is loaded
+    // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
+    collaborateOnFile: function(project, path, onSuccess) {
+        var collab = bespin.get('settings').isSettingOn('collaborate');
+        if (collab) {
+            console.log("collab on", collab);
+            bespin.get('editSession').startSession(project, path, onSuccess);
+        }
+        else {
+            console.log("collab off", collab);
+            this.loadContents(project, path, onSuccess);
+        }
     },
 
     // ** {{{ bespin.client.FileSystem.forceOpenFile(project, path, content) }}}

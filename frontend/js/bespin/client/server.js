@@ -35,7 +35,7 @@ dojo.declare("bespin.client.Server", null, {
     //
     // * {{{base}}} is the base server URL to access
     constructor: function(base) {
-        this.SERVER_BASE_URL = base || '';
+        this.SERVER_BASE_URL = base || '.';
     },
 
     // == Helpers ==
@@ -626,7 +626,7 @@ dojo.declare("bespin.client.Server", null, {
                     callback(result);
                 }
             }
-        )
+        );
     },
     
     // ** {{{ processMessages() }}}

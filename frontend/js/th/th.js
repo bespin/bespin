@@ -153,7 +153,7 @@ dojo.declare("th.Resources", null, {
                         dojo.connect(image, "onload", this, this.processImage);
                     }
 
-                    image.src = url;
+                    image.src = "." + url;
                     this.images[value] = image;
 
                     // swap out the value in the CSS with an image; not sure this is the right way to go
