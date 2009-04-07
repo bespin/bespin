@@ -990,7 +990,7 @@ dojo.declare("bespin.syntax.codemirror.PHPBase", bespin.syntax.codemirror.Base, 
 
             var ch = source.next();
             if (ch == "'" || ch == "\"") {
-                return readMultilineString(ch)
+                return readMultilineString(ch);
             } else if (ch == "#") {
                 return readSingleLineComment();
             } else if (ch == "$") {
@@ -998,7 +998,7 @@ dojo.declare("bespin.syntax.codemirror.PHPBase", bespin.syntax.codemirror.Base, 
             } else if (ch == ":" && source.equals(":")) {
                 source.next();
                 // the T_DOUBLE_COLON can only follow a T_STRING (class name)
-                return {type: "t_double_colon", style: "php-operator"}
+                return {type: "t_double_colon", style: "php-operator"};
             } else if (/[\[\]{}\(\),;:]/.test(ch)) { // with punctuation, the type of the token is the symbol itself
                 return {type: ch, style: "php-punctuation"};
             } else if (ch == "0" && (source.equals("x") || source.equals("X"))) {
@@ -1386,7 +1386,7 @@ dojo.declare("bespin.syntax.codemirror.PHPBase", bespin.syntax.codemirror.Base, 
                 cont(require(["t_string", "variable"]), maybeoperator);
             } else {
                 // a t_string wasn't followed by ::, such as in a function call: foo()
-                pass(expression)
+                pass(expression);
             }
         }
 

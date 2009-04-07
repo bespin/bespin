@@ -55,7 +55,7 @@ dojo.require("bespin.client.settings");
 
     dojo.mixin(bespin.util.navigate, {
         dashboard: function(newTab) {
-            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath')
+            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath');
             if (pathSelected) {
                 go("dashboard.html#path="+pathSelected, newTab);    // this contains the pathSelected parameter!
             } else {

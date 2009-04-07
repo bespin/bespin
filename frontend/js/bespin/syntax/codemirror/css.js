@@ -169,7 +169,7 @@ dojo.declare("bespin.syntax.codemirror.CSS", bespin.syntax.codemirror.Base, {
                     return base + self.indentUnit;
                 }
             };
-        }
+        };
 
         var iter = {
             next: function() {

@@ -76,7 +76,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         // * Defensively stop doing copy/cut/paste magic if you are in the command line
         var stopAction = function(e) {
             return e.target.id == "command";
-        }
+        };
 
         // Copy
         this.beforecopyHandle = dojo.connect(document, "beforecopy", function(e) {

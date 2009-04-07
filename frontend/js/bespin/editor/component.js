@@ -62,7 +62,7 @@ dojo.declare("bespin.editor.Component", null, {
         
         var initialcontent;
         if (opts.loadfromdiv) {
-            initialcontent = dojo.byId(container).innerHTML
+            initialcontent = dojo.byId(container).innerHTML;
         } else if (opts.content) {
             initialcontent = opts.content;
         }

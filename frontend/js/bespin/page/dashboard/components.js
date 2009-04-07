@@ -266,7 +266,7 @@ dojo.declare("bespin.page.dashboard.components.BespinProjectPanel", th.component
         this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
         y += lh;
 
-        var sw = this.splitter.getPreferredWidth()
+        var sw = this.splitter.getPreferredWidth();
         this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
 
         var innerWidth = d.b.w - d.i.w - sw;

@@ -626,7 +626,7 @@ dojo.declare("bespin.client.Server", null, {
                     callback(result);
                 }
             }
-        )
+        );
     },
     
     // ** {{{ processMessages() }}}

@@ -105,7 +105,7 @@ dojo.provide("bespin.page.editor.init");
             scene.paint();
             bespin.get('editor').paint();
         }
-    })
+    });
 
     // ** {{{ window.load time }}} **
     //

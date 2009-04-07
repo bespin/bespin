@@ -190,7 +190,7 @@ dojo.provide("bespin.page.dashboard.init");
                         }
                     }
                 }
-            }
+            };
             
             // get the data for the lists
             for (var x = sameLevel; x < newPath.length; x++) {                                                
@@ -198,7 +198,7 @@ dojo.provide("bespin.page.dashboard.init");
                 if (selected && selected.contents && dojo.isArray(selected.contents)) {
                     // restore filelist from local memory (the filelists was ones fetched)
                     if (x > bd.tree.lists.length - 1) {
-                        bd.tree.showChildren(null, selected.contents)
+                        bd.tree.showChildren(null, selected.contents);
                     } else {
                         bd.tree.replaceList(x, selected.contents);
                     }
@@ -368,7 +368,7 @@ dojo.provide("bespin.page.dashboard.init");
                 bespin.page.dashboard.lastSelectedPath = this;
                 location.hash = '#path=' + this;
             }), 300);
-        })
+        });
 
         scene.bus.bind("itemselected", tree.lists[0], function(e) {
             currentProject = e.item.name;
@@ -405,7 +405,7 @@ dojo.provide("bespin.page.dashboard.init");
             var index = path.length - 1;
             var list = this.lists[index];
             var listNext = (this.lists.length > index ? this.lists[index + 1] : false);
-            var listPre = (index != 0 ? this.lists[index - 1] : false)
+            var listPre = (index != 0 ? this.lists[index - 1] : false);
             
             switch (e.keyCode) {
                 case key.ARROW_LEFT:

@@ -273,7 +273,7 @@ mobwrite.shareRadioObj.prototype.getClientText = function() {
   // Group of radio buttons
   for (var x = 0; x < this.elements.length; x++) {
     if (this.elements[x].checked) {
-      return this.elements[x].value
+      return this.elements[x].value;
     }
   }
   // Nothing checked.
@@ -622,10 +622,8 @@ mobwrite.shareTextareaObj.shareHandler = function(node) {
       node.type == 'text' || node.type == 'password')) {
     if (mobwrite.UA_webkit) {
       // Safari needs to track which text element has the focus.
-      node.addEventListener('focus', function() {this.activeElement = true},
-          false);
-      node.addEventListener('blur', function() {this.activeElement = false},
-          false);
+      node.addEventListener('focus', function() { this.activeElement = true; }, false);
+      node.addEventListener('blur', function() { this.activeElement = false; }, false);
       node.activeElement = false;
     }
     return new mobwrite.shareTextareaObj(node);
