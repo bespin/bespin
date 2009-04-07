@@ -47,6 +47,7 @@ bespin.vcs.getRemoteauth = function(project, callback) {
     var cached = bespin.vcs._remoteauthCache[project];
     if (cached === undefined) {
         bespin.get('server').remoteauth(project, callback);
+        return;
     }
     // work from cache
     callback(cached);
@@ -338,15 +339,20 @@ bespin.cmd.commands.add({
         
         var sendRequest = function(kcpass) {
             var command = {
-                command: ['update'],
-                kcpass: kcpass
+                command: ['update', '_BESPIN_REMOTE_URL'],
             };
+            
+            if (kcpass !== undefined) {
+                command.kcpass = kcpass;
+            }
+            
             bespin.get('server').vcs(project, 
                                     command,
                                     bespin.vcs.standardHandler);
         };
         
         bespin.vcs.getRemoteauth(project, function(remoteauth) {
+            console.log("remote auth is: " + remoteauth);
             if (remoteauth == "both") {
                 bespin.vcs.getKeychainPassword(sendRequest);
             } else {

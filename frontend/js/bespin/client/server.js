@@ -615,6 +615,7 @@ dojo.declare("bespin.client.Server", null, {
     // values to vcs:remoteauthUpdate and sent to the callback.
     remoteauth: function(project, callback) {
         this.request('GET', '/vcs/remoteauth/' + escape(project) + '/',
+            null,
             {
                 onSuccess: function(result) {
                     var event = {

@@ -91,54 +91,72 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
         keychain.set_credentials_for_project(project, remoteauth, username, 
                 password)
     
+    metadata = project.metadata
+    metadata['remote_url'] = source
+
     if push:
-        metadata = project.metadata
         metadata['push'] = push
-        metadata.close()
+
+    metadata.close()
         
     return str(output)
     
 def run_command(user, project, args, kcpass=None):
     working_dir = project.location
+    metadata = project.metadata
     
-    context = main.SecureContext(working_dir)
-    
-    if args and args[0] in main.dialects:
-        dialect = None
-    elif not is_new_project_command(args):
-        dialect = main.infer_dialect(working_dir)
-    else:
-        dialect = None
-        
-    command_class = main.get_command_class(context, args, dialect)
-    
-    keyfile = None
-    
-    if command_class.reads_remote or command_class.writes_remote:
-        metadata = project.metadata
-        remote_auth = metadata.get(AUTH_PROPERTY)
-        metadata.close()
-        if command_class.writes_remote or remote_auth == AUTH_BOTH:
-            if not kcpass:
-                raise model.NotAuthorized("Keychain password is required for this command.")
-            keychain = KeyChain(user, kcpass)
-            credentials = keychain.get_credentials_for_project(project)
-            if credentials['type'] == 'ssh':
-                keyfile = TempSSHKeyFile()
-                keyfile.store(credentials['ssh_public_key'], 
-                              credentials['ssh_private_key'])
-                auth = dict(type='ssh', key=keyfile.filename)
-            else:
-                auth = credentials
-            context.auth = auth
-                
     try:
-        command = command_class.from_args(context, args)
-        output = main.run_command(command, context)
-    finally:
-        if keyfile:
-            keyfile.delete()
-            
+        for i in range(0, len(args)):
+            if args[i] == "_BESPIN_REMOTE_URL":
+                try:
+                    args[i] = metadata["remote_url"].encode("utf8")
+                except KeyError:
+                    del args[i]
+                    break
+            elif args[i] == "_BESPIN_PUSH":
+                try:
+                    args[i] = metadata["push"].encode("utf8")
+                except KeyError:
+                    del args[i]
+                    break
+                    
+        context = main.SecureContext(working_dir)
+    
+        if args and args[0] in main.dialects:
+            dialect = None
+        elif not is_new_project_command(args):
+            dialect = main.infer_dialect(working_dir)
+        else:
+            dialect = None
+        
+        command_class = main.get_command_class(context, args, dialect)
+    
+        keyfile = None
+    
+        if command_class.reads_remote or command_class.writes_remote:
+            remote_auth = metadata.get(AUTH_PROPERTY)
+            if command_class.writes_remote or remote_auth == AUTH_BOTH:
+                if not kcpass:
+                    raise model.NotAuthorized("Keychain password is required for this command.")
+                keychain = KeyChain(user, kcpass)
+                credentials = keychain.get_credentials_for_project(project)
+                if credentials['type'] == 'ssh':
+                    keyfile = TempSSHKeyFile()
+                    keyfile.store(credentials['ssh_public_key'], 
+                                  credentials['ssh_private_key'])
+                    auth = dict(type='ssh', key=keyfile.filename)
+                else:
+                    auth = credentials
+                context.auth = auth
+                
+        try:
+            command = command_class.from_args(context, args)
+            output = main.run_command(command, context)
+        finally:
+            if keyfile:
+                keyfile.delete()
+    finally:        
+        metadata.close()
     return str(output)
     
 class TempSSHKeyFile(object):

@@ -34,6 +34,6 @@ bespin.cmd.dashboardcommands.Commands = [
     'createproject', 'deleteproject', 'renameproject', 'status',
     'follow', 'unfollow', 'group', 'share', 'viewme', 'test', 'echo',
     'vcs', 'clone', 'authset', 'commit', 'diff', "getkey", "add",
-    "push"
+    "push", "update"
 ];
 

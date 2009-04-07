@@ -63,6 +63,7 @@ def test_run_an_hg_clone(run_command_params):
     
     assert 'remote_auth' not in metadata
     assert 'push' not in metadata
+    assert metadata['remote_url'] == "http://hg.mozilla.org/labs/bespin"
     metadata.close()
 
 diff_output = """diff -r ff44251fbb1e uvc/main.py
@@ -99,17 +100,23 @@ def test_provide_auth_info_to_update_command(run_command_params):
     _init_data()
     bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    metadata = bigmac.metadata
+    metadata['remote_url'] = 'http://hg.mozilla.org/labs/bespin'
+    metadata.close()
     keychain = vcs.KeyChain(macgyver, "foobar")
     keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
     
-    cmd = ["update"]
+    cmd = ["update", "_BESPIN_REMOTE_URL"]
     output = vcs.run_command(macgyver, bigmac, cmd, "foobar")
     
     command, context = run_command_params
     command_line = command.get_command_line()
     assert command_line[:3] == ["hg", "fetch", "-e"]
     assert command_line[3].startswith("ssh -i")
-    assert len(command_line) == 4
+    assert command_line[4] == "http://hg.mozilla.org/labs/bespin"
+    # make sure it's not unicode
+    assert isinstance(command_line[4], str)
+    assert len(command_line) == 5
     
 @mock_run_command(update_output)
 def test_dont_provide_auth_info_to_update_command(run_command_params):
