@@ -219,12 +219,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var userString = fromUser.join(' ');
         
         if (command.takes['*']) {
-            args = new bespin.util.TokenObject(userString, {});
+            args = new bespin.util.TokenObject(userString);
             args.rawinput = userString;
             
-            // slightly untidy, pulling out a private var.
-            // at least it's only done in this place.
-            args.varargs = args._pieces;
+            args.varargs = args.pieces; // directly grab the token pieces as an array
         } else if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
             args = userString;
         } else {           

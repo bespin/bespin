@@ -44,9 +44,9 @@ dojo.provide("bespin.util.tokenobject");
 dojo.declare("bespin.util.TokenObject", null, { 
     constructor: function(input, options) {
         this._input = input;
-        this._options = options;
+        this._options = options || {};
         this._splitterRegex = new RegExp(this._options.splitBy || '\\s+');
-        this._pieces = this.tokenize(input.split(this._splitterRegex));
+        this.pieces = this.tokenize(input.split(this._splitterRegex));
 
         if (this._options.params) { // -- create a hash for name based access
             this._nametoindex = {};
@@ -55,10 +55,9 @@ dojo.declare("bespin.util.TokenObject", null, {
                 this._nametoindex[namedparams[x]] = x;
 
                 if (!this._options['noshortcutvalues']) { // side step if you really don't want this
-                    this[namedparams[x]] = this._pieces[x];
+                    this[namedparams[x]] = this.pieces[x];
                 }
             }
-
         }
     },
     
@@ -89,10 +88,10 @@ dojo.declare("bespin.util.TokenObject", null, {
     },
     
     param: function(index) {
-        return (typeof index == "number") ? this._pieces[index] : this._pieces[this._nametoindex[index]];
+        return (typeof index == "number") ? this.pieces[index] : this.pieces[this._nametoindex[index]];
     },
 
     length: function() {
-        return this._pieces.length;
+        return this.pieces.length;
     }
 });
