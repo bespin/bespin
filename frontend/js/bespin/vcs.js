@@ -296,6 +296,29 @@ bespin.cmd.commands.add({
     }                                
 });
 
+// ** {{{Command: diff}}} **
+bespin.cmd.commands.add({
+    name: 'resolved',
+    preview: 'Mark files as resolved',
+    // ** {{{execute}}} **
+    execute: function(self) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                {command: ["resolved"]}, 
+                                bespin.vcs.standardHandler);
+    }                                
+});
+
+
 // ** {{{Command: update}}} **
 bespin.cmd.commands.add({
     name: 'update',
