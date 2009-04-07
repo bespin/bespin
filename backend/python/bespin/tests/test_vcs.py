@@ -91,6 +91,26 @@ def test_run_a_diff(run_command_params):
     assert working_dir == bigmac.location
     assert output == diff_output
     
+update_output = """27 files updates from 97 changesets with 3.2 changes per file,
+all on line 10."""
+
+@mock_run_command(update_output)
+def test_provide_auth_info_to_update_command(run_command_params):
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    keychain = vcs.KeyChain(macgyver, "foobar")
+    keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
+    
+    cmd = ["update"]
+    output = vcs.run_command(macgyver, bigmac, cmd, "foobar")
+    
+    command, context = run_command_params
+    command_line = command.get_command_line()
+    assert command_line[:3] == ["hg", "fetch", "-e"]
+    assert command_line[3].startswith("ssh -i")
+    assert len(command_line) == 4
+    
 def test_bad_keychain_password():
     _init_data()
     keychain = vcs.KeyChain(macgyver, "foobar")

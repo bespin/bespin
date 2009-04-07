@@ -713,6 +713,12 @@ class ProjectMetadata(dict):
             conn.commit()
             c.close()
         return conn
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
         
     def __getitem__(self, key):
         conn = self.connection

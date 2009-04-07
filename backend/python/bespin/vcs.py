@@ -98,7 +98,7 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
         
     return str(output)
     
-def run_command(user, project, args):
+def run_command(user, project, args, kcpass=None):
     working_dir = project.location
     
     context = main.SecureContext(working_dir)
@@ -110,8 +110,40 @@ def run_command(user, project, args):
     else:
         dialect = None
         
-    command = main.convert(context, args, dialect)
-    output = main.run_command(command, context)
+    command_class = main.get_command_class(context, args, dialect)
+    
+    keyfile = None
+    
+    print "CC %s (%s, %s)" % (command_class, command_class.reads_remote,
+        command_class.writes_remote)
+    if command_class.reads_remote or command_class.writes_remote:
+        print "2"
+        metadata = project.metadata
+        remote_auth = metadata.get(AUTH_PROPERTY)
+        metadata.close()
+        print "RA: ", remote_auth
+        if command_class.writes_remote or remote_auth == AUTH_BOTH:
+            print "3"
+            keychain = KeyChain(user, kcpass)
+            credentials = keychain.get_credentials_for_project(project)
+            if credentials['type'] == 'ssh':
+                print "4"
+                keyfile = TempSSHKeyFile()
+                keyfile.store(credentials['ssh_public_key'], 
+                              credentials['ssh_private_key'])
+                auth = dict(type='ssh', key=keyfile.filename)
+            else:
+                auth = credentials
+            context.auth = auth
+            print "AUTH SET TO", auth
+                
+    try:
+        command = command_class.from_args(context, args)
+        output = main.run_command(command, context)
+    finally:
+        if keyfile:
+            keyfile.delete()
+            
     return str(output)
     
 class TempSSHKeyFile(object):
@@ -263,6 +295,7 @@ class KeyChain(object):
             # for SSH, we need to change the SSH key name into the key itself.
             if value['type'] == "ssh":
                 value['ssh_private_key'] = kcdata['ssh']['private']
+                value['ssh_public_key'] = kcdata['ssh']['public']
         
         return value
     
