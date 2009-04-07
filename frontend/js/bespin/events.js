@@ -59,7 +59,7 @@ bespin.subscribe("editor:evalfile", function(event) {
         return;
     }
 
-    bespin.get('files').loadFile(project, filename, function(file) {
+    bespin.get('files').loadContents(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
                 bespin.publish("cmdline:suppressinfo");
@@ -202,7 +202,7 @@ bespin.subscribe("command:load", function(event) {
         return;
     }
 
-    bespin.get('files').loadFile(bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
+    bespin.get('files').loadContents(bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
         try {
             eval('bespin.get("commandLine").addCommands([' + file.content + '])');
         } catch (e) {
