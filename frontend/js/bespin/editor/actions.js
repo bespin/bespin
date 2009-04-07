@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.actions");  
+dojo.provide("bespin.editor.actions");
 
 // = Actions =
 //
@@ -36,7 +36,7 @@ dojo.provide("bespin.editor.actions");
 // action that should be executed to undo or redo the operation and the remaining keys correspond to state necessary to perform
 // the action. See below for various examples.
 
-dojo.declare("bespin.editor.Actions", null, { 
+dojo.declare("bespin.editor.Actions", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.model = this.editor.model;
@@ -155,7 +155,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     insertTab: function(args) {
         var settings = bespin.get("settings");
-        
+
         if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
             return;
@@ -182,7 +182,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.model.insertCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tablength });
         this.repaint();
-        
+
         // undo/redo
         args.action = "insertTab";
         var redoOperation = args;
@@ -195,14 +195,14 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
-    
+
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
         delete this.editor.selection;
         this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), args.tab.length);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
         this.repaint();
-        
+
         // undo/redo
         args.action = "removeTab";
         var redoOperation = args;
@@ -218,7 +218,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     indent: function(args) {
-        var historyIndent = args.historyIndent || false;    
+        var historyIndent = args.historyIndent || false;
         var useHistoryIndent = !!historyIndent;
         if (!historyIndent) historyIndent = new Array();
         var settings = bespin.get('settings');
@@ -272,9 +272,9 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoOperation = args;
         var undoArgs = { action: "unindent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, historyIndent: historyIndent, pos: bespin.editor.utils.copyPos(args.pos) };
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));        
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
-    
+
     unindent: function(args) {
         var historyIndent = args.historyIndent || false;
         if (!historyIndent) {
@@ -330,7 +330,7 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
         this.repaint();
-        
+
         // undo/redo
         args.action = "unindent";
         args.selection = selection;
@@ -345,7 +345,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.copySelection(args);
         this.deleteSelection(args);
     },
-    
+
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     copySelection: function(args) {
         var selectionObject = this.editor.getSelection();
@@ -473,7 +473,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.getCursorPos()), queued: args.queued };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-        
+
         this.repaint();
     },
 
@@ -482,7 +482,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.setSelection({ startPos: { row: args.pos.row, col: 0 }, endPos: { row: args.pos.row + 1, col: 0 } });
         this.cutSelection(args); // cut (will save and redo will work)
     },
-    
+
     deleteSelection: function(args) {
         if (!this.editor.selection) return;
         var selection = this.editor.getSelection();
@@ -659,7 +659,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
     },
-    
+
     moveCursorRowToCenter: function(args) {
         var saveCursorRow = this.editor.getCursorPos().row;
         var halfRows = Math.floor(this.editor.ui.visibleRows / 2);
@@ -714,8 +714,14 @@ dojo.declare("bespin.editor.Actions", null, {
 
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
-        this.model.insertCharacters(args.selectionObject.startModelPos, args.text);
+        this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
+
+		args.action = "undoSelectionChangeCase";
+		var redoOperation = args;
+		var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, text: args.text };
+		var undoOperation = undoArgs;
+		this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
     repaint: function() {
