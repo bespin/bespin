@@ -629,16 +629,30 @@ def vcs_command(request, response):
     project_name = request.kwargs['project_name']
     request_info = simplejson.loads(request.body)
     args = request_info['command']
+    kcpass = request_info.get('kcpass')
     
     # special support for clone/checkout
     if vcs.is_new_project_command(args):
         raise BadRequest("Use /vcs/clone/ to create a new project")
     else:
         project = model.get_project(user, user, project_name)
-        output = vcs.run_command(user, project, args)
+        output = vcs.run_command(user, project, args, kcpass)
     
     response.content_type = "application/json"
     response.body = simplejson.dumps({'output' : output})
+    return response()
+
+@expose(r'^/vcs/remoteauth/(?P<project_name>.*)/$', 'GET')
+def vcs_remoteauth(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    
+    project = model.get_project(user, user, project_name)
+    metadata = project.metadata
+    value = metadata.get(vcs.AUTH_PROPERTY, "")
+    
+    response.content_type = "text/plain"
+    response.body = value.encode("utf8")
     return response()
 
 @expose(r'^/vcs/setauth/(?P<project_name>.*)/$', 'POST')

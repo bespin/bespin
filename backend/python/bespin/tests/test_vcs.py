@@ -329,3 +329,19 @@ def test_vcs_get_ssh_key_from_web():
     assert resp.content_type == "application/x-ssh-key"
     assert resp.body.startswith("ssh-rsa")
     
+def test_find_out_remote_auth_info_from_web():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    keychain = vcs.KeyChain(macgyver, "foobar")
+    keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
+    resp = app.get("/vcs/remoteauth/bigmac/")
+    assert resp.body == "both"
+    
+    keychain.delete_credentials_for_project(bigmac)
+    resp = app.get("/vcs/remoteauth/bigmac/")
+    assert resp.body == ""
+    
+    keychain.set_ssh_for_project(bigmac, vcs.AUTH_WRITE)
+    resp = app.get("/vcs/remoteauth/bigmac/")
+    assert resp.body == "write"
+    
