@@ -572,5 +572,86 @@ dojo.declare("bespin.client.Server", null, {
     // Alter the view setting for a given member
     viewmeSet: function(member, value, opts) {
         this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
+    },
+    
+    // ** {{{ vcs() }}}
+    // Run a Version Control System (VCS) command
+    // The command object should have a command attribute
+    // on it that is a list of the arguments.
+    // Commands that require authentication should also
+    // have kcpass, which is a string containing the user's
+    // keychain password.
+    vcs: function(project, command, opts) {
+        this.request('POST', '/vcs/command/' + project + '/',
+                     dojo.toJson(command),
+                     opts || {});
+    },
+    
+    // ** {{{ clone() }}}
+    // Clone a remote repository
+    clone: function(data, opts) {
+        this.request('POST', '/vcs/clone/',
+                    data, opts || {});
+    },
+    
+    // ** {{{ setauth() }}}
+    // Sets authentication for a project
+    setauth: function(project, form, opts) {
+        this.request('POST', '/vcs/setauth/' + project + '/',
+                    dojo.formToQuery(form), opts || {});
+    },
+    
+    // ** {{{ getkey() }}}
+    // Retrieves the user's SSH public key that can be used for VCS functions
+    getkey: function(kcpass, opts) {
+        this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+    },
+    
+    // ** {{{ remoteauth() }}}
+    // Finds out if the given project requires remote authentication
+    // the values returned are "", "both" (for read and write), "write"
+    // when only writes require authentication
+    // the result is published as an object with project, remoteauth
+    // values to vcs:remoteauthUpdate and sent to the callback.
+    remoteauth: function(project, callback) {
+        this.request('GET', '/vcs/remoteauth/' + escape(project) + '/',
+            null,
+            {
+                onSuccess: function(result) {
+                    var event = {
+                        project: project,
+                        remoteauth: result
+                    };
+                    bespin.publish("vcs:remoteauthUpdate", event);
+                    callback(result);
+                }
+            }
+        );
+    },
+    
+    // ** {{{ processMessages() }}}
+    // Starts up message retrieve for this user. Call this only once.
+    processMessages: function() {
+        var server = this;
+        function doProcessMessages() {
+            server.request('POST', '/messages/', null,
+                {
+                    evalJSON: true,
+                    onSuccess: function(messages) {
+                        for (var i=0; i < messages.length; i++) {
+                            var message = messages[i];
+                            var eventName = message.eventName;
+                            if (eventName) {
+                                bespin.publish(eventName, message);
+                            }
+                        }
+                        setTimeout(doProcessMessages, 1000);
+                    },
+                    onFailure: function(message) {
+                        setTimeout(doProcessMessages, 1000);
+                    }
+                });
+        }
+        doProcessMessages();
     }
 });

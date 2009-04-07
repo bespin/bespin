@@ -53,28 +53,28 @@ bespin.util.queryToObject = function(str, seperator) {
     	}
     });
     return ret;
-}
+};
 
 // = endsWith =
 //
 // A la Prototype endsWith(). Takes a regex exclusing the '$' end marker
 bespin.util.endsWith = function(str, end) {
     return str.match(new RegExp(end + "$"));
-}
+};
 
 // = include =
 //
 // A la Prototype include().
 bespin.util.include = function(array, item) {
     return dojo.indexOf(array, item) > -1;
-}
+};
 
 // = last =
 //
 // A la Prototype last().
 bespin.util.last = function(array) {
     if (dojo.isArray(array)) return array[array.length - 1];
-}
+};
 
 // = shrinkArray =
 //
@@ -138,4 +138,4 @@ bespin.util.leadingSpaces = function(row) {
 // Windows folks expect to use CTRL + C
 bespin.util.isMac = function() {
     return navigator.appVersion.indexOf("Macintosh") >= 0;
-}
+};

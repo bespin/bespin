@@ -133,13 +133,20 @@ bespin.cmd.commands.add({
 
             if (!setting.key) { // -- show all
                 var settings = self.settings.list();
-
                 output = "<u>Your Settings</u><br/><br/>";
-                for (var x = 0; x < settings.length; x++) {
-                    if (settings[x].key[0] != '_') {
-                        output += settings[x].key + ": " + settings[x].value + "<br/>";
+                dojo.forEach(settings.sort(function (a, b) { // first sort the settings based on the key
+                    if (a.key < b.key) {
+                        return -1;
+                    } else if (a.key == b.key) {
+                        return 0;
+                    } else {
+                        return 1;
                     }
-                }
+                }), function(setting) { // now add to output unless hidden settings (start with a _)
+                    if (setting.key[0] != '_') {
+                        output += setting.key + ": " + setting.value + "<br/>";
+                    }
+                });
             } else {
                 var key = setting.key;
                 if (setting.value === undefined) { // show it
@@ -259,8 +266,8 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'deleteproject',
     takes: ['projectname'],
-    preview: 'delete a new project',
-    usage: '[newprojectname]',
+    preview: 'delete a project',
+    usage: '[projectname]',
     execute: function(self, projectname) {
         if (!projectname) {
             self.showUsage(this);
@@ -965,7 +972,7 @@ bespin.cmd.commands.add({
     execute: function(self) {
         bespin.publish("parser:showoutline");
     }
-})
+});
 
 // ** {{{Command: follow}}} **
 bespin.cmd.commands.add({
@@ -1164,7 +1171,7 @@ bespin.cmd.commands.add({
         self.showInfo(reason);
         bespin.get('server').request('POST', '/test/cleanup/', null, {
             onSuccess: function() {
-                console.log("Server cleanup completed")
+                console.log("Server cleanup completed");
             },
             onFailure: function(xhr) {
                 self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
@@ -1181,7 +1188,7 @@ bespin.cmd.commands.add({
         var element = script[index];
         var that = this;
         self.showInfo = function(html, autohide) {
-            var info = dojo.byId('info')
+            var info = dojo.byId('info');;
             info.innerHTML = html;
             var text = info.textContent;
             if (element.expect.test(text)) {

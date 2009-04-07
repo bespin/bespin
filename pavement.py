@@ -96,7 +96,8 @@ options(
         address="",
         port=8080,
         try_build=False,
-        dburl=None
+        dburl=None,
+        async=False
     ),
     dojo=Bunch(
         version="1.3.0",
@@ -160,6 +161,10 @@ def start():
     
     if options.server.dburl:
         config.c.dburl = options.server.dburl
+    
+    if options.server.async:
+        config.c.async_jobs = True
+        config.c.queue_path = path.getcwd() / "queue.db"
     
     config.activate_profile()
     port = int(options.port)

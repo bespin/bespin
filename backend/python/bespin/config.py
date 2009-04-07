@@ -56,6 +56,7 @@ c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
+c.async_jobs = True
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
@@ -67,12 +68,15 @@ c.fslevels = 0
 
 c.max_import_file_size = 20000000
 
+c.log_requests_to_stdout = False
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
         c.fsroot = os.path.abspath("%s/../testfiles" 
                         % os.path.dirname(__file__))
+        c.async_jobs = False
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
         c.fsroot = os.path.abspath("%s/../../../devfiles" 
@@ -81,13 +85,17 @@ def set_profile(profile):
         root_log.setLevel(logging.DEBUG)
         handler = logging.handlers.RotatingFileHandler(
                     c.log_file)
-        root_log.addHandler(handler)
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        root_log.addHandler(handler)
+        
         # turn off the secure cookie, because localhost connections
         # will be HTTP
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
         c.default_quota=10000
+        c.log_requests_to_stdout = True
+        
+        c.async_jobs = False
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)

@@ -43,6 +43,7 @@ dojo.require("bespin.client.session");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
+dojo.require("bespin.vcs");
 dojo.require("bespin.cmd.dashboardcommands");
 
 // -- Thunderhead hoooooo

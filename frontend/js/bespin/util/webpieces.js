@@ -24,7 +24,7 @@
 
 dojo.provide("bespin.util.webpieces");
 
-dojo.require("dijit._base.place"); 
+dojo.require("dijit._base.place");
 
 // = Utility functions for Web snippets =
 //
@@ -82,5 +82,36 @@ dojo.mixin(bespin.util.webpieces, {
     showStatus: function(msg) {
         dojo.byId("status").innerHTML = msg;
         dojo.style('status', 'display', 'block');
+    },
+    
+    // -- showContentOverlay displays the center screen overlay with
+    // a scrolling pane for content.
+    showContentOverlay: function(msg, options) {
+        options = options || {};
+        var el = dojo.byId('centerpopup');
+        var addTags = "";
+        var endTags = "";
+        
+        if (options.pre) {
+            addTags = addTags + "<pre>";
+            endTags = "</pre>" + endTags;
+        }
+        
+        el.innerHTML = "<div style='background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto'>" + addTags + msg + endTags + "</div>";
+        oldwidth = el.style.width;
+        oldheight = el.style.height;
+        el.style.width = "80%";
+        el.style.height = "80%";
+        dojo.require("dijit._base.place");
+        dojo.require("bespin.util.webpieces");
+
+        bespin.util.webpieces.showCenterPopup(el);
+        
+        var connection = dojo.connect(el, "onclick", function() {
+            bespin.util.webpieces.hideCenterPopup(el);
+            el.style.width = oldwidth;
+            el.style.height = oldheight;
+            dojo.disconnect(connection);
+        });
     }
 });

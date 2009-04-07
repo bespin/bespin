@@ -42,6 +42,7 @@ from uuid import uuid4
 import shutil
 import subprocess
 import itertools
+import sqlite3
 
 from path import path as path_obj
 from pathutils import LockError as PULockError, Lock, LockFile
@@ -49,7 +50,7 @@ import pkg_resources
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
                     Boolean, Binary, Table, ForeignKey,
-                    DateTime, func, UniqueConstraint)
+                    DateTime, func, UniqueConstraint, Text)
 from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
@@ -99,6 +100,14 @@ class Connection(Base):
 
     followed_viewable = Column(Boolean, default=False)
 
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
+    when = Column(DateTime, default=datetime.now)
+    message = Column(Text)
+
 class User(Base):
     __tablename__ = "users"
     
@@ -112,6 +121,7 @@ class User(Base):
     amount_used = Column(Integer, default=0)
     file_location = Column(String(200))
     everyone_viewable = Column(Boolean, default=False)
+    messages = relation(Message, order_by=Message.when, backref="user")
     
     i_follow = relation(Connection,
                         primaryjoin=Connection.following_id==id,
@@ -263,6 +273,11 @@ class User(Base):
         statusinfo = simplejson.loads(statusinfo)
         return statusinfo.get("open", {})
         
+    def publish(self, message_obj):
+        data = simplejson.dumps(message_obj)
+        message = Message(user=self, message=data)
+        self.messages.append(message)
+
 class Group(Base):
     __tablename__ = "groups"
 
@@ -305,8 +320,8 @@ class GroupSharing(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
 
-bad_characters = "<>| '\"/"
-invalid_chars = re.compile(r'[%s]' % bad_characters)
+bad_characters = r'\W'
+invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
     if invalid_chars.search(value):
@@ -481,13 +496,28 @@ class UserManager(object):
 
     def set_viewme(self, user, member, value):
         return [ "Not implemented", member, value ]
-
+        
+    def pop_messages(self, user):
+        messages = []
+        for message in user.messages:
+            messages.append(message.message)
+            self.session.delete(message)
+        return messages
 
 class Directory(object):
-    def __init__(self, name):
+    def __init__(self, project, name):
+        if "../" in name:
+            raise BadValue("Relative directories are not allowed")
+        
+        # chop off any leading slashes
+        while name and name.startswith("/"):
+            name = name[1:]
+        
         if not name.endswith("/"):
             name += "/"
         self.name = name
+        
+        self.location = project.location / name
     
     @property
     def short_name(self):
@@ -650,6 +680,82 @@ def _get_space_used(directory):
         total += f.size
     return total
 
+class ProjectMetadata(dict):
+    """Provides access to Bespin-specific project information.
+    This metadata is stored in an sqlite database in the user's
+    metadata area."""
+    
+    def __init__(self, project):
+        self.project_name = project.name
+        self.project_location = project.location
+        self.filename = self.project_location / ".." / \
+                        (".%s_metadata" % self.project_name)
+        self._connection = None
+        
+    @property
+    def connection(self):
+        """Opens the database. This is generally done automatically
+        by the methods that use the DB."""
+        if self._connection:
+            return self._connection
+            
+        is_new = not self.filename.exists()
+        
+        conn = sqlite3.connect(self.filename)
+        self._connection = conn
+        
+        if is_new:
+            c = conn.cursor()
+            c.execute('''create table keyvalue (
+    key text primary key,
+    value text
+)''')
+            conn.commit()
+            c.close()
+        return conn
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+        
+    def __getitem__(self, key):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("""select value from keyvalue where key=?""", (key,))
+        value = None
+        for row in c:
+            value = row[0]
+        c.close()
+        if value is None:
+            raise KeyError("%s not found" % key)
+        return value
+    
+    def __setitem__(self, key, value):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("delete from keyvalue where key=?", (key,))
+        c.execute("""insert into keyvalue (key, value) values (?, ?) """,
+                    (key, value))
+        conn.commit()
+        c.close()
+    
+    def __delitem__(self, key):
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("delete from keyvalue where key=?", (key,))
+        conn.commit()
+        c.close()
+        
+    def close(self):
+        """Close the metadata database."""
+        if self._connection:
+            self._connection.close()
+            self._connection = None
+        
+    def __del__(self):
+        self.close()
 
 class Project(object):
     """Provides access to the files in a project."""
@@ -660,8 +766,20 @@ class Project(object):
         self.location = location
     
     @property
+    def metadata(self):
+        try:
+            return self._metadata
+        except AttributeError:
+            self._metadata = ProjectMetadata(self)
+            return self._metadata
+    
+    @property
     def short_name(self):
         return self.name + "/"
+    
+    @property
+    def full_name(self):
+        return self.owner.uuid + "/" + self.name
             
     def __repr__(self):
         return "Project(name=%s)" % (self.name)
@@ -742,6 +860,8 @@ class Project(object):
         """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
+        if "/" in template or "." in template:
+            raise BadValue("Template names cannot include '/' or '.'")
         found = False
         for p in config.c.template_path:
             source_dir = path_obj(p) / template
@@ -795,7 +915,7 @@ class Project(object):
         result = []
         for name in names:
             if name.isdir():
-                result.append(Directory(self.location.relpathto(name)))
+                result.append(Directory(self, self.location.relpathto(name)))
             else:
                 result.append(File(self, self.location.relpathto(name)))
         
@@ -827,12 +947,13 @@ class Project(object):
         If the path is empty, the project will be deleted."""
         # deleting the project?
         if not path or path.endswith("/"):
+            dir_obj = Directory(self, path)
             if not path:
                 location = self.location
                 if not location.exists():
                     raise FileNotFound("Project %s does not exist" % (self.name))
             else:
-                location = self.location / path
+                location = dir_obj.location
                 if not location.exists():
                     raise FileNotFound("Directory %s in project %s does not exist" %
                             (path, self.name))
@@ -974,6 +1095,7 @@ class Project(object):
     def rename(self, new_name):
         """Renames this project to new_name, assuming there is
         not already another project with that name."""
+        _check_identifiers("Project name", new_name)
         old_location = self.location
         new_location = self.location.parent / new_name
         if new_location.exists():

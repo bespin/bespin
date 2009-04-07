@@ -463,6 +463,39 @@ def test_bad_files_and_directories():
     assert not foopath.exists()
     location = bigmac.location
     assert (location / "tmp" / "foo").exists()
+
+def test_bad_directory_names():
+    _init_data()
+    p = path("/tmp/onlydirs/")
+    assert not p.exists()
+    p.makedirs()
+    try:
+        (p / "dir2").mkdir()
+        (p / "dir3").mkdir()
+        bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+        try:
+            files = bigmac.list_files(p)
+            assert False, "Expected exception for absolute dir"
+        except model.BadValue:
+            pass
+    finally:
+        p.rmtree()
+
+def test_delete_directories_outside_of_tree():
+    _init_data()
+    p = path("/tmp/onlydirs/")
+    assert not p.exists()
+    p.makedirs()
+    try:
+        (p / "dir2").mkdir()
+        (p / "dir3").mkdir()
+        bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+        bigmac.save_file("tmp/onlydirs/newfile", "yo")
+        files = bigmac.delete(p)
+        assert p.exists()
+    finally:
+        if p.exists():
+            p.rmtree()
     
 def _setup_search_data():
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
@@ -560,7 +593,20 @@ def _run_search_tests(search_func):
         "foo_some_other",
         "some_deeply_nested_file_here"
     ]
-    
+
+def test_project_rename_should_be_secure():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    p = path('/tmp/foo')
+    try:
+        try:
+            bigmac.rename("/tmp/foo")
+            assert not p.exists()
+        except model.BadValue:
+            pass
+    finally:
+        if p.exists():
+            p.rmdir()
 
 # -------
 # Web tests

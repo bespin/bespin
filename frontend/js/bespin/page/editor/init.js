@@ -101,9 +101,11 @@ dojo.provide("bespin.page.editor.init");
             var d = dojo.coords('status');
             dojo.attr('projectLabel', { width: d.w, height: d.h });
 
+            // Repaint the various canvas'
+            scene.paint();
             bespin.get('editor').paint();
         }
-    })
+    });
 
     // ** {{{ window.load time }}} **
     //
@@ -164,6 +166,9 @@ dojo.provide("bespin.page.editor.init");
         };
 
         scene.render();
+        
+        // Set up message retrieval
+        server.processMessages();
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **

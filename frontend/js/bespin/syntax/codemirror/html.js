@@ -111,7 +111,7 @@ dojo.declare("bespin.syntax.codemirror.HTML", bespin.syntax.codemirror.XMLBase, 
                         } else {
                             return oldIndent(chars);
                         }
-                    }
+                    };
                 }
 
                 return token;

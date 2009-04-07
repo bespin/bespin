@@ -102,7 +102,7 @@ dojo.declare("bespin.syntax.codemirror.PHP", bespin.syntax.codemirror.BaseXML, {
                         } else {
                             return oldIndent(chars);
                         }
-                    }
+                    };
                 }
 
                 return token;

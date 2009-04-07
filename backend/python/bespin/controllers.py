@@ -40,7 +40,7 @@ from webob import Request, Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
-from bespin import model
+from bespin import model, vcs
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 import socket
@@ -235,8 +235,6 @@ def install_template(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     template_name = request.body
-    if "/" in template_name or "." in template_name:
-        raise BadRequest("Template names cannot include '/' or '.'")
     project = model.get_project(user, user, project_name, create=True)
     project.install_template(template_name)
     response.content_type = "text/plain"
@@ -743,6 +741,110 @@ def test_cleanup(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
+    
+@expose(r'^/vcs/clone/$', 'POST')
+def vcs_clone(request, response):
+    user = request.user
+    output = vcs.clone(user, **dict(request.POST))
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(dict(output=output))
+    return response()
+    
+@expose(r'^/vcs/command/(?P<project_name>.*)/$', 'POST')
+def vcs_command(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    request_info = simplejson.loads(request.body)
+    args = request_info['command']
+    kcpass = request_info.get('kcpass')
+    
+    # special support for clone/checkout
+    if vcs.is_new_project_command(args):
+        raise BadRequest("Use /vcs/clone/ to create a new project")
+    else:
+        project = model.get_project(user, user, project_name)
+        output = vcs.run_command(user, project, args, kcpass)
+    
+    response.content_type = "application/json"
+    response.body = simplejson.dumps({'output' : output})
+    return response()
+
+@expose(r'^/vcs/remoteauth/(?P<project_name>.*)/$', 'GET')
+def vcs_remoteauth(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    
+    project = model.get_project(user, user, project_name)
+    metadata = project.metadata
+    value = metadata.get(vcs.AUTH_PROPERTY, "")
+    
+    response.content_type = "text/plain"
+    response.body = value.encode("utf8")
+    return response()
+
+@expose(r'^/vcs/setauth/(?P<project_name>.*)/$', 'POST')
+def keychain_setauth(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    project = model.get_project(user, user, project_name)
+    
+    try:
+        kcpass = request.POST['kcpass']
+        atype = request.POST['type']
+        remote_auth = request.POST['remoteauth']
+    except KeyError:
+        raise BadRequest("Request must include kcpass, type and remoteauth.")
+        
+    if remote_auth != vcs.AUTH_WRITE and remote_auth != vcs.AUTH_BOTH:
+        raise BadRequest("Remote auth type must be %s or %s" % 
+                        (vcs.AUTH_WRITE, vcs.AUTH_BOTH))
+    keychain = vcs.KeyChain(user, kcpass)
+    
+    body = ""
+    
+    if atype == "password":
+        try:
+            username = request.POST['username']
+            password = request.POST['password']
+        except KeyError:
+            raise BadRequest("Request must include username and password")
+        
+        keychain.set_credentials_for_project(project, remote_auth, username, 
+                                             password)
+    elif atype == "ssh":
+        # set the project to use the SSH key and return the public key
+        body = keychain.set_ssh_for_project(project, remote_auth)[0]
+    else:
+        raise BadRequest("auth type must be ssh or password")
+        
+    response.content_type = "application/json"
+    response.body = body
+    return response()
+    
+@expose("^/vcs/getkey/$", 'POST')
+def get_ssh_key(request, response):
+    user = request.user
+    try:
+        kcpass = request.POST['kcpass']
+    except KeyError:
+        raise BadRequest("Keychain password (kcpass) is required")
+        
+    keychain = vcs.KeyChain(user, kcpass)
+    response.content_type = "application/x-ssh-key"
+    response.body = keychain.get_ssh_key()[0]
+    return response()
+
+@expose("^/messages/$", 'POST')
+def messages(request, response):
+    user = request.user
+    user_manager = request.user_manager
+    messages = user_manager.pop_messages(user)
+    body = u"[" + ",".join(messages) + \
+            "]"
+    
+    response.content_type = "application/json"
+    response.body = body.encode("utf8")
+    return response()
 
 def db_middleware(app):
     def wrapped(environ, start_response):
@@ -795,4 +897,8 @@ def make_app():
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
+    if c.log_requests_to_stdout:
+        from paste.translogger import TransLogger
+        app = TransLogger(app)
+        
     return app
