@@ -24,6 +24,8 @@
  
 dojo.provide("bespin.cmd.editorcommands");
 
+dojo.require("bespin.vcs");
+
 // = Editor Commands =
 //
 // This array stores all of the editor commands. 

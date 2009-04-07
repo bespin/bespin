@@ -576,10 +576,14 @@ dojo.declare("bespin.client.Server", null, {
     
     // ** {{{ vcs() }}}
     // Run a Version Control System (VCS) command
+    // The command object should have a command attribute
+    // on it that is a list of the arguments.
+    // Commands that require authentication should also
+    // have kcpass, which is a string containing the user's
+    // keychain password.
     vcs: function(project, command, opts) {
-        var command_obj = {command: command}
         this.request('POST', '/vcs/command/' + project + '/',
-                     dojo.toJson(command_obj),
+                     dojo.toJson(command),
                      opts || {});
     },
     
@@ -601,6 +605,27 @@ dojo.declare("bespin.client.Server", null, {
     // Retrieves the user's SSH public key that can be used for VCS functions
     getkey: function(kcpass, opts) {
         this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+    },
+    
+    // ** {{{ remoteauth() }}}
+    // Finds out if the given project requires remote authentication
+    // the values returned are "", "both" (for read and write), "write"
+    // when only writes require authentication
+    // the result is published as an object with project, remoteauth
+    // values to vcs:remoteauthUpdate and sent to the callback.
+    remoteauth: function(project, callback) {
+        this.request('GET', '/vcs/remoteauth/' + escape(project) + '/',
+            {
+                onSuccess: function(result) {
+                    var event = {
+                        project: project,
+                        remoteauth: result
+                    };
+                    bespin.publish("vcs:remoteauthUpdate", event);
+                    callback(result);
+                }
+            }
+        )
     },
     
     // ** {{{ processMessages() }}}

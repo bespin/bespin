@@ -37,6 +37,25 @@ bespin.vcs.standardHandler = {
     }
 };
 
+bespin.vcs._remoteauthCache = {};
+
+// ** {{{ bespin.vcs.get_remoteauth }}}
+// Looks in the cache or calls to the server to find
+// out if the given project requires remote authentication.
+// The result is published at vcs:remoteauth:project
+bespin.vcs.getRemoteauth = function(project, callback) {
+    var cached = bespin.vcs._remoteauthCache[project];
+    if (cached === undefined) {
+        bespin.get('server').remoteauth(project, callback);
+    }
+    // work from cache
+    callback(cached);
+}
+
+bespin.subscribe("vcs:remoteauthUpdate", function(event) {
+    bespin.vcs._remoteauthCache[event.project] = event.remoteauth;
+})
+
 bespin.vcs.clone = function(url) {
     var el = dojo.byId('centerpopup');
     
@@ -151,6 +170,11 @@ bespin.vcs.setProjectPassword = function(project) {
     bespin.util.webpieces.showCenterPopup(el, true);
 }
 
+// ** {{{ getKeychainPassword }}}
+// Presents the user with a dialog requesting their keychain
+// password. If they click the submit button, the password
+// is sent to the callback. If they do not, the callback
+// is not called.
 bespin.vcs.getKeychainPassword = function(callback) {
     var el = dojo.byId('centerpopup');
     
@@ -158,7 +182,7 @@ bespin.vcs.getKeychainPassword = function(callback) {
             + '<table><tbody><tr><td>Keychain password</td><td>'
             + '<input type="password" id="kcpass">'
             + '</td></tr><tr><td>&nbsp;</td><td>'
-            + '<input type="button" id="vcsauthsubmit" value="Save">'
+            + '<input type="button" id="vcsauthsubmit" value="Submit">'
             + '<input type="button" id="vcsauthcancel" value="Cancel">'
             + '</td></tr></tbody></table></form>';
     
@@ -214,12 +238,39 @@ bespin.cmd.commands.add({
             self.showInfo("You need to pass in a project");
             return;
         }
-        bespin.get('server').vcs(project, 
-                                args.varargs, 
-                                {evalJSON: true, 
-                                onSuccess: function(response) {
-                                    bespin.publish("vcs:response", response);
-                                }});
+        
+        bespin.vcs.getKeychainPassword(function(kcpass) {
+            bespin.get('server').vcs(project, 
+                                    {command: args.varargs,
+                                    kcpass: kcpass}, 
+                                    bespin.vcs.standardHandler);
+        });
+    }                                
+});
+
+// ** {{{Command: push}}} **
+bespin.cmd.commands.add({
+    name: 'push',
+    preview: 'push to the remote repository',
+    // ** {{{execute}}} **
+    execute: function(self, args) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        
+        bespin.vcs.getKeychainPassword(function(kcpass) {
+            bespin.get('server').vcs(project, 
+                                    {command: ['push'],
+                                    kcpass: kcpass}, 
+                                    bespin.vcs.standardHandler);
+        });
     }                                
 });
 
@@ -240,11 +291,8 @@ bespin.cmd.commands.add({
             return;
         }
         bespin.get('server').vcs(project, 
-                                ["diff"], 
-                                {evalJSON: true, 
-                                onSuccess: function(response) {
-                                    bespin.publish("vcs:response", response);
-                                }});
+                                {command: ["diff"]}, 
+                                bespin.vcs.standardHandler);
     }                                
 });
 
@@ -264,13 +312,48 @@ bespin.cmd.commands.add({
             self.showInfo("You need to pass in a project");
             return;
         }
-        bespin.get('server').vcs(project, 
-                                ["diff"], 
-                                {evalJSON: true, 
-                                onSuccess: function(response) {
-                                    bespin.publish("vcs:response", response);
-                                }});
+        
+        var sendRequest = function(kcpass) {
+            var command = {
+                command: ['update'],
+                kcpass: kcpass
+            };
+            bespin.get('server').vcs(project, 
+                                    command,
+                                    bespin.vcs.standardHandler);
+        };
+        
+        bespin.vcs.getRemoteauth(project, function(remoteauth) {
+            if (remoteauth == "both") {
+                bespin.vcs.getKeychainPassword(sendRequest);
+            } else {
+                sendRequest(undefined);
+            }
+        });
+        
     }                                
+});
+
+// ** {{{Command: add}}} **
+bespin.cmd.commands.add({
+    name: 'add',
+    preview: 'Adds missing files to the project',
+    // ** {{{execute}}} **
+    execute: function(self, args) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project, 
+                                {command: ["add"]}, 
+                                bespin.vcs.standardHandler);
+    }
 });
 
 // ** {{{Command: commit}}} **
@@ -295,11 +378,8 @@ bespin.cmd.commands.add({
             return;
         }
         bespin.get('server').vcs(project, 
-                                ['commit', '-m', 'message'], 
-                                {evalJSON: true, 
-                                onSuccess: function(response) {
-                                    bespin.publish("vcs:response", response);
-                                }});
+                                {command: ['commit', '-m', message]}, 
+                                bespin.vcs.standardHandler);
     }                                
 });
 
