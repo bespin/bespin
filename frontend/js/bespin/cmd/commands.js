@@ -133,13 +133,20 @@ bespin.cmd.commands.add({
 
             if (!setting.key) { // -- show all
                 var settings = self.settings.list();
-
                 output = "<u>Your Settings</u><br/><br/>";
-                for (var x = 0; x < settings.length; x++) {
-                    if (settings[x].key[0] != '_') {
-                        output += settings[x].key + ": " + settings[x].value + "<br/>";
+                dojo.forEach(settings.sort(function (a, b) { // first sort the settings based on the key
+                    if (a.key < b.key) {
+                        return -1;
+                    } else if (a.key == b.key) {
+                        return 0;
+                    } else {
+                        return 1;
                     }
-                }
+                }), function(setting) { // now add to output unless hidden settings (start with a _)
+                    if (setting.key[0] != '_') {
+                        output += setting.key + ": " + setting.value + "<br/>";
+                    }
+                });
             } else {
                 var key = setting.key;
                 if (setting.value === undefined) { // show it
