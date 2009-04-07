@@ -173,7 +173,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
-                console.log("stop")
                 bespin.unsubscribe(onChange)
                 self._started = false;
             })
