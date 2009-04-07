@@ -13,8 +13,9 @@ dojo.require("bespin.editor.actions");
 dojo.require("bespin.editor.editor");
 dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
-dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
+
+dojo.require("bespin.themes.default");
 
 dojo.require("th.helpers");
 dojo.require("th.css");

@@ -41,7 +41,9 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model, vcs
-#from bespin.mobwrite.mobwrite_daemon import RequestHandler
+from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
+from bespin.mobwrite.mobwrite_daemon import Persister
+import socket
 import urllib
 
 log = logging.getLogger("bespin.controllers")
@@ -473,25 +475,25 @@ def unfollow(request, response):
     return _users_followed_response(request.user_manager, request.user, response)
 
 @expose(r'^/group/list/all', 'GET')
-def groupListAll(request, response):
+def group_list_all(request, response):
     groups = request.user_manager.get_groups(request.user)
     return _respond_json(response, groups)
 
 @expose(r'^/group/list/(?P<group>.+)/$', 'GET')
-def groupList(request, response):
+def group_list(request, response):
     group = request.kwargs['group']
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
 
 @expose(r'^/group/remove/all/(?P<group>.+)/$', 'POST')
-def groupRemoveAll(request, response):
+def group_remove_all(request, response):
     group = request.kwargs['group']
     request.user_manager.remove_all_group_members(request.user, group)
     members = request.user_manager.get_group_members(request.user, group)
     return _respond_json(response, members)
 
 @expose(r'^/group/remove/(?P<group>.+)/$', 'POST')
-def groupRemove(request, response):
+def group_remove(request, response):
     group = request.kwargs['group']
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
@@ -500,7 +502,7 @@ def groupRemove(request, response):
     return _respond_json(response, members)
 
 @expose(r'^/group/add/(?P<group>.+)/$', 'POST')
-def groupAdd(request, response):
+def group_add(request, response):
     group = request.kwargs['group']
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
@@ -529,20 +531,20 @@ def _users_followed_response(user_manager, user, response):
     response.content_type = "text/plain"
 
 @expose(r'^/share/list/all/$', 'GET')
-def shareListAll(request, response):
+def share_list_all(request, response):
     "List all project shares"
     data = request.user_manager.get_sharing(request.user)
     return _respond_json(response, data)
 
 @expose(r'^/share/list/(?P<project>.+)/$', 'GET')
-def shareListProject(request, response):
+def share_list_project(request, response):
     "List sharing for a given project"
     project = get_project(request.user, request.user, request.kwargs['project'])
     data = request.user_manager.get_sharing(request.user, project)
     return _respond_json(response, data)
 
 @expose(r'^/share/list/(?P<project>.+)/(?P<member>.+)/$', 'GET')
-def shareListProjectMember(request, response):
+def share_list_project_member(request, response):
     "List sharing for a given project and member"
     project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.kwargs['member']
@@ -550,14 +552,14 @@ def shareListProjectMember(request, response):
     return _respond_json(response, data)
 
 @expose(r'^/share/remove/(?P<project>.+)/all/$', 'POST')
-def shareRemoveAll(request, response):
+def share_remove_all(request, response):
     "Remove all sharing from a project"
     project = get_project(request.user, request.user, request.kwargs['project'])
     data = request.user_manager.remove_sharing(request.user, project)
     return _respond_json(response, data)
 
 @expose(r'^/share/remove/(?P<project>.+)/(?P<member>.+)/$', 'POST')
-def shareRemove(request, response):
+def share_remove(request, response):
     "Remove project sharing from a given member"
     project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.kwargs['member']
@@ -565,7 +567,7 @@ def shareRemove(request, response):
     return _respond_json(response, data)
 
 @expose(r'^/share/add/(?P<project>.+)/(?P<member>.+)/$', 'POST')
-def shareAdd(request, response):
+def share_add(request, response):
     "Add a member to the sharing list for a project"
     project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.kwargs['member']
@@ -574,31 +576,157 @@ def shareAdd(request, response):
     return _respond_json(response, data)
 
 @expose(r'^/viewme/list/all/$', 'GET')
-def viewmeListAll(request, response):
+def viewme_list_all(request, response):
     "List all the members with view settings on me"
     data = request.user_manager.get_viewme(request.user)
     return _respond_json(response, data)
 
 @expose(r'^/viewme/list/(?P<member>.+)/$', 'GET')
-def viewmeList(request, response):
+def viewme_list(request, response):
     "List the view settings for a given member"
     member = request.kwargs['member']
     data = request.user_manager.get_viewme(request.user, member)
     return _respond_json(response, data)
 
 @expose(r'^/viewme/set/(?P<member>.+)/(?P<value>.+)/$', 'POST')
-def viewmeSet(request, response):
+def viewme_set(request, response):
     "Alter the view setting for a given member"
     member = request.kwargs['member']
     value = request.kwargs['value']
     data = request.user_manager.set_viewme(request.user, member, value)
     return _respond_json(response, data)
 
+@expose(r'^/share/list/(?P<project>.+)/$', 'GET')
+def share_list_project(request, response):
+    "List sharing for a given project"
+    project = request.kwargs['project']
+    data = request.user_manager.get_sharing(project)
+    return _respond_json(response, data)
+
+@expose(r'^/share/list/(?P<project>.+)/(?P<member>.+)/$', 'GET')
+def share_list_project_member(request, response):
+    "List sharing for a given project and member"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    data = request.user_manager.get_sharing(project, member)
+    return _respond_json(response, data)
+
+@expose(r'^/share/remove/(?P<project>.+)/all/$', 'POST')
+def share_remove_all(request, response):
+    "Remove all sharing from a project"
+    project = request.kwargs['project']
+    data = request.user_manager.remove_sharing(project)
+    return _respond_json(response, data)
+
+@expose(r'^/share/remove/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+def share_remove(request, response):
+    "Remove project sharing from a given member"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    data = request.user_manager.remove_sharing(project, member)
+    return _respond_json(response, data)
+
+@expose(r'^/share/add/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+def share_add(request, response):
+    "Add a member to the sharing list for a project"
+    project = request.kwargs['project']
+    member = request.kwargs['member']
+    options = simplejson.loads(request.body)
+    data = request.user_manager.add_sharing(project, member, options)
+    return _respond_json(response, [ "Not implemented", project, member, options ])
+
+@expose(r'^/viewme/list/all/$', 'GET')
+def viewme_list_all(request, response):
+    "List all the members with view settings on me"
+    data = request.user_manager.get_viewme()
+    return _respond_json(response, [ "Not implemented" ])
+
+@expose(r'^/viewme/list/(?P<member>.+)/$', 'GET')
+def viewme_list(request, response):
+    "List the view settings for a given member"
+    member = request.kwargs['member']
+    data = request.user_manager.get_viewme(member)
+    return _respond_json(response, [ "Not implemented", member ])
+
+@expose(r'^/viewme/set/(?P<member>.+)/(?P<value>.+)/$', 'POST')
+def viewme_set(request, response):
+    "Alter the view setting for a given member"
+    member = request.kwargs['member']
+    value = request.kwargs['value']
+    data = request.user_manager.set_viewme(member, value)
+    return _respond_json(response, [ "Not implemented", member, value ])
+
+
+class InProcessMobwriteWorker(MobwriteWorker):
+    "Talk to an in-process mobwrite"
+
+    def __init__(self, user_manager):
+        persister = Persister()
+        MobwriteWorker.__init__(self, persister)
+
+    def processRequest(self, question):
+        "Since we are a MobWriteWorker we just call directly into mobwrite code"
+        answer = self.parseRequest(question)
+        from bespin.mobwrite.mobwrite_daemon import maybe_cleanup
+        maybe_cleanup()
+        return answer
+
+
+class MobwriteWorkerProxy():
+    "Talk to mobwrite using port 3017"
+
+    def processRequest(self, question):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("localhost", 3017))
+        s.send(question)
+        answer = ''
+        while True:
+            line = s.recv(1024)
+            if not line:
+                break
+            answer += line
+        s.close()
+        return answer
+
+
+@expose(r'^/mobwrite/$', 'POST')
+def mobwrite(request, response):
+    """Handle a request for mobwrite synchronization.
+
+    We talk to mobwrite either in-process for development or using a socket
+    which would be more common in live."""
+    question = urllib.unquote(request.body)
+    # Hmmm do we need to handle 'p' requests? q.py does.
+    mode = None
+    if question.find("p=") == 0:
+        mode = "script"
+    elif question.find("q=") == 0:
+        mode = "text"
+    else:
+        raise BadRequest("Missing q= or p=")
+    question = question[2:]
+
+    # TODO: select the implementation based on a runtime flag
+    worker = InProcessMobwriteWorker(request.user_manager)
+    #worker = MobwriteWorkerProxy()
+    answer = worker.processRequest(question)
+
+    if mode == "text":
+        response.body = answer + "\n\n"
+        response.content_type = "text/plain"
+    else:
+        answer = answer.replace("\\", "\\\\").replace("\"", "\\\"")
+        answer = answer.replace("\n", "\\n").replace("\r", "\\r")
+        answer = "mobwrite.callback(\"%s\");" % answer
+        response.body = answer
+        response.content_type = "application/javascript"
+    return response()
+
+
 test_users = [ "ev", "tom", "mattb", "zuck" ]
 
 @expose(r'^/test/setup/$', 'POST')
-def testSetup(request, response):
-    "A method to setup the environment for command line driven testing"
+def test_setup(request, response):
     user_manager = request.user_manager
     for name in test_users:
         user = user_manager.get_user(name)
@@ -609,8 +737,7 @@ def testSetup(request, response):
     return response()
 
 @expose(r'^/test/cleanup/$', 'POST')
-def testCleanup(request, response):
-    "A method to cleanup the environment. See testSetup"
+def test_cleanup(request, response):
     response.body = ""
     response.content_type = "text/plain"
     return response()
@@ -727,6 +854,12 @@ def db_middleware(app):
         environ['bespin.docommit'] = True
         environ['user_manager'] = model.UserManager(session)
         try:
+            # If you need to work out what <script> tags to insert into a
+            # page to get Dojo to behave properly, then uncomment these 3
+            # path_info = environ["PATH_INFO"]
+            # if path_info.endswith(".js"):
+            #     print "<script type='text/javascript' src='%s'></script>" % path_info
+
             result = app(environ, start_response)
             if environ['bespin.docommit']:
                 session.commit()

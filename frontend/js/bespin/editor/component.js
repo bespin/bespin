@@ -24,8 +24,9 @@ dojo.require("bespin.editor.editor");
 dojo.require("bespin.editor.events");
 dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
-dojo.require("bespin.editor.themes");
 dojo.require("bespin.editor.undo");
+
+dojo.require("bespin.themes.default");
 
 dojo.require("bespin.syntax.base"); 
 dojo.require("bespin.syntax.simple._base");
