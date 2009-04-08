@@ -133,6 +133,14 @@ dojo.provide("bespin.page.editor.init");
 
 
         // bind in things for search :)
+        dojo.connect(window, 'keydown', function(e) {
+            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
+                dojo.stopEvent(e);
+                dojo.byId('searchquery').focus();
+                dojo.byId('searchquery').select();
+            }
+        });
+        
         dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
             if (e.keyCode == bespin.util.keys.Key.ENTER) {
                 if (dojo.byId('searchquery').value != '') {
@@ -149,10 +157,6 @@ dojo.provide("bespin.page.editor.init");
                     delete bespin.get('editor').ui.searchString;
                     bespin.get('editor').ui.actions.findClear();
                 }
-            } else if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
-                // pressed CMD + F within the searchfield? => select search field again and suppress browser search
-                dojo.stopEvent(e);
-                dojo.byId('searchquery').select();
             }
         });
         
