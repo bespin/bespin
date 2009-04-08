@@ -31,6 +31,7 @@
 // * {{{bespin.cmd.commandline.KeyBindings}}} : Handling the special key handling in the command line
 // * {{{bespin.cmd.commandline.History}}} : Handle command line history
 // * {{{bespin.cmd.commandline.SimpleHistoryStore}}} : Simple one session storage of history
+// * {{{bespin.cmd.commandline.ServerHistoryStore}}} : Save the history on the server in BespinSettings/command.history.txt
 // * {{{bespin.cmd.commandline.Events}}} : The custom events that the command line needs to handle
 
 dojo.provide("bespin.cmd.commandline");
@@ -267,7 +268,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var command = ca[0];
         var args = ca[1];
         
-        bespin.publish("command:executed", { command: command, args: args });
+        bespin.publish("command:executed", { command: command, args: args, commandString: value });
 
         command.execute(this, args, command);
         this.commandLine.value = ''; // clear after the command
@@ -407,7 +408,7 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         if (this.last() != command) {
             this.history.push(command);
             this.trim();
-            this.pointer = this.history.length - 1;
+            this.pointer = this.history.length; // also make it one past the end so you can go back to it
             this.store.save(this.history);
         }
     },
@@ -524,7 +525,8 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // Once the command has been executed, do something.
         // In this case, save it for the history
         bespin.subscribe("command:executed", function(event) {
-            commandline.commandLineHistory.add(event.command.name + " " + event.args); // only add to the history when a valid command
+            var command = event.commandString || event.command.name + " " + event.args.join(' '); // try to get the raw input
+            commandline.commandLineHistory.add(command); // only add to the history when a valid command
         });
         
         // ** {{{ Event: command:executed }}} **
