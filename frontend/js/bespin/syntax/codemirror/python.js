@@ -685,4 +685,4 @@ dojo.declare("bespin.syntax.codemirror.Python", bespin.syntax.codemirror.Base, {
 });
 
 // Register this puppy
-bespin.syntax.codemirror.Resolver.register(new bespin.syntax.codemirror.Python(), ['py']); 
+bespin.syntax.codemirror.Resolver.register(new bespin.syntax.codemirror.Python(), ['py', 'python']);
