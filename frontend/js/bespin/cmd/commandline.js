@@ -357,34 +357,46 @@ dojo.declare("bespin.cmd.commandline.History", null, {
     constructor: function(cl) {
         this.commandLine = cl;
         this.history = [];
+        this.historySize = 50;
         this.pointer = 0;
-        this.store = new bespin.cmd.commandline.SimpleHistoryStore();
-        this.seed();
+        this.store = new bespin.cmd.commandline.ServerHistoryStore(this);
     },
 
     // TODO: get from the database
-    seed: function() {
-        this.history = this.store.seed();
+    seed: function(commands) {
+        this.history = commands;
+        this.trim();
+        this.pointer = this.history.length; // make it one past the end so you can go back and hit the last one not the one before last
+    },
+
+    // Keep the history to the historySize
+    trim: function() {
+        if (this.history.length > this.historySize) {
+            this.history.splice(0, this.history.length - this.historySize);
+        }
     },
 
     add: function(command) {
         command = dojo.trim(command);
         if (this.last() != command) {
-            this.store.add(command);
             this.history.push(command);
+            this.trim();
             this.pointer = this.history.length - 1;
+            this.store.save(this.history);
         }
     },
 
     next: function() {
-        if (this.pointer < this.history.length) {
-            return this.history[this.pointer++];
+        if (this.pointer < this.history.length - 1) {
+            this.pointer++;
+            return this.history[this.pointer];
         }
     },
 
     previous: function() {
         if (this.pointer > 0) {
-           return this.history[this.pointer--];
+            this.pointer--;
+            return this.history[this.pointer];
         }
     },
 
@@ -418,23 +430,37 @@ dojo.declare("bespin.cmd.commandline.History", null, {
 // ** {{{ bespin.cmd.commandline.SimpleHistoryStore }}} **
 //
 // A simple store that keeps the commands in memory.
-// In the future we would want to store the history cross session.
-
 dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
-    constructor: function() {
-        this.commands = [];
+    constructor: function(history) {
+        history.seed(['ls', 'clear', 'status']);
+    },
+
+    save: function(commands) {}
+});
+
+// ** {{{ bespin.cmd.commandline.ServerHistoryStore }}} **
+//
+// Store the history in BespinSettings/command.history.txt
+dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
+    constructor: function(history) {
+        this.history = history;
+        this.seed();
     },
 
     seed: function() {
-        this.add('ls');
-        this.add('clear');
-        this.add('status');
-
-        return dojo.clone(this.commands); 
+        // load last 50 commands from history
+        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history.txt", dojo.hitch(this, function(file) {
+            this.history.seed(file.content.split(/\n/));
+        }));
     },
 
-    add: function(command) {
-        this.commands.push(command);
+    save: function(commands) {
+        // save commands back to server asynchronously        
+        bespin.get('files').saveFile(bespin.userSettingsProject, {
+            name: "command.history.txt",
+            content: commands.join("\n") || "help",
+            timestamp: new Date().getTime()
+        });
     }
 });
 

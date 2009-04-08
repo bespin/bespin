@@ -61,7 +61,7 @@ dojo.declare("bespin.client.session.EditSession", null, {
 
         mobwrite.share(this);
 
-        onSuccess({
+        if (dojo.isFunction(onSuccess)) onSuccess({
             name: path,
             timestamp: new Date().getTime()
         });
