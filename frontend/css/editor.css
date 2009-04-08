@@ -3,6 +3,7 @@ body {
     margin: 0;
     overflow: hidden;
 	background-color: #2A211C;
+    -webkit-user-select: none;
 }
 
 #subheader {

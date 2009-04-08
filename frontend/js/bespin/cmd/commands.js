@@ -68,6 +68,47 @@ bespin.cmd.commands.toArgArray = function(args) {
 // == Start adding commands to the store ==
 //
 
+bespin.cmd.displayHelp = function(commandStore, commandLine, extra) {
+    var commands = [];
+    var command, name;
+    
+    if (commandStore.commands[extra]) { // caught a real command
+        commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
+        command = commandStore.commands[extra];
+        commands.push(command['description'] ? command.description : command.preview);
+    } else {
+        var showHidden = false;
+        commands.push("<u>Commands Available</u><br/>");
+
+        if (extra) {
+            if (extra == "hidden") { // sneaky, sneaky.
+                extra = "";
+                showHidden = true;
+            }
+            commands.push("<em>(starting with</em> " + extra + " <em>)</em><br/>");
+        }
+
+        var tobesorted = [];
+        for (name in commandStore.commands) {
+            tobesorted.push(name);
+        }
+
+        var sorted = tobesorted.sort();
+        
+        for (var i = 0; i < sorted.length; i++) {
+            name = sorted[i];
+            command = commandStore.commands[name];
+
+            if (!showHidden && command.hidden) continue;
+            if (extra && name.indexOf(extra) != 0) continue;
+
+            var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
+            commands.push('<b>' + name + args + '</b>: ' + command.preview);
+        }
+    }
+    commandLine.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
+}
+
 // ** {{{Command: help}}} **
 bespin.cmd.commands.add({
     name: 'help',
@@ -76,44 +117,7 @@ bespin.cmd.commands.add({
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(self, extra) {
-        var commands = [];
-        var command, name;
-
-        if (self.commands[extra]) { // caught a real command
-            commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
-            command = self.commands[extra];
-            commands.push(command['description'] ? command.description : command.preview);
-        } else {
-            var showHidden = false;
-            commands.push("<u>Commands Available</u><br/>");
-
-            if (extra) {
-                if (extra == "hidden") { // sneaky, sneaky.
-                    extra = "";
-                    showHidden = true;
-                }
-                commands.push("<em>(starting with</em> " + extra + " <em>)</em><br/>");
-            }
-
-            var tobesorted = [];
-            for (name in self.commands) {
-                tobesorted.push(name);
-            }
-
-            var sorted = tobesorted.sort();
-            
-            for (var i = 0; i < sorted.length; i++) {
-                name = sorted[i];
-                command = self.commands[name];
-
-                if (!showHidden && command.hidden) continue;
-                if (extra && name.indexOf(extra) != 0) continue;
-
-                var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-                commands.push('<b>' + name + args + '</b>: ' + command.preview);
-            }
-        }
-        self.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
+        bespin.cmd.displayHelp(self.commandStore, self, extra);
     }
 }); 
 
@@ -550,7 +554,7 @@ bespin.cmd.commands.add({
         var bespinVersion = 'Your Bespin is at version ' + bespin.versionNumber + ', Code name: "' + bespin.versionCodename + '"';
         var version;
         if (command) {
-            var theCommand = self.commands[command];
+            var theCommand = self.commandStore.commands[command];
             if (!theCommand) {
                 version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
             } else {
@@ -956,9 +960,9 @@ bespin.cmd.commands.add({
           var aliascmd = value.split(' ')[0];
           
           output = "<u>Saving setting</u><br/><br/>";
-          if (self.commands[key]) {
+          if (self.commandStore.commands[key]) {
               output += "Sorry, there is already a command with the name: " + key;
-          } else if (self.commands[aliascmd]) {
+          } else if (self.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
               self.aliases[key] = value;
           } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
