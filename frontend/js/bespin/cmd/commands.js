@@ -79,9 +79,9 @@ bespin.cmd.commands.add({
         var commands = [];
         var command, name;
 
-        if (self.commands[extra]) { // caught a real command
+        if (self.commandStore.commands[extra]) { // caught a real command
             commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
-            command = self.commands[extra];
+            command = self.commandStore.commands[extra];
             commands.push(command['description'] ? command.description : command.preview);
         } else {
             var showHidden = false;
@@ -96,7 +96,7 @@ bespin.cmd.commands.add({
             }
 
             var tobesorted = [];
-            for (name in self.commands) {
+            for (name in self.commandStore.commands) {
                 tobesorted.push(name);
             }
 
@@ -104,7 +104,7 @@ bespin.cmd.commands.add({
             
             for (var i = 0; i < sorted.length; i++) {
                 name = sorted[i];
-                command = self.commands[name];
+                command = self.commandStore.commands[name];
 
                 if (!showHidden && command.hidden) continue;
                 if (extra && name.indexOf(extra) != 0) continue;
@@ -509,7 +509,7 @@ bespin.cmd.commands.add({
         var bespinVersion = 'Your Bespin is at version ' + bespin.versionNumber + ', Code name: "' + bespin.versionCodename + '"';
         var version;
         if (command) {
-            var theCommand = self.commands[command];
+            var theCommand = self.commandStore.commands[command];
             if (!theCommand) {
                 version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
             } else {
@@ -915,9 +915,9 @@ bespin.cmd.commands.add({
           var aliascmd = value.split(' ')[0];
           
           output = "<u>Saving setting</u><br/><br/>";
-          if (self.commands[key]) {
+          if (self.commandStore.commands[key]) {
               output += "Sorry, there is already a command with the name: " + key;
-          } else if (self.commands[aliascmd]) {
+          } else if (self.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
               self.aliases[key] = value;
           } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
