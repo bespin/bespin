@@ -26,7 +26,8 @@
 //
 // This command line module provides everything that the command line interface needs:
 //
-// * {{{bespin.cmd.commandline.Interface}}} : The base class itself. The actually interface.
+// * {{{bespin.cmd.commandline.CommandStore}}} : Model to store the commands
+// * {{{bespin.cmd.commandline.Interface}}} : The core command line driver. It executes commands, stores them, and handles completion
 // * {{{bespin.cmd.commandline.KeyBindings}}} : Handling the special key handling in the command line
 // * {{{bespin.cmd.commandline.History}}} : Handle command line history
 // * {{{bespin.cmd.commandline.SimpleHistoryStore}}} : Simple one session storage of history
@@ -41,6 +42,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         
         if (initCommands) this.addCommands(initCommands); // initialize the commands for the cli
     },
+
     splitCommandAndArgs: function(value) {
         var data = value.split(/\s+/);
         var commandname = data.shift();
