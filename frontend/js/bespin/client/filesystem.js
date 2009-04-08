@@ -91,11 +91,9 @@ dojo.declare("bespin.client.FileSystem", null, {
     collaborateOnFile: function(project, path, onSuccess) {
         var collab = bespin.get('settings').isSettingOn('collaborate');
         if (collab) {
-            console.log("collab on", collab);
             bespin.get('editSession').startSession(project, path, onSuccess);
         }
         else {
-            console.log("collab off", collab);
             this.loadContents(project, path, onSuccess);
         }
     },
