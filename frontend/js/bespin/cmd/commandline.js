@@ -62,11 +62,18 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             return;
         }
         
+        if (command.subcommands) {
+            return command.subcommands.splitCommandAndArgs(data.join(" "));
+        }
+        
         return [command, this.getArgs(argstr.split(' '), command)]
         
     },
       
     addCommand: function(command) {
+        if (!command) {
+            return;
+        }
         // -- Allow for the default [ ] takes style by expanding it to something bigger
         if (command.takes && dojo.isArray(command.takes)) {
             command = this.normalizeTakes(command); 
