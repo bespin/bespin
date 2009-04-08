@@ -243,11 +243,12 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 
-    moveLeft: function() {
+    moveLeft: function(args) {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var shiftKey = (args.event ? args.event.shiftKey : false);
         
-        if (!this.editor.getSelection()) {
+        if (!this.editor.getSelection() || shiftKey) {
             if (settings && settings.isSettingOn('smartmove')) {
                 var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
                 if (freeSpaces == this.editor.getTabSize()) {
@@ -267,18 +268,18 @@ dojo.declare("bespin.editor.CursorManager", null, {
             }
         } else {
             this.moveCursor(this.editor.getSelection().startPos);
-            //delete this.editor.selection;
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 
-    moveRight: function(newStuffInsert) {
+    moveRight: function(args) {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
+        var shiftKey = (args.event ? args.event.shiftKey : false);
         
-        if (!this.editor.getSelection()) {
-            if ((settings && settings.isSettingOn('smartmove')) && !newStuffInsert) {
+        if (!this.editor.getSelection() || shiftKey) {
+            if ((settings && settings.isSettingOn('smartmove')) && args != true) {
                 var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
                 if (freeSpaces == this.editor.getTabSize()) {
                     this.moveCursor({ col: oldPos.col + freeSpaces })  
@@ -297,9 +298,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
             }
         } else {
             this.moveCursor(this.editor.getSelection().endPos);
-            //delete this.editor.selection;
         }
-
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
