@@ -32,7 +32,9 @@ dojo.provide("bespin.editor.events");
 dojo.declare("bespin.editor.Events", null, {
     constructor: function(editor) {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
-            editor.model.insertDocument(event.file.content);
+            // If collaboration is turned on, we won't know the file contents
+            var content = event.file.content || "";
+            editor.model.insertDocument(content);
             editor.cursorManager.moveCursor({ row: 0, col: 0 });
         });
 
