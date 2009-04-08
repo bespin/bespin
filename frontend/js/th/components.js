@@ -573,7 +573,14 @@ dojo.declare("th.components.Label", th.components.Panel, {
     paint: function(ctx) {
         var d = this.d();
 
-        if (this.style.backgroundColor) this.inherited(arguments); 
+        if (this.style.backgroundColor) {
+            // this is broken as a lot of things are moving at the moment
+            if(!dojo.isObject(this.stlyes)) {
+                this.styles = {};
+            }
+            this.styles["background-color"] = this.style.backgroundColor;
+            this.inherited(arguments); 
+        } 
 
         this.styleContext(ctx);
 

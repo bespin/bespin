@@ -174,7 +174,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             
             var key = bespin.util.keys.Key;
             
-            if (e.keyCode == key.ARROW_UP) {
+            if (e.keyCode == key.ARROW_UP) {                
                 this.panel.list.moveSelectionUp();
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ARROW_DOWN) {
