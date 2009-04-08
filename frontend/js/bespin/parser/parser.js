@@ -481,7 +481,6 @@ bespin.subscribe("editor:openfile:opensuccess", function() {
     // 
     // Start parsing the document
     bespin.subscribe("parser:start", function () {
-        console.log("start")
         bespin.get("parser").start();
     })
 })
