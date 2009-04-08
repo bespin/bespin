@@ -6,10 +6,10 @@ var __GLOBAL__ = this;
 
 __GLOBAL__.console = {
     log: function (msg) {
-        postMessage("log="+msg);;
+        postMessage("log="+msg);
     }
 };
-    
+
 var internalMessageIdentifier = "__IMPORT_SCRIPT__";
 
 var SCRIPT_COUNT = 0;
@@ -21,7 +21,7 @@ if(typeof importScripts == "undefined") {
     __GLOBAL__.importScripts = function () {
         for(var i = 0; i < arguments.length; ++i) {
             var script = arguments[i];
-            postMessage(internalMessageIdentifier+"["+(SCRIPT_COUNT++)+", '"+script+"']");;
+            postMessage(internalMessageIdentifier+"["+(SCRIPT_COUNT++)+", '"+script+"']");
         }
     };
     
