@@ -35,10 +35,9 @@
 dojo.provide("bespin.cmd.commandline");
 
 dojo.declare("bespin.cmd.commandline.CommandStore", null, {
-    constructor: function(initCommands, commandLine) {
+    constructor: function(initCommands) {
         this.commands = {};
         this.aliases = {};
-        this.commandLine = commandLine;
         
         if (initCommands) this.addCommands(initCommands); // initialize the commands for the cli
     },
@@ -63,7 +62,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             return;
         }
         
-        return [command, this.getArgs(argstr.split(' '))]
+        return [command, this.getArgs(argstr.split(' '), command)]
         
     },
       
@@ -255,12 +254,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
     
     executeCommand: function(value) {
-        var ca = this.commandStore.splitCommandAndArgs(value);        
+        var ca = this.commandStore.splitCommandAndArgs(value);
+        var command = ca[0];
+        var args = ca[1];
         
-        bespin.publish("command:executed", { command: ca[0], args: ca[1] });
+        bespin.publish("command:executed", { command: command, args: args });
 
-        command.execute(this.commandLine, ca[1], ca[0]);
-        this.value = ''; // clear after the command
+        command.execute(this, args, command);
+        this.commandLine.value = ''; // clear after the command
     },
     
 
