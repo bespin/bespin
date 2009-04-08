@@ -213,7 +213,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveUp: function() {
         var settings = bespin.get("settings");
-        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var selection = this.editor.getSelection();
+        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.startPos.row, col: this.position.col} : this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
@@ -228,7 +229,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     moveDown: function() {
         var settings = bespin.get("settings");
-        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var selection = this.editor.getSelection();
+        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.endPos.row, col: this.position.col} : this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
@@ -245,22 +247,27 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if (settings && settings.isSettingOn('smartmove')) {
-            var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
-            if (freeSpaces == this.editor.getTabSize()) {
-                this.moveCursor({ col: oldPos.col - freeSpaces });  
-                return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-            } // else {
-            //  this case is handled by the code following
-            //}
-        }
+        if (!this.editor.getSelection()) {
+            if (settings && settings.isSettingOn('smartmove')) {
+                var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
+                if (freeSpaces == this.editor.getTabSize()) {
+                    this.moveCursor({ col: oldPos.col - freeSpaces });  
+                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+                } // else {
+                //  this case is handled by the code following
+                //}
+            }
 
-        // start of the line so move up
-        if ((settings && settings.isSettingOn('strictlines')) && (this.position.col == 0)) {
-            this.moveUp();
-            if (oldPos.row > 0) this.moveToLineEnd();
+            // start of the line so move up
+            if ((settings && settings.isSettingOn('strictlines')) && (this.position.col == 0)) {
+                this.moveUp();
+                if (oldPos.row > 0) this.moveToLineEnd();
+            } else {
+                this.moveCursor({ row: oldPos.row, col: Math.max(0, oldPos.col - 1) });
+            }
         } else {
-            this.moveCursor({ row: oldPos.row, col: Math.max(0, oldPos.col - 1) });
+            this.moveCursor(this.editor.getSelection().startPos);
+            //delete this.editor.selection;
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
@@ -270,22 +277,27 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
         
-        if ((settings && settings.isSettingOn('smartmove')) && !newStuffInsert) {
-            var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
-            if (freeSpaces == this.editor.getTabSize()) {
-                this.moveCursor({ col: oldPos.col + freeSpaces });
-                return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
-            }// else {
-            //  this case is handled by the code following
-            //}
-        }
+        if (!this.editor.getSelection()) {
+            if ((settings && settings.isSettingOn('smartmove')) && !newStuffInsert) {
+                var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
+                if (freeSpaces == this.editor.getTabSize()) {
+                    this.moveCursor({ col: oldPos.col + freeSpaces })  
+                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+                }// else {
+                //  this case is handled by the code following
+                //}
+            }
 
-        // end of the line, so go to the start of the next line
-        if ((settings && settings.isSettingOn('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
-            this.moveDown();
-            if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
+            // end of the line, so go to the start of the next line
+            if ((settings && settings.isSettingOn('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
+                this.moveDown();
+                if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
+            } else {
+                this.moveCursor({ col: this.position.col + 1 });
+            }
         } else {
-            this.moveCursor({ col: this.position.col + 1 });
+            this.moveCursor(this.editor.getSelection().endPos);
+            //delete this.editor.selection;
         }
 
 
