@@ -53,6 +53,12 @@
             <li><code>content</code>: Feed the editor the string as the initial content (loadfromdiv trumps this)</li>
             <li><code>language</code>: The given syntax highlighter language to turn on (not people language!)</li>
             <li><code>dontstealfocus</code>: by default the component will steal focus when it loads, but you can change that by setting this to true</li>
+            <li><code>set</code>: can contain a hash of settings that match the <a href="https://wiki.mozilla.org/Labs/Bespin/Settings">settings</a> available for Bespin. For example:
+                <pre>
+                    set: {
+                        strictlines: 'on'
+                    }
+                </pre>
         </ul>        
     </p>    
 
