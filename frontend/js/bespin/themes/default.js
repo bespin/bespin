@@ -142,6 +142,7 @@ bespin.themes.white = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#E0D4CB",
+    searchHighlight: "#B55C00",
 
     // syntax definitions
     plain: "#bdae9d",

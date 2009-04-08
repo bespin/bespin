@@ -81,8 +81,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         bespin.publish("command:executed", { command: command, args: argstr });
 
-        command.execute(this, this.getArgs(argstr.split(' '), command));
+        var result = command.execute(this, this.getArgs(argstr.split(' '), command));
         this.commandLine.value = ''; // clear after the command
+        
+        return result;
     },
       
     addCommand: function(command) {

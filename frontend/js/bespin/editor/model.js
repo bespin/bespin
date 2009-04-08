@@ -279,7 +279,77 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         return cModelPos;
     },
-
+    
+    // returnes an array with the col positions of the substrings str in the given row
+    getStringIndexInRow: function(row, str) {
+        str = str.toLowerCase()
+        var row = this.getRowArray(row).join('').toLowerCase();
+        
+        if (row.indexOf(str) == -1) return false;
+        
+        var result = new Array();
+        var start = 0;
+        var index = row.indexOf(str);
+        
+        do {
+            result.push(index);
+            index = row.indexOf(str, index + 1);
+        } while (index != -1)
+        
+        return result;
+    },
+    
+    // count the occurrences of str in the whole file
+    getCountOfString: function(str) {
+        var count = 0;
+        var line;
+        var match;
+        
+        for (var x = 0; x < this.getRowCount(); x++) {
+            match = this.getStringIndexInRow(x, str);   // TODO: Couldn't this be done with an regex much more faster???
+            if (match) {
+                count += match.length;
+            }
+        }
+        
+        return count;
+    },
+    
+    // find the position of the previous match. Returns a complete selection-object
+    findPrev: function(row, col, str) {
+        var indexs;
+        var strLen = str.length;
+        
+        for (var x = row; x > -1; x--) {
+            indexs = this.getStringIndexInRow(x, str);
+            if (!indexs) continue;
+            for (var y = indexs.length - 1; y > -1; y--) {
+                if (indexs[y] < (col - strLen) || row != x) {
+                    return { startPos: { col: indexs[y], row: x}, endPos: {col: indexs[y] + strLen, row: x} };
+                }
+            }
+        }
+        
+        return false;
+    },
+    
+    // find the position of the next match. Returns a complete selection-object
+    findNext: function(row, col, str) {
+        var indexs;
+        
+        for (var x = row; x < this.getRowCount(); x++) {
+            indexs = this.getStringIndexInRow(x, str);
+            if (!indexs) continue;
+            for (var y = 0; y < indexs.length; y++) {
+                if (indexs[y] > col || row != x) {
+                    return { startPos: { col: indexs[y], row: x}, endPos: {col: indexs[y] + str.length, row: x} };
+                }
+            }
+        }
+        
+        return false;
+    },
+    
     findBefore: function(row, col, comparator) {
         var line = this.getRowArray(row);
         if (!dojo.isFunction(comparator)) comparator = function(letter) { // default to non alpha
