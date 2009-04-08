@@ -35,13 +35,14 @@
 dojo.provide("bespin.cmd.commandline");
 
 dojo.declare("bespin.cmd.commandline.CommandStore", null, {
-    constructor: function(initCommand) {
+    constructor: function(initCommands, commandLine) {
         this.commands = {};
         this.aliases = {};
+        this.commandLine = commandLine;
         
         if (initCommands) this.addCommands(initCommands); // initialize the commands for the cli
     },
-    executeCommand: function(value) {
+    splitCommandAndArgs: function(value) {
         var data = value.split(/\s+/);
         var commandname = data.shift();
 
@@ -61,11 +62,9 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
-
-        bespin.publish("command:executed", { command: command, args: argstr });
-
-        command.execute(this, this.getArgs(argstr.split(' '), command));
-        this.commandLine.value = ''; // clear after the command
+        
+        return [command, this.getArgs(argstr.split(' '))]
+        
     },
       
     addCommand: function(command) {
@@ -254,6 +253,16 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             this.commandLine.value = commandLineValue;
         }
     },
+    
+    executeCommand: function(value) {
+        var ca = this.commandStore.splitCommandAndArgs(value);        
+        
+        bespin.publish("command:executed", { command: ca[0], args: ca[1] });
+
+        command.execute(this.commandLine, ca[1], ca[0]);
+        this.value = ''; // clear after the command
+    },
+    
 
     handleCommandLineFocus: function(e) {
         if (this.inCommandLine) return true; // in the command line!
@@ -341,7 +350,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 this.commandLineHistory.setPrevious();
                 return false;
             } else if (e.keyCode == dojo.keys.ENTER) {
-                this.commandStore.executeCommand(dojo.byId('command').value);
+                this.executeCommand(dojo.byId('command').value);
 
                 return false;
             } else if (e.keyCode == dojo.keys.TAB) { 
