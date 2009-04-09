@@ -69,6 +69,7 @@ dojo.declare("th.Resources", null, {
     },
 
     load: function() {
+        console.log("load");
         if (this.loaded) return;    // no re-loading
         
         this.loading = true;
@@ -84,6 +85,8 @@ dojo.declare("th.Resources", null, {
     },
 
     onLoaded: function() {
+        console.log("onLoaded");
+
         if (this.cssLoaded && ((this.blockUntilImagesLoaded && this.imagesLoaded) || !this.blockUntilImagesLoaded)) {
             this.loaded = true;
             this.loading = false;
@@ -105,10 +108,12 @@ dojo.declare("th.Resources", null, {
     },
 
     parseCSS: function() {
+        console.log("parseCSS");
+
         var links = [];
 
         // add default stylesheet; cheesy path at the moment, need to come up with a better way to approach this TODO
-        links.push({ url: "js/th/default.css", array: this.userAgentCss, index: 0 });
+        links.push({ url: "/js/th/default.css", array: this.userAgentCss, index: 0 });
 
         var s, l = document.getElementsByTagName('link'), counter = 0;
 		for (var i=0; i < l.length; i++){
@@ -136,7 +141,18 @@ dojo.declare("th.Resources", null, {
     },
 
     processCSS: function(stylesheet, array, index) {
-        array[index] = new th.css.CSSParser().parse(stylesheet);
+        console.log("processCSS");
+
+        try {
+            array[index] = new th.css.CSSParser().parse(stylesheet);
+        } catch (e) {
+            console.log("Exception!");
+            console.log(e);
+        } finally {
+            console.log("processCSS: 2");
+        }
+
+        console.log("processCSS: 1");
 
         // load the images
         for (var rule in array[index]) {
@@ -161,6 +177,8 @@ dojo.declare("th.Resources", null, {
                 }
             }
         }
+
+        console.log("done!");
 
         if (++this.currentSheet == this.sheetCount) {
             this.cssLoaded = true;
@@ -279,9 +297,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
             this.render();
         })); 
 
-        this.root = new th.components.Panel({ id: "root", style: {
-//            backgroundColor: "pink" // for debugging         
-        } });
+        this.root = new th.components.Panel({ id: "root" });
         this.root.scene = this; 
 
         var testCanvas = document.createElement("canvas");
@@ -330,14 +346,19 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     render: function() {
+        console.log("render");
         if (!this.resources.loaded) {
+            console.log("render: resources not loaded");
             if (!this.resourceCallbackRegistered) {
+                console.log("render: registering callback");
                 this.resources.registerOnLoadCallback(this.render, this);
                 this.resourceCallbackRegistered = true;
             }
 
             return;
         }
+
+        console.log("render: resources loaded");
 
         this.layout();
         this.paint();
@@ -359,6 +380,8 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
 
             return;
         }
+
+        console.log("paint: resources loaded");
 
         if (!component) component = this.root;
 
@@ -637,7 +660,7 @@ dojo.declare("th.Window", null, {
             if (!this.isVisible || !this.closeOnClickOutside) return;
 
             var d = dojo.coords(this.container);
-            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
+            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
                 this.toggle();
             } else {
                 dojo.stopEvent(e);

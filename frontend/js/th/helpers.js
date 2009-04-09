@@ -31,6 +31,11 @@ dojo.provide("th.helpers");
 dojo.mixin(th.helpers, {
     isPercentage: function(str){  // TODO: make more robust 
         return (str.indexOf && str.indexOf("%") != -1);
+    },
+
+    isCssPixel: function(str) {
+        str = dojo.trim(str).toLowerCase();
+        return (str.indexOf("px") == str.length - 2);
     }
 });
 
@@ -225,6 +230,88 @@ dojo.declare("th.helpers.ComponentHelpers", null, {
 
         // for now, we only match on id and type, so 0 is the only option left
         return 0;
+    },
+
+    // paints the background of the component using the optionally passed coordinates using CSS properties; if no coordinates are
+    // passed, will default to painting the background on the entire component, which is generally the default and expected behavior
+    paintBackground: function(ctx, x, y, w, h) {
+        if (!x) x = 0;
+        if (!y) y = 0;
+        if (!w) w = this.bounds.width;
+        if (!h) h = this.bounds.height;
+
+        if (this.styles["background-color"]) {
+            ctx.fillStyle = this.styles["background-color"];
+            ctx.fillRect(x, y, w, h);
+        }
+
+        if (this.styles["background-image"]) {
+            var img = this.styles["background-image"];
+            this.paintImage(ctx, img, this.styles["background-repeat"], this.styles["background-position"], x, y, w, h);
+        }
+    },
+
+    // paints the image on the ctx using the optional repeat, position, x, y, w, h values, any of which may be undefined
+    paintImage: function(ctx, img, repeat, position, x, y, w, h) {
+        if (!repeat) repeat = "repeat";
+        if (!position) position = "0% 0%";
+
+        if (!x) x = 0;
+        if (!y) y = 0;
+        if (!w) w = this.bounds.width;
+        if (!h) h = this.bounds.height;
+
+        ctx.save();
+        try {
+            if ((x != 0) || (y != 0)) ctx.translate(x, y);
+
+            // convert the position string into two different numbers
+            var pos = position.toLowerCase().split(" ");
+            if (pos.length == 1) pos.push("50%");
+            if (pos.length != 2) {
+                console.log("Unsupported position syntax; only \"X\" or \"X Y\" supported, you passed in \" + position + \"");
+                return;
+            }
+
+            // order is x, y *unless* one they are keywords, in which case they *might* be reversed
+            var xy = [];
+            xy[0] = (pos[0] == "top" || pos[0] == "bottom") ? pos[1] : pos[0];
+            xy[1] = (pos[0] == "top" || pos[0] == "bottom") ? pos[0] : pos[1];
+
+            // convert positions to percentages if they are keywords
+            dojo.forEach(xy, function(p, index) {
+                if (p == "top") xy[index] = "0%";
+                if (p == "right") xy[index] = "100%";
+                if (p == "bottom") xy[index] = "100%";
+                if (p == "left") xy[index] = "0%";
+                if (p == "center") xy[index] = "50%";
+            });
+
+            // convert positions to pixels; if the positions are lengths, the image's origin is drawn at the specified position.
+            // if the positions are percentages, the percentage represents both the position at which the image is to be drawn
+            // and the amount the origin should be translated before image is drawn (a touch confusing)
+            var txy = [0, 0];
+            for (var i = 0; i < xy.length; i++) {
+                var percentage = th.helpers.isPercentage(xy[i]);
+                var pixelPosition = this.convertPositionToPixel(xy[i], (i == 0) ? w : h);
+                if (percentage) txy[i] = this.convertPositionToPixel(xy[i], (i == 0) ? img.width : img.height);
+                xy[i] = pixelPosition;
+            }
+
+            // now we can draw the frickin' picture
+            ctx.drawImage(img, xy[0], xy[1]);
+        } finally {
+            ctx.restore();
+        }
+    },
+
+    convertPositionToPixel: function(position, totalLength) {
+        if (th.helpers.isPercentage(pos)) {
+            var per = pos.substring(0, pos.length - 1) / 100;
+            return totalLength * per;
+        } else if (th.helpers.isCssPixel(pos)) {
+            return pos.substring(0, pos.length - 2);
+        }
     }
 });
 
