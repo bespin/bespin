@@ -539,7 +539,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
                 command += " " + args;
             }
 
-            if (command) commandline.commandStore.executeCommand(command);
+            if (command) commandline.executeCommand(command);
         });
         
         // -- Files
