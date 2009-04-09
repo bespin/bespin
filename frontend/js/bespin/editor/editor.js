@@ -395,7 +395,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.gutterWidth = 54;
 
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 6, bottom: 6 };
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 10, bottom: 6 };
         this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
