@@ -136,6 +136,8 @@ dojo.declare("th.Resources", null, {
     },
 
     processCSS: function(stylesheet, array, index) {
+        array[index] = new th.css.CSSParser().parse(stylesheet);
+
         // load the images
         for (var rule in array[index]) {
             for (var property in array[index][rule]) {
