@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.actions");  
+dojo.provide("bespin.editor.actions");
 
 // = Actions =
 //
@@ -36,7 +36,7 @@ dojo.provide("bespin.editor.actions");
 // action that should be executed to undo or redo the operation and the remaining keys correspond to state necessary to perform
 // the action. See below for various examples.
 
-dojo.declare("bespin.editor.Actions", null, { 
+dojo.declare("bespin.editor.Actions", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.model = this.editor.model;
@@ -155,7 +155,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     insertTab: function(args) {
         var settings = bespin.get("settings");
-        
+
         if (this.editor.getSelection() && !args.undoInsertTab) {
             this.indent(args);
             return;
@@ -182,7 +182,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.model.insertCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), tab);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col + tablength });
         this.repaint();
-        
+
         // undo/redo
         args.action = "insertTab";
         var redoOperation = args;
@@ -195,14 +195,14 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
-    
+
     // this function can only be called by editor.undoManager for undo insertTab in the case of beeing nothing selected
     removeTab: function(args) {
         delete this.editor.selection;
         this.model.deleteCharacters(this.cursorManager.getModelPosition({ row: args.pos.row, col: args.pos.col }), args.tab.length);
         this.cursorManager.moveCursor({ row: args.pos.row, col: args.pos.col });
         this.repaint();
-        
+
         // undo/redo
         args.action = "removeTab";
         var redoOperation = args;
@@ -218,7 +218,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     indent: function(args) {
-        var historyIndent = args.historyIndent || false;    
+        var historyIndent = args.historyIndent || false;
         var useHistoryIndent = !!historyIndent;
         if (!historyIndent) historyIndent = new Array();
         var settings = bespin.get('settings');
@@ -272,9 +272,9 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoOperation = args;
         var undoArgs = { action: "unindent", queued: args.queued, selection: selection, fakeSelection: fakeSelection, historyIndent: historyIndent, pos: bespin.editor.utils.copyPos(args.pos) };
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));        
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
-    
+
     unindent: function(args) {
         var historyIndent = args.historyIndent || false;
         if (!historyIndent) {
@@ -330,7 +330,7 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         historyIndent = historyIndent ? historyIndent : newHistoryIndent;
         this.repaint();
-        
+
         // undo/redo
         args.action = "unindent";
         args.selection = selection;
@@ -345,7 +345,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.copySelection(args);
         this.deleteSelection(args);
     },
-    
+
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     copySelection: function(args) {
         var selectionObject = this.editor.getSelection();
@@ -435,15 +435,14 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteChunk: function(args) {
-        var selection = this.editor.getSelection({ startPos: args.pos, endPos: args.endPos });
-        var chunk = this.model.deleteChunk(selection);
-        this.cursorManager.moveCursor(selection.startPos);
+        var chunk = this.model.deleteChunk({ startPos: this.cursorManager.getModelPosition(args.pos), endPos: this.cursorManager.getModelPosition(args.endPos) });
+        this.cursorManager.moveCursor(args.pos);
         this.repaint();
 
         // undo/redo
         args.action = "deleteChunk";
         var redoOperation = args;
-        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(selection.startPos), queued: args.queued, chunk: chunk };
+        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, chunk: chunk };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
@@ -473,7 +472,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoArgs = { action: "newline", pos: bespin.editor.utils.copyPos(this.editor.getCursorPos()), queued: args.queued };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-        
+
         this.repaint();
     },
 
@@ -482,23 +481,25 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.setSelection({ startPos: { row: args.pos.row, col: 0 }, endPos: { row: args.pos.row + 1, col: 0 } });
         this.cutSelection(args); // cut (will save and redo will work)
     },
-    
+
     deleteSelection: function(args) {
         if (!this.editor.selection) return;
         var selection = this.editor.getSelection();
+        var startPos = bespin.editor.utils.copyPos(selection.startPos);
+        selection = this.cursorManager.getModelSelection(selection);
         var chunk = this.model.getChunk(selection);
         this.model.deleteChunk(selection);
 
         // undo/redo
         args.action = "deleteSelection";
         var redoOperation = args;
-        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(selection.startPos), queued: args.queued, chunk: chunk };
+        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(startPos), queued: args.queued, chunk: chunk };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection(undefined);
-        this.cursorManager.moveCursor(selection.startPos);
+        this.cursorManager.moveCursor(startPos);
         this.repaint();
 
         return chunk;
@@ -659,7 +660,7 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
     },
-    
+
     moveCursorRowToCenter: function(args) {
         var saveCursorRow = this.editor.getCursorPos().row;
         var halfRows = Math.floor(this.editor.ui.visibleRows / 2);
@@ -687,7 +688,6 @@ dojo.declare("bespin.editor.Actions", null, {
             if (!args.selectionObject) {
                 args.selectionObject = this.editor.getSelection();
             }
-
             var selection = this.model.getChunk(args.selectionObject);
 			var stringArray = selection.split("\n");
 			for (i in stringArray) {
@@ -699,11 +699,9 @@ dojo.declare("bespin.editor.Actions", null, {
 				}
 			}
 			var outText = stringArray.join("\n");
-
             this.model.deleteChunk(args.selectionObject);
-            this.model.insertChunk(args.selectionObject.startModelPos, outText);
+            this.model.insertChunk(args.selectionObject.startPos, outText);
             this.select(args.selectionObject);
-
             args.action = "selectionChangeCase";
             var redoOperation = args;
             var undoArgs = { action: "undoSelectionChangeCase", selectionObject: args.selectionObject, text: selection };
@@ -714,7 +712,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
-        this.model.insertCharacters(args.selectionObject.startModelPos, args.text);
+        this.model.insertChunk(args.selectionObject.startPos, args.text);
         this.select(args.selectionObject);
     },
 
