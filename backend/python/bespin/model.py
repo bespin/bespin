@@ -288,11 +288,22 @@ class Group(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "name"), {})
 
+    def __init__(self, name, owner_viewable=False):
+        self.name = name
+        self.owner_viewable = owner_viewable
+
+    def __str__(self):
+        return "%s (%s-%s)" % (self.name, self.id, id(self))
+
 class GroupMembership(Base):
     __tablename__ = "group_memberships"
 
     group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+
+    def __init__(self, group, user):
+        self.group_id = group.id
+        self.user_id = user.id
 
 class UserSharing(Base):
     __tablename__ = "user_sharing"
@@ -307,6 +318,14 @@ class UserSharing(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_user_id"), {})
 
+    def __init__(self, owner, project_name, user, edit, loadany):
+        self.owner_id = owner.id
+        self.project_name = project_name
+        self.invited_user_id = user.id
+        #self.invited_name = user.username
+        self.edit = edit
+        self.loadany = loadany
+
 class GroupSharing(Base):
     __tablename__ = "group_sharing"
 
@@ -319,6 +338,14 @@ class GroupSharing(Base):
     loadany = Column(Boolean, default=False)    
 
     __table_args__ = (UniqueConstraint("owner_id", "project_name", "invited_group_id"), {})
+
+    def __init__(self, owner, project_name, group, edit, loadany):
+        self.owner_id = owner.id
+        self.project_name = project_name
+        self.invited_group_id = group.id
+        #self.invited_name = group.name
+        self.edit = edit
+        self.loadany = loadany
 
 bad_characters = r'\W'
 invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
@@ -362,18 +389,16 @@ class UserManager(object):
         return self.session.query(User).filter_by(username=username).first()
         
     def users_i_follow(self, following_user):
-        """Retrieve a list of the users that someone follows.
-        
-        Note this currently returns a list of Connections, we will probably
-        change this to return a list of Users soon."""
-        return self.session.query(Connection).filter_by(following=following_user).all()
+        """Retrieve a list of the users that someone follows."""
+        list = self.session.query(Connection).filter_by(following=following_user).all()
+        list = [connection.followed.username for connection in list]
+        return list
 
     def users_following_me(self, followed_user):
-        """Retrieve a list of the users that someone is following
-        
-        Note this currently returns a list of Connections, we will probably
-        change this to return a list of Users soon."""
-        return self.session.query(Connection).filter_by(followed=followed_user).all()
+        """Retrieve a list of the users that someone is following"""
+        list = self.session.query(Connection).filter_by(followed=followed_user).all()
+        list = [connection.following.username for connection in list]
+        return list
 
     def follow(self, following_user, followed_user):
         """Add a follow connection between 2 users"""
@@ -411,32 +436,33 @@ class UserManager(object):
         return members
 
     def remove_all_group_members(self, user, groupname):
-        """Remove all the members of a given group
-
-        TODO: Surely this should simply delete the group???"""
+        """Remove all the members of a given group"""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id).delete()
-        pass
 
     def remove_group_members(self, user, groupname, other_user):
-        """Remove members from a given users group.
-
-        TODO: check on how this works"""
+        """Remove members from a given users group."""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
         members = self.sesison.query(GroupMember).filter_by(group_id=group.id, user_id=other_user.id).delete()
-        pass
 
     def add_group_members(self, user, groupname, other_user):
-        """Add members from a given users group.
-
-        TODO: check on how this works"""
-        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
-        self.session.add(GroupMember(group_id=group.id, user_id=other_user.id))
+        """Add members from a given users group."""
+        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
+        if group == None:
+            group = Group(groupname)
+            self.session.add(group)
+            self.session.flush()
+            group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
+        print str(group)
+        self.session.add(GroupMembership(group, user))
+        self.session.flush()
         try:
             self.session.flush()
         except DBAPIError:
-            raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
-        pass
+            raise ConflictError("%s is already a member of %s" % (other_user.username, groupname))
+
+    def _is_group(self, user, member):
+        return self.session.query(Group).filter_by(owner_id=user.id, name=member).first() != None
 
     def get_sharing(self, user, project=None, member=None):
         """Retrieve a list of the shares made by a given user"""
@@ -447,24 +473,23 @@ class UserManager(object):
                     'owner':user.username,
                     'project':sharing.project_name,
                     'type':'user',
-                    'recipient':sharing.invited_name,
+                    'recipient':sharing.invited_name.username,
                     'edit':sharing.edit,
                     'loadany':sharing.loadany
                 })
         if member != None:
-            if _is_group(user, member):
+            if self._is_group(user, member):
                 group = _get_group(member)
                 list = self.session.query(GroupSharing) \
                     .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
                     .all()
                 add_shares(list)
             else:
-                user = get_user(member)
+                user = self.get_user(member)
                 list = self.session.query(GroupSharing) \
                     .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=user.id) \
                     .all()
                 add_shares(list)
-            pass
         elif project != None:
             list = self.session.query(UserSharing) \
                     .filter_by(owner_id=user.id, project_name=project.name) \
@@ -483,13 +508,34 @@ class UserManager(object):
                     .filter_by(owner_id=user.id) \
                     .all()
             add_shares(list)
-        return [ "Not implemented", project, member ]
+        return shares
 
     def remove_sharing(self, user, project, member=None):
-        return [ "Not implemented", project, member ]
+        if member == None:
+            self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name) \
+                    .delete()
+            self.session.query(UserSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name) \
+                    .delete()
+        elif self._is_group(user, member):
+            group = _get_group(member)
+            self.session.query(GroupSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
+                    .delete()
+        else:
+            other_user = self.get_user(member)
+            self.session.query(UserSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=other_user.id) \
+                    .delete()
 
-    def add_sharing(self, user, project, member, options):
-        return [ "Not implemented", project, member, options ]
+    def add_sharing(self, user, project, member, edit=False, loadany=False):
+        if self._is_group(user, member):
+            group = _get_group(member)
+            self.session.add(GroupSharing(user, project.name, group, edit, loadany))
+        else:
+            other_user = self.get_user(member)
+            self.session.add(UserSharing(user, project.name, other_user, edit, loadany))
 
     def get_viewme(self, user, member=None):
         return [ "Not implemented", member ]

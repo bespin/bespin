@@ -26,6 +26,11 @@ dojo.provide("bespin.vcs");
 
 dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.commandline");
+
+// Command store for the VCS commands (which are subcommands of the main
+// 'vcs' command)
+bespin.vcs.commands = new bespin.cmd.commandline.CommandStore();
 
 bespin.vcs.standardHandler = {
     evalJSON: true,
@@ -219,7 +224,7 @@ bespin.vcs.getKeychainPassword = function(callback) {
 // Version Control System-related commands
 
 // ** {{{{Command: clone}}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'clone',
     takes: ['url'],
     aliases: ['checkout'],
@@ -231,35 +236,9 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: vcs}}} **
-bespin.cmd.commands.add({
-    name: 'vcs',
-    takes: ['*'],
-    preview: 'run any version control system command',
-    // ** {{{execute}}} **
-    execute: function(self, args) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        
-        bespin.vcs.getKeychainPassword(function(kcpass) {
-            bespin.get('server').vcs(project, 
-                                    {command: args.varargs,
-                                    kcpass: kcpass}, 
-                                    bespin.vcs.standardHandler);
-        });
-    }                                
-});
 
 // ** {{{Command: push}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'push',
     preview: 'push to the remote repository',
     // ** {{{execute}}} **
@@ -285,7 +264,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: diff}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'diff',
     preview: 'Display the differences in the checkout out files',
     // ** {{{execute}}} **
@@ -307,7 +286,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: diff}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'resolved',
     preview: 'Mark files as resolved',
     // ** {{{execute}}} **
@@ -330,7 +309,7 @@ bespin.cmd.commands.add({
 
 
 // ** {{{Command: update}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'update',
     preview: 'Update your working copy from the remote repository',
     // ** {{{execute}}} **
@@ -373,7 +352,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: add}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'add',
     preview: 'Adds missing files to the project',
     // ** {{{execute}}} **
@@ -395,7 +374,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: commit}}} **
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'commit',
     takes: ['message'],
     preview: 'Commit to the repository',
@@ -421,7 +400,7 @@ bespin.cmd.commands.add({
     }                                
 });
 
-bespin.cmd.commands.add({
+bespin.vcs.commands.addCommand({
     name: 'getkey',
     preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
     execute: function(self) {
@@ -445,6 +424,19 @@ bespin.cmd.commands.add({
     }
 });
 
+// ** {{{Command: help}}} **
+bespin.vcs.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands',
+    description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(self, extra) {
+        bespin.cmd.displayHelp(bespin.vcs.commands, self, extra);
+    }
+}); 
+
+
 // ** {{{ Event: bespin:vcs:response }}} **
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
@@ -456,3 +448,12 @@ bespin.subscribe("vcs:response", function(event) {
 bespin.subscribe("vcs:error", function(event) {
     bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.responseText + "</pre>");
 });
+
+// ** {{{Command: vcs}}} **
+// This is the top level command that contains all of the other commands.
+bespin.cmd.commands.add({
+    name: 'vcs',
+    preview: 'run a version control command',
+    subcommands: bespin.vcs.commands
+});
+

@@ -240,6 +240,17 @@ def install_template(request, response):
     response.content_type = "text/plain"
     response.body = ""
     return response()
+
+@expose(r'^/file/list_all/(?P<project_name>.*)/$', 'GET')
+def file_list_all(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    project = model.get_project(user, user, project_name)
+    
+    files = project._search_cache.lines(retain=False)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(files)
+    return response()   
     
 @expose(r'^/file/search/(?P<project_name>.*)$', 'GET')
 def file_search(request, response):
@@ -519,7 +530,6 @@ def _lookup_usernames(user_manager, usernames):
     def lookup_username(username):
         user = user_manager.get_user(username)
         if user == None:
-            # TODO: XSS injection hole here, we should have some policy
             raise BadRequest("Username not found: %s" % username)
         return user
     return map(lookup_username, usernames)

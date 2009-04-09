@@ -19,6 +19,11 @@ likely need a "python-dev" (on Ubuntu, possibly python-devel elsewhere)
 package installed and either the libc-dev or libc6-dev package, if you 
 do not already have them.
 
+*** NOTE FOR MAC USERS: If you put your Bespin checkout in a directory
+that has a space in the directory name, the bootstrap script will fail
+with an error "no such file or directory" because there will be
+scripts generated with an invalid shebang (#!) line.
+
 Run::
 
   python bootstrap.py --no-site-packages

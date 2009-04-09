@@ -194,6 +194,22 @@ dojo.declare("bespin.client.Server", null, {
         this.request('GET', url, null, opts);
     },
 
+    // ** {{{ listAllFiles(project, onSuccess, onFailure) }}}
+    //
+    // List *all* files in the given project. Be *aware*: this will be a huge json-result!
+    // 
+    // * {{{project}}} is the project to list all files from
+    // * {{{onSuccess}}} fires if the list returns something
+    // * {{{onFailure}}} fires if there is an error getting a list from the server 
+    listAllFiles: function(project, onSuccess, onFailure) {
+        var project = project || '';
+        var url = bespin.util.path.combine('/file/list_all/', project, '/');
+        var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing all files in: " + url };
+        if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
+        
+        this.request('GET', url, null, opts);
+    },
+
     // ** {{{ projects(onSuccess) }}}
     //
     // Return the list of projects that you have access too

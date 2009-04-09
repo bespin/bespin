@@ -45,7 +45,10 @@
         window.onload = function() {
             _editorComponent = new bespin.editor.Component('editor', {
                 language: "js",
-                loadfromdiv: true
+                loadfromdiv: true,
+                set: {
+                    strictlines: 'off'
+                }
             });
         };
 

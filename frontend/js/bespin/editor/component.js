@@ -89,6 +89,14 @@ dojo.declare("bespin.editor.Component", null, {
         if (!opts.dontstealfocus) {
             this.editor.canvas.focus();
         }
+
+        if (opts.set) { // we have generic settings
+            for (var key in opts.set) {
+                if (opts.set.hasOwnProperty(key)) {
+                    this.set(key, opts.set[key]);
+                }
+            }
+        }
     },
 
     // ** {{{ getContent }}} **

@@ -47,6 +47,7 @@ dojo.declare("bespin.client.FileSystem", null, {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
                 bespin.get('editSession').startSession(project, path || "new.txt");
+
                 onSuccess();
             },
             elseFailed: function() {
