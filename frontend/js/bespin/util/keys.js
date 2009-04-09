@@ -181,5 +181,4 @@ bespin.util.keys.passThroughToBrowser = function(e) {
             bespin.util.keys.KeyCodeToName[keyCode] = key;
         }
     }
-    console.log(bespin.util.keys.KeyCodeToName);
 })();
