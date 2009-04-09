@@ -910,12 +910,12 @@ dojo.declare("bespin.editor.UI", null, {
         // paint the line numbers
         if (refreshCanvas) {
             y = (this.lineHeight * this.firstVisibleRow);
+            ctx.fillStyle = theme.lineNumberColor;
+            ctx.font = this.editor.theme.lineNumberFont;
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
                 x = this.GUTTER_INSETS.left;
                 cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
-                ctx.fillStyle = theme.lineNumberColor;
-                ctx.font = this.editor.theme.lineNumberFont;
                 ctx.fillText(currentLine + 1, x, cy);
 
                 y += this.lineHeight;
@@ -936,7 +936,7 @@ dojo.declare("bespin.editor.UI", null, {
         var firstColumn = Math.floor(Math.abs(this.xoffset / this.charWidth));
         var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
 
-        // paint the line content and zebra stripes
+        // create the state necessary to render each line of text
         y = (this.lineHeight * this.firstVisibleRow);
         var cc; // the starting column of the current region in the region render loop below
         var ce; // the ending column in the same loop
@@ -944,6 +944,8 @@ dojo.declare("bespin.editor.UI", null, {
         var regionlen;  // length of the text in the region; used in the same loop
         var tx, tw;
         var settings = bespin.get("settings");
+
+        // paint each line
         for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
             x = this.GUTTER_WIDTH;
 
@@ -956,7 +958,7 @@ dojo.declare("bespin.editor.UI", null, {
                 }
 
                 // setup a clip for the current line only; this makes drawing just that piece of the scrollbar easy
-                ctx.save();
+                ctx.save(); // this is restore()'d in another if (!refreshCanvas) block at the end of the loop
                 ctx.beginPath();
                 ctx.rect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
                 ctx.closePath();
@@ -997,36 +999,36 @@ dojo.declare("bespin.editor.UI", null, {
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
             // CHUNK 1: this code just renders the line with white text and is for testing
-            ctx.fillStyle = "white";
-            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
+//            ctx.fillStyle = "white";
+//            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
 
             // CHUNK 2: this code uses the SyntaxModel API to render the line
             // syntax highlighting
-//            var lineInfo = this.syntaxModel.getSyntaxStyles(lineText, currentLine, this.editor.language);
-//
-//            for (ri = 0; ri < lineInfo.regions.length; ri++) {
-//                var styleInfo = lineInfo.regions[ri];
-//
-//                for (var style in styleInfo) {
-//                    if (!styleInfo.hasOwnProperty(style)) continue;
-//
-//                    var thisLine = "";
-//
-//                    var styleArray = styleInfo[style];
-//                    var currentColumn = 0; // current column, inclusive
-//                    for (var si = 0; si < styleArray.length; si++) {
-//                        var range = styleArray[si];
-//
-//                        for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
-//                        thisLine += lineInfo.text.substring(range.start, range.stop);
-//                        currentColumn = range.stop;
-//                    }
-//
-//                    ctx.fillStyle = this.editor.theme[style] || "white";
-//                    ctx.font = this.editor.theme.lineNumberFont;
-//                    ctx.fillText(thisLine, x, cy);
-//                }
-//            }
+            var lineInfo = this.syntaxModel.getSyntaxStylesPerLine(lineText, currentLine, this.editor.language);
+
+            for (ri = 0; ri < lineInfo.regions.length; ri++) {
+                var styleInfo = lineInfo.regions[ri];
+
+                for (var style in styleInfo) {
+                    if (!styleInfo.hasOwnProperty(style)) continue;
+
+                    var thisLine = "";
+
+                    var styleArray = styleInfo[style];
+                    var currentColumn = 0; // current column, inclusive
+                    for (var si = 0; si < styleArray.length; si++) {
+                        var range = styleArray[si];
+
+                        for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
+                        thisLine += lineInfo.text.substring(range.start, range.stop);
+                        currentColumn = range.stop;
+                    }
+
+                    ctx.fillStyle = this.editor.theme[style] || "white";
+                    ctx.font = this.editor.theme.lineNumberFont;
+                    ctx.fillText(thisLine, x, cy);
+                }
+            }
 
             // paint tab information, if applicable and the information should be displayed
             if (settings && (settings.isSettingOn("tabarrow") || settings.isSettingOn("tabshowspace"))) {
@@ -1282,7 +1284,7 @@ dojo.declare("bespin.editor.UI", null, {
         var alpha = (ctx.globalAlpha) ? ctx.globalAlpha : 1;
 
         if (!scrollbar.isH()) {
-            ctx.save();
+            ctx.save();     // restored in another if (!scrollbar.isH()) block at end of function
             ctx.translate(bar.x + Math.floor(bar.w / 2), bar.y + Math.floor(bar.h / 2));
             ctx.rotate(Math.PI * 1.5);
             ctx.translate(-(bar.x + Math.floor(bar.w / 2)), -(bar.y + Math.floor(bar.h / 2)));
