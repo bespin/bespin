@@ -369,10 +369,14 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 
                 this.complete(dojo.byId('command').value);
                 return false;
-            } else if (e.keyCode == dojo.keys.ESCAPE) {
+            }
+        });
+
+        dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
+            if (e.keyCode == dojo.keys.ESCAPE) {
                 this.hideInfo();
             }
-        });   
+        });
     }
 });
 
