@@ -860,6 +860,7 @@ bespin.cmd.commands.add({
                 var modifierInfo = modifiers.length > 0 ? modifiers.join(', ') + " " : "";
                 var keyInfo = modifierInfo + bespin.util.keys.KeyCodeToName[keyCode] || keyCode;
                 output += "<tr style='font-size: x-small'><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
+            }
             output += "</table>";
             self.showInfo(output);
         }
