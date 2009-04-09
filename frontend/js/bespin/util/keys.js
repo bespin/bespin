@@ -168,3 +168,18 @@ bespin.util.keys.passThroughToBrowser = function(e) {
                                                  
     return false;
 };
+
+// -- Reverse the map for lookups
+(function() {
+    var keys = bespin.util.keys.Key;
+    bespin.util.keys.KeyCodeToName = {};
+    
+    for (var key in keys) {
+        var keyCode = keys[key];
+        
+        if (typeof keyCode == "number") {
+            bespin.util.keys.KeyCodeToName[keyCode] = key;
+        }
+    }
+    console.log(bespin.util.keys.KeyCodeToName);
+})();

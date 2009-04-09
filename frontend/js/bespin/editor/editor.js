@@ -240,18 +240,21 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // Allow for multiple key maps to be defined
         this.keyMap = this.defaultKeyMap;
+        this.keyMapDescriptions = {};
     },
 
-    bindKey: function(keyCode, metaKey, ctrlKey, altKey, shiftKey, action) {
+    bindKey: function(keyCode, metaKey, ctrlKey, altKey, shiftKey, action, name) {
         this.defaultKeyMap[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = 
             (typeof action == "string") ?
                 function() { 
                     var toFire = bespin.events.toFire(action);
                     bespin.publish(toFire.name, toFire.args);
                 } : dojo.hitch(this.actions, action);
+
+        if (name) this.keyMapDescriptions[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = name;
     },
 
-    bindKeyString: function(modifiers, keyCode, action) {
+    bindKeyString: function(modifiers, keyCode, action, name) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
         var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1);
@@ -267,11 +270,11 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
                 ctrlKey = true;
             }
         }
-        return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
+        return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action, name);
     },
     
-    bindKeyStringSelectable: function(modifiers, keyCode, action) {
-        this.bindKeyString(modifiers, keyCode, action);
+    bindKeyStringSelectable: function(modifiers, keyCode, action, name) {
+        this.bindKeyString(modifiers, keyCode, action, name);
         this.bindKeyString("SHIFT " + modifiers, keyCode, action);
     },
 
@@ -694,52 +697,52 @@ dojo.declare("bespin.editor.UI", null, {
 
         // Modifiers, Key, Action
 
-        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
-        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
-        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
-        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
+        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft, "Move Cursor Left");
+        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight, "Move Cursor Right");
+        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp, "Move Cursor Up");
+        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown, "Move Cursor Down");
 
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft, "Move Word Left");
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight, "Move Word Right");
 
-        listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd, "Move to end of line");
 
-        listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
-        listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
+        listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
+        listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
 
-        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
-        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft);
+        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace, "Backspace");
+        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
 
-        listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
-        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight);
+        listener.bindKeyString("", Key.DELETE, this.actions.deleteKey, "Delete");
+        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight, "Delete a word to the right");
 
-        listener.bindKeyString("", Key.ENTER, this.actions.newline);
-        listener.bindKeyString("", Key.TAB, this.actions.insertTab);
-        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
+        listener.bindKeyString("", Key.ENTER, this.actions.newline, "Insert newline");
+        listener.bindKeyString("", Key.TAB, this.actions.insertTab, "Indent / insert tab");
+        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
 
-        listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
+        listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
-        listener.bindKeyString("CMD", Key.Z, this.actions.undo);
-        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo);
-        listener.bindKeyString("CMD", Key.Y, this.actions.redo);
+        listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
+        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
+        listener.bindKeyString("CMD", Key.Y, this.actions.redo, "Redo");
 
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
-        listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop, "Move to top of file");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom, "Move to bottom of file");
+        listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop, "Move to top of file");
+        listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom, "Move to bottom of file");
 
-        listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
-        listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
+        listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp, "Move a page up");
+        listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown, "Move a page down");
 
-        listener.bindKeyString("CTRL SHIFT", Key.U, this.actions.selectionUpperCase);
-        listener.bindKeyString("CTRL SHIFT", Key.L, this.actions.selectionLowerCase);
+        listener.bindKeyString("CTRL SHIFT", Key.U, this.actions.selectionUpperCase, "Convert to upper case");
+        listener.bindKeyString("CTRL SHIFT", Key.L, this.actions.selectionLowerCase, "Convert to lower case");
 
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile", "Create a new file");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },

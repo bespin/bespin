@@ -129,6 +129,13 @@ bespin.util.leadingSpaces = function(row) {
     return numspaces;
 };
 
+// = englishFromCamel =
+//
+// Given a camelCaseWord convert to "Camel Case Word"
+bespin.util.englishFromCamel = function(camel) {
+    dojo.trim(camel.replace(/([A-Z])/g, function(str) { return " " + str.toLowerCase() }));
+}
+
 // = isMac =
 //
 // I hate doing this, but we need some way to determine if the user is on a Mac
