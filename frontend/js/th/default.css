@@ -21,6 +21,14 @@ Scrollbar > Button.down {
 ResizeNib {
     -th-vertical-bar-color: rgb(10, 10, 8);
     -th-vertical-bar-shadow-color: rgb(185, 180, 158);
+
+    -th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);
+    -th-horizontal-bar-shadow-color: black;
+    -th-horizontal-bar-color: rgb(183, 180, 160);
+}
+
+Panel {
+    /*background-color: blue;*/
 }
 
 ExpandingInfoPanel {

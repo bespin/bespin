@@ -176,17 +176,8 @@ dojo.declare("th.components.Scrollbar", th.Container, {
     
 dojo.declare("th.components.Panel", th.Container, {
     paintSelf: function(ctx) {
-        if (this.styles["background-color"]) {
-            ctx.fillStyle = this.styles["background-color"];
-
-            var x = 0;
-            var y = 0;
-            var w = this.bounds.width;
-            var h = this.bounds.height;
-
-            ctx.fillRect(x, y, w, h);
-        }
-    }   
+        this.paintBackground(ctx);
+    }
 });  
 
 
@@ -251,23 +242,26 @@ dojo.declare("th.components.ResizeNib", th.Component, {
 
             // lay down the shadowy bits
             var cx = x;
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-            for (var i = 0; i < 3; i++) {
-                ctx.fillRect(cx, y, 1, dh);
-                cx += 3;
+
+            if (this.styles["-th-horizontal-bar-subtle-shadow-color"]) {
+                ctx.fillStyle = this.styles["-th-horizontal-bar-subtle-shadow-color"];
+                for (var i = 0; i < 3; i++) {
+                    ctx.fillRect(cx, y, 1, dh);
+                    cx += 3;
+                }
             }
 
             // lay down the black shadow
-            var cx = x + 1;
-            ctx.fillStyle = "black";
+            cx = x + 1;
+            ctx.fillStyle = this.styles["-th-horizontal-bar-shadow-color"];
             for (var i = 0; i < 3; i++) {
                 ctx.fillRect(cx, y + dh - 1, 1, 1);
                 cx += 3;
             }
 
             // draw the bars
-            var cx = x + 1;
-            ctx.fillStyle = "rgb(183, 180, 160)";
+            cx = x + 1;
+            ctx.fillStyle = this.styles["-th-horizontal-bar-color"];
             for (var i = 0; i < 3; i++) {
                 ctx.fillRect(cx, y + 1, 1, bh);
                 cx += 3;

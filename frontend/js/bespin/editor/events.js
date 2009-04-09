@@ -65,10 +65,11 @@ dojo.declare("bespin.editor.Events", null, {
             var action = editor.ui.actions[event.action] || event.action;
 
             if (keyCode && action) {
+                var actionDescription = "User key to execute: " + event.action.replace("command:execute;name=", "");
                 if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
-                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action);
+                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
                 } else {
-                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
                 }
             }
         });

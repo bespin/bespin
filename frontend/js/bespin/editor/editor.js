@@ -240,18 +240,21 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // Allow for multiple key maps to be defined
         this.keyMap = this.defaultKeyMap;
+        this.keyMapDescriptions = {};
     },
 
-    bindKey: function(keyCode, metaKey, ctrlKey, altKey, shiftKey, action) {
+    bindKey: function(keyCode, metaKey, ctrlKey, altKey, shiftKey, action, name) {
         this.defaultKeyMap[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = 
             (typeof action == "string") ?
                 function() { 
                     var toFire = bespin.events.toFire(action);
                     bespin.publish(toFire.name, toFire.args);
                 } : dojo.hitch(this.actions, action);
+
+        if (name) this.keyMapDescriptions[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = name;
     },
 
-    bindKeyString: function(modifiers, keyCode, action) {
+    bindKeyString: function(modifiers, keyCode, action, name) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
         var metaKey = (modifiers.toUpperCase().indexOf("META") != -1) || (modifiers.toUpperCase().indexOf("APPLE") != -1);
@@ -267,11 +270,11 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
                 ctrlKey = true;
             }
         }
-        return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action);
+        return this.bindKey(keyCode, metaKey, ctrlKey, altKey, shiftKey, action, name);
     },
     
-    bindKeyStringSelectable: function(modifiers, keyCode, action) {
-        this.bindKeyString(modifiers, keyCode, action);
+    bindKeyStringSelectable: function(modifiers, keyCode, action, name) {
+        this.bindKeyString(modifiers, keyCode, action, name);
         this.bindKeyString("SHIFT " + modifiers, keyCode, action);
     },
 
@@ -372,18 +375,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.editor = editor; 
 
         var settings = bespin.get("settings");
-        var syntaxEngine = (settings) ? settings.get("syntaxengine") : "simple";
-        this.syntaxModel = bespin.syntax.Resolver.setEngine(syntaxEngine).getModel();
-        bespin.subscribe("settings:set:syntaxengine", dojo.hitch(this, function(evt){
-            var name = evt.value || "simple";
-
-            dojo.require("bespin.syntax." + name + "._base");
-
-            this.syntaxModel = bespin.syntax.Resolver.setEngine(name).getModel();
-        }));
-
-        this.selectionHelper = new bespin.editor.SelectionHelper(editor);
-        this.actions = new bespin.editor.Actions(editor);
+        this.syntaxModel = bespin.syntax.Resolver.setEngine("simple").getModel();
 
         this.selectionHelper = new bespin.editor.SelectionHelper(editor);
         this.actions = new bespin.editor.Actions(editor);
@@ -400,9 +392,13 @@ dojo.declare("bespin.editor.UI", null, {
         this.horizontalScrollCanvas = dojo.create("canvas");
         this.verticalScrollCanvas   = dojo.create("canvas");
 
-        this.GUTTER_WIDTH = 54;
+        // gutterWidth used to be a constant, but is now dynamically calculated in each paint() invocation. I set it to a silly
+        // default value here in case some of the code expects it to be populated before the first paint loop kicks in. the
+        // default value ought to eventually become 0
+        this.gutterWidth = 54;
+
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 };
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 10, bottom: 6 };
         this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
@@ -412,6 +408,8 @@ dojo.declare("bespin.editor.UI", null, {
                             bottom: Math.floor(this.NIB_WIDTH / 2) };
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
+        this.DEBUG_GUTTER_WIDTH = 15;
+        
         //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         //this.charWidth;         // set first time a paint occurs
         //this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
@@ -484,10 +482,10 @@ dojo.declare("bespin.editor.UI", null, {
             y = Math.floor(ty / this.lineHeight);
         }
 
-        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
+        if (pos.x <= (this.gutterWidth + this.LINE_INSETS.left)) {
             x = -1;
         } else {
-            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
+            var tx = pos.x - this.gutterWidth - this.LINE_INSETS.left;
             x = Math.floor(tx / this.charWidth);
             
             // With strictlines turned on, don't select past the end of the line
@@ -597,7 +595,7 @@ dojo.declare("bespin.editor.UI", null, {
         var x = this.charWidth * this.editor.cursorManager.getCursorPosition().col;
 
         var cheight = this.getHeight();
-        var cwidth = this.getWidth() - this.GUTTER_WIDTH;
+        var cwidth = this.getWidth() - this.gutterWidth;
 
         if (Math.abs(this.yoffset) > y) {               // current row before top-most visible row
             this.yoffset = -y;
@@ -699,52 +697,52 @@ dojo.declare("bespin.editor.UI", null, {
 
         // Modifiers, Key, Action
 
-        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
-        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
-        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
-        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
+        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft, "Move Cursor Left");
+        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight, "Move Cursor Right");
+        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp, "Move Cursor Up");
+        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown, "Move Cursor Down");
 
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft, "Move Word Left");
+        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight, "Move Word Right");
 
-        listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart);
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd);
+        listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd, "Move to end of line");
 
-        listener.bindKeyString("CTRL", Key.K, this.actions.killLine);
-        listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter);
+        listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
+        listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
 
-        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace);
-        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft);
+        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace, "Backspace");
+        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
 
-        listener.bindKeyString("", Key.DELETE, this.actions.deleteKey);
-        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight);
+        listener.bindKeyString("", Key.DELETE, this.actions.deleteKey, "Delete");
+        listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight, "Delete a word to the right");
 
-        listener.bindKeyString("", Key.ENTER, this.actions.newline);
-        listener.bindKeyString("", Key.TAB, this.actions.insertTab);
-        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent);
+        listener.bindKeyString("", Key.ENTER, this.actions.newline, "Insert newline");
+        listener.bindKeyString("", Key.TAB, this.actions.insertTab, "Indent / insert tab");
+        listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
 
-        listener.bindKeyString("CMD", Key.A, this.actions.selectAll);
+        listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
-        listener.bindKeyString("CMD", Key.Z, this.actions.undo);
-        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo);
-        listener.bindKeyString("CMD", Key.Y, this.actions.redo);
+        listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
+        listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
+        listener.bindKeyString("CMD", Key.Y, this.actions.redo, "Redo");
 
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom);
-        listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop);
-        listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom);
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop, "Move to top of file");
+        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom, "Move to bottom of file");
+        listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop, "Move to top of file");
+        listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom, "Move to bottom of file");
 
-        listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
-        listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
+        listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp, "Move a page up");
+        listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown, "Move a page down");
 
-        listener.bindKeyString("CTRL SHIFT", Key.U, this.actions.selectionUpperCase);
-        listener.bindKeyString("CTRL SHIFT", Key.L, this.actions.selectionLowerCase);
+        listener.bindKeyString("CTRL SHIFT", Key.U, this.actions.selectionUpperCase, "Convert to upper case");
+        listener.bindKeyString("CTRL SHIFT", Key.L, this.actions.selectionLowerCase, "Convert to lower case");
 
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile");
+        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile", "Create a new file");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
@@ -788,17 +786,7 @@ dojo.declare("bespin.editor.UI", null, {
     // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
     // of the editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
 
-    // asynchronous paint
-    paint: function (ctx, fullRefresh) {
-        if (this.paintTimeout) {
-            clearTimeout(this.paintTimeout);
-        }
-        this.paintTimeout = setTimeout(dojo.hitch(this, function () {
-            this._paint(ctx, fullRefresh);
-        }), 0);
-    },
-
-    _paint: function(ctx, fullRefresh) {
+    paint: function(ctx, fullRefresh) {
         // DECLARE VARIABLES
 
         // these are convenience references so we don't have to type so much
@@ -852,9 +840,14 @@ dojo.declare("bespin.editor.UI", null, {
         //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
         var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getCursorPosition().col) + 2);
 
+        // calculate the gutter width; for now, we'll make it fun and dynamic based on the lines visible in the editor.
+        this.gutterWidth = this.GUTTER_INSETS.left + this.GUTTER_INSETS.right;  // first, add the padding space
+        this.gutterWidth += ("" + lastLineToRender).length * this.charWidth;    // make it wide enough to display biggest line number visible
+        if (this.editor.debugMode) this.gutterWidth += this.DEBUG_GUTTER_WIDTH;
+        
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
-            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.GUTTER_WIDTH))) this.xoffset = (cwidth - this.GUTTER_WIDTH) - virtualwidth;
+            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.gutterWidth))) this.xoffset = (cwidth - this.gutterWidth) - virtualwidth;
         }
         if (this.yoffset < 0) {
             if ((Math.abs(this.yoffset)) > (virtualheight - cheight)) this.yoffset = cheight - virtualheight;
@@ -868,7 +861,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // these are boolean values indicating whether the x and y (i.e., horizontal or vertical) scroll bars are visible
-        var xscroll = ((cwidth - this.GUTTER_WIDTH) < virtualwidth);
+        var xscroll = ((cwidth - this.gutterWidth) < virtualwidth);
         var yscroll = (cheight < virtualheight);
 
         // the scroll bars are rendered off-screen into their own canvas instances; these values are used in two ways as part of
@@ -884,7 +877,7 @@ dojo.declare("bespin.editor.UI", null, {
         // these are boolean values that indicate whether special little "nibs" should be displayed indicating more content to the
         // left, right, top, or bottom
         var showLeftScrollNib = (xscroll && (this.xoffset != 0));
-        var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.GUTTER_WIDTH) - virtualwidth)));
+        var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.gutterWidth) - virtualwidth)));
         var showUpScrollNib = (yscroll && (this.yoffset != 0));
         var showDownScrollNib = (yscroll && (this.yoffset > (cheight - virtualheight)));
 
@@ -913,406 +906,391 @@ dojo.declare("bespin.editor.UI", null, {
         // save this state for the next paint attempt (see above for usage)
         this.lastCursorPos = bespin.editor.utils.copyPos(ed.cursorManager.getCursorPosition()); 
         
-        var innerPaint = dojo.hitch(this, function(lineInfos) {
-            // if we're doing a full repaint...
-            if (refreshCanvas) {
-                // ...paint the background color over the whole canvas and...
-                ctx.fillStyle = theme.backgroundStyle;
-                ctx.fillRect(0, 0, c.width, c.height);
+        // if we're doing a full repaint...
+        if (refreshCanvas) {
+            // ...paint the background color over the whole canvas and...
+            ctx.fillStyle = theme.backgroundStyle;
+            ctx.fillRect(0, 0, c.width, c.height);
 
-                // ...paint the gutter 
-                ctx.fillStyle = theme.gutterStyle;
-                ctx.fillRect(0, 0, this.GUTTER_WIDTH, c.height);
-            }
+            // ...paint the gutter
+            ctx.fillStyle = theme.gutterStyle;
+            ctx.fillRect(0, 0, this.gutterWidth, c.height);
+        }
 
-            // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
-            ctx.save(); // take snapshot of current context state so we can roll back later on
-            ctx.translate(0, this.yoffset);
+        // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
+        ctx.save(); // take snapshot of current context state so we can roll back later on
+        ctx.translate(0, this.yoffset);
 
-            // paint the line numbers
-            if (refreshCanvas) {
-                y = (this.lineHeight * this.firstVisibleRow);
-                for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
-                    x = this.GUTTER_INSETS.left;
-                    cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
-
-                    ctx.fillStyle = theme.lineNumberColor;
-                    ctx.font = this.editor.theme.lineNumberFont;
-                    ctx.fillText(currentLine + 1, x, cy);
-
-                    y += this.lineHeight;
-                }
-            }
-
-            // and now we're ready to translate the horizontal axis; while we're at it, we'll setup a clip to prevent any drawing outside
-            // of code editor region itself (protecting the gutter). this clip is important to prevent text from bleeding into the gutter.
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(this.GUTTER_WIDTH, -this.yoffset, cwidth - this.GUTTER_WIDTH, cheight);
-            ctx.closePath();
-            ctx.translate(this.xoffset, 0);
-            ctx.clip();
-
-            // calculate the first and last visible columns on the screen; these values will be used to try and avoid painting text
-            // that the user can't actually see
-            var firstColumn = Math.floor(Math.abs(this.xoffset / this.charWidth));
-            var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
-
-            // paint the line content and zebra stripes
+        // paint the line numbers
+        if (refreshCanvas) {
             y = (this.lineHeight * this.firstVisibleRow);
-            var cc; // the starting column of the current region in the region render loop below
-            var ce; // the ending column in the same loop
-            var ri; // counter variable used for the same loop
-            var regionlen;  // length of the text in the region; used in the same loop
-            var tx, tw;
-            var settings = bespin.get("settings");
+            ctx.fillStyle = theme.lineNumberColor;
+            ctx.font = this.editor.theme.lineNumberFont;
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
-                x = this.GUTTER_WIDTH;
-
-                // if we aren't repainting the entire canvas...
-                if (!refreshCanvas) {
-                    // ...don't bother painting the line unless it is "dirty" (see above for dirty checking)
-                    if (!dirty[currentLine]) {
-                        y += this.lineHeight;
-                        continue;
-                    }
-
-                    // setup a clip for the current line only; this makes drawing just that piece of the scrollbar easy
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
-                    ctx.closePath();
-                    ctx.clip();
-
-                    if ((currentLine % 2) == 1) { // only repaint the line background if the zebra stripe won't be painted into it
-                        ctx.fillStyle = theme.backgroundStyle;
-                        ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
-                    }
-                }
-
-                // if highlight line is on, paint the highlight color
-                if ((settings && settings.isSettingOn('highlightline')) &&
-                        (currentLine == ed.cursorManager.getCursorPosition().row)) {
-                    ctx.fillStyle = theme.highlightCurrentLineColor;
-                    ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
-                // if not on highlight, see if we need to paint the zebra
-                } else if ((currentLine % 2) == 0) {
-                    ctx.fillStyle = theme.zebraStripeColor;
-                    ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
-                }
-
-                x += this.LINE_INSETS.left;
+                x = this.GUTTER_INSETS.left;
                 cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
-                // paint the selection bar if the line has selections
-                var selections = this.selectionHelper.getRowSelectionPositions(currentLine);
-                if (selections) {
-                    tx = x + (selections.startCol * this.charWidth);
-                    tw = (selections.endCol == -1) ? (lastColumn - firstColumn) * this.charWidth : (selections.endCol - selections.startCol) * this.charWidth;
-                    ctx.fillStyle = theme.editorSelectedTextBackground;
-                    ctx.fillRect(tx, y, tw, this.lineHeight);
-                }
-
-                // syntax highlighting
-                var lineInfo = lineInfos[currentLine];
-
-                for (ri = 0; ri < lineInfo.regions.length; ri++) {
-                    var styleInfo = lineInfo.regions[ri];
-
-                    for (var style in styleInfo) {
-                        if (!styleInfo.hasOwnProperty(style)) continue;
-
-                        var thisLine = "";
-
-                        var styleArray = styleInfo[style];
-                        var currentColumn = 0; // current column, inclusive
-                        for (var si = 0; si < styleArray.length; si++) {
-                            var range = styleArray[si];
-
-                            for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
-                            thisLine += lineInfo.text.substring(range.start, range.stop);
-                            currentColumn = range.stop;
-                        }
-
-                        ctx.fillStyle = this.editor.theme[style] || "white";
-                        ctx.font = this.editor.theme.lineNumberFont;
-                        ctx.fillText(thisLine, x, cy);
-                    }
-                }
-
-                // paint tab information, if applicable and the information should be displayed
-                if (settings && (settings.isSettingOn("tabarrow") || settings.isSettingOn("tabshowspace"))) {
-                    if (lineMetadata[currentLine].tabExpansions.length > 0) {
-                        for (var i = 0; i < lineMetadata[currentLine].tabExpansions.length; i++) {
-                            var expansion = lineMetadata[currentLine].tabExpansions[i];
-
-                            // the starting x position of the tab character; the existing value of y is fine
-                            var lx = x + (expansion.start * this.charWidth);
-
-                            // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
-                            var showTabSpace = settings && settings.isSettingOn("tabshowspace");
-                            if (showTabSpace) {
-                                var sw = (expansion.end - expansion.start) * this.charWidth;
-                                ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
-                                ctx.fillRect(lx, y, sw, this.lineHeight);
-                            }
-
-                            var showTabNib = settings && settings.isSettingOn("tabarrow");
-                            if (showTabNib) {
-                                // the center of the current character position's bounding rectangle
-                                var cy = y + (this.lineHeight / 2);
-                                var cx = lx + (this.charWidth / 2);
-
-                                // the width and height of the triangle to draw representing the tab
-                                var tw = 4;
-                                var th = 6;
-
-                                // the origin of the triangle
-                                var tx = parseInt(cx - (tw / 2));
-                                var ty = parseInt(cy - (th / 2));
-
-                                // draw the rectangle
-                                ctx.beginPath();
-                                ctx.fillStyle = this.editor.theme["plain"] || "white";
-                                ctx.moveTo(tx, ty);
-                                ctx.lineTo(tx, ty + th);
-                                ctx.lineTo(tx + tw, ty + parseInt(th / 2));
-                                ctx.closePath();
-                                ctx.fill();
-                            }
-                        }
-                    }
-                }
-
-
-                if (!refreshCanvas) {
-                    ctx.drawImage(this.verticalScrollCanvas, verticalx + Math.abs(this.xoffset), Math.abs(this.yoffset));
-                    ctx.restore();
-                }
+                ctx.fillText(currentLine + 1, x, cy);
 
                 y += this.lineHeight;
             }
+        }
 
+        // and now we're ready to translate the horizontal axis; while we're at it, we'll setup a clip to prevent any drawing outside
+        // of code editor region itself (protecting the gutter). this clip is important to prevent text from bleeding into the gutter.
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(this.gutterWidth, -this.yoffset, cwidth - this.gutterWidth, cheight);
+        ctx.closePath();
+        ctx.translate(this.xoffset, 0);
+        ctx.clip();
 
-            // paint the cursor
-            if (this.editor.focus) {
-                if (this.showCursor) {
-                    if (ed.theme.cursorType == "underline") {
-                        x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
-                        y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
-                        ctx.fillStyle = ed.theme.cursorStyle;
-                        ctx.fillRect(x, y, this.charWidth, 3);
-                    } else {
-                        x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
-                        y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
-                        ctx.fillStyle = ed.theme.cursorStyle;
-                        ctx.fillRect(x, y, 1, this.lineHeight);
+        // calculate the first and last visible columns on the screen; these values will be used to try and avoid painting text
+        // that the user can't actually see
+        var firstColumn = Math.floor(Math.abs(this.xoffset / this.charWidth));
+        var lastColumn = firstColumn + (Math.ceil((cwidth - this.gutterWidth) / this.charWidth));
+
+        // create the state necessary to render each line of text
+        y = (this.lineHeight * this.firstVisibleRow);
+        var cc; // the starting column of the current region in the region render loop below
+        var ce; // the ending column in the same loop
+        var ri; // counter variable used for the same loop
+        var regionlen;  // length of the text in the region; used in the same loop
+        var tx, tw;
+        var settings = bespin.get("settings");
+
+        // paint each line
+        for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
+            x = this.gutterWidth;
+
+            // if we aren't repainting the entire canvas...
+            if (!refreshCanvas) {
+                // ...don't bother painting the line unless it is "dirty" (see above for dirty checking)
+                if (!dirty[currentLine]) {
+                    y += this.lineHeight;
+                    continue;
+                }
+
+                // setup a clip for the current line only; this makes drawing just that piece of the scrollbar easy
+                ctx.save(); // this is restore()'d in another if (!refreshCanvas) block at the end of the loop
+                ctx.beginPath();
+                ctx.rect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+                ctx.closePath();
+                ctx.clip();
+
+                if ((currentLine % 2) == 1) { // only repaint the line background if the zebra stripe won't be painted into it
+                    ctx.fillStyle = theme.backgroundStyle;
+                    ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+                }
+            }
+
+            // if highlight line is on, paint the highlight color
+            if ((settings && settings.isSettingOn('highlightline')) &&
+                    (currentLine == ed.cursorManager.getCursorPosition().row)) {
+                ctx.fillStyle = theme.highlightCurrentLineColor;
+                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+            // if not on highlight, see if we need to paint the zebra
+            } else if ((currentLine % 2) == 0) {
+                ctx.fillStyle = theme.zebraStripeColor;
+                ctx.fillRect(x + (Math.abs(this.xoffset)), y, cwidth, this.lineHeight);
+            }
+
+            x += this.LINE_INSETS.left;
+            cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
+
+            // paint the selection bar if the line has selections
+            var selections = this.selectionHelper.getRowSelectionPositions(currentLine);
+            if (selections) {
+                tx = x + (selections.startCol * this.charWidth);
+                tw = (selections.endCol == -1) ? (lastColumn - firstColumn) * this.charWidth : (selections.endCol - selections.startCol) * this.charWidth;
+                ctx.fillStyle = theme.editorSelectedTextBackground;
+                ctx.fillRect(tx, y, tw, this.lineHeight);
+            }
+
+            var lineMetadata = this.getRowMetadata(currentLine);
+            var lineText = lineMetadata.lineText;
+
+            // the following two chunks of code do the same thing; only one should be uncommented at a time
+
+            // CHUNK 1: this code just renders the line with white text and is for testing
+//            ctx.fillStyle = "white";
+//            ctx.fillText(this.editor.model.getRowArray(currentLine).join(""), x, cy);
+
+            // CHUNK 2: this code uses the SyntaxModel API to render the line
+            // syntax highlighting
+            var lineInfo = this.syntaxModel.getSyntaxStylesPerLine(lineText, currentLine, this.editor.language);
+
+            for (ri = 0; ri < lineInfo.regions.length; ri++) {
+                var styleInfo = lineInfo.regions[ri];
+
+                for (var style in styleInfo) {
+                    if (!styleInfo.hasOwnProperty(style)) continue;
+
+                    var thisLine = "";
+
+                    var styleArray = styleInfo[style];
+                    var currentColumn = 0; // current column, inclusive
+                    for (var si = 0; si < styleArray.length; si++) {
+                        var range = styleArray[si];
+
+                        for ( ; currentColumn < range.start; currentColumn++) thisLine += " ";
+                        thisLine += lineInfo.text.substring(range.start, range.stop);
+                        currentColumn = range.stop;
+                    }
+
+                    ctx.fillStyle = this.editor.theme[style] || "white";
+                    ctx.font = this.editor.theme.lineNumberFont;
+                    ctx.fillText(thisLine, x, cy);
+                }
+            }
+
+            // paint tab information, if applicable and the information should be displayed
+            if (settings && (settings.isSettingOn("tabarrow") || settings.isSettingOn("tabshowspace"))) {
+                if (lineMetadata.tabExpansions.length > 0) {
+                    for (var i = 0; i < lineMetadata.tabExpansions.length; i++) {
+                        var expansion = lineMetadata.tabExpansions[i];
+
+                        // the starting x position of the tab character; the existing value of y is fine
+                        var lx = x + (expansion.start * this.charWidth);
+
+                        // check if the user wants us to highlight tabs; useful if you need to mix tabs and spaces
+                        var showTabSpace = settings && settings.isSettingOn("tabshowspace");
+                        if (showTabSpace) {
+                            var sw = (expansion.end - expansion.start) * this.charWidth;
+                            ctx.fillStyle = this.editor.theme["tabSpace"] || "white";
+                            ctx.fillRect(lx, y, sw, this.lineHeight);
+                        }
+
+                        var showTabNib = settings && settings.isSettingOn("tabarrow");
+                        if (showTabNib) {
+                            // the center of the current character position's bounding rectangle
+                            var cy = y + (this.lineHeight / 2);
+                            var cx = lx + (this.charWidth / 2);
+
+                            // the width and height of the triangle to draw representing the tab
+                            var tw = 4;
+                            var th = 6;
+
+                            // the origin of the triangle
+                            var tx = parseInt(cx - (tw / 2));
+                            var ty = parseInt(cy - (th / 2));
+
+                            // draw the rectangle
+                            ctx.beginPath();
+                            ctx.fillStyle = this.editor.theme["plain"] || "white";
+                            ctx.moveTo(tx, ty);
+                            ctx.lineTo(tx, ty + th);
+                            ctx.lineTo(tx + tw, ty + parseInt(th / 2));
+                            ctx.closePath();
+                            ctx.fill();
+                        }
                     }
                 }
-            } else {
-                x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
-                y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
-
-                ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
-                ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
-                ctx.fillRect(x, y, this.charWidth, this.lineHeight);
-                ctx.strokeRect(x, y, this.charWidth, this.lineHeight);
             }
 
-            // scroll bars - x axis
-            ctx.restore();
 
-            // scrollbars - y axis
-            ctx.restore();
+            if (!refreshCanvas) {
+                ctx.drawImage(this.verticalScrollCanvas, verticalx + Math.abs(this.xoffset), Math.abs(this.yoffset));
+                ctx.restore();
+            }
 
-            // paint scroll bars unless we don't need to :-)
-            if (!refreshCanvas) return;
+            y += this.lineHeight;
+        }
 
-            // temporary disable of scrollbars
-            //if (this.xscrollbar.rect) return;
 
-            if (this.horizontalScrollCanvas.width != cwidth) this.horizontalScrollCanvas.width = cwidth;
-            if (this.horizontalScrollCanvas.height != this.NIB_WIDTH + 4) this.horizontalScrollCanvas.height = this.NIB_WIDTH + 4;
+        // paint the cursor
+        if (this.editor.focus) {
+            if (this.showCursor) {
+                if (ed.theme.cursorType == "underline") {
+                    x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
+                    ctx.fillStyle = ed.theme.cursorStyle;
+                    ctx.fillRect(x, y, this.charWidth, 3);
+                } else {
+                    x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
+                    ctx.fillStyle = ed.theme.cursorStyle;
+                    ctx.fillRect(x, y, 1, this.lineHeight);
+                }
+            }
+        } else {
+            x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+            y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
 
-            if (this.verticalScrollCanvas.height != cheight) this.verticalScrollCanvas.height = cheight;
-            if (this.verticalScrollCanvas.width != this.NIB_WIDTH + 4) this.verticalScrollCanvas.width = this.NIB_WIDTH + 4;
+            ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
+            ctx.strokeStyle = ed.theme.unfocusedCursorStrokeStyle;
+            ctx.fillRect(x, y, this.charWidth, this.lineHeight);
+            ctx.strokeRect(x, y, this.charWidth, this.lineHeight);
+        }
 
-            var hctx = this.horizontalScrollCanvas.getContext("2d");
-            hctx.clearRect(0, 0, this.horizontalScrollCanvas.width, this.horizontalScrollCanvas.height);
+        // scroll bars - x axis
+        ctx.restore();
+
+        // scrollbars - y axis
+        ctx.restore();
+
+        // paint scroll bars unless we don't need to :-)
+        if (!refreshCanvas) return;
+
+        // temporary disable of scrollbars
+        //if (this.xscrollbar.rect) return;
+
+        if (this.horizontalScrollCanvas.width != cwidth) this.horizontalScrollCanvas.width = cwidth;
+        if (this.horizontalScrollCanvas.height != this.NIB_WIDTH + 4) this.horizontalScrollCanvas.height = this.NIB_WIDTH + 4;
+
+        if (this.verticalScrollCanvas.height != cheight) this.verticalScrollCanvas.height = cheight;
+        if (this.verticalScrollCanvas.width != this.NIB_WIDTH + 4) this.verticalScrollCanvas.width = this.NIB_WIDTH + 4;
+
+        var hctx = this.horizontalScrollCanvas.getContext("2d");
+        hctx.clearRect(0, 0, this.horizontalScrollCanvas.width, this.horizontalScrollCanvas.height);
+        hctx.save();
+
+        var vctx = this.verticalScrollCanvas.getContext("2d");
+        vctx.clearRect(0, 0, this.verticalScrollCanvas.width, this.verticalScrollCanvas.height);
+        vctx.save();
+
+        var ythemes = (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null) ?
+                      { n: ed.theme.fullNibStyle, a: ed.theme.fullNibArrowStyle, s: ed.theme.fullNibStrokeStyle } :
+                      { n: ed.theme.partialNibStyle, a: ed.theme.partialNibArrowStyle, s: ed.theme.partialNibStrokeStyle };
+        var xthemes = (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null) ?
+                      { n: ed.theme.fullNibStyle, a: ed.theme.fullNibArrowStyle, s: ed.theme.fullNibStrokeStyle } :
+                      { n: ed.theme.partialNibStyle, a: ed.theme.partialNibArrowStyle, s: ed.theme.partialNibStrokeStyle };
+
+        var midpoint = Math.floor(this.NIB_WIDTH / 2);
+
+        this.nibup = new Rect(cwidth - this.NIB_INSETS.right - this.NIB_WIDTH,
+                this.NIB_INSETS.top, this.NIB_WIDTH, this.NIB_WIDTH);
+
+        this.nibdown = new Rect(cwidth - this.NIB_INSETS.right - this.NIB_WIDTH,
+                cheight - (this.NIB_WIDTH * 2) - (this.NIB_INSETS.bottom * 2),
+                this.NIB_INSETS.top,
+                this.NIB_WIDTH, this.NIB_WIDTH);
+
+        this.nibleft = new Rect(this.gutterWidth + this.NIB_INSETS.left, cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
+                this.NIB_WIDTH, this.NIB_WIDTH);
+
+        this.nibright = new Rect(cwidth - (this.NIB_INSETS.right * 2) - (this.NIB_WIDTH * 2),
+                cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
+                this.NIB_WIDTH, this.NIB_WIDTH);
+
+        vctx.translate(-verticalx, 0);
+        hctx.translate(0, -horizontaly);
+
+        if (xscroll && ((this.overXScrollBar) || (this.xscrollbar.mousedownValue != null))) {
             hctx.save();
 
-            var vctx = this.verticalScrollCanvas.getContext("2d");
-            vctx.clearRect(0, 0, this.verticalScrollCanvas.width, this.verticalScrollCanvas.height);
+            hctx.beginPath();
+            hctx.rect(this.nibleft.x + midpoint + 2, 0, this.nibright.x - this.nibleft.x - 1, cheight); // y points don't matter
+            hctx.closePath();
+            hctx.clip();
+
+            hctx.fillStyle = ed.theme.scrollTrackFillStyle;
+            hctx.fillRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
+
+            hctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
+            hctx.strokeRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
+
+            hctx.restore();
+        }
+
+        if (yscroll && ((this.overYScrollBar) || (this.yscrollbar.mousedownValue != null))) {
             vctx.save();
 
-            var ythemes = (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null) ?
-                          { n: ed.theme.fullNibStyle, a: ed.theme.fullNibArrowStyle, s: ed.theme.fullNibStrokeStyle } :
-                          { n: ed.theme.partialNibStyle, a: ed.theme.partialNibArrowStyle, s: ed.theme.partialNibStrokeStyle };
-            var xthemes = (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null) ?
-                          { n: ed.theme.fullNibStyle, a: ed.theme.fullNibArrowStyle, s: ed.theme.fullNibStrokeStyle } :
-                          { n: ed.theme.partialNibStyle, a: ed.theme.partialNibArrowStyle, s: ed.theme.partialNibStrokeStyle };
+            vctx.beginPath();
+            vctx.rect(0, this.nibup.y + midpoint + 2, cwidth, this.nibdown.y - this.nibup.y - 1); // x points don't matter
+            vctx.closePath();
+            vctx.clip();
 
-            var midpoint = Math.floor(this.NIB_WIDTH / 2);
+            vctx.fillStyle = ed.theme.scrollTrackFillStyle;
+            vctx.fillRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
 
-            this.nibup = new Rect(cwidth - this.NIB_INSETS.right - this.NIB_WIDTH,
-                    this.NIB_INSETS.top, this.NIB_WIDTH, this.NIB_WIDTH);
+            vctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
+            vctx.strokeRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
 
-            this.nibdown = new Rect(cwidth - this.NIB_INSETS.right - this.NIB_WIDTH,
-                    cheight - (this.NIB_WIDTH * 2) - (this.NIB_INSETS.bottom * 2),
-                    this.NIB_INSETS.top,
-                    this.NIB_WIDTH, this.NIB_WIDTH);
+            vctx.restore();
+        }
 
-            this.nibleft = new Rect(this.GUTTER_WIDTH + this.NIB_INSETS.left, cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
-                    this.NIB_WIDTH, this.NIB_WIDTH);
-
-            this.nibright = new Rect(cwidth - (this.NIB_INSETS.right * 2) - (this.NIB_WIDTH * 2),
-                    cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
-                    this.NIB_WIDTH, this.NIB_WIDTH);
-
-            vctx.translate(-verticalx, 0);
-            hctx.translate(0, -horizontaly);
-
-            if (xscroll && ((this.overXScrollBar) || (this.xscrollbar.mousedownValue != null))) {
-                hctx.save();
-
-                hctx.beginPath();
-                hctx.rect(this.nibleft.x + midpoint + 2, 0, this.nibright.x - this.nibleft.x - 1, cheight); // y points don't matter
-                hctx.closePath();
-                hctx.clip();
-
-                hctx.fillStyle = ed.theme.scrollTrackFillStyle;
-                hctx.fillRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
-
-                hctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
-                hctx.strokeRect(this.nibleft.x, this.nibleft.y - 1, this.nibright.x2 - this.nibleft.x, this.nibleft.h + 1);
-
-                hctx.restore();
-            }
-
-            if (yscroll && ((this.overYScrollBar) || (this.yscrollbar.mousedownValue != null))) {
+        if (yscroll) {
+            // up arrow
+            if ((showUpScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
                 vctx.save();
-
-                vctx.beginPath();
-                vctx.rect(0, this.nibup.y + midpoint + 2, cwidth, this.nibdown.y - this.nibup.y - 1); // x points don't matter
-                vctx.closePath();
-                vctx.clip();
-
-                vctx.fillStyle = ed.theme.scrollTrackFillStyle;
-                vctx.fillRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
-
-                vctx.strokeStyle = ed.theme.scrollTrackStrokeStyle;
-                vctx.strokeRect(this.nibup.x - 1, this.nibup.y, this.nibup.w + 1, this.nibdown.y2 - this.nibup.y);
-
+                vctx.translate(this.nibup.x + midpoint, this.nibup.y + midpoint);
+                this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
                 vctx.restore();
             }
 
-            if (yscroll) {
-                // up arrow
-                if ((showUpScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
-                    vctx.save();
-                    vctx.translate(this.nibup.x + midpoint, this.nibup.y + midpoint);
-                    this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
-                    vctx.restore();
-                }
-
-                // down arrow
-                if ((showDownScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
-                    vctx.save();
-                    vctx.translate(this.nibdown.x + midpoint, this.nibdown.y + midpoint);
-                    vctx.rotate(Math.PI);
-                    this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
-                    vctx.restore();
-                }
+            // down arrow
+            if ((showDownScrollNib) || (this.overYScrollBar) || (this.yscrollbar.mousedownValue != null)) {
+                vctx.save();
+                vctx.translate(this.nibdown.x + midpoint, this.nibdown.y + midpoint);
+                vctx.rotate(Math.PI);
+                this.paintNib(vctx, ythemes.n, ythemes.a, ythemes.s);
+                vctx.restore();
             }
-
-            if (xscroll) {
-                // left arrow
-                if ((showLeftScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
-                    hctx.save();
-                    hctx.translate(this.nibleft.x + midpoint, this.nibleft.y + midpoint);
-                    hctx.rotate(Math.PI * 1.5);
-                    this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
-                    hctx.restore();
-                }
-
-                // right arrow
-                if ((showRightScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
-                    hctx.save();
-                    hctx.translate(this.nibright.x + midpoint, this.nibright.y + midpoint);
-                    hctx.rotate(Math.PI * 0.5);
-                    this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
-                    hctx.restore();
-                }
-            }
-
-            // the bar
-            var sx = this.nibleft.x2 + 4;
-            var sw = this.nibright.x - this.nibleft.x2 - 9;
-            this.xscrollbar.rect = new Rect(sx, this.nibleft.y - 1, sw, this.nibleft.h + 1);
-            this.xscrollbar.value = -this.xoffset;
-            this.xscrollbar.min = 0;
-            this.xscrollbar.max = virtualwidth - (cwidth - this.GUTTER_WIDTH);
-            this.xscrollbar.extent = cwidth - this.GUTTER_WIDTH;
-
-            if (xscroll) {
-                var fullonxbar = (((this.overXScrollBar) && (virtualwidth > cwidth)) || ((this.xscrollbar) && (this.xscrollbar.mousedownValue != null)));
-                if (!fullonxbar) hctx.globalAlpha = 0.3;
-                this.paintScrollbar(hctx, this.xscrollbar);
-                hctx.globalAlpha = 1.0;
-            }
-
-            var sy = this.nibup.y2 + 4;
-            var sh = this.nibdown.y - this.nibup.y2 - 9;
-            this.yscrollbar.rect = new Rect(this.nibup.x - 1, sy, this.nibup.w + 1, sh);
-            this.yscrollbar.value = -this.yoffset;
-            this.yscrollbar.min = 0;
-            this.yscrollbar.max = virtualheight - cheight;
-            this.yscrollbar.extent = cheight;
-
-            if (yscroll) {
-                var fullonybar = ((this.overYScrollBar) && (virtualheight > cheight)) || ((this.yscrollbar) && (this.yscrollbar.mousedownValue != null));
-                if (!fullonybar) vctx.globalAlpha = 0.3;
-                this.paintScrollbar(vctx, this.yscrollbar);
-                vctx.globalAlpha = 1;
-            }
-
-            // composite the scrollbars
-            ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
-            ctx.drawImage(this.horizontalScrollCanvas, 0, horizontaly);
-            hctx.restore();
-            vctx.restore();
-
-            // clear the unusued nibs
-            if (!showUpScrollNib) this.nibup = new Rect();
-            if (!showDownScrollNib) this.nibdown = new Rect();
-            if (!showLeftScrollNib) this.nibleft = new Rect();
-            if (!showRightScrollNib) this.nibright = new Rect();
-        });
-
-        var lineMetadata = [];
-        var lines = [];
-        for (var i = (this.syntaxModel.workerEnabled ? 0 :  this.firstVisibleRow); i < this.editor.model.getRowCount(); i++) {
-            // Possible optimizations:
-            // - sent only initally (or when switching to worker based syntax engine) all rows,
-            // - afterwords sent only dirty rows
-            // - run getRowString() on worker 
-            lineMetadata[i] = this.getRowMetadata(i); 
-            lines[i] = lineMetadata[i].lineText;
         }
-        
-        if (this.syntaxModel.workerEnabled) {
-            this.syntaxModel.getSyntaxStyles(lines, this.firstVisibleRow, lastLineToRender, this.editor.language).and(
-                this, null, [], function (lineInfos) {
-                    innerPaint(lineInfos);
-            });
-        } else {
-            var lineInfos = this.syntaxModel.getSyntaxStyles(lines, this.firstVisibleRow, lastLineToRender, this.editor.language);
-            if (lineInfos) {
-                innerPaint(lineInfos);
-            } else {
-                console.error("arrgh, invalid syntax results !!!");
+
+        if (xscroll) {
+            // left arrow
+            if ((showLeftScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
+                hctx.save();
+                hctx.translate(this.nibleft.x + midpoint, this.nibleft.y + midpoint);
+                hctx.rotate(Math.PI * 1.5);
+                this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
+                hctx.restore();
             }
-        } 
+
+            // right arrow
+            if ((showRightScrollNib) || (this.overXScrollBar) || (this.xscrollbar.mousedownValue != null)) {
+                hctx.save();
+                hctx.translate(this.nibright.x + midpoint, this.nibright.y + midpoint);
+                hctx.rotate(Math.PI * 0.5);
+                this.paintNib(hctx, xthemes.n, xthemes.a, xthemes.s);
+                hctx.restore();
+            }
+        }
+
+        // the bar
+        var sx = this.nibleft.x2 + 4;
+        var sw = this.nibright.x - this.nibleft.x2 - 9;
+        this.xscrollbar.rect = new Rect(sx, this.nibleft.y - 1, sw, this.nibleft.h + 1);
+        this.xscrollbar.value = -this.xoffset;
+        this.xscrollbar.min = 0;
+        this.xscrollbar.max = virtualwidth - (cwidth - this.gutterWidth);
+        this.xscrollbar.extent = cwidth - this.gutterWidth;
+
+        if (xscroll) {
+            var fullonxbar = (((this.overXScrollBar) && (virtualwidth > cwidth)) || ((this.xscrollbar) && (this.xscrollbar.mousedownValue != null)));
+            if (!fullonxbar) hctx.globalAlpha = 0.3;
+            this.paintScrollbar(hctx, this.xscrollbar);
+            hctx.globalAlpha = 1.0;
+        }
+
+        var sy = this.nibup.y2 + 4;
+        var sh = this.nibdown.y - this.nibup.y2 - 9;
+        this.yscrollbar.rect = new Rect(this.nibup.x - 1, sy, this.nibup.w + 1, sh);
+        this.yscrollbar.value = -this.yoffset;
+        this.yscrollbar.min = 0;
+        this.yscrollbar.max = virtualheight - cheight;
+        this.yscrollbar.extent = cheight;
+
+        if (yscroll) {
+            var fullonybar = ((this.overYScrollBar) && (virtualheight > cheight)) || ((this.yscrollbar) && (this.yscrollbar.mousedownValue != null));
+            if (!fullonybar) vctx.globalAlpha = 0.3;
+            this.paintScrollbar(vctx, this.yscrollbar);
+            vctx.globalAlpha = 1;
+        }
+
+        // composite the scrollbars
+        ctx.drawImage(this.verticalScrollCanvas, verticalx, 0);
+        ctx.drawImage(this.horizontalScrollCanvas, 0, horizontaly);
+        hctx.restore();
+        vctx.restore();
+
+        // clear the unusued nibs
+        if (!showUpScrollNib) this.nibup = new Rect();
+        if (!showDownScrollNib) this.nibdown = new Rect();
+        if (!showLeftScrollNib) this.nibleft = new Rect();
+        if (!showRightScrollNib) this.nibright = new Rect();
     },
 
     paintScrollbar: function(ctx, scrollbar) {
@@ -1320,7 +1298,7 @@ dojo.declare("bespin.editor.UI", null, {
         var alpha = (ctx.globalAlpha) ? ctx.globalAlpha : 1;
 
         if (!scrollbar.isH()) {
-            ctx.save();
+            ctx.save();     // restored in another if (!scrollbar.isH()) block at end of function
             ctx.translate(bar.x + Math.floor(bar.w / 2), bar.y + Math.floor(bar.h / 2));
             ctx.rotate(Math.PI * 1.5);
             ctx.translate(-(bar.x + Math.floor(bar.w / 2)), -(bar.y + Math.floor(bar.h / 2)));

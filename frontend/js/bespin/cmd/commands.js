@@ -836,13 +836,34 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'bindkey',
     takes: ['modifiers', 'key', 'action'],
-    preview: 'Bind a key to an action',
-    completeText: 'give modifier(s), key, and action name',
-    hidden: true,
+    preview: 'Bind a key to an action, or show bindings',
+    completeText: 'With no arguments show bindings, else give modifier(s), key, and action name to set',
     execute: function(self, args) {
-        if (args.modifiers == "none") args.modifiers = '';
+        if (args.key && args.action) { // bind a new key binding
+            if (args.modifiers == "none") args.modifiers = '';
 
-        bespin.publish("editor:bindkey", args);
+            bespin.publish("editor:bindkey", args);
+        } else { // show me the key bindings
+            var descriptions = bespin.get('editor').editorKeyListener.keyMapDescriptions;
+            var output = "<u>Your Key Bindings</u><br><br><table>";
+            
+            for (var keys in descriptions) {
+                var keyData = keys.split(','); // metaKey, ctrlKey, altKey, shiftKey
+                var keyCode = parseInt(keyData[0]);
+
+                var modifiers = [];
+                if (keyData[1] === "true") modifiers.push("CMD");
+                if (keyData[2] === "true") modifiers.push("CTRL");
+                if (keyData[3] === "true") modifiers.push("ALT");
+                if (keyData[4] === "true") modifiers.push("SHIFT");
+
+                var modifierInfo = modifiers.length > 0 ? modifiers.join(', ') + " " : "";
+                var keyInfo = modifierInfo + bespin.util.keys.KeyCodeToName[keyCode] || keyCode;
+                output += "<tr style='font-size: x-small'><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
+            }
+            output += "</table>";
+            self.showInfo(output);
+        }
     }
 });
 
