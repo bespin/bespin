@@ -408,8 +408,7 @@ dojo.declare("bespin.editor.UI", null, {
                             bottom: Math.floor(this.NIB_WIDTH / 2) };
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
-        this.DEBUG_GUTTER_WIDTH = 18;
-        this.DEBUG_GUTTER_INSETS = { top: 2, left: 2, right: 2, bottom: 2 };
+        this.DEBUG_GUTTER_WIDTH = 15;
         
         //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         //this.charWidth;         // set first time a paint occurs
@@ -506,21 +505,6 @@ dojo.declare("bespin.editor.UI", null, {
         var clientX = e.clientX - this.getLeftOffset();
 
         if (this.overXScrollBar || this.overYScrollBar) return;
-
-        if (this.editor.debugMode) {
-            if (clientX < this.DEBUG_GUTTER_WIDTH) {
-                var point = { x: clientX, y: clientY };
-                point.y += Math.abs(this.yoffset);
-                var p = this.convertClientPointToCursorPoint(point);
-
-                var editSession = bespin.get("editSession");
-                if (p && editSession) {
-                    bespin.debugInfo.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
-                    this.editor.paint(true);
-                    return;
-                }
-            }
-        }
 
         if (e.shiftKey) {
             this.selectMouseDownPos = (this.editor.selection) ? this.editor.selection.startPos : this.editor.getCursorPos();
@@ -903,18 +887,6 @@ dojo.declare("bespin.editor.UI", null, {
             dojo.attr(c, { width: cwidth, height: cheight });
         } 
 
-        // get debug metadata
-        var breakpoints = {};
-
-        if (this.editor.debugMode && bespin.get("editSession")) {
-            var points = bespin.debugInfo.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
-            dojo.forEach(points, function(point) {
-                breakpoints[point.lineNumber] = point;
-            });
-            delete points;
-        }
-
-
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
         //refreshCanvas = true;
 
@@ -952,40 +924,12 @@ dojo.declare("bespin.editor.UI", null, {
         // paint the line numbers
         if (refreshCanvas) {
             y = (this.lineHeight * this.firstVisibleRow);
+            ctx.fillStyle = theme.lineNumberColor;
+            ctx.font = this.editor.theme.lineNumberFont;
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
-                x = 0;
-
-                // if we're in debug mode...
-                if (this.editor.debugMode) {
-                    // ...check if the current line has a breakpoint
-                    if (breakpoints[currentLine]) {
-                        var bpx = x + this.DEBUG_GUTTER_INSETS.left;
-                        var bpy = y + this.DEBUG_GUTTER_INSETS.top;
-                        var bpw = this.DEBUG_GUTTER_WIDTH - this.DEBUG_GUTTER_INSETS.left - this.DEBUG_GUTTER_INSETS.right;
-                        var bph = this.lineHeight - this.DEBUG_GUTTER_INSETS.top - this.DEBUG_GUTTER_INSETS.bottom; 
-
-                        var bpmidpointx = bpx + parseInt(bpw / 2);
-                        var bpmidpointy = bpy + parseInt(bph / 2);
-
-                        ctx.strokeStyle = "rgb(128, 0, 0)";
-                        ctx.fillStyle = "rgb(255, 102, 102)";
-                        ctx.beginPath();
-                        ctx.arc(bpmidpointx, bpmidpointy, bpw / 2, 0, Math.PI*2, true);
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
-                    }
-
-                    // ...and push the line number to the right, leaving a space for breakpoint stuff
-                    x += this.DEBUG_GUTTER_WIDTH;
-                }
-
-                x += this.GUTTER_INSETS.left;
-
+                x = this.GUTTER_INSETS.left;
                 cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
 
-                ctx.fillStyle = theme.lineNumberColor;
-                ctx.font = this.editor.theme.lineNumberFont;
                 ctx.fillText(currentLine + 1, x, cy);
 
                 y += this.lineHeight;
@@ -1502,9 +1446,6 @@ dojo.declare("bespin.editor.UI", null, {
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
         this.opts = opts || {};
-
-        // fixme: this stuff may not belong here
-        this.debugMode = false;
 
         this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel(this);
