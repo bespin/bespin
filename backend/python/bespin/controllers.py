@@ -755,9 +755,9 @@ def test_cleanup(request, response):
 @expose(r'^/vcs/clone/$', 'POST')
 def vcs_clone(request, response):
     user = request.user
-    output = vcs.clone(user, **dict(request.POST))
+    jobid = vcs.clone(user, **dict(request.POST))
     response.content_type = "application/json"
-    response.body = simplejson.dumps(dict(output=output))
+    response.body = simplejson.dumps(dict(jobid=jobid))
     return response()
     
 @expose(r'^/vcs/command/(?P<project_name>.*)/$', 'POST')

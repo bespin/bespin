@@ -29,6 +29,7 @@
 import os
 import logging
 import logging.handlers
+import ConfigParser
 
 from path import path
 
@@ -56,6 +57,9 @@ c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
+c.queue_host = None
+c.queue_port = None
+c.queue = None
 c.async_jobs = True
 
 # if this is true, the user's UUID will be used as their
@@ -64,7 +68,7 @@ c.async_jobs = True
 # in development.
 c.use_uuid_as_dir_identifier = True
 
-c.fslevels = 0
+c.fslevels = 3
 
 c.max_import_file_size = 20000000
 
@@ -77,6 +81,7 @@ def set_profile(profile):
         c.fsroot = os.path.abspath("%s/../testfiles" 
                         % os.path.dirname(__file__))
         c.async_jobs = False
+        c.fslevels = 0
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
         c.fsroot = os.path.abspath("%s/../../../devfiles" 
@@ -96,12 +101,22 @@ def set_profile(profile):
         c.log_requests_to_stdout = True
         
         c.async_jobs = False
+        c.fslevels = 0
+    
+def load_config(configfile):
+    cp = ConfigParser.ConfigParser()
+    cp.read(configfile)
+    c.update(cp.items("config"))
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
     c.fsroot = path(c.fsroot)
     if not c.fsroot.exists:
         c.fsroot.makedirs()
+    
+    if c.async_jobs:
+        from bespin import queue
+        c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

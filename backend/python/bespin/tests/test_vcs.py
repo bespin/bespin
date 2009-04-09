@@ -49,7 +49,7 @@ updating working directory
 @mock_run_command(clone_output, "bespin")
 def test_run_an_hg_clone(run_command_params):
     _init_data()
-    output = vcs.clone(macgyver, source="http://hg.mozilla.org/labs/bespin")
+    output = vcs._clone_impl(macgyver, source="http://hg.mozilla.org/labs/bespin")
     command, context = run_command_params
     
     assert isinstance(command, hg.clone)
@@ -162,6 +162,12 @@ def test_hg_clone_on_web(run_command_params):
                 ))
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
+    assert 'jobid' in output
+    
+    resp = app.post("/messages/")
+    messages = simplejson.loads(resp.body)
+    assert len(messages) == 1
+    output = messages[0]
     assert 'output' in output
     output = output['output']
     command, context = run_command_params
@@ -191,6 +197,12 @@ def test_hg_clone_on_web_with_ssh(run_command_params):
                 ))
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
+    assert 'jobid' in output
+    
+    resp = app.post("/messages/")
+    messages = simplejson.loads(resp.body)
+    assert len(messages) == 1
+    output = messages[0]
     assert 'output' in output
     output = output['output']
     command, context = run_command_params

@@ -17,7 +17,7 @@ from uvc import main
 from uvc.main import is_new_project_command
 from Crypto.Cipher import AES
 
-from bespin import model, config
+from bespin import model, config, queue
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -48,6 +48,30 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
             authtype=None, username=None, password=None, kcpass="",
             vcs="hg"):
     """Clones or checks out the repository using the command provided."""
+    user = user.username
+    job_body = dict(execute="bespin.vcs:clone_run",
+        user=user, source=source, dest=dest, push=push, remoteauth=remoteauth,
+        authtype=authtype, username=username, password=password,
+        kcpass=kcpass, vcs=vcs)
+    return queue.enqueue("vcs", job_body)
+
+def clone_run(qi):
+    """Runs the queued up clone job."""
+    message = qi.message
+    s = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = model.UserManager(s)
+    user = user_manager.get_user(message['user'])
+    message['user'] = user
+    output = _clone_impl(**message)
+    retvalue = model.Message(user_id=user.id, 
+        message=simplejson.dumps(dict(eventName="vcs:response", output=output)))
+    s.add(retvalue)
+    s.commit()
+    s.close()
+
+def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
+            authtype=None, username=None, password=None, kcpass="",
+            vcs="hg"):
     working_dir = user.get_location()
     
     args = ["clone", source]
