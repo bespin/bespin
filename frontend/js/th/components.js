@@ -176,7 +176,6 @@ dojo.declare("th.components.Scrollbar", th.Container, {
     
 dojo.declare("th.components.Panel", th.Container, {
     paintSelf: function(ctx) {
-        console.log("panel paint");
         this.paintBackground(ctx);
     }
 });  

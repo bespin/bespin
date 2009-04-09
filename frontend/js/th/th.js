@@ -69,7 +69,6 @@ dojo.declare("th.Resources", null, {
     },
 
     load: function() {
-        console.log("load");
         if (this.loaded) return;    // no re-loading
         
         this.loading = true;
@@ -85,8 +84,6 @@ dojo.declare("th.Resources", null, {
     },
 
     onLoaded: function() {
-        console.log("onLoaded");
-
         if (this.cssLoaded && ((this.blockUntilImagesLoaded && this.imagesLoaded) || !this.blockUntilImagesLoaded)) {
             this.loaded = true;
             this.loading = false;
@@ -108,8 +105,6 @@ dojo.declare("th.Resources", null, {
     },
 
     parseCSS: function() {
-        console.log("parseCSS");
-
         var links = [];
 
         // add default stylesheet; cheesy path at the moment, need to come up with a better way to approach this TODO
@@ -141,19 +136,6 @@ dojo.declare("th.Resources", null, {
     },
 
     processCSS: function(stylesheet, array, index) {
-        console.log("processCSS");
-
-        try {
-            array[index] = new th.css.CSSParser().parse(stylesheet);
-        } catch (e) {
-            console.log("Exception!");
-            console.log(e);
-        } finally {
-            console.log("processCSS: 2");
-        }
-
-        console.log("processCSS: 1");
-
         // load the images
         for (var rule in array[index]) {
             for (var property in array[index][rule]) {
@@ -177,8 +159,6 @@ dojo.declare("th.Resources", null, {
                 }
             }
         }
-
-        console.log("done!");
 
         if (++this.currentSheet == this.sheetCount) {
             this.cssLoaded = true;
@@ -346,19 +326,14 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
     },
 
     render: function() {
-        console.log("render");
         if (!this.resources.loaded) {
-            console.log("render: resources not loaded");
             if (!this.resourceCallbackRegistered) {
-                console.log("render: registering callback");
                 this.resources.registerOnLoadCallback(this.render, this);
                 this.resourceCallbackRegistered = true;
             }
 
             return;
         }
-
-        console.log("render: resources loaded");
 
         this.layout();
         this.paint();
@@ -380,8 +355,6 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
 
             return;
         }
-
-        console.log("paint: resources loaded");
 
         if (!component) component = this.root;
 
