@@ -73,7 +73,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'strictlines': 'on',
             'syntaxengine': 'simple',
             'preview': 'window',
-            'smartmove': 'on',
+            'smartmove': 'on'
         };
     },
 
@@ -493,6 +493,19 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
+        bespin.subscribe("settings:set:debugmode", function(event) {
+            editor.debugMode = settings.isOn(event.value);
+
+            if (editor.debugMode) {
+                bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints.txt", dojo.hitch(this, function(file) {
+                    bespin.debugInfo.breakpoints = dojo.fromJson(file.content);
+                    editor.paint(true);
+                }));
+            }
+
+            editor.paint(true);
+        });
+
         // ** {{{ Event: settings:set:cursorblink }}} **
         // 
         // The frequency of the cursor blink in milliseconds (defaults to 250)
@@ -593,6 +606,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             });
         });
         
+        bespin.subscribe("settings:init", function(event) {
+            bespin.publish("settings:set:debugmode", {
+                value: settings.get('debugmode')
+            });
+        });
+
         // ** {{{ Event: settings:init }}} **
         // 
         // Set syntaxcheck
