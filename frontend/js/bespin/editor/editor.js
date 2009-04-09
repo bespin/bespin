@@ -389,9 +389,13 @@ dojo.declare("bespin.editor.UI", null, {
         this.horizontalScrollCanvas = dojo.create("canvas");
         this.verticalScrollCanvas   = dojo.create("canvas");
 
-        this.GUTTER_WIDTH = 54;
+        // gutterWidth used to be a constant, but is now dynamically calculated in each paint() invocation. I set it to a silly
+        // default value here in case some of the code expects it to be populated before the first paint loop kicks in. the
+        // default value ought to eventually become 0
+        this.gutterWidth = 54;
+
         this.LINE_HEIGHT = 23;
-        this.GUTTER_INSETS = { top: 0, left: 6, right: 0, bottom: 6 };
+        this.GUTTER_INSETS = { top: 0, left: 6, right: 6, bottom: 6 };
         this.LINE_INSETS = { top: 0, left: 5, right: 0, bottom: 6 };
         this.FALLBACK_CHARACTER_WIDTH = 10;
         this.NIB_WIDTH = 15;
@@ -401,6 +405,8 @@ dojo.declare("bespin.editor.UI", null, {
                             bottom: Math.floor(this.NIB_WIDTH / 2) };
         this.NIB_ARROW_INSETS = { top: 3, left: 3, right: 3, bottom: 5 };
 
+        this.DEBUG_GUTTER_WIDTH = 15;
+        
         //this.lineHeight;        // reserved for when line height is calculated dynamically instead of with a constant; set first time a paint occurs
         //this.charWidth;         // set first time a paint occurs
         //this.visibleRows;       // the number of rows visible in the editor; set each time a paint occurs
@@ -473,10 +479,10 @@ dojo.declare("bespin.editor.UI", null, {
             y = Math.floor(ty / this.lineHeight);
         }
 
-        if (pos.x <= (this.GUTTER_WIDTH + this.LINE_INSETS.left)) {
+        if (pos.x <= (this.gutterWidth + this.LINE_INSETS.left)) {
             x = -1;
         } else {
-            var tx = pos.x - this.GUTTER_WIDTH - this.LINE_INSETS.left;
+            var tx = pos.x - this.gutterWidth - this.LINE_INSETS.left;
             x = Math.floor(tx / this.charWidth);
             
             // With strictlines turned on, don't select past the end of the line
@@ -586,7 +592,7 @@ dojo.declare("bespin.editor.UI", null, {
         var x = this.charWidth * this.editor.cursorManager.getCursorPosition().col;
 
         var cheight = this.getHeight();
-        var cwidth = this.getWidth() - this.GUTTER_WIDTH;
+        var cwidth = this.getWidth() - this.gutterWidth;
 
         if (Math.abs(this.yoffset) > y) {               // current row before top-most visible row
             this.yoffset = -y;
@@ -831,9 +837,14 @@ dojo.declare("bespin.editor.UI", null, {
         //var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(), ed.cursorManager.getCursorPosition().col) + 2);       // full width based on content plus a little padding
         var virtualwidth = this.charWidth * (Math.max(this.getMaxCols(this.firstVisibleRow, lastLineToRender), ed.cursorManager.getCursorPosition().col) + 2);
 
+        // calculate the gutter width; for now, we'll make it fun and dynamic based on the lines visible in the editor.
+        this.gutterWidth = this.GUTTER_INSETS.left + this.GUTTER_INSETS.right;  // first, add the padding space
+        this.gutterWidth += ("" + lastLineToRender).length * this.charWidth;    // make it wide enough to display biggest line number visible
+        if (this.editor.debugMode) this.gutterWidth += this.DEBUG_GUTTER_WIDTH;
+        
         // these next two blocks make sure we don't scroll too far in either the x or y axis
         if (this.xoffset < 0) {
-            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.GUTTER_WIDTH))) this.xoffset = (cwidth - this.GUTTER_WIDTH) - virtualwidth;
+            if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.gutterWidth))) this.xoffset = (cwidth - this.gutterWidth) - virtualwidth;
         }
         if (this.yoffset < 0) {
             if ((Math.abs(this.yoffset)) > (virtualheight - cheight)) this.yoffset = cheight - virtualheight;
@@ -847,7 +858,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // these are boolean values indicating whether the x and y (i.e., horizontal or vertical) scroll bars are visible
-        var xscroll = ((cwidth - this.GUTTER_WIDTH) < virtualwidth);
+        var xscroll = ((cwidth - this.gutterWidth) < virtualwidth);
         var yscroll = (cheight < virtualheight);
 
         // the scroll bars are rendered off-screen into their own canvas instances; these values are used in two ways as part of
@@ -863,7 +874,7 @@ dojo.declare("bespin.editor.UI", null, {
         // these are boolean values that indicate whether special little "nibs" should be displayed indicating more content to the
         // left, right, top, or bottom
         var showLeftScrollNib = (xscroll && (this.xoffset != 0));
-        var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.GUTTER_WIDTH) - virtualwidth)));
+        var showRightScrollNib = (xscroll && (this.xoffset > ((cwidth - this.gutterWidth) - virtualwidth)));
         var showUpScrollNib = (yscroll && (this.yoffset != 0));
         var showDownScrollNib = (yscroll && (this.yoffset > (cheight - virtualheight)));
 
@@ -900,7 +911,7 @@ dojo.declare("bespin.editor.UI", null, {
 
             // ...paint the gutter
             ctx.fillStyle = theme.gutterStyle;
-            ctx.fillRect(0, 0, this.GUTTER_WIDTH, c.height);
+            ctx.fillRect(0, 0, this.gutterWidth, c.height);
         }
 
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
@@ -926,7 +937,7 @@ dojo.declare("bespin.editor.UI", null, {
         // of code editor region itself (protecting the gutter). this clip is important to prevent text from bleeding into the gutter.
         ctx.save();
         ctx.beginPath();
-        ctx.rect(this.GUTTER_WIDTH, -this.yoffset, cwidth - this.GUTTER_WIDTH, cheight);
+        ctx.rect(this.gutterWidth, -this.yoffset, cwidth - this.gutterWidth, cheight);
         ctx.closePath();
         ctx.translate(this.xoffset, 0);
         ctx.clip();
@@ -934,7 +945,7 @@ dojo.declare("bespin.editor.UI", null, {
         // calculate the first and last visible columns on the screen; these values will be used to try and avoid painting text
         // that the user can't actually see
         var firstColumn = Math.floor(Math.abs(this.xoffset / this.charWidth));
-        var lastColumn = firstColumn + (Math.ceil((cwidth - this.GUTTER_WIDTH) / this.charWidth));
+        var lastColumn = firstColumn + (Math.ceil((cwidth - this.gutterWidth) / this.charWidth));
 
         // create the state necessary to render each line of text
         y = (this.lineHeight * this.firstVisibleRow);
@@ -947,7 +958,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         // paint each line
         for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
-            x = this.GUTTER_WIDTH;
+            x = this.gutterWidth;
 
             // if we aren't repainting the entire canvas...
             if (!refreshCanvas) {
@@ -1032,9 +1043,9 @@ dojo.declare("bespin.editor.UI", null, {
 
             // paint tab information, if applicable and the information should be displayed
             if (settings && (settings.isSettingOn("tabarrow") || settings.isSettingOn("tabshowspace"))) {
-                if (lineMetadata[currentLine].tabExpansions.length > 0) {
-                    for (var i = 0; i < lineMetadata[currentLine].tabExpansions.length; i++) {
-                        var expansion = lineMetadata[currentLine].tabExpansions[i];
+                if (lineMetadata.tabExpansions.length > 0) {
+                    for (var i = 0; i < lineMetadata.tabExpansions.length; i++) {
+                        var expansion = lineMetadata.tabExpansions[i];
 
                         // the starting x position of the tab character; the existing value of y is fine
                         var lx = x + (expansion.start * this.charWidth);
@@ -1088,19 +1099,19 @@ dojo.declare("bespin.editor.UI", null, {
         if (this.editor.focus) {
             if (this.showCursor) {
                 if (ed.theme.cursorType == "underline") {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
                     y = (ed.getCursorPos().row * this.lineHeight) + (this.lineHeight - 5);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, this.charWidth, 3);
                 } else {
-                    x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+                    x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
                     y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
                     ctx.fillStyle = ed.theme.cursorStyle;
                     ctx.fillRect(x, y, 1, this.lineHeight);
                 }
             }
         } else {
-            x = this.GUTTER_WIDTH + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
+            x = this.gutterWidth + this.LINE_INSETS.left + ed.cursorManager.getCursorPosition().col * this.charWidth;
             y = (ed.cursorManager.getCursorPosition().row * this.lineHeight);
 
             ctx.fillStyle = ed.theme.unfocusedCursorFillStyle;
@@ -1152,7 +1163,7 @@ dojo.declare("bespin.editor.UI", null, {
                 this.NIB_INSETS.top,
                 this.NIB_WIDTH, this.NIB_WIDTH);
 
-        this.nibleft = new Rect(this.GUTTER_WIDTH + this.NIB_INSETS.left, cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
+        this.nibleft = new Rect(this.gutterWidth + this.NIB_INSETS.left, cheight - this.NIB_INSETS.bottom - this.NIB_WIDTH,
                 this.NIB_WIDTH, this.NIB_WIDTH);
 
         this.nibright = new Rect(cwidth - (this.NIB_INSETS.right * 2) - (this.NIB_WIDTH * 2),
@@ -1241,8 +1252,8 @@ dojo.declare("bespin.editor.UI", null, {
         this.xscrollbar.rect = new Rect(sx, this.nibleft.y - 1, sw, this.nibleft.h + 1);
         this.xscrollbar.value = -this.xoffset;
         this.xscrollbar.min = 0;
-        this.xscrollbar.max = virtualwidth - (cwidth - this.GUTTER_WIDTH);
-        this.xscrollbar.extent = cwidth - this.GUTTER_WIDTH;
+        this.xscrollbar.max = virtualwidth - (cwidth - this.gutterWidth);
+        this.xscrollbar.extent = cwidth - this.gutterWidth;
 
         if (xscroll) {
             var fullonxbar = (((this.overXScrollBar) && (virtualwidth > cwidth)) || ((this.xscrollbar) && (this.xscrollbar.mousedownValue != null)));
