@@ -435,14 +435,15 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteChunk: function(args) {
-        var chunk = this.model.deleteChunk({ startPos: this.cursorManager.getModelPosition(args.pos), endPos: this.cursorManager.getModelPosition(args.endPos) });
-        this.cursorManager.moveCursor(args.pos);
+        var selection = this.editor.getSelection({ startPos: args.pos, endPos: args.endPos });
+        var chunk = this.model.deleteChunk(selection);
+        this.cursorManager.moveCursor(selection.startPos);
         this.repaint();
 
         // undo/redo
         args.action = "deleteChunk";
         var redoOperation = args;
-        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, chunk: chunk };
+        var undoArgs = { action: "insertChunk", pos: bespin.editor.utils.copyPos(selection.startPos), queued: args.queued, chunk: chunk };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
@@ -485,21 +486,19 @@ dojo.declare("bespin.editor.Actions", null, {
     deleteSelection: function(args) {
         if (!this.editor.selection) return;
         var selection = this.editor.getSelection();
-        var startPos = bespin.editor.utils.copyPos(selection.startPos);
-        selection = this.cursorManager.getModelSelection(selection);
         var chunk = this.model.getChunk(selection);
         this.model.deleteChunk(selection);
 
         // undo/redo
         args.action = "deleteSelection";
         var redoOperation = args;
-        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(startPos), queued: args.queued, chunk: chunk };
+        var undoArgs = { action: "insertChunkAndSelect", pos: bespin.editor.utils.copyPos(selection.startPos), queued: args.queued, chunk: chunk };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
         // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection(undefined);
-        this.cursorManager.moveCursor(startPos);
+        this.cursorManager.moveCursor(selection.startPos);
         this.repaint();
 
         return chunk;
@@ -688,6 +687,7 @@ dojo.declare("bespin.editor.Actions", null, {
             if (!args.selectionObject) {
                 args.selectionObject = this.editor.getSelection();
             }
+
             var selection = this.model.getChunk(args.selectionObject);
 			var stringArray = selection.split("\n");
 			for (i in stringArray) {
@@ -699,9 +699,11 @@ dojo.declare("bespin.editor.Actions", null, {
 				}
 			}
 			var outText = stringArray.join("\n");
+
             this.model.deleteChunk(args.selectionObject);
-            this.model.insertChunk(args.selectionObject.startPos, outText);
+            this.model.insertChunk(args.selectionObject.startModelPos, outText);
             this.select(args.selectionObject);
+
             args.action = "selectionChangeCase";
             var redoOperation = args;
             var undoArgs = { action: "undoSelectionChangeCase", selectionObject: args.selectionObject, text: selection };
@@ -712,8 +714,14 @@ dojo.declare("bespin.editor.Actions", null, {
 
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
-        this.model.insertChunk(args.selectionObject.startPos, args.text);
+        this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
+
+		args.action = "undoSelectionChangeCase";
+		var redoOperation = args;
+		var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, text: args.text };
+		var undoOperation = undoArgs;
+		this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
 
     repaint: function() {
