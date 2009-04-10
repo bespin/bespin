@@ -80,6 +80,12 @@ dojo.declare("bespin.client.Server", null, {
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + response + " (SyntaxError: " + syntaxException + ")");
                             }
+                            
+                            if (options.serverAsync && response.taskname) {
+                                bespin.publish("message", 
+                                    {msg: "Server is running : " + response.taskname,
+                                    tag: "autohide"});
+                            }
                         }
                         
                         if (dojo.isFunction(options['onSuccess'])) {
