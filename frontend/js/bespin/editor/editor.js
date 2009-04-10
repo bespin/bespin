@@ -601,6 +601,7 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     toggleCursor: function(ui) {
+/*
         if (ui.toggleCursorAllowed) {
             ui.showCursor = !ui.showCursor;    
         } else {
@@ -615,6 +616,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         setTimeout(function() { ui.toggleCursor(ui); }, ui.toggleCursorFrequency);
+*/
     },
 
     ensureCursorVisible: function() {
