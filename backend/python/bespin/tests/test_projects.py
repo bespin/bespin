@@ -143,12 +143,13 @@ def test_import():
     ]
     
     def run_one(func, f):
-        print "Testing %s" % (func)
+        print "Testing %s on %s" % (func, f)
         handle = open(f)
         _init_data()
         bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
         getattr(bigmac, func)(os.path.basename(f), handle)
         handle.close()
+        print bigmac.location
         proj_names = [proj.name for proj in macgyver.projects]
         assert 'bigmac' in proj_names
         filenames = [f.basename() for f in bigmac.location.files()]

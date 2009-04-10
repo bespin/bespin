@@ -49,25 +49,50 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
             vcs="hg"):
     """Clones or checks out the repository using the command provided."""
     user = user.username
-    job_body = dict(execute="bespin.vcs:clone_run",
-        user=user, source=source, dest=dest, push=push, remoteauth=remoteauth,
+    job_body = dict(user=user, source=source, dest=dest, push=push, 
+        remoteauth=remoteauth,
         authtype=authtype, username=username, password=password,
         kcpass=kcpass, vcs=vcs)
-    return queue.enqueue("vcs", job_body)
+    return queue.enqueue("vcs", job_body, execute="bespin.vcs:clone_run",
+                        error_handler="bespin.vcs:vcs_error",
+                        use_db=True)
+
+def vcs_error(qi, e):
+    """Handles exceptions that come up during VCS operations.
+    A message is added to the user's message queue."""
+    s = qi.session
+    user_manager = model.UserManager(s)
+    user = qi.message['user']
+    # if the user hadn't already been looked up, go ahead and pull
+    # them out of the database
+    if isinstance(user, basestring):
+        user = user_manager.get_user(user)
+    else:
+        s.add(user)
+    
+    # if we didn't find the user in the database, there's not much
+    # we can do.
+    if user:
+        message = dict(eventName="vcs:error", output=str(e))
+        message['asyncDone'] = True
+        retval = model.Message(user_id=user.id, 
+                            message=simplejson.dumps(message))
+        s.add(retval)
 
 def clone_run(qi):
     """Runs the queued up clone job."""
     message = qi.message
-    s = config.c.sessionmaker(bind=config.c.dbengine)
+    s = qi.session
     user_manager = model.UserManager(s)
     user = user_manager.get_user(message['user'])
     message['user'] = user
-    output = _clone_impl(**message)
+    result = _clone_impl(**message)
+    result.update(dict(eventName="vcs:response",
+                        asyncDone=True,
+                        command="clone"))
     retvalue = model.Message(user_id=user.id, 
-        message=simplejson.dumps(dict(eventName="vcs:response", output=output)))
+        message=simplejson.dumps(result))
     s.add(retvalue)
-    s.commit()
-    s.close()
 
 def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
             authtype=None, username=None, password=None, kcpass="",
@@ -122,8 +147,9 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
         metadata['push'] = push
 
     metadata.close()
-        
-    return str(output)
+    
+    result = dict(output=str(output), project=command.dest)
+    return result
     
 def run_command(user, project, args, kcpass=None):
     working_dir = project.location

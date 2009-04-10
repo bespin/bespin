@@ -55,7 +55,8 @@ def test_run_an_hg_clone(run_command_params):
     assert isinstance(command, hg.clone)
     working_dir = context.working_dir
     assert working_dir == macgyver.get_location()
-    assert output == clone_output
+    assert output['output'] == clone_output
+    assert output['project'] == "bespin"
     assert str(command) == "clone http://hg.mozilla.org/labs/bespin bespin"
     
     bespin = model.get_project(macgyver, macgyver, "bespin")
@@ -168,6 +169,7 @@ def test_hg_clone_on_web(run_command_params):
     messages = simplejson.loads(resp.body)
     assert len(messages) == 1
     output = messages[0]
+    assert output['project'] == "bigmac"
     assert 'output' in output
     output = output['output']
     command, context = run_command_params

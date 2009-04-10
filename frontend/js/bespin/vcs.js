@@ -137,8 +137,6 @@ bespin.vcs.clone = function(url) {
         bespin.get('server').clone(data, {
             evalJSON: true,
             onSuccess: function(response) {
-                bespin.publish("project:create", {});
-                bespin.publish("vcs:response", response);
             },
             onFailure: function(response) {
                 bespin.publish("vcs:error", response);
@@ -441,12 +439,18 @@ bespin.vcs.commands.addCommand({
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
     bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
+    if (event.command) {
+        var command = event.command;
+        if (command == "clone") {
+            bespin.publish("project:create", {project: event.project});
+        }
+    }
 });
 
 // ** {{{ Event: bespin:vcs:error }}} **
 // Handle a negative response from a version control system command
 bespin.subscribe("vcs:error", function(event) {
-    bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.responseText + "</pre>");
+    bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.output + "</pre>");
 });
 
 // ** {{{Command: vcs}}} **
