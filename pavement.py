@@ -476,6 +476,20 @@ def dojo(options):
         destpath.write_bytes(f.read())
         f.close()
 
+@task
+def testfrontend():
+    """Run the frontend tests via DOH"""
+    basedir = options.dojo.destination.abspath()
+    if not (basedir / "util").exists():
+        raise BuildFailure("You need to be using a Dojo source package. Run paver dojo -s.")
+
+    # copy the fixed runner script into place in dojo. Shouldn't do this each time :/
+    fixedrunner = basedir / ".." / "tests" / "unit" / "runner.js"
+    fixedrunner.copy(basedir / "util" / "doh" / "runner.js")
+
+    sh("java -jar frontend/js/util/shrinksafe/js.jar frontend/js/util/doh/runner.js dojoUrl=frontend/js/dojo/dojo.js testUrl=frontend/tests/unit/util.js testModule=tests.unit.util dohBase=frontend/js/util/doh/")
+
+
 """
 Cannot be used because jsparse needed to be slightly patched
 @task
