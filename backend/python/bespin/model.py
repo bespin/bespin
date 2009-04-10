@@ -774,6 +774,14 @@ class ProjectMetadata(dict):
         if self.filename.exists():
             self.close()
             self.filename.unlink()
+            
+    def rename(self, new_project_name):
+        """Rename this metadata file, because the project name is changing."""
+        if self.filename.exists():
+            d = self.filename.dirname()
+            new_name = d / (".%s_metadata" % new_project_name)
+            self.filename.rename(new_name)
+            self.filename = new_name
         
     ######
     # 
@@ -1228,6 +1236,7 @@ class Project(object):
         _check_identifiers("Project name", new_name)
         old_location = self.location
         new_location = self.location.parent / new_name
+        self.metadata.rename(new_name)
         if new_location.exists():
             raise FileConflict("Cannot rename project %s to %s, because"
                 " a project with the new name already exists."
