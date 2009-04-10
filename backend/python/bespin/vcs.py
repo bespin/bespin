@@ -144,6 +144,9 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
 
     if push:
         metadata['push'] = push
+    
+    space_used = project.scan_files()
+    user.amount_used += space_used
 
     metadata.close()
     

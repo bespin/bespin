@@ -194,9 +194,8 @@ class User(Base):
         # by only looking at directories, we skip
         # over our metadata files
         for proj in self.projects:
-            additional, files = _get_file_list(proj.location)
+            additional = proj.scan_files()
             total += additional
-            proj._save_file_list(files)
         self.amount_used = total
 
     def mark_opened(self, file_obj, mode):
@@ -1245,8 +1244,12 @@ class Project(object):
         self.name = new_name
         self.location = new_location
         
-    def _save_file_list(self, files):
+    def scan_files(self):
+        """Looks through the files, computes how much space they
+        take and updates the cached file list."""
+        space_used, files = _get_file_list(self.location)
         self.metadata.cache_replace(files)
+        return space_used
         
     def search_files(self, query, limit=20):
         """Scans the files for filenames that match the queries."""
