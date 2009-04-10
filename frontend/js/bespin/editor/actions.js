@@ -672,17 +672,8 @@ dojo.declare("bespin.editor.Actions", null, {
         this.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
-    /*selectionUpperCase: function(args) {
-        args.stringCase = 'u';
-        return this.selectionChangeCase(args);
-    },
-
-    selectionLowerCase: function(args) {
-        args.stringCase = 'l';
-        return this.selectionChangeCase(args);
-    },*/
-
     selectionChangeCase: function(args) {
+		console.log('selectionChangeCase Fired!');
         if (this.editor.selection) {
             if (!args.selectionObject) {
                 args.selectionObject = this.editor.getSelection();

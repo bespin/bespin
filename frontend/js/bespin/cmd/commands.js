@@ -1252,9 +1252,9 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
 	name: 'uc',
 	preview: 'Change all selected text to uppercase',
-	withKey: 'CMD SHIFT U',
-	execute: function(self, args) {
-		args.stringCase='u';
+	withKey: "CMD SHIFT U",
+	execute: function(self) {
+		var args={stringCase: 'u'};
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
 });
@@ -1262,9 +1262,9 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
 	name: 'lc',
 	preview: 'Change all selected text to lowercase',
-	withKey: 'CMD SHIFT L',
-	execute function(self, args) {
-		agrs.stringCase='l';
+	withKey: "CMD SHIFT L",
+	execute: function(self) {
+		var args={stringCase: 'l'};
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
 });
