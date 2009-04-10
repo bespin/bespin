@@ -453,7 +453,6 @@ class UserManager(object):
             self.session.add(group)
             self.session.flush()
             group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
-        print str(group)
         self.session.add(GroupMembership(group, user))
         self.session.flush()
         try:
@@ -725,6 +724,12 @@ def _get_space_used(directory):
             continue
         total += f.size
     return total
+    
+def _regexp(expr, item):
+    # only search on basenames
+    p = path_obj(item)
+    item = p.basename()
+    return re.search(expr, item, re.UNICODE|re.I) is not None
 
 class ProjectMetadata(dict):
     """Provides access to Bespin-specific project information.
@@ -737,6 +742,7 @@ class ProjectMetadata(dict):
         self.filename = self.project_location / ".." / \
                         (".%s_metadata" % self.project_name)
         self._connection = None
+        self._regexp_initialized = False
         
     @property
     def connection(self):
@@ -756,10 +762,81 @@ class ProjectMetadata(dict):
     key text primary key,
     value text
 )''')
+            c.execute('''create table search_cache (
+    filename
+)''')
             conn.commit()
             c.close()
         return conn
+        
+    def delete(self):
+        """Remove this metadata file."""
+        if self.filename.exists():
+            self.close()
+            self.filename.unlink()
+        
+    ######
+    # 
+    # Methods for handling the filename cache
+    #
+    ######
     
+    def cache_add(self, filename):
+        """Add the file to the search cache."""
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("""insert into search_cache values (?)""", (filename,))
+        conn.commit()
+        c.close()
+        
+    def cache_delete(self, filename, recursive=False):
+        """Remove the file from the search cache. If recursive is True,
+        this will remove everything under there."""
+        conn = self.connection
+        c = conn.cursor()
+        
+        if recursive:
+            op = " LIKE "
+            if filename.endswith("/"):
+                filename = filename[:-1]
+            filename += "%"
+        else:
+            op = "="
+        
+        c.execute("""delete from search_cache where filename%s?""" % op, (filename,))
+        conn.commit()
+        c.close()
+    
+    def cache_replace(self, files):
+        """Replace the entire search cache with the list of files provided."""
+        conn = self.connection
+        c = conn.cursor()
+        c.execute("delete from search_cache")
+        for filename in files:
+            c.execute("""insert into search_cache values (?)""", (filename,))
+        conn.commit()
+        c.close()
+        
+    def search_files(self, search_expr):
+        """Search the file list with the given regular expression."""
+        conn = self.connection
+        # the sqlite REGEXP support needs a supplied regexp function
+        if not self._regexp_initialized:
+            conn.create_function("regexp", 2, _regexp)
+        c = conn.cursor()
+        rs = c.execute(
+            "SELECT filename FROM search_cache WHERE filename REGEXP ?", 
+            (search_expr,))
+        result = [item[0] for item in rs]
+        c.close()
+        return result
+    
+    ######
+    #
+    # Dictionary methods for the key/value store
+    #
+    ######
+        
     def get(self, key, default=None):
         try:
             return self[key]
@@ -879,7 +956,7 @@ class Project(object):
             size_delta = saved_size - file.saved_size
         else:
             size_delta = saved_size
-            self._search_cache.write_bytes("%s\n" % destpath, append=True)
+            self.metadata.cache_add(destpath)
         file.save(contents)
         self.owner.amount_used += size_delta
         return file
@@ -1005,6 +1082,12 @@ class Project(object):
                             (path, self.name))
             
             space_used = _get_space_used(location)
+            
+            if not path:
+                self.metadata.delete()
+            else:
+                self.metadata.cache_delete(path, True)
+                
             location.rmtree()
             self.owner.amount_used -= space_used
         else:
@@ -1022,6 +1105,7 @@ class Project(object):
             
             self.owner.amount_used -= file_obj.saved_size
             file_obj.location.remove()
+            self.metadata.cache_delete(path)
 
     def import_tarball(self, filename, file_obj):
         """Imports the tarball in the file_obj into the project
@@ -1152,29 +1236,19 @@ class Project(object):
         self.name = new_name
         self.location = new_location
         
-    @property
-    def _search_cache(self):
-        return self.location.parent / (".%s_filelist" % (self.name))
-        
     def _save_file_list(self, files):
-        cache_file = self._search_cache
-        cache_file.write_bytes("\n".join(files))
+        self.metadata.cache_replace(files)
         
     def search_files(self, query, limit=20):
         """Scans the files for filenames that match the queries."""
-        match_list = []
         
         # make the query lower case so that the match boosting
         # in _SearchMatch can use it
         query = query.lower()
         escaped_query = [re.escape(char) for char in query]
         search_re = ".*".join(escaped_query)
-        main_search = re.compile(search_re, re.I)
-        location = self.location
-        files = self._search_cache.lines(retain=False)
-        for f in files:
-            if main_search.search(path_obj(f).basename()):
-                match_list.append(_SearchMatch(query, f))
+        files = self.metadata.search_files(search_re)
+        match_list = [_SearchMatch(query, f) for f in files]
         all_results = [str(match) for match in sorted(match_list)]
         return all_results[:limit]
         

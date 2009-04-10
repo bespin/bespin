@@ -98,6 +98,9 @@ def test_basic_file_creation():
     difference = ending_point - starting_point
     assert difference == 19
     
+    result = bigmac.search_files("eq")
+    assert result == ['reqs']
+    
     now = datetime.now()
     assert now - file_obj.created < timedelta(seconds=2)
     assert now - file_obj.modified < timedelta(seconds=2)
@@ -279,7 +282,15 @@ def test_successful_deletion():
     starting_used = macgyver.amount_used
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     bigmac.save_file("foo/bar/baz", "biz")
+    
+    files = bigmac.search_files("baz")
+    assert files == ["foo/bar/baz"]
+    
     bigmac.delete("foo/bar/baz")
+    
+    files = bigmac.search_files("baz")
+    assert files == []
+    
     assert macgyver.amount_used == starting_used
     try:
         bigmac.get_file("foo/bar/baz")
@@ -304,7 +315,15 @@ def test_directory_deletion():
     starting_used = macgyver.amount_used
     bigmac.save_file("foo/bar", "data")
     bigmac.save_file("foo/blorg", "moredata")
+    
+    files = bigmac.search_files("blorg")
+    assert files == ['foo/blorg']
+    
     bigmac.delete("foo/")
+    
+    files = bigmac.search_files("blorg")
+    assert files == []
+    
     flist = bigmac.list_files()
     assert len(flist) == 1
     assert flist[0].name == 'whiz/'
