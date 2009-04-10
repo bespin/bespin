@@ -3,56 +3,238 @@ dojo.provide("bespin.git");
 
 dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.commandline");
+
+bespin.git.commands = new bespin.cmd.commandline.CommandStore();
 
 bespin.cmd.commands.add({
   name: 'git',
-  // takes: ['action ...'],
-  takes: ['*'],
   //  type: [Bespin.Commands.Editor, Bespin.Commands.Dashboard],
-  preview: 'git stuff',
-  execute: function(self, args) {
-    //  args = bespin.cmd.commands.toArgArray(args);
-    //  action = args.shift()
-    var project;
-    var filename;
-    var action = args.varargs[0];
-
-
-    // default to what you have
-    bespin.withComponent('editSession', function(editSession) {
-      project = editSession.project;
-      filename = editSession.path;
-    });
-
-    if (!action) action = "help";
-
-    if (!project && action != "clone" && action != "help") {
-      bespin.publish("message",
-                     {msg: "You need be in a project"});
-      return;
-    }
-    var cmd = { command: args.varargs, filename: filename || null, project: project || null};
-    bespin.publish("git:command", cmd);
-
-    return;
-  }
-
+  preview: 'the git version control system',
+  subcommands: bespin.git.commands
 });
+
+bespin.git.commands.addCommand({
+  name: 'add',
+  takes: ['*'],
+  preview: 'Add file contents to the index',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'add', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'bisect',
+  takes: ['*'],
+  preview: 'Find by binary search the change that introduced a bug',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'bisect', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'branch',
+  takes: ['*'],
+  preview: 'List, create, or delete branches',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'branch', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'checkout',
+  takes: ['*'],
+  preview: 'Checkout a branch or paths to the working tree',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'checkout', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'clone',
+  takes: ['*'],
+  preview: 'Clone a repository into a new directory',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'clone', args: args.varargs, allowNoProject: true});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'commit',
+  takes: ['*'],
+  preview: 'Record changes to the repository',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'commit', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'diff',
+  takes: ['*'],
+  preview: 'Show changes between commits, commit and working tree, etc',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'diff', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'fetch',
+  takes: ['*'],
+  preview: 'Download objects and refs from another repository',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'fetch', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'grep',
+  takes: ['pattern [--] [path]', '*'],
+  preview: 'Print lines matching a pattern',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'grep', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'help',
+  takes: ['search'],
+  preview: 'Show the most common git commands',
+  execute: function(self, args) {
+    // if args is exactly a command, just get the native help
+    if (bespin.git.commands.GET_COMMANDS.indexOf(args) != -1 ||
+        bespin.git.commands.POST_COMMANDS.indexOf(args) != -1) {
+      bespin.publish("git:command", {action: 'help', args: [args]});
+    } else {
+      bespin.cmd.displayHelp(bespin.git.commands, self, args);
+    }
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'init',
+  takes: ['*'],
+  preview: 'Create an empty git repository or reinitialize an existing one',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'init', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'log',
+  takes: ['*'],
+  preview: 'Show commit logs',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'log', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'merge',
+  takes: ['*'],
+  preview: 'Join two or more development histories together',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'merge', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'mv',
+  takes: ['*'],
+  preview: 'Move or rename a file, a directory, or a symlink',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'mv', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'pull',
+  takes: ['*'],
+  preview: 'Fetch from and merge with another repository or a local branch',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'pull', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'push',
+  takes: ['*'],
+  preview: 'Update remote refs along with associated objects',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'push', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'rebase',
+  takes: ['*'],
+  preview: 'Forward-port local commits to the updated upstream head',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'rebase', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'reset',
+  takes: ['*'],
+  preview: 'Reset current HEAD to the specified state',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'reset', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'rm',
+  takes: ['*'],
+  preview: 'Remove files from the working tree and from the index',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'rm', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'show',
+  takes: ['*'],
+  preview: 'Show various types of objects',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'show', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'status',
+  takes: ['*'],
+  preview: 'Show the working tree status',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'status', args: args.varargs});
+  }
+});
+bespin.git.commands.addCommand({
+  name: 'tag',
+  takes: ['*'],
+  preview: 'Create, list, delete, or verify a tag object signed with GPG',
+  execute: function(self, args) {
+    bespin.publish("git:command", {action: 'tag', args: args.varargs});
+  }
+});
+bespin.git.commands.GET_COMMANDS = [
+    "diff", "grep", "help", "ls-files",
+    "log", "shortlog", "show", "status", "settings"
+  ];
+bespin.git.commands.POST_COMMANDS = [
+    "add", "bisect", "branch", "checkout", "clone", "commit",
+    "fetch", "init", "merge", "mv", "pull",
+    "push", "rebase", "remote", "reset", "rm", "stash", "submodule", "tag",
+    // special
+    "rebase_interactive", // for continuing an interactive rebase
+    "make_private", "make_public"
+  ];
 
 // ** {{{ Event: bespin:git:command }}} **
 // Handle a git version control system command
 bespin.subscribe("git:command", function(event) {
-
-  var command = event.command;
-  var filename = event.filename;
-  var project = event.project;
-  var action = command[0];
+  var action = event.action;
+  var args = event.args;
+  var filename = null;
+  var project = null;
   var git = bespin.get('git-server');
 
-  console.debug("git command: " + command);
+  // default to what you have
+  bespin.withComponent('editSession', function(editSession) {
+    project = editSession.project;
+    filename = editSession.path;
+  });
+
+  if (!action) action = "help";
+
+  if (!project && action != "clone" && action != "help") {
+    bespin.publish("message",
+                   {msg: "You need be in a project"});
+    return;
+  }
+
+  console.debug("git command: " + action + " " + args);
   var opts = {
     evalJSON: true,
-    call: function(e) { this.onSuccess(e); },
     onSuccess: function(response) {
       if (response && response["output"] && response["output"].length > 0)
         bespin.publish("vcs:response", response);
@@ -62,22 +244,10 @@ bespin.subscribe("git:command", function(event) {
         msg: "Failed. Maybe due to: " + xhr.responseText });
     }
   }
-  var get_commands = [
-    "diff", "grep", "help", "log", "shortlog", "show", "status", "settings"
-  ];
-  var post_commands = [
-    "add", "bisect", "branch", "checkout", "clone", "commit",
-    "fetch", "init", "merge", "mv", "pull",
-    "push", "rebase", "remote", "reset", "rm", "stash", "submodule", "tag",
-    // special
-    "rebase_interactive", // for continuing an interactive rebase
-    "make_private", "make_public"
-  ];
 
-
-  if (action == "commit" && (command.indexOf("-m") == -1) && !event.message) {
+  if (action == "commit" && (args.indexOf("-m") == -1) && !event.message) {
     console.debug("plain commit command");
-    event.command[0] = "status"
+    event.action = "status"
     opts.onSuccess = function(data) {
       if (data.output.indexOf("no changes added to commit") != -1) {
         bespin.publish("vcs:response", data);
@@ -87,7 +257,7 @@ bespin.subscribe("git:command", function(event) {
     }
     git.run_post(project, event, opts);
   } else if (action == "rebase" &&
-             (command.indexOf("-i") != -1 || command.indexOf("--interactive") != -1)) {
+             (args.indexOf("-i") != -1 || args.indexOf("--interactive") != -1)) {
     opts.onSuccess = function(data) {
       if (data.todo) {
         git.rebaseInteractive(event, data);
@@ -96,7 +266,7 @@ bespin.subscribe("git:command", function(event) {
       }
     }
     git.run_post(project, event, opts);
-  } else if (action == "log" && command.length == 1) {
+  } else if (action == "log" && args.length == 0) {
     opts.onSuccess = function(data) {
       git.showLogViewer(event, data);
     };
@@ -108,12 +278,13 @@ bespin.subscribe("git:command", function(event) {
       bespin.publish("project:create", {});
       notifier(data);
     };
+    opts.serverAsync = true;
     git.run_post(project, event, opts);
 
-  } else if (get_commands.indexOf(action) != -1) {
+  } else if (bespin.git.commands.GET_COMMANDS.indexOf(action) != -1) {
     git.run_post(project, event, opts);      // FIXME: run_get
 
-  } else if (post_commands.indexOf(action) != -1) {
+  } else if (bespin.git.commands.POST_COMMANDS.indexOf(action) != -1) {
     git.run_post(project, event, opts);
 
   } else {
@@ -127,9 +298,9 @@ dojo.declare("bespin.git.server", null, {
     bespin.get('server').request(a, b, c, d || {});
   },
 
-  run_post: function(project, command, opts) {
+  run_post: function(project, event, opts) {
     var url = bespin.util.path.combine('/git/run', project);
-    this.request('POST', url, dojo.toJson(command), opts);
+    this.request('POST', url, dojo.toJson(event), opts);
   },
 /*
   rebase_interactive: function(project, path, args, opts) {
@@ -180,7 +351,7 @@ dojo.declare("bespin.git.server", null, {
       var msg = dojo.byId("commit-message").value;
       // TODO: allow checkbox to add --amend
       event.message = msg;
-      event.command[0] = "commit";
+      event.action = "commit";
       bespin.publish("git:command", event);
       closer();
     });
@@ -272,7 +443,8 @@ dojo.declare("bespin.git.server", null, {
     dojo.connect(dojo.byId('rebase-submit'), "click", function() {
       var msg = dojo.byId("rebase-message").value;
       event.todo = msg;
-      event.command = ["rebase_interactive"]
+      event.action = ["rebase_interactive"]
+      event.args = [];
       bespin.publish("git:command", event);
       closer();
     });

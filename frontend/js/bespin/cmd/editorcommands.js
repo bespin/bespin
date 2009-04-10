@@ -25,6 +25,7 @@
 dojo.provide("bespin.cmd.editorcommands");
 
 dojo.require("bespin.vcs");
+dojo.require("bespin.git");
 
 // = Editor Commands =
 //
@@ -36,6 +37,6 @@ dojo.require("bespin.vcs");
         keys.push(i);
     }
   keys.push("dogfood");
-  keys.push("git");
+  //keys.push("git");
     bespin.cmd.editorcommands.Commands = keys;  
 })();
