@@ -93,6 +93,9 @@ def set_profile(profile):
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         root_log.addHandler(handler)
         
+        paste_log = logging.getLogger("paste.httpserver.ThreadPool")
+        paste_log.setLevel(logging.ERROR)
+        
         # turn off the secure cookie, because localhost connections
         # will be HTTP
         c.secure_cookie = False
