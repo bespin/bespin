@@ -672,7 +672,7 @@ dojo.declare("bespin.editor.Actions", null, {
         this.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
-    selectionUpperCase: function(args) {
+    /*selectionUpperCase: function(args) {
         args.stringCase = 'u';
         return this.selectionChangeCase(args);
     },
@@ -680,7 +680,7 @@ dojo.declare("bespin.editor.Actions", null, {
     selectionLowerCase: function(args) {
         args.stringCase = 'l';
         return this.selectionChangeCase(args);
-    },
+    },*/
 
     selectionChangeCase: function(args) {
         if (this.editor.selection) {
@@ -698,7 +698,7 @@ dojo.declare("bespin.editor.Actions", null, {
                     stringArray[i] = stringArray[i].toUpperCase();
                 }
             }
-            var outText = stringArray.join("\n");
+            var outText = stringArray.join("\n");            
 
             this.model.deleteChunk(args.selectionObject);
             this.model.insertChunk(args.selectionObject.startModelPos, outText);
