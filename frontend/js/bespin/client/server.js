@@ -636,17 +636,20 @@ dojo.declare("bespin.client.Server", null, {
     // have kcpass, which is a string containing the user's
     // keychain password.
     vcs: function(project, command, opts) {
+        opts = opts || {};
+        opts.serverAsync = true;
         this.request('POST', '/vcs/command/' + project + '/',
                      dojo.toJson(command),
-                     opts || {});
+                     opts);
     },
     
     // ** {{{ clone() }}}
     // Clone a remote repository
     clone: function(data, opts) {
+        opts = opts || {};
         opts.serverAsync = true;
         this.request('POST', '/vcs/clone/',
-                    data, opts || {});
+                    data, opts);
     },
     
     // ** {{{ setauth() }}}

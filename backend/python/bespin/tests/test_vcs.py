@@ -84,14 +84,14 @@ def test_run_a_diff(run_command_params):
     bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     cmd = ["diff"]
-    output = vcs.run_command(macgyver, bigmac, cmd)
+    output = vcs._run_command_impl(macgyver, bigmac, cmd, None)
     command, context = run_command_params
     
     working_dir = context.working_dir
     
     assert isinstance(command, hg.diff)
     assert working_dir == bigmac.location
-    assert output == diff_output
+    assert output['output'] == diff_output
     
 update_output = """27 files updates from 97 changesets with 3.2 changes per file,
 all on line 10."""
@@ -128,11 +128,14 @@ def test_dont_provide_auth_info_to_update_command(run_command_params):
     keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
     
     cmd = ["update"]
-    try:
-        output = vcs.run_command(macgyver, bigmac, cmd)
-        assert False, "Expected authorization problem for project requiring auth"
-    except model.NotAuthorized:
-        pass
+    output = vcs.run_command(macgyver, bigmac, cmd)
+    
+    resp = app.post("/messages/")
+    messages = simplejson.loads(resp.body)
+    assert len(messages) == 1
+    output = messages[0]
+    assert 'output' in output
+    assert output['output'] == 'Keychain password is required for this command.'
 
 def test_bad_keychain_password():
     _init_data()
@@ -237,6 +240,12 @@ def test_hg_diff_on_web(run_command_params):
     
     assert resp.content_type == "application/json"
     output = simplejson.loads(resp.body)
+    assert 'jobid' in output
+    
+    resp = app.post("/messages/")
+    messages = simplejson.loads(resp.body)
+    assert len(messages) == 1
+    output = messages[0]
     assert 'output' in output
     output = output['output']
     command, context = run_command_params

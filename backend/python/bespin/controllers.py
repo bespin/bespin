@@ -772,15 +772,20 @@ def vcs_command(request, response):
     args = request_info['command']
     kcpass = request_info.get('kcpass')
     
+    try:
+        taskname = "vcs %s command" % (args[0])
+    except IndexError:
+        taskname = "vcs command"
+    
     # special support for clone/checkout
     if vcs.is_new_project_command(args):
         raise BadRequest("Use /vcs/clone/ to create a new project")
     else:
         project = model.get_project(user, user, project_name)
-        output = vcs.run_command(user, project, args, kcpass)
+        jobid = vcs.run_command(user, project, args, kcpass)
     
     response.content_type = "application/json"
-    response.body = simplejson.dumps({'output' : output})
+    response.body = simplejson.dumps(dict(jobid=jobid, taskname=taskname))
     return response()
 
 @expose(r'^/vcs/remoteauth/(?P<project_name>.*)/$', 'GET')

@@ -88,8 +88,7 @@ def clone_run(qi):
     message['user'] = user
     result = _clone_impl(**message)
     result.update(dict(eventName="vcs:response",
-                        asyncDone=True,
-                        command="clone"))
+                        asyncDone=True))
     retvalue = model.Message(user_id=user.id, 
         message=simplejson.dumps(result))
     s.add(retvalue)
@@ -148,10 +147,39 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
 
     metadata.close()
     
-    result = dict(output=str(output), project=command.dest)
+    result = dict(output=str(output), command="clone",
+                    project=command.dest)
     return result
     
 def run_command(user, project, args, kcpass=None):
+    """Run any VCS command through UVC."""
+    user = user.username
+    project = project.name
+    job_body = dict(user=user, project=project, args=args, kcpass=kcpass)
+    return queue.enqueue("vcs", job_body, execute="bespin.vcs:run_command_run",
+                        error_handler="bespin.vcs:vcs_error",
+                        use_db=True)
+    
+def run_command_run(qi):
+    """Runs the queued up run_command job."""
+    message = qi.message
+    s = qi.session
+    
+    user_manager = model.UserManager(s)
+    user = user_manager.get_user(message['user'])
+    message['user'] = user
+    message['project'] = model.get_project(user, user, message['project'])
+    
+    result = _run_command_impl(**message)
+    result.update(dict(eventName="vcs:response",
+                        asyncDone=True))
+                        
+    retvalue = model.Message(user_id=user.id, 
+        message=simplejson.dumps(result))
+    s.add(retvalue)
+
+def _run_command_impl(user, project, args, kcpass):
+    """Synchronous implementation of run_command."""
     working_dir = project.location
     metadata = project.metadata
     
@@ -180,6 +208,7 @@ def run_command(user, project, args, kcpass=None):
             dialect = None
         
         command_class = main.get_command_class(context, args, dialect)
+        command_name = command_class.__name__
     
         keyfile = None
     
@@ -207,7 +236,9 @@ def run_command(user, project, args, kcpass=None):
                 keyfile.delete()
     finally:        
         metadata.close()
-    return str(output)
+    
+    result = dict(command=command_name, output=str(output))
+    return result
     
 class TempSSHKeyFile(object):
     def __init__(self):

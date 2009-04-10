@@ -35,7 +35,6 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore();
 bespin.vcs.standardHandler = {
     evalJSON: true,
     onSuccess: function(response) {
-        bespin.publish("vcs:response", response);
     },
     onFailure: function(response) {
         bespin.publish("vcs:error", response);
