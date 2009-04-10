@@ -1249,7 +1249,7 @@ bespin.cmd.commands.add({
     }
 });
 
-bespin.cmd.command.add({
+bespin.cmd.commands.add({
 	name: 'uc',
 	preview: 'Change all selected text to uppercase',
 	withKey: 'CMD SHIFT U',
@@ -1259,7 +1259,7 @@ bespin.cmd.command.add({
 	}
 });
 
-bespin.cmd.command.add({
+bespin.cmd.commands.add({
 	name: 'lc',
 	preview: 'Change all selected text to lowercase',
 	withKey: 'CMD SHIFT L',
