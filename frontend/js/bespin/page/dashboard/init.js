@@ -399,6 +399,9 @@ dojo.provide("bespin.page.dashboard.init");
         
         // provide arrow navigation to dashboard
         dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
+            // catch focus on commandline
+            if(commandLine.handleCommandLineFocus(e)) return false;
+
             var key = bespin.util.keys.Key;
             var path = this.getSelectedPath();
             // things to make life much more easy :)
