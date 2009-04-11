@@ -61,7 +61,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             }
             command = this.commands[aliascmd];
         } else {
-            this.showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
+            bespin.get('commandLine').showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
         
@@ -98,7 +98,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             }, this);
         }
     },
-    
+
     addCommands: function(commands) {   
         dojo.forEach(commands, dojo.hitch(this, function(command) {
             if (dojo.isString(command)) command = bespin.cmd.commands.get(command);
@@ -106,7 +106,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         }));
         
     },
-    
+
     hasCommand: function(commandname) {
         if (this.commands[commandname]) { // yup, there she blows. shortcut
             return true;
@@ -131,7 +131,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
                   matches.push(command);
                 }
             }
-            
+
             for (var alias in this.aliases) {
                 if (alias.indexOf(value) == 0) {
                   matches.push(alias);
@@ -140,7 +140,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         }
         return matches;
     },
-    
+
     commandTakesArgs: function(command) {
         return command.takes != undefined;
     },
@@ -155,11 +155,11 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
         var args;
         var userString = fromUser.join(' ');
-        
+
         if (command.takes['*']) {
             args = new bespin.util.TokenObject(userString);
             args.rawinput = userString;
-            
+
             args.varargs = args.pieces; // directly grab the token pieces as an array
         } else if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
             args = userString;
@@ -176,7 +176,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         command.takes = {
             order: takes
         };
-        
+
         dojo.forEach(takes, function(item) {
             command.takes[item] = {
                 "short": item[0]
@@ -185,7 +185,6 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
         return command;
     }
-    
 });
 
 // ** {{{ bespin.cmd.commandline.Interface }}} **
@@ -202,7 +201,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         this.inCommandLine = false;
         this.suppressInfo = false; // When true, info bar popups will not be shown
-        
+
         this.commandStore = new bespin.cmd.commandline.CommandStore(initCommands);
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
@@ -265,6 +264,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     
     executeCommand: function(value) {
         var ca = this.commandStore.splitCommandAndArgs(value);
+        if (typeof ca === "undefined") return; // error out if no commands were found
+
         var command = ca[0];
         var args = ca[1];
         

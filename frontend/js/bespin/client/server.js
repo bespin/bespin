@@ -36,6 +36,7 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{base}}} is the base server URL to access
     constructor: function(base) {
         this.SERVER_BASE_URL = base || '.';
+        this._asyncCount = 0;
     },
 
     // == Helpers ==
@@ -55,6 +56,7 @@ dojo.declare("bespin.client.Server", null, {
     //   options['on' + STATUS CODE] = call for specific failures
     //   options['log'] = just log the following
     request: function(method, url, payload, options) {
+        var server = this;
         var xhr = new XMLHttpRequest();
 
         if (location.href.indexOf("file:") == 0){ // if developing and using this locally only!
@@ -77,6 +79,12 @@ dojo.declare("bespin.client.Server", null, {
                                 response = dojo.fromJson(response);
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + response + " (SyntaxError: " + syntaxException + ")");
+                            }
+                            
+                            if (options.serverAsync && response.taskname) {
+                                bespin.publish("message", 
+                                    {msg: "Server is running : " + response.taskname,
+                                    tag: "autohide"});
                             }
                         }
                         
@@ -104,6 +112,9 @@ dojo.declare("bespin.client.Server", null, {
                     }
                 }
             }
+            if (options.serverAsync) {
+                server.asyncStarted();
+            }
             xhr.send(payload);
         } else {
             var fullUrl = this.SERVER_BASE_URL + url;
@@ -112,6 +123,33 @@ dojo.declare("bespin.client.Server", null, {
             xhr.send(payload);
             return xhr.responseText;
         }
+    },
+    
+    // ** {{{ asyncStarted() }}}
+    //
+    // Keeps track of jobs that are asynchronous on the server, so
+    // that we know when we need to check for messages from the
+    // server.
+    asyncStarted: function() {
+        console.log("Starting new server-side async job.")
+        if (this._asyncCount == 0) {
+            this.processMessages();
+        }
+        this._asyncCount++;
+        console.log("Count is now " + this._asyncCount);
+    },
+
+    // ** {{{ asyncEnded() }}}
+    //
+    // Keeps track of the end of jobs that are asynchronous on the server, so
+    // that we know when we can stop checking for messages from the
+    // server.
+    asyncEnded: function() {
+        console.log("Server-side async job done.")
+        if (this._asyncCount > 0) {
+            this._asyncCount--;
+        }
+        console.log("Count is now " + this._asyncCount);
     },
 
     // == USER ==
@@ -598,16 +636,20 @@ dojo.declare("bespin.client.Server", null, {
     // have kcpass, which is a string containing the user's
     // keychain password.
     vcs: function(project, command, opts) {
+        opts = opts || {};
+        opts.serverAsync = true;
         this.request('POST', '/vcs/command/' + project + '/',
                      dojo.toJson(command),
-                     opts || {});
+                     opts);
     },
     
     // ** {{{ clone() }}}
     // Clone a remote repository
     clone: function(data, opts) {
+        opts = opts || {};
+        opts.serverAsync = true;
         this.request('POST', '/vcs/clone/',
-                    data, opts || {});
+                    data, opts);
     },
     
     // ** {{{ setauth() }}}
@@ -648,6 +690,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ processMessages() }}}
     // Starts up message retrieve for this user. Call this only once.
     processMessages: function() {
+        console.log("Message processing starting");
         var server = this;
         function doProcessMessages() {
             server.request('POST', '/messages/', null,
@@ -660,11 +703,21 @@ dojo.declare("bespin.client.Server", null, {
                             if (eventName) {
                                 bespin.publish(eventName, message);
                             }
+                            if (message.asyncDone) {
+                                server.asyncEnded();
+                            }
                         }
-                        setTimeout(doProcessMessages, 1000);
+                        if (server._asyncCount > 0) {
+                            setTimeout(doProcessMessages, 1000);
+                        }
                     },
                     onFailure: function(message) {
-                        setTimeout(doProcessMessages, 1000);
+                        if (message.asyncDone) {
+                            server.asyncEnded();
+                        }
+                        if (server._asyncCount > 0) {
+                            setTimeout(doProcessMessages, 1000);
+                        }
                     }
                 });
         }

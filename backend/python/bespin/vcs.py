@@ -17,7 +17,7 @@ from uvc import main
 from uvc.main import is_new_project_command
 from Crypto.Cipher import AES
 
-from bespin import model, config
+from bespin import model, config, queue
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -48,6 +48,54 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
             authtype=None, username=None, password=None, kcpass="",
             vcs="hg"):
     """Clones or checks out the repository using the command provided."""
+    user = user.username
+    job_body = dict(user=user, source=source, dest=dest, push=push, 
+        remoteauth=remoteauth,
+        authtype=authtype, username=username, password=password,
+        kcpass=kcpass, vcs=vcs)
+    return queue.enqueue("vcs", job_body, execute="bespin.vcs:clone_run",
+                        error_handler="bespin.vcs:vcs_error",
+                        use_db=True)
+
+def vcs_error(qi, e):
+    """Handles exceptions that come up during VCS operations.
+    A message is added to the user's message queue."""
+    s = qi.session
+    user_manager = model.UserManager(s)
+    user = qi.message['user']
+    # if the user hadn't already been looked up, go ahead and pull
+    # them out of the database
+    if isinstance(user, basestring):
+        user = user_manager.get_user(user)
+    else:
+        s.add(user)
+    
+    # if we didn't find the user in the database, there's not much
+    # we can do.
+    if user:
+        message = dict(eventName="vcs:error", output=str(e))
+        message['asyncDone'] = True
+        retval = model.Message(user_id=user.id, 
+                            message=simplejson.dumps(message))
+        s.add(retval)
+
+def clone_run(qi):
+    """Runs the queued up clone job."""
+    message = qi.message
+    s = qi.session
+    user_manager = model.UserManager(s)
+    user = user_manager.get_user(message['user'])
+    message['user'] = user
+    result = _clone_impl(**message)
+    result.update(dict(eventName="vcs:response",
+                        asyncDone=True))
+    retvalue = model.Message(user_id=user.id, 
+        message=simplejson.dumps(result))
+    s.add(retvalue)
+
+def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
+            authtype=None, username=None, password=None, kcpass="",
+            vcs="hg"):
     working_dir = user.get_location()
     
     args = ["clone", source]
@@ -96,12 +144,45 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
 
     if push:
         metadata['push'] = push
+    
+    space_used = project.scan_files()
+    user.amount_used += space_used
 
     metadata.close()
-        
-    return str(output)
+    
+    result = dict(output=str(output), command="clone",
+                    project=command.dest)
+    return result
     
 def run_command(user, project, args, kcpass=None):
+    """Run any VCS command through UVC."""
+    user = user.username
+    project = project.name
+    job_body = dict(user=user, project=project, args=args, kcpass=kcpass)
+    return queue.enqueue("vcs", job_body, execute="bespin.vcs:run_command_run",
+                        error_handler="bespin.vcs:vcs_error",
+                        use_db=True)
+    
+def run_command_run(qi):
+    """Runs the queued up run_command job."""
+    message = qi.message
+    s = qi.session
+    
+    user_manager = model.UserManager(s)
+    user = user_manager.get_user(message['user'])
+    message['user'] = user
+    message['project'] = model.get_project(user, user, message['project'])
+    
+    result = _run_command_impl(**message)
+    result.update(dict(eventName="vcs:response",
+                        asyncDone=True))
+                        
+    retvalue = model.Message(user_id=user.id, 
+        message=simplejson.dumps(result))
+    s.add(retvalue)
+
+def _run_command_impl(user, project, args, kcpass):
+    """Synchronous implementation of run_command."""
     working_dir = project.location
     metadata = project.metadata
     
@@ -130,6 +211,7 @@ def run_command(user, project, args, kcpass=None):
             dialect = None
         
         command_class = main.get_command_class(context, args, dialect)
+        command_name = command_class.__name__
     
         keyfile = None
     
@@ -157,7 +239,9 @@ def run_command(user, project, args, kcpass=None):
                 keyfile.delete()
     finally:        
         metadata.close()
-    return str(output)
+    
+    result = dict(command=command_name, output=str(output))
+    return result
     
 class TempSSHKeyFile(object):
     def __init__(self):

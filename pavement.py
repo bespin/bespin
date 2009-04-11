@@ -164,7 +164,6 @@ def start():
     
     if options.server.async:
         config.c.async_jobs = True
-        config.c.queue_path = path.getcwd() / "queue.db"
     
     config.activate_profile()
     port = int(options.port)

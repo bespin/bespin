@@ -143,12 +143,13 @@ def test_import():
     ]
     
     def run_one(func, f):
-        print "Testing %s" % (func)
+        print "Testing %s on %s" % (func, f)
         handle = open(f)
         _init_data()
         bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
         getattr(bigmac, func)(os.path.basename(f), handle)
         handle.close()
+        print bigmac.location
         proj_names = [proj.name for proj in macgyver.projects]
         assert 'bigmac' in proj_names
         filenames = [f.basename() for f in bigmac.location.files()]
@@ -294,6 +295,10 @@ def test_rename_project():
     _init_data()
     app.post("/project/rename/bigmac/", "foobar", status=404)
     app.put("/file/at/bigmac/")
+    
+    bigmac = get_project(macgyver, macgyver, "bigmac")
+    bigmac.metadata['hello'] = "world"
+    
     app.post("/project/rename/bigmac/", "foobar")
     try:
         bigmac = get_project(macgyver, macgyver, "bigmac")
@@ -301,6 +306,8 @@ def test_rename_project():
     except model.FileNotFound:
         pass
     foobar = get_project(macgyver, macgyver, "foobar")
+    assert foobar.metadata['hello'] == 'world'
+    
     app.put("/file/at/bigmac/")
     # should get a conflict error if you try to rename to a project
     # that exists
