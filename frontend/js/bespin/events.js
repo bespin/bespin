@@ -204,7 +204,7 @@ bespin.subscribe("command:load", function(event) {
 
     bespin.get('files').loadContents(bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
         try {
-            eval('bespin.get("commandLine").addCommands([' + file.content + '])');
+            eval('bespin.get("commandLine").commandStore.addCommands([' + file.content + '])');
         } catch (e) {
             bespin.publish("message", { msg: "Something is wrong about the command:<br><br>" + e });
         }
