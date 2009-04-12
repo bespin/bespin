@@ -55,7 +55,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     moveCursor: function(moveType, args) {
-        var posData = this.cursorManager[moveType](args);
+        var posData = this.cursorManager[moveType]();
         this.handleCursorSelection(args);
         this.repaint();
         args.pos = posData.newPos;
@@ -703,74 +703,16 @@ dojo.declare("bespin.editor.Actions", null, {
         }
     },
 
-    // START SEARCH ACTIONS
-    // find the next match in the file
-    findNext: function() {
-        if (!this.editor.ui.searchString) return;
-        var pos = this.cursorManager.getModelPosition();
-        var found = this.model.findNext(pos.row, pos.col, this.editor.ui.searchString);
-
-        if (found) {
-            this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
-            this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
-            this.editor.ui.ensureCursorVisible();
-            this.repaint();
-
-            return true;
-        } else {
-            return false;
-        }
-    },
-
-    // find the previous match in the file
-    findPrev: function() {
-        if (!this.editor.ui.searchString) return;
-
-        var pos = this.cursorManager.getModelPosition();
-        var found = this.model.findPrev(pos.row, pos.col, this.editor.ui.searchString);
-        if (found) {
-            this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
-            this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
-            this.editor.ui.ensureCursorVisible();
-            this.repaint();
-        }
-    },
-
-    // Fire an escape message so various parts of the UI can choose to clear
-    escape: function() {
-        bespin.publish("ui:escape");
-    },
-
-    // focus the search field
-    findSelectInputField: function() {
-        dojo.byId('searchquery').focus();
-    },
-    // END SEARCH ACTIONS
-    
-    toggleQuickopen: function() {
-        var quickopen = bespin.get('quickopen');
-        if (quickopen) {
-            quickopen.window.toggle();
-        }  
-    },
-    
-    focusCommandline: function() {
-        var commandLine = bespin.get('commandLine');
-        if (commandLine) {
-            commandLine.commandLine.focus();
-        }
-    },
-        
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
         this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
 
-        args.action = "undoSelectionChangeCase";
+        /*args.action = "undoSelectionChangeCase";
         var redoOperation = args;
         var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, stringCase: args.stringCase};
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));*/
     },
 
     repaint: function() {
