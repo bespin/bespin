@@ -62,7 +62,7 @@ dojo.provide("bespin.cmd.debugcommands");
         preview: 'insert the given text at this point.',
         hidden: true,
         execute: function(self, text) {
-            self.editor.model.insertChunk(self.editor.getCursorPos(), text);
+            self.editor.model.insertChunk(self.editor.getModelPos(), text);
         }
     });
 
