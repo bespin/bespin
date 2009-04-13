@@ -121,65 +121,6 @@ bespin.cmd.commands.add({
     }
 }); 
 
-// ** {{{Command: eval}}} **
-bespin.cmd.commands.add({
-    name: 'eval',
-    takes: ['js-code'],
-    preview: 'evals given js code and show the result',
-    completeText: 'evals given js code and show the result',
-    execute: function(self, jscode) {
-        try {
-            var result = eval(jscode);
-        } catch (err) {
-            var result = '<b>Error: ' + err.message + '</b>';
-        }
-        
-        var msg = '';
-        var type = '';
-        
-        if (dojo.isFunction(result)) {
-            // converts the function to a well formated string
-            msg = (result + '').replace(/\n/g, '<br>').replace(/ /g, '&#160');
-            type = 'function';
-        } else if (dojo.isObject(result)) {
-            if (dojo.isArray(result)) {
-                type = 'array'
-            } else {
-                type = 'object';
-            }
-            
-            var items = [];
-            var value;
-                        
-            for (x in result) {
-                if (dojo.isFunction(result[x])) {
-                    value = "[function]";                    
-                } else if (dojo.isObject(result[x])) {
-                    value = "[object]";
-                } else {
-                    value = result[x];
-                }
-                
-                items.push({name: x, value: value});
-            }
-            
-            items.sort(function(a,b) {
-                return (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 1
-            });
-            
-            for (var x = 0; x < items.length; x++) {
-                msg += '<b>' + items[x].name + '</b>: ' + items[x].value + '<br>';
-            }
-            
-        } else {
-            msg = result;
-            type = typeof result;
-        }
-        
-        self.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");        
-    }
-});
-
 // ** {{{Command: set}}} **
 bespin.cmd.commands.add({
         name: 'set',
@@ -239,54 +180,6 @@ bespin.cmd.commands.add({
         execute: function(self, key) {
             self.settings.unset(key);
             self.showInfo("Unset the setting for " + key + ".");
-        }
-});
-
-// ** {{{Command: search}}} **
-bespin.cmd.commands.add({
-        name: 'search',
-        takes: ['searchString'],
-        preview: 'searches the current file for the given searchString',
-        completeText: 'type in a string to search',
-        execute: function(self, str) {
-            var editor = bespin.get('editor');         
-            
-            if (str == '') {
-                editor.ui.setSearchString(false);
-                editor.paint(true);
-                return false;
-            }
-               
-            var count = editor.model.getCountOfString(str);
-
-            if (count == 0) {
-                // there isn't anything? => well, there is no such string within the file!
-                self.showInfo("The given searchString '" + str + "' was not found in the current file!", true);
-                editor.ui.setSearchString(false);
-                editor.paint(true);
-                return false;
-            }
-
-            // okay, there are matches, so go on...
-            editor.ui.setSearchString(str);
-            var pos = bespin.editor.utils.copyPos(editor.cursorManager.getCursorPosition());
-
-            // first try to find the searchSting from the current position
-            if (!editor.ui.actions.findNext()) {
-                // there was nothing found? Search from the beginning
-                editor.cursorManager.moveCursor({col: 0, row: 0 });
-                editor.ui.actions.findNext();
-            }
-
-            var msg = "Found " + count + " match";
-            if (count > 1) { msg += 'es'; }
-            msg += " for your search for <em>" + str + "</em>";
-
-            self.showInfo(msg, true);
-
-            editor.paint(true);
-
-            return true;
         }
 });
 
@@ -647,29 +540,19 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: goto}}} **
-(function () {
-var previewFull      = 'move it! make the editor head to a line number or a function name.';
-var preview          = 'move it! make the editor head to a line number.';
-var completeTextFull = 'add the line number to move to, or the name of a function in the file';
-var completeText     = 'add the line number to move to in the file';
-var gotoCmd = {
+bespin.cmd.commands.add({
     name: 'goto',
     takes: ['value'],
-    preview: previewFull,
-    completeText: completeTextFull,
+    preview: 'move it! make the editor head to a line number or a function name.',
+    completeText: 'add the line number to move to, or the name of a function in the file',
     execute: function(self, value) {
-        var settings = bespin.get("settings")
         if (value) {
             var linenum = parseInt(value, 10); // parse the line number as a decimal
             
             if (isNaN(linenum)) { // it's not a number, so for now it is a function name
-                if(settings.isOn(settings.get("syntaxcheck"))) {
-                    bespin.publish("parser:gotofunction", {
-                        functionName: value
-                    });
-                } else {
-                    bespin.publish("message", { msg: "Please enter a valid line number." })
-                }
+                bespin.publish("parser:gotofunction", {
+                    functionName: value
+                });                
             } else {
                 bespin.publish("editor:moveandcenter", {
                     row: linenum
@@ -677,19 +560,7 @@ var gotoCmd = {
             }
         }
     }
-}
-bespin.cmd.commands.add(gotoCmd);
-bespin.subscribe("settings:set:syntaxcheck", function () {
-    var settings = bespin.get("settings")
-    if(settings.isOn(settings.get("syntaxcheck"))) {
-        gotoCmd.preview = previewFull;
-        gotoCmd.completeText = completeTextFull;
-    } else {
-        gotoCmd.preview = preview;
-        gotoCmd.completeText = completeText;
-    }
-})
-})()
+});
 
 // ** {{{Command: replace}}} **
 bespin.cmd.commands.add({
@@ -1049,19 +920,17 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
-      var aliases = self.commandStore.aliases;
-
       if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
-        for (var x in aliases) {
-          output += x + ": " + aliases[x] + "<br/>";
+        for (var x in self.aliases) {
+          output += x + ": " + self.aliases[x] + "<br/>";
         }
       } else {
         if (args.command === undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
-          var alias = aliases[args.alias];
+          var alias = self.aliases[args.alias];
           if (alias) {
-              output += args.alias + ": " + aliases[args.alias];
+              output += args.alias + ": " + self.aliases[args.alias];
           } else {
               output += "No alias set for " + args.alias;
           }
@@ -1075,10 +944,10 @@ bespin.cmd.commands.add({
               output += "Sorry, there is already a command with the name: " + key;
           } else if (self.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
-              aliases[key] = value;
-          } else if (aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
-              output += key + ": " + aliases[value] + " (" + value + " was an alias itself)";
-              aliases[key] = value;
+              self.aliases[key] = value;
+          } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
+              output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
+              self.aliases[key] = value;
           } else {
               output += "Sorry, no command or alias with that name.";
           }
@@ -1126,15 +995,261 @@ bespin.cmd.commands.add({
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
     execute: function(self) {
-        var settings = bespin.get("settings");
-        if(settings.isOff(settings.get("syntaxcheck"))) {
-            bespin.publish("message", { msg: "Please enable the syntaxcheck feature with 'set syntaxcheck on' to activate the outline view." });
-        } else {
-            bespin.publish("parser:showoutline");
+        bespin.publish("parser:showoutline");
+    }
+});
+
+// ** {{{Command: follow}}} **
+bespin.cmd.commands.add({
+    name: 'follow',
+    takes: ['username ...'],
+    preview: 'add to the list of users we are following, or (with no args) list the current set',
+    completeText: 'username(s) of person(s) to follow',
+    usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var usernames = bespin.cmd.commands.toArgArray(args);
+        if (usernames.length == 0) {
+            bespin.publish("network:followers");
+        }
+        else {
+            bespin.publish("network:follow", [ usernames ]);
         }
     }
 });
 
+// ** {{{Command: unfollow}}} **
+bespin.cmd.commands.add({
+    name: 'unfollow',
+    takes: ['username ...'],
+    preview: 'remove from the list of users we are following',
+    completeText: 'username(s) of person(s) to stop following',
+    usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        var usernames = bespin.cmd.commands.toArgArray(args);
+
+        if (usernames.length == 0) {
+            self.showInfo('Please specify the users to cease following');
+        }
+        else {
+            bespin.publish("network:unfollow", [ usernames ]);
+        }
+    }
+});
+
+// ** {{{Command: group}}} **
+bespin.cmd.commands.add({
+    name: 'group',
+    preview: 'Collect the people you follow into groups, and display the existing groups',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            bespin.publish("groups:list:all");
+        }
+        else if (args.length == 1) {
+            bespin.publish("groups:list", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] == "-r" || args[1] == "--remove") {
+                bespin.publish("groups:remove:all", [ args[0] ]);
+            }
+            else {
+                self.showInfo('Syntax error - You must specify what you want to do with your group.');
+            }
+        }
+        else if (args.length > 2) {
+            var group = args.shift();
+            var command = args.shift();
+            if (command == "-a" || command == "--add") {
+                bespin.publish("groups:add", [ group, args ]);
+            }
+            else if (command == "-r" || command == "--remove") {
+                args.shift();
+                bespin.publish("groups:remove", [ group, args ]);
+            }
+            else {
+                self.showInfo('Syntax error - To manipulate a group you must use add/remove');
+            }
+        }
+    }
+});
+
+// ** {{{Command: share}}} **
+bespin.cmd.commands.add({
+    name: 'share',
+    preview: 'List and alter sharing for a project',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'share'
+            bespin.publish("share:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'share {project}'
+            bespin.publish("share:list:project", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] == "none") {
+                // i.e. 'share {project} none'
+                bespin.publish("share:remove:all", [ args[0] ]);
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone'
+                bespin.publish("share:list:project:member", [ args[0], args[1] ]);
+            }
+        }
+        else if (args.length == 3) {
+            if (args[2] == "none") {
+                // i.e. 'share {project} {user}|{group}|everyone none'
+                bespin.publish("share:remove", [ args[0], args[1] ]);
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'none\', \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
+                bespin.publish("share:add", [ args[0], args[1], [ args[2] ] ]);
+            }
+        }
+        else if (args.length == 4) {
+            if (args[3] != "loadany") {
+                this._syntaxError('Valid scope options are loadany or <blank>');
+            }
+            else if (args[2] != "readonly" && args[2] != "edit") {
+                this._syntaxError('Valid edit options are \'readonly\' or \'edit\'.');
+            }
+            else {
+                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
+                bespin.publish("share:add", [ args[0], args[1], [ args[2], args[3] ] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 4 arguments to \'share\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+    }
+});
+
+// ** {{{Command: viewme}}} **
+bespin.cmd.commands.add({
+    name: 'viewme',
+    preview: 'List and alter user\'s ability to see what I\'m working on',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        args = bespin.cmd.commands.toArgArray(args);
+
+        if (args.length == 0) {
+            // i.e. 'viewme'
+            bespin.publish("viewme:list:all");
+        }
+        else if (args.length == 1) {
+            // i.e. 'viewme {user|group}'
+            bespin.publish("viewme:list", [ args[0] ]);
+        }
+        else if (args.length == 2) {
+            if (args[1] != 'false' && args[1] != 'true' && args[1] != 'default') {
+                this._syntaxError('Valid viewme settings are {true|false|deafult}');
+            }
+            else {
+                bespin.publish("viewme:set", [ args[0], args[1] ]);
+            }
+        }
+        else {
+            this._syntaxError('Too many arguments. Maximum 2 arguments to \'viewme\' command.');
+        }
+    },
+    _syntaxError: function(message) {
+        self.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
+    }
+});
+
+// ** {{{Command: test}}} **
+bespin.cmd.commands.add({
+    name: 'test',
+    preview: 'Run some automated end to end tests',
+    script: [
+        { send:"echo Starting", expect:/^Starting$/ },
+        { send:"follow", expect:/sds/ },
+        { send:"echo Finished", expect:/^Finished$/ }
+    ],
+    // ** {{{_setup}}}
+    _setup: function(self, onComplete) {
+        this.originalShowInfo = self.showInfo;
+        var that = this;
+        bespin.get('server').request('POST', '/test/setup/', null, {
+            onSuccess: onSuccess,
+            onFailure: function(xhr) {
+                that._cleanup(self, "_setup() failed. Maybe due to: " + xhr.responseText);
+            }
+        });
+    },
+    // ** {{{_cleanup}}}
+    _cleanup: function(self, reason) {
+        self.showInfo = this.originalShowInfo;
+        self.showInfo(reason);
+        bespin.get('server').request('POST', '/test/cleanup/', null, {
+            onSuccess: function() {
+                console.log("Server cleanup completed");
+            },
+            onFailure: function(xhr) {
+                self.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
+            }
+        });
+    },
+    // ** {{{_runNextElement}}}
+    _runNextElement: function(self, script, index) {
+        console.log("_runNextElement", index);
+        if (index >= script.length) {
+            this._cleanup(self, "Finished running tests");
+            return;
+        }
+        var element = script[index];
+        var that = this;
+        self.showInfo = function(html, autohide) {
+            var info = dojo.byId('info');
+            info.innerHTML = html;
+            var text = info.textContent;
+            if (element.expect.test(text)) {
+                that._runNextElement(self, script, index + 1);
+            }
+            else {
+                console.error("Test failure at index:", index);
+                console.log("Command: ", element.send);
+                console.log("Expected: ", element.expect.source);
+                console.log("Received:", text);
+                that._cleanup(self, "Test failure at index: " + index + "<br/>Command: '" + element.send + "'<br/>Expected: /" + element.expect.source + "/<br/>Received: '" + text + "'");
+            }
+        };
+        self.executeCommand(element.send);
+    },
+    // ** {{{execute}}}
+    execute: function(self) {
+        var that = this;
+        this._setup(self, function() {
+            that._runNextElement(self, that.script, 0);
+        });
+    }
+});
+
+// ** {{{Command: echo}}} **
+bespin.cmd.commands.add({
+    name: 'echo',
+    takes: ['message ...'],
+    preview: 'A test echo command',
+    // ** {{{execute}}}
+    execute: function(self, args) {
+        self.showInfo(args);
+    }
+});
+
+//Change Case: uppercase
 bespin.cmd.commands.add({
 	name: 'uc',
 	preview: 'Change all selected text to uppercase',
@@ -1145,6 +1260,7 @@ bespin.cmd.commands.add({
 	}
 });
 
+//Change Case: lowercase 
 bespin.cmd.commands.add({
 	name: 'lc',
 	preview: 'Change all selected text to lowercase',
@@ -1153,6 +1269,4 @@ bespin.cmd.commands.add({
 		var args={stringCase: 'l'};
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
-});
-					 
-
+});                    
