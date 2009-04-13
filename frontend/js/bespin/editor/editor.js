@@ -558,7 +558,19 @@ dojo.declare("bespin.editor.UI", null, {
         point.y += Math.abs(this.yoffset);
         var up = this.convertClientPointToCursorPoint(point);
 
-        if (down.col == -1) down.col = 0;
+        if (down.col == -1) {
+            down.col = 0;
+            //clicked in gutter; show appropriate lineMarker message
+            var lineMarkers = bespin.get("parser").getLineMarkers();
+            for (var i = 0; i < lineMarkers.length; i++) {
+                if (lineMarkers[i].row === down.row + 1) {
+                    bespin.publish("message", {
+                        msg: 'Syntax error: ' + lineMarkers[i].message + ' on line ' + lineMarkers[i].row,
+                        tag: 'autohide'
+                    });
+                }
+            }
+        }
         if (up.col == -1) up.col = 0;
 
         if (!bespin.editor.utils.posEquals(down, up)) {
@@ -918,7 +930,6 @@ dojo.declare("bespin.editor.UI", null, {
             delete points;
         }
 
-
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
         //refreshCanvas = true;
 
@@ -955,6 +966,18 @@ dojo.declare("bespin.editor.UI", null, {
 
         // paint the line numbers
         if (refreshCanvas) {
+            //line markers first
+            if(bespin.get("parser")) {
+                var lineMarkers = bespin.get("parser").getLineMarkers();
+                for (var i = 0; i < lineMarkers.length; i++) {
+                    if (lineMarkers[i].row >= this.firstVisibleRow && lineMarkers[i].row <= lastLineToRender + 1) {
+                        y = this.lineHeight * (lineMarkers[i].row - 1);
+                        cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
+                        ctx.fillStyle = this.editor.theme.lineMarkerGutterColor;
+                        ctx.fillRect(0, y, this.gutterWidth, this.lineHeight); 
+                    }
+                 }
+            }
             y = (this.lineHeight * this.firstVisibleRow);
             for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
                 x = 0;
@@ -994,7 +1017,7 @@ dojo.declare("bespin.editor.UI", null, {
 
                 y += this.lineHeight;
             }
-        }
+         }
 
         // and now we're ready to translate the horizontal axis; while we're at it, we'll setup a clip to prevent any drawing outside
         // of code editor region itself (protecting the gutter). this clip is important to prevent text from bleeding into the gutter.
