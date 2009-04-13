@@ -530,7 +530,18 @@ dojo.declare("bespin.client.settings.Events", null, {
             } else {
                 bespin.unsubscribe(_trimOnSave);
             }
-        });        
+        });
+
+        // ** {{{ Event: settings:set:syntaxcheck }}} **
+        // 
+        // Turn the syntax parser on or off
+        bespin.subscribe("settings:set:syntaxcheck", function (data) {
+            if (settings.isOff(data.value)) {
+                bespin.publish("parser:stop");
+            } else {
+                bespin.publish("parser:start");
+            }
+        });
 
         // ** {{{ Event: settings:init }}} **
         // 
@@ -538,7 +549,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:init", function(event) {
             var path    = event.path;
             var project = event.project;
-
+            
             // TODO: use the action and don't run a command itself
             var newfile = settings.fromURL.get('new');
             if (!newfile) { // scratch file
@@ -553,81 +564,21 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the theme
+        //
+        // For every setting that has a bespin:settings:set:nameofsetting callback, init it
         bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:theme", {
-                value: settings.get('theme')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the special keybindings
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:keybindings", {
-                value: settings.get('keybindings')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Check for auto load
-        bespin.subscribe("settings:init", function(event) {
-            if (!settings.isOff(settings.get('autoconfig'))) {
-                bespin.publish("editor:config:run");
-            }
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the font size that the user has configured
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:fontsize", {
-                value: settings.get('fontsize')
-            });
-        });        
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the syntax engine if set
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:syntaxengine", {
-                value: settings.get('syntaxengine')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Set trimonsave
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:trimonsave", {
-                value: settings.get('trimonsave')
-            });
-        });
-        
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:debugmode", {
-                value: settings.get('debugmode')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Set syntaxcheck
-        bespin.subscribe("settings:init", function(event) {
-            bespin.subscribe("settings:set:syntaxcheck", function (data) {
-                if(settings.isOff(data.value)) {
-                    bespin.publish("parser:stop");
-                } else {
-                    bespin.publish("parser:start");
+            // Goes deep into internals which is naughty!
+            // In this case, going into the Dojo saved "topics" that you subscribe/publish too
+            for (var topic in dojo._topics) {
+                var settingsTopicBase = "bespin:settings:set:";
+                if (topic.indexOf(settingsTopicBase) == 0) {
+                    var settingKey = topic.substring(settingsTopicBase.length);
+                    bespin.publish("settings:set:" + settingKey, {
+                        value: settings.get(settingKey)
+                    });
                 }
-            });
-            
-            bespin.publish("settings:set:syntaxcheck", {
-                value: settings.get('syntaxcheck')
-            });
-        });
+            }
+        });        
 
     }
 });
