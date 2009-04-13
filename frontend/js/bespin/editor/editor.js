@@ -1116,8 +1116,8 @@ dojo.declare("bespin.editor.UI", null, {
 
                 // in some cases the selections are -1 => set them to a more "realistic" number
                 if (selections) {
-                    if (selections.startCol == -1)  selections.startCol = 0;
-                    if (selections.endCol   == -1)  selections.endCol = lineText.length;
+                    if (selections.startCol == -1) selections.startCol = 0;
+                    if (selections.endCol   == -1) selections.endCol = lineText.length;
                 }
 
                 if (indexs) {
@@ -1126,7 +1126,7 @@ dojo.declare("bespin.editor.UI", null, {
                         xStart = xoff + indexs[x] * this.charWidth;
 
                         // highlight the area
-                        ctx.fillStyle = "#B55C00"; // TODO: Move this into theme
+                        ctx.fillStyle = this.editor.theme.searchHighlight;
                         ctx.fillRect(xStart, yoff, searchStringLength * this.charWidth, this.lineHeight - 1);
 
                         // figure out, whether the selection is in this area. If so, colour it different
@@ -1138,13 +1138,13 @@ dojo.declare("bespin.editor.UI", null, {
                                 indexStart = Math.max(indexStart, selections.startCol);
                                 indexEnd = Math.min(indexEnd, selections.endCol);
 
-                                ctx.fillStyle = "#FF9A00"; // TODO: Move this into theme                                
-                                ctx.fillRect(xoff + indexStart * this.charWidth, yoff, (indexEnd - indexStart) * this.charWidth, this.lineHeight - 1 );
+                                ctx.fillStyle = this.editor.theme.searchHighlightSelected;
+                                ctx.fillRect(xoff + indexStart * this.charWidth, yoff, (indexEnd - indexStart) * this.charWidth, this.lineHeight - 1);
                             }
                         }
 
                         // print the overpainted text again
-                        ctx.fillStyle = "white";
+                        ctx.fillStyle = this.editor.theme.editorTextColor || "white";
                         ctx.fillText(lineText.substring(indexs[x], indexs[x] + searchStringLength), xStart, cy);
                     }
                 }
