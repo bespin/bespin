@@ -55,7 +55,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     moveCursor: function(moveType, args) {
-        var posData = this.cursorManager[moveType]();
+        var posData = this.cursorManager[moveType](args);
         this.handleCursorSelection(args);
         this.repaint();
         args.pos = posData.newPos;
