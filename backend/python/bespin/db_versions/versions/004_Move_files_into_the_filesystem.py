@@ -8,9 +8,6 @@ from path import path
 
 from bespin.config import c
 
-# XXX TEMPORARY FOR TESTING
-c.fsroot = path("/tmp/DATA")
-
 metadata = MetaData()
 metadata.bind = migrate_engine
 metadata.reflect()
@@ -163,12 +160,15 @@ ADD COLUMN everyone_viewable TINYINT(1) DEFAULT NULL
         
         projects = projects_table.select().where(projects_table.c.user_id==user.id).execute(bind=conn2)
         for project in projects:
-            ci = _check_identifiers(project.name)
+            projectname = project.name
+            if projectname.startswith("SampleProjectFor:"):
+                projectname = "SampleProject"
+            ci = _check_identifiers(projectname)
             if ci:
-                projectname = bad_pattern.sub("", project.name)
+                projectname = bad_pattern.sub("", projectname)
                 print "Project:", projectname
             else:
-                projectname = project.name
+                projectname = projectname
             
             project_location = path(c.fsroot) / user_location / projectname
             project_obj = Project(projectname, project_location)
