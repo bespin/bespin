@@ -845,7 +845,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.lastLineCount = ed.model.getRowCount();        // save the number of lines for the next time paint
 
         // get the line and character metrics; calculated for each paint because this value can change at run-time
-        ctx.font = theme.lineNumberFont;
+        ctx.font = theme.editorTextFont;
         this.charWidth = this.getCharWidth(ctx);
         this.lineHeight = this.getLineHeight(ctx);
 
@@ -1122,7 +1122,7 @@ dojo.declare("bespin.editor.UI", null, {
                     }
 
                     ctx.fillStyle = this.editor.theme[style] || "white";
-                    ctx.font = this.editor.theme.lineNumberFont;
+                    ctx.font = this.editor.theme.editorTextFont;
                     ctx.fillText(thisLine, x, cy);
                 }
             }
