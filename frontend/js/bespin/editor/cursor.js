@@ -214,7 +214,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveUp: function() {
         var settings = bespin.get("settings");
         var selection = this.editor.getSelection();
-        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.startPos.row, col: this.position.col} : this.position);
+        var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
@@ -230,7 +230,10 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveDown: function() {
         var settings = bespin.get("settings");
         var selection = this.editor.getSelection();
-        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.endPos.row, col: this.position.col} : this.position);
+
+        console.log(selection);
+
+        var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
