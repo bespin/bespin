@@ -231,8 +231,6 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var settings = bespin.get("settings");
         var selection = this.editor.getSelection();
 
-        console.log(selection);
-
         var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
