@@ -281,6 +281,17 @@ class KeyChain(object):
         self.user = user
         self.password = pad(password[:31])
         self._kcdata = None
+        
+    @classmethod
+    def get_ssh_public_key(cls, user):
+        """Retrieve the user's public key without decrypting
+        the keychain."""
+        # external API users should not instantiate without a KeyChain password
+        kc = cls(user, "")
+        pubfile = kc.public_key_file
+        if not pubfile.exists():
+            raise model.NotAuthorized("Keychain is not set up. Please initialize with a password.")
+        return pubfile.bytes()
     
     def get_ssh_key(self):
         """Returns the SSH key pair for this key chain. If necessary,
@@ -296,6 +307,7 @@ class KeyChain(object):
             sshkeyfile.delete()
             
         kcdata['ssh'] = dict(public=pubkey, private=private_key)
+        self.public_key_file.write_bytes(pubkey)
         self._save()
         return pubkey, private_key
     
@@ -318,6 +330,11 @@ class KeyChain(object):
                 
                 self._kcdata = simplejson.loads(text)
         return self._kcdata
+    
+    @property
+    def public_key_file(self):
+        """Get the public key filename"""
+        return self.kcfile + "-public"
     
     @property
     def kcfile(self):

@@ -662,7 +662,11 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ getkey() }}}
     // Retrieves the user's SSH public key that can be used for VCS functions
     getkey: function(kcpass, opts) {
-        this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+        if (kcpass == null) {
+            this.request('POST', '/vcs/getkey/', null, opts || {});
+        } else {
+            this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+        }
     },
     
     // ** {{{ remoteauth() }}}

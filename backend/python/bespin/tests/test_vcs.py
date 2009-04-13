@@ -265,6 +265,9 @@ def test_keychain_creation():
     assert public_key.startswith("ssh-rsa")
     assert "RSA PRIVATE KEY" in private_key
     
+    public_key2 = vcs.KeyChain.get_ssh_public_key(macgyver)
+    assert public_key2 == public_key
+    
     bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
     
     kc.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
@@ -356,6 +359,19 @@ def test_vcs_auth_set_should_have_good_remote_auth_value():
 def test_vcs_get_ssh_key_from_web():
     _init_data()
     resp = app.post("/vcs/getkey/", dict(kcpass="foobar"))
+    assert resp.content_type == "application/x-ssh-key"
+    assert resp.body.startswith("ssh-rsa")
+    
+def test_vcs_get_ssh_key_from_web_without_password_no_pubkey():
+    _init_data()
+    resp = app.post("/vcs/getkey/", status=401)
+    
+def test_vcs_get_ssh_key_from_web_without_password_with_pubkey():
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
+    # generate the key pair
+    kc.get_ssh_key()
+    resp = app.post("/vcs/getkey/")
     assert resp.content_type == "application/x-ssh-key"
     assert resp.body.startswith("ssh-rsa")
     

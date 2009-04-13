@@ -846,11 +846,16 @@ def get_ssh_key(request, response):
     try:
         kcpass = request.POST['kcpass']
     except KeyError:
-        raise BadRequest("Keychain password (kcpass) is required")
+        kcpass = None
         
-    keychain = vcs.KeyChain(user, kcpass)
+    if kcpass is None:
+        pubkey = vcs.KeyChain.get_ssh_public_key(user)
+    else:
+        keychain = vcs.KeyChain(user, kcpass)
+        pubkey = keychain.get_ssh_key()[0]
+        
     response.content_type = "application/x-ssh-key"
-    response.body = keychain.get_ssh_key()[0]
+    response.body = pubkey
     return response()
 
 @expose("^/messages/$", 'POST')

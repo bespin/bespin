@@ -397,26 +397,40 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
+bespin.vcs._displaySSHKey = function(response) {
+    bespin.util.webpieces.showContentOverlay(
+        '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
+        + response + '" id="sshkey" style="width: 95%">'
+    );
+    dojo.byId("sshkey").select();
+};
+
+// Retrieve the user's SSH public key using their keychain password.
+// This is required if they have not already set up a public key.
+bespin.vcs._getSSHKeyAuthenticated = function() {
+    bespin.vcs.getKeychainPassword(function(kcpass) {
+        bespin.get('server').getkey(kcpass, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: function(response) {
+                self.showInfo("Bad keychain password.");
+            },
+            onFailure: function(response) {
+                self.showInfo("getkey failed: " + response);
+            }
+        });
+    });
+};
+
 bespin.vcs.commands.addCommand({
     name: 'getkey',
     preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
     execute: function(self) {
-        bespin.vcs.getKeychainPassword(function(kcpass) {
-            bespin.get('server').getkey(kcpass, {
-                onSuccess: function(response) {
-                    bespin.util.webpieces.showContentOverlay(
-                        '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
-                        + response + '" id="sshkey" style="width: 95%">'
-                    );
-                    dojo.byId("sshkey").select();
-                },
-                on401: function(response) {
-                    self.showInfo("Bad keychain password.");
-                },
-                onFailure: function(response) {
-                    self.showInfo("getkey failed: " + response);
-                }
-            });
+        bespin.get('server').getkey(null, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: bespin.vcs._getSSHKeyAuthenticated,
+            onFailure: function(response) {
+                self.showInfo("getkey failed: " + response);
+            }
         });
     }
 });
