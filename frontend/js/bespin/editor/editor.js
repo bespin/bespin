@@ -284,10 +284,10 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         var quickopen = bespin.get('quickopen');
         var handled = false;
         
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
+        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
             handled = true;
         }
-        
+
         if (handled) return false;
         // -- End of commandLine short cut
 
@@ -322,12 +322,12 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         var quickopen = bespin.get('quickopen');
         var handled = false;
         
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e))) {
+        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
             handled = true;
         }
-                
+
         if (handled) return false;
-        
+
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
         if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
@@ -381,6 +381,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.actions = new bespin.editor.Actions(editor);
 
         this.rowLengthCache = [];
+        this.searchString = null;
 
         this.toggleCursorFullRepaintCounter = 0; // tracks how many cursor toggles since the last full repaint
         this.toggleCursorFrequency = 250;        // number of milliseconds between cursor blink
@@ -614,9 +615,9 @@ dojo.declare("bespin.editor.UI", null, {
         var cwidth = this.getWidth() - this.gutterWidth;
 
         if (Math.abs(this.yoffset) > y) {               // current row before top-most visible row
-            this.yoffset = -y;
+            this.yoffset = Math.min(-y + cheight * 0.25, 0);
         } else if ((Math.abs(this.yoffset) + cheight) < (y + this.lineHeight)) {       // current row after bottom-most visible row
-            this.yoffset = -((y + this.lineHeight) - cheight);
+            this.yoffset = -((y + this.lineHeight) - cheight * 0.75);
         }
 
         if (Math.abs(this.xoffset) > x) {               // current col before left-most visible col
@@ -738,6 +739,12 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("", Key.ENTER, this.actions.newline, "Insert newline");
         listener.bindKeyString("", Key.TAB, this.actions.insertTab, "Indent / insert tab");
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
+
+        // SEARCH / FIND
+        listener.bindKeyString("", Key.ESCAPE, this.actions.findClear, "Clear the find dialog");
+        listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
+        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
+        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
@@ -1094,6 +1101,52 @@ dojo.declare("bespin.editor.UI", null, {
                     ctx.fillStyle = this.editor.theme[style] || "white";
                     ctx.font = this.editor.theme.lineNumberFont;
                     ctx.fillText(thisLine, x, cy);
+                }
+            }
+
+            // highlight search string
+            if (this.searchString) {
+                var lineText = lineMetadata.lineText;
+                var indexs = ed.model.getStringIndexInRow(currentLine, this.searchString);
+
+                var xoff = this.gutterWidth + this.LINE_INSETS.left;
+                var yoff = (currentLine * this.lineHeight) + 1;
+                var xStart;
+                var searchStringLength = this.searchString.length;
+
+                // in some cases the selections are -1 => set them to a more "realistic" number
+                if (selections) {
+                    if (selections.startCol == -1)  selections.startCol = 0;
+                    if (selections.endCol   == -1)  selections.endCol = lineText.length;
+                }
+
+                if (indexs) {
+                    for (var x = 0; x < indexs.length; x++) {
+                        indexs[x] = ed.cursorManager.getCursorPosition({col: indexs[x], row: currentLine}).col;
+                        xStart = xoff + indexs[x] * this.charWidth;
+
+                        // highlight the area
+                        ctx.fillStyle = "#B55C00"; // TODO: Move this into theme
+                        ctx.fillRect(xStart, yoff, searchStringLength * this.charWidth, this.lineHeight - 1);
+
+                        // figure out, whether the selection is in this area. If so, colour it different
+                        if (selections) {
+                            var indexStart = indexs[x];
+                            var indexEnd = indexs[x] + searchStringLength;
+
+                            if (selections.startCol < indexEnd && selections.endCol > indexStart) {
+                                indexStart = Math.max(indexStart, selections.startCol);
+                                indexEnd = Math.min(indexEnd, selections.endCol);
+
+                                ctx.fillStyle = "#FF9A00"; // TODO: Move this into theme                                
+                                ctx.fillRect(xoff + indexStart * this.charWidth, yoff, (indexEnd - indexStart) * this.charWidth, this.lineHeight - 1 );
+                            }
+                        }
+
+                        // print the overpainted text again
+                        ctx.fillStyle = "white";
+                        ctx.fillText(lineText.substring(indexs[x], indexs[x] + searchStringLength), xStart, cy);
+                    }
                 }
             }
 

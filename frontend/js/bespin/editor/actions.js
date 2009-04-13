@@ -703,6 +703,54 @@ dojo.declare("bespin.editor.Actions", null, {
         }
     },
 
+    // START SEARCH ACTIONS
+    // find the next match in the file
+    findNext: function() {
+        if (!this.editor.ui.searchString) return;
+        var pos = this.cursorManager.getModelPosition();
+        var found = this.model.findNext(pos.row, pos.col, this.editor.ui.searchString);
+
+        if (found) {
+            this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
+            this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
+            this.editor.ui.ensureCursorVisible();
+            this.repaint();
+
+            return true;
+        } else {
+            return false;
+        }
+    },
+
+    // find the previous match in the file
+    findPrev: function() {
+        if (!this.editor.ui.searchString) return;
+
+        var pos = this.cursorManager.getModelPosition();
+        var found = this.model.findPrev(pos.row, pos.col, this.editor.ui.searchString);
+        if (found) {
+            this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
+            this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
+            this.editor.ui.ensureCursorVisible();
+            this.repaint();
+        }
+    },
+
+    // clear the "find". This removes the highlighting
+    findClear: function() {
+        if (this.editor.ui.searchString) {
+            bespin.get('commandLine').showInfo('Reset searchString', true);
+            delete this.editor.ui.searchString;   
+            this.repaint();
+        }
+    },
+
+    // focus the search field
+    findSelectInputField: function() {
+        dojo.byId('searchquery').focus();
+    },
+    // END SEARCH ACTIONS
+        
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);
         this.model.insertChunk(args.selectionObject.startModelPos, args.text);

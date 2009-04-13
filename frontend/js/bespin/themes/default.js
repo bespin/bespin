@@ -57,6 +57,7 @@ bespin.themes.coffee = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#392A25",
+    searchHighlight: "#B55C00",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -142,6 +143,7 @@ bespin.themes.white = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#E0D4CB",
+    searchHighlight: "#B55C00",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -199,6 +201,7 @@ bespin.themes.black = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#E0D4CB",
+    searchHighlight: "#B55C00",
 
     // syntax definitions
     plain: "#bdae9d",
