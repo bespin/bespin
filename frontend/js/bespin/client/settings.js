@@ -424,7 +424,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
             var fontsize = parseInt(event.value);
-            editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
+            editor.theme.editorTextFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
         // ** {{{ Event: settings:set:theme }}} **
@@ -432,14 +432,41 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the Theme object used by the editor
         bespin.subscribe("settings:set:theme", function(event) {
             var theme = event.value;
-
+            
             if (theme) {
                 var themeSettings = bespin.themes[theme];
 
-                if (themeSettings) {
-                    if (themeSettings != editor.theme) {
-                        editor.theme = themeSettings;
+                if (!themeSettings) { // Not in the default themes, load from bespin.themes
+                    try {
+                        dojo.require("bespin.themes." + theme);
+                        themeSettings = bespin.themes[theme];
+                    } catch (e) {
+                        //console.log(e);
                     }
+
+                    if (!themeSettings) { // Not in bespin.themes, load from users directory
+                        bespin.get('files').loadContents(bespin.userSettingsProject, "/themes/" + theme + ".js", dojo.hitch(this, function(file) {
+                            try {
+                                eval(file.content);
+                            } catch (e) {
+                                //console.log(e)
+                            }
+
+                            themeSettings = bespin.themes[theme];
+                            if (themeSettings && (themeSettings != editor.theme)) {
+                                editor.theme = themeSettings;
+                            } else {
+                                bespin.publish("message", {
+                                    msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
+                                });
+                            }
+                        }));
+                    }
+                }
+
+                // If we have a winner, set it to be the editor theme, else tell people the bad news
+                if (themeSettings && (themeSettings != editor.theme)) {
+                    editor.theme = themeSettings;
                 } else {
                     bespin.publish("message", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"

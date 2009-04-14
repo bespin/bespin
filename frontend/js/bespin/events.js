@@ -308,7 +308,7 @@ bespin.subscribe("directory:create", function(event) {
             msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
         bespin.publish("message", {
-            msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']' + project, tag: 'autohide' });
+            msg: 'Unable to create directory: [project=' + project + ', path=' + path + '] ' + project, tag: 'autohide' });
     });
 });
 

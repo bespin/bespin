@@ -173,7 +173,7 @@ class User(Base):
         if not location.exists():
             location.makedirs()
         return location
-    
+
     @property
     def projects(self):
         location = self.get_location()
@@ -351,22 +351,22 @@ invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
     if invalid_chars.search(value):
-        raise BadValue("%s cannot contain any of: %s"
-            % (kind, bad_characters))
+        log.error("Invalid identifier kind='%s', value='%s'" % (kind, value))
+        raise BadValue("%s cannot contain any of: %s" % (kind, bad_characters))
     if value.startswith("."):
+        log.error("Identifier starts with '.' value='%s'" % (kind, value))
         raise BadValue("%s cannot start with '.'" % (kind))
-    
 
 class UserManager(object):
     def __init__(self, session):
         self.session = session
-        
+
     def create_user(self, username, password, email, override_location=None):
         """Adds a new user with the given username and password.
         This raises a ConflictError is the user already
         exists."""
         _check_identifiers("Usernames", username)
-            
+
         log.debug("Creating user %s", username)
         user = User(username, password, email)
         if override_location is not None:
@@ -377,27 +377,40 @@ class UserManager(object):
             self.session.flush()
         except DBAPIError, e:
             raise ConflictError("Username %s is already in use" % username)
-        
+
         project = get_project(user, user, "SampleProject", create=True)
         project.install_template()
         return user
-        
+
     def get_user(self, username):
         """Looks up a user by username. Returns None if the user is not
         found."""
         return self.session.query(User).filter_by(username=username).first()
-        
+
+    def get_user_projects(self, user, include_shared=False):
+        """Find all the projects that are accessible to the given user.
+        See also user.projects, however this method also takes into account
+        projects that have been shared by this users followees"""
+        location = user.get_location()
+        result = [Project(user, name.basename(), location / name) 
+                for name in location.dirs()
+                if not name.basename().startswith(".")]
+        result = sorted(result, key=lambda item: item.name)
+        if include_shared:
+            for followee_connection in self.users_i_follow(user):
+                followee = followee_connection.followed
+                for project in followee.projects:
+                    if self.get_sharing(followee, project, user.username) != []:
+                        result.append(project)
+        return result
+
     def users_i_follow(self, following_user):
         """Retrieve a list of the users that someone follows."""
-        list = self.session.query(Connection).filter_by(following=following_user).all()
-        list = [connection.followed.username for connection in list]
-        return list
+        return self.session.query(Connection).filter_by(following=following_user).all()
 
     def users_following_me(self, followed_user):
         """Retrieve a list of the users that someone is following"""
-        list = self.session.query(Connection).filter_by(followed=followed_user).all()
-        list = [connection.following.username for connection in list]
-        return list
+        return self.session.query(Connection).filter_by(followed=followed_user).all()
 
     def follow(self, following_user, followed_user):
         """Add a follow connection between 2 users"""
@@ -421,12 +434,8 @@ class UserManager(object):
             raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
 
     def get_groups(self, user):
-        """Retrieve a list of the groups created by a given user.
-        
-        Note this currently returns a list of Groups, we will probably change
-        this to return a list of group names in the future"""
-        groups = self.session.query(Group).filter_by(owner_id=user.id).all()
-        return groups
+        """Retrieve a list of the groups created by a given user."""
+        return self.session.query(Group).filter_by(owner_id=user.id).all()
 
     def get_group_members(self, user, groupname):
         """Retrieve a list of the members of a given users group"""
@@ -460,6 +469,7 @@ class UserManager(object):
             raise ConflictError("%s is already a member of %s" % (other_user.username, groupname))
 
     def _is_group(self, user, member):
+        """Check to see if the given member name represents a user or a group"""
         return self.session.query(Group).filter_by(owner_id=user.id, name=member).first() != None
 
     def get_sharing(self, user, project=None, member=None):
@@ -483,9 +493,9 @@ class UserManager(object):
                     .all()
                 add_shares(list)
             else:
-                user = self.get_user(member)
-                list = self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=user.id) \
+                invited_user = self.get_user(member)
+                list = self.session.query(UserSharing) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=invited_user.id) \
                     .all()
                 add_shares(list)
         elif project != None:
@@ -508,6 +518,16 @@ class UserManager(object):
             add_shares(list)
         return shares
 
+    def is_project_accessible(self, owner, project_name, user):
+        # Is the project directly accessible to the user?
+        match = self.session.query(UserSharing) \
+                .filter_by(owner_id=owner.id, project_name=project_name, invited_user_id=user.id) \
+                .first()
+        if match != None:
+            return True
+        # TODO: add checks for group/everyone sharing ...
+        return False
+
     def remove_sharing(self, user, project, member=None):
         if member == None:
             self.session.query(GroupSharing) \
@@ -522,9 +542,9 @@ class UserManager(object):
                     .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
                     .delete()
         else:
-            other_user = self.get_user(member)
+            invited_user = self.get_user(member)
             self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=other_user.id) \
+                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=invited_user.id) \
                     .delete()
 
     def add_sharing(self, user, project, member, edit=False, loadany=False):
@@ -1345,17 +1365,22 @@ def _cmp_files_in_project(fs1, fs2):
         return cmp(file1.name, file2.name)
     return proj_diff
     
-def get_project(user, owner, project_name, create=False, clean=False):
+def get_project(user, owner, project_name, create=False, clean=False, user_manager=None):
     """Create a project object that provides an appropriate view
     of the project for the given user. A project is identified by
     the 'owner' of the project and by the project name. If
     create is True, the project will be created if it does not
     already exist. If clean is True, the project will be deleted
-    and recreated if it already exists."""
+    and recreated if it already exists. If user=!owner then a
+    user_manager must be specified to allow permission checking"""
+
     _check_identifiers("Project names", project_name)
+
     if user != owner:
-        raise NotAuthorized("User %s is not allowed to access project %s" %
-                            (user, project_name))
+        # should we assert user_manager != null?
+        if not user_manager.is_project_accessible(owner, project_name, user):
+            raise NotAuthorized("User %s is not allowed to access project %s" %
+                                (user, project_name))
 
     # a request for a clean project also implies that creating it
     # is okay
