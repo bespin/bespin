@@ -487,7 +487,7 @@ def testfrontend():
     fixedrunner = basedir / ".." / "tests" / "unit" / "runner.js"
     fixedrunner.copy(basedir / "util" / "doh" / "runner.js")
 
-    sh("java -jar frontend/js/util/shrinksafe/js.jar frontend/js/util/doh/runner.js dojoUrl=frontend/js/dojo/dojo.js testUrl=frontend/tests/unit/util.js testModule=tests.unit.util dohBase=frontend/js/util/doh/")
+    sh("java -jar frontend/js/util/shrinksafe/js.jar frontend/js/util/doh/runner.js dojoUrl=frontend/js/dojo/dojo.js testUrl=frontend/tests/unit/loadfiles.js testModule=tests.unit.loadfiles dohBase=frontend/js/util/doh/")
 
 
 """

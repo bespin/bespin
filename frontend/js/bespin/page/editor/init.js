@@ -111,13 +111,13 @@ dojo.provide("bespin.page.editor.init");
     //
     // Loads and configures the objects that the editor needs
     dojo.addOnLoad(function() {
-        bespin.register('quickopen', new bespin.editor.quickopen.API());
         var editor = bespin.register('editor', new bespin.editor.API('editor'));
         var editSession = bespin.register('editSession', new bespin.client.session.EditSession(editor));
         var server = bespin.register('server', new bespin.client.Server());
         var files = bespin.register('files', new bespin.client.FileSystem());
 
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
+        bespin.register('quickopen', new bespin.editor.quickopen.API());
 
         // Force a login just in case the user session isn't around
         server.currentuser(bespin.page.editor.whenLoggedIn, bespin.page.editor.whenNotLoggedIn);
@@ -129,6 +129,40 @@ dojo.provide("bespin.page.editor.init");
         bespin.subscribe("settings:loaded", function(event) {
             bespin.get('settings').loadSession();  // load the last file or what is passed in
             bespin.page.editor.doResize();
+        });
+        
+        // bind in things for search :)
+        dojo.connect(window, 'keydown', function(e) {
+            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
+                dojo.stopEvent(e);
+                dojo.byId('searchquery').focus();
+                dojo.byId('searchquery').select();
+            }
+        });
+
+        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
+            if (e.keyCode == bespin.util.keys.Key.ENTER) {
+                if (dojo.byId('searchquery').value != '') {
+                    // want to search? Do so!
+                    if (bespin.get('commandLine').executeCommand('search ' + dojo.byId('searchquery').value)) {
+                        dojo.byId('canvas').focus();
+                        bespin.get('editor').setFocus(true);
+                        dojo.stopEvent(e);                    
+                    } else {
+                        dojo.byId('searchquery').select();
+                    }                    
+                } else {
+                    // in this case just remove the searchString
+                    delete bespin.get('editor').ui.searchString;
+                    bespin.get('editor').ui.actions.findClear();
+                }
+            }
+        });
+
+        // handle things when search field get focused
+        dojo.connect(dojo.byId('searchquery'), 'focus', function(e) {
+            bespin.get('editor').setFocus(false);
+            dojo.byId('searchquery').select();
         });
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");

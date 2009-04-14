@@ -183,6 +183,46 @@ bespin.cmd.commands.add({
         }
 });
 
+// ** {{{Command: search}}} **
+bespin.cmd.commands.add({
+        name: 'search',
+        takes: ['searchString'],
+        preview: 'searches the current file for the given searchString',
+        completeText: 'type in a string to search',
+        execute: function(self, str) {
+            var editor = bespin.get('editor');            
+            var count = editor.model.getCountOfString(str);
+
+            if (count == 0) {
+                // there isn't anything? => well, there is no such string within the file!
+                self.showInfo("The given searchString '" + str + "' was not found in the current file!", true);
+                delete editor.ui.searchString;
+                editor.paint(true);
+                return false;
+            }
+
+            // okay, there are matches, so go on...
+            editor.ui.searchString = str;
+            var pos = bespin.editor.utils.copyPos(editor.cursorManager.getCursorPosition());
+
+            // first try to find the searchSting from the current position
+            if (!editor.ui.actions.findNext()) {
+                // there was nothing found? Search from the beginning
+                editor.cursorManager.moveCursor({col: 0, row: 0 });
+            }
+
+            var msg = "Found " + count + " match";
+            if (count > 1) { msg += 'es'; }
+            msg += " for your search for <em>" + str + "</em>";
+
+            self.showInfo(msg, true);
+
+            editor.paint(true);
+
+            return true;
+        }
+});
+
 // ** {{{Command: files (ls, list)}}} **
 bespin.cmd.commands.add({
     name: 'files',

@@ -14,8 +14,8 @@
 
     <script type="text/javascript" src="http://extjs.com/deploy/dev/ext-all.js"></script>
 
-    <script src="../../js/dojo/dojo.js"></script>
-    <script src="../../js/bespin/editor/embed.js"></script>
+    <script src="../../../js/dojo/dojo.js"></script>
+    <script src="../../../js/bespin/editor/embed.js"></script>
 
 	<script type="text/javascript">
 	/*
@@ -27,8 +27,6 @@
 	 */
 	
 	Ext.onReady(function(){
-
-	
 		// second tabs built from JS
 		var tabs2 = new Ext.TabPanel({
 			renderTo: document.body,
@@ -47,8 +45,7 @@
 		load();
 	});
 	
-	function load()
-	{
+	function load() {
 		var editor= new bespin.editor.Component('editor', {
 			language: 'js',
 			content: 'function() {\n  alert("foo");\n}'
@@ -58,11 +55,7 @@
 </head>
 
 <body>
-<br />
-<br />
-<br />
-<br />
-
+<br><br><br><br>
 </body>
 </html>
 
