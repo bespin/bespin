@@ -214,7 +214,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveUp: function() {
         var settings = bespin.get("settings");
         var selection = this.editor.getSelection();
-        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.startPos.row, col: this.position.col} : this.position);
+        var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: oldPos.row - 1, col: Math.max(oldPos.col, this.virtualCol) });
@@ -230,7 +230,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
     moveDown: function() {
         var settings = bespin.get("settings");
         var selection = this.editor.getSelection();
-        var oldPos = bespin.editor.utils.copyPos(selection ? { row: selection.endPos.row, col: this.position.col} : this.position);
+
+        var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
 
         this.moveCursor({ row: Math.max(0, oldPos.row + 1), col: Math.max(oldPos.col, this.virtualCol) });
@@ -243,11 +244,12 @@ dojo.declare("bespin.editor.CursorManager", null, {
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 
-    moveLeft: function() {
+    moveLeft: function(args) {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        
-        if (!this.editor.getSelection()) {
+        var shiftKey = (args.event ? args.event.shiftKey : false);
+
+        if (!this.editor.getSelection() || shiftKey) {
             if (settings && settings.isSettingOn('smartmove')) {
                 var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
                 if (freeSpaces == this.editor.getTabSize()) {
@@ -267,18 +269,18 @@ dojo.declare("bespin.editor.CursorManager", null, {
             }
         } else {
             this.moveCursor(this.editor.getSelection().startPos);
-            //delete this.editor.selection;
         }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 
-    moveRight: function(newStuffInsert) {
+    moveRight: function(args) {
         var settings = bespin.get("settings");
         var oldPos = bespin.editor.utils.copyPos(this.position);
-        
-        if (!this.editor.getSelection()) {
-            if ((settings && settings.isSettingOn('smartmove')) && !newStuffInsert) {
+        var shiftKey = (args.event ? args.event.shiftKey : false);
+
+        if (!this.editor.getSelection() || shiftKey) {
+            if ((settings && settings.isSettingOn('smartmove')) && args != true) {
                 var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
                 if (freeSpaces == this.editor.getTabSize()) {
                     this.moveCursor({ col: oldPos.col + freeSpaces })  
@@ -297,9 +299,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
             }
         } else {
             this.moveCursor(this.editor.getSelection().endPos);
-            //delete this.editor.selection;
         }
-
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },

@@ -36,6 +36,7 @@ bespin.themes.coffee = {
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#2A211C",
     highlightCurrentLineColor: "#3a312b",
+    editorTextFont: "10pt Monaco, Lucida Console, monospace",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#526DA5",
@@ -57,6 +58,8 @@ bespin.themes.coffee = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#392A25",
+    searchHighlight: "#B55C00",
+    searchHighlightSelected: "#FF9A00",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -121,6 +124,7 @@ bespin.themes.white = {
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#FFFFFF",
     highlightCurrentLineColor: "#3a312b",
+    editorTextFont: "10pt Monaco, Lucida Console, monospace",
     editorTextColor: "#000000",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#4d97ff",
@@ -142,6 +146,8 @@ bespin.themes.white = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#E0D4CB",
+    searchHighlight: "#B55C00",
+    searchHighlightSelected: "#FF9A00",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -178,6 +184,7 @@ bespin.themes.black = {
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     zebraStripeColor: "#000000", //"#111111",
     highlightCurrentLineColor: "#3a312b",
+    editorTextFont: "10pt Monaco, Lucida Console, monospace",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#243b75",
@@ -199,6 +206,8 @@ bespin.themes.black = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#E0D4CB",
+    searchHighlight: "#B55C00",
+    searchHighlightSelected: "#FF9A00",
 
     // syntax definitions
     plain: "#bdae9d",

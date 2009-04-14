@@ -42,7 +42,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         this._started  = false;
         
         this.currentMetaInfo;
-        
+        this.lineMarkers = [];
+
         // ** {{{ Event: parser:error }}} **
         // 
         // Parser found an error in the source code
@@ -50,7 +51,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             bespin.publish("message", { 
                 msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
                 tag: 'autohide'
-            })
+            });
+            self.lineMarkers.push(error);
         })
         
         // ** {{{ Event: parser:showoutline }}} **
@@ -222,7 +224,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             if (type) { 
                 var source = editor.model.getDocument();
-                
+                self.lineMarkers = [];
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
                     if (data.isError) {
                         // publish custom event if we found an error
@@ -236,6 +238,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 })
             }
         }
+    },
+
+    getLineMarkers: function() {
+        return this.lineMarkers;
     }
 })
 

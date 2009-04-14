@@ -424,7 +424,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
             var fontsize = parseInt(event.value);
-            editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
+            editor.theme.editorTextFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
         // ** {{{ Event: settings:set:theme }}} **
