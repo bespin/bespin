@@ -739,7 +739,6 @@ dojo.declare("bespin.editor.Actions", null, {
     // clear the "find". This removes the highlighting
     findClear: function() {
         if (this.editor.ui.searchString) {
-            bespin.get('commandLine').showInfo('Reset searchString', true);
             delete this.editor.ui.searchString;   
             this.repaint();
         }
