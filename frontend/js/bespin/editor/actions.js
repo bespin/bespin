@@ -756,11 +756,11 @@ dojo.declare("bespin.editor.Actions", null, {
         this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
 
-        args.action = "undoSelectionChangeCase";
+        /*args.action = "undoSelectionChangeCase";
         var redoOperation = args;
         var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, stringCase: args.stringCase};
         var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));*/
     },
 
     repaint: function() {
