@@ -108,10 +108,10 @@ bespin.subscribe("editor:preview", function(event) {
                         preview.removeChild(inlineIframe);
                         dojo.style(preview, "display", "none");
                         dojo.style(subheader, "display", "block");
-                        dojo.style(editor, "display", "block"); 
-                        dojo.disconnect(esc); 
-                }
-            });
+                        dojo.style(editor, "display", "block");
+                        dojo.disconnect(esc);
+                    }
+                });
             }
         } else if (type == "iphone") {
             var centerpopup = dojo.byId("centerpopup");

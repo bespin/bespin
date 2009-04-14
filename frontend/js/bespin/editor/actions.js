@@ -736,12 +736,9 @@ dojo.declare("bespin.editor.Actions", null, {
         }
     },
 
-    // clear the "find". This removes the highlighting
-    findClear: function() {
-        if (this.editor.ui.searchString) {
-            delete this.editor.ui.searchString;   
-            this.repaint();
-        }
+    // Fire an escape message so various parts of the UI can choose to clear
+    escape: function() {
+        bespin.publish("escape");
     },
 
     // focus the search field

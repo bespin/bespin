@@ -753,7 +753,7 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
 
         // SEARCH / FIND
-        listener.bindKeyString("", Key.ESCAPE, this.actions.findClear, "Clear the find dialog");
+        listener.bindKeyString("", Key.ESCAPE, this.actions.escape, "Clear fields and dialogs");
         listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
         listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
         listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");

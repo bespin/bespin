@@ -270,5 +270,15 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("cmdline:blur", function(event) {
             editor.setFocus(true);
         });
+
+        // ** {{{ Event: escape }}} **
+        // 
+        // escape key hit, so clear the find
+        bespin.subscribe("escape", function(event) {
+            if (editor.ui.searchString) {
+                delete editor.ui.searchString;
+            }
+        });
+
     }
 });
