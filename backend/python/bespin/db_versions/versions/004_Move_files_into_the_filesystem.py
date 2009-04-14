@@ -16,8 +16,8 @@ files_table = metadata.tables['files']
 users_table = metadata.tables['users']
 projects_table = metadata.tables['projects']
 
-good_characters = r'+\w@.-'
-good_pattern = re.compile(r'\w[%s]*' % good_characters, re.UNICODE)
+good_characters = r'\w-'
+good_pattern = re.compile(r'^\w[%s]*$' % good_characters, re.UNICODE)
 bad_pattern = re.compile(r'[^%s]' % good_characters, re.UNICODE)
 bad_beginning = re.compile(r'^\W', re.UNICODE)
 

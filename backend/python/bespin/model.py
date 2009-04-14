@@ -346,16 +346,15 @@ class GroupSharing(Base):
         self.edit = edit
         self.loadany = loadany
 
-bad_characters = r'\W'
-invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
+good_characters = r'\w-'
+good_pattern = re.compile(r'^\w[%s]*$' % good_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
-    if invalid_chars.search(value):
+    if not config.c.restrict_identifiers:
+        return
+    if not good_pattern.match(value):
         log.error("Invalid identifier kind='%s', value='%s'" % (kind, value))
-        raise BadValue("%s cannot contain any of: %s" % (kind, bad_characters))
-    if value.startswith("."):
-        log.error("Identifier starts with '.' value='%s'" % (kind, value))
-        raise BadValue("%s cannot start with '.'" % (kind))
+        raise BadValue("%s must only contain letters, numbers and dashes and must start with a letter or number." % (kind))
 
 class UserManager(object):
     def __init__(self, session):
