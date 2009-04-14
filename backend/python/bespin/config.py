@@ -57,10 +57,16 @@ c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
+
+# turns on asynchronous running of long jobs (like vcs)
+c.async_jobs = True
+
+# beanstalkd host and port
 c.queue_host = None
 c.queue_port = None
+
+# holds the actual queue object
 c.queue = None
-c.async_jobs = True
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
