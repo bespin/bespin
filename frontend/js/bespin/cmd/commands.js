@@ -1067,13 +1067,11 @@ bespin.cmd.commands.add({
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
     // ** {{{execute}}}
     execute: function(self, args) {
-        var usernames = bespin.cmd.commands.toArgArray(args);
-
-        if (usernames.length == 0) {
+        if (args.pieces.length == 0) {
             self.showInfo('Please specify the users to cease following');
         }
         else {
-            bespin.publish("network:unfollow", [ usernames ]);
+            bespin.publish("network:unfollow", [ args.pieces ]);
         }
     }
 });
@@ -1084,7 +1082,7 @@ bespin.cmd.commands.add({
     preview: 'Collect the people you follow into groups, and display the existing groups',
     // ** {{{execute}}}
     execute: function(self, args) {
-        args = bespin.cmd.commands.toArgArray(args);
+        args = args.pieces;
 
         if (args.length == 0) {
             bespin.publish("groups:list:all");
@@ -1120,10 +1118,11 @@ bespin.cmd.commands.add({
 // ** {{{Command: share}}} **
 bespin.cmd.commands.add({
     name: 'share',
+    takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
     // ** {{{execute}}}
     execute: function(self, args) {
-        args = bespin.cmd.commands.toArgArray(args);
+        args = args.pieces;
 
         if (args.length == 0) {
             // i.e. 'share'

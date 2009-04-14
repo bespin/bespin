@@ -66,17 +66,42 @@ def test_sharing():
     s, user_manager = _get_user_manager(True)
     mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
 
-    project = get_project(joe, joe, "test_sharing_project", create=True)
+    assert len(joe.projects) == 1 # We start with a SampleProject
+    joes_project = get_project(joe, joe, "joes_project", create=True)
+    assert len(joe.projects) == 2
     assert user_manager.get_sharing(joe) == []
 
-    user_manager.add_sharing(joe, project, "ev", False, False)
+    user_manager.add_sharing(joe, joes_project, "ev", False, False)
     sharing = user_manager.get_sharing(joe)
-    assert sharing == [{'loadany':False, 'edit':False, 'type':'user', 'project':'test_sharing_project', 'owner':'joe', 'recipient':'ev'}]
+    assert sharing == [{'loadany':False, 'edit':False, 'type':'user', 'project':'joes_project', 'owner':'joe', 'recipient':'ev'}]
 
-    user_manager.remove_sharing(joe, project)
+    # Joe has shared a project with ev but without anyone following him nothing changes
+    assert len(ev.projects) == 1
+    assert len(tom.projects) == 1
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(ev, False)) == 1
+    assert len(user_manager.get_user_projects(tom, False)) == 1
+
+    user_manager.follow(ev, joe)
+
+    # user.projects reports projects that the user owns, so this should not change
+    assert len(ev.projects) == 1
+    assert len(tom.projects) == 1
+
+    evs_projects = user_manager.get_user_projects(ev, True)
+    assert len(evs_projects) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(ev, False)) == 1
+    assert len(user_manager.get_user_projects(tom, False)) == 1
+
+    user_manager.remove_sharing(joe, joes_project)
     assert user_manager.get_sharing(joe) == []
 
-    project.delete()
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+
+    joes_project.delete()
 
 # Group tests
 def _test_groups():
@@ -85,6 +110,12 @@ def _test_groups():
 
     assert len(user_manager.get_groups(joe)) == 0
     user_manager.add_group_members(joe, "homies", mattb)
+
+def _followed_names(connections):
+    return set([connection.followed.username for connection in connections])
+
+def _following_names(connections):
+    return set([connection.following.username for connection in connections])
 
 # Follower tests
 def test_follow():
@@ -107,10 +138,10 @@ def test_follow():
     user_manager.follow(zuck, joe)
     assert len(user_manager.users_i_follow(joe)) == 0
     assert len(user_manager.users_i_follow(mattb)) == 0
-    assert user_manager.users_i_follow(zuck) == [ "joe" ]
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
     assert len(user_manager.users_i_follow(tom)) == 0
     assert len(user_manager.users_i_follow(ev)) == 0
-    assert user_manager.users_following_me(joe) == [ "zuck" ]
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck" ])
     assert len(user_manager.users_following_me(mattb)) == 0
     assert len(user_manager.users_following_me(zuck)) == 0
     assert len(user_manager.users_following_me(tom)) == 0
@@ -121,11 +152,11 @@ def test_follow():
     user_manager.follow(ev, joe)
     user_manager.follow(tom, joe)
     assert len(user_manager.users_i_follow(joe)) == 0
-    assert user_manager.users_i_follow(zuck) == [ "joe" ]
-    assert user_manager.users_i_follow(mattb) == [ "joe" ]
-    assert user_manager.users_i_follow(tom) == [ "joe" ]
-    assert user_manager.users_i_follow(ev) == [ "joe" ]
-    assert set(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
     assert len(user_manager.users_following_me(zuck)) == 0
     assert len(user_manager.users_following_me(mattb)) == 0
     assert len(user_manager.users_following_me(tom)) == 0
@@ -139,13 +170,13 @@ def test_follow():
     except model.ConflictError:
         s.rollback()
     assert len(user_manager.users_i_follow(joe)) == 0
-    assert user_manager.users_i_follow(zuck) == [ "joe" ]
-    assert user_manager.users_i_follow(mattb) == [ "joe" ]
-    assert user_manager.users_i_follow(tom) == [ "joe" ]
-    assert user_manager.users_i_follow(ev) == [ "joe" ]
-    assert set(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
-    assert len(user_manager.users_following_me(zuck)) == 0
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
     assert len(user_manager.users_following_me(mattb)) == 0
+    assert len(user_manager.users_following_me(zuck)) == 0
     assert len(user_manager.users_following_me(tom)) == 0
     assert len(user_manager.users_following_me(ev)) == 0
 
@@ -157,11 +188,11 @@ def test_follow():
     except model.ConflictError:
         s.rollback()
     assert len(user_manager.users_i_follow(joe)) == 0
-    assert user_manager.users_i_follow(zuck) == [ "joe" ]
-    assert user_manager.users_i_follow(mattb) == [ "joe" ]
-    assert user_manager.users_i_follow(tom) == [ "joe" ]
-    assert user_manager.users_i_follow(ev) == [ "joe" ]
-    assert set(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
     assert len(user_manager.users_following_me(mattb)) == 0
     assert len(user_manager.users_following_me(zuck)) == 0
     assert len(user_manager.users_following_me(tom)) == 0
@@ -173,15 +204,15 @@ def test_follow():
     user_manager.follow(joe, mattb)
     user_manager.follow(joe, ev)
     assert len(user_manager.users_i_follow(joe)) == 4
-    assert user_manager.users_i_follow(zuck) == [ "joe" ]
-    assert user_manager.users_i_follow(mattb) == [ "joe" ]
-    assert user_manager.users_i_follow(tom) == [ "joe" ]
-    assert user_manager.users_i_follow(ev) == [ "joe" ]
-    assert set(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
-    assert user_manager.users_following_me(mattb) == [ "joe" ]
-    assert user_manager.users_following_me(zuck) == [ "joe" ]
-    assert user_manager.users_following_me(tom) == [ "joe" ]
-    assert user_manager.users_following_me(ev) == [ "joe" ]
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "joe" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
+    assert _following_names(user_manager.users_following_me(mattb)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(zuck)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(tom)) == set([ "joe" ])
+    assert _following_names(user_manager.users_following_me(ev)) == set([ "joe" ])
 
     # A love in
     user_manager.follow(zuck, tom)
@@ -196,60 +227,60 @@ def test_follow():
     user_manager.follow(ev, zuck)
     user_manager.follow(ev, tom)
     user_manager.follow(ev, mattb)
-    assert len(user_manager.users_i_follow(joe)) == 4
-    assert len(user_manager.users_i_follow(zuck)) == 4
-    assert len(user_manager.users_i_follow(mattb)) == 4
-    assert len(user_manager.users_i_follow(tom)) == 4
-    assert len(user_manager.users_i_follow(ev)) == 4
-    assert set(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
-    assert len(user_manager.users_following_me(zuck)) == 4
-    assert len(user_manager.users_following_me(mattb)) == 4
-    assert len(user_manager.users_following_me(tom)) == 4
-    assert len(user_manager.users_following_me(ev)) == 4
+    assert _followed_names(user_manager.users_i_follow(joe)) == set([ "mattb", "zuck", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "zuck", "tom", "ev", "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "mattb", "tom", "ev", "joe" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "mattb", "zuck", "ev", "joe" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "mattb", "zuck", "tom", "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "zuck", "mattb", "tom", "ev" ])
+    assert _following_names(user_manager.users_following_me(mattb)) == set([ "zuck", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(zuck)) == set([ "mattb", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(tom)) == set([ "mattb", "zuck", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(ev)) == set([ "mattb", "zuck", "tom", "joe" ])
 
     # The joe hate begins
     user_manager.unfollow(zuck, joe)
     user_manager.unfollow(tom, joe)
-    assert len(user_manager.users_i_follow(joe)) == 4
-    assert len(user_manager.users_i_follow(zuck)) == 3
-    assert len(user_manager.users_i_follow(mattb)) == 4
-    assert len(user_manager.users_i_follow(tom)) == 3
-    assert len(user_manager.users_i_follow(ev)) == 4
-    assert len(user_manager.users_following_me(joe)) == 2
-    assert len(user_manager.users_following_me(zuck)) == 4
-    assert len(user_manager.users_following_me(mattb)) == 4
-    assert len(user_manager.users_following_me(tom)) == 4
-    assert len(user_manager.users_following_me(ev)) == 4
+    assert _followed_names(user_manager.users_i_follow(joe)) == set([ "mattb", "zuck", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "zuck", "tom", "ev", "joe" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "mattb", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "mattb", "zuck", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "mattb", "zuck", "tom", "joe" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([ "mattb", "ev" ])
+    assert _following_names(user_manager.users_following_me(mattb)) == set([ "zuck", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(zuck)) == set([ "mattb", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(tom)) == set([ "mattb", "zuck", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(ev)) == set([ "mattb", "zuck", "tom", "joe" ])
 
     # The joe hate continues
     user_manager.unfollow(mattb, joe)
     user_manager.unfollow(ev, joe)
-    assert len(user_manager.users_i_follow(joe)) == 4
-    assert len(user_manager.users_i_follow(zuck)) == 3
-    assert len(user_manager.users_i_follow(mattb)) == 3
-    assert len(user_manager.users_i_follow(tom)) == 3
-    assert len(user_manager.users_i_follow(ev)) == 3
-    assert len(user_manager.users_following_me(joe)) == 0
-    assert len(user_manager.users_following_me(zuck)) == 4
-    assert len(user_manager.users_following_me(mattb)) == 4
-    assert len(user_manager.users_following_me(tom)) == 4
-    assert len(user_manager.users_following_me(ev)) == 4
+    assert _followed_names(user_manager.users_i_follow(joe)) == set([ "mattb", "zuck", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "zuck", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "mattb", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "mattb", "zuck", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "mattb", "zuck", "tom" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([])
+    assert _following_names(user_manager.users_following_me(mattb)) == set([ "zuck", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(zuck)) == set([ "mattb", "tom", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(tom)) == set([ "mattb", "zuck", "ev", "joe" ])
+    assert _following_names(user_manager.users_following_me(ev)) == set([ "mattb", "zuck", "tom", "joe" ])
 
     # Joe: well be like that then
     user_manager.unfollow(joe, zuck)
     user_manager.unfollow(joe, tom)
     user_manager.unfollow(joe, mattb)
     user_manager.unfollow(joe, ev)
-    assert len(user_manager.users_i_follow(joe)) == 0
-    assert len(user_manager.users_i_follow(zuck)) == 3
-    assert len(user_manager.users_i_follow(mattb)) == 3
-    assert len(user_manager.users_i_follow(tom)) == 3
-    assert len(user_manager.users_i_follow(ev)) == 3
-    assert len(user_manager.users_following_me(joe)) == 0
-    assert len(user_manager.users_following_me(zuck)) == 3
-    assert len(user_manager.users_following_me(mattb)) == 3
-    assert len(user_manager.users_following_me(tom)) == 3
-    assert len(user_manager.users_following_me(ev)) == 3
+    assert _followed_names(user_manager.users_i_follow(joe)) == set([])
+    assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "zuck", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "mattb", "tom", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(tom)) == set([ "mattb", "zuck", "ev" ])
+    assert _followed_names(user_manager.users_i_follow(ev)) == set([ "mattb", "zuck", "tom" ])
+    assert _following_names(user_manager.users_following_me(joe)) == set([])
+    assert _following_names(user_manager.users_following_me(mattb)) == set([ "zuck", "tom", "ev" ])
+    assert _following_names(user_manager.users_following_me(zuck)) == set([ "mattb", "tom", "ev" ])
+    assert _following_names(user_manager.users_following_me(tom)) == set([ "mattb", "zuck", "ev" ])
+    assert _following_names(user_manager.users_following_me(ev)) == set([ "mattb", "zuck", "tom" ])
 
     # And we all throw our toys out of the pram
     user_manager.unfollow(zuck, tom)

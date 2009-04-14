@@ -714,12 +714,12 @@ class Persister:
 
   def load(self, name):
     project, path = self.__decomposeName(name)
-    print "loading from: %s" % name
+    print "loading from: %s/%s" % (project.name, path)
     return project.get_file(path)
 
   def save(self, name, contents):
     project, path = self.__decomposeName(name)
-    print "saving to: %s" % name
+    print "saving to: %s/%s" % (project.name, path)
     project.save_file(path, contents)
 
   def __decomposeName(self, name):
@@ -727,9 +727,18 @@ class Persister:
     from bespin.config import c
     session = c.sessionmaker(bind=c.dbengine)
     user_manager = model.UserManager(session)
-    (username, projectname, path) = name.split("/", 2)
-    user = user_manager.get_user(username)
-    project = model.get_project(user, user, projectname)
+    (user_name, project_name, path) = name.split("/", 2)
+
+    user = user_manager.get_user(user_name)
+
+    parts = project_name.partition('+')
+    if parts[1] == '':
+        owner = user
+    else:
+        owner = user_manager.get_user(parts[0])
+        project_name = parts[2]
+
+    project = model.get_project(user, owner, project_name, user_manager=user_manager)
     return (project, path)
 
 
