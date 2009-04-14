@@ -22,24 +22,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.themes.default");  
+dojo.provide("bespin.themes.white");  
 
-// = Themes =
-//
-// The editor can be styled with Themes. This will become CSS soon, but for now is JSON
+// = White Theme =
 
-// ** Coffee Theme **
-bespin.themes.coffee = {
-    backgroundStyle: "#2A211C",
-    gutterStyle: "#4c4a41",
-    lineNumberColor: "#e5c138",
+bespin.themes.white = {
+    backgroundStyle: "#FFFFFF",
+    gutterStyle: "#d2d2d2",
+    lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
-    zebraStripeColor: "#2A211C",
+    zebraStripeColor: "#FFFFFF",
     highlightCurrentLineColor: "#3a312b",
     editorTextFont: "10pt Monaco, Lucida Console, monospace",
-    editorTextColor: "rgb(230, 230, 230)",
+    editorTextColor: "#000000",
     editorSelectedTextColor: "rgb(240, 240, 240)",
-    editorSelectedTextBackground: "#526DA5",
+    editorSelectedTextBackground: "#4d97ff",
     cursorStyle: "#879aff",
     cursorType: "ibeam",       // one of "underline" or "ibeam"
     unfocusedCursorStrokeStyle: "#FF0033",
@@ -57,64 +54,33 @@ bespin.themes.coffee = {
     scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
-    tabSpace: "#392A25",
+    tabSpace: "#E0D4CB",
     searchHighlight: "#B55C00",
     searchHighlightSelected: "#FF9A00",
 
     // syntax definitions
     plain: "#bdae9d",
-    keyword: "#42a8ed",
-    string: "#039a0a",
-    comment: "#666666",
-    'c-comment': "#666666",
+    keyword: "#0000ff",
+    string: "#036907",
+    comment: "#0066ff",
+    'c-comment': "#0066ff",
     punctuation: "#888888",
     attribute: "#BF9464",
     test: "rgb(255,0,0)",
     cdata: "#bdae9d",
-    "attribute-value": "#039a0a",
-    tag: "#46a8ed",
-    color: "#c4646b",
-    "tag-name": "#46a8ed",
-    value: "#039a0a",
+    "attribute-value": "#BF9464",
+    tag: "#bdae9d",
+    "tag-name": "#bdae9d",
+    value: "#BF9464",
     important: "#990000",
-    sizes: "#990000",
     cssclass: "#BF9464",
-    cssid: "#46a8ed",  
-       
-    // Codemirror additions (TODO: better color choice)
+    cssid: "#bdae9d"
     
-    atom: "#aa4444",
-    variable: "#00cccc",
-    variabledef: "#4422cc",
-    localvariable: "#cc2277",
-    property: "#66bb33",
-    operator: "#88bbff",
-    error: "#FF0000", 
-    
-    // XML and HTML
-    processing: "#999999",
-    entity: "#AA2222",
-    text: "#00BB00",
-    
-    // PHP
-    "compile-time-constant": "#776088", 
-    "predefined-constant": "#33CC33",
-    "reserved-language-construct": "#00FF00", 
-    "predefined-function": "#22FF22", 
-    "predefined-class": "#22FF22",
-    
-    // Python
-    literal: "#DD4411",
-    identifier: "#22FF22", 
-    func: "#2200FF",  
-    type: "#8822FF",
-    decorator: "#2222FF"
+    // Codemirror additions
+    // TODO
 };
 
-// ** Coffee Zebra Theme **
-bespin.themes.coffeezebra = {};
-dojo.mixin(bespin.themes.coffeezebra, bespin.themes.coffee);
-bespin.themes.coffeezebra.zebraStripeColor = '#FFFFFF';
-
-// ** Setup the default **
-bespin.themes['default'] = bespin.themes.coffee;
+// ** White Zebra Theme **
+bespin.themes.whitezebra = {};
+dojo.mixin(bespin.themes.whitezebra, bespin.themes.white); 
+bespin.themes.whitezebra.zebraStripeColor = '#EAEAEA';
