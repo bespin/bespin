@@ -576,14 +576,20 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:init", function(event) {
             var path    = event.path;
             var project = event.project;
-            
-            // TODO: use the action and don't run a command itself
-            var newfile = settings.fromURL.get('new');
-            if (!newfile) { // scratch file
-                if (project && (editSession.project != project)) {
-                    bespin.publish("project:set", { project: project });
-                }
 
+            if (project && (editSession.project != project)) {
+                bespin.publish("project:set", { project: project });
+            }
+
+            // if this is a new file, deal with it and setup the state
+            var newfile = settings.fromURL.get('new');
+            if (newfile) { // scratch file
+                bespin.publish("editor:newfile", {
+                   project: project,
+                   newfilename: path
+                });
+            // existing file, so open it
+            } else {
                 if (path) {
                     bespin.publish("editor:openfile", { filename: path });
                 }

@@ -76,5 +76,8 @@ bespin.subscribe("editor:newfile", function(event) {
 
     var newfilename = event.newfilename || "new.txt";
 
-    bespin.util.navigate.editor(project, newfilename);
+    bespin.util.navigate.editor(project, newfilename, {
+        newFile: true,
+        newTab: false
+    });
 });
