@@ -253,7 +253,7 @@ bespin.vcs.commands.addCommand({
         
         bespin.vcs.getKeychainPassword(function(kcpass) {
             bespin.get('server').vcs(project, 
-                                    {command: ['push'],
+                                    {command: ['push', '_BESPIN_PUSH'],
                                     kcpass: kcpass}, 
                                     bespin.vcs.standardHandler);
         });

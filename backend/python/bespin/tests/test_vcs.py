@@ -227,8 +227,36 @@ def test_hg_clone_on_web_with_ssh(run_command_params):
     assert metadata['remote_auth'] == vcs.AUTH_BOTH
     assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
     metadata.close()
-    
 
+push_output = "Changes pushed."
+
+@mock_run_command(push_output)
+def test_hg_push_on_web(run_command_params):
+    _init_data()
+    kc = vcs.KeyChain(macgyver, "foobar")
+    # generate key pair
+    kc.get_ssh_key()
+    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    kc.set_ssh_for_project(bigmac, vcs.AUTH_WRITE)
+    metadata = bigmac.metadata
+    metadata['remote_url'] = "http://hg.mozilla.org/labs/bespin"
+    metadata['push'] = "ssh://hg.mozilla.org/labs/bespin"
+    metadata.close()
+    bigmac.save_file(".hg/hgrc", "# test rc file\n")
+    
+    request = simplejson.dumps({'command' : ['push', '_BESPIN_PUSH'], 
+                                'kcpass' : 'foobar'})
+    resp = app.post("/vcs/command/bigmac/", request)
+    resp = app.post("/messages/")
+    
+    command, context = run_command_params
+    
+    command_line = command.get_command_line()
+    print command_line
+    assert command_line[0:3] == ["hg", "push", "-e"]
+    assert command_line[3].startswith("ssh -i")
+    assert command_line[4] == "ssh://hg.mozilla.org/labs/bespin"
+    
 @mock_run_command(diff_output)
 def test_hg_diff_on_web(run_command_params):
     _init_data()

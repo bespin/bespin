@@ -7,9 +7,11 @@ from here:
 
 http://www.codekoala.com/blog/2009/mar/16/aes-encryption-python-using-pycrypto/
 """
+import sys
 import os
 import tempfile
 import random
+from traceback import format_exc
 
 from path import path
 import simplejson
@@ -73,7 +75,15 @@ def vcs_error(qi, e):
     # if we didn't find the user in the database, there's not much
     # we can do.
     if user:
-        message = dict(eventName="vcs:error", output=str(e))
+        if isinstance(e, (model.FSException, main.UVCError)):
+            # for exceptions that are our types, just display the
+            # error message
+            tb = str(e)
+        else:
+            # otherwise, it looks like a programming error and we
+            # want more information
+            tb = format_exc()
+        message = dict(eventName="vcs:error", output=tb)
         message['asyncDone'] = True
         retval = model.Message(user_id=user.id, 
                             message=simplejson.dumps(message))
