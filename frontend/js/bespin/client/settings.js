@@ -97,7 +97,7 @@ dojo.declare("bespin.client.settings.Core", null, {
     //
     // This is where we choose which store to load
     loadStore: function(store) {
-        this.store = new (store || bespin.client.settings.Server)(this);
+        this.store = new (store || bespin.client.settings.ServerFile)(this);
     },
 
     toList: function() {
@@ -206,11 +206,11 @@ dojo.declare("bespin.client.settings.Cookie", null, {
     }
 });    
 
-// ** {{{ bespin.client.settings.Server }}} **
+// ** {{{ bespin.client.settings.ServerAPI }}} **
 //
 // The real grand-daddy that implements uses {{{Server}}} to access the backend
 
-dojo.declare("bespin.client.settings.Server", null, {
+dojo.declare("bespin.client.settings.ServerAPI", null, {
     constructor: function(parent) {
         this.parent = parent;
         this.server = bespin.get('server');
@@ -239,6 +239,78 @@ dojo.declare("bespin.client.settings.Server", null, {
     unset: function(key) {
         delete this.settings[key];
         this.server.unsetSetting(key);
+    }
+});
+
+
+// ** {{{ bespin.client.settings.ServerFile }}} **
+//
+// Store the settings in the file system
+
+dojo.declare("bespin.client.settings.ServerFile", null, {
+    constructor: function(parent) {
+        this.parent = parent;
+        this.server = bespin.get('server');
+        this.settings = this.parent.defaultSettings(); // seed defaults just for now!
+        this.loaded = false;
+
+        // Load up settings from the file system
+        this._load();
+    },
+
+    set: function(key, value) {
+        this.settings[key] = value;
+
+        if (key[0] != '_') this._save(); // Save back to the file system unless this is a hidden setting
+    },
+
+    get: function(key) {
+        return this.settings[key];
+    },
+
+    unset: function(key) {
+        delete this.settings[key];
+
+        this._save(); // Save back to the file system
+    },
+
+    _save: function() {
+        if (!this.loaded) return; // short circuit to make sure that we don't save the defaults over your settings
+
+        var settings = "";
+        for (var key in this.settings) {
+            if (this.settings.hasOwnProperty(key) && (key[0] != '_')) {
+                settings += key + " " + this.settings[key] + "\n";
+            }
+        }
+
+        bespin.get('files').saveFile(bespin.userSettingsProject, {
+            name: "settings.txt",
+            content: settings,
+            timestamp: new Date().getTime()
+        });
+    },
+
+    _load: function() {
+        var checkLoaded = dojo.hitch(this, function() {
+            if (!this.loaded) { // first time load
+                this.loaded = true;
+                bespin.publish("settings:loaded");
+            }
+        });
+
+        setTimeout(dojo.hitch(this, function() {
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings.txt", dojo.hitch(this, function(file) {
+                dojo.forEach(file.content.split(/\n/), dojo.hitch(this, function(setting) {
+                    if (setting.match(/\S+\s+\S+/)) {
+                        var pieces = setting.split(/\s+/);
+                        this.settings[pieces[0]] = pieces[1];
+                    }
+                }));
+
+                checkLoaded();
+            }), checkLoaded); // unable to load the file, so kick this off and a save should kick in
+        }), 0);
     }
 });
 
