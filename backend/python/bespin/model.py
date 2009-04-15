@@ -1001,17 +1001,22 @@ class Project(object):
         The files inside of that directory will be installed into
         the project, with the common root for the files chopped off.
         
-        Additionally, filenames containing { will be treated as Jinja2
-        templates and the contents of files will be treated as Jinja2
+        Additionally, filenames containing { will be treated as JSON Template
+        templates and the contents of files will be treated as JSON Template
         templates. This means that the filenames can contain variables
         that are substituted when the template is installed into the
         user's project. The contents of the files can also have variables
         and small amounts of logic.
         
-        These Jinja2 templates automatically have "project" as a variable
-        (you might often want to use project.name). You can pass in
-        a dictionary for other_vars and those values will also be available
-        in the templates.
+        These JSON Template templates automatically have the following
+        variables:
+        
+        * project: the project name
+        * username: the project owner's username
+        * filename: the name of the file being generated
+        
+        You can pass in a dictionary for other_vars and those values 
+        will also be available in the templates.
         """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
