@@ -98,12 +98,6 @@ dojo.declare("bespin.client.settings.Core", null, {
     // This is where we choose which store to load
     loadStore: function(store) {
         this.store = new (store || bespin.client.settings.Server)(this);
-
-//        this.store = new Bespin.Settings.Cookie(this);
-
-// TODO: ignore gears for now:
-// this.store = (window['google']) ? new Bespin.Settings.DB : new Bespin.Settings.InMemory;
-// this.store = new Bespin.Settings.InMemory;
     },
 
     toList: function() {
