@@ -362,6 +362,15 @@ dojo.provide("bespin.page.dashboard.init");
         scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
             var db = bespin.page.dashboard;
+            
+            var treepath = tree.getSelectedPath();
+            var selectionInfo = {
+                project: db.getFilePath([treepath[0]]),
+                path: db.getFilePath(treepath.slice(1, treepath.length)),
+                fromDashboardItemSelected: true
+            }
+            bespin.publish("file:set", selectionInfo);
+            
             // this keeps the url to be changed if the file path changes to frequently
             if (db.urlTimeout) {
                 clearTimeout(db.urlTimeout);
