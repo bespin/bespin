@@ -123,20 +123,9 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
     },
 
     findCompletions: function(value) {
-        var words = value.split(" ");
-        var remainder = words.slice(1, words.length).join(" ");
-        value = words[0];
         var matches = [];
-        
-        var matchedCommand = this.commands[value];
-        
-        if (!matchedCommand) {
-            matchedCommand = this.aliases[value];
-        }
-        
-        if (remainder && matchedCommand && matchedCommand.subcommands) {
-            return matchedCommand.subcommands.findCompletions(remainder);
-        } else if (value.length > 0) {
+
+        if (value.length > 0) {
             for (var command in this.commands) {
                 if (command.indexOf(value) == 0) {
                   matches.push(command);
