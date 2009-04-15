@@ -429,8 +429,8 @@ dojo.declare("bespin.client.settings.Events", null, {
             
             var checkSetAndExit = function() {
                 var themeSettings = bespin.themes[theme];
-                if (themeSettings && (themeSettings != editor.theme)) {
-                    editor.theme = themeSettings;
+                if (themeSettings) {
+                    if (themeSettings != editor.theme) editor.theme = themeSettings;
                     return true;
                 }
                 return false;
