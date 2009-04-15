@@ -354,20 +354,36 @@ bespin.vcs.commands.addCommand({
     preview: 'Adds missing files to the project',
     takes: ['*'],
     completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
     execute: function(self, args) {
         var project;
+        var path;
 
         bespin.withComponent('editSession', function(editSession) {
             project = editSession.project;
+            path = editSession.path;
         });
 
         if (!project) {
             self.showInfo("You need to pass in a project");
             return;
         }
+        
+        if (args.varargs.length == 0) {
+            if (!path) {
+                self.showInfo("You must select a file to add, or use -a for all files.");
+                return;
+            }
+            var command = ["add", path];
+        } else if (args.varargs[0] == "-a") {
+            var command = ["add"]
+        } else {
+            var command = ["add"];
+            command.concat(args.varargs);
+        }
         bespin.get('server').vcs(project, 
-                                {command: ["add"]}, 
+                                {command: command}, 
                                 bespin.vcs.standardHandler);
     }
 });
