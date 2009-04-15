@@ -285,22 +285,13 @@ bespin.vcs.commands.addCommand({
 // ** {{{Command: diff}}} **
 bespin.vcs.commands.addCommand({
     name: 'resolved',
+    takes: ['*'],
     preview: 'Mark files as resolved',
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["resolved"]}, 
-                                bespin.vcs.standardHandler);
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("resolved", self, args);
     }                                
 });
 
@@ -348,6 +339,37 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
+bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args) {
+    var project;
+    var path;
+
+    bespin.withComponent('editSession', function(editSession) {
+        project = editSession.project;
+        path = editSession.path;
+    });
+
+    if (!project) {
+        self.showInfo("You need to pass in a project");
+        return;
+    }
+    
+    if (args.varargs.length == 0) {
+        if (!path) {
+            self.showInfo("You must select a file to add, or use -a for all files.");
+            return;
+        }
+        var command = [vcsCommand, path];
+    } else if (args.varargs[0] == "-a") {
+        var command = [vcsCommand]
+    } else {
+        var command = [vcsCommand];
+        command.concat(args.varargs);
+    }
+    bespin.get('server').vcs(project, 
+                            {command: command}, 
+                            bespin.vcs.standardHandler);
+}
+
 // ** {{{Command: add}}} **
 bespin.vcs.commands.addCommand({
     name: 'add',
@@ -357,34 +379,7 @@ bespin.vcs.commands.addCommand({
     description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
     execute: function(self, args) {
-        var project;
-        var path;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-            path = editSession.path;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        
-        if (args.varargs.length == 0) {
-            if (!path) {
-                self.showInfo("You must select a file to add, or use -a for all files.");
-                return;
-            }
-            var command = ["add", path];
-        } else if (args.varargs[0] == "-a") {
-            var command = ["add"]
-        } else {
-            var command = ["add"];
-            command.concat(args.varargs);
-        }
-        bespin.get('server').vcs(project, 
-                                {command: command}, 
-                                bespin.vcs.standardHandler);
+        bespin.vcs._performVCSCommandWithFiles("add", self, args);
     }
 });
 
