@@ -427,45 +427,45 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:set:theme", function(event) {
             var theme = event.value;
             
-            if (theme) {
+            var checkSetAndExit = function() {
                 var themeSettings = bespin.themes[theme];
-
-                if (!themeSettings) { // Not in the default themes, load from bespin.themes
-                    try {
-                        dojo.require("bespin.themes." + theme);
-                        themeSettings = bespin.themes[theme];
-                    } catch (e) {
-                        //console.log(e);
-                    }
-
-                    if (!themeSettings) { // Not in bespin.themes, load from users directory
-                        bespin.get('files').loadContents(bespin.userSettingsProject, "/themes/" + theme + ".js", dojo.hitch(this, function(file) {
-                            try {
-                                eval(file.content);
-                            } catch (e) {
-                                //console.log(e)
-                            }
-
-                            themeSettings = bespin.themes[theme];
-                            if (themeSettings && (themeSettings != editor.theme)) {
-                                editor.theme = themeSettings;
-                            } else {
-                                bespin.publish("message", {
-                                    msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                                });
-                            }
-                        }));
-                    }
-                }
-
-                // If we have a winner, set it to be the editor theme, else tell people the bad news
                 if (themeSettings && (themeSettings != editor.theme)) {
                     editor.theme = themeSettings;
-                } else {
+                    return true;
+                }
+                return false;
+            }
+            
+            if (theme) {
+                // Try to load the theme from the themes hash
+                if (checkSetAndExit()) return true;
+
+                // Not in the default themes, load from bespin.themes.ThemeName file
+                try {
+                    dojo.require("bespin.themes." + theme);
+                    if (checkSetAndExit()) return true;
+                } catch (e) {
+                    //console.log(e);
+                }
+
+                // Not in bespin.themes, load from users directory
+                bespin.get('files').loadContents(bespin.userSettingsProject, "/themes/" + theme + ".js", dojo.hitch(this, function(file) {
+                    try {
+                        eval(file.content);
+                    } catch (e) {
+                        //console.log(e)
+                    }
+
+                    if (!checkSetAndExit()) {                    
+                        bespin.publish("message", {
+                            msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
+                        });
+                    }
+                }), function() {
                     bespin.publish("message", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                    });
-                }
+                    });                    
+                });
             }
         });
 

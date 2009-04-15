@@ -65,18 +65,18 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{project}}} is the name of the project that houses the file
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
-    loadContents: function(project, path, onLoad) {
+    loadContents: function(project, path, onSuccess, onFailure) {
         this.server.loadFile(project, path, function(content) {
             if (/\n$/.test(content)) {
                 content = content.substr(0, content.length - 1);
             }
 
-            onLoad({
+            onSuccess({
                 name: path,
                 content: content,
                 timestamp: new Date().getTime()
             });
-        });
+        }, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.collaborateOnFile(project, path, callback) }}}

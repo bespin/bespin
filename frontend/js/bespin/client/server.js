@@ -281,12 +281,14 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{project}}} is the project to load from
     // * {{{path}}} is the path to load
     // * {{{onSuccess}}} fires after the file is loaded
-    loadFile: function(project, path, onSuccess) {
+    loadFile: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var path = path || '';
         var url = bespin.util.path.combine('/file/at', project, path);
+        var opts = { onSuccess: onSuccess };
+        if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
 
-        this.request('GET', url, null, { onSuccess: onSuccess });
+        this.request('GET', url, null, opts);
     },
 
     // ** {{{ removeFile(project, path, onSuccess, onFailure) }}}
