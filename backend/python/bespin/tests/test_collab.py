@@ -104,7 +104,7 @@ def test_sharing():
     joes_project.delete()
 
 # Group tests
-def test_groups():
+def _test_groups():
     s, user_manager = _get_user_manager(True)
     mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
 
