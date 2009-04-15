@@ -133,11 +133,13 @@ dojo.provide("bespin.page.dashboard.init");
             var oldPath = bd.lastSelectedPath;
             bd.lastSelectedPath = newPath;
                         
-            if (newPath == oldPath && newPath != '') return;     // the path has not changed
+            if (newPath == oldPath && newPath != '') return;    // the path has not changed
 
             newPath = newPath.split('/');
             oldPath = oldPath.split('/');
             currentProject = newPath[0];
+            
+            bespin.publish("project:set", { project: currentProject, suppressPopup: true });
 
             tree.lists[0].selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
             scene.renderAllowed = false;
