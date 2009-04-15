@@ -286,7 +286,8 @@ class Group(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "name"), {})
 
-    def __init__(self, name, owner_viewable=False):
+    def __init__(self, owner, name, owner_viewable=False):
+        self.owner_id = owner.id
         self.name = name
         self.owner_viewable = owner_viewable
 
@@ -455,10 +456,9 @@ class UserManager(object):
         """Add members from a given users group."""
         group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
         if group == None:
-            group = Group(groupname)
+            group = Group(user, groupname)
             self.session.add(group)
             self.session.flush()
-            group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
         self.session.add(GroupMembership(group, user))
         self.session.flush()
         try:
