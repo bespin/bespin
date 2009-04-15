@@ -352,6 +352,8 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'add',
     preview: 'Adds missing files to the project',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
     // ** {{{execute}}} **
     execute: function(self, args) {
         var project;
