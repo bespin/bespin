@@ -55,9 +55,8 @@ from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson
-import jinja2
 
-from bespin import config
+from bespin import config, jsontemplate
 
 log = logging.getLogger("bespin.model")
 
@@ -906,6 +905,13 @@ class ProjectMetadata(dict):
     def __del__(self):
         self.close()
 
+class LenientUndefinedDict(dict):
+    def get(self, key, default=''):
+        return super(LenientUndefinedDict, self).get(key, default)
+        
+    def __missing__(self, key):
+        return ""
+
 class Project(object):
     """Provides access to the files in a project."""
     
@@ -1020,13 +1026,13 @@ class Project(object):
         if not found:
             raise FSException("Unknown project template: %s" % template)
         
-        env = jinja2.Environment()
         if other_vars is not None:
-            variables = other_vars
+            variables = LenientUndefinedDict(other_vars)
         else:
-            variables = {}
+            variables = LenientUndefinedDict()
         
-        variables['project'] = self
+        variables['project'] = self.name
+        variables['username'] = self.owner.username
             
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -1035,8 +1041,7 @@ class Project(object):
                 continue
             for f in filenames:
                 if "{" in f:
-                    temp = env.from_string(f)
-                    dest_f = temp.render(variables)
+                    dest_f = jsontemplate.expand(f, variables)
                 else:
                     dest_f = f
                 
@@ -1045,8 +1050,8 @@ class Project(object):
                 else:
                     destpath = dest_f
                 contents = open(os.path.join(dirpath, f)).read()
-                temp = env.from_string(contents)
-                contents = temp.render(variables)
+                variables['filename'] = dest_f
+                contents = jsontemplate.expand(contents, variables)
                 self.save_file(destpath, contents)
                 
     def list_files(self, path=""):
