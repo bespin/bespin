@@ -274,7 +274,7 @@ dojo.declare("bespin.editor.Events", null, {
         // ** {{{ Event: escape }}} **
         // 
         // escape key hit, so clear the find
-        bespin.subscribe("escape", function(event) {
+        bespin.subscribe("ui:escape", function(event) {
             if (editor.ui.searchString) {
                 delete editor.ui.searchString;
             }

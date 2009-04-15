@@ -738,7 +738,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // Fire an escape message so various parts of the UI can choose to clear
     escape: function() {
-        bespin.publish("escape");
+        bespin.publish("ui:escape");
     },
 
     // focus the search field
