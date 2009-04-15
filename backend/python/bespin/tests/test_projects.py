@@ -114,15 +114,11 @@ def test_customized_template_installation():
     assert fnlist == ["newfile-bigmac.js"]
     contents = flist[0].data
     print contents
-    assert contents == """// bigmac
+    assert contents == """// newfile-bigmac.js
 // Created by MacGyver (who likes the number 42)
-// Who also has:
 
-// BespinSettings
-// SampleProject
-// bigmac
-
-alert("Welcome to bigmac");"""
+alert("Welcome to bigmac");
+"""
     
 def test_common_base_selection():
     tests = [

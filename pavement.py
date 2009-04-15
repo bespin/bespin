@@ -151,6 +151,12 @@ from bespin.config import c
 # bespin_worker jobs
 # c.async_jobs = True
 
+# should Project and User names be restricted to a subset
+# of characters
+# (see bespin.model._check_identifiers)
+# uncomment the next line to turn off the restrictions
+# c.restrict_identifiers = False
+
 # Look in bespin.config to see more options you can set
 """)
     info("Config file created in: %s", options.server.config_file)
