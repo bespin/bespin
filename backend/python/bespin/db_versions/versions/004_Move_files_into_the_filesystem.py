@@ -8,6 +8,9 @@ from path import path
 
 from bespin.config import c
 
+# XXX Temporary for testing
+c.fsroot = "/tmp/DATA"
+
 metadata = MetaData()
 metadata.bind = migrate_engine
 metadata.reflect()
