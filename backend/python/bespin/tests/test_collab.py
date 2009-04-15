@@ -104,18 +104,26 @@ def test_sharing():
     joes_project.delete()
 
 # Group tests
-def _test_groups():
+def test_groups():
     s, user_manager = _get_user_manager(True)
     mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
 
     assert len(user_manager.get_groups(joe)) == 0
     user_manager.add_group_members(joe, "homies", mattb)
+    print _group_name(user_manager.get_groups(joe))
+    assert _group_name(user_manager.get_groups(joe)) == set([ "homies" ])
+    user_manager.add_group_members(joe, "homies", zuck)
+    user_manager.add_group_members(joe, "homies", tom)
+    user_manager.add_group_members(joe, "homies", ev)
 
 def _followed_names(connections):
     return set([connection.followed.username for connection in connections])
 
 def _following_names(connections):
     return set([connection.following.username for connection in connections])
+
+def _group_name(groups):
+    return set([group.name for group in groups])
 
 # Follower tests
 def test_follow():
@@ -305,3 +313,11 @@ def test_follow():
     assert len(user_manager.users_following_me(mattb)) == 0
     assert len(user_manager.users_following_me(tom)) == 0
     assert len(user_manager.users_following_me(ev)) == 0
+
+    # But there is a limit to how much you can hate
+    s.commit()
+    try:
+        user_manager.unfollow(zuck, tom)
+        assert False, "Missing ConflictError"
+    except model.ConflictError:
+        s.rollback()
