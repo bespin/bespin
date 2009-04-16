@@ -264,22 +264,13 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'diff',
     preview: 'Display the differences in the checkout out files',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["diff"]}, 
-                                bespin.vcs.standardHandler);
-    }                                
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("diff", self, args);
+    }
 });
 
 // ** {{{Command: diff}}} **
