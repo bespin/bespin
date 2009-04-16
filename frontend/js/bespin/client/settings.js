@@ -302,9 +302,10 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
         setTimeout(dojo.hitch(this, function() {
             bespin.get('files').loadContents(bespin.userSettingsProject, "settings.txt", dojo.hitch(this, function(file) {
                 dojo.forEach(file.content.split(/\n/), dojo.hitch(this, function(setting) {
+                    if (setting.match(/^\s*#/)) return; // if comments are added ignore
                     if (setting.match(/\S+\s+\S+/)) {
                         var pieces = setting.split(/\s+/);
-                        this.settings[pieces[0]] = pieces[1];
+                        this.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
                     }
                 }));
 
