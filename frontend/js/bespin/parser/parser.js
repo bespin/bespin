@@ -158,24 +158,23 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             // rerun parser every time the doc changes
             var rerun = function() {
-                
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
-                if(timeout) {
+                if (timeout) {
                     clearTimeout(timeout);
                 }
                 timeout = setTimeout(function() {
-                    console.log("Syntax-Check")
+                    console.log("Syntax-Check");
                     self.fetch();
                 }, 400)
             }
-            var onChange =  bespin.subscribe("editor:document:changed", rerun)
+            var onChange = bespin.subscribe("editor:document:changed", rerun);
             
             // ** {{{ Event: parser:stop }}} **
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
-                bespin.unsubscribe(onChange)
+                bespin.unsubscribe(onChange);
                 self._started = false;
             })
         }

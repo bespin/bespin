@@ -40,6 +40,7 @@ dojo.provide("bespin.page.editor.init");
 (function() {
     var projectLabel;
     var fileLabel;
+    var dirtyLabel;
     var scene;
 
     dojo.mixin(bespin.page.editor, {
@@ -184,8 +185,12 @@ dojo.provide("bespin.page.editor.init");
             color: "white",
             font: "12pt Calibri, Arial, sans-serif"
         }});
+        dirtyLabel = new th.components.Label({ text: "", style: {
+            color: "white",
+            font: "12pt Calibri, Arial, sans-serif"
+        }});
 
-        panel.add([ projectLabel, symbolThingie, fileLabel ]);
+        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
         panel.layout = function() {
             var d = this.d();
 
@@ -196,9 +201,12 @@ dojo.provide("bespin.page.editor.init");
                 x += width;
             }
 
-            this.children[2].bounds = { x: x, y: 0, width: d.b.w - d.i.w - x, height: d.b.h };
+            var dirtyWidth = this.children[3].getPreferredWidth(d.b.h);
+            var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
+            this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
+            x += filenameWidth - 18; // 18 is an evil magic number that is caused by a DOM bug. The new Thunderhead will fix this :)
+            this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
         };
-
         scene.render();
         
         // Set up message retrieval
@@ -213,8 +221,24 @@ dojo.provide("bespin.page.editor.init");
         var project = event.project || bespin.get('editSession').project; 
         var filename = event.file.name;
 
-        projectLabel.attributes.text = bespin.get('editSession').project;
+        projectLabel.attributes.text = project;
         fileLabel.attributes.text = filename;
+        scene.render();
+    });
+    
+    // ** {{{ Event: editor:dirty }}} **
+    // 
+    // Add a notifier to show that the file is dirty and needs to be saved
+    bespin.subscribe("editor:dirty", function(event) {
+        dirtyLabel.attributes.text = "●";
+        scene.render();
+    });
+
+    // ** {{{ Event: editor:clean }}} **
+    // 
+    // Take away the notifier. Just saved
+    bespin.subscribe("editor:clean", function(event) {
+        dirtyLabel.attributes.text = "";
         scene.render();
     });
 })();
