@@ -455,7 +455,20 @@ bespin.vcs.commands.addCommand({
 // ** {{{ Event: bespin:vcs:response }}} **
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
-    bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
+    var output = event.output;
+    
+    // if the output is all whitespace, we should display something
+    // nicer
+    if (/^\s*$/.exec(output)) {
+        output = "(Successful command with no visible output)";
+    }
+    
+    bespin.util.webpieces.showContentOverlay("<h2>vcs " 
+                    + event.command 
+                    + " output</h2><pre>" 
+                    + output 
+                    + "</pre>");
+                    
     if (event.command) {
         var command = event.command;
         if (command == "clone") {
