@@ -1172,7 +1172,9 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+        bespin.publish("message", {
+            msg: '<u>Syntax error</u><br><br>' + message + "<br><br>share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]"
+        });
     }
 });
 
