@@ -109,6 +109,7 @@ img {
     background-image: url("../images/info_popup.png");
     background-repeat: no-repeat;
     font-family: Calibri, Arial, sans-serif;
+    -webkit-user-select: text;
 }
 
 #info u {
