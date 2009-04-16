@@ -30,6 +30,7 @@ bespin.themes.pastels = {
     gutterStyle: "#4c4a41",
     lineNumberColor: "#e5c138",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
+    lineMarkerGutterColor: "#CC4444",
     zebraStripeColor: "#221e1e",
     highlightCurrentLineColor: "#342e2e",
     editorTextColor: "rgb(230, 230, 230)",

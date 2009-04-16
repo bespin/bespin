@@ -34,6 +34,7 @@ bespin.themes.coffee = {
     gutterStyle: "#4c4a41",
     lineNumberColor: "#e5c138",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
+    lineMarkerGutterColor: "#CC4444",
     zebraStripeColor: "#2A211C",
     highlightCurrentLineColor: "#3a312b",
     editorTextFont: "10pt Monaco, Lucida Console, monospace",
