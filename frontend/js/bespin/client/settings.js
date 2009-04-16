@@ -73,7 +73,8 @@ dojo.declare("bespin.client.settings.Core", null, {
             'strictlines': 'on',
             'syntaxengine': 'simple',
             'preview': 'window',
-            'smartmove': 'on'
+            'smartmove': 'on',
+            'jslint': 'off'
         };
     },
 
@@ -680,5 +681,13 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });        
 
+        // ** {{{ Event: settings:jslint }}} **
+        //
+        // When changing the jslint setting, restart the parser
+        bespin.subscribe("jslint", function(event) {
+            bespin.publish("parser:stop");
+           bespin.publish("parser:start");
+            bespin.get("parser").fetch();
+        });      
     }
 });
