@@ -40,8 +40,8 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{ Event: network:followers }}} **
-//Get a list of our followers
+// ** {{{ Event: network:followers }}} **
+// Get a list of our followers
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
         onSuccess: function(data) {
@@ -53,8 +53,8 @@ bespin.subscribe("network:followers", function() {
     });
 });
 
-//** {{{ Event: network:follow }}} **
-//Add to the list of users that we follow
+// ** {{{ Event: network:follow }}} **
+// Add to the list of users that we follow
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
         onSuccess: function(data) {
@@ -66,7 +66,7 @@ bespin.subscribe("network:follow", function(usernames) {
     });
 });
 
-//** {{{Command: unfollow}}} **
+// ** {{{Command: unfollow}}} **
 bespin.cmd.commands.add({
     name: 'unfollow',
     takes: ['username ...'],
@@ -85,8 +85,8 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{ Event: network:unfollow }}} **
-//Remove users from the list that we follow
+// ** {{{ Event: network:unfollow }}} **
+// Remove users from the list that we follow
 bespin.subscribe("network:unfollow", function(usernames) {
     bespin.get('server').unfollow(usernames, {
         onSuccess: function(data) {
@@ -140,8 +140,8 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{ Event: groups:list:all }}} **
-//Get a list of our groups
+// ** {{{ Event: groups:list:all }}} **
+// Get a list of our groups
 bespin.subscribe("groups:list:all", function() {
     bespin.get('server').groupListAll({
         onSuccess: function(data) {
@@ -160,12 +160,20 @@ bespin.subscribe("groups:list:all", function() {
     });
 });
 
-//** {{{ Event: groups:list }}} **
-//Get a list of group members
+// ** {{{ Event: groups:list }}} **
+// Get a list of group members
 bespin.subscribe("groups:list", function(group) {
     bespin.get('server').groupList(group, {
         onSuccess: function(data) {
-            bespin.publish("message", { msg: "Members of " + group + ": " + data });
+            var members = dojo.fromJson(data);
+            if (members.length == 0) {
+                console.warn("Group " + group + " has no members - it should have been auto-deleted!")
+                bespin.publish("message", { msg: "" + group + " has no members." });
+            }
+            else {
+                var message = "Members of " + group + ": " + format_json_string_array(members);
+                bespin.publish("message", { msg:message });
+            }
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve group members: " + xhr.responseText });
@@ -173,8 +181,8 @@ bespin.subscribe("groups:list", function(group) {
     });
 });
 
-//** {{{ Event: groups:remove:all }}} **
-//Remove a group and all its members
+// ** {{{ Event: groups:remove:all }}} **
+// Remove a group and all its members
 bespin.subscribe("groups:remove:all", function(group) {
     bespin.get('server').groupRemoveAll(group, {
         onSuccess: function(data) {
@@ -186,8 +194,8 @@ bespin.subscribe("groups:remove:all", function(group) {
     });
 });
 
-//** {{{ Event: groups:add }}} **
-//Add to members of a group
+// ** {{{ Event: groups:add }}} **
+// Add to members of a group
 bespin.subscribe("groups:add", function(group, users) {
     bespin.get('server').groupAdd(group, users, {
         onSuccess: function(data) {
@@ -199,8 +207,8 @@ bespin.subscribe("groups:add", function(group, users) {
     });
 });
 
-//** {{{ Event: groups:remove }}} **
-//Add to members of a group
+// ** {{{ Event: groups:remove }}} **
+// Add to members of a group
 bespin.subscribe("groups:remove", function(group, users) {
     bespin.get('server').groupRemove(group, users, {
         onSuccess: function(data) {
@@ -221,7 +229,7 @@ bespin.cmd.commands.add({
     preview: 'List and alter sharing for a project',
     // ** {{{execute}}}
     execute: function(self, args) {
-        args = bespin.cmd.commands.toArgArray(args);
+        args = args.pieces;
 
         if (args.length == 0) {
             // i.e. 'share'
@@ -275,8 +283,8 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{ Event: share:list:all }}} **
-//List all project shares
+// ** {{{ Event: share:list:all }}} **
+// List all project shares
 bespin.subscribe("share:list:all", function() {
     bespin.get('server').shareListAll({
         onSuccess: function(data) {
@@ -288,8 +296,8 @@ bespin.subscribe("share:list:all", function() {
     });
 });
 
-//** {{{ Event: share:list:project }}} **
-//List sharing for a given project
+// ** {{{ Event: share:list:project }}} **
+// List sharing for a given project
 bespin.subscribe("share:list:project", function(project) {
     bespin.get('server').shareListProject(project, {
         onSuccess: function(data) {
@@ -301,8 +309,8 @@ bespin.subscribe("share:list:project", function(project) {
     });
 });
 
-//** {{{ Event: share:list:project:member }}} **
-//List sharing for a given project and member
+// ** {{{ Event: share:list:project:member }}} **
+// List sharing for a given project and member
 bespin.subscribe("share:list:project:member", function(project, member) {
     bespin.get('server').shareListProjectMember(project, member, {
         onSuccess: function(data) {
@@ -314,8 +322,8 @@ bespin.subscribe("share:list:project:member", function(project, member) {
     });
 });
 
-//** {{{ Event: share:remove:all }}} **
-//Remove all sharing from a project
+// ** {{{ Event: share:remove:all }}} **
+// Remove all sharing from a project
 bespin.subscribe("share:remove:all", function(project) {
     bespin.get('server').shareRemoveAll(project, {
         onSuccess: function(data) {
@@ -327,8 +335,8 @@ bespin.subscribe("share:remove:all", function(project) {
     });
 });
 
-//** {{{ Event: share:remove }}} **
-//Remove project sharing from a given member
+// ** {{{ Event: share:remove }}} **
+// Remove project sharing from a given member
 bespin.subscribe("share:remove", function(project, member) {
     bespin.get('server').shareRemove(project, member, {
         onSuccess: function(data) {
@@ -340,8 +348,8 @@ bespin.subscribe("share:remove", function(project, member) {
     });
 });
 
-//** {{{ Event: share:add }}} **
-//Add a member to the sharing list for a project
+// ** {{{ Event: share:add }}} **
+// Add a member to the sharing list for a project
 bespin.subscribe("share:add", function(project, member, options) {
     bespin.get('server').shareAdd(project, member, options, {
         onSuccess: function(data) {
@@ -388,8 +396,8 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{ Event: viewme:list:all }}} **
-//List all the members with view settings on me
+// ** {{{ Event: viewme:list:all }}} **
+// List all the members with view settings on me
 bespin.subscribe("viewme:list:all", function() {
     bespin.get('server').viewmeListAll({
         onSuccess: function(data) {
@@ -401,8 +409,8 @@ bespin.subscribe("viewme:list:all", function() {
     });
 });
 
-//** {{{ Event: viewme:list }}} **
-//List the view settings for a given member
+// ** {{{ Event: viewme:list }}} **
+// List the view settings for a given member
 bespin.subscribe("viewme:list", function(member) {
     bespin.get('server').viewmeList(member, {
         onSuccess: function(data) {
@@ -414,8 +422,8 @@ bespin.subscribe("viewme:list", function(member) {
     });
 });
 
-//** {{{ Event: viewme:set }}} **
-//Alter the view setting for a given member
+// ** {{{ Event: viewme:set }}} **
+// Alter the view setting for a given member
 bespin.subscribe("viewme:set", function(member, value) {
     bespin.get('server').viewmeSet(member, value, {
         onSuccess: function(data) {
