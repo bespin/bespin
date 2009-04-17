@@ -675,25 +675,31 @@ class UserManager(object):
         return False
 
     def is_project_user_shared(self, owner, project, user):
+        if isinstance(project, Project):
+            project = project.name
         match = self.session.query(UserSharing) \
                 .filter_by(owner_id=owner.id) \
-                .filter_by(project_name=project.name) \
+                .filter_by(project_name=project) \
                 .filter_by(invited_user_id=user.id) \
                 .first()
         return match != None
 
     def is_project_group_shared(self, owner, project, group):
+        if isinstance(project, Project):
+            project = project.name
         match = self.session.query(GroupSharing) \
                 .filter_by(owner_id=owner.id) \
-                .filter_by(project_name=project.name) \
+                .filter_by(project_name=project) \
                 .filter_by(invited_group_id=group.id) \
                 .first()
         return match != None
 
     def is_project_everyone_shared(self, owner, project):
+        if isinstance(project, Project):
+            project = project.name
         match = self.session.query(EveryoneSharing) \
                 .filter_by(owner_id=owner.id) \
-                .filter_by(project_name=project.name) \
+                .filter_by(project_name=project) \
                 .first()
         return match != None
 
