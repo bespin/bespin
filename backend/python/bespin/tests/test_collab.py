@@ -29,14 +29,26 @@
 #from webtest import TestApp
 #import simplejson
 
-from bespin import config, model
+from webtest import TestApp
+import simplejson
+from bespin import config, controllers, model
 from bespin.model import get_project, File, Project, User, Connection, UserManager
+
+session = None
+user_manager = None
+mattb = None
+zuck = None
+tom = None
+ev = None
+joe = None
+app = None
 
 def setup_module(module):
     config.set_profile("test")
     config.activate_profile()
+    _reset()
 
-def _clear_db():
+def _reset():
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     fsroot = config.c.fsroot
@@ -44,34 +56,131 @@ def _clear_db():
         fsroot.rmtree()
     fsroot.makedirs()
 
-def _get_user_manager(clear=False):
-    if clear:
-        _clear_db()
-    s = config.c.sessionmaker(bind=config.c.dbengine)
-    user_manager = UserManager(s)
-    return s, user_manager
-
-def _create_test_users(s, user_manager):
-    num_users = s.query(User).count()
+    global session
+    session = config.c.sessionmaker(bind=config.c.dbengine)
+    num_users = session.query(User).count()
     assert num_users == 0
-    ev = user_manager.create_user("ev", "ev", "ev")
-    tom = user_manager.create_user("tom", "tom", "tom")
+    session.commit()
+
+    global user_manager
+    user_manager = UserManager(session)
+
+    global mattb, zuck, tom, ev, joe
     mattb = user_manager.create_user("mattb", "mattb", "mattb")
     zuck = user_manager.create_user("zuck", "zuck", "zuck")
+    tom = user_manager.create_user("tom", "tom", "tom")
+    ev = user_manager.create_user("ev", "ev", "ev")
     joe = user_manager.create_user("joe", "joe", "joe")
-    return mattb, zuck, tom, ev, joe
+
+    global app
+    app = controllers.make_app()
+    app = TestApp(app)
+    app.post("/register/login/joe", dict(password="joe"))
+
+def _followed_names(connections):
+    return set([connection.followed.username for connection in connections])
+
+def _following_names(connections):
+    return set([connection.following.username for connection in connections])
+
+def _group_names(groups):
+    return set([group.name for group in groups])
+
+def _group_member_names(group_memberships):
+    return set([group_membership.user.username for group_membership in group_memberships])
+
+# Group tests
+def test_groups():
+    _reset()
+
+    assert len(user_manager.get_groups(joe)) == 0
+
+    homies = user_manager.get_group(joe, "homies", create_on_not_found=True)
+    assert _group_names(user_manager.get_groups(joe)) == set([ "homies" ])
+    assert user_manager.get_groups(joe, mattb) == []
+
+    user_manager.add_group_member(homies, mattb)
+    assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "homies" ])
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb" ])
+
+    user_manager.add_group_member(homies, zuck)
+    user_manager.add_group_member(homies, tom)
+    user_manager.add_group_member(homies, ev)
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "tom", "ev" ])
+
+    deleted = user_manager.remove_group_member(homies, tom)
+    assert deleted > 0
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "ev" ])
+
+    deleted = user_manager.remove_group_member(homies, tom)
+    assert deleted == 0
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "ev" ])
+
+    deleted = user_manager.remove_all_group_members(homies)
+    assert deleted > 0
+    assert user_manager.get_group_members(homies) == []
+
+    deleted = user_manager.remove_all_group_members(homies)
+    assert deleted == 0
+    assert user_manager.get_group_members(homies) == []
+
+    user_manager.add_group_member(homies, mattb)
+    user_manager.add_group_member(homies, zuck)
+    user_manager.add_group_member(homies, tom)
+    user_manager.add_group_member(homies, ev)
+
+    deleted = user_manager.remove_group(homies)
+    assert deleted > 0
+    assert user_manager.get_groups(joe) == []
+
+# Group tests
+def test_groups_with_app():
+    _reset()
+
+    assert len(user_manager.get_groups(joe)) == 0
+
+    app.get("/group/list/homies/", status=400)
+    app.post("/group/add/homies/", '["mattb"]')
+
+    homies = user_manager.get_group(joe, "homies", raise_on_not_found=True)
+
+    assert _group_names(user_manager.get_groups(joe)) == set([ "homies" ])
+    assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "homies" ])
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb" ])
+
+    app.post("/group/add/homies/", '["zuck", "tom", "ev"]')
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "tom", "ev" ])
+
+    response = app.post("/group/remove/homies/", '["tom"]')
+    assert int(response.body) >= 1
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "ev" ])
+
+    response = app.post("/group/remove/homies/", '["tom"]')
+    assert response.body == "0"
+    assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb", "zuck", "ev" ])
+
+    response = app.post("/group/remove/all/homies/")
+    assert int(response.body) >= 1
+    assert user_manager.get_group_members(homies) == []
+
+    app.post("/group/remove/all/homies/", status=400)
+
+    app.post("/group/add/homies/", '["mattb", "zuck", "tom", "ev"]')
+    response = app.post("/group/remove/all/homies/")
+    assert int(response.body) >= 1
+    assert user_manager.get_group_members(homies) == []
+    assert user_manager.get_groups(joe) == []
 
 # Sharing tests
 def test_sharing():
-    s, user_manager = _get_user_manager(True)
-    mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
+    _reset()
 
     assert len(joe.projects) == 1 # We start with a SampleProject
     joes_project = get_project(joe, joe, "joes_project", create=True)
     assert len(joe.projects) == 2
     assert user_manager.get_sharing(joe) == []
 
-    user_manager.add_sharing(joe, joes_project, "ev", False, False)
+    user_manager.add_sharing(joe, joes_project, ev, False, False)
     sharing = user_manager.get_sharing(joe)
     assert sharing == [{'loadany':False, 'edit':False, 'type':'user', 'project':'joes_project', 'owner':'joe', 'recipient':'ev'}]
 
@@ -80,8 +189,8 @@ def test_sharing():
     assert len(tom.projects) == 1
     assert len(user_manager.get_user_projects(ev, True)) == 1
     assert len(user_manager.get_user_projects(tom, True)) == 1
-    assert len(user_manager.get_user_projects(ev, False)) == 1
-    assert len(user_manager.get_user_projects(tom, False)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
 
     user_manager.follow(ev, joe)
 
@@ -89,11 +198,68 @@ def test_sharing():
     assert len(ev.projects) == 1
     assert len(tom.projects) == 1
 
-    evs_projects = user_manager.get_user_projects(ev, True)
-    assert len(evs_projects) == 2
+    assert len(user_manager.get_user_projects(ev, True)) == 2
     assert len(user_manager.get_user_projects(tom, True)) == 1
-    assert len(user_manager.get_user_projects(ev, False)) == 1
-    assert len(user_manager.get_user_projects(tom, False)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    # Joe's homies are mattb and zuck
+    homies = user_manager.get_group(joe, "homies", create_on_not_found=True)
+    user_manager.add_group_member(homies, mattb)
+    user_manager.add_group_member(homies, zuck)
+    user_manager.add_sharing(joe, joes_project, homies, False, False)
+
+    # But mattb and zuck don't care they're not following joe
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    user_manager.follow(mattb, joe)
+    user_manager.follow(zuck, joe)
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    # So now joe shares it with everyone
+    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+
+    # Once again, tom doesn't care, because he's not following joe
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.follow(tom, joe)
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 2
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    # Check that we can undo in a different order
+    user_manager.remove_sharing(joe, joes_project, 'everyone')
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.remove_sharing(joe, joes_project, ev)
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.remove_sharing(joe, joes_project, homies)
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    # Share again to check fast removal
+    user_manager.add_sharing(joe, joes_project, ev, False, False)
+    user_manager.add_sharing(joe, joes_project, homies, False, False)
+    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
 
     user_manager.remove_sharing(joe, joes_project)
     assert user_manager.get_sharing(joe) == []
@@ -103,32 +269,9 @@ def test_sharing():
 
     joes_project.delete()
 
-# Group tests
-def _test_groups():
-    s, user_manager = _get_user_manager(True)
-    mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
-
-    assert len(user_manager.get_groups(joe)) == 0
-    user_manager.add_group_members(joe, "homies", mattb)
-    print _group_name(user_manager.get_groups(joe))
-    assert _group_name(user_manager.get_groups(joe)) == set([ "homies" ])
-    user_manager.add_group_members(joe, "homies", zuck)
-    user_manager.add_group_members(joe, "homies", tom)
-    user_manager.add_group_members(joe, "homies", ev)
-
-def _followed_names(connections):
-    return set([connection.followed.username for connection in connections])
-
-def _following_names(connections):
-    return set([connection.following.username for connection in connections])
-
-def _group_name(groups):
-    return set([group.name for group in groups])
-
 # Follower tests
 def test_follow():
-    s, user_manager = _get_user_manager(True)
-    mattb, zuck, tom, ev, joe = _create_test_users(s, user_manager)
+    _reset()
 
     # To start with no-one follows anyone else
     assert len(user_manager.users_i_follow(joe)) == 0
@@ -171,12 +314,12 @@ def test_follow():
     assert len(user_manager.users_following_me(ev)) == 0
 
     # There is a limit to how much love though
-    s.commit()
+    session.commit()
     try:
         user_manager.follow(zuck, joe)
         assert False, "Missing ConflictError"
     except model.ConflictError:
-        s.rollback()
+        session.rollback()
     assert len(user_manager.users_i_follow(joe)) == 0
     assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
     assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
@@ -189,12 +332,12 @@ def test_follow():
     assert len(user_manager.users_following_me(ev)) == 0
 
     # Tom is a narcissist
-    s.commit()
+    session.commit()
     try:
         user_manager.follow(tom, tom)
         assert False, "Missing ConflictError"
     except model.ConflictError:
-        s.rollback()
+        session.rollback()
     assert len(user_manager.users_i_follow(joe)) == 0
     assert _followed_names(user_manager.users_i_follow(mattb)) == set([ "joe" ])
     assert _followed_names(user_manager.users_i_follow(zuck)) == set([ "joe" ])
@@ -315,9 +458,9 @@ def test_follow():
     assert len(user_manager.users_following_me(ev)) == 0
 
     # But there is a limit to how much you can hate
-    s.commit()
+    session.commit()
     try:
         user_manager.unfollow(zuck, tom)
         assert False, "Missing ConflictError"
     except model.ConflictError:
-        s.rollback()
+        session.rollback()

@@ -131,7 +131,7 @@ dojo.declare("bespin.client.Server", null, {
     // that we know when we need to check for messages from the
     // server.
     asyncStarted: function() {
-        console.log("Starting new server-side async job.");
+        console.log("Starting new server-side async job.")
         if (this._asyncCount == 0) {
             this.processMessages();
         }
@@ -145,7 +145,7 @@ dojo.declare("bespin.client.Server", null, {
     // that we know when we can stop checking for messages from the
     // server.
     asyncEnded: function() {
-        console.log("Server-side async job done.");
+        console.log("Server-side async job done.")
         if (this._asyncCount > 0) {
             this._asyncCount--;
         }
@@ -281,14 +281,12 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{project}}} is the project to load from
     // * {{{path}}} is the path to load
     // * {{{onSuccess}}} fires after the file is loaded
-    loadFile: function(project, path, onSuccess, onFailure) {
+    loadFile: function(project, path, onSuccess) {
         var project = project || '';
         var path = path || '';
         var url = bespin.util.path.combine('/file/at', project, path);
-        var opts = { onSuccess: onSuccess };
-        if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
 
-        this.request('GET', url, null, opts);
+        this.request('GET', url, null, { onSuccess: onSuccess });
     },
 
     // ** {{{ removeFile(project, path, onSuccess, onFailure) }}}
@@ -450,6 +448,7 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{archivetype}}} is either zip | tgz
     exportProject: function(project, archivetype) {
         if (bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
+//            console.log('/project/export', project + "." + archivetype);
             var iframe = document.createElement("iframe");
             iframe.src = bespin.util.path.combine('/project/export', project + "." + archivetype);
             iframe.style.display = 'none';
@@ -557,6 +556,12 @@ dojo.declare("bespin.client.Server", null, {
         this.request('GET', '/group/list/' + group + '/', null, opts || {});
     },
 
+    // ** {{{ groupRemove() }}}
+    // Get a list of the users the current user is following
+    groupRemove: function(group, users, opts) {
+        this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
+    },
+
     // ** {{{ groupRemoveAll() }}}
     // Get a list of the users the current user is following
     groupRemoveAll: function(group, opts) {
@@ -566,12 +571,6 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ groupAdd() }}}
     // Get a list of the users the current user is following
     groupAdd: function(group, users, opts) {
-        this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
-    },
-
-    // ** {{{ groupRemove() }}}
-    // Get a list of the users the current user is following
-    groupRemove: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
     },
 
