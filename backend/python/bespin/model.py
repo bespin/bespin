@@ -422,6 +422,26 @@ class UserManager(object):
         found."""
         return self.session.query(User).filter_by(username=username).first()
 
+    def find_member(self, user, member):
+        """ Several UserManager functions take a member parameter which can be
+        either a user or a group or everyone. This works out which"""
+        if isinstance(member, User):
+            return member
+        if isinstance(member, Group):
+            return member
+        if isinstance(member, str):
+            if member == 'everyone':
+                return member
+            else:
+                group = self.get_group(user, member)
+                if group != None:
+                    return group
+                else:
+                    user = self.get_user(member)
+                    if user != None:
+                        return user
+        raise BadValue("No groups or users found called '%s'" % (member))
+
     def get_user_projects(self, user, include_shared=False):
         """Find all the projects that are accessible to the given user.
         See also user.projects, however this method also takes into account
@@ -497,7 +517,7 @@ class UserManager(object):
         if create_on_not_found:
             return self.add_group(user, group_name)
         elif raise_on_not_found:
-            raise BadValue("%s does not have a group called '%s'" % (user.username, group_name))
+            raise ConflictError("%s does not have a group called '%s'" % (user.username, group_name))
         else:
             return None
 
@@ -522,6 +542,8 @@ class UserManager(object):
 
     def add_group_member(self, group, other_user):
         """Add a member to a given users group."""
+        if group.owner_id == other_user.id:
+            raise ConflictError("You can't be a member of your own group")
         membership = GroupMembership(group, other_user)
         self.session.add(membership)
         return membership

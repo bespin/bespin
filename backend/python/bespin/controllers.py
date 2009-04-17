@@ -486,6 +486,7 @@ def unfollow(request, response):
 @expose(r'^/group/list/all', 'GET')
 def group_list_all(request, response):
     groups = request.user_manager.get_groups(request.user)
+    groups = [ group.name for group in groups ]
     return _respond_json(response, groups)
 
 @expose(r'^/group/list/(?P<group>[^/]+)/$', 'GET')
@@ -493,6 +494,7 @@ def group_list(request, response):
     group_name = request.kwargs['group']
     group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
     members = request.user_manager.get_group_members(group)
+    members = [ member.user.username for member in members ]
     return _respond_json(response, members)
 
 @expose(r'^/group/remove/all/(?P<group>[^/]+)/$', 'POST')
@@ -568,7 +570,7 @@ def share_list_project(request, response):
 def share_list_project_member(request, response):
     "List sharing for a given project and member"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.get_sharing(request.user, project, member)
     return _respond_json(response, data)
 
@@ -583,7 +585,7 @@ def share_remove_all(request, response):
 def share_remove(request, response):
     "Remove project sharing from a given member"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.remove_sharing(request.user, project, member)
     return _respond_json(response, data)
 
@@ -591,10 +593,10 @@ def share_remove(request, response):
 def share_add(request, response):
     "Add a member to the sharing list for a project"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     options = simplejson.loads(request.body)
-    data = request.user_manager.add_sharing(request.user, project, member, options)
-    return _respond_json(response, data)
+    request.user_manager.add_sharing(request.user, project, member, options)
+    return _respond_blank(response)
 
 @expose(r'^/viewme/list/all/$', 'GET')
 def viewme_list_all(request, response):
@@ -605,14 +607,14 @@ def viewme_list_all(request, response):
 @expose(r'^/viewme/list/(?P<member>[^/]+)/$', 'GET')
 def viewme_list(request, response):
     "List the view settings for a given member"
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.get_viewme(request.user, member)
     return _respond_json(response, data)
 
 @expose(r'^/viewme/set/(?P<member>[^/]+)/(?P<value>[^/]+)/$', 'POST')
 def viewme_set(request, response):
     "Alter the view setting for a given member"
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     value = request.kwargs['value']
     data = request.user_manager.set_viewme(request.user, member, value)
     return _respond_json(response, data)

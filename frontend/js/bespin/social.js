@@ -289,9 +289,32 @@ bespin.subscribe("share:list:all", function() {
     bespin.get('server').shareListAll({
         onSuccess: function(data) {
             bespin.publish("message", { msg: "Project sharing: " + data });
+
+            var shares = dojo.fromJson(data);
+            if (shares.length == 0) {
+                bespin.publish("message", { msg:"You are not sharing any projects" });
+            }
+            else {
+                var message = "You have the following shares:<ul>\n";
+                dojo.forEach(shares, function(share) {
+                    // loadany needs adding here
+                    var edit = share.edit ? "<strong>Editable</strong>" : "Read-only";
+                    if (share.type == "everyone") {
+                        message += "<li><strong>" + share.project + "</strong> with <strong>everyone</strong>: " + edit + ".</li>\n";
+                    }
+                    else if (share.type == "group") {
+                        message += "<li><strong>" + share.project + "</strong> with the group <strong>" + share.recipient + "</strong>: " + edit + ".</li>\n";
+                    }
+                    else {
+                        message += "<li><strong>" + share.project + "</strong> with <strong>" + share.recipient + "</strong>: " + edit + ".</li>\n";
+                    }
+                });
+                message += "</ul>";
+                bespin.publish("message", { msg:message });
+            }
         },
         onFailure: function(xhr) {
-            bespin.publish("message", { msg: "Failed to list project shares. Maybe due to: " + xhr.responseText });
+            bespin.publish("message", { msg: "Failed to list project shares: " + xhr.responseText });
         }
     });
 });

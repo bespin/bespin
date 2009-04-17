@@ -42,6 +42,7 @@ tom = None
 ev = None
 joe = None
 app = None
+group = None
 
 def setup_module(module):
     config.set_profile("test")
@@ -71,6 +72,11 @@ def _reset():
     tom = user_manager.create_user("tom", "tom", "tom")
     ev = user_manager.create_user("ev", "ev", "ev")
     joe = user_manager.create_user("joe", "joe", "joe")
+    group = user_manager.add_group(joe, "group")
+    user_manager.add_group_member(group, mattb)
+    user_manager.add_group_member(group, zuck)
+    user_manager.add_group_member(group, tom)
+    user_manager.add_group_member(group, ev)
 
     global app
     app = controllers.make_app()
@@ -93,14 +99,14 @@ def _group_member_names(group_memberships):
 def test_groups():
     _reset()
 
-    assert len(user_manager.get_groups(joe)) == 0
+    assert len(user_manager.get_groups(joe)) == 1
 
     homies = user_manager.get_group(joe, "homies", create_on_not_found=True)
-    assert _group_names(user_manager.get_groups(joe)) == set([ "homies" ])
-    assert user_manager.get_groups(joe, mattb) == []
+    assert _group_names(user_manager.get_groups(joe)) == set([ "homies", "group" ])
+    assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "group" ])
 
     user_manager.add_group_member(homies, mattb)
-    assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "homies" ])
+    assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "homies", "group" ])
     assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb" ])
 
     user_manager.add_group_member(homies, zuck)
@@ -129,22 +135,29 @@ def test_groups():
     user_manager.add_group_member(homies, tom)
     user_manager.add_group_member(homies, ev)
 
+    session.commit()
+    try:
+        user_manager.add_group_member(homies, joe)
+        assert False, "Missing ConflictError"
+    except model.ConflictError:
+        session.rollback()
+
     deleted = user_manager.remove_group(homies)
     assert deleted > 0
-    assert user_manager.get_groups(joe) == []
+    assert _group_names(user_manager.get_groups(joe)) == set([ "group" ])
 
 # Group tests
 def test_groups_with_app():
     _reset()
 
-    assert len(user_manager.get_groups(joe)) == 0
+    assert len(user_manager.get_groups(joe)) == 1
 
-    app.get("/group/list/homies/", status=400)
+    app.get("/group/list/homies/", status=409)
     app.post("/group/add/homies/", '["mattb"]')
 
     homies = user_manager.get_group(joe, "homies", raise_on_not_found=True)
 
-    assert _group_names(user_manager.get_groups(joe)) == set([ "homies" ])
+    assert _group_names(user_manager.get_groups(joe)) == set([ "homies", "group" ])
     assert _group_names(user_manager.get_groups(joe, mattb)) == set([ "homies" ])
     assert _group_member_names(user_manager.get_group_members(homies)) == set([ "mattb" ])
 
@@ -163,13 +176,13 @@ def test_groups_with_app():
     assert int(response.body) >= 1
     assert user_manager.get_group_members(homies) == []
 
-    app.post("/group/remove/all/homies/", status=400)
+    app.post("/group/remove/all/homies/", status=409)
 
     app.post("/group/add/homies/", '["mattb", "zuck", "tom", "ev"]')
     response = app.post("/group/remove/all/homies/")
     assert int(response.body) >= 1
     assert user_manager.get_group_members(homies) == []
-    assert user_manager.get_groups(joe) == []
+    assert _group_names(user_manager.get_groups(joe)) == set([ "group" ])
 
 # Sharing tests
 def test_sharing():
@@ -183,6 +196,114 @@ def test_sharing():
     user_manager.add_sharing(joe, joes_project, ev, False, False)
     sharing = user_manager.get_sharing(joe)
     assert sharing == [{'loadany':False, 'edit':False, 'type':'user', 'project':'joes_project', 'owner':'joe', 'recipient':'ev'}]
+
+    # Joe has shared a project with ev but without anyone following him nothing changes
+    assert len(ev.projects) == 1
+    assert len(tom.projects) == 1
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    user_manager.follow(ev, joe)
+
+    # user.projects reports projects that the user owns, so this should not change
+    assert len(ev.projects) == 1
+    assert len(tom.projects) == 1
+
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    # Joe's homies are mattb and zuck
+    homies = user_manager.get_group(joe, "homies", create_on_not_found=True)
+    user_manager.add_group_member(homies, mattb)
+    user_manager.add_group_member(homies, zuck)
+    user_manager.add_sharing(joe, joes_project, homies, False, False)
+
+    # But mattb and zuck don't care they're not following joe
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    user_manager.follow(mattb, joe)
+    user_manager.follow(zuck, joe)
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    # So now joe shares it with everyone
+    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+
+    # Once again, tom doesn't care, because he's not following joe
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.follow(tom, joe)
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 2
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    # Check that we can undo in a different order
+    user_manager.remove_sharing(joe, joes_project, 'everyone')
+    assert len(user_manager.get_user_projects(ev, True)) == 2
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.remove_sharing(joe, joes_project, ev)
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 2
+    assert len(user_manager.get_user_projects(mattb, True)) == 2
+
+    user_manager.remove_sharing(joe, joes_project, homies)
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(zuck, True)) == 1
+    assert len(user_manager.get_user_projects(mattb, True)) == 1
+
+    # Share again to check fast removal
+    user_manager.add_sharing(joe, joes_project, ev, False, False)
+    user_manager.add_sharing(joe, joes_project, homies, False, False)
+    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+
+    user_manager.remove_sharing(joe, joes_project)
+    assert user_manager.get_sharing(joe) == []
+
+    assert len(user_manager.get_user_projects(tom, True)) == 1
+    assert len(user_manager.get_user_projects(ev, True)) == 1
+
+    joes_project.delete()
+
+# Sharing tests
+def test_sharing_with_app():
+    _reset()
+
+    response = app.get("/file/list/")
+    assert len(simplejson.loads(response.body)) == 1
+
+    ##app.post("/group/add/homies/", '["mattb"]')
+
+    joes_project = get_project(joe, joe, "joes_project", create=True)
+    response = app.get("/file/list/")
+    assert len(simplejson.loads(response.body)) == 2
+
+    response = app.get("/share/list/all/")
+    assert len(simplejson.loads(response.body)) == 0
+
+    response = app.post("/share/add/joes_project/ev/", '["edit"]')
+    assert response.body == ""
+
+    response = app.get("/share/list/all/")
+    shares = simplejson.loads(response.body)
+    assert shares == [{'loadany':False, 'edit':True, 'type':'user', 'project':'joes_project', 'owner':'joe', 'recipient':'ev'}]
 
     # Joe has shared a project with ev but without anyone following him nothing changes
     assert len(ev.projects) == 1
