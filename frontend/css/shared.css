@@ -110,6 +110,7 @@ img {
     background-repeat: no-repeat;
     font-family: Calibri, Arial, sans-serif;
     -webkit-user-select: text;
+    -moz-user-select: text;
 }
 
 #info u {
