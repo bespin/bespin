@@ -151,6 +151,12 @@ from bespin.config import c
 # bespin_worker jobs
 # c.async_jobs = True
 
+# should Project and User names be restricted to a subset
+# of characters
+# (see bespin.model._check_identifiers)
+# uncomment the next line to turn off the restrictions
+# c.restrict_identifiers = False
+
 # Look in bespin.config to see more options you can set
 """)
     info("Config file created in: %s", options.server.config_file)
@@ -574,3 +580,58 @@ def editbespin(options):
         project = model.get_project(user, user, "BespinSettings", create=True)
         project.install_template('usertemplate')
     info("User %s set up to access directory %s" % (user, location))
+
+@task
+def test():
+    #import nose
+    #nose.main("bespin.tests")
+    from os import system
+    system("nosetests backend/python/bespin")
+
+@task
+def mobwrite():
+    from bespin.mobwrite import mobwrite_daemon
+    mobwrite_daemon.main()
+
+@task
+def seeddb():
+    from bespin import config, model
+    from bespin.model import User, Connection, UserManager
+    config.set_profile("dev")
+    config.activate_profile()
+    session = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = UserManager(session)
+
+    def get_user(name):
+        user = user_manager.get_user(name)
+        if user == None:
+            user = user_manager.create_user(name, name, name)
+        return user
+
+    # Seriously there is something wrong with my ego today ;-)
+    bgalbraith = get_user("bgalbraith")
+    kdangoor = get_user("kdangoor")
+    dalmaer = get_user("dalmaer")
+    mattb = get_user("mattb")
+    zuck = get_user("zuck")
+    tom = get_user("tom")
+    ev = get_user("ev")
+    j = get_user("j")
+
+    user_manager.follow(bgalbraith, j)
+    user_manager.follow(kdangoor, j)
+    user_manager.follow(dalmaer, j)
+    user_manager.follow(mattb, j)
+    user_manager.follow(zuck, j)
+    user_manager.follow(tom, j)
+    user_manager.follow(ev, j)
+
+    jproject = model.get_project(j, j, "SampleProject", create=True)
+
+    user_manager.add_sharing(j, jproject, "bgalbraith", edit=True)
+    user_manager.add_sharing(j, jproject, "kdangoor", edit=True)
+    user_manager.add_sharing(j, jproject, "dalmaer", edit=True)
+    user_manager.add_sharing(j, jproject, "mattb", edit=False)
+    user_manager.add_sharing(j, jproject, "zuck", edit=False)
+    user_manager.add_sharing(j, jproject, "tom", edit=False)
+    user_manager.add_sharing(j, jproject, "ev", edit=False)

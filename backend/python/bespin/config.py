@@ -80,6 +80,11 @@ c.max_import_file_size = 20000000
 
 c.log_requests_to_stdout = False
 
+# should Project and User names be restricted to a subset
+# of characters
+# (see bespin.model._check_identifiers)
+c.restrict_identifiers = True
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store

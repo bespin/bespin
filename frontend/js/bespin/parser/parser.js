@@ -158,24 +158,23 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             // rerun parser every time the doc changes
             var rerun = function() {
-                
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
-                if(timeout) {
+                if (timeout) {
                     clearTimeout(timeout);
                 }
                 timeout = setTimeout(function() {
-                    console.log("Syntax-Check")
+                    console.log("Syntax-Check");
                     self.fetch();
                 }, 400)
             }
-            var onChange =  bespin.subscribe("editor:document:changed", rerun)
+            var onChange = bespin.subscribe("editor:document:changed", rerun);
             
             // ** {{{ Event: parser:stop }}} **
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
-                bespin.unsubscribe(onChange)
+                bespin.unsubscribe(onChange);
                 self._started = false;
             })
         }
@@ -221,15 +220,20 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             var editor = bespin.get("editor");
             var type   = editor.language;
-            
+            var settings = bespin.get("settings");
             if (type) { 
                 var source = editor.model.getDocument();
                 self.lineMarkers = [];
+                if(settings.isOn(settings.get("jslint"))) {
+                    this.jslint().postMessage(source);
+                }
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
                     if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message
-                        bespin.publish("parser:error", data)
+                        if(settings.isOff(settings.get("jslint"))) {
+                            bespin.publish("parser:error", data);
+                        }
                     } else {
                         // publish custome event for new meta info
                         bespin.publish("parser:metainfo", data)
@@ -242,7 +246,24 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
     getLineMarkers: function() {
         return this.lineMarkers;
-    }
+    },
+
+    jslint: function() {
+        var worker = new Worker("/js/jsparse/fulljslint.js");
+        worker.onmessage = function(event) {
+            var errors = event.data.errors;
+            for (var i = 0; i < errors.length; i++) {
+                bespin.publish("parser:error", { 
+                    message: 'Syntax error: ' + errors[i].reason,
+                    row: errors[i].line + 1
+                });
+            }
+        };
+        worker.onerror = function(error) {
+            alert("jslint error: " + error.message);
+        };
+        return worker;
+     }
 })
 
 // ** {{{ bespin.parser.JavaScript }}} **

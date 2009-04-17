@@ -77,6 +77,7 @@ dojo.require("bespin.parser.parser");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
+dojo.require("bespin.social");
 dojo.require("bespin.cmd.editorcommands");
 
 dojo.require("bespin.mobwrite.core");

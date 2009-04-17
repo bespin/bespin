@@ -264,43 +264,25 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'diff',
     preview: 'Display the differences in the checkout out files',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["diff"]}, 
-                                bespin.vcs.standardHandler);
-    }                                
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("diff", self, args);
+    }
 });
 
 // ** {{{Command: diff}}} **
 bespin.vcs.commands.addCommand({
     name: 'resolved',
+    takes: ['*'],
     preview: 'Mark files as resolved',
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["resolved"]}, 
-                                bespin.vcs.standardHandler);
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("resolved", self, args);
     }                                
 });
 
@@ -348,25 +330,47 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
+bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args) {
+    var project;
+    var path;
+
+    bespin.withComponent('editSession', function(editSession) {
+        project = editSession.project;
+        path = editSession.path;
+    });
+
+    if (!project) {
+        self.showInfo("You need to pass in a project");
+        return;
+    }
+    
+    if (args.varargs.length == 0) {
+        if (!path) {
+            self.showInfo("You must select a file to add, or use -a for all files.");
+            return;
+        }
+        var command = [vcsCommand, path];
+    } else if (args.varargs[0] == "-a") {
+        var command = [vcsCommand]
+    } else {
+        var command = [vcsCommand];
+        command.concat(args.varargs);
+    }
+    bespin.get('server').vcs(project, 
+                            {command: command}, 
+                            bespin.vcs.standardHandler);
+}
+
 // ** {{{Command: add}}} **
 bespin.vcs.commands.addCommand({
     name: 'add',
     preview: 'Adds missing files to the project',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
     execute: function(self, args) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["add"]}, 
-                                bespin.vcs.standardHandler);
+        bespin.vcs._performVCSCommandWithFiles("add", self, args);
     }
 });
 
@@ -451,7 +455,20 @@ bespin.vcs.commands.addCommand({
 // ** {{{ Event: bespin:vcs:response }}} **
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
-    bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
+    var output = event.output;
+    
+    // if the output is all whitespace, we should display something
+    // nicer
+    if (/^\s*$/.exec(output)) {
+        output = "(Successful command with no visible output)";
+    }
+    
+    bespin.util.webpieces.showContentOverlay("<h2>vcs " 
+                    + event.command 
+                    + " output</h2><pre>" 
+                    + output 
+                    + "</pre>");
+                    
     if (event.command) {
         var command = event.command;
         if (command == "clone") {
@@ -470,6 +487,7 @@ bespin.subscribe("vcs:error", function(event) {
 // This is the top level command that contains all of the other commands.
 bespin.cmd.commands.add({
     name: 'vcs',
+    takes: ['*'],
     preview: 'run a version control command',
     subcommands: bespin.vcs.commands
 });

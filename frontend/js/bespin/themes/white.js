@@ -31,6 +31,7 @@ bespin.themes.white = {
     gutterStyle: "#d2d2d2",
     lineNumberColor: "#888888",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
+    lineMarkerGutterColor: "#CC4444",
     zebraStripeColor: "#FFFFFF",
     highlightCurrentLineColor: "#3a312b",
     editorTextFont: "10pt Monaco, Lucida Console, monospace",

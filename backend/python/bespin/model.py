@@ -55,9 +55,8 @@ from sqlalchemy.orm import relation, deferred, mapper, backref
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.exc import NoResultFound
 import simplejson
-import jinja2
 
-from bespin import config
+from bespin import config, jsontemplate
 
 log = logging.getLogger("bespin.model")
 
@@ -152,8 +151,8 @@ class User(Base):
         self.file_location = file_location
         
     def __str__(self):
-        return "%s (%s-%s)" % (self.username, self.id, id(self))
-        
+        return "User[%s id=%s]" % (self.username, self.id)
+
     def check_save(self, amount):
         """Confirms that the user can save this amount. Returns True
         if the user has enough available in their quota, False otherwise.
@@ -287,22 +286,30 @@ class Group(Base):
 
     __table_args__ = (UniqueConstraint("owner_id", "name"), {})
 
-    def __init__(self, name, owner_viewable=False):
+    def __init__(self, owner, name, owner_viewable=False):
+        self.owner_id = owner.id
         self.name = name
         self.owner_viewable = owner_viewable
 
     def __str__(self):
-        return "%s (%s-%s)" % (self.name, self.id, id(self))
+        return "Group[%s id=%s owner_id=%s]" % (self.name, self.id, self.owner_id)
 
 class GroupMembership(Base):
     __tablename__ = "group_memberships"
 
     group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'), primary_key=True)
+    group = relation(Group, primaryjoin=Group.id==group_id)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'), primary_key=True)
+    user = relation(User, primaryjoin=User.id==user_id)
 
     def __init__(self, group, user):
+        if group.id == None:
+            raise BadValue("Null group.id for " + group.name)
         self.group_id = group.id
         self.user_id = user.id
+
+    def __str__(self):
+        return "GroupMembership[group_id=%s, user_id=%s]" % (self.group_id, self.user_id)
 
 class UserSharing(Base):
     __tablename__ = "user_sharing"
@@ -311,7 +318,7 @@ class UserSharing(Base):
     owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
     project_name = Column(String(128))
     invited_user_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
-    invited_name = relation(User, primaryjoin=User.id==invited_user_id)
+    invited = relation(User, primaryjoin=User.id==invited_user_id)
     edit = Column(Boolean, default=False)
     loadany = Column(Boolean, default=False)    
 
@@ -321,9 +328,13 @@ class UserSharing(Base):
         self.owner_id = owner.id
         self.project_name = project_name
         self.invited_user_id = user.id
-        #self.invited_name = user.username
+        #self.invited = user
         self.edit = edit
         self.loadany = loadany
+
+    @property
+    def invited_name(self):
+        return self.invited.username
 
 class GroupSharing(Base):
     __tablename__ = "group_sharing"
@@ -332,7 +343,7 @@ class GroupSharing(Base):
     owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
     project_name = Column(String(128))
     invited_group_id = Column(Integer, ForeignKey('groups.id', ondelete='cascade'))
-    invited_name = relation(Group, primaryjoin=Group.id==invited_group_id)
+    invited = relation(Group, primaryjoin=Group.id==invited_group_id)
     edit = Column(Boolean, default=False)
     loadany = Column(Boolean, default=False)    
 
@@ -342,20 +353,44 @@ class GroupSharing(Base):
         self.owner_id = owner.id
         self.project_name = project_name
         self.invited_group_id = group.id
-        #self.invited_name = group.name
+        #self.invited = group
         self.edit = edit
         self.loadany = loadany
 
-bad_characters = r'\W'
-invalid_chars = re.compile(r'[%s]' % bad_characters, re.UNICODE)
+    @property
+    def invited_name(self):
+        return self.invited.name
+
+class EveryoneSharing(Base):
+    __tablename__ = "everyone_sharing"
+
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('users.id', ondelete='cascade'))
+    project_name = Column(String(128))
+    edit = Column(Boolean, default=False)
+    loadany = Column(Boolean, default=False)    
+
+    __table_args__ = (UniqueConstraint("owner_id", "project_name"), {})
+
+    def __init__(self, owner, project_name, edit, loadany):
+        self.owner_id = owner.id
+        self.project_name = project_name
+        self.edit = edit
+        self.loadany = loadany
+
+    @property
+    def invited_name(self):
+        return 'everyone'
+
+good_characters = r'\w-'
+good_pattern = re.compile(r'^\w[%s]*$' % good_characters, re.UNICODE)
 
 def _check_identifiers(kind, value):
-    if invalid_chars.search(value):
+    if not config.c.restrict_identifiers:
+        return
+    if not good_pattern.match(value):
         log.error("Invalid identifier kind='%s', value='%s'" % (kind, value))
-        raise BadValue("%s cannot contain any of: %s" % (kind, bad_characters))
-    if value.startswith("."):
-        log.error("Identifier starts with '.' value='%s'" % (kind, value))
-        raise BadValue("%s cannot start with '.'" % (kind))
+        raise BadValue("%s must only contain letters, numbers and dashes and must start with a letter or number." % (kind))
 
 class UserManager(object):
     def __init__(self, session):
@@ -400,7 +435,7 @@ class UserManager(object):
             for followee_connection in self.users_i_follow(user):
                 followee = followee_connection.followed
                 for project in followee.projects:
-                    if self.get_sharing(followee, project, user.username) != []:
+                    if self.is_project_shared(followee, project, user):
                         result.append(project)
         return result
 
@@ -429,131 +464,244 @@ class UserManager(object):
         """Remove a follow connection between 2 users"""
         following_user_name = following_user.username;
         followed_user_name = followed_user.username;
-        rows = self.session.query(Connection).filter_by(followed=followed_user, following=following_user).delete()
-        if (rows == 0):
+        rows = self.session.query(Connection) \
+            .filter_by(followed=followed_user) \
+            .filter_by(following=following_user) \
+            .delete()
+        if rows == 0:
             raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
 
-    def get_groups(self, user):
+    def get_groups(self, user, with_member=None):
         """Retrieve a list of the groups created by a given user."""
-        return self.session.query(Group).filter_by(owner_id=user.id).all()
+        query = self.session.query(Group).filter_by(owner_id=user.id)
+        if with_member != None:
+            query = query.filter(GroupMembership.user_id==with_member.id) \
+                .filter(Group.id==GroupMembership.group_id)
+        return query.all()
 
-    def get_group_members(self, user, groupname):
-        """Retrieve a list of the members of a given users group"""
-        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
-        members = self.sesison.query(GroupMember).filter_by(group_id=group.id).all()
-        return members
+    def debug(self):
+        for table in [ User, Group, GroupMembership ]:            
+            for found in self.session.query(table).all():
+                print found
 
-    def remove_all_group_members(self, user, groupname):
-        """Remove all the members of a given group"""
-        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
-        members = self.sesison.query(GroupMember).filter_by(group_id=group.id).delete()
+    def get_group(self, user, group_name, create_on_not_found=False, raise_on_not_found=False):
+        """Check to see if the given member name represents a group"""
+        match = self.session.query(Group) \
+            .filter_by(owner_id=user.id) \
+            .filter_by(name=group_name) \
+            .first()
 
-    def remove_group_members(self, user, groupname, other_user):
-        """Remove members from a given users group."""
-        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).one()
-        members = self.sesison.query(GroupMember).filter_by(group_id=group.id, user_id=other_user.id).delete()
+        if match != None:
+            return match
 
-    def add_group_members(self, user, groupname, other_user):
-        """Add members from a given users group."""
-        group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
-        if group == None:
-            group = Group(groupname)
-            self.session.add(group)
-            self.session.flush()
-            group = self.session.query(Group).filter_by(owner_id=user.id, name=groupname).first()
-        self.session.add(GroupMembership(group, user))
+        if create_on_not_found:
+            return self.add_group(user, group_name)
+        elif raise_on_not_found:
+            raise BadValue("%s does not have a group called '%s'" % (user.username, group_name))
+        else:
+            return None
+
+    def add_group(self, user, group_name):
+        """Create (and return) a new group for the given user, with the given name"""
+        group = Group(user, group_name)
+        self.session.add(group)
         self.session.flush()
-        try:
-            self.session.flush()
-        except DBAPIError:
-            raise ConflictError("%s is already a member of %s" % (other_user.username, groupname))
+        return group
 
-    def _is_group(self, user, member):
-        """Check to see if the given member name represents a user or a group"""
-        return self.session.query(Group).filter_by(owner_id=user.id, name=member).first() != None
+    def remove_group(self, group):
+        """Remove a group (and all its members) from the owning users profile"""
+        return self.session.query(Group). \
+            filter_by(id=group.id). \
+            delete()
+
+    def get_group_members(self, group):
+        """Retrieve a list of the members of a given users group"""
+        return self.session.query(GroupMembership) \
+            .filter_by(group_id=group.id) \
+            .all()
+
+    def add_group_member(self, group, other_user):
+        """Add a member to a given users group."""
+        membership = GroupMembership(group, other_user)
+        self.session.add(membership)
+        return membership
+
+    def remove_group_member(self, group, other_user):
+        """Remove a member from a given users group."""
+        return self.session.query(GroupMembership) \
+            .filter_by(group_id=group.id) \
+            .filter_by(user_id=other_user.id) \
+            .delete()
+
+    def remove_all_group_members(self, group):
+        """Remove all the members of a given group"""
+        return self.session.query(GroupMembership) \
+            .filter_by(group_id=group.id) \
+            .delete()
 
     def get_sharing(self, user, project=None, member=None):
-        """Retrieve a list of the shares made by a given user"""
-        shares = []
-        def add_shares(sharing_list):
-            for sharing in sharing_list:
-                shares.append({
-                    'owner':user.username,
-                    'project':sharing.project_name,
-                    'type':'user',
-                    'recipient':sharing.invited_name.username,
-                    'edit':sharing.edit,
-                    'loadany':sharing.loadany
-                })
-        if member != None:
-            if self._is_group(user, member):
-                group = _get_group(member)
-                list = self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
-                    .all()
-                add_shares(list)
-            else:
-                invited_user = self.get_user(member)
-                list = self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=invited_user.id) \
-                    .all()
-                add_shares(list)
-        elif project != None:
-            list = self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name) \
-                    .all()
-            add_shares(list)
-            list = self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name) \
-                    .all()
-            add_shares(list)
+        """Retrieve a list of the shares (at all levels) made by a given user,
+        optionally filtered by project and by invited member"""
+        if member == None:
+            return self.get_user_sharing(user, project) + \
+                   self.get_group_sharing(user, project) + \
+                   self.get_everyone_sharing(user, project)
         else:
-            list = self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id) \
-                    .all()
-            add_shares(list)
-            list = self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id) \
-                    .all()
-            add_shares(list)
-        return shares
+            if member == 'everyone':
+                # The user and group shares are irrelevant if we're only looking
+                # at everyone sharing
+                return self.get_everyone_sharing(user, project)
+            else:
+                if isinstance(member, Group):
+                    # The user shares are irrelevant if we're only looking at
+                    # group level sharing
+                    return self.get_group_sharing(user, project, member) + \
+                           self.get_everyone_sharing(user, project)
+                else:
+                    return self.get_user_sharing(user, project, member) + \
+                           self.get_group_sharing(user, project, member) + \
+                           self.get_everyone_sharing(user, project)
 
-    def is_project_accessible(self, owner, project_name, user):
-        # Is the project directly accessible to the user?
-        match = self.session.query(UserSharing) \
-                .filter_by(owner_id=owner.id, project_name=project_name, invited_user_id=user.id) \
-                .first()
-        if match != None:
-            return True
-        # TODO: add checks for group/everyone sharing ...
-        return False
+    def _create_share_record(self, owner_name, type, sharing):
+        """For internal use by the get_*_sharing methods"""
+        return {
+            'owner':owner_name,
+            'project':sharing.project_name,
+            'type':type,
+            'recipient':sharing.invited_name,
+            'edit':sharing.edit,
+            'loadany':sharing.loadany
+        }
+
+    def get_user_sharing(self, user, project=None, invited_user=None):
+        """Retrieve a list of the user level shares made by a user, optionally
+        filtered by project and by invited user"""
+        query = self.session.query(UserSharing).filter_by(owner_id=user.id)
+        if project != None:
+            query = query.filter_by(project_name=project.name)
+        if invited_user != None:
+            query = query.filter_by(invited_user_id=invited_user.id)
+        return [self._create_share_record(user.username, 'user', sharing) for sharing in query.all()]
+
+    def get_group_sharing(self, user, project=None, invited_group=None):
+        """Retrieve a list of the group level shares made by a user, optionally
+        filtered by project and by invited group"""
+        query = self.session.query(GroupSharing).filter_by(owner_id=user.id)
+        if project != None:
+            query = query.filter_by(project_name=project.name)
+        if invited_group != None:
+            query = query.filter_by(invited_group_id=invited_group.id)
+        return [self._create_share_record(user.username, 'group', sharing) for sharing in query.all()]
+
+    def get_everyone_sharing(self, user, project=None):
+        """Retrieve a list of the public level shares made by a user, optionally
+        filtered by project"""
+        query = self.session.query(EveryoneSharing).filter_by(owner_id=user.id)
+        if project != None:
+            query = query.filter_by(project_name=project.name)
+        return [self._create_share_record(user.username, 'everyone', sharing) for sharing in query.all()]
+
+    def remove_user_sharing(self, user, project, invited_user=None):
+        user_query = self.session.query(UserSharing).filter_by(owner_id=user.id)
+        if project != None:
+            user_query = user_query.filter_by(project_name=project.name)
+        if invited_user != None:
+            user_query = user_query.filter_by(invited_user_id=invited_user.id)
+        return user_query.delete()
+
+    def remove_group_sharing(self, user, project, invited_group=None):
+        group_query = self.session.query(GroupSharing).filter_by(owner_id=user.id)
+        if project != None:
+            group_query = group_query.filter_by(project_name=project.name)
+        if invited_group != None:
+            group_query = group_query.filter_by(invited_group_id=invited_group.id)
+        return group_query.delete()
+
+    def remove_everyone_sharing(self, user, project):
+        everyone_query = self.session.query(EveryoneSharing).filter_by(owner_id=user.id)
+        if project != None:
+            everyone_query = everyone_query.filter_by(project_name=project.name)
+        return everyone_query.delete()
 
     def remove_sharing(self, user, project, member=None):
         if member == None:
-            self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name) \
-                    .delete()
-            self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name) \
-                    .delete()
-        elif self._is_group(user, member):
-            group = _get_group(member)
-            self.session.query(GroupSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_group_id=group.id) \
-                    .delete()
+            rows = 0
+            rows += self.remove_user_sharing(user, project)
+            rows += self.remove_group_sharing(user, project)
+            rows += self.remove_everyone_sharing(user, project)
+            return rows
         else:
-            invited_user = self.get_user(member)
-            self.session.query(UserSharing) \
-                    .filter_by(owner_id=user.id, project_name=project.name, invited_user_id=invited_user.id) \
-                    .delete()
+            if member == 'everyone':
+                return self.remove_everyone_sharing(user, project)
+            else:
+                if isinstance(member, Group):
+                    return self.remove_group_sharing(user, project, member)
+                else:
+                    return self.remove_user_sharing(user, project, member)
 
     def add_sharing(self, user, project, member, edit=False, loadany=False):
-        if self._is_group(user, member):
-            group = _get_group(member)
-            self.session.add(GroupSharing(user, project.name, group, edit, loadany))
+        if member == 'everyone':
+            return self.add_everyone_sharing(user, project, edit, loadany)
         else:
-            other_user = self.get_user(member)
-            self.session.add(UserSharing(user, project.name, other_user, edit, loadany))
+            if isinstance(member, Group):
+                return self.add_group_sharing(user, project, member, edit, loadany)
+            else:
+                return self.add_user_sharing(user, project, member, edit, loadany)
+
+    def add_user_sharing(self, user, project, invited_user, edit=False, loadany=False):
+        sharing = UserSharing(user, project.name, invited_user, edit, loadany)
+        self.session.add(sharing)
+        return sharing
+
+    def add_group_sharing(self, user, project, invited_group, edit=False, loadany=False):
+        sharing = GroupSharing(user, project.name, invited_group, edit, loadany)
+        self.session.add(sharing)
+        return sharing
+
+    def add_everyone_sharing(self, user, project, edit=False, loadany=False):
+        sharing = EveryoneSharing(user, project.name, edit, loadany)
+        self.session.add(sharing)
+        return sharing
+
+    def is_project_shared(self, owner, project, user):
+        if self.is_project_everyone_shared(owner, project):
+            return True
+        if self.is_project_user_shared(owner, project, user):
+            return True
+        groups = self.get_groups(owner, user)
+        for group in groups:
+            if self.is_project_group_shared(owner, project, group):
+                return True
+        return False
+
+    def is_project_user_shared(self, owner, project, user):
+        if isinstance(project, Project):
+            project = project.name
+        match = self.session.query(UserSharing) \
+                .filter_by(owner_id=owner.id) \
+                .filter_by(project_name=project) \
+                .filter_by(invited_user_id=user.id) \
+                .first()
+        return match != None
+
+    def is_project_group_shared(self, owner, project, group):
+        if isinstance(project, Project):
+            project = project.name
+        match = self.session.query(GroupSharing) \
+                .filter_by(owner_id=owner.id) \
+                .filter_by(project_name=project) \
+                .filter_by(invited_group_id=group.id) \
+                .first()
+        return match != None
+
+    def is_project_everyone_shared(self, owner, project):
+        if isinstance(project, Project):
+            project = project.name
+        match = self.session.query(EveryoneSharing) \
+                .filter_by(owner_id=owner.id) \
+                .filter_by(project_name=project) \
+                .first()
+        return match != None
 
     def get_viewme(self, user, member=None):
         return [ "Not implemented", member ]
@@ -907,6 +1055,13 @@ class ProjectMetadata(dict):
     def __del__(self):
         self.close()
 
+class LenientUndefinedDict(dict):
+    def get(self, key, default=''):
+        return super(LenientUndefinedDict, self).get(key, default)
+        
+    def __missing__(self, key):
+        return ""
+
 class Project(object):
     """Provides access to the files in a project."""
     
@@ -996,17 +1151,22 @@ class Project(object):
         The files inside of that directory will be installed into
         the project, with the common root for the files chopped off.
         
-        Additionally, filenames containing { will be treated as Jinja2
-        templates and the contents of files will be treated as Jinja2
+        Additionally, filenames containing { will be treated as JSON Template
+        templates and the contents of files will be treated as JSON Template
         templates. This means that the filenames can contain variables
         that are substituted when the template is installed into the
         user's project. The contents of the files can also have variables
         and small amounts of logic.
         
-        These Jinja2 templates automatically have "project" as a variable
-        (you might often want to use project.name). You can pass in
-        a dictionary for other_vars and those values will also be available
-        in the templates.
+        These JSON Template templates automatically have the following
+        variables:
+        
+        * project: the project name
+        * username: the project owner's username
+        * filename: the name of the file being generated
+        
+        You can pass in a dictionary for other_vars and those values 
+        will also be available in the templates.
         """
         log.debug("Installing template %s for user %s as project %s",
                 template, self.owner, self.name)
@@ -1021,13 +1181,13 @@ class Project(object):
         if not found:
             raise FSException("Unknown project template: %s" % template)
         
-        env = jinja2.Environment()
         if other_vars is not None:
-            variables = other_vars
+            variables = LenientUndefinedDict(other_vars)
         else:
-            variables = {}
+            variables = LenientUndefinedDict()
         
-        variables['project'] = self
+        variables['project'] = self.name
+        variables['username'] = self.owner.username
             
         common_path_len = len(source_dir) + 1
         for dirpath, dirnames, filenames in os.walk(source_dir):
@@ -1036,8 +1196,7 @@ class Project(object):
                 continue
             for f in filenames:
                 if "{" in f:
-                    temp = env.from_string(f)
-                    dest_f = temp.render(variables)
+                    dest_f = jsontemplate.expand(f, variables)
                 else:
                     dest_f = f
                 
@@ -1046,8 +1205,8 @@ class Project(object):
                 else:
                     destpath = dest_f
                 contents = open(os.path.join(dirpath, f)).read()
-                temp = env.from_string(contents)
-                contents = temp.render(variables)
+                variables['filename'] = dest_f
+                contents = jsontemplate.expand(contents, variables)
                 self.save_file(destpath, contents)
                 
     def list_files(self, path=""):
@@ -1377,8 +1536,8 @@ def get_project(user, owner, project_name, create=False, clean=False, user_manag
     _check_identifiers("Project names", project_name)
 
     if user != owner:
-        # should we assert user_manager != null?
-        if not user_manager.is_project_accessible(owner, project_name, user):
+        # should we assert user_manager != None?
+        if not user_manager.is_project_shared(owner, project_name, user):
             raise NotAuthorized("User %s is not allowed to access project %s" %
                                 (user, project_name))
 

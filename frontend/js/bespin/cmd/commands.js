@@ -1288,7 +1288,6 @@ bespin.cmd.commands.add({
     }
 });
 
-//Change Case: uppercase
 bespin.cmd.commands.add({
 	name: 'uc',
 	preview: 'Change all selected text to uppercase',
@@ -1299,7 +1298,6 @@ bespin.cmd.commands.add({
 	}
 });
 
-//Change Case: lowercase 
 bespin.cmd.commands.add({
 	name: 'lc',
 	preview: 'Change all selected text to lowercase',
@@ -1308,4 +1306,6 @@ bespin.cmd.commands.add({
 		var args={stringCase: 'l'};
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
-});                    
+});
+					 
+

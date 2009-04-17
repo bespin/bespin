@@ -490,34 +490,46 @@ def group_list_all(request, response):
 
 @expose(r'^/group/list/(?P<group>[^/]+)/$', 'GET')
 def group_list(request, response):
-    group = request.kwargs['group']
-    members = request.user_manager.get_group_members(request.user, group)
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    members = request.user_manager.get_group_members(group)
     return _respond_json(response, members)
 
 @expose(r'^/group/remove/all/(?P<group>[^/]+)/$', 'POST')
 def group_remove_all(request, response):
-    group = request.kwargs['group']
-    request.user_manager.remove_all_group_members(request.user, group)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    rows = 0
+    rows += request.user_manager.remove_all_group_members(group)
+    rows += request.user_manager.remove_group(group)
+    return _respond_json(response, rows)
 
 @expose(r'^/group/remove/(?P<group>[^/]+)/$', 'POST')
 def group_remove(request, response):
-    group = request.kwargs['group']
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    rows = 0
     for other_user in users:
-        request.user_manager.remove_group_members(request.user, group, other_user)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+        rows += request.user_manager.remove_group_member(group, other_user)
+    members = request.user_manager.get_group_members(group)
+    if len(members) == 0:
+        rows += request.user_manager.remove_group(group)
+    return _respond_json(response, rows)
 
 @expose(r'^/group/add/(?P<group>[^/]+)/$', 'POST')
 def group_add(request, response):
-    group = request.kwargs['group']
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, create_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
-        request.user_manager.add_group_members(request.user, group, other_user)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+        request.user_manager.add_group_member(group, other_user)
+    return _respond_blank(response)
+
+def _respond_blank(response):
+    response.body = ""
+    response.content_type = "text/plain"
+    return response()
 
 def _respond_json(response, data):
     response.body = simplejson.dumps(data)
