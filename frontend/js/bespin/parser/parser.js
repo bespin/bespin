@@ -227,7 +227,11 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 if(settings.isOn(settings.get("jslint"))) {
                     this.jslint().postMessage(source);
                 }
+                if(this.isFetching) return
+                this.isFetching = true; // avoid ever doing to parse runs at once
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
+                    console.log("Parse Done")
+                    self.isFetching = false;
                     if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message
