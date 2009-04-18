@@ -164,17 +164,18 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     clearTimeout(timeout);
                 }
                 timeout = setTimeout(function() {
-                    console.log("Syntax-Check");
                     self.fetch();
                 }, 400)
             }
             var onChange = bespin.subscribe("editor:document:changed", rerun);
+            var run = bespin.subscribe("parser:run", rerun);
             
             // ** {{{ Event: parser:stop }}} **
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
                 bespin.unsubscribe(onChange);
+                bespin.unsubscribe(run);
                 self._started = false;
             })
         }
@@ -227,10 +228,13 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 if(settings.isOn(settings.get("jslint"))) {
                     this.jslint().postMessage(source);
                 }
-                if(this.isFetching) return
-                this.isFetching = true; // avoid ever doing to parse runs at once
+                // avoid ever doing to parse runs at once
+                if(this.isFetching) {
+                    bespin.publish("parser:run")
+                    return
+                }
+                this.isFetching = true; 
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
-                    console.log("Parse Done")
                     self.isFetching = false;
                     if (data.isError) {
                         // publish custom event if we found an error
