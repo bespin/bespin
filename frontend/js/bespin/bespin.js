@@ -80,10 +80,10 @@ dojo.mixin(bespin, {
     //
     // Given an id and an object, register it inside of Bespin
     register: function(id, object) {
+        this.registeredComponents[id] = object;
+
         bespin.publish("component:register", { id: id, object: object });
 
-        this.registeredComponents[id] = object;
-        
         return object;
     },
 
