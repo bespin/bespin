@@ -18,7 +18,17 @@ mobwrite.shareBespinObj = function(node) {
         path = "/" + path;
     }
 
-    var id = username + "/" + project + path;
+    var id;
+    parts = project.split("+");
+    if (parts.length == 1) {
+        // This is our project
+        id = username + "/" + project + path;
+    }
+    else {
+        // This is someone else's projects
+        id = parts[0] + "/" + parts[1] + path;
+    }
+
     // Call our prototype's constructor.
     mobwrite.shareObj.apply(this, [id]);
 };

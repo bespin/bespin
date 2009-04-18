@@ -32,3 +32,5 @@ backend/python/testfiles
 .project
 .settings/
 .externalToolBuilders/
+devconfig.py
+

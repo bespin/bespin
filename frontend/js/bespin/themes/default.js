@@ -34,8 +34,10 @@ bespin.themes.coffee = {
     gutterStyle: "#4c4a41",
     lineNumberColor: "#e5c138",
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
+    lineMarkerGutterColor: "#CC4444",
     zebraStripeColor: "#2A211C",
     highlightCurrentLineColor: "#3a312b",
+    editorTextFont: "10pt Monaco, Lucida Console, monospace",
     editorTextColor: "rgb(230, 230, 230)",
     editorSelectedTextColor: "rgb(240, 240, 240)",
     editorSelectedTextBackground: "#526DA5",
@@ -57,6 +59,8 @@ bespin.themes.coffee = {
     scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
     scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
     tabSpace: "#392A25",
+    searchHighlight: "#B55C00",
+    searchHighlightSelected: "#FF9A00",
 
     // syntax definitions
     plain: "#bdae9d",
@@ -112,122 +116,6 @@ bespin.themes.coffee = {
 bespin.themes.coffeezebra = {};
 dojo.mixin(bespin.themes.coffeezebra, bespin.themes.coffee);
 bespin.themes.coffeezebra.zebraStripeColor = '#FFFFFF';
-
-// ** White Theme **
-bespin.themes.white = {
-    backgroundStyle: "#FFFFFF",
-    gutterStyle: "#d2d2d2",
-    lineNumberColor: "#888888",
-    lineNumberFont: "10pt Monaco, Lucida Console, monospace",
-    zebraStripeColor: "#FFFFFF",
-    highlightCurrentLineColor: "#3a312b",
-    editorTextColor: "#000000",
-    editorSelectedTextColor: "rgb(240, 240, 240)",
-    editorSelectedTextBackground: "#4d97ff",
-    cursorStyle: "#879aff",
-    cursorType: "ibeam",       // one of "underline" or "ibeam"
-    unfocusedCursorStrokeStyle: "#FF0033",
-    unfocusedCursorFillStyle: "#73171E",
-    partialNibStyle: "rgba(100, 100, 100, 0.3)",
-    partialNibArrowStyle: "rgba(255, 255, 255, 0.3)",
-    partialNibStrokeStyle: "rgba(150, 150, 150, 0.3)",
-    fullNibStyle: "rgb(100, 100, 100)",
-    fullNibArrowStyle: "rgb(255, 255, 255)",
-    fullNibStrokeStyle: "rgb(150, 150, 150)",
-    scrollTrackFillStyle: "rgba(50, 50, 50, 0.8)",
-    scrollTrackStrokeStyle: "rgb(150, 150, 150)",
-    scrollBarFillStyle: "rgba(0, 0, 0, %a)",
-    scrollBarFillGradientTopStart: "rgba(90, 90, 90, %a)",
-    scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
-    scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
-    scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
-    tabSpace: "#E0D4CB",
-    searchHighlight: "#B55C00",
-
-    // syntax definitions
-    plain: "#bdae9d",
-    keyword: "#0000ff",
-    string: "#036907",
-    comment: "#0066ff",
-    'c-comment': "#0066ff",
-    punctuation: "#888888",
-    attribute: "#BF9464",
-    test: "rgb(255,0,0)",
-    cdata: "#bdae9d",
-    "attribute-value": "#BF9464",
-    tag: "#bdae9d",
-    "tag-name": "#bdae9d",
-    value: "#BF9464",
-    important: "#990000",
-    cssclass: "#BF9464",
-    cssid: "#bdae9d"
-    
-    // Codemirror additions
-    // TODO
-};
-
-// ** White Zebra Theme **
-bespin.themes.whitezebra = {};
-dojo.mixin(bespin.themes.whitezebra, bespin.themes.white); 
-bespin.themes.whitezebra.zebraStripeColor = '#EAEAEA';
-
-// ** Black Theme **
-bespin.themes.black = {
-    backgroundStyle: "#000000",
-    gutterStyle: "#d2d2d2",
-    lineNumberColor: "#888888",
-    lineNumberFont: "10pt Monaco, Lucida Console, monospace",
-    zebraStripeColor: "#000000", //"#111111",
-    highlightCurrentLineColor: "#3a312b",
-    editorTextColor: "rgb(230, 230, 230)",
-    editorSelectedTextColor: "rgb(240, 240, 240)",
-    editorSelectedTextBackground: "#243b75",
-    cursorStyle: "#879aff",
-    cursorType: "ibeam",       // one of "underline" or "ibeam"
-    unfocusedCursorStrokeStyle: "#FF0033",
-    unfocusedCursorFillStyle: "#73171E",
-    partialNibStyle: "rgba(100, 100, 100, 0.3)",
-    partialNibArrowStyle: "rgba(255, 255, 255, 0.3)",
-    partialNibStrokeStyle: "rgba(150, 150, 150, 0.3)",
-    fullNibStyle: "rgb(100, 100, 100)",
-    fullNibArrowStyle: "rgb(255, 255, 255)",
-    fullNibStrokeStyle: "rgb(150, 150, 150)",
-    scrollTrackFillStyle: "rgba(50, 50, 50, 0.8)",
-    scrollTrackStrokeStyle: "rgb(150, 150, 150)",
-    scrollBarFillStyle: "rgba(0, 0, 0, %a)",
-    scrollBarFillGradientTopStart: "rgba(90, 90, 90, %a)",
-    scrollBarFillGradientTopStop: "rgba(40, 40, 40, %a)",
-    scrollBarFillGradientBottomStart: "rgba(22, 22, 22, %a)",
-    scrollBarFillGradientBottomStop: "rgba(44, 44, 44, %a)",
-    tabSpace: "#E0D4CB",
-
-    // syntax definitions
-    plain: "#bdae9d",
-    preprocessor: "rgb(100,100,100)",
-    keyword: "#42a8ed",
-    string: "#039a0a",
-    comment: "#666666",
-    'c-comment': "#666666",
-    punctuation: "#888888",
-    attribute: "#BF9464",
-    test: "rgb(255,0,0)",
-    cdata: "#bdae9d",
-    "attribute-value": "#BF9464",
-    tag: "#bdae9d",
-    "tag-name": "#bdae9d",
-    value: "#BF9464",
-    important: "#990000",
-    cssclass: "#BF9464",
-    cssid: "#bdae9d"
-    
-    // Codemirror additions
-    // TODO:
-};
-
-// ** Black Zebra Theme **
-bespin.themes.blackzebra = {};
-dojo.mixin(bespin.themes.blackzebra, bespin.themes.black); 
-bespin.themes.blackzebra.zebraStripeColor = '#111111';
 
 // ** Setup the default **
 bespin.themes['default'] = bespin.themes.coffee;

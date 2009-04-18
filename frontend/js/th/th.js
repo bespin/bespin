@@ -108,7 +108,7 @@ dojo.declare("th.Resources", null, {
         var links = [];
 
         // add default stylesheet; cheesy path at the moment, need to come up with a better way to approach this TODO
-        links.push({ url: "js/th/default.css", array: this.userAgentCss, index: 0 });
+        links.push({ url: "/js/th/default.css", array: this.userAgentCss, index: 0 });
 
         var s, l = document.getElementsByTagName('link'), counter = 0;
 		for (var i=0; i < l.length; i++){
@@ -279,9 +279,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
             this.render();
         })); 
 
-        this.root = new th.components.Panel({ id: "root", style: {
-//            backgroundColor: "pink" // for debugging         
-        } });
+        this.root = new th.components.Panel({ id: "root" });
         this.root.scene = this; 
 
         var testCanvas = document.createElement("canvas");
@@ -637,7 +635,7 @@ dojo.declare("th.Window", null, {
             if (!this.isVisible || !this.closeOnClickOutside) return;
 
             var d = dojo.coords(this.container);
-            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
+            if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
                 this.toggle();
             } else {
                 dojo.stopEvent(e);

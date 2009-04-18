@@ -32,9 +32,9 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { isDebug: false };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
-    <script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
+    <script type="text/javascript" src="js/dojo/dojo.js"></script>
     <script type="text/javascript">
         dojo.require("bespin.page.editor.dependencies");
     </script>
@@ -54,9 +54,8 @@
         <span id="selected_browsers"></span>
     </div>
     <div id="subheader">
-        <!-- coming soon :-) -->
         <div id="search">
-            <div style="float: left"><input id="searchquery" type="text"></div>
+            <div style="float: left"><input id="searchquery" type="text" spellcheck="false"></div>
             <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"></div>
         </div>
 
@@ -170,4 +169,3 @@
     <div id="overlay" style="display: none;"></div>
 </body>
 </html>
-

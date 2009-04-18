@@ -72,6 +72,7 @@ dojo.declare("bespin.editor.Component", null, {
         this.server = bespin.register('server', opts.server || new bespin.client.Server());
         this.files = bespin.register('files', opts.files || new bespin.client.FileSystem());
         
+        // Use in memory settings here instead of saving to the server which is default. Potentially use Cookie settings
         bespin.register('settings', opts.settings || new bespin.client.settings.Core(bespin.client.settings.InMemory));
 
         dojo.connect(window, 'resize', opts.resize || dojo.hitch(this, function() {

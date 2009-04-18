@@ -74,6 +74,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'syntaxengine': 'simple',
             'preview': 'window',
             'smartmove': 'on',
+            'jslint': 'off'
         };
     },
 
@@ -97,13 +98,7 @@ dojo.declare("bespin.client.settings.Core", null, {
     //
     // This is where we choose which store to load
     loadStore: function(store) {
-        this.store = new (store || bespin.client.settings.Server)(this);
-
-//        this.store = new Bespin.Settings.Cookie(this);
-
-// TODO: ignore gears for now:
-// this.store = (window['google']) ? new Bespin.Settings.DB : new Bespin.Settings.InMemory;
-// this.store = new Bespin.Settings.InMemory;
+        this.store = new (store || bespin.client.settings.ServerFile)(this);
     },
 
     toList: function() {
@@ -212,11 +207,11 @@ dojo.declare("bespin.client.settings.Cookie", null, {
     }
 });    
 
-// ** {{{ bespin.client.settings.Server }}} **
+// ** {{{ bespin.client.settings.ServerAPI }}} **
 //
 // The real grand-daddy that implements uses {{{Server}}} to access the backend
 
-dojo.declare("bespin.client.settings.Server", null, {
+dojo.declare("bespin.client.settings.ServerAPI", null, {
     constructor: function(parent) {
         this.parent = parent;
         this.server = bespin.get('server');
@@ -245,6 +240,79 @@ dojo.declare("bespin.client.settings.Server", null, {
     unset: function(key) {
         delete this.settings[key];
         this.server.unsetSetting(key);
+    }
+});
+
+
+// ** {{{ bespin.client.settings.ServerFile }}} **
+//
+// Store the settings in the file system
+
+dojo.declare("bespin.client.settings.ServerFile", null, {
+    constructor: function(parent) {
+        this.parent = parent;
+        this.server = bespin.get('server');
+        this.settings = this.parent.defaultSettings(); // seed defaults just for now!
+        this.loaded = false;
+
+        // Load up settings from the file system
+        this._load();
+    },
+
+    set: function(key, value) {
+        this.settings[key] = value;
+
+        if (key[0] != '_') this._save(); // Save back to the file system unless this is a hidden setting
+    },
+
+    get: function(key) {
+        return this.settings[key];
+    },
+
+    unset: function(key) {
+        delete this.settings[key];
+
+        this._save(); // Save back to the file system
+    },
+
+    _save: function() {
+        if (!this.loaded) return; // short circuit to make sure that we don't save the defaults over your settings
+
+        var settings = "";
+        for (var key in this.settings) {
+            if (this.settings.hasOwnProperty(key) && (key[0] != '_')) {
+                settings += key + " " + this.settings[key] + "\n";
+            }
+        }
+
+        bespin.get('files').saveFile(bespin.userSettingsProject, {
+            name: "settings.txt",
+            content: settings,
+            timestamp: new Date().getTime()
+        });
+    },
+
+    _load: function() {
+        var checkLoaded = dojo.hitch(this, function() {
+            if (!this.loaded) { // first time load
+                this.loaded = true;
+                bespin.publish("settings:loaded");
+            }
+        });
+
+        setTimeout(dojo.hitch(this, function() {
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings.txt", dojo.hitch(this, function(file) {
+                dojo.forEach(file.content.split(/\n/), dojo.hitch(this, function(setting) {
+                    if (setting.match(/^\s*#/)) return; // if comments are added ignore
+                    if (setting.match(/\S+\s+\S+/)) {
+                        var pieces = setting.split(/\s+/);
+                        this.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
+                    }
+                }));
+
+                checkLoaded();
+            }), checkLoaded); // unable to load the file, so kick this off and a save should kick in
+        }), 0);
     }
 });
 
@@ -424,7 +492,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
             var fontsize = parseInt(event.value);
-            editor.theme.lineNumberFont = fontsize + "pt Monaco, Lucida Console, monospace";
+            editor.theme.editorTextFont = fontsize + "pt Monaco, Lucida Console, monospace";
         });
 
         // ** {{{ Event: settings:set:theme }}} **
@@ -432,19 +500,46 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the Theme object used by the editor
         bespin.subscribe("settings:set:theme", function(event) {
             var theme = event.value;
-
-            if (theme) {
+            
+            var checkSetAndExit = function() {
                 var themeSettings = bespin.themes[theme];
-
                 if (themeSettings) {
-                    if (themeSettings != editor.theme) {
-                        editor.theme = themeSettings;
+                    if (themeSettings != editor.theme) editor.theme = themeSettings;
+                    return true;
+                }
+                return false;
+            }
+            
+            if (theme) {
+                // Try to load the theme from the themes hash
+                if (checkSetAndExit()) return true;
+
+                // Not in the default themes, load from bespin.themes.ThemeName file
+                try {
+                    dojo.require("bespin.themes." + theme);
+                    if (checkSetAndExit()) return true;
+                } catch (e) {
+                    //console.log(e);
+                }
+
+                // Not in bespin.themes, load from users directory
+                bespin.get('files').loadContents(bespin.userSettingsProject, "/themes/" + theme + ".js", dojo.hitch(this, function(file) {
+                    try {
+                        eval(file.content);
+                    } catch (e) {
+                        //console.log(e)
                     }
-                } else {
+
+                    if (!checkSetAndExit()) {                    
+                        bespin.publish("message", {
+                            msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
+                        });
+                    }
+                }), function() {
                     bespin.publish("message", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                    });
-                }
+                    });                    
+                });
             }
         });
 
@@ -493,6 +588,19 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
+        bespin.subscribe("settings:set:debugmode", function(event) {
+            editor.debugMode = settings.isOn(event.value);
+
+            if (editor.debugMode) {
+                bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints.txt", dojo.hitch(this, function(file) {
+                    bespin.debugInfo.breakpoints = dojo.fromJson(file.content);
+                    editor.paint(true);
+                }));
+            }
+
+            editor.paint(true);
+        });
+
         // ** {{{ Event: settings:set:cursorblink }}} **
         // 
         // The frequency of the cursor blink in milliseconds (defaults to 250)
@@ -517,7 +625,18 @@ dojo.declare("bespin.client.settings.Events", null, {
             } else {
                 bespin.unsubscribe(_trimOnSave);
             }
-        });        
+        });
+
+        // ** {{{ Event: settings:set:syntaxcheck }}} **
+        // 
+        // Turn the syntax parser on or off
+        bespin.subscribe("settings:set:syntaxcheck", function (data) {
+            if (settings.isOff(data.value)) {
+                bespin.publish("parser:stop");
+            } else {
+                bespin.publish("parser:start");
+            }
+        });
 
         // ** {{{ Event: settings:init }}} **
         // 
@@ -526,13 +645,19 @@ dojo.declare("bespin.client.settings.Events", null, {
             var path    = event.path;
             var project = event.project;
 
-            // TODO: use the action and don't run a command itself
-            var newfile = settings.fromURL.get('new');
-            if (!newfile) { // scratch file
-                if (project && (editSession.project != project)) {
-                    bespin.publish("project:set", { project: project });
-                }
+            if (project && (editSession.project != project)) {
+                bespin.publish("project:set", { project: project });
+            }
 
+            // if this is a new file, deal with it and setup the state
+            var newfile = settings.fromURL.get('new');
+            if (newfile) { // scratch file
+                bespin.publish("editor:newfile", {
+                   project: project,
+                   newfilename: path
+                });
+            // existing file, so open it
+            } else {
                 if (path) {
                     bespin.publish("editor:openfile", { filename: path });
                 }
@@ -540,75 +665,29 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the theme
+        //
+        // For every setting that has a bespin:settings:set:nameofsetting callback, init it
         bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:theme", {
-                value: settings.get('theme')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the special keybindings
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:keybindings", {
-                value: settings.get('keybindings')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Check for auto load
-        bespin.subscribe("settings:init", function(event) {
-            if (!settings.isOff(settings.get('autoconfig'))) {
-                bespin.publish("editor:config:run");
+            // Goes deep into internals which is naughty!
+            // In this case, going into the Dojo saved "topics" that you subscribe/publish too
+            for (var topic in dojo._topics) {
+                var settingsTopicBase = "bespin:settings:set:";
+                if (topic.indexOf(settingsTopicBase) == 0) {
+                    var settingKey = topic.substring(settingsTopicBase.length);
+                    bespin.publish("settings:set:" + settingKey, {
+                        value: settings.get(settingKey)
+                    });
+                }
             }
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the font size that the user has configured
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:fontsize", {
-                value: settings.get('fontsize')
-            });
         });        
 
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Setup the syntax engine if set
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:syntaxengine", {
-                value: settings.get('syntaxengine')
-            });
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Set trimonsave
-        bespin.subscribe("settings:init", function(event) {
-            bespin.publish("settings:set:trimonsave", {
-                value: settings.get('trimonsave')
-            });
-        });
-        
-        // ** {{{ Event: settings:init }}} **
-        // 
-        // Set syntaxcheck
-        bespin.subscribe("settings:init", function(event) {
-            bespin.subscribe("settings:set:syntaxcheck", function (data) {
-                if(settings.isOff(data.value)) {
-                    bespin.publish("parser:stop");
-                } else {
-                    bespin.publish("parser:start");
-                }
-            });
-            
-            bespin.publish("settings:set:syntaxcheck", {
-                value: settings.get('syntaxcheck')
-            });
-        });
-
+        // ** {{{ Event: settings:jslint }}} **
+        //
+        // When changing the jslint setting, restart the parser
+        bespin.subscribe("jslint", function(event) {
+            bespin.publish("parser:stop");
+           bespin.publish("parser:start");
+            bespin.get("parser").fetch();
+        });      
     }
 });

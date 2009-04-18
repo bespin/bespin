@@ -87,5 +87,8 @@ difficult) to make the backend work on Windows once Python 2.5 is
 installed. However, this has not been tested and there are likely two
 issues:
 
-1. some libraries used by Bespin try to compile C code
+1. some libraries used by Bespin try to compile C code (*)
 2. some paths may not be correct on Windows systems
+
+Microsoft offers free command line compilers that work well with
+Python.

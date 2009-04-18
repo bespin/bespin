@@ -65,10 +65,11 @@ dojo.declare("bespin.editor.Events", null, {
             var action = editor.ui.actions[event.action] || event.action;
 
             if (keyCode && action) {
+                var actionDescription = "User key to execute: " + event.action.replace("command:execute;name=", "");
                 if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
-                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action);
+                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
                 } else {
-                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action);
+                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
                 }
             }
         });
@@ -153,7 +154,7 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
-
+            
             bespin.publish("editor:savefile:before", { filename: filename });
 
             // saves the current state of the editor to a cookie
@@ -175,6 +176,8 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.publish("editor:titlechange", { filename: filename });
 
             bespin.publish("message", { msg: 'Saved file: ' + file.name, tag: 'autohide' });
+            
+            bespin.publish("editor:clean");
         });
 
         // ** {{{ Event: editor:moveandcenter }}} **
@@ -269,5 +272,30 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("cmdline:blur", function(event) {
             editor.setFocus(true);
         });
+
+        // ** {{{ Event: escape }}} **
+        // 
+        // escape key hit, so clear the find
+        bespin.subscribe("ui:escape", function(event) {
+            if (editor.ui.searchString) {
+                delete editor.ui.searchString;
+            }
+        });
+
+        // ** {{{ Event: editor:document:changed }}} **
+        // 
+        // Track whether a file is dirty (hasn't been saved)
+        bespin.subscribe("editor:document:changed", function(event) {
+            bespin.publish("editor:dirty");
+        });
+
+        bespin.subscribe("editor:dirty", function(event) {
+            editor.dirty = true;
+        });
+
+        bespin.subscribe("editor:clean", function(event) {
+            editor.dirty = false;
+        });
+
     }
 });

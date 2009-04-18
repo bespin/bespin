@@ -71,18 +71,20 @@ dojo.require("bespin.client.settings");
     		go("editor.html#new=true", newTab);
     	},
 
-        editor: function(project, path, newTab) {
+        editor: function(project, path, opts) {
             var url = "editor.html#";
             var args = [];
 
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
+            if (opts.newFile) args.push("new=true");
+
             var selectedPath = bespin.page.dashboard.tree.getSelectedPath(true);
-            if (selectedPath)   args.push('fromDashboardPath='+selectedPath);
+            if (selectedPath) args.push('fromDashboardPath=' + selectedPath);
 
             if (args.length > 0) url += args.join("&");
 
-            go(url, newTab);
+            go(url, opts.newTab);
         }
     });
 })();

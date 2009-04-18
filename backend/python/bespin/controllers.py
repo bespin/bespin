@@ -142,14 +142,20 @@ def delete_setting(request, response):
     except KeyError:
         response.status = "404 Not Found"
     return response()
-    
+
 def _split_path(request):
     path = request.kwargs['path']
     result = path.split('/', 1)
     if len(result) < 2:
         raise BadRequest("Project and path are both required.")
+    parts = result[0].partition('+')
+    if parts[1] == '':
+        result.insert(0, request.user)
+    else:
+        result.insert(0, request.user_manager.get_user(parts[0]))
+        result[1] = parts[2]
     return result
-    
+
 @expose(r'^/file/listopen/$', 'GET')
 def listopen(request, response):
     user = request.user
@@ -161,10 +167,10 @@ def listopen(request, response):
 @expose(r'^/file/at/(?P<path>.*)$', 'PUT')
 def putfile(request, response):
     user = request.user
-    
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project, create=True)
-    
+
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, create=True, user_manager=request.user_manager)
+
     if path:
         project.save_file(path, request.body)
     return response()
@@ -172,64 +178,67 @@ def putfile(request, response):
 @expose(r'^/file/at/(?P<path>.*)$', 'GET')
 def getfile(request, response):
     user = request.user
-    
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project)
-    
+
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+
     mode = request.GET.get('mode', 'rw')
     contents = project.get_file(path, mode)
     response.body = contents
     return response()
-    
+
 @expose(r'^/file/close/(?P<path>.*)$', 'POST')
 def postfile(request, response):
     user = request.user
-    
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project)
-    
+
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+
     project.close(path)
     return response()
 
 @expose(r'^/file/at/(?P<path>.*)$', 'DELETE')
 def deletefile(request, response):
     user = request.user
-    
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project)
-    
+
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+
     project.delete(path)
     return response()
 
 @expose(r'^/file/list/(?P<path>.*)$', 'GET')
 def listfiles(request, response):
     user = request.user
-    
     path = request.kwargs['path']
+    result = []
+
     if not path:
-        files = user.projects
+        projects = request.user_manager.get_user_projects(user, True)
+        for project in projects:
+            if project.owner == user:
+                result.append({ 'name':project.short_name })
+            else:
+                result.append({ 'name':project.owner.username + "+" + project.short_name })
     else:
         try:
-            project, path = _split_path(request)
+            owner, project, path = _split_path(request)
         except BadRequest:
             project = path
             path = ''
-    
+
         if project:
-            project = model.get_project(user, user, project)
-    
+            project = model.get_project(user, owner, project, user_manager=request.user_manager)
+
         files = project.list_files(path)
-        
-    result = []
-    for item in files:
-        f = {'name' : item.short_name}
-        _populate_stats(item, f)
-        result.append(f)
-        
-    response.content_type = "application/json"
-    response.body = simplejson.dumps(result)
-    return response()
-    
+
+        for item in files:
+            reply = { 'name':item.short_name }
+            _populate_stats(item, reply)
+            result.append(reply)
+
+    return _respond_json(response, result)
+
 @expose(r'^/project/template/(?P<project_name>.*)/$', 'POST')
 def install_template(request, response):
     user = request.user
@@ -246,12 +255,10 @@ def file_list_all(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     project = model.get_project(user, user, project_name)
-    
+
     files = project._search_cache.lines(retain=False)
-    response.content_type = "application/json"
-    response.body = simplejson.dumps(files)
-    return response()   
-    
+    return _respond_json(response, files)
+
 @expose(r'^/file/search/(?P<project_name>.*)$', 'GET')
 def file_search(request, response):
     user = request.user
@@ -262,14 +269,11 @@ def file_search(request, response):
     except ValueError:
         limit = 20
     project_name = request.kwargs['project_name']
-    
+
     project = model.get_project(user, user, project_name)
     result = project.search_files(query, limit)
-    
-    response.content_type = "application/json"
-    response.body = simplejson.dumps(result)
-    return response()
-    
+    return _respond_json(response, result)
+
 def _populate_stats(item, result):
     if isinstance(item, model.File):
         result['size'] = item.saved_size
@@ -280,47 +284,42 @@ def _populate_stats(item, result):
 @expose(r'^/file/stats/(?P<path>.+)$', 'GET')
 def filestats(request, response):
     user = request.user
-    
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project)
-    
+
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+
     file_obj = project.get_file_object(path)
     result = {}
     _populate_stats(file_obj, result)
-    response.content_type = "application/json"
-    response.body = simplejson.dumps(result)
-    return response()
-    
+    return _respond_json(response, result)
+
 # Edits may be changing with collab. Commented out for now
 # DELETE once we know these are done...
 
 # @expose(r'^/edit/at/(?P<path>.*)$', 'PUT')
 # def save_edit(request, response):
 #     user = request.user
-#     
-#     project, path = _split_path(request)
-#     project = model.get_project(user, user, project, create=True)
-#     
-#     fm.save_edit(user, project, path, 
-#                  request.body)
+#
+#     owner, project, path = _split_path(request)
+#     project = model.get_project(user, owner, project, create=True, user_manager=request.user_manager)
+#
+#     fm.save_edit(user, project, path, request.body)
 #     return response()
-# 
+#
 # def _get_edit_list(request, response, start_at=0):
 #     fm = request.file_manager
 #     user = request.user
-#     
-#     project, path = _split_path(request)
-#     project = fm.get_project(user, project)
-#     
+#
+#     owner, project, path = _split_path(request)
+#     project = fm.get_project(user, owner, project, user_manager=request.user_manager)
+#
 #     edits = fm.list_edits(user, project, path, start_at)
-#     response.content_type = "application/json"
-#     response.body = simplejson.dumps(edits)
-#     return response()
-# 
+#     return _respond_json(response, edits)
+#
 # @expose(r'^/edit/list/(?P<path>.*)$', 'GET')
 # def list_edits(request, response):
 #     return _get_edit_list(request, response)
-# 
+#
 # @expose(r'^/edit/recent/(?P<start_at>\d+)/(?P<path>.*)$', 'GET')
 # def list_recent(request, response):
 #     start_at = int(request.kwargs['start_at'])
@@ -336,8 +335,8 @@ def filestats(request, response):
 #     fm = request.file_manager
 #     user = request.user
 #     
-#     project, path = _split_path(request)
-#     project = fm.get_project(user, project)
+#     owner, project, path = _split_path(request)
+#     project = fm.get_project(user, owner, project, user_manager=request.user_manager)
 #     
 #     fm.reset_edits(user, project, path)
 #     return response()
@@ -376,7 +375,6 @@ def _perform_import(user, project_name, filename, fileobj):
     else:
         raise BadRequest(
             "Import only supports .tar.gz, .tgz and .zip at this time.")
-        
     
     func(filename, fileobj)
     return
@@ -396,7 +394,7 @@ def import_from_url(request, response):
     except httplib2.HttpLib2Error, e:
         raise BadRequest(str(e))
         
-    # chech the content length to see if the user has enough quota
+    # check the content length to see if the user has enough quota
     # available before we download the whole file
     content_length = resp[0].get("content-length")
     if content_length:
@@ -448,8 +446,8 @@ def export_project(request, response):
 def preview_file(request, response):
     user = request.user
     
-    project, path = _split_path(request)
-    project = model.get_project(user, user, project)
+    owner, project, path = _split_path(request)
+    project = model.get_project(user, owner, project, user_manager=request.user_manager)
     
     file_obj = project.get_file_object(path)
     response.body = str(file_obj.data)
@@ -459,7 +457,7 @@ def preview_file(request, response):
 @expose(r'^/project/rename/(?P<project_name>.+)/$', 'POST')
 def rename_project(request, response):
     user = request.user
-    
+
     project_name = request.kwargs['project_name']
     project = model.get_project(user, user, project_name)
     project.rename(request.body)
@@ -488,49 +486,62 @@ def unfollow(request, response):
 @expose(r'^/group/list/all', 'GET')
 def group_list_all(request, response):
     groups = request.user_manager.get_groups(request.user)
+    groups = [ group.name for group in groups ]
     return _respond_json(response, groups)
 
-@expose(r'^/group/list/(?P<group>.+)/$', 'GET')
+@expose(r'^/group/list/(?P<group>[^/]+)/$', 'GET')
 def group_list(request, response):
-    group = request.kwargs['group']
-    members = request.user_manager.get_group_members(request.user, group)
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    members = request.user_manager.get_group_members(group)
+    members = [ member.user.username for member in members ]
     return _respond_json(response, members)
 
-@expose(r'^/group/remove/all/(?P<group>.+)/$', 'POST')
+@expose(r'^/group/remove/all/(?P<group>[^/]+)/$', 'POST')
 def group_remove_all(request, response):
-    group = request.kwargs['group']
-    request.user_manager.remove_all_group_members(request.user, group)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    rows = 0
+    rows += request.user_manager.remove_all_group_members(group)
+    rows += request.user_manager.remove_group(group)
+    return _respond_json(response, rows)
 
-@expose(r'^/group/remove/(?P<group>.+)/$', 'POST')
+@expose(r'^/group/remove/(?P<group>[^/]+)/$', 'POST')
 def group_remove(request, response):
-    group = request.kwargs['group']
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    rows = 0
     for other_user in users:
-        request.user_manager.remove_group_members(request.user, group, other_user)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+        rows += request.user_manager.remove_group_member(group, other_user)
+    members = request.user_manager.get_group_members(group)
+    if len(members) == 0:
+        rows += request.user_manager.remove_group(group)
+    return _respond_json(response, rows)
 
-@expose(r'^/group/add/(?P<group>.+)/$', 'POST')
+@expose(r'^/group/add/(?P<group>[^/]+)/$', 'POST')
 def group_add(request, response):
-    group = request.kwargs['group']
+    group_name = request.kwargs['group']
+    group = request.user_manager.get_group(request.user, group_name, create_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
-        request.user_manager.add_group_members(request.user, group, other_user)
-    members = request.user_manager.get_group_members(request.user, group)
-    return _respond_json(response, members)
+        request.user_manager.add_group_member(group, other_user)
+    return _respond_blank(response)
+
+def _respond_blank(response):
+    response.body = ""
+    response.content_type = "text/plain"
+    return response()
 
 def _respond_json(response, data):
     response.body = simplejson.dumps(data)
-    response.content_type = "text/plain"
+    response.content_type = "application/json"
     return response()
 
 def _lookup_usernames(user_manager, usernames):
     def lookup_username(username):
         user = user_manager.get_user(username)
         if user == None:
-            # TODO: XSS injection hole here, we should have some policy
             raise BadRequest("Username not found: %s" % username)
         return user
     return map(lookup_username, usernames)
@@ -540,6 +551,7 @@ def _users_followed_response(user_manager, user, response):
     list = [connection.followed.username for connection in list]
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
+    return response()
 
 @expose(r'^/share/list/all/$', 'GET')
 def share_list_all(request, response):
@@ -547,44 +559,44 @@ def share_list_all(request, response):
     data = request.user_manager.get_sharing(request.user)
     return _respond_json(response, data)
 
-@expose(r'^/share/list/(?P<project>.+)/$', 'GET')
+@expose(r'^/share/list/(?P<project>[^/]+)/$', 'GET')
 def share_list_project(request, response):
     "List sharing for a given project"
-    project = get_project(request.user, request.user, request.kwargs['project'])
+    project = model.get_project(request.user, request.user, request.kwargs['project'])
     data = request.user_manager.get_sharing(request.user, project)
     return _respond_json(response, data)
 
-@expose(r'^/share/list/(?P<project>.+)/(?P<member>.+)/$', 'GET')
+@expose(r'^/share/list/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'GET')
 def share_list_project_member(request, response):
     "List sharing for a given project and member"
-    project = get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.get_sharing(request.user, project, member)
     return _respond_json(response, data)
 
-@expose(r'^/share/remove/(?P<project>.+)/all/$', 'POST')
+@expose(r'^/share/remove/(?P<project>[^/]+)/all/$', 'POST')
 def share_remove_all(request, response):
     "Remove all sharing from a project"
-    project = get_project(request.user, request.user, request.kwargs['project'])
+    project = model.get_project(request.user, request.user, request.kwargs['project'])
     data = request.user_manager.remove_sharing(request.user, project)
     return _respond_json(response, data)
 
-@expose(r'^/share/remove/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+@expose(r'^/share/remove/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_remove(request, response):
     "Remove project sharing from a given member"
-    project = get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.remove_sharing(request.user, project, member)
     return _respond_json(response, data)
 
-@expose(r'^/share/add/(?P<project>.+)/(?P<member>.+)/$', 'POST')
+@expose(r'^/share/add/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_add(request, response):
     "Add a member to the sharing list for a project"
-    project = get_project(request.user, request.user, request.kwargs['project'])
-    member = request.kwargs['member']
+    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     options = simplejson.loads(request.body)
-    data = request.user_manager.add_sharing(request.user, project, member, options)
-    return _respond_json(response, data)
+    request.user_manager.add_sharing(request.user, project, member, options)
+    return _respond_blank(response)
 
 @expose(r'^/viewme/list/all/$', 'GET')
 def viewme_list_all(request, response):
@@ -592,81 +604,20 @@ def viewme_list_all(request, response):
     data = request.user_manager.get_viewme(request.user)
     return _respond_json(response, data)
 
-@expose(r'^/viewme/list/(?P<member>.+)/$', 'GET')
+@expose(r'^/viewme/list/(?P<member>[^/]+)/$', 'GET')
 def viewme_list(request, response):
     "List the view settings for a given member"
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     data = request.user_manager.get_viewme(request.user, member)
     return _respond_json(response, data)
 
-@expose(r'^/viewme/set/(?P<member>.+)/(?P<value>.+)/$', 'POST')
+@expose(r'^/viewme/set/(?P<member>[^/]+)/(?P<value>[^/]+)/$', 'POST')
 def viewme_set(request, response):
     "Alter the view setting for a given member"
-    member = request.kwargs['member']
+    member = request.user_manager.find_member(request.user, request.kwargs['member'])
     value = request.kwargs['value']
     data = request.user_manager.set_viewme(request.user, member, value)
     return _respond_json(response, data)
-
-@expose(r'^/share/list/(?P<project>.+)/$', 'GET')
-def share_list_project(request, response):
-    "List sharing for a given project"
-    project = request.kwargs['project']
-    data = request.user_manager.get_sharing(project)
-    return _respond_json(response, data)
-
-@expose(r'^/share/list/(?P<project>.+)/(?P<member>.+)/$', 'GET')
-def share_list_project_member(request, response):
-    "List sharing for a given project and member"
-    project = request.kwargs['project']
-    member = request.kwargs['member']
-    data = request.user_manager.get_sharing(project, member)
-    return _respond_json(response, data)
-
-@expose(r'^/share/remove/(?P<project>.+)/all/$', 'POST')
-def share_remove_all(request, response):
-    "Remove all sharing from a project"
-    project = request.kwargs['project']
-    data = request.user_manager.remove_sharing(project)
-    return _respond_json(response, data)
-
-@expose(r'^/share/remove/(?P<project>.+)/(?P<member>.+)/$', 'POST')
-def share_remove(request, response):
-    "Remove project sharing from a given member"
-    project = request.kwargs['project']
-    member = request.kwargs['member']
-    data = request.user_manager.remove_sharing(project, member)
-    return _respond_json(response, data)
-
-@expose(r'^/share/add/(?P<project>.+)/(?P<member>.+)/$', 'POST')
-def share_add(request, response):
-    "Add a member to the sharing list for a project"
-    project = request.kwargs['project']
-    member = request.kwargs['member']
-    options = simplejson.loads(request.body)
-    data = request.user_manager.add_sharing(project, member, options)
-    return _respond_json(response, [ "Not implemented", project, member, options ])
-
-@expose(r'^/viewme/list/all/$', 'GET')
-def viewme_list_all(request, response):
-    "List all the members with view settings on me"
-    data = request.user_manager.get_viewme()
-    return _respond_json(response, [ "Not implemented" ])
-
-@expose(r'^/viewme/list/(?P<member>.+)/$', 'GET')
-def viewme_list(request, response):
-    "List the view settings for a given member"
-    member = request.kwargs['member']
-    data = request.user_manager.get_viewme(member)
-    return _respond_json(response, [ "Not implemented", member ])
-
-@expose(r'^/viewme/set/(?P<member>.+)/(?P<value>.+)/$', 'POST')
-def viewme_set(request, response):
-    "Alter the view setting for a given member"
-    member = request.kwargs['member']
-    value = request.kwargs['value']
-    data = request.user_manager.set_viewme(member, value)
-    return _respond_json(response, [ "Not implemented", member, value ])
-
 
 class InProcessMobwriteWorker(MobwriteWorker):
     "Talk to an in-process mobwrite"
@@ -681,7 +632,6 @@ class InProcessMobwriteWorker(MobwriteWorker):
         from bespin.mobwrite.mobwrite_daemon import maybe_cleanup
         maybe_cleanup()
         return answer
-
 
 class MobwriteWorkerProxy():
     "Talk to mobwrite using port 3017"
@@ -698,7 +648,6 @@ class MobwriteWorkerProxy():
             answer += line
         s.close()
         return answer
-
 
 @expose(r'^/mobwrite/$', 'POST')
 def mobwrite(request, response):
@@ -756,9 +705,13 @@ def test_cleanup(request, response):
 @expose(r'^/vcs/clone/$', 'POST')
 def vcs_clone(request, response):
     user = request.user
-    output = vcs.clone(user, **dict(request.POST))
+    source = request.POST.get("source")
+    taskname = "Clone/checkout"
+    if source:
+         taskname += " from %s" % (source)
+    jobid = vcs.clone(user, **dict(request.POST))
     response.content_type = "application/json"
-    response.body = simplejson.dumps(dict(output=output))
+    response.body = simplejson.dumps(dict(jobid=jobid, taskname=taskname))
     return response()
     
 @expose(r'^/vcs/command/(?P<project_name>.*)/$', 'POST')
@@ -769,15 +722,20 @@ def vcs_command(request, response):
     args = request_info['command']
     kcpass = request_info.get('kcpass')
     
+    try:
+        taskname = "vcs %s command" % (args[0])
+    except IndexError:
+        taskname = "vcs command"
+    
     # special support for clone/checkout
     if vcs.is_new_project_command(args):
         raise BadRequest("Use /vcs/clone/ to create a new project")
     else:
         project = model.get_project(user, user, project_name)
-        output = vcs.run_command(user, project, args, kcpass)
+        jobid = vcs.run_command(user, project, args, kcpass)
     
     response.content_type = "application/json"
-    response.body = simplejson.dumps({'output' : output})
+    response.body = simplejson.dumps(dict(jobid=jobid, taskname=taskname))
     return response()
 
 @expose(r'^/vcs/remoteauth/(?P<project_name>.*)/$', 'GET')
@@ -838,11 +796,16 @@ def get_ssh_key(request, response):
     try:
         kcpass = request.POST['kcpass']
     except KeyError:
-        raise BadRequest("Keychain password (kcpass) is required")
+        kcpass = None
         
-    keychain = vcs.KeyChain(user, kcpass)
+    if kcpass is None:
+        pubkey = vcs.KeyChain.get_ssh_public_key(user)
+    else:
+        keychain = vcs.KeyChain(user, kcpass)
+        pubkey = keychain.get_ssh_key()[0]
+        
     response.content_type = "application/x-ssh-key"
-    response.body = keychain.get_ssh_key()[0]
+    response.body = pubkey
     return response()
 
 @expose("^/messages/$", 'POST')
@@ -872,6 +835,8 @@ def db_middleware(app):
             #     print "<script type='text/javascript' src='%s'></script>" % path_info
 
             result = app(environ, start_response)
+            if result == None:
+                log.error("WSGI response == None")
             if environ['bespin.docommit']:
                 session.commit()
             else:

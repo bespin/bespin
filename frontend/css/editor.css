@@ -4,6 +4,7 @@ body {
     overflow: hidden;
 	background-color: #2A211C;
     -webkit-user-select: none;
+    -moz-user-select: none;
 }
 
 #subheader {

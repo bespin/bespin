@@ -36,6 +36,7 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{base}}} is the base server URL to access
     constructor: function(base) {
         this.SERVER_BASE_URL = base || '.';
+        this._asyncCount = 0;
     },
 
     // == Helpers ==
@@ -55,6 +56,7 @@ dojo.declare("bespin.client.Server", null, {
     //   options['on' + STATUS CODE] = call for specific failures
     //   options['log'] = just log the following
     request: function(method, url, payload, options) {
+        var server = this;
         var xhr = new XMLHttpRequest();
 
         if (location.href.indexOf("file:") == 0){ // if developing and using this locally only!
@@ -77,6 +79,12 @@ dojo.declare("bespin.client.Server", null, {
                                 response = dojo.fromJson(response);
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + response + " (SyntaxError: " + syntaxException + ")");
+                            }
+                            
+                            if (options.serverAsync && response.taskname) {
+                                bespin.publish("message", 
+                                    {msg: "Server is running : " + response.taskname,
+                                    tag: "autohide"});
                             }
                         }
                         
@@ -104,6 +112,9 @@ dojo.declare("bespin.client.Server", null, {
                     }
                 }
             }
+            if (options.serverAsync) {
+                server.asyncStarted();
+            }
             xhr.send(payload);
         } else {
             var fullUrl = this.SERVER_BASE_URL + url;
@@ -112,6 +123,33 @@ dojo.declare("bespin.client.Server", null, {
             xhr.send(payload);
             return xhr.responseText;
         }
+    },
+    
+    // ** {{{ asyncStarted() }}}
+    //
+    // Keeps track of jobs that are asynchronous on the server, so
+    // that we know when we need to check for messages from the
+    // server.
+    asyncStarted: function() {
+        console.log("Starting new server-side async job.");
+        if (this._asyncCount == 0) {
+            this.processMessages();
+        }
+        this._asyncCount++;
+        console.log("Count is now " + this._asyncCount);
+    },
+
+    // ** {{{ asyncEnded() }}}
+    //
+    // Keeps track of the end of jobs that are asynchronous on the server, so
+    // that we know when we can stop checking for messages from the
+    // server.
+    asyncEnded: function() {
+        console.log("Server-side async job done.");
+        if (this._asyncCount > 0) {
+            this._asyncCount--;
+        }
+        console.log("Count is now " + this._asyncCount);
     },
 
     // == USER ==
@@ -243,12 +281,14 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{project}}} is the project to load from
     // * {{{path}}} is the path to load
     // * {{{onSuccess}}} fires after the file is loaded
-    loadFile: function(project, path, onSuccess) {
+    loadFile: function(project, path, onSuccess, onFailure) {
         var project = project || '';
         var path = path || '';
         var url = bespin.util.path.combine('/file/at', project, path);
+        var opts = { onSuccess: onSuccess };
+        if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
 
-        this.request('GET', url, null, { onSuccess: onSuccess });
+        this.request('GET', url, null, opts);
     },
 
     // ** {{{ removeFile(project, path, onSuccess, onFailure) }}}
@@ -410,7 +450,6 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{archivetype}}} is either zip | tgz
     exportProject: function(project, archivetype) {
         if (bespin.util.include(['zip','tgz','tar.gz'], archivetype)) {
-//            console.log('/project/export', project + "." + archivetype);
             var iframe = document.createElement("iframe");
             iframe.src = bespin.util.path.combine('/project/export', project + "." + archivetype);
             iframe.style.display = 'none';
@@ -518,6 +557,12 @@ dojo.declare("bespin.client.Server", null, {
         this.request('GET', '/group/list/' + group + '/', null, opts || {});
     },
 
+    // ** {{{ groupRemove() }}}
+    // Get a list of the users the current user is following
+    groupRemove: function(group, users, opts) {
+        this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
+    },
+
     // ** {{{ groupRemoveAll() }}}
     // Get a list of the users the current user is following
     groupRemoveAll: function(group, opts) {
@@ -527,12 +572,6 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ groupAdd() }}}
     // Get a list of the users the current user is following
     groupAdd: function(group, users, opts) {
-        this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
-    },
-
-    // ** {{{ groupRemove() }}}
-    // Get a list of the users the current user is following
-    groupRemove: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
     },
 
@@ -598,16 +637,20 @@ dojo.declare("bespin.client.Server", null, {
     // have kcpass, which is a string containing the user's
     // keychain password.
     vcs: function(project, command, opts) {
+        opts = opts || {};
+        opts.serverAsync = true;
         this.request('POST', '/vcs/command/' + project + '/',
                      dojo.toJson(command),
-                     opts || {});
+                     opts);
     },
     
     // ** {{{ clone() }}}
     // Clone a remote repository
     clone: function(data, opts) {
+        opts = opts || {};
+        opts.serverAsync = true;
         this.request('POST', '/vcs/clone/',
-                    data, opts || {});
+                    data, opts);
     },
     
     // ** {{{ setauth() }}}
@@ -620,7 +663,11 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ getkey() }}}
     // Retrieves the user's SSH public key that can be used for VCS functions
     getkey: function(kcpass, opts) {
-        this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+        if (kcpass == null) {
+            this.request('POST', '/vcs/getkey/', null, opts || {});
+        } else {
+            this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
+        }
     },
     
     // ** {{{ remoteauth() }}}
@@ -648,6 +695,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ processMessages() }}}
     // Starts up message retrieve for this user. Call this only once.
     processMessages: function() {
+        console.log("Message processing starting");
         var server = this;
         function doProcessMessages() {
             server.request('POST', '/messages/', null,
@@ -660,11 +708,21 @@ dojo.declare("bespin.client.Server", null, {
                             if (eventName) {
                                 bespin.publish(eventName, message);
                             }
+                            if (message.asyncDone) {
+                                server.asyncEnded();
+                            }
                         }
-                        setTimeout(doProcessMessages, 1000);
+                        if (server._asyncCount > 0) {
+                            setTimeout(doProcessMessages, 1000);
+                        }
                     },
                     onFailure: function(message) {
-                        setTimeout(doProcessMessages, 1000);
+                        if (message.asyncDone) {
+                            server.asyncEnded();
+                        }
+                        if (server._asyncCount > 0) {
+                            setTimeout(doProcessMessages, 1000);
+                        }
                     }
                 });
         }

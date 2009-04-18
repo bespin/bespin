@@ -97,7 +97,8 @@ options(
         port=8080,
         try_build=False,
         dburl=None,
-        async=False
+        async=False,
+        config_file=path("devconfig.py")
     ),
     dojo=Bunch(
         version="1.3.0",
@@ -132,6 +133,33 @@ def required():
     # clean up after urlrelay's installation
     path("README").unlink()
     path("include").rmtree()
+    
+@task
+def devconfig(options):
+    """Generate a developer webserver config file (devconfig.py)."""
+    options.server.config_file.write_text("""
+from bespin.config import c
+
+# uncomment the following line to turn of stdout logging
+# c.log_requests_to_stdout = False
+
+# change the following line if you want to test Bespin
+# with another database, such as MySQL
+# c.dburl = mysql://user:password@localhost/databasename
+
+# uncomment the following line to use the beanstalkd queue and
+# bespin_worker jobs
+# c.async_jobs = True
+
+# should Project and User names be restricted to a subset
+# of characters
+# (see bespin.model._check_identifiers)
+# uncomment the next line to turn off the restrictions
+# c.restrict_identifiers = False
+
+# Look in bespin.config to see more options you can set
+""")
+    info("Config file created in: %s", options.server.config_file)
 
 @task
 def start():
@@ -164,7 +192,12 @@ def start():
     
     if options.server.async:
         config.c.async_jobs = True
-        config.c.queue_path = path.getcwd() / "queue.db"
+    
+    config_file = options.server.config_file
+    if config_file.exists():
+        info("Loading config: %s", config_file)
+        code = compile(config_file.bytes(), config_file, "exec")
+        exec code in {}
     
     config.activate_profile()
     port = int(options.port)
@@ -477,6 +510,20 @@ def dojo(options):
         destpath.write_bytes(f.read())
         f.close()
 
+@task
+def testfrontend():
+    """Run the frontend tests via DOH"""
+    basedir = options.dojo.destination.abspath()
+    if not (basedir / "util").exists():
+        raise BuildFailure("You need to be using a Dojo source package. Run paver dojo -s.")
+
+    # copy the fixed runner script into place in dojo. Shouldn't do this each time :/
+    fixedrunner = basedir / ".." / "tests" / "unit" / "runner.js"
+    fixedrunner.copy(basedir / "util" / "doh" / "runner.js")
+
+    sh("java -jar frontend/js/util/shrinksafe/js.jar frontend/js/util/doh/runner.js dojoUrl=frontend/js/dojo/dojo.js testUrl=frontend/tests/unit/loadfiles.js testModule=tests.unit.loadfiles dohBase=frontend/js/util/doh/")
+
+
 """
 Cannot be used because jsparse needed to be slightly patched
 @task
@@ -533,3 +580,58 @@ def editbespin(options):
         project = model.get_project(user, user, "BespinSettings", create=True)
         project.install_template('usertemplate')
     info("User %s set up to access directory %s" % (user, location))
+
+@task
+def test():
+    #import nose
+    #nose.main("bespin.tests")
+    from os import system
+    system("nosetests backend/python/bespin")
+
+@task
+def mobwrite():
+    from bespin.mobwrite import mobwrite_daemon
+    mobwrite_daemon.main()
+
+@task
+def seeddb():
+    from bespin import config, model
+    from bespin.model import User, Connection, UserManager
+    config.set_profile("dev")
+    config.activate_profile()
+    session = config.c.sessionmaker(bind=config.c.dbengine)
+    user_manager = UserManager(session)
+
+    def get_user(name):
+        user = user_manager.get_user(name)
+        if user == None:
+            user = user_manager.create_user(name, name, name)
+        return user
+
+    # Seriously there is something wrong with my ego today ;-)
+    bgalbraith = get_user("bgalbraith")
+    kdangoor = get_user("kdangoor")
+    dalmaer = get_user("dalmaer")
+    mattb = get_user("mattb")
+    zuck = get_user("zuck")
+    tom = get_user("tom")
+    ev = get_user("ev")
+    j = get_user("j")
+
+    user_manager.follow(bgalbraith, j)
+    user_manager.follow(kdangoor, j)
+    user_manager.follow(dalmaer, j)
+    user_manager.follow(mattb, j)
+    user_manager.follow(zuck, j)
+    user_manager.follow(tom, j)
+    user_manager.follow(ev, j)
+
+    jproject = model.get_project(j, j, "SampleProject", create=True)
+
+    user_manager.add_sharing(j, jproject, "bgalbraith", edit=True)
+    user_manager.add_sharing(j, jproject, "kdangoor", edit=True)
+    user_manager.add_sharing(j, jproject, "dalmaer", edit=True)
+    user_manager.add_sharing(j, jproject, "mattb", edit=False)
+    user_manager.add_sharing(j, jproject, "zuck", edit=False)
+    user_manager.add_sharing(j, jproject, "tom", edit=False)
+    user_manager.add_sharing(j, jproject, "ev", edit=False)

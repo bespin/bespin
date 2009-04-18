@@ -39,6 +39,12 @@ bespin.subscribe("project:set", function(event) {
     }
 });
 
+bespin.subscribe("file:set", function(event) {
+    var session = bespin.get('editSession');
+    session.project = event.project;
+    session.path = event.path;
+});
+
 bespin.subscribe("project:create", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
@@ -76,5 +82,8 @@ bespin.subscribe("editor:newfile", function(event) {
 
     var newfilename = event.newfilename || "new.txt";
 
-    bespin.util.navigate.editor(project, newfilename);
+    bespin.util.navigate.editor(project, newfilename, {
+        newFile: true,
+        newTab: false
+    });
 });

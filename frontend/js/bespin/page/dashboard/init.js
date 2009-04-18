@@ -133,11 +133,13 @@ dojo.provide("bespin.page.dashboard.init");
             var oldPath = bd.lastSelectedPath;
             bd.lastSelectedPath = newPath;
                         
-            if (newPath == oldPath && newPath != '') return;     // the path has not changed
+            if (newPath == oldPath && newPath != '') return;    // the path has not changed
 
             newPath = newPath.split('/');
             oldPath = oldPath.split('/');
             currentProject = newPath[0];
+            
+            bespin.publish("project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
 
             tree.lists[0].selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
             scene.renderAllowed = false;
@@ -227,7 +229,7 @@ dojo.provide("bespin.page.dashboard.init");
             tree.replaceList(0, projectItems);
                                     
             // Restore the last selected file
-            var path =  (new bespin.client.settings.URL()).get('path');
+            var path = (new bespin.client.settings.URL()).get('path');
             if (!bd.lastSelectedPath) {
                 bd.restorePath(path);
             } else {
@@ -360,6 +362,15 @@ dojo.provide("bespin.page.dashboard.init");
         scene.bus.bind("itemselected", tree, function(e) {
             var pathSelected = tree.getSelectedPath(true);
             var db = bespin.page.dashboard;
+            
+            var treepath = tree.getSelectedPath();
+            var selectionInfo = {
+                project: db.getFilePath([treepath[0]]),
+                path: db.getFilePath(treepath.slice(1, treepath.length)),
+                fromDashboardItemSelected: true
+            }
+            bespin.publish("file:set", selectionInfo);
+            
             // this keeps the url to be changed if the file path changes to frequently
             if (db.urlTimeout) {
                 clearTimeout(db.urlTimeout);
@@ -393,12 +404,15 @@ dojo.provide("bespin.page.dashboard.init");
         
         // provide history for the dashboard
         bespin.subscribe("url:changed", function(e) {
-            var pathSelected =  (new bespin.client.settings.URL()).get('path');
+            var pathSelected = (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });
         
         // provide arrow navigation to dashboard
         dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
+            // catch focus on commandline
+            if(commandLine.handleCommandLineFocus(e)) return false;
+
             var key = bespin.util.keys.Key;
             var path = this.getSelectedPath();
             // things to make life much more easy :)

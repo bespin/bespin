@@ -8,8 +8,8 @@ from path import path
 
 from bespin.config import c
 
-# XXX TEMPORARY FOR TESTING
-c.fsroot = path("/tmp/DATA")
+# XXX Temporary for testing
+c.fsroot = "/tmp/DATA"
 
 metadata = MetaData()
 metadata.bind = migrate_engine
@@ -19,8 +19,8 @@ files_table = metadata.tables['files']
 users_table = metadata.tables['users']
 projects_table = metadata.tables['projects']
 
-good_characters = r'+\w@.-'
-good_pattern = re.compile(r'\w[%s]*' % good_characters, re.UNICODE)
+good_characters = r'\w-'
+good_pattern = re.compile(r'^\w[%s]*$' % good_characters, re.UNICODE)
 bad_pattern = re.compile(r'[^%s]' % good_characters, re.UNICODE)
 bad_beginning = re.compile(r'^\W', re.UNICODE)
 
@@ -163,12 +163,15 @@ ADD COLUMN everyone_viewable TINYINT(1) DEFAULT NULL
         
         projects = projects_table.select().where(projects_table.c.user_id==user.id).execute(bind=conn2)
         for project in projects:
-            ci = _check_identifiers(project.name)
+            projectname = project.name
+            if projectname.startswith("SampleProjectFor:"):
+                projectname = "SampleProject"
+            ci = _check_identifiers(projectname)
             if ci:
-                projectname = bad_pattern.sub("", project.name)
+                projectname = bad_pattern.sub("", projectname)
                 print "Project:", projectname
             else:
-                projectname = project.name
+                projectname = projectname
             
             project_location = path(c.fsroot) / user_location / projectname
             project_obj = Project(projectname, project_location)

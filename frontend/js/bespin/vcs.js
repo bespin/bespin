@@ -35,7 +35,6 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore();
 bespin.vcs.standardHandler = {
     evalJSON: true,
     onSuccess: function(response) {
-        bespin.publish("vcs:response", response);
     },
     onFailure: function(response) {
         bespin.publish("vcs:error", response);
@@ -137,8 +136,6 @@ bespin.vcs.clone = function(url) {
         bespin.get('server').clone(data, {
             evalJSON: true,
             onSuccess: function(response) {
-                bespin.publish("project:create", {});
-                bespin.publish("vcs:response", response);
             },
             onFailure: function(response) {
                 bespin.publish("vcs:error", response);
@@ -256,7 +253,7 @@ bespin.vcs.commands.addCommand({
         
         bespin.vcs.getKeychainPassword(function(kcpass) {
             bespin.get('server').vcs(project, 
-                                    {command: ['push'],
+                                    {command: ['push', '_BESPIN_PUSH'],
                                     kcpass: kcpass}, 
                                     bespin.vcs.standardHandler);
         });
@@ -267,43 +264,25 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'diff',
     preview: 'Display the differences in the checkout out files',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["diff"]}, 
-                                bespin.vcs.standardHandler);
-    }                                
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("diff", self, args);
+    }
 });
 
 // ** {{{Command: diff}}} **
 bespin.vcs.commands.addCommand({
     name: 'resolved',
+    takes: ['*'],
     preview: 'Mark files as resolved',
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
-    execute: function(self) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["resolved"]}, 
-                                bespin.vcs.standardHandler);
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("resolved", self, args);
     }                                
 });
 
@@ -351,25 +330,47 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
+bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args) {
+    var project;
+    var path;
+
+    bespin.withComponent('editSession', function(editSession) {
+        project = editSession.project;
+        path = editSession.path;
+    });
+
+    if (!project) {
+        self.showInfo("You need to pass in a project");
+        return;
+    }
+    
+    if (args.varargs.length == 0) {
+        if (!path) {
+            self.showInfo("You must select a file to add, or use -a for all files.");
+            return;
+        }
+        var command = [vcsCommand, path];
+    } else if (args.varargs[0] == "-a") {
+        var command = [vcsCommand]
+    } else {
+        var command = [vcsCommand];
+        command.concat(args.varargs);
+    }
+    bespin.get('server').vcs(project, 
+                            {command: command}, 
+                            bespin.vcs.standardHandler);
+}
+
 // ** {{{Command: add}}} **
 bespin.vcs.commands.addCommand({
     name: 'add',
     preview: 'Adds missing files to the project',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
     // ** {{{execute}}} **
     execute: function(self, args) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            self.showInfo("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project, 
-                                {command: ["add"]}, 
-                                bespin.vcs.standardHandler);
+        bespin.vcs._performVCSCommandWithFiles("add", self, args);
     }
 });
 
@@ -400,26 +401,40 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
+bespin.vcs._displaySSHKey = function(response) {
+    bespin.util.webpieces.showContentOverlay(
+        '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
+        + response + '" id="sshkey" style="width: 95%">'
+    );
+    dojo.byId("sshkey").select();
+};
+
+// Retrieve the user's SSH public key using their keychain password.
+// This is required if they have not already set up a public key.
+bespin.vcs._getSSHKeyAuthenticated = function() {
+    bespin.vcs.getKeychainPassword(function(kcpass) {
+        bespin.get('server').getkey(kcpass, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: function(response) {
+                self.showInfo("Bad keychain password.");
+            },
+            onFailure: function(response) {
+                self.showInfo("getkey failed: " + response);
+            }
+        });
+    });
+};
+
 bespin.vcs.commands.addCommand({
     name: 'getkey',
     preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
     execute: function(self) {
-        bespin.vcs.getKeychainPassword(function(kcpass) {
-            bespin.get('server').getkey(kcpass, {
-                onSuccess: function(response) {
-                    bespin.util.webpieces.showContentOverlay(
-                        '<h2>Your Bespin SSH public key</h2><input type="text" value="' 
-                        + response + '" id="sshkey" style="width: 95%">'
-                    );
-                    dojo.byId("sshkey").select();
-                },
-                on401: function(response) {
-                    self.showInfo("Bad keychain password.");
-                },
-                onFailure: function(response) {
-                    self.showInfo("getkey failed: " + response);
-                }
-            });
+        bespin.get('server').getkey(null, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: bespin.vcs._getSSHKeyAuthenticated,
+            onFailure: function(response) {
+                self.showInfo("getkey failed: " + response);
+            }
         });
     }
 });
@@ -440,19 +455,39 @@ bespin.vcs.commands.addCommand({
 // ** {{{ Event: bespin:vcs:response }}} **
 // Handle a response from a version control system command
 bespin.subscribe("vcs:response", function(event) {
-    bespin.util.webpieces.showContentOverlay(event.output, {pre: true});
+    var output = event.output;
+    
+    // if the output is all whitespace, we should display something
+    // nicer
+    if (/^\s*$/.exec(output)) {
+        output = "(Successful command with no visible output)";
+    }
+    
+    bespin.util.webpieces.showContentOverlay("<h2>vcs " 
+                    + event.command 
+                    + " output</h2><pre>" 
+                    + output 
+                    + "</pre>");
+                    
+    if (event.command) {
+        var command = event.command;
+        if (command == "clone") {
+            bespin.publish("project:create", {project: event.project});
+        }
+    }
 });
 
 // ** {{{ Event: bespin:vcs:error }}} **
 // Handle a negative response from a version control system command
 bespin.subscribe("vcs:error", function(event) {
-    bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.responseText + "</pre>");
+    bespin.util.webpieces.showContentOverlay("<h2>Error in VCS command</h2><pre>" + event.output + "</pre>");
 });
 
 // ** {{{Command: vcs}}} **
 // This is the top level command that contains all of the other commands.
 bespin.cmd.commands.add({
     name: 'vcs',
+    takes: ['*'],
     preview: 'run a version control command',
     subcommands: bespin.vcs.commands
 });
