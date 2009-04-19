@@ -121,6 +121,65 @@ bespin.cmd.commands.add({
     }
 }); 
 
+// ** {{{Command: eval}}} **
+bespin.cmd.commands.add({
+    name: 'eval',
+    takes: ['js-code'],
+    preview: 'evals given js code and show the result',
+    completeText: 'evals given js code and show the result',
+    execute: function(self, jscode) {
+        try {
+            var result = eval(jscode);
+        } catch (err) {
+            var result = '<b>Error: ' + err.message + '</b>';
+        }
+        
+        var msg = '';
+        var type = '';
+        
+        if (dojo.isFunction(result)) {
+            // converts the function to a well formated string
+            msg = (result + '').replace(/\n/g, '<br>').replace(/ /g, '&#160');
+            type = 'function';
+        } else if (dojo.isObject(result)) {
+            if (dojo.isArray(result)) {
+                type = 'array'
+            } else {
+                type = 'object';
+            }
+            
+            var items = [];
+            var value;
+                        
+            for (x in result) {
+                if (dojo.isFunction(result[x])) {
+                    value = "[function]";                    
+                } else if (dojo.isObject(result[x])) {
+                    value = "[object]";
+                } else {
+                    value = result[x];
+                }
+                
+                items.push({name: x, value: value});
+            }
+            
+            items.sort(function(a,b) {
+                return (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 1
+            });
+            
+            for (var x = 0; x < items.length; x++) {
+                msg += '<b>' + items[x].name + '</b>: ' + items[x].value + '<br>';
+            }
+            
+        } else {
+            msg = result;
+            type = typeof result;
+        }
+        
+        self.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");        
+    }
+});
+
 // ** {{{Command: set}}} **
 bespin.cmd.commands.add({
         name: 'set',
@@ -190,7 +249,14 @@ bespin.cmd.commands.add({
         preview: 'searches the current file for the given searchString',
         completeText: 'type in a string to search',
         execute: function(self, str) {
-            var editor = bespin.get('editor');            
+            var editor = bespin.get('editor');         
+            
+            if (str == '') {
+                editor.ui.setSearchString(false);
+                editor.paint(true);
+                return false;
+            }
+               
             var count = editor.model.getCountOfString(str);
 
             if (count == 0) {
