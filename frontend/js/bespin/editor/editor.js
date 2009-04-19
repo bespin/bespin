@@ -950,7 +950,12 @@ dojo.declare("bespin.editor.UI", null, {
 
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save(); // take snapshot of current context state so we can roll back later on
-        ctx.translate(0, this.yoffset);
+        
+        // the Math.round(this.yoffset) makes the painting nice and not to go over 2 pixels 
+        // see for more informations:  
+        //  - https://developer.mozilla.org/en/Canvas_tutorial/Applying_styles_and_colors, section "Line styles"
+        //  - https://developer.mozilla.org/@api/deki/files/601/=Canvas-grid.png
+        ctx.translate(0, Math.round(this.yoffset));     
 
         // paint the line numbers
         if (refreshCanvas) {
