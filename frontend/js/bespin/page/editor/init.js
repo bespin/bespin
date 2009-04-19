@@ -166,41 +166,6 @@ dojo.provide("bespin.page.editor.init");
             dojo.byId('searchquery').select();
         });
 
-
-        // bind in things for search :)
-        dojo.connect(window, 'keydown', function(e) {
-            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
-                dojo.stopEvent(e);
-                dojo.byId('searchquery').focus();
-                dojo.byId('searchquery').select();
-            }
-        });
-        
-        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
-            if (e.keyCode == bespin.util.keys.Key.ENTER) {
-                if (dojo.byId('searchquery').value != '') {
-                    // want to search? Do so!
-                    if (bespin.get('commandLine').executeCommand('search ' + dojo.byId('searchquery').value)) {
-                        dojo.byId('canvas').focus();
-                        bespin.get('editor').setFocus(true);
-                        dojo.stopEvent(e);                    
-                    } else {
-                        dojo.byId('searchquery').select();
-                    }                    
-                } else {
-                    // in this case just remove the searchString
-                    delete bespin.get('editor').ui.searchString;
-                    bespin.get('editor').ui.actions.findClear();
-                }
-            }
-        });
-        
-        // handle things when search field get focused
-        dojo.connect(dojo.byId('searchquery'), 'focus', function(e) {
-            bespin.get('editor').setFocus(false);
-            dojo.byId('searchquery').select();
-        });
-
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 
         scene = new th.Scene(dojo.byId("projectLabel"));

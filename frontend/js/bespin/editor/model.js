@@ -32,6 +32,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.rows = [];
+        this.cacheRowMetadata = [];
     },
 
     isEmpty: function() {
@@ -280,8 +281,8 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         return cModelPos;
     },
 
-    // returnes an array with the col positions of the substrings str in the given row
-    getStringIndexInRow: function(row, str) {
+    // returns an array with the col positions of the substrings str in the given row
+    getStringIndicesInRow: function(row, str) {        
         str = str.toLowerCase()
         var row = this.getRowArray(row).join('').toLowerCase();
 
@@ -306,7 +307,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var match;
 
         for (var x = 0; x < this.getRowCount(); x++) {
-            match = this.getStringIndexInRow(x, str);   // TODO: Couldn't this be done with an regex much more faster???
+            match = this.getStringIndicesInRow(x, str);   // TODO: Couldn't this be done with an regex much more faster???
             if (match) {
                 count += match.length;
             }
@@ -314,19 +315,31 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         return count;
     },
+    
+    searchStringChanged: function(str) {        
+        for (var row = 0; row < this.cacheRowMetadata.length; row++) {
+            if (this.cacheRowMetadata[row]) {
+                if (str) {
+                    this.cacheRowMetadata[row].searchIndices = this.getStringIndicesInRow(row, str);            
+                } else {
+                    this.cacheRowMetadata[row].searchIndices = false;
+                }
+            }
+        }
+    },
 
     // find the position of the previous match. Returns a complete selection-object
     findPrev: function(row, col, str) {
-        var indexs;
+        var indices;
         var strLen = str.length;
 
         for (var x = row; x > -1; x--) {
-            indexs = this.getStringIndexInRow(x, str);
-            if (!indexs) continue;
+            indices = this.getStringIndicesInRow(x, str);
+            if (!indices) continue;
 
-            for (var y = indexs.length - 1; y > -1; y--) {
-                if (indexs[y] < (col - strLen) || row != x) {
-                    return { startPos: { col: indexs[y], row: x}, endPos: {col: indexs[y] + strLen, row: x} };
+            for (var y = indices.length - 1; y > -1; y--) {
+                if (indices[y] < (col - strLen) || row != x) {
+                    return { startPos: { col: indices[y], row: x}, endPos: {col: indices[y] + strLen, row: x} };
                 }
             }
         }
@@ -335,14 +348,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // find the position of the next match. Returns a complete selection-object
     findNext: function(row, col, str) {
-        var indexs;
+        var indices;
 
         for (var x = row; x < this.getRowCount(); x++) {
-            indexs = this.getStringIndexInRow(x, str);
-            if (!indexs) continue;
-            for (var y = 0; y < indexs.length; y++) {
-                if (indexs[y] > col || row != x) {
-                    return { startPos: { col: indexs[y], row: x}, endPos: {col: indexs[y] + str.length, row: x} };
+            indices = this.getStringIndicesInRow(x, str);
+            if (!indices) continue;
+            for (var y = 0; y < indices.length; y++) {
+                if (indices[y] > col || row != x) {
+                    return { startPos: { col: indices[y], row: x}, endPos: {col: indices[y] + str.length, row: x} };
                 }
             }
         }
@@ -390,5 +403,65 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         }
 
         return { row: row, col: col };
-    }
+    },
+    
+    // returns various metadata about the row, mainly concerning tab information
+    // uses a cache to speed things up
+    getRowMetadata: function(row) {
+        // check if we can use the cached RowMetadata
+        if (!this.isRowDirty(row) && this.cacheRowMetadata[row]) {
+            return this.cacheRowMetadata[row];
+        }
+        
+        // No cache or row is dirty? Well, then we have to calculate things new...
+        
+        // contains the row metadata; this object is returned at the end of the function
+        var meta = { tabExpansions: [] };
+
+        var rowArray = this.editor.model.getRowArray(row);
+        var lineText = rowArray.join("");
+        var tabsize = this.editor.getTabSize();
+
+        meta.lineTextWithoutTabExpansion = lineText;
+        meta.lineLengthWithoutTabExpansion = rowArray.length;
+
+        // check for tabs and handle them
+        for (var ti = 0; ti < lineText.length; ti++) {
+            // check if the current character is a tab
+            if (lineText.charCodeAt(ti) == 9) {
+                // since the current character is a tab, we potentially need to insert some blank space between the tab character
+                // and the next tab stop
+                var toInsert = tabsize - (ti % tabsize);
+
+                // create a spacer string representing the space between the tab and the tabstop
+                var spacer = "";
+                for (var si = 1; si < toInsert; si++) spacer += " ";
+
+                // split the row string into the left half and the right half (eliminating the tab character) in preparation for
+                // creating a new row string
+                var left = (ti == 0) ? "" : lineText.substring(0, ti);
+                var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
+
+                // create the new row string; the blank space essentially replaces the tab character
+                lineText = left + " " + spacer + right;
+                meta.tabExpansions.push({ start: left.length, end: left.length + spacer.length + 1 });
+
+                // increment the column counter to correspond to the new space
+                ti += toInsert - 1;
+            }
+        }
+
+        meta.lineText = lineText;
+        
+        if (this.editor.ui.searchString) {
+            meta.searchIndices = this.getStringIndicesInRow(row, this.editor.ui.searchString);            
+        } else {
+            meta.searchIndices = false;
+        }
+
+        // save the calcualted metadata to the cache
+        this.cacheRowMetadata[row] = meta;
+
+        return meta;
+    },
 });

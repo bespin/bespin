@@ -196,19 +196,20 @@ bespin.cmd.commands.add({
             if (count == 0) {
                 // there isn't anything? => well, there is no such string within the file!
                 self.showInfo("The given searchString '" + str + "' was not found in the current file!", true);
-                delete editor.ui.searchString;
+                editor.ui.setSearchString(false);
                 editor.paint(true);
                 return false;
             }
 
             // okay, there are matches, so go on...
-            editor.ui.searchString = str;
+            editor.ui.setSearchString(str);
             var pos = bespin.editor.utils.copyPos(editor.cursorManager.getCursorPosition());
 
             // first try to find the searchSting from the current position
             if (!editor.ui.actions.findNext()) {
                 // there was nothing found? Search from the beginning
                 editor.cursorManager.moveCursor({col: 0, row: 0 });
+                editor.ui.actions.findNext();
             }
 
             var msg = "Found " + count + " match";
