@@ -960,17 +960,19 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
+      var aliases = self.commandStore.aliases;
+
       if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
-        for (var x in self.aliases) {
-          output += x + ": " + self.aliases[x] + "<br/>";
+        for (var x in aliases) {
+          output += x + ": " + aliases[x] + "<br/>";
         }
       } else {
         if (args.command === undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
-          var alias = self.aliases[args.alias];
+          var alias = aliases[args.alias];
           if (alias) {
-              output += args.alias + ": " + self.aliases[args.alias];
+              output += args.alias + ": " + aliases[args.alias];
           } else {
               output += "No alias set for " + args.alias;
           }
@@ -984,10 +986,10 @@ bespin.cmd.commands.add({
               output += "Sorry, there is already a command with the name: " + key;
           } else if (self.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
-              self.aliases[key] = value;
-          } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
-              output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
-              self.aliases[key] = value;
+              aliases[key] = value;
+          } else if (aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
+              output += key + ": " + aliases[value] + " (" + value + " was an alias itself)";
+              aliases[key] = value;
           } else {
               output += "Sorry, no command or alias with that name.";
           }

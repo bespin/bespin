@@ -679,15 +679,24 @@ dojo.declare("bespin.client.settings.Events", null, {
                     });
                 }
             }
-        });        
+        });
+
+        // ** {{{ Event: bespin:settings:init }}} **
+        //
+        // Check for auto load
+        bespin.subscribe("settings:init", function() {
+            if (settings.isOff(settings.get('autoconfig'))) return;
+
+            bespin.publish("editor:config:run");
+        });
 
         // ** {{{ Event: settings:jslint }}} **
         //
         // When changing the jslint setting, restart the parser
         bespin.subscribe("jslint", function(event) {
             bespin.publish("parser:stop");
-           bespin.publish("parser:start");
+            bespin.publish("parser:start");
             bespin.get("parser").fetch();
-        });      
+        });
     }
 });
