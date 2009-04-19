@@ -279,17 +279,8 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
-            handled = true;
-        }
-
-        if (handled) return false;
-        // -- End of commandLine short cut
+        // handle keys only if editor has the focus!
+        if (!this.editor.focus) return false;
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
@@ -317,16 +308,8 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
-            handled = true;
-        }
-
-        if (handled) return false;
+        // handle keys only if editor has the focus!
+        if (!this.editor.focus) return false;
 
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
@@ -760,6 +743,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
+        
+        listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
+        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Focus Commandline");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
         listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
