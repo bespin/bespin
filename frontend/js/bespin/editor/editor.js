@@ -313,6 +313,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
+        var commandLine = bespin.get('commandLine');
         if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             dojo.stopEvent(e);
             return false;
