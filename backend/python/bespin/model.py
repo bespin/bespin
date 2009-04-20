@@ -1027,7 +1027,18 @@ class ProjectMetadata(dict):
         result = [item[0] for item in rs]
         c.close()
         return result
-    
+        
+    def get_file_list(self):
+        """Return a list of all files."""
+        conn = self.connection
+        c = conn.cursor()
+        rs = c.execute(
+            "SELECT filename FROM search_cache"
+        )
+        result = [item[0] for item in rs]
+        c.close()
+        return result
+        
     ######
     #
     # Dictionary methods for the key/value store
