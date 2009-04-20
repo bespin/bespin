@@ -273,7 +273,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var result = command.execute(this, args, command);
         this.commandLine.value = ''; // clear after the command
-
         return result;
     },
     

@@ -121,6 +121,65 @@ bespin.cmd.commands.add({
     }
 }); 
 
+// ** {{{Command: eval}}} **
+bespin.cmd.commands.add({
+    name: 'eval',
+    takes: ['js-code'],
+    preview: 'evals given js code and show the result',
+    completeText: 'evals given js code and show the result',
+    execute: function(self, jscode) {
+        try {
+            var result = eval(jscode);
+        } catch (err) {
+            var result = '<b>Error: ' + err.message + '</b>';
+        }
+        
+        var msg = '';
+        var type = '';
+        
+        if (dojo.isFunction(result)) {
+            // converts the function to a well formated string
+            msg = (result + '').replace(/\n/g, '<br>').replace(/ /g, '&#160');
+            type = 'function';
+        } else if (dojo.isObject(result)) {
+            if (dojo.isArray(result)) {
+                type = 'array'
+            } else {
+                type = 'object';
+            }
+            
+            var items = [];
+            var value;
+                        
+            for (x in result) {
+                if (dojo.isFunction(result[x])) {
+                    value = "[function]";                    
+                } else if (dojo.isObject(result[x])) {
+                    value = "[object]";
+                } else {
+                    value = result[x];
+                }
+                
+                items.push({name: x, value: value});
+            }
+            
+            items.sort(function(a,b) {
+                return (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 1
+            });
+            
+            for (var x = 0; x < items.length; x++) {
+                msg += '<b>' + items[x].name + '</b>: ' + items[x].value + '<br>';
+            }
+            
+        } else {
+            msg = result;
+            type = typeof result;
+        }
+        
+        self.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");        
+    }
+});
+
 // ** {{{Command: set}}} **
 bespin.cmd.commands.add({
         name: 'set',
@@ -190,25 +249,33 @@ bespin.cmd.commands.add({
         preview: 'searches the current file for the given searchString',
         completeText: 'type in a string to search',
         execute: function(self, str) {
-            var editor = bespin.get('editor');            
+            var editor = bespin.get('editor');         
+            
+            if (str == '') {
+                editor.ui.setSearchString(false);
+                editor.paint(true);
+                return false;
+            }
+               
             var count = editor.model.getCountOfString(str);
 
             if (count == 0) {
                 // there isn't anything? => well, there is no such string within the file!
                 self.showInfo("The given searchString '" + str + "' was not found in the current file!", true);
-                delete editor.ui.searchString;
+                editor.ui.setSearchString(false);
                 editor.paint(true);
                 return false;
             }
 
             // okay, there are matches, so go on...
-            editor.ui.searchString = str;
+            editor.ui.setSearchString(str);
             var pos = bespin.editor.utils.copyPos(editor.cursorManager.getCursorPosition());
 
             // first try to find the searchSting from the current position
             if (!editor.ui.actions.findNext()) {
                 // there was nothing found? Search from the beginning
                 editor.cursorManager.moveCursor({col: 0, row: 0 });
+                editor.ui.actions.findNext();
             }
 
             var msg = "Found " + count + " match";
@@ -982,17 +1049,19 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(self, args) {
       var output;
+      var aliases = self.commandStore.aliases;
+
       if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
-        for (var x in self.aliases) {
-          output += x + ": " + self.aliases[x] + "<br/>";
+        for (var x in aliases) {
+          output += x + ": " + aliases[x] + "<br/>";
         }
       } else {
         if (args.command === undefined) { // show it
           output = "<u>Your alias</u><br/><br/>";
-          var alias = self.aliases[args.alias];
+          var alias = aliases[args.alias];
           if (alias) {
-              output += args.alias + ": " + self.aliases[args.alias];
+              output += args.alias + ": " + aliases[args.alias];
           } else {
               output += "No alias set for " + args.alias;
           }
@@ -1006,10 +1075,10 @@ bespin.cmd.commands.add({
               output += "Sorry, there is already a command with the name: " + key;
           } else if (self.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
-              self.aliases[key] = value;
-          } else if (self.aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
-              output += key + ": " + self.aliases[value] + " (" + value + " was an alias itself)";
-              self.aliases[key] = value;
+              aliases[key] = value;
+          } else if (aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
+              output += key + ": " + aliases[value] + " (" + value + " was an alias itself)";
+              aliases[key] = value;
           } else {
               output += "Sorry, no command or alias with that name.";
           }

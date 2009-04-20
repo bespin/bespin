@@ -746,6 +746,20 @@ dojo.declare("bespin.editor.Actions", null, {
         dojo.byId('searchquery').focus();
     },
     // END SEARCH ACTIONS
+    
+    toggleQuickopen: function() {
+        var quickopen = bespin.get('quickopen');
+        if (quickopen) {
+            quickopen.window.toggle();
+        }  
+    },
+    
+    focusCommandline: function() {
+        var commandLine = bespin.get('commandLine');
+        if (commandLine) {
+            commandLine.commandLine.focus();
+        }
+    },
         
     undoSelectionChangeCase: function(args) {
         this.model.deleteChunk(args.selectionObject);

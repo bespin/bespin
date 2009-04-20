@@ -279,17 +279,8 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeydown: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
-            handled = true;
-        }
-
-        if (handled) return false;
-        // -- End of commandLine short cut
+        // handle keys only if editor has the focus!
+        if (!this.editor.focus) return false;
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
@@ -317,19 +308,12 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     },
 
     onkeypress: function(e) {
-        // -- Short cut for IF a command line is installed
-        var commandLine = bespin.get('commandLine');
-        var quickopen = bespin.get('quickopen');
-        var handled = false;
-        
-        if ( (commandLine && commandLine.handleCommandLineFocus(e)) || (quickopen && quickopen.handleKeys(e)) || !this.editor.focus) {
-            handled = true;
-        }
-
-        if (handled) return false;
+        // handle keys only if editor has the focus!
+        if (!this.editor.focus) return false;
 
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
+        var commandLine = bespin.get('commandLine');
         if (commandLine && e.charCode == 'j'.charCodeAt() && e.ctrlKey) {
             dojo.stopEvent(e);
             return false;
@@ -373,6 +357,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 dojo.declare("bespin.editor.UI", null, {
     constructor: function(editor) {
         this.editor = editor; 
+        this.model = this.editor.model;
 
         var settings = bespin.get("settings");
         this.syntaxModel = bespin.syntax.Resolver.setEngine("simple").getModel();
@@ -759,6 +744,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
+        
+        listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
+        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Focus Commandline");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
         listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
@@ -962,7 +950,12 @@ dojo.declare("bespin.editor.UI", null, {
 
         // translate the canvas based on the scrollbar position; for now, just translate the vertical axis
         ctx.save(); // take snapshot of current context state so we can roll back later on
-        ctx.translate(0, this.yoffset);
+        
+        // the Math.round(this.yoffset) makes the painting nice and not to go over 2 pixels 
+        // see for more informations:  
+        //  - https://developer.mozilla.org/en/Canvas_tutorial/Applying_styles_and_colors, section "Line styles"
+        //  - https://developer.mozilla.org/@api/deki/files/601/=Canvas-grid.png
+        ctx.translate(0, Math.round(this.yoffset));     
 
         // paint the line numbers
         if (refreshCanvas) {
@@ -1039,8 +1032,9 @@ dojo.declare("bespin.editor.UI", null, {
         var ce; // the ending column in the same loop
         var ri; // counter variable used for the same loop
         var regionlen;  // length of the text in the region; used in the same loop
-        var tx, tw;
+        var tx, tw, tsel;
         var settings = bespin.get("settings");
+        var searchStringLength = (this.searchString ? this.searchString.length : -1);
 
         // paint each line
         for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
@@ -1090,8 +1084,9 @@ dojo.declare("bespin.editor.UI", null, {
                 ctx.fillRect(tx, y, tw, this.lineHeight);
             }
 
-            var lineMetadata = this.getRowMetadata(currentLine);
+            var lineMetadata = this.model.getRowMetadata(currentLine);
             var lineText = lineMetadata.lineText;
+            var searchIndices = lineMetadata.searchIndices;
 
             // the following two chunks of code do the same thing; only one should be uncommented at a time
 
@@ -1128,49 +1123,43 @@ dojo.declare("bespin.editor.UI", null, {
             }
 
             // highlight search string
-            if (this.searchString) {
-                var lineText = lineMetadata.lineText;
-                var indexs = ed.model.getStringIndexInRow(currentLine, this.searchString);
-
-                var xoff = this.gutterWidth + this.LINE_INSETS.left;
-                var yoff = (currentLine * this.lineHeight) + 1;
-                var xStart;
-                var searchStringLength = this.searchString.length;
-
+            if (searchIndices) {                
                 // in some cases the selections are -1 => set them to a more "realistic" number
                 if (selections) {
-                    if (selections.startCol == -1) selections.startCol = 0;
-                    if (selections.endCol   == -1) selections.endCol = lineText.length;
+                    tsel = { startCol: 0, endCol: lineText.length };
+                    if (selections.startCol != -1) tsel.startCol = selections.startCol;
+                    if (selections.endCol   != -1) tsel.endCol = selections.endCol;
+                } else {
+                    tsel = false;
                 }
 
-                if (indexs) {
-                    for (var x = 0; x < indexs.length; x++) {
-                        indexs[x] = ed.cursorManager.getCursorPosition({col: indexs[x], row: currentLine}).col;
-                        xStart = xoff + indexs[x] * this.charWidth;
+                for (var i = 0; i < searchIndices.length; i++) {
+                    var index = ed.cursorManager.getCursorPosition({col: searchIndices[i], row: currentLine}).col;
+                    tx = x + index * this.charWidth;
 
-                        // highlight the area
-                        ctx.fillStyle = this.editor.theme.searchHighlight;
-                        ctx.fillRect(xStart, yoff, searchStringLength * this.charWidth, this.lineHeight - 1);
+                    // highlight the area
+                    ctx.fillStyle = this.editor.theme.searchHighlight;
+                    ctx.fillRect(tx, y, searchStringLength * this.charWidth, this.lineHeight);
 
-                        // figure out, whether the selection is in this area. If so, colour it different
-                        if (selections) {
-                            var indexStart = indexs[x];
-                            var indexEnd = indexs[x] + searchStringLength;
+                    // figure out, whether the selection is in this area. If so, colour it different
+                    if (tsel) {
+                        var indexStart = index;
+                        var indexEnd = index + searchStringLength;
 
-                            if (selections.startCol < indexEnd && selections.endCol > indexStart) {
-                                indexStart = Math.max(indexStart, selections.startCol);
-                                indexEnd = Math.min(indexEnd, selections.endCol);
+                        if (tsel.startCol < indexEnd && tsel.endCol > indexStart) {
+                            indexStart = Math.max(indexStart, tsel.startCol);
+                            indexEnd = Math.min(indexEnd, tsel.endCol);
 
-                                ctx.fillStyle = this.editor.theme.searchHighlightSelected;
-                                ctx.fillRect(xoff + indexStart * this.charWidth, yoff, (indexEnd - indexStart) * this.charWidth, this.lineHeight - 1);
-                            }
+                            ctx.fillStyle = this.editor.theme.searchHighlightSelected;
+                            ctx.fillRect(x + indexStart * this.charWidth, y, (indexEnd - indexStart) * this.charWidth, this.lineHeight);
                         }
-
-                        // print the overpainted text again
-                        ctx.fillStyle = this.editor.theme.editorTextColor || "white";
-                        ctx.fillText(lineText.substring(indexs[x], indexs[x] + searchStringLength), xStart, cy);
                     }
+
+                    // print the overpainted text again
+                    ctx.fillStyle = this.editor.theme.editorTextColor || "white";
+                    ctx.fillText(lineText.substring(index, index + searchStringLength), tx, cy);
                 }
+                
             }
 
             // paint tab information, if applicable and the information should be displayed
@@ -1507,52 +1496,9 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.fill();
     },
 
-    // returns various metadata about the row, mainly concerning tab information
-    getRowMetadata: function(row) {
-        // contains the row metadata; this object is returned at the end of the function
-        var meta = { tabExpansions: [] };
-
-        var rowArray = this.editor.model.getRowArray(row);
-        var lineText = rowArray.join("");
-        var tabsize = this.editor.getTabSize();
-
-        meta.lineTextWithoutTabExpansion = lineText;
-        meta.lineLengthWithoutTabExpansion = rowArray.length;
-
-        // check for tabs and handle them
-        for (var ti = 0; ti < lineText.length; ti++) {
-            // check if the current character is a tab
-            if (lineText.charCodeAt(ti) == 9) {
-                // since the current character is a tab, we potentially need to insert some blank space between the tab character
-                // and the next tab stop
-                var toInsert = tabsize - (ti % tabsize);
-
-                // create a spacer string representing the space between the tab and the tabstop
-                var spacer = "";
-                for (var si = 1; si < toInsert; si++) spacer += " ";
-
-                // split the row string into the left half and the right half (eliminating the tab character) in preparation for
-                // creating a new row string
-                var left = (ti == 0) ? "" : lineText.substring(0, ti);
-                var right = (ti < lineText.length - 1) ? lineText.substring(ti + 1) : "";
-
-                // create the new row string; the blank space essentially replaces the tab character
-                lineText = left + " " + spacer + right;
-                meta.tabExpansions.push({ start: left.length, end: left.length + spacer.length + 1 });
-
-                // increment the column counter to correspond to the new space
-                ti += toInsert - 1;
-            }
-        }
-
-        meta.lineText = lineText;
-
-        return meta;
-    },
-
     // returns metadata bout the a string that represents the row; converts tab characters to spaces
     getRowString: function(row) {
-        return this.getRowMetadata(row).lineText;
+        return this.model.getRowMetadata(row).lineText;
     },
 
     getRowScreenLength: function(row) {
@@ -1566,6 +1512,15 @@ dojo.declare("bespin.editor.UI", null, {
             cols = Math.max(cols, this.getRowScreenLength(i));
         }
         return cols;
+    },
+    
+    setSearchString: function(str) {
+        if (str) {
+            this.searchString = str;
+        } else {
+            delete this.searchString;
+        }
+        this.model.searchStringChanged(this.searchString);
     }
 });
 
