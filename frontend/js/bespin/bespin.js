@@ -43,8 +43,8 @@
 (function () {
 dojo.provide("bespin.bespin");
 
-var lazySubscriptionCount   = 0;
-var lazySubscriptionTimeout = {};
+var lazySubscriptionCount   = 0;  // holds the count to keep a unique value for setTimeout
+var lazySubscriptionTimeout = {}; // holds the timeouts so they can be cleared later
 
 dojo.mixin(bespin, {
     // BEGIN VERSION BLOCK
@@ -71,20 +71,20 @@ dojo.mixin(bespin, {
     // If minTimeBetweenPublishMillis is set to an integer the subscription will not
     // be invoked more than once within this time interval
     subscribe: function(topic, callback, minTimeBetweenPublishMillis) {
-        if(minTimeBetweenPublishMillis) {
+        if (minTimeBetweenPublishMillis) {
             var orig = callback;
-            
+
             var count = lazySubscriptionCount++;
-            
-            callback = function lazySubscriptionWrapper () {
-                var self = this;
-                if(lazySubscriptionTimeout[count]) {
-                    clearTimeout(lazySubscriptionTimeout[count])
+
+            callback = function lazySubscriptionWrapper() {
+                if (lazySubscriptionTimeout[count]) {
+                    clearTimeout(lazySubscriptionTimeout[count]);
                 }
-                lazySubscriptionTimeout[count] = setTimeout(function lazySubscriptionTimeout () {
-                    orig.apply(self, arguments);
+
+                lazySubscriptionTimeout[count] = setTimeout(dojo.hitch(this, function() {
+                    orig.apply(this, arguments);
                     delete lazySubscriptionTimeout[count];
-                }, minTimeBetweenPublishMillis)
+                }), minTimeBetweenPublishMillis);
             };
             
         }
