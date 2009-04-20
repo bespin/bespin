@@ -492,7 +492,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
             var fontsize = parseInt(event.value);
-            editor.theme.editorTextFont = fontsize + "pt Monaco, Lucida Console, monospace";
+            editor.theme.editorTextFont = editor.theme.editorTextFont.replace(/[0-9]{1,}pt/, fontsize+'pt');
+            editor.theme.lineNumberFont = editor.theme.lineNumberFont.replace(/[0-9]{1,}pt/, fontsize+'pt');
         });
 
         // ** {{{ Event: settings:set:theme }}} **
@@ -504,7 +505,10 @@ dojo.declare("bespin.client.settings.Events", null, {
             var checkSetAndExit = function() {
                 var themeSettings = bespin.themes[theme];
                 if (themeSettings) {
-                    if (themeSettings != editor.theme) editor.theme = themeSettings;
+                    if (themeSettings != editor.theme) {
+                        editor.theme = themeSettings;
+                        bespin.publish("settings:set:fontsize", {value: settings.get('fontsize')});
+                    }
                     return true;
                 }
                 return false;
