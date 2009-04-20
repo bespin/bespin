@@ -40,8 +40,12 @@
 // {{{ bespin.get }}} allows you to get registered components out
 // {{{ bespin.withComponent }}} maps onto dojo.subscribe but lets us abstract away for the future
 
+(function () {
 dojo.provide("bespin.bespin");
-    
+
+var lazySubscriptionCount   = 0;
+var lazySubscriptionTimeout = {};
+
 dojo.mixin(bespin, {
     // BEGIN VERSION BLOCK
     versionNumber: 'tip',
@@ -64,7 +68,26 @@ dojo.mixin(bespin, {
     // ** {{{ subscribe }}} **
     //
     // Given a topic and a function, subscribe to the event
-    subscribe: function(topic, callback) {
+    // If minTimeBetweenPublishMillis is set to an integer the subscription will not
+    // be invoked more than once within this time interval
+    subscribe: function(topic, callback, minTimeBetweenPublishMillis) {
+        if(minTimeBetweenPublishMillis) {
+            var orig = callback;
+            
+            var count = lazySubscriptionCount++;
+            
+            callback = function lazySubscriptionWrapper () {
+                var self = this;
+                if(lazySubscriptionTimeout[count]) {
+                    clearTimeout(lazySubscriptionTimeout[count])
+                }
+                lazySubscriptionTimeout[count] = setTimeout(function lazySubscriptionTimeout () {
+                    orig.apply(self, arguments);
+                    delete lazySubscriptionTimeout[count];
+                }, minTimeBetweenPublishMillis)
+            };
+            
+        }
         return dojo.subscribe("bespin:" + topic, callback);
     },
 
@@ -176,3 +199,4 @@ dojo.mixin(bespin, {
         }
     }
 });
+})()

@@ -158,17 +158,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             // rerun parser every time the doc changes
             var rerun = function() {
-                // only to a fetch at max every N millis
-                // so we dont run during active typing
-                if (timeout) {
-                    clearTimeout(timeout);
-                }
-                timeout = setTimeout(function() {
-                    self.fetch();
-                }, 400)
+                self.fetch();
             }
-            var onChange = bespin.subscribe("editor:document:changed", rerun);
-            var run = bespin.subscribe("parser:run", rerun);
+            var onChange = bespin.subscribe("editor:document:changed", rerun, 400);
+            var run = bespin.subscribe("parser:run", rerun, 400);
             
             // ** {{{ Event: parser:stop }}} **
             // 
