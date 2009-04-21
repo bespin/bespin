@@ -122,8 +122,8 @@ def load_config(configfile):
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
-    c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
-    #c.session_factory = sessionmaker(bind=c.dbengine)
+    #c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
+    c.session_factory = sessionmaker(bind=c.dbengine)
     c.fsroot = path(c.fsroot)
     if not c.fsroot.exists:
         c.fsroot.makedirs()
