@@ -1,27 +1,19 @@
 
 dojo.provide("bespin.social");
 
-// ====================================================================== FOLLOW
+dojo.require("bespin.cmd.dashboardcommands");
 
-format_json_string_array = function(data) {
-    var reply = "";
-    dojo.forEach(data, function(item) {
-        if (item) {
-            reply += ", " + item;
-        }
-    });
-    if (reply.length < 2) {
-        return "";
-    }
-    return reply.substring(2);
-}
-
-social_display_followers = function(followers) {
-    var message = "Following: " + format_json_string_array(followers);
+// ** {{{ Utility: displayFollowers }}} **
+// Take an string array of follower names, and publish a "Following: ..."
+// message as a command line response.
+bespin.cmd.displayFollowers = function(followers) {
+    var message = "Following: " + followers.join(", ");
     bespin.publish("message", { msg:message });
 }
 
-// ** {{{Command: follow}}} **
+//====================================================================== FOLLOW
+
+// ** {{{ Command: follow }}} **
 bespin.cmd.commands.add({
     name: 'follow',
     takes: ['username ...'],
@@ -40,12 +32,19 @@ bespin.cmd.commands.add({
     }
 });
 
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('follow');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('follow');
+//}
+
 // ** {{{ Event: network:followers }}} **
 // Get a list of our followers
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
         onSuccess: function(data) {
-            social_display_followers(dojo.fromJson(data));
+            bespin.cmd.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve followers: " + xhr.responseText });
@@ -58,13 +57,29 @@ bespin.subscribe("network:followers", function() {
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
         onSuccess: function(data) {
-            social_display_followers(dojo.fromJson(data));
+            bespin.cmd.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to add follower: " + xhr.responseText });
         }
     });
 });
+
+dojo.extend(bespin.client.Server, {
+    // ** {{{ follows(opts) }}}
+    // Get a list of the users the current user is following
+    follow: function(users, opts) {
+        this.request('POST', '/network/follow/', dojo.toJson(users), opts || {});
+    },
+
+    // ** {{{ follows(opts) }}}
+    // Get a list of the users the current user is following
+    followers: function(opts) {
+        this.request('GET', '/network/followers/', null, opts || {});
+    }
+});
+
+// ==================================================================== UNFOLLOW
 
 // ** {{{Command: unfollow}}} **
 bespin.cmd.commands.add({
@@ -85,17 +100,32 @@ bespin.cmd.commands.add({
     }
 });
 
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('unfollow');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('unfollow');
+//}
+
 // ** {{{ Event: network:unfollow }}} **
 // Remove users from the list that we follow
 bespin.subscribe("network:unfollow", function(usernames) {
     bespin.get('server').unfollow(usernames, {
         onSuccess: function(data) {
-            social_display_followers(dojo.fromJson(data));
+            bespin.cmd.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to remove follower: " + xhr.responseText });
         }
     });
+});
+
+dojo.extend(bespin.client.Server, {
+    // ** {{{ follows(opts) }}}
+    // Get a list of the users the current user is following
+    unfollow: function(users, opts) {
+        this.request('POST', '/network/unfollow/', dojo.toJson(users), opts || {});
+    }
 });
 
 // ======================================================================= GROUP
@@ -140,6 +170,13 @@ bespin.cmd.commands.add({
     }
 });
 
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('group');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('group');
+//}
+
 // ** {{{ Event: groups:list:all }}} **
 // Get a list of our groups
 bespin.subscribe("groups:list:all", function() {
@@ -150,7 +187,7 @@ bespin.subscribe("groups:list:all", function() {
                 bespin.publish("message", { msg:"You have no groups" });
             }
             else {
-                var message = "You have the following groups: " + format_json_string_array(groups);
+                var message = "You have the following groups: " + bespin.cmd.formatStringArray(groups);
                 bespin.publish("message", { msg:message });
             }
         },
@@ -171,7 +208,7 @@ bespin.subscribe("groups:list", function(group) {
                 bespin.publish("message", { msg: "" + group + " has no members." });
             }
             else {
-                var message = "Members of " + group + ": " + format_json_string_array(members);
+                var message = "Members of " + group + ": " + bespin.cmd.formatStringArray(members);
                 bespin.publish("message", { msg:message });
             }
         },
@@ -218,6 +255,38 @@ bespin.subscribe("groups:remove", function(group, users) {
             bespin.publish("message", { msg: "Failed to remove to group members. Maybe due to: " + xhr.responseText });
         }
     });
+});
+
+dojo.extend(bespin.client.Server, {
+    // ** {{{ groupListAll() }}}
+    // Get a list of the users the current user is following
+    groupListAll: function(opts) {
+        this.request('GET', '/group/list/all/', null, opts || {});
+    },
+
+    // ** {{{ groupList() }}}
+    // Get a list of the users the current user is following
+    groupList: function(group, opts) {
+        this.request('GET', '/group/list/' + group + '/', null, opts || {});
+    },
+
+    // ** {{{ groupRemove() }}}
+    // Get a list of the users the current user is following
+    groupRemove: function(group, users, opts) {
+        this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
+    },
+
+    // ** {{{ groupRemoveAll() }}}
+    // Get a list of the users the current user is following
+    groupRemoveAll: function(group, opts) {
+        this.request('POST', '/group/remove/all/' + group + '/', null, opts || {});
+    },
+
+    // ** {{{ groupAdd() }}}
+    // Get a list of the users the current user is following
+    groupAdd: function(group, users, opts) {
+        this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
+    }
 });
 
 // ======================================================================= SHARE
@@ -282,6 +351,13 @@ bespin.cmd.commands.add({
         self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
     }
 });
+
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('share');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('share');
+//}
 
 // ** {{{ Event: share:list:all }}} **
 // List all project shares
@@ -384,6 +460,44 @@ bespin.subscribe("share:add", function(project, member, options) {
     });
 });
 
+dojo.extend(bespin.client.Server, {
+    // ** {{{ shareListAll() }}}
+    // List all project shares
+    shareListAll: function(opts) {
+        this.request('GET', '/share/list/all/', null, opts || {});
+    },
+
+    // ** {{{ shareListProject() }}}
+    // List sharing for a given project
+    shareListProject: function(project, opts) {
+        this.request('GET', '/share/list/' + project + '/', null, opts || {});
+    },
+
+    // ** {{{ shareListProjectMember() }}}
+    // List sharing for a given project and member
+    shareListProjectMember: function(project, member, opts) {
+        this.request('GET', '/share/list/' + project + '/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ shareRemoveAll() }}}
+    // Remove all sharing from a project
+    shareRemoveAll: function(project, opts) {
+        this.request('POST', '/share/remove/' + project + '/all/', null, opts || {});
+    },
+
+    // ** {{{ shareRemove() }}}
+    // Remove project sharing from a given member
+    shareRemove: function(project, member, opts) {
+        this.request('POST', '/share/remove/' + project + '/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ shareAdd() }}}
+    // Add a member to the sharing list for a project
+    shareAdd: function(project, member, options, opts) {
+        this.request('POST', '/share/add/' + project + '/' + member + '/', dojo.toJson(options), opts || {});
+    }
+});
+
 // ====================================================================== VIEWME
 
 // ** {{{Command: viewme}}} **
@@ -418,6 +532,13 @@ bespin.cmd.commands.add({
         self.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
+
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('viewme');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('viewme');
+//}
 
 // ** {{{ Event: viewme:list:all }}} **
 // List all the members with view settings on me
@@ -456,6 +577,26 @@ bespin.subscribe("viewme:set", function(member, value) {
             bespin.publish("message", { msg: "Failed to change view setttings. Maybe due to: " + xhr.responseText });
         }
     });
+});
+
+dojo.extend(bespin.client.Server, {
+    // ** {{{ viewmeListAll() }}}
+    // List all the members with view settings on me
+    viewmeListAll: function(opts) {
+        this.request('GET', '/viewme/list/all/', null, opts || {});
+    },
+
+    // ** {{{ viewmeList() }}}
+    // List the view settings for a given member
+    viewmeList: function(member, opts) {
+        this.request('GET', '/viewme/list/' + member + '/', null, opts || {});
+    },
+
+    // ** {{{ viewmeSet() }}}
+    // Alter the view setting for a given member
+    viewmeSet: function(member, value, opts) {
+        this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
+    }
 });
 
 // ======================================================================== TEST
@@ -528,6 +669,13 @@ bespin.cmd.commands.add({
     }
 });
 
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('test');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('test');
+//}
+
 // ======================================================================== ECHO
 
 // ** {{{Command: echo}}} **
@@ -541,3 +689,9 @@ bespin.cmd.commands.add({
     }
 });
 
+if (bespin.cmd.dashboardcommands) {
+    bespin.cmd.dashboardcommands.Commands.push('echo');
+}
+//if (bespin.cmd.editorcommands) {
+//    bespin.cmd.editorcommands.Commands.push('echo');
+//}
