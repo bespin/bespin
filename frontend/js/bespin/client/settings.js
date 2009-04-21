@@ -286,7 +286,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
         }
 
         bespin.get('files').saveFile(bespin.userSettingsProject, {
-            name: "settings.txt",
+            name: "settings",
             content: settings,
             timestamp: new Date().getTime()
         });
@@ -301,7 +301,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
         });
 
         setTimeout(dojo.hitch(this, function() {
-            bespin.get('files').loadContents(bespin.userSettingsProject, "settings.txt", dojo.hitch(this, function(file) {
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", dojo.hitch(this, function(file) {
                 dojo.forEach(file.content.split(/\n/), dojo.hitch(this, function(setting) {
                     if (setting.match(/^\s*#/)) return; // if comments are added ignore
                     if (setting.match(/\S+\s+\S+/)) {
@@ -596,7 +596,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             editor.debugMode = settings.isOn(event.value);
 
             if (editor.debugMode) {
-                bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints.txt", dojo.hitch(this, function(file) {
+                bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", dojo.hitch(this, function(file) {
                     bespin.debugInfo.breakpoints = dojo.fromJson(file.content);
                     editor.paint(true);
                 }));

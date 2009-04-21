@@ -191,7 +191,7 @@ dojo.mixin(bespin, {
         saveBreakpoints: function() {
             // save breakpoints back to server asynchronously
             bespin.get('files').saveFile(bespin.userSettingsProject, {
-                name: "breakpoints.txt",
+                name: "breakpoints",
                 content: dojo.toJson(this.breakpoints),
                 timestamp: new Date().getTime()
             });

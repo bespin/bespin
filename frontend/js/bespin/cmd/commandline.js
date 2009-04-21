@@ -31,7 +31,7 @@
 // * {{{bespin.cmd.commandline.KeyBindings}}} : Handling the special key handling in the command line
 // * {{{bespin.cmd.commandline.History}}} : Handle command line history
 // * {{{bespin.cmd.commandline.SimpleHistoryStore}}} : Simple one session storage of history
-// * {{{bespin.cmd.commandline.ServerHistoryStore}}} : Save the history on the server in BespinSettings/command.history.txt
+// * {{{bespin.cmd.commandline.ServerHistoryStore}}} : Save the history on the server in BespinSettings/command.history
 // * {{{bespin.cmd.commandline.Events}}} : The custom events that the command line needs to handle
 
 dojo.provide("bespin.cmd.commandline");
@@ -473,7 +473,7 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
 
 // ** {{{ bespin.cmd.commandline.ServerHistoryStore }}} **
 //
-// Store the history in BespinSettings/command.history.txt
+// Store the history in BespinSettings/command.history
 dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     constructor: function(history) {
         this.history = history;
@@ -482,7 +482,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
     seed: function() {
         // load last 50 commands from history
-        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history.txt", dojo.hitch(this, function(file) {
+        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             this.history.seed(file.content.split(/\n/));
         }));
     },
@@ -490,7 +490,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     save: function(commands) {
         // save commands back to server asynchronously        
         bespin.get('files').saveFile(bespin.userSettingsProject, {
-            name: "command.history.txt",
+            name: "command.history",
             content: commands.join("\n") || "help",
             timestamp: new Date().getTime()
         });
