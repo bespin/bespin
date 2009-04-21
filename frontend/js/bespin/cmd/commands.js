@@ -1389,7 +1389,7 @@ bespin.cmd.commands.add({
 	preview: 'Change all selected text to uppercase',
 	withKey: "CMD SHIFT U",
 	execute: function(self) {
-		var args={stringCase: 'u'};
+		var args = { stringCase: 'u' };
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
 });
@@ -1399,7 +1399,7 @@ bespin.cmd.commands.add({
 	preview: 'Change all selected text to lowercase',
 	withKey: "CMD SHIFT L",
 	execute: function(self) {
-		var args={stringCase: 'l'};
+		var args = { stringCase: 'l' };
 		self.editor.ui.actions.selectionChangeCase(args);
 	}
 });
