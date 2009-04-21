@@ -162,7 +162,7 @@ bespin.subscribe("editor:closefile", function(event) {
 bespin.subscribe("editor:config:run", function(event) {
     bespin.publish("editor:evalfile", {
         project: bespin.userSettingsProject,
-        filename: "config.js"
+        filename: "config"
     });
 });
 
@@ -177,7 +177,7 @@ bespin.subscribe("editor:config:edit", function(event) {
 
     bespin.publish("editor:openfile", {
         project: bespin.userSettingsProject,
-        filename: "config.js"
+        filename: "config"
     });
 });
 
