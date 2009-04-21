@@ -234,6 +234,13 @@ dojo.provide("bespin.page.editor.init");
         scene.render();
     });
 
+    // ** {{{ Event: editor:dirty }}} **
+    // 
+    // Change the HTML title to change - to ● as a subtle indicator
+    bespin.subscribe("editor:dirty", function() {
+        document.title = document.title.replace('- editing with Bespin', '● editing with Bespin');
+    });
+
     // ** {{{ Event: editor:clean }}} **
     // 
     // Take away the notifier. Just saved
@@ -241,4 +248,12 @@ dojo.provide("bespin.page.editor.init");
         dirtyLabel.attributes.text = "";
         scene.render();
     });
+
+    // ** {{{ Event: editor:clean }}} **
+    // 
+    // Take away the notifier from the HTML title.
+    bespin.subscribe("editor:clean", function(event) {
+        document.title = document.title.replace('● editing with Bespin', '- editing with Bespin');
+    });
+
 })();

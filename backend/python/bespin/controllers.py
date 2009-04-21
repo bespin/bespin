@@ -255,8 +255,11 @@ def file_list_all(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     project = model.get_project(user, user, project_name)
+    metadata = project.metadata
 
-    files = project._search_cache.lines(retain=False)
+    files = metadata.get_file_list()
+    metadata.close()
+    
     return _respond_json(response, files)
 
 @expose(r'^/file/search/(?P<project_name>.*)$', 'GET')

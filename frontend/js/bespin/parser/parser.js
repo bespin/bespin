@@ -158,23 +158,17 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             
             // rerun parser every time the doc changes
             var rerun = function() {
-                // only to a fetch at max every N millis
-                // so we dont run during active typing
-                if (timeout) {
-                    clearTimeout(timeout);
-                }
-                timeout = setTimeout(function() {
-                    console.log("Syntax-Check");
-                    self.fetch();
-                }, 400)
+                self.fetch();
             }
-            var onChange = bespin.subscribe("editor:document:changed", rerun);
+            var onChange = bespin.subscribe("editor:document:changed", rerun, 400);
+            var run = bespin.subscribe("parser:run", rerun, 400);
             
             // ** {{{ Event: parser:stop }}} **
             // 
             // Stop parsing the document
             bespin.subscribe("parser:stop", function () {
                 bespin.unsubscribe(onChange);
+                bespin.unsubscribe(run);
                 self._started = false;
             })
         }
@@ -227,7 +221,14 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 if(settings.isOn(settings.get("jslint"))) {
                     this.jslint().postMessage(source);
                 }
+                // avoid ever doing to parse runs at once
+                if(this.isFetching) {
+                    bespin.publish("parser:run")
+                    return
+                }
+                this.isFetching = true; 
                 bespin.parser.AsyncEngineResolver.parse(type, source, "getMetaInfo", self.getCodePatterns()).and(function(data) { 
+                    self.isFetching = false;
                     if (data.isError) {
                         // publish custom event if we found an error
                         // error constains row (lineNumber) and message

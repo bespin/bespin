@@ -647,19 +647,29 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: goto}}} **
-bespin.cmd.commands.add({
+(function () {
+var previewFull      = 'move it! make the editor head to a line number or a function name.';
+var preview          = 'move it! make the editor head to a line number.';
+var completeTextFull = 'add the line number to move to, or the name of a function in the file';
+var completeText     = 'add the line number to move to in the file';
+var gotoCmd = {
     name: 'goto',
     takes: ['value'],
-    preview: 'move it! make the editor head to a line number or a function name.',
-    completeText: 'add the line number to move to, or the name of a function in the file',
+    preview: previewFull,
+    completeText: completeTextFull,
     execute: function(self, value) {
+        var settings = bespin.get("settings")
         if (value) {
             var linenum = parseInt(value, 10); // parse the line number as a decimal
             
             if (isNaN(linenum)) { // it's not a number, so for now it is a function name
-                bespin.publish("parser:gotofunction", {
-                    functionName: value
-                });                
+                if(settings.isOn(settings.get("syntaxcheck"))) {
+                    bespin.publish("parser:gotofunction", {
+                        functionName: value
+                    });
+                } else {
+                    bespin.publish("message", { msg: "Please enter a valid line number." })
+                }
             } else {
                 bespin.publish("editor:moveandcenter", {
                     row: linenum
@@ -667,7 +677,19 @@ bespin.cmd.commands.add({
             }
         }
     }
-});
+}
+bespin.cmd.commands.add(gotoCmd);
+bespin.subscribe("settings:set:syntaxcheck", function () {
+    var settings = bespin.get("settings")
+    if(settings.isOn(settings.get("syntaxcheck"))) {
+        gotoCmd.preview = previewFull;
+        gotoCmd.completeText = completeTextFull;
+    } else {
+        gotoCmd.preview = preview;
+        gotoCmd.completeText = completeText;
+    }
+})
+})()
 
 // ** {{{Command: replace}}} **
 bespin.cmd.commands.add({
@@ -1104,7 +1126,12 @@ bespin.cmd.commands.add({
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
     execute: function(self) {
-        bespin.publish("parser:showoutline");
+        var settings = bespin.get("settings");
+        if(settings.isOff(settings.get("syntaxcheck"))) {
+            bespin.publish("message", { msg: "Please enable the syntaxcheck feature with 'set syntaxcheck on' to activate the outline view." });
+        } else {
+            bespin.publish("parser:showoutline");
+        }
     }
 });
 

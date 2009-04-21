@@ -793,3 +793,14 @@ def test_search_from_the_web():
     # illegal limits are turned into the default
     resp = app.get("/file/search/bigmac?limit=foo")
     
+def test_list_all_files():
+    _init_data()
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac.save_file("foo/bar/baz.txt", "Text file 1\n")
+    bigmac.save_file("README.txt", "Another file\n")
+    bigmac.save_file("bespin/noodle.py", "# A python file\n")
+    resp = app.get("/file/list_all/bigmac/")
+    assert resp.content_type == "application/json"
+    data = simplejson.loads(resp.body)
+    assert len(data) == 3
+    
