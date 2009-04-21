@@ -501,7 +501,7 @@ dojo.declare("bespin.editor.UI", null, {
 
                 var editSession = bespin.get("editSession");
                 if (p && editSession) {
-                    bespin.debugInfo.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
+                    bespin.debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
                     this.editor.paint(true);
                     return;
                 }
@@ -911,7 +911,7 @@ dojo.declare("bespin.editor.UI", null, {
         var breakpoints = {};
 
         if (this.editor.debugMode && bespin.get("editSession")) {
-            var points = bespin.debugInfo.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
+            var points = bespin.debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
             dojo.forEach(points, function(point) {
                 breakpoints[point.lineNumber] = point;
             });

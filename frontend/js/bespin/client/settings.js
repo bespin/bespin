@@ -595,11 +595,10 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:set:debugmode", function(event) {
             editor.debugMode = settings.isOn(event.value);
 
-            if (editor.debugMode) {
-                bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", dojo.hitch(this, function(file) {
-                    bespin.debugInfo.breakpoints = dojo.fromJson(file.content);
+            if (editor.debugMode && bespin.debug) {
+                bespin.debug.loadBreakpoints(function() {
                     editor.paint(true);
-                }));
+                });
             }
 
             editor.paint(true);
