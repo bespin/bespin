@@ -725,8 +725,7 @@ class Persister:
   def __decomposeName(self, name):
     from bespin import config, model
     from bespin.config import c
-    session = c.sessionmaker(bind=c.dbengine)
-    user_manager = model.UserManager(session)
+    user_manager = model.UserManager(c.session_factory())
     (user_name, project_name, path) = name.split("/", 2)
 
     user = user_manager.get_user(user_name)

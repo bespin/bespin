@@ -41,7 +41,7 @@ def setup_module(module):
     config.activate_profile()
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
-    session = config.c.sessionmaker(bind=config.c.dbengine)
+    session = config.c.session_factory()
     user_manager = model.UserManager(session)
     user_manager.create_user("BillBixby", "", "bill@bixby.com")
     app = controllers.make_app()

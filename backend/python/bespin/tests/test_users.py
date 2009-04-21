@@ -48,7 +48,7 @@ def _clear_db():
 def _get_user_manager(clear=False):
     if clear:
         _clear_db()
-    s = config.c.sessionmaker(bind=config.c.dbengine)
+    s = config.c.session_factory()
     user_manager = UserManager(s)
     return s, user_manager
     
@@ -70,7 +70,7 @@ def test_create_duplicate_user():
         user_manager.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
     except model.ConflictError:
-        pass
+        s.rollback()
     s, user_manager = _get_user_manager(False)
     user = user_manager.get_user("BillBixby")
     assert user.password == "somepass", "Password should not have changed"

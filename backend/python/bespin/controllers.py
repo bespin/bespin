@@ -823,7 +823,8 @@ def messages(request, response):
 def db_middleware(app):
     def wrapped(environ, start_response):
         from bespin import model
-        session = c.sessionmaker(bind=c.dbengine)
+        from sqlalchemy.orm import scoped_session
+        session = c.session_factory()
         environ['bespin.dbsession'] = session
         environ['bespin.docommit'] = True
         environ['user_manager'] = model.UserManager(session)

@@ -34,7 +34,7 @@ import ConfigParser
 from path import path
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 class Bunch(dict):
     def __getattr__(self, attr):
@@ -53,7 +53,6 @@ c.pw_secret = "This phrase encrypts passwords."
 c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
 c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
-c.sessionmaker = sessionmaker()
 c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
@@ -99,11 +98,10 @@ def set_profile(profile):
                         % os.path.dirname(__file__))
         root_log = logging.getLogger()
         root_log.setLevel(logging.DEBUG)
-        handler = logging.handlers.RotatingFileHandler(
-                    c.log_file)
+        handler = logging.handlers.RotatingFileHandler(c.log_file)
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         root_log.addHandler(handler)
-        
+
         paste_log = logging.getLogger("paste.httpserver.ThreadPool")
         paste_log.setLevel(logging.ERROR)
         
@@ -124,6 +122,8 @@ def load_config(configfile):
     
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
+    c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
+    #c.session_factory = sessionmaker(bind=c.dbengine)
     c.fsroot = path(c.fsroot)
     if not c.fsroot.exists:
         c.fsroot.makedirs()

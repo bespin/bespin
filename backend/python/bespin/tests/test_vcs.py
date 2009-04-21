@@ -28,7 +28,7 @@ def _init_data():
     
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
-    s = config.c.sessionmaker(bind=config.c.dbengine)
+    s = config.c.session_factory()
     user_manager = model.UserManager(s)
     
     app.post("/register/new/MacGyver", 

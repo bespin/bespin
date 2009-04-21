@@ -32,7 +32,7 @@ class QueueItem(object):
         
         use_db = self.use_db
         if use_db:
-            session = config.c.sessionmaker(bind=config.c.dbengine)
+            session = config.c.session_factory()
             self.session = session
         try:
             execute(self)
@@ -44,7 +44,7 @@ class QueueItem(object):
                 session.close()
             
                 # get a fresh session for the error handler to use
-                session = config.c.sessionmaker(bind=config.c.dbengine)
+                session = config.c.session_factory()
                 self.session = session
                 
             try:

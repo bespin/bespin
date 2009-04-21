@@ -1582,7 +1582,6 @@ def get_project(user, owner, project_name, create=False, clean=False, user_manag
         project = ProjectView(user, owner, project_name, location)
     return project
 
-        
 def _find_common_base(member_names):
     base = None
     base_len = None

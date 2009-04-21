@@ -565,7 +565,7 @@ def editbespin(options):
     
     config.set_profile("dev")
     config.activate_profile()
-    session = config.c.sessionmaker(bind=config.c.dbengine)
+    session = config.c.session_factory()
     try:
         user = session.query(model.User).filter_by(username=user).one()
     except NoResultFound:
@@ -599,7 +599,7 @@ def seeddb():
     from bespin.model import User, Connection, UserManager
     config.set_profile("dev")
     config.activate_profile()
-    session = config.c.sessionmaker(bind=config.c.dbengine)
+    session = config.c.session_factory()
     user_manager = UserManager(session)
 
     def get_user(name):
