@@ -605,13 +605,13 @@ def seeddb():
     def get_user(name):
         user = user_manager.get_user(name)
         if user == None:
-            user = user_manager.create_user(name, name, name)
+            user = user_manager.create_user(name, name, name + "@foo.com")
         return user
 
     # Seriously there is something wrong with my ego today ;-)
     bgalbraith = get_user("bgalbraith")
     kdangoor = get_user("kdangoor")
-    dalmaer = get_user("dalmaer")
+    dalmaer = get_user("d")
     mattb = get_user("mattb")
     zuck = get_user("zuck")
     tom = get_user("tom")
@@ -628,10 +628,10 @@ def seeddb():
 
     jproject = model.get_project(j, j, "SampleProject", create=True)
 
-    user_manager.add_sharing(j, jproject, "bgalbraith", edit=True)
-    user_manager.add_sharing(j, jproject, "kdangoor", edit=True)
-    user_manager.add_sharing(j, jproject, "dalmaer", edit=True)
-    user_manager.add_sharing(j, jproject, "mattb", edit=False)
-    user_manager.add_sharing(j, jproject, "zuck", edit=False)
-    user_manager.add_sharing(j, jproject, "tom", edit=False)
-    user_manager.add_sharing(j, jproject, "ev", edit=False)
+    user_manager.add_sharing(j, jproject, bgalbraith, edit=True)
+    user_manager.add_sharing(j, jproject, kdangoor, edit=True)
+    user_manager.add_sharing(j, jproject, dalmaer, edit=True)
+    user_manager.add_sharing(j, jproject, mattb, edit=False)
+    user_manager.add_sharing(j, jproject, zuck, edit=False)
+    user_manager.add_sharing(j, jproject, tom, edit=False)
+    user_manager.add_sharing(j, jproject, ev, edit=False)
