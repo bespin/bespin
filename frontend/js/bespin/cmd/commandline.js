@@ -357,10 +357,16 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == dojo.keys.DOWN_ARROW) {
+                dojo.stopEvent(e);
+
                 this.commandLineHistory.setNext();
+
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == dojo.keys.UP_ARROW) {
+                dojo.stopEvent(e);
+
                 this.commandLineHistory.setPrevious();
+
                 return false;
             } else if (e.keyCode == dojo.keys.ENTER) {
                 this.executeCommand(dojo.byId('command').value);
@@ -441,8 +447,10 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         return this.history[0];
     },
 
-    set: function(command) {
-        this.commandLine.commandLine.value = command;
+    set: function(commandString) {
+        var cmdline = this.commandLine.commandLine;
+
+        cmdline.value = commandString;
     },
 
     setNext: function() {
