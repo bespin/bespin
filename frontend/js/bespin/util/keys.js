@@ -52,7 +52,7 @@ bespin.util.keys.Key = {
   SEVEN: 55,
   EIGHT: 56,
   NINE: 57,
-  
+
 // -- Alphabet
   A: 65,
   B: 66,
@@ -81,22 +81,7 @@ bespin.util.keys.Key = {
   Y: 89,
   Z: 90,
 
-// -- Special Keys
-  BACKSPACE: 8,
-  TAB: 9,
-  ENTER: 13,
-  ESCAPE: 27,
-  END: 35,
-  HOME: 36,
-  ARROW_LEFT: 37,
-  ARROW_UP: 38,
-  ARROW_RIGHT: 39,
-  ARROW_DOWN: 40,
-  DELETE: 46,
-  PAGE_UP: 33,
-  PAGE_DOWN: 34,
-  PLUS: 61,
-  MINUS: 109,
+  // Special keys that dojo.keys doesn't have
   TILDE: 192
 };
 
@@ -110,7 +95,7 @@ bespin.util.keys.Key = {
 bespin.util.keys.fillArguments = function(string, args) {
     var keys = string.split(' ');
     args = args || {};
-    
+
     var modifiers = [];   
     dojo.forEach(keys, function(key) {
        if (key.length > 1) { // more than just an alpha/numeric
@@ -125,7 +110,7 @@ bespin.util.keys.fillArguments = function(string, args) {
     } else {
         args.modifiers = modifiers.join(',');
     }
-    
+
     return args;
 };
 
@@ -142,7 +127,7 @@ bespin.util.keys.PassThroughCharCodes = dojo.map(["k", "l", "n", "o", "t", "w", 
 // Should map to list above 
 bespin.util.keys.PassThroughKeyCodes = (function() {
     var Key = bespin.util.keys.Key;
-    return [Key.C, Key.X, Key.V, Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.PLUS, Key.MINUS, Key.TILDE,
+    return [Key.C, Key.X, Key.V, Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.NUMPAD_PLUS, Key.NUMPAD_MINUS, Key.TILDE,
             Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];   
 })();
 
@@ -155,7 +140,7 @@ bespin.util.keys.PassThroughKeyCodes = (function() {
 
 bespin.util.keys.passThroughToBrowser = function(e) {
     var Key = bespin.util.keys.Key;
-    
+
     if (!e.ctrlKey) { // let normal characters through
         return true;
     } else if (e.metaKey || e.altKey) { // Apple or Alt key
@@ -165,18 +150,20 @@ bespin.util.keys.passThroughToBrowser = function(e) {
             if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true; 
         }
     }
-                                                 
+
     return false;
 };
 
 // -- Reverse the map for lookups
 (function() {
+    dojo.mixin(bespin.util.keys.Key, dojo.keys); // use dojo.keys
+
     var keys = bespin.util.keys.Key;
     bespin.util.keys.KeyCodeToName = {};
-    
+
     for (var key in keys) {
         var keyCode = keys[key];
-        
+
         if (typeof keyCode == "number") {
             bespin.util.keys.KeyCodeToName[keyCode] = key;
         }

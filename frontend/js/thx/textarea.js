@@ -36,7 +36,7 @@ dojo.declare("thx.textarea.TextArea", th.Container, {
         dojo.connect(document, "keypress", this, dojo.hitch(this.listener, "onkeypress"));
         dojo.connect(document, "keydown", this, dojo.hitch(this.listener, "onkeydown"));
         var Key = bespin.util.keys.Key; // alias
-        this.listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft);
+        this.listener.bindKeyStringSelectable("", Key.LEFT_ARROW, this.actions.moveCursorLeft);
         this.listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight);
         this.listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp);
         this.listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown);
@@ -47,7 +47,7 @@ dojo.declare("thx.textarea.TextArea", th.Container, {
         this.listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd);
         this.listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp);
         this.listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown);
-        this.listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft);
+        this.listener.bindKeyStringSelectable("ALT", Key.LEFT_ARROW, this.actions.moveWordLeft);
         this.listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight);
         this.listener.bindKeyString("CTRL", Key.A, this.actions.selectAll);
     },

@@ -104,7 +104,7 @@ bespin.subscribe("editor:preview", function(event) {
                 }, preview);
                 var esc = dojo.connect(document, "onkeypress", function(e) {
                     var key = e.keyCode || e.charCode;
-                    if (key == dojo.keys.ESCAPE) {
+                    if (key == bespin.util.keys.Key.ESCAPE) {
                         preview.removeChild(inlineIframe);
                         dojo.style(preview, "display", "none");
                         dojo.style(subheader, "display", "block");
@@ -125,7 +125,7 @@ bespin.subscribe("editor:preview", function(event) {
                 bespin.util.webpieces.showCenterPopup(centerpopup);
                 var esc = dojo.connect(document, "onkeypress", function(e) {
                     var key = e.keyCode || e.charCode;
-                    if (key == dojo.keys.ESCAPE) {
+                    if (key == bespin.util.keys.Key.ESCAPE) {
                         centerpopup.removeChild(iphoneIframe);
                         bespin.util.webpieces.hideCenterPopup(centerpopup);
                         dojo.disconnect(esc);

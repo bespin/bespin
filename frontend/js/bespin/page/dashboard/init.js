@@ -422,12 +422,12 @@ dojo.provide("bespin.page.dashboard.init");
             var listPre = (index != 0 ? this.lists[index - 1] : false);
             
             switch (e.keyCode) {
-                case key.ARROW_LEFT:
+                case key.LEFT_ARROW:
                     if (!listPre) break;
                     // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
                     listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
                     break;
-                case key.ARROW_RIGHT:
+                case key.RIGHT_ARROW:
                     if (!listNext) break;
                     if (list.selected.lastSelected) {
                         listNext.selectItemByText(list.selected.lastSelected);
@@ -437,10 +437,10 @@ dojo.provide("bespin.page.dashboard.init");
                         listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
                     }
                     break;
-                case key.ARROW_UP:
+                case key.UP_ARROW:
                     list.moveSelectionUp();
                     break;
-                case key.ARROW_DOWN:
+                case key.DOWN_ARROW:
                     list.moveSelectionDown();
                     break;
                 case key.ENTER: 
