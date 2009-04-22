@@ -348,6 +348,8 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         });             
         
         dojo.connect(cl.commandLine, "onkeypress", cl, function(e) {
+            var Key = bespin.util.keys.Key;
+
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
                 dojo.stopEvent(e);
 
@@ -356,17 +358,29 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 bespin.publish("cmdline:blur");
 
                 return false;
-            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == dojo.keys.DOWN_ARROW) {
+            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == Key.DOWN_ARROW) {
+                dojo.stopEvent(e);
+
                 this.commandLineHistory.setNext();
+
                 return false;
-            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == dojo.keys.UP_ARROW) {
+            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == Key.UP_ARROW) {
+                dojo.stopEvent(e);
+
                 this.commandLineHistory.setPrevious();
+
                 return false;
-            } else if (e.keyCode == dojo.keys.ENTER) {
+            } else if (e.keyChar == 'u' && e.ctrlKey) {
+                dojo.stopEvent(e);
+
+                cl.commandLine.value = '';
+
+                return false;
+            } else if (e.keyCode == Key.ENTER) {
                 this.executeCommand(dojo.byId('command').value);
 
                 return false;
-            } else if (e.keyCode == dojo.keys.TAB) { 
+            } else if (e.keyCode == Key.TAB) { 
                 dojo.stopEvent(e);
                 
                 this.complete(dojo.byId('command').value);
@@ -375,7 +389,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         });
 
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
-            if (e.keyCode == dojo.keys.ESCAPE) {
+            if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideInfo();
             }
         });
@@ -441,8 +455,10 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         return this.history[0];
     },
 
-    set: function(command) {
-        this.commandLine.commandLine.value = command;
+    set: function(commandString) {
+        var cmdline = this.commandLine.commandLine;
+
+        cmdline.value = commandString;
     },
 
     setNext: function() {
