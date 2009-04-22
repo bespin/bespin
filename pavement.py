@@ -606,6 +606,8 @@ def seeddb():
         user = user_manager.get_user(name)
         if user == None:
             user = user_manager.create_user(name, name, name + "@foo.com")
+            session.commit()
+            print("Created user called '" + name + "'")
         return user
 
     # Seriously there is something wrong with my ego today ;-)
@@ -635,3 +637,4 @@ def seeddb():
     user_manager.add_sharing(j, jproject, zuck, edit=False)
     user_manager.add_sharing(j, jproject, tom, edit=False)
     user_manager.add_sharing(j, jproject, ev, edit=False)
+
