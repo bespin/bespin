@@ -63,9 +63,9 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.1.6",
-        name="Nonchalant Nimbus+",
-        api="3"
+        number="0.2.0",
+        name="Sassy Cirrus",
+        api="4"
     ),
     build_top=path("build"),
     build_dir=lambda: options.build_top / "BespinServer",
