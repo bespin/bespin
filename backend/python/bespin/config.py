@@ -115,6 +115,9 @@ def set_profile(profile):
         c.async_jobs = False
         c.fslevels = 0
     
+    if c.queue_port:
+        c.queue_port = int(c.queue_port)
+    
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
     cp.read(configfile)

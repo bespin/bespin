@@ -70,7 +70,7 @@ def required():
 def production():
     """Gets things ready for production."""
     non_production_packages = set(["py", "WebTest", "boto", "virtualenv", 
-                                  "Paver", "BespinServer"])
+                                  "Paver", "BespinServer", "nose"])
     production = path("production")
     production_requirements = production / "requirements.txt"
     
