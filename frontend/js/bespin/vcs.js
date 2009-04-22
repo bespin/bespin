@@ -273,6 +273,20 @@ bespin.vcs.commands.addCommand({
     }
 });
 
+// ** {{{Command: remove}}} **
+bespin.vcs.commands.addCommand({
+    name: 'remove',
+    preview: 'Remove a file from version control (also deletes it)',
+    takes: ['*'],
+    description: 'The files presented will be deleted and removed from version control.',
+    // ** {{{execute}}} **
+    execute: function(self, args) {
+        bespin.vcs._performVCSCommandWithFiles("remove", self, args,
+            {acceptAll: false});
+    }
+});
+
+
 // ** {{{Command: diff}}} **
 bespin.vcs.commands.addCommand({
     name: 'resolved',
@@ -330,7 +344,11 @@ bespin.vcs.commands.addCommand({
     }                                
 });
 
-bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args) {
+bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args,
+            options) {
+    options = options || {
+        acceptAll: true
+    };
     var project;
     var path;
 
@@ -346,11 +364,15 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, self, args) {
     
     if (args.varargs.length == 0) {
         if (!path) {
-            self.showInfo("You must select a file to add, or use -a for all files.");
+            var dasha = "";
+            if (options.acceptAll) {
+                dasha = ", or use -a for all files.";
+            }
+            self.showInfo("You must select a file to " + vcsCommand + dasha);
             return;
         }
         var command = [vcsCommand, path];
-    } else if (args.varargs[0] == "-a") {
+    } else if (args.varargs[0] == "-a" && options.acceptAll) {
         var command = [vcsCommand]
     } else {
         var command = [vcsCommand];

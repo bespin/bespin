@@ -8,9 +8,6 @@ from path import path
 
 from bespin.config import c
 
-# XXX Temporary for testing
-c.fsroot = "/tmp/DATA"
-
 metadata = MetaData()
 metadata.bind = migrate_engine
 metadata.reflect()
@@ -18,19 +15,6 @@ metadata.reflect()
 files_table = metadata.tables['files']
 users_table = metadata.tables['users']
 projects_table = metadata.tables['projects']
-
-good_characters = r'\w-'
-good_pattern = re.compile(r'^\w[%s]*$' % good_characters, re.UNICODE)
-bad_pattern = re.compile(r'[^%s]' % good_characters, re.UNICODE)
-bad_beginning = re.compile(r'^\W', re.UNICODE)
-
-def _check_identifiers(value):
-    matchinfo = good_pattern.match(value)
-    if not matchinfo:
-        return value
-    if value.startswith("."):
-        return "leading ."
-    return False
 
 class Directory(object):
     def __init__(self, project, name):
@@ -136,22 +120,8 @@ ADD COLUMN everyone_viewable TINYINT(1) DEFAULT NULL
     invalids = dict()
     files_written = 0
     for user in data:
-        ci = _check_identifiers(user.username) 
         total += 1
-        if ci:
-            invalid += 1
-            invalids[ci] = invalids.setdefault(ci, 0) + 1
-            username = bad_pattern.sub('@', user.username)
-            username = bad_beginning.sub('', username)
-            data = select([func.count(users_table.c.id)]) \
-                    .where(users_table.c.username==username)
-            data = data.execute(bind=conn4)
-            data = list(data)[0]
-            data = data.count_1
-            if data:
-                username += "@"
-        else:
-            username = user.username
+        username = user.username
         
         user_uuid = str(uuid.uuid4())
         user_location = user_uuid
@@ -166,10 +136,6 @@ ADD COLUMN everyone_viewable TINYINT(1) DEFAULT NULL
             projectname = project.name
             if projectname.startswith("SampleProjectFor:"):
                 projectname = "SampleProject"
-            ci = _check_identifiers(projectname)
-            if ci:
-                projectname = bad_pattern.sub("", projectname)
-                print "Project:", projectname
             else:
                 projectname = projectname
             
