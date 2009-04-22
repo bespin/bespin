@@ -11,7 +11,7 @@ bespin.cmd.displayFollowers = function(followers) {
     bespin.publish("message", { msg:message });
 }
 
-//====================================================================== FOLLOW
+// ====================================================================== FOLLOW
 
 // ** {{{ Command: follow }}} **
 bespin.cmd.commands.add({
