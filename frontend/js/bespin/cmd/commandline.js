@@ -368,6 +368,12 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 this.commandLineHistory.setPrevious();
 
                 return false;
+            } else if (e.keyChar == 'u' && e.ctrlKey) {
+                dojo.stopEvent(e);
+
+                cl.commandLine.value = '';
+
+                return false;
             } else if (e.keyCode == dojo.keys.ENTER) {
                 this.executeCommand(dojo.byId('command').value);
 
