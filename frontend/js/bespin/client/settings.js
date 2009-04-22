@@ -520,7 +520,9 @@ dojo.declare("bespin.client.settings.Events", null, {
 
                 // Not in the default themes, load from bespin.themes.ThemeName file
                 try {
-                    dojo.require("bespin.themes." + theme);
+                    var dr = dojo.require;
+                    // the build system doesn't like dynamic names.
+                    dr("bespin.themes." + theme);
                     if (checkSetAndExit()) return true;
                 } catch (e) {
                     //console.log(e);
