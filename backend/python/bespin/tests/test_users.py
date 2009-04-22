@@ -122,8 +122,8 @@ def test_register_and_verify_user():
     assert data['quota'] == 15728640
     assert 'amountUsed' in data
     
-    resp = app.get("/file/at/BespinSettings/config.js")
-    app.post("/file/close/BespinSettings/config.js")
+    resp = app.get("/file/at/BespinSettings/config")
+    app.post("/file/close/BespinSettings/config")
     
 def test_logout():
     s, user_manager = _get_user_manager(True)
