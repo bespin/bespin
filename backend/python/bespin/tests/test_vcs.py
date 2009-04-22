@@ -148,6 +148,25 @@ def test_bad_keychain_password():
         assert False, "Expected exception for bad keychain password"
     except model.NotAuthorized:
         pass
+        
+def test_get_users_vcs_name():
+    _init_data()
+    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    user = vcs._get_vcs_user(macgyver, bigmac)
+    assert user == "MacGyver"
+    
+    settings = model.get_project(macgyver, macgyver, "BespinSettings")
+    settings.save_file("settings", """
+vcsuser Mack Gyver <gyver@mac.com>
+""")
+    user = vcs._get_vcs_user(macgyver, bigmac)
+    assert user == "Mack Gyver <gyver@mac.com>"
+    
+    metadata = bigmac.metadata
+    metadata['vcsuser'] = "Big MacGyver <mrbig@macgyver.com>"
+    metadata.close()
+    user = vcs._get_vcs_user(macgyver, bigmac)
+    assert user == "Big MacGyver <mrbig@macgyver.com>"
     
 # Web tests
 
@@ -250,6 +269,8 @@ def test_hg_push_on_web(run_command_params):
     resp = app.post("/messages/")
     
     command, context = run_command_params
+    
+    assert context.user == "MacGyver"
     
     command_line = command.get_command_line()
     print command_line

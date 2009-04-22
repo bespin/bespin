@@ -46,6 +46,18 @@ pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
 EncodeAES = lambda c, s: c.encrypt(pad(s)).encode("base64")
 DecodeAES = lambda c, e: c.decrypt(e.decode("base64")).rstrip(PADDING)
 
+def _get_vcs_user(user, project):
+    metadata = project.metadata
+    vcsuser = metadata.get("vcsuser")
+    if vcsuser:
+        return vcsuser
+        
+    settings = user.get_settings()
+    vcsuser = settings.get("vcsuser")
+    if vcsuser:
+        return vcsuser
+    return user.username
+
 def clone(user, source, dest=None, push=None, remoteauth="write",
             authtype=None, username=None, password=None, kcpass="",
             vcs="hg"):
@@ -212,6 +224,7 @@ def _run_command_impl(user, project, args, kcpass):
                     break
                     
         context = main.SecureContext(working_dir)
+        context.user = _get_vcs_user(user, project)
     
         if args and args[0] in main.dialects:
             dialect = None

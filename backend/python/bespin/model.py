@@ -275,6 +275,21 @@ class User(Base):
         data = simplejson.dumps(message_obj)
         message = Message(user=self, message=data)
         self.messages.append(message)
+        
+    def get_settings(self):
+        """Load a user's settings from BespinSettings/settings.
+        Returns a dictionary."""
+        location = self.get_location()
+        settings_file = location / "BespinSettings" / "settings"
+        if not settings_file.exists():
+            return {}
+        settings = {}
+        for line in settings_file.lines(retain=False):
+            info = line.split(" ", 1)
+            if len(info) != 2:
+                continue
+            settings[info[0]] = info[1]
+        return settings
 
 class Group(Base):
     __tablename__ = "groups"
