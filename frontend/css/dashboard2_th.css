@@ -1,0 +1,51 @@
+horizontalTree {
+    background: rgb(76, 74, 65);
+    -th-odd-background: rgb(82, 80, 71);
+    font: 9pt Tahoma;
+    color: white;
+}
+
+horizontalTree:selected {
+    border-top: 1px solid rgb(177, 112, 20);
+    border-bottom: 1px solid rgb(160, 95, 1);
+    /* background: -th-gradient(linear, top, bottom, from( */
+}
+
+BespinSessionPanel {
+    padding: 5px;
+    border-top: 1px solid rgb(93, 91, 84);
+    border-left: 1px solid rgb(94, 91, 84);
+    border-bottom: 1px solid rgb(51, 49, 44);
+    border-right: 1px solid rgb(54, 52, 46);
+    background-color: rgb(67, 65, 58);
+}
+
+BespinSessionPanel Label {
+    
+}
+
+BespinSessionPanel Label.filename {
+    color: white;
+}
+
+BespinSessionPanel Label.path {
+    color: rgb(210, 210, 210);
+}
+
+BespinSessionPanel Label.opened {
+    color: rgb(160, 157, 147);
+}
+
+BespinSessionPanel Label.details {
+    color: rgb(160, 157, 147);
+}
+
+BespinSessionPanel Label.editTime {
+    color: rgb(160, 157, 147);
+}
+
+Splitter > Label {
+    color: white;
+    font: 9pt Tahoma;
+    padding-top: 4px;
+}
