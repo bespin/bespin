@@ -244,6 +244,7 @@ dojo.provide("bespin.page.dashboard.init");
     
     dojo.connect(window, "resize", function() {
         bd.sizeCanvas(dojo.byId("canvas"));
+        commandLine.infoResizer();
     });
     
     dojo.addOnLoad(function() {

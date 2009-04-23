@@ -251,3 +251,8 @@ ul#sessionslist li ul li {
     color: #DDDDDD;
     padding-left: 2px;
 }
+
+#info_test {
+	width: 100%;
+	overflow: auto;
+}

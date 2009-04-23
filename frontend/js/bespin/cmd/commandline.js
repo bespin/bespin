@@ -217,12 +217,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     showInfo: function(html, autohide) {
         if (this.suppressInfo) return; // bypass
 
-        this.hideInfo();
-
-        dojo.byId('info').innerHTML = html;
+        this.hideInfo();                
+        dojo.byId('info_text').innerHTML = html;
         dojo.style('info', 'display', 'block'); 
+        
+        this.infoResizer();
         dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
-
+        
         if (autohide) {
             this.infoTimeout = setTimeout(dojo.hitch(this, function() {
                 this.hideInfo();
@@ -233,6 +234,18 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     hideInfo: function() {
         dojo.style('info', 'display', 'none');
         if (this.infoTimeout) clearTimeout(this.infoTimeout);
+    },
+    
+    infoResizer: function() {
+    	if(dojo.style('info','display')!='none') {
+    		var browserY=window.innerHeight;
+    		var infoY=dojo.style('info','height');
+    		if((infoY/browserY)*100>35) {
+    			var tmp=browserY*.35+'px';
+    			console.log('New height: ' + tmp);
+    			dojo.style('info','height',tmp);
+    		}    		
+    	}
     },
 
     complete: function(value) {
