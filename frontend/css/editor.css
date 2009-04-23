@@ -368,9 +368,4 @@ body {
     font-size: smaller;
     color: red;
     font-style: italic;
-}
-
-#info_test {
-	width: 100%;
-	overflow: auto;
 }	

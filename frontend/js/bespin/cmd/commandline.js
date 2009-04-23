@@ -238,12 +238,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     
     infoResizer: function() {
     	if(dojo.style('info','display')!='none') {
-    		var browserY=window.innerHeight;
+    		dojo.style('info','height','');
+    		var browserY=window.innerHeight-dojo.style('commandline','height');
     		var infoY=dojo.style('info','height');
     		if((infoY/browserY)*100>35) {
-    			var tmp=browserY*.35+'px';
-    			console.log('New height: ' + tmp);
-    			dojo.style('info','height',tmp);
+    			var nHeight=(browserY*.35)+'px';
+    			dojo.style('info','height',nHeight);  
     		}    		
     	}
     },
