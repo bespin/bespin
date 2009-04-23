@@ -711,18 +711,18 @@ dojo.declare("bespin.editor.UI", null, {
 
         // Modifiers, Key, Action
 
-        listener.bindKeyStringSelectable("", Key.ARROW_LEFT, this.actions.moveCursorLeft, "Move Cursor Left");
-        listener.bindKeyStringSelectable("", Key.ARROW_RIGHT, this.actions.moveCursorRight, "Move Cursor Right");
-        listener.bindKeyStringSelectable("", Key.ARROW_UP, this.actions.moveCursorUp, "Move Cursor Up");
-        listener.bindKeyStringSelectable("", Key.ARROW_DOWN, this.actions.moveCursorDown, "Move Cursor Down");
+        listener.bindKeyStringSelectable("", Key.LEFT_ARROW, this.actions.moveCursorLeft, "Move Cursor Left");
+        listener.bindKeyStringSelectable("", Key.RIGHT_ARROW, this.actions.moveCursorRight, "Move Cursor Right");
+        listener.bindKeyStringSelectable("", Key.UP_ARROW, this.actions.moveCursorUp, "Move Cursor Up");
+        listener.bindKeyStringSelectable("", Key.DOWN_ARROW, this.actions.moveCursorDown, "Move Cursor Down");
 
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_LEFT, this.actions.moveWordLeft, "Move Word Left");
-        listener.bindKeyStringSelectable("ALT", Key.ARROW_RIGHT, this.actions.moveWordRight, "Move Word Right");
+        listener.bindKeyStringSelectable("ALT", Key.LEFT_ARROW, this.actions.moveWordLeft, "Move Word Left");
+        listener.bindKeyStringSelectable("ALT", Key.RIGHT_ARROW, this.actions.moveWordRight, "Move Word Right");
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart, "Move to start of line");
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_LEFT, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyStringSelectable("CMD", Key.LEFT_ARROW, this.actions.moveToLineStart, "Move to start of line");
         listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_RIGHT, this.actions.moveToLineEnd, "Move to end of line");
+        listener.bindKeyStringSelectable("CMD", Key.RIGHT_ARROW, this.actions.moveToLineEnd, "Move to end of line");
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
@@ -752,8 +752,8 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
         listener.bindKeyString("CMD", Key.Y, this.actions.redo, "Redo");
 
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_UP, this.actions.moveToFileTop, "Move to top of file");
-        listener.bindKeyStringSelectable("CMD", Key.ARROW_DOWN, this.actions.moveToFileBottom, "Move to bottom of file");
+        listener.bindKeyStringSelectable("CMD", Key.UP_ARROW, this.actions.moveToFileTop, "Move to top of file");
+        listener.bindKeyStringSelectable("CMD", Key.DOWN_ARROW, this.actions.moveToFileBottom, "Move to bottom of file");
         listener.bindKeyStringSelectable("CMD", Key.HOME, this.actions.moveToFileTop, "Move to top of file");
         listener.bindKeyStringSelectable("CMD", Key.END, this.actions.moveToFileBottom, "Move to bottom of file");
 

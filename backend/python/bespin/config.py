@@ -36,6 +36,8 @@ from path import path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from bespin import stats
+
 class Bunch(dict):
     def __getattr__(self, attr):
         try:
@@ -66,6 +68,14 @@ c.queue_port = None
 
 # holds the actual queue object
 c.queue = None
+
+# stats type: none, memory, redis
+# memory just holds the stats in a dictionary
+# redis stores the stats in a redis server
+# http://code.google.com/p/redis/
+c.stats_type = "none"
+c.redis_host = None
+c.redis_port = None
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
@@ -134,6 +144,17 @@ def activate_profile():
     if c.async_jobs:
         from bespin import queue
         c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
+    
+    if c.stats_type == "redis":
+        from bespin import redis
+        if c.redis_port:
+            c.redis_port = int(c.redis_port)
+        redis_client = redis.Redis(c.redis_host, c.redis_port)
+        c.stats = stats.RedisStats(redis_client)
+    elif c.stats_type == "memory":
+        c.stats = stats.MemoryStats()
+    else:
+        c.stats = stats.DoNothingStats()
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
