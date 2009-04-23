@@ -125,9 +125,6 @@ def set_profile(profile):
         c.async_jobs = False
         c.fslevels = 0
     
-    if c.queue_port:
-        c.queue_port = int(c.queue_port)
-    
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
     cp.read(configfile)
@@ -142,6 +139,9 @@ def activate_profile():
         c.fsroot.makedirs()
     
     if c.async_jobs:
+        if c.queue_port:
+            c.queue_port = int(c.queue_port)
+
         from bespin import queue
         c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
     
