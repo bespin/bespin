@@ -188,7 +188,8 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
                     for (var x = 0; x < newPath.length - 1; x++) {
                         // when the path is not restored from the root, then there are contents without contents!
                         if (contentsPath[x + 1]) {
-                            bd.tree.lists[x].selected.contents = contentsPath[x + 1];                            
+                            // todo: I added the if () to fix an error, not sure if it was a symptom of something larger
+                            if (bd.tree.lists[x].selected) bd.tree.lists[x].selected.contents = contentsPath[x + 1];                            
                         }
                     }
                 }
@@ -253,18 +254,18 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
 
         bespin.displayVersion(); // display the version on the page
 
-        scene = new th.Scene(dojo.byId("canvas"), "");  
+        scene = new th.Scene(dojo.byId("canvas"));  
 
-        tree = new th.HorizontalTree();
+        tree = new th.HorizontalTree({ id: "htree" });
 
         bd.tree = tree;
         
-        var projectLabel = new th.Label({ text: "Projects" });
+        // invoking showChildren() here causes the List containing the children to be created, which is necessary
+        // for us to manipulate it a touch here
+        bd.tree.showChildren(null, [{name: ''}]);
 
-        // add the the former project tree
-        bd.tree.showChildren(null, [{name: '<Projects>'}]);
-        tree.lists[0].label = projectLabel; 
-        tree.lists[0].label.height = 16;
+        // set various properties of this first list, which contains the projects to display
+        tree.lists[0].addTopLabel(new th.Label({ text: "Projects" }));
         tree.lists[0].allowDeselection = false;
 
         var topPanel = new th.Panel();
