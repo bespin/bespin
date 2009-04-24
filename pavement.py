@@ -607,7 +607,13 @@ def seeddb():
         if user == None:
             user = user_manager.create_user(name, name, name + "@foo.com")
             session.commit()
-            print("Created user called '" + name + "'")
+            info("Created user called '" + name + "'")
+        try:
+            model.get_project(user, user, "BespinSettings")
+        except:
+            settings = model.get_project(user, user, "BespinSettings", create=True)
+            settings.install_template('usertemplate')
+            info("Created BespinSettings project for '" + name + "'")
         return user
 
     # Seriously there is something wrong with my ego today ;-)
