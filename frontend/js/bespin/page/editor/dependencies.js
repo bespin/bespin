@@ -79,11 +79,13 @@ dojo.require("bespin.parser.parser");
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
-//dojo.require("bespin.social");
 
+/*
+dojo.require("bespin.social");
 dojo.require("bespin.mobwrite.core");
 dojo.require("bespin.mobwrite.diff");
 dojo.require("bespin.mobwrite.form");
 dojo.require("bespin.mobwrite.integrate");
+*/
 
 dojo.require("bespin.page.editor.init");
