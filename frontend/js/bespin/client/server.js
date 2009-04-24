@@ -104,9 +104,11 @@ dojo.declare("bespin.client.Server", null, {
                 }
             };
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
-            var token = server._randomPassword();
-            dojo.cookie("Domain-Token", token);
-            xhr.setRequestHeader("Domain-Token", token);
+            if (!server.token) {
+                server.token = server._randomPassword();
+            }
+            dojo.cookie("Domain-Token", server.token);
+            xhr.setRequestHeader("Domain-Token", server.token);
             xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
             if (options.headers) {
                 for (var key in options.headers) {

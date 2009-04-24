@@ -53,7 +53,8 @@ class BespinRequest(Request):
         self.username = environ.get('REMOTE_USER')
         self.user_manager = self.environ['user_manager']
         self.kwargs = environ.get('wsgiorg.routing_args')[1]
-        
+        self.session_token = environ.get("HTTP_DOMAIN_TOKEN")
+
     @property
     def user(self):
         if self._user:
@@ -62,7 +63,7 @@ class BespinRequest(Request):
             self._user = self.user_manager.get_user(self.username)
             return self._user
         return None
-        
+
 class BespinResponse(Response):
     def __init__(self, environ, start_request, **kw):
         super(BespinResponse, self).__init__(**kw)
