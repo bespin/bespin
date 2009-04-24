@@ -26,4 +26,12 @@
 # ***** END LICENSE BLOCK *****
 # 
 
+from webtest import TestApp
 
+class BespinTestApp(TestApp):
+    def _make_environ(self, extra_environ=None):
+        environ = super(BespinTestApp, self)._make_environ(extra_environ)
+        environ["HTTP_DOMAIN_TOKEN"] = "anti-csrf"
+        environ["HTTP_COOKIE"] = "Domain-Token=anti-csrf"
+        environ["BespinTestApp"] = "True"
+        return environ

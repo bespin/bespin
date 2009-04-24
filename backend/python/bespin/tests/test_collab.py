@@ -29,12 +29,12 @@
 #from webtest import TestApp
 #import simplejson
 
-from webtest import TestApp
 import simplejson
 from bespin import config, controllers, model
 from bespin.model import get_project, File, Project, User, Connection, UserManager
 
 from nose.tools import assert_equals
+from __init__ import BespinTestApp
 
 session = None
 user_manager = None
@@ -82,7 +82,7 @@ def _reset():
 
     global app
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     app.post("/register/login/joe", dict(password="joe"))
 
 def _followed_names(connections):

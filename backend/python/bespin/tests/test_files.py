@@ -34,7 +34,7 @@ from datetime import datetime, timedelta
 import shutil
 from urllib import urlencode
 
-from webtest import TestApp
+from __init__ import BespinTestApp
 import simplejson
 from path import path
 
@@ -56,7 +56,7 @@ def setup_module(module):
     global app
     config.set_profile('test')
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     
 def _init_data():
     global macgyver, someone_else, murdoc

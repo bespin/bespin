@@ -1,5 +1,5 @@
 from uvc.tests.util import mock_run_command
-from webtest import TestApp
+from __init__ import BespinTestApp
 from uvc import hg
 import simplejson
 from path import path
@@ -13,7 +13,7 @@ def setup_module(module):
     global app
     config.set_profile('test')
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     
 def _init_data():
     global macgyver

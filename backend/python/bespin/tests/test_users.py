@@ -26,7 +26,7 @@
 # ***** END LICENSE BLOCK *****
 # 
 
-from webtest import TestApp
+from __init__ import BespinTestApp
 import simplejson
 
 from bespin import config, controllers, model
@@ -85,7 +85,7 @@ def test_get_user_returns_none_for_nonexistent():
 
 def test_register_returns_empty_when_not_logged_in():
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.get('/register/userinfo/', status=401)
     assert resp.body == ""
     
@@ -94,7 +94,7 @@ def test_register_and_verify_user():
     _clear_db()
     s, user_manager = _get_user_manager()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
                                                     password="notangry"))
     assert resp.content_type == "application/json"
@@ -129,7 +129,7 @@ def test_logout():
     s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby", 
         dict(password='hulkrulez'))
     resp = app.get("/register/logout/")
@@ -139,7 +139,7 @@ def test_bad_login_yields_401():
     s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby",
         dict(password="NOTHULK"), status=401)
     
@@ -147,7 +147,7 @@ def test_login_without_cookie():
     s, user_manager = _get_user_manager(True)
     user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby",
         dict(password="hulkrulez"))
     assert resp.cookies_set['auth_tkt']
@@ -155,7 +155,7 @@ def test_login_without_cookie():
 def test_static_files_with_auth():
     _clear_db()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.get('/editor.html', status=302)
     assert resp.location == "http://localhost/"
     resp = app.post('/register/new/Aldus', dict(password="foo", 
@@ -165,10 +165,10 @@ def test_static_files_with_auth():
 def test_register_existing_user_should_not_authenticate():
     s, user_manager = _get_user_manager(True)
     app_orig = controllers.make_app()
-    app = TestApp(app_orig)
+    app = BespinTestApp(app_orig)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
                                                     password="notangry"))
-    app = TestApp(app_orig)
+    app = BespinTestApp(app_orig)
     resp = app.post("/register/new/BillBixby", dict(email="bill@bixby.com",
                                                     password="somethingelse"),
                     status=409)
@@ -179,7 +179,7 @@ def test_register_existing_user_should_not_authenticate():
 def test_bad_ticket_is_ignored():
     _clear_db()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/new/Aldus", dict(password="foo", 
                                         email="a@b.com"))
     app.cookies['auth_tkt'] = app.cookies['auth_tkt'][:-1]
@@ -187,14 +187,14 @@ def test_bad_ticket_is_ignored():
 
 def test_api_version_header():
     app = controllers.make_app()
-    app = TestApp(app)    
+    app = BespinTestApp(app)    
     resp = app.get("/register/userinfo/", status=401)
     assert resp.headers.get("X-Bespin-API") == "dev"
     
 def test_username_with_bad_characters():
     _clear_db()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/new/Thinga%20Majig",
             dict(password="foo", email="thinga@majig"), status=400)
     resp = app.post("/register/new/Thinga<majig>",
@@ -207,7 +207,7 @@ def test_username_with_bad_characters():
 def test_messages_sent_from_server_to_user():
     _clear_db()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/new/macgyver",
         dict(password="foo", email="macgyver@ducttape.macgyver"))
     s, user_manager = _get_user_manager()
@@ -229,7 +229,7 @@ def test_messages_sent_from_server_to_user():
 def test_get_users_settings():
     _clear_db()
     app = controllers.make_app()
-    app = TestApp(app)
+    app = BespinTestApp(app)
     resp = app.post("/register/new/macgyver",
         dict(password="foo", email="macgyver@ducttape.macgyver"))
     resp = app.put("/file/at/BespinSettings/settings", """
