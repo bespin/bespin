@@ -1,10 +1,3 @@
-horizontalTree {
-    background: rgb(76, 74, 65);
-    -th-odd-background: rgb(82, 80, 71);
-    font: 9pt Tahoma;
-    color: white;
-}
-
 horizontalTree:selected {
     border-top: 1px solid rgb(177, 112, 20);
     border-bottom: 1px solid rgb(160, 95, 1);
@@ -17,7 +10,7 @@ BespinSessionPanel {
     border-left: 1px solid rgb(94, 91, 84);
     border-bottom: 1px solid rgb(51, 49, 44);
     border-right: 1px solid rgb(54, 52, 46);
-    background-color: rgb(67, 65, 58);
+    background-color: rgb(61, 59, 52);
 }
 
 BespinSessionPanel Label {
@@ -48,4 +41,50 @@ Splitter > Label {
     color: white;
     font: 9pt Tahoma;
     padding-top: 4px;
+}
+
+/* this selects the project list in the horizontal tree */
+#htree-list-1 {
+    background-color: rgb(61, 59, 52);
+}
+
+#htree-list-1 Label {
+    border-top: 1px solid rgb(75, 74, 67);
+    border-bottom: 1px solid rgb(41, 40, 35);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+HorizontalTree Label {
+    font: 9pt Tahoma;
+    color: white;
+}
+
+#htree-list-1 Label.header {
+    border-bottom: black;
+    border-top: rgb(51, 50, 46);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#272621), to(#161613));
+}
+
+/* I need to support multiple classes per component; right now I don't, hence, this mess */
+HorizontalTree Label.evenmore, HorizontalTree Label.oddmore {
+    background-image: url(../images/dash_icn_more.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-top: 4px;
+    padding-bottom: 2px;
+}
+
+HorizontalTree Label.even, HorizontalTree Label.odd {
+    padding-top: 4px;
+    padding-bottom: 2px;
+}
+
+HorizontalTree Label.even, HorizontalTree Label.evenmore {
+    background-color: rgb(76, 75, 65);
+}
+
+HorizontalTree Label.odd, HorizontalTree Label.oddmore {
+    background-color: rgb(83, 80, 71);
 }
