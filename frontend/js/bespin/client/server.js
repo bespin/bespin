@@ -104,6 +104,9 @@ dojo.declare("bespin.client.Server", null, {
                 }
             };
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
+            var token = server._randomPassword();
+            dojo.cookie("Domain-Token", token);
+            xhr.setRequestHeader("Domain-Token", token);
             xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
             if (options.headers) {
                 for (var key in options.headers) {
@@ -125,6 +128,16 @@ dojo.declare("bespin.client.Server", null, {
         }
     },
     
+    _randomPassword: function() {
+        chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        pass = "";
+        for (var x = 0; x < 16; x++) {
+            var charIndex = Math.floor(Math.random() * chars.length);
+            pass += chars.charAt(charIndex);
+        }
+        return pass;
+    },
+
     // ** {{{ asyncStarted() }}}
     //
     // Keeps track of jobs that are asynchronous on the server, so
@@ -207,10 +220,10 @@ dojo.declare("bespin.client.Server", null, {
     // 
     // * {{{onSuccess}}} fires after the user attempt
     // * {{{notloggedin}}} fires if the user isn't logged in
-    currentuser: function(onSuccess, notloggedin) {
+    currentuser: function(whenLoggedIn, whenNotloggedin) {
         var url = "/register/userinfo/";
         return this.request('GET', url, null, 
-                { onSuccess: onSuccess, on401: notloggedin, evalJSON: true });
+                { onSuccess: whenLoggedIn, on401: whenNotloggedin, evalJSON: true });
     },
 
     // == FILES ==

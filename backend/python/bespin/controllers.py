@@ -344,7 +344,7 @@ def filestats(request, response):
 #     fm.reset_edits(user, project, path)
 #     return response()
 
-@expose(r'^/(?P<filename>editor|dashboard)\.html', 'GET', auth=False)
+@expose(r'^/(?P<filename>editor|dashboard)\.html', 'GET', auth=False, skip_token_check=True)
 def static_with_login(request, response):
     """Ensure that the user is logged in. Redirect them to the front
     page if they're not. If they are logged in, go ahead and serve
