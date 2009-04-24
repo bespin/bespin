@@ -91,6 +91,12 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
     collaborateOnFile: function(project, path, onSuccess) {
         var collab = bespin.get('settings').isSettingOn('collaborate');
+
+        if (collab) {
+            console.log("Forcing 'collaborate' to off in filesystem.js:collaborateOnFile");
+            collab = false;
+        }
+
         if (collab) {
             bespin.get('editSession').startSession(project, path, onSuccess);
         }
