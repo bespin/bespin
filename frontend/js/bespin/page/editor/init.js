@@ -44,26 +44,6 @@ dojo.provide("bespin.page.editor.init");
     var scene;
 
     dojo.mixin(bespin.page.editor, {
-        // ** {{{ whenLoggedIn(userinfo) }}} **
-        //
-        // * {{{userinfo}}} is an object containing user specific info (project etc)
-        //
-        // Save the users magic project into the session
-        whenLoggedIn: function(userinfo) {
-            bespin.get('editSession').setUserinfo(userinfo);
-
-            bespin.register('settings', new bespin.client.settings.Core());
-            bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
-        },
-
-        // ** {{{ whenNotLoggedIn() }}} **
-        //
-        // Send the user back to the front page as they aren't logged in.
-        // The server should stop this from happening, but JUST in case.
-        whenNotLoggedIn: function() {
-            bespin.util.navigate.home(); // go back
-        },
-
         // ** {{{ recalcLayout() }}} **
         //
         // When a change to the UI is needed due to opening or closing a feature
@@ -121,18 +101,34 @@ dojo.provide("bespin.page.editor.init");
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
         bespin.register('quickopen', new bespin.editor.quickopen.API());
 
-        // Force a login just in case the user session isn't around
-        server.currentuser(bespin.page.editor.whenLoggedIn, bespin.page.editor.whenNotLoggedIn);
-
-        // Set the version info
-        bespin.displayVersion();
-
         // Get going when settings are loaded
         bespin.subscribe("settings:loaded", function(event) {
             bespin.get('settings').loadSession();  // load the last file or what is passed in
             bespin.page.editor.doResize();
         });
         
+        var whenLoggedIn = function(userinfo) {
+            bespin.get('editSession').setUserinfo(userinfo);
+
+            bespin.register('settings', new bespin.client.settings.Core());
+            bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
+
+            // Set up message retrieval
+            server.processMessages();
+
+            bespin.publish("authenticated");
+        };
+
+        var whenNotLoggedIn = function() {
+            bespin.util.navigate.home(); // go back
+        };
+
+        // Force a login just in case the user session isn't around
+        server.currentuser(whenLoggedIn, whenNotLoggedIn);
+
+        // Set the version info
+        bespin.displayVersion();
+
         // bind in things for search :)
         dojo.connect(window, 'keydown', function(e) {
             if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
@@ -209,9 +205,6 @@ dojo.provide("bespin.page.editor.init");
             this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
         };
         scene.render();
-        
-        // Set up message retrieval
-        server.processMessages();
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **

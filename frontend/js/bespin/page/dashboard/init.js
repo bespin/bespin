@@ -58,17 +58,6 @@ dojo.provide("bespin.page.dashboard.init");
             dojo.attr(canvas, { width: window.innerWidth, height: height });
         },
         
-        loggedIn: function(userinfo)  {
-            editSession.setUserinfo(userinfo);
-
-            server.list(null, null, bd.displayProjects); // get projects
-            server.listOpen(bd.displaySessions); // get sessions
-        },
-
-        notLoggedIn: function(xhr) {
-            go.home();
-        },
-
         prepareFilesForTree: function(files) {
             if (files.length == 0) return [];
 
@@ -400,15 +389,31 @@ dojo.provide("bespin.page.dashboard.init");
             if (handled) return false;
         });
 
+        var whenLoggedIn = function(userinfo) {
+            editSession.setUserinfo(userinfo);
+
+            server.list(null, null, bd.displayProjects); // get projects
+            server.listOpen(bd.displaySessions); // get sessions
+
+            // Set up message retrieval
+            server.processMessages();
+
+            bespin.publish("authenticated");
+        };
+
+        var whenNotLoggedIn = function(xhr) {
+            go.home();
+        };
+
         // get logged in name; if not logged in, display an error of some kind
-        server.currentuser(bd.loggedIn, bd.notLoggedIn);   
-        
+        server.currentuser(whenLoggedIn, whenNotLoggedIn);
+
         // provide history for the dashboard
         bespin.subscribe("url:changed", function(e) {
             var pathSelected = (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });
-        
+
         // provide arrow navigation to dashboard
         dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
             // catch focus on commandline
@@ -449,8 +454,5 @@ dojo.provide("bespin.page.dashboard.init");
                     break;
             }
         }));
-        
-        // Set up message retrieval
-        server.processMessages();
     });
 })();

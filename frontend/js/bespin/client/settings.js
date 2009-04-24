@@ -293,26 +293,42 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     },
 
     _load: function() {
-        var checkLoaded = dojo.hitch(this, function() {
-            if (!this.loaded) { // first time load
-                this.loaded = true;
+        
+        var self = this;
+
+        var checkLoaded = function() {
+            if (!self.loaded) { // first time load
+                self.loaded = true;
                 bespin.publish("settings:loaded");
             }
-        });
+        };
 
-        setTimeout(dojo.hitch(this, function() {
-            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", dojo.hitch(this, function(file) {
-                dojo.forEach(file.content.split(/\n/), dojo.hitch(this, function(setting) {
+        var loadSettings = function() {
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", function(file) {
+                dojo.forEach(file.content.split(/\n/), function(setting) {
                     if (setting.match(/^\s*#/)) return; // if comments are added ignore
                     if (setting.match(/\S+\s+\S+/)) {
                         var pieces = setting.split(/\s+/);
-                        this.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
+                        self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
                     }
-                }));
+                });
 
                 checkLoaded();
-            }), checkLoaded); // unable to load the file, so kick this off and a save should kick in
-        }), 0);
+            }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
+        };
+
+        setTimeout(loadSettings, 0);
+
+        /*
+        if (bespin.authenticated) {
+            loadSettings();
+        }
+        else {
+            bespin.subscribe("authenticated", function() {
+                loadSettings();
+            });
+        }
+        */
     }
 });
 

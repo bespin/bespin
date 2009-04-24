@@ -506,7 +506,16 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
 dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     constructor: function(history) {
         this.history = history;
-        this.seed();
+        var self = this;
+
+        if (bespin.authenticated) {
+            self.seed();
+        }
+        else {
+            bespin.subscribe("authenticated", function() {
+                self.seed();
+            });
+        }
     },
 
     seed: function() {
