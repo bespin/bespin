@@ -37,11 +37,19 @@
 dojo.provide("bespin.cmd.commandline");
 
 dojo.declare("bespin.cmd.commandline.CommandStore", null, {
-    constructor: function(initCommands) {
+    constructor: function(opts) {
         this.commands = {};
         this.aliases = {};
         
-        if (initCommands) this.addCommands(initCommands); // initialize the commands for the cli
+        if (opts.subCommand) {
+            this.subcommandFor = opts.subCommand.name; // save the fact that we are a subcommand for this chap
+            opts.subCommand.takes = ['*']; // implicit that it takes something
+            opts.subCommand.subcommands = this; // link back to this store
+            
+            bespin.cmd.commands.add(opts.subCommand); // add the sub command to the root store
+        }
+        
+        if (opts.initCommands) this.addCommands(opts.initCommands); // initialize the commands for the cli
     },
 
     splitCommandAndArgs: function(value) {
@@ -203,7 +211,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.inCommandLine = false;
         this.suppressInfo = false; // When true, info bar popups will not be shown
 
-        this.commandStore = new bespin.cmd.commandline.CommandStore(initCommands);
+        this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.commandLineHistory = new bespin.cmd.commandline.History(this);
