@@ -66,10 +66,11 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         }
         
         if (command.subcommands) {
+            if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
             return command.subcommands.splitCommandAndArgs(data.join(" "));
         }
         
-        return [command, this.getArgs(argstr.split(' '), command)]
+        return [command, this.getArgs(argstr.split(' '), command)];
         
     },
       

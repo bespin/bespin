@@ -511,6 +511,7 @@ bespin.cmd.commands.add({
     name: 'vcs',
     takes: ['*'],
     preview: 'run a version control command',
-    subcommands: bespin.vcs.commands
+    subcommands: bespin.vcs.commands,
+    subcommanddefault: 'help'
 });
 
