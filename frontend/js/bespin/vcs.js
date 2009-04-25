@@ -469,8 +469,8 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'help',
     takes: ['search'],
-    preview: 'show commands',
-    description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    preview: 'show commands for vcs subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(self, extra) {
         bespin.cmd.displayHelp(bespin.vcs.commands, self, extra);

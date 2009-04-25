@@ -70,7 +70,7 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
                 meta = { inMultiLineComment: this.inMultiLineComment(), offset: type.start }; // pass in an offset
                 var pieceRegions = [];
                 var fromResolver = bespin.syntax.simple.Resolver.highlight(type.type, lineText.substring(type.start, type.stop), meta);
-                if (fromResolver.meta && (i == languages.length - 1) ){
+                if (fromResolver.meta && (i == languages.length - 1) ) {
                     this.setLineMetaInfo(lineNumber, fromResolver.meta);
                 }
                 pieceRegions.push(fromResolver);

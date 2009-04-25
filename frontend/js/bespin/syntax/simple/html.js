@@ -38,13 +38,12 @@ bespin.syntax.HTMLConstants = {
     STRING: "string",
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
-    OTHER: "plain"
+    OTHER: "plain",
+    ATTR_NAME: "attname"
 };
 
 
 dojo.declare("bespin.syntax.simple.HTML", null, {
-    keywordRegex: "/*(html|head|body|doctype|link|script|div|span|img|h1|h2|h3|h4|h5|h6|ul|li|ol|blockquote)",
-
     punctuation: '< > = " \'',
 
     highlight: function(line, meta) {
@@ -52,7 +51,7 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
 
         var K = bespin.syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
 
-        var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
+        var regions = {};                       // contains the individual style types as keys, with array of start/stop positions as value
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
         var currentStyle = (meta.inMultilineComment) ? K.HTML_STYLE_COMMENT : undefined;
@@ -63,14 +62,28 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
         var stringChar = "";    // the character used to start the current string
         var multiline = meta.inMultilineComment;  // this line contains an unterminated multi-line comment
 
+        if (meta.inJavaScript) {
+            if (line.indexOf('</script>') > 0) {
+                meta.inJavaScript = false;
+            } else {
+                return bespin.syntax.simple.Resolver.resolve("js").highlight(line, meta);
+            }
+        } else {
+            meta.inJavaScript = false;
+        }
+
+        if (line.indexOf('<script') > 0) {
+            meta.inJavaScript = true;
+        }
+
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.HTML_STYLE_COMMENT) {
                 if (c == ">" && bespin.util.endsWith(buffer, "--") &&
-                        ! (/<!--/.test(buffer) && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
-                        ! (/<!---/.test(buffer)  && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
+                        ! (/<!--/.test(buffer)  && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
+                        ! (/<!---/.test(buffer) && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
                         ) { // has the multiline comment just ended?
                     currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
@@ -102,9 +115,10 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
                     currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (buffer.match(this.keywordRegex)) {
-                            // the buffer contains a keyword
+                        if (line.charAt(currentRegion.start - 1) == '<') {
                             currentStyle = K.KEYWORD;
+                        } else if (line.charAt(currentRegion.stop) == '=') { // an attribute (TODO allow for spaces)
+                            currentStyle = K.ATTR_NAME;
                         } else {
                             currentStyle = K.OTHER;
                         }
@@ -153,7 +167,7 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: { inMultilineComment: multiline } };
+        return { regions: regions, meta: { inMultilineComment: multiline, inJavaScript: meta.inJavaScript } };
     },
 
     addRegion: function(regions, type, data) {

@@ -46,7 +46,7 @@ bespin.syntax.JavaScriptConstants = {
 dojo.declare("bespin.syntax.simple.JavaScript", null, {
     keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
                     'default delete do double else enum export extends false final finally float ' +
-                    'for function goto if implements import in instanceof int interface long native ' +
+                    'for function goto if implements import in instanceof int interface let long native ' +
                     'new null package private protected public return short static super switch ' +
                     'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
 
@@ -168,7 +168,10 @@ dojo.declare("bespin.syntax.simple.JavaScript", null, {
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: { inMultilineComment: multiline } };
+        var newMeta = { inMultilineComment: multiline };
+        if (meta.inJavaScript) newMeta.inJavaScript = meta.inJavaScript;
+
+        return { regions: regions, meta: newMeta };
     },
 
     addRegion: function(regions, type, data) {

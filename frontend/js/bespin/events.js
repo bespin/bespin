@@ -88,7 +88,7 @@ bespin.subscribe("editor:preview", function(event) {
     });
 
     if (settings && filename) {
-        var type = settings.get("preview");
+        var type = event.type || settings.get("preview"); // allow a type to override the global setting
         if (type == "inline") {
             var preview = dojo.byId("preview");
             var subheader = dojo.byId("subheader");
