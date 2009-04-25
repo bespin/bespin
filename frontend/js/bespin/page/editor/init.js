@@ -117,6 +117,8 @@ dojo.provide("bespin.page.editor.init");
         var server = bespin.register('server', new bespin.client.Server());
         var files = bespin.register('files', new bespin.client.FileSystem());
 
+        bespin.register('actions', editor.ui.actions);
+        bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
         bespin.register('quickopen', new bespin.editor.quickopen.API());
 
@@ -132,32 +134,61 @@ dojo.provide("bespin.page.editor.init");
             bespin.page.editor.doResize();
         });
         
+        // --- START SEARCH ---
         // bind in things for search :)
+        // some of the key-bindings go to the window object direct, to make them happen all over the window
         dojo.connect(window, 'keydown', function(e) {
             if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
+                bespin.get('actions').toggleFilesearch();
                 dojo.stopEvent(e);
-                dojo.byId('searchquery').focus();
-                dojo.byId('searchquery').select();
+            } else if (e.keyCode == bespin.util.keys.Key.G && (e.metaKey || e.ctrlKey)) {
+                if (e.shiftKey) {
+                    bespin.get('actions').findPrev();
+                } else {
+                    bespin.get('actions').findNext();
+                }
+                dojo.stopEvent(e);
             }
         });
 
+        // Handle Enter & Escape
         dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
-            if (e.keyCode == bespin.util.keys.Key.ENTER) {
-                if (dojo.byId('searchquery').value != '') {
-                    // want to search? Do so!
-                    if (bespin.get('commandLine').executeCommand('search ' + dojo.byId('searchquery').value)) {
-                        dojo.byId('canvas').focus();
-                        bespin.get('editor').setFocus(true);
-                        dojo.stopEvent(e);                    
-                    } else {
-                        dojo.byId('searchquery').select();
-                    }                    
-                } else {
-                    // in this case just remove the searchString
-                    delete bespin.get('editor').ui.searchString;
-                    bespin.get('editor').ui.actions.findClear();
-                }
+            var key = bespin.util.keys.Key;
+
+            if (e.keyCode == key.ESCAPE) {
+                dojo.byId('searchresult').style.display = 'none';
+                dojo.byId('searchquery').blur();
+                bespin.get('editor').setFocus(true);
+                dojo.stopEvent(e);
+            } else if (e.keyCode == key.ENTER) {
+                bespin.get('actions').startSearch(dojo.byId('searchquery').value, 'toolbar', e.shiftKey);
+                dojo.stopEvent(e);
             }
+        });
+
+        // preform a new search after a character has been added to the searchquery-input-field
+        dojo.connect(dojo.byId('searchquery'), 'keypress', function(e) {
+            var key = bespin.util.keys.Key;    
+            var isOkay = false;
+        
+            // check to let only some keys perform a new search!
+            if ([key.ENTER, key.BACKSPACE, key.DELETE].indexOf(e.keyCode) != -1) isOkay = true;
+            if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1)  isOkay = true;
+            if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) isOkay = true;
+        
+            if (!isOkay) {
+                // the key was not a character!
+                return;
+            }
+        
+            // perform a search only each 300ms
+            var ui = bespin.get('editor').ui;
+            if (ui.serachTimeout) {
+                clearTimeout(ui.serachTimeout);
+            }
+            ui.serachTimeout = setTimeout(dojo.hitch(ui, function () {
+                this.actions.startSearch(dojo.byId('searchquery').value, 'toolbar');
+            }), 300);   
         });
 
         // handle things when search field get focused
@@ -165,6 +196,36 @@ dojo.provide("bespin.page.editor.init");
             bespin.get('editor').setFocus(false);
             dojo.byId('searchquery').select();
         });
+        
+        // little helper function ;)
+        function addButtonEvents(elm, filename, clickFunc) {
+            dojo.connect(elm, 'mouseover', function() {
+                elm.src = "images/" + filename + "_on.png";
+            });
+
+            dojo.connect(elm, 'mouseout', function() {
+                elm.src = "images/" + filename + ".png";
+            });
+            
+            dojo.connect(elm, 'click', clickFunc);
+        }
+        
+        // stuff for the buttons
+        addButtonEvents(dojo.byId('searchprev'), 'button_left', function() {
+            bespin.get('actions').findPrev();
+        });
+
+        addButtonEvents(dojo.byId('searchnext'), 'button_right', function() {
+            bespin.get('actions').findNext();    
+        });
+        
+        addButtonEvents(dojo.byId('searchdone'), 'button_done', function() {
+            dojo.byId('searchresult').style.display = 'none';
+            bespin.get('editor').setFocus(true);
+            dojo.byId('searchquery').blur();
+        });
+        
+        // --- DONE WITH SEARCH ---
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 

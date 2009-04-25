@@ -279,6 +279,7 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("ui:escape", function(event) {
             if (editor.ui.searchString) {
                 editor.ui.setSearchString(false);
+                dojo.byId('searchresult').style.display = 'none';                
             }
         });
 
