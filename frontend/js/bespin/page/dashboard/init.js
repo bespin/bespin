@@ -24,6 +24,8 @@
 
 dojo.provide("bespin.page.dashboard.init");  
 
+if (!bespin.page.dashboard) bespin.page.dashboard = {};
+
 // = Dashboard =
 //
 // This file is the dashboard code that is loaded via script src
@@ -58,6 +60,17 @@ dojo.provide("bespin.page.dashboard.init");
             dojo.attr(canvas, { width: window.innerWidth, height: height });
         },
         
+        loggedIn: function(userinfo)  {
+            editSession.setUserinfo(userinfo);
+
+            server.list(null, null, bd.displayProjects); // get projects
+            server.listOpen(bd.displaySessions); // get sessions
+        },
+
+        notLoggedIn: function(xhr) {
+            go.home();
+        },
+
         prepareFilesForTree: function(files) {
             if (files.length == 0) return [];
 
@@ -105,7 +118,7 @@ dojo.provide("bespin.page.dashboard.init");
                     var path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
                     var name = (lastSlash == -1) ? file : file.substring(lastSlash + 1);
 
-                    var panel = new bespin.page.dashboard.components.BespinSessionPanel({ filename: name, project: project, path: path });
+                    var panel = new th.BespinSessionPanel({ filename: name, project: project, path: path });
                     infoPanel.add(panel);
                     panel.bus.bind("dblclick", panel, function(e) {
                         var newTab = e.shiftKey;
@@ -122,13 +135,11 @@ dojo.provide("bespin.page.dashboard.init");
             var oldPath = bd.lastSelectedPath;
             bd.lastSelectedPath = newPath;
                         
-            if (newPath == oldPath && newPath != '') return;    // the path has not changed
+            if (newPath == oldPath && newPath != '') return;     // the path has not changed
 
             newPath = newPath.split('/');
             oldPath = oldPath.split('/');
             currentProject = newPath[0];
-            
-            bespin.publish("project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
 
             tree.lists[0].selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
             scene.renderAllowed = false;
@@ -177,7 +188,8 @@ dojo.provide("bespin.page.dashboard.init");
                     for (var x = 0; x < newPath.length - 1; x++) {
                         // when the path is not restored from the root, then there are contents without contents!
                         if (contentsPath[x + 1]) {
-                            bd.tree.lists[x].selected.contents = contentsPath[x + 1];                            
+                            // todo: I added the if () to fix an error, not sure if it was a symptom of something larger
+                            if (bd.tree.lists[x].selected) bd.tree.lists[x].selected.contents = contentsPath[x + 1];                            
                         }
                     }
                 }
@@ -218,7 +230,7 @@ dojo.provide("bespin.page.dashboard.init");
             tree.replaceList(0, projectItems);
                                     
             // Restore the last selected file
-            var path = (new bespin.client.settings.URL()).get('path');
+            var path =  (new bespin.client.settings.URL()).get('path');
             if (!bd.lastSelectedPath) {
                 bd.restorePath(path);
             } else {
@@ -233,7 +245,6 @@ dojo.provide("bespin.page.dashboard.init");
     
     dojo.connect(window, "resize", function() {
         bd.sizeCanvas(dojo.byId("canvas"));
-        commandLine.infoResizer();
     });
     
     dojo.addOnLoad(function() {
@@ -245,98 +256,33 @@ dojo.provide("bespin.page.dashboard.init");
 
         scene = new th.Scene(dojo.byId("canvas"));  
 
-        tree = new th.components.HorizontalTree({ style: {
-            backgroundColor: "rgb(76, 74, 65)",
-            backgroundColorOdd: "rgb(82, 80, 71)",
-            font: "9pt Tahoma",
-            color: "white",
-            scrollTopImage: dojo.byId("vscroll_track_top"),
-            scrollMiddleImage: dojo.byId("vscroll_track_middle"),
-            scrollBottomImage: dojo.byId("vscroll_track_bottom"),
-            scrollUpArrow: dojo.byId("vscroll_up_arrow"),
-            scrollDownArrow: dojo.byId("vscroll_down_arrow")
-        }});
+        tree = new th.HorizontalTree({ id: "htree" });
 
         bd.tree = tree;
         
-        var renderer = new th.components.Label({ style: { border: new th.borders.EmptyBorder({ size: 3 }) } });
-        renderer.old_paint = renderer.paint;
-        renderer.paint = function(ctx) {
-            var d = this.d();
+        // invoking showChildren() here causes the List containing the children to be created, which is necessary
+        // for us to manipulate it a touch here
+        bd.tree.showChildren(null, [{name: ''}]);
 
-            if (this.selected) {
-                ctx.fillStyle = "rgb(177, 112, 20)";
-                ctx.fillRect(0, 0, d.b.w, 1);
-
-                var gradient = ctx.createLinearGradient(0, 0, 0, d.b.h);
-                gradient.addColorStop(0, "rgb(172, 102, 1)");
-                gradient.addColorStop(1, "rgb(219, 129, 1)");
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
-
-                ctx.fillStyle = "rgb(160, 95, 1)";
-                ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-            }
-
-            if (this.item.contents) {
-                renderer.styleContext(ctx);
-                var metrics = ctx.measureText(">");
-                ctx.fillText(">", d.b.w - metrics.width - 5, d.b.h / 2 + (metrics.ascent / 2) - 1);
-            }
-
-            this.old_paint(ctx);
-        };
-        tree.renderer = renderer;
-        
-        var projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "8pt Tahoma" } });
-        projectLabel.oldPaint = projectLabel.paint;
-        projectLabel.paint = function(ctx) {
-            var d = this.d();
-
-            ctx.fillStyle = "rgb(51, 50, 46)";
-            ctx.fillRect(0, 0, d.b.w, 1);
-
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-
-            var gradient = ctx.createLinearGradient(0, 1, 0, d.b.h - 2);
-            gradient.addColorStop(0, "rgb(39, 38, 33)");
-            gradient.addColorStop(1, "rgb(22, 22, 19)");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
-
-            this.oldPaint(ctx);
-        };
-        
-        // add the the former project tree
-        bd.tree.showChildren(null, [{name: '<Projects>'}]);
-        tree.lists[0].label = projectLabel; 
-        tree.lists[0].label.height = 16;
+        // set various properties of this first list, which contains the projects to display
+        tree.lists[0].addTopLabel(new th.Label({ text: "Projects" }));
         tree.lists[0].allowDeselection = false;
-        tree.lists[0].style = { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" };
 
-        var topPanel = new th.components.Panel();
+        var topPanel = new th.Panel();
         topPanel.add([ tree ]);
         topPanel.layout = function() {
             var d = this.d();
             tree.bounds = { x: d.i.l, y: d.i.t, width: d.b.w - d.i.w, height: d.b.h - d.i.h };
         };
 
-        infoPanel = new th.components.ExpandingInfoPanel();
+        infoPanel = new th.ExpandingInfoPanel();
 
-        var splitPanel = new th.components.SplitPanel({ id: "splitPanel", attributes: {
+        var splitPanel = new th.SplitPanel({ id: "splitPanel",
             orientation: th.VERTICAL,
             regions: [ { size: "75%", contents: topPanel }, { size: "25%", contents: infoPanel } ]
-        } });
-
-        splitPanel.attributes.regions[0].label = new th.components.Label({
-                text: "Open Sessions",
-                style: {
-                    color: "white",
-                    font: "9pt Tahoma"
-                },
-                border: new th.borders.EmptyBorder({ size: 4 })
         });
+
+        splitPanel.regions[0].label = new th.Label({ text: "Open Sessions" });
 
         scene.root.add(splitPanel);
 
@@ -350,17 +296,10 @@ dojo.provide("bespin.page.dashboard.init");
         });
 
         scene.bus.bind("itemselected", tree, function(e) {
+            console.log("item selected on tree");
+
             var pathSelected = tree.getSelectedPath(true);
             var db = bespin.page.dashboard;
-            
-            var treepath = tree.getSelectedPath();
-            var selectionInfo = {
-                project: db.getFilePath([treepath[0]]),
-                path: db.getFilePath(treepath.slice(1, treepath.length)),
-                fromDashboardItemSelected: true
-            }
-            bespin.publish("file:set", selectionInfo);
-            
             // this keeps the url to be changed if the file path changes to frequently
             if (db.urlTimeout) {
                 clearTimeout(db.urlTimeout);
@@ -389,31 +328,16 @@ dojo.provide("bespin.page.dashboard.init");
             if (handled) return false;
         });
 
-        var whenLoggedIn = function(userinfo) {
-            editSession.setUserinfo(userinfo);
-
-            server.list(null, null, bd.displayProjects); // get projects
-            server.listOpen(bd.displaySessions); // get sessions
-
-            // Set up message retrieval
-            server.processMessages();
-
-            bespin.publish("authenticated");
-        };
-
-        var whenNotLoggedIn = function(xhr) {
-            go.home();
-        };
-
         // get logged in name; if not logged in, display an error of some kind
-        server.currentuser(whenLoggedIn, whenNotLoggedIn);
-
+        server.currentuser(bd.loggedIn, bd.notLoggedIn);   
+        
         // provide history for the dashboard
         bespin.subscribe("url:changed", function(e) {
-            var pathSelected = (new bespin.client.settings.URL()).get('path');
+            var pathSelected =  (new bespin.client.settings.URL()).get('path');
             bespin.page.dashboard.restorePath(pathSelected);
         });
 
+        // TODO: commenting this out as it is throwing errors at the moment
         // provide arrow navigation to dashboard
         dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
             // catch focus on commandline
@@ -426,7 +350,7 @@ dojo.provide("bespin.page.dashboard.init");
             var list = this.lists[index];
             var listNext = (this.lists.length > index ? this.lists[index + 1] : false);
             var listPre = (index != 0 ? this.lists[index - 1] : false);
-            
+
             switch (e.keyCode) {
                 case key.LEFT_ARROW:
                     if (!listPre) break;
@@ -438,7 +362,7 @@ dojo.provide("bespin.page.dashboard.init");
                     if (list.selected.lastSelected) {
                         listNext.selectItemByText(list.selected.lastSelected);
                         listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                    } else {   
+                    } else {
                         listNext.selected = listNext.items[0];
                         listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
                     }
@@ -449,10 +373,13 @@ dojo.provide("bespin.page.dashboard.init");
                 case key.DOWN_ARROW:
                     list.moveSelectionDown();
                     break;
-                case key.ENTER: 
+                case key.ENTER:
                     this.bus.fire("dblclick", e, tree);
                     break;
             }
         }));
+        
+        // Set up message retrieval
+        server.processMessages();
     });
 })();

@@ -24,255 +24,238 @@
 
 dojo.provide("bespin.page.dashboard.components");
 
-dojo.declare("bespin.page.dashboard.components.BespinBorder", th.Border, {
-    getInsets: function() {
-        return { left: 1, right: 1, bottom: 1, top: 1 };
-    },
+if (!bespin.page.dashboard) bespin.page.dashboard = {};
 
-    paint: function(ctx) {
-        var d = this.component.d();
+th.BespinSessionPanel = Class.define({
+    type: "BespinSessionPanel",
 
-        ctx.fillStyle = "rgb(93, 91, 84)";
-        ctx.fillRect(0, 0, d.b.w, 1);
+    superclass: th.Panel,
 
-        ctx.fillStyle = "rgb(51, 49, 44)";
-        ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+    members: {
+        init: function(parms) {
+            this._super(parms);
 
-        ctx.fillStyle = "rgb(94, 91, 84)";
-        ctx.fillRect(0, 0, 1, d.b.h);
+            this.filename = new th.Label({ className: "filename" });
+            this.path = new th.Label({ className: "path" });
+            this.opened = new th.Label({ className: "opened" });
+            this.details = new th.Label({ className: "details" });
+            this.editTime = new th.Label({ className: "editTime" });
 
-        ctx.fillStyle = "rgb(54, 52, 46)";
-        ctx.fillRect(d.b.w - 1, 0, 1, d.b.h);
-    }
-});
+            var labels = [ this.filename, this.path, this.opened, this.details, this.editTime ];
 
-dojo.declare("bespin.page.dashboard.components.BespinSessionPanel", th.components.Panel, {
-    constructor: function(parms) {
-        this.filename = new th.components.Label({ style: { color: "white" } });
-        this.path = new th.components.Label({ style: { color: "rgb(210, 210, 210)" } });
-        this.opened = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
-        this.details = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
-        this.editTime = new th.components.Label({ style: { color: "rgb(160, 157, 147)" } });
+            this.add(labels);
 
-        var labels = [ this.filename, this.path, this.opened, this.details, this.editTime ];
-
-        this.add(labels);
-
-        var panel = this;
-        for (var i = 0; i < labels.length; i++) {
-            this.bus.bind("dblclick", labels[i], function(e) {
-                panel.bus.fire("dblclick", e, panel);
-            });
-        }
-
-        this.style.border = new bespin.page.dashboard.components.BespinBorder();
-        this.style.backgroundColor = "rgb(67, 65, 58)";
-
-        this.preferredSizes = [ 13, 9, 8, 8, 8 ];
-        this.minimumSizes = [ 9, 8, 7, 7, 7 ];
-
-        this.filename.attributes.text = parms.filename;
-        this.path.attributes.text = parms.project + ": /" + parms.path;
-
-        // dummy data
-        this.opened.attributes.text = "(opened info)";
-        this.details.attributes.text = "(edit details info)";
-        this.editTime.attributes.text = "(editing time)";
-
-        this.session = { filename: parms.filename, path: parms.path, project: parms.project };
-    },
-
-    layout: function() {
-        var d = this.d();
-        var w = d.b.w - d.i.w;
-        var labels = 5;
-        var sizes = this.preferredSizes.slice();
-        var y;
-
-        while (labels > 0) {
-            y = d.i.t;
-
-            // set the fonts and clear the bounds
-            for (var i = 0; i < this.children.length; i++) {
-                var font = sizes[i] + "pt Tahoma";
-                this.children[i].style.font = font;
-
-                delete this.children[i].bounds;
+            var panel = this;
+            for (var i = 0; i < labels.length; i++) {
+                this.bus.bind("dblclick", labels[i], function(e) {
+                    panel.bus.fire("dblclick", e, panel);
+                });
             }
 
-            var current = 0;
+            this.preferredSizes = [ 13, 9, 8, 8, 8 ];
+            this.minimumSizes = [ 9, 8, 7, 7, 7 ];
 
-            var h = this.filename.getPreferredHeight(w);
-            h = Math.floor(h * 0.95); // pull in the line height a bit
-            this.filename.bounds = { x: d.i.l, y: y, width: w, height: h };
-            y += h;
+            this.filename.text = parms.filename;
+            this.path.text = parms.project + ": /" + parms.path;
 
-            if (++current < labels) {
-                h = this.path.getPreferredHeight(w);
-                h = Math.floor(h * 1.2); // add a bit of margin to separate from subsequent labels
-                this.path.bounds = { x: d.i.l, y: y, width: w, height: h };
-                y += h;
-            }
+            // dummy data
+            this.opened.text = "(opened info)";
+            this.details.text = "(edit details info)";
+            this.editTime.text = "(editing time)";
 
-            if (++current < labels) {
-                h = this.opened.getPreferredHeight(w);
-                this.opened.bounds = { x: d.i.l, y: y, width: w, height: h };
-                y += h;
-            }
+            this.session = { filename: parms.filename, path: parms.path, project: parms.project };
+        },
 
-            if (++current < labels) {
-                h = this.details.getPreferredHeight(w);
-                this.details.bounds = { x: d.i.l, y: y, width: w, height: h };
-                y += h;
-            }
+        layout: function() {
+            var d = this.d();
+            var w = d.b.w - d.i.w;
+            var labels = 5;
+            var sizes = this.preferredSizes.slice();
+            var y;
 
-            if (++current < labels) {
-                h = this.editTime.getPreferredHeight(w);
-                this.editTime.bounds = { x: d.i.l, y: y, width: w, height: h };
-                y += h;
-            }
+            while (labels > 0) {
+                y = d.i.t;
 
-            y += d.i.b;
-            if (y <= d.b.h) break;
+                // set the fonts and clear the bounds
+                for (var i = 0; i < this.children.length; i++) {
+                    var font = sizes[i] + "pt Tahoma";
+                    this.children[i].addCss("font", font);
 
-            // we're too tall, make adjustments
-
-            var changeMade = false;
-            for (var z = 2; z < sizes.length; z++) {
-                if (sizes[z] > this.minimumSizes[z]) {
-                    sizes[z]--;
-                    changeMade = true;
+                    delete this.children[i].bounds;
                 }
-            }
-            if (changeMade) continue;
 
-            if (labels > 2) {
+                var current = 0;
+
+                var h = this.filename.getPreferredSize().height;
+                h = Math.floor(h * 0.95); // pull in the line height a bit
+                this.filename.bounds = { x: d.i.l, y: y, width: w, height: h };
+                y += h;
+
+                if (++current < labels) {
+                    h = this.path.getPreferredSize().height;
+                    h = Math.floor(h * 1.2); // add a bit of margin to separate from subsequent labels
+                    this.path.bounds = { x: d.i.l, y: y, width: w, height: h };
+                    y += h;
+                }
+
+                if (++current < labels) {
+                    h = this.opened.getPreferredSize().height;
+                    this.opened.bounds = { x: d.i.l, y: y, width: w, height: h };
+                    y += h;
+                }
+
+                if (++current < labels) {
+                    h = this.details.getPreferredSize().height;
+                    this.details.bounds = { x: d.i.l, y: y, width: w, height: h };
+                    y += h;
+                }
+
+                if (++current < labels) {
+                    h = this.editTime.getPreferredSize().height;
+                    this.editTime.bounds = { x: d.i.l, y: y, width: w, height: h };
+                    y += h;
+                }
+
+                y += d.i.b;
+                if (y <= d.b.h) break;
+
+                // we're too tall, make adjustments
+
+                var changeMade = false;
+                for (var z = 2; z < sizes.length; z++) {
+                    if (sizes[z] > this.minimumSizes[z]) {
+                        sizes[z]--;
+                        changeMade = true;
+                    }
+                }
+                if (changeMade) continue;
+
+                if (labels > 2) {
+                    labels--;
+                    continue;
+                }
+
+                changeMade = false;
+                for (y = 0; y < 2; y++) {
+                    if (sizes[y] > this.minimumSizes[y]) {
+                        sizes[y]--;
+                        changeMade = true;
+                    }
+                }
+                if (changeMade) continue;
+
                 labels--;
-                continue;
             }
-
-            changeMade = false;
-            for (y = 0; y < 2; y++) {
-                if (sizes[y] > this.minimumSizes[y]) {
-                    sizes[y]--;
-                    changeMade = true;
-                }
-            }
-            if (changeMade) continue;
-
-            labels--;
         }
-    },
-
-    getInsets: function() {
-        return { top: 5, left: 5, bottom: 5, right: 5 };
-    } 
-});
-
-dojo.declare("bespin.page.dashboard.components.BespinProjectPanelFooter", th.components.Panel, {
-    constructor: function(parms) {
-        this.add = new th.components.Button();
-
-    },
-
-    getPreferredHeight: function(width) {
-        return 17;
-    },
-
-    paintSelf: function(ctx) {
-
-        // not ready to display this yet - bg
-
-//        var d = this.d();
-//
-//        ctx.fillStyle = "rgb(85, 80, 72)";
-//        ctx.fillRect(0, 0, d.b.w, 1);
-//
-//        ctx.fillStyle = "rgb(35, 31, 28)";
-//        ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-//
-//        var gradient = ctx.createLinearGradient(0, 1, 1, d.b.h - 2);
-//        gradient.addColorStop(0, "rgb(71, 66, 57)");
-//        gradient.addColorStop(1, "rgb(65, 61, 53)");
-//        ctx.fillStyle = gradient;
-//        ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
     }
 });
 
-dojo.declare("bespin.page.dashboard.components.BespinProjectPanel", th.components.Panel, {
-    constructor: function(parms) {
-        if (!parms) parms = {};
+th.BespinProjectPanelFooter = Class.define({
+    type: "BespinProjectPanelFooter",
 
-        this.projectLabel = new th.components.Label({ text: "Projects", style: { color: "white", font: "8pt Tahoma" } });
-        this.projectLabel.oldPaint = this.projectLabel.paint;
-        this.projectLabel.paint = function(ctx) {
+    superclass: th.Panel,
+
+    members: {
+        init: function(parms) {
+            this._super(parms);
+            this.add = new th.Button();
+        },
+
+        getPreferredHeight: function(width) {
+            return 17;
+        },
+
+        paintSelf: function(ctx) {
+            // not ready to display this yet - bg
+
+    //        var d = this.d();
+    //
+    //        ctx.fillStyle = "rgb(85, 80, 72)";
+    //        ctx.fillRect(0, 0, d.b.w, 1);
+    //
+    //        ctx.fillStyle = "rgb(35, 31, 28)";
+    //        ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+    //
+    //        var gradient = ctx.createLinearGradient(0, 1, 1, d.b.h - 2);
+    //        gradient.addColorStop(0, "rgb(71, 66, 57)");
+    //        gradient.addColorStop(1, "rgb(65, 61, 53)");
+    //        ctx.fillStyle = gradient;
+    //        ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+        }
+    }
+});
+
+th.BespinProjectPanel = Class.define({
+    type: "BespinProjectPanel",
+
+    superclass: th.Panel,
+
+    member: {
+        init: function(parms) {
+            if (!parms) parms = {};
+            this._super(parms);
+
+            this.projectLabel = new th.Label({ text: "Projects", className: "projectLabel" });
+
+            this.list = new th.List();
+
+            this.splitter = new th.Splitter({ orientation: th.HORIZONTAL });
+
+            this.footer = new th.BespinProjectPanelFooter();
+
+            this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
+
+            this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
+            this.bus.bind("drag", this.splitter, this.ondrag, this);
+            this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
+
+            // this is a closed container
+            delete this.add;
+            delete this.remove;
+        },
+
+        ondragstart: function(e) {
+            this.startWidth = this.bounds.width;
+        },
+
+        ondrag: function(e) {
+            var delta = e.currentPos.x - e.startPos.x;
+            this.prefWidth = this.startWidth + delta;
+            this.getScene().render();
+        },
+
+        ondragstop: function(e) {
+            delete this.startWidth;
+        },
+
+        getPreferredSize: function() {
+            return { width: this.prefWidth || 150, height: 0 };
+        },
+
+        layout: function() {
             var d = this.d();
 
-            ctx.fillStyle = "rgb(51, 50, 46)";
-            ctx.fillRect(0, 0, d.b.w, 1);
+            var y = d.i.t;
 
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
+            // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
+            //var lh = this.projectLabel.getPreferredHeight(d.b.w);
+            var lh = this.projectLabel.getPreferredSize().height;
 
-            var gradient = ctx.createLinearGradient(0, 1, 0, d.b.h - 2);
-            gradient.addColorStop(0, "rgb(39, 38, 33)");
-            gradient.addColorStop(1, "rgb(22, 22, 19)");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
+            this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
+            y += lh;
 
-            this.oldPaint(ctx);
-        };
+            var sw = this.splitter.getPreferredSize().width;
+            this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
 
-        this.list = new th.components.List({ allowDeselection: false, style: { backgroundColor: "rgb(61, 59, 52)", color: "white", font: "8pt Tahoma" } });
+            var innerWidth = d.b.w - d.i.w - sw;
 
-        this.splitter = new th.components.Splitter({ orientation: th.HORIZONTAL });
+            // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
+//            var ph = this.footer.getPreferredHeight(innerWidth);
+            var ph = this.footer.getPreferredSize().height;
 
-        this.footer = new bespin.page.dashboard.components.BespinProjectPanelFooter();
+            this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };
 
-        this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
-
-        this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
-        this.bus.bind("drag", this.splitter, this.ondrag, this);
-        this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
-
-        // this is a closed container
-        delete this.add;
-        delete this.remove;
-    },
-
-    ondragstart: function(e) {
-        this.startWidth = this.bounds.width;
-    },
-
-    ondrag: function(e) {
-        var delta = e.currentPos.x - e.startPos.x;
-        this.prefWidth = this.startWidth + delta;
-        this.getScene().render();
-    },
-
-    ondragstop: function(e) {
-        delete this.startWidth;
-    },
-
-    getPreferredWidth: function(height) {
-        return this.prefWidth || 150;
-    },
-
-    layout: function() {
-        var d = this.d();
-
-        var y = d.i.t;
-        var lh = this.projectLabel.getPreferredHeight(d.b.w);
-        this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
-        y += lh;
-
-        var sw = this.splitter.getPreferredWidth();
-        this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
-
-        var innerWidth = d.b.w - d.i.w - sw;
-        var ph = this.footer.getPreferredHeight(innerWidth);
-        this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };  
-
-        this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
+            this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
+        }
     }
 });

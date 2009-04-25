@@ -27,11 +27,12 @@
 <html>
 <head>
     <title>Bespin &raquo; Dashboard</title>
-    <link type="text/css" rel="stylesheet" href="css/dashboard.css">
     <link type="text/css" rel="thstylesheet" href="css/dashboard_th.css">
+    <link type="text/css" rel="stylesheet" href="css/dashboard.css">
     <link type="text/css" rel="stylesheet" href="css/shared.css">
 
     <!-- begin script tags -->
+    <script type="text/javascript" src="js/th/th.all.js"></script>
     <script type="text/javascript">
         var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
@@ -51,6 +52,7 @@
     </div>
     <div id="filecanvas">
         <canvas id="canvas" moz-opaque="true">
+            
         </canvas>
     </div>
     <div id="footer">
@@ -62,7 +64,7 @@
             </tr>
         </table>
     </div>
-    <div id="info" style="display: none;"><div id="info_text" style="overflow: auto; height: 100%"></div></div>
+    <div id="info" style="display: none;"></div>
     <div id="centerpopup" style="display:none;"></div>
     <div id="overlay" style="display: none;"></div>
     </body>

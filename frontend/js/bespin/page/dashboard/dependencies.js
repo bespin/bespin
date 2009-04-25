@@ -45,15 +45,6 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.vcs");
 dojo.require("bespin.cmd.dashboardcommands");
-//dojo.require("bespin.social");
-
-// -- Thunderhead hoooooo
-dojo.require("th.helpers");
-dojo.require("th.css");
-dojo.require("th.th");
-dojo.require("th.models");
-dojo.require("th.borders");
-dojo.require("th.components");
 
 // -- The main dashboard subsystems
 dojo.require("bespin.page.dashboard.components");

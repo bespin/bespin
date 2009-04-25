@@ -24,6 +24,8 @@
  
 dojo.provide("bespin.page.dashboard.events");
 
+if (!bespin.page.dashboard) bespin.page.dashboard = {};
+
 // After a project is imported or created, do a list
 bespin.subscribe("project:imported", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
@@ -37,12 +39,6 @@ bespin.subscribe("project:set", function(event) {
         bespin.page.dashboard.tree.lists[0].selectItemByText(event.project);
         bespin.page.dashboard.tree.itemSelected({thComponent: bespin.page.dashboard.tree.lists[0], item: bespin.page.dashboard.tree.lists[0].selected});
     }
-});
-
-bespin.subscribe("file:set", function(event) {
-    var session = bespin.get('editSession');
-    session.project = event.project;
-    session.path = event.path;
 });
 
 bespin.subscribe("project:create", function(event) {
@@ -82,8 +78,5 @@ bespin.subscribe("editor:newfile", function(event) {
 
     var newfilename = event.newfilename || "new.txt";
 
-    bespin.util.navigate.editor(project, newfilename, {
-        newFile: true,
-        newTab: false
-    });
+    bespin.util.navigate.editor(project, newfilename);
 });
