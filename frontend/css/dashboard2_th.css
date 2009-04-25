@@ -44,11 +44,11 @@ Splitter > Label {
 }
 
 /* this selects the project list in the horizontal tree */
-#htree-list-1 {
+#htree-list-1 Label {
     background-color: rgb(61, 59, 52);
 }
 
-#htree-list-1 Label {
+#htree-list-1 Label.evenmore, #htree-list-1 Label.oddmore {
     border-top: 1px solid rgb(75, 74, 67);
     border-bottom: 1px solid rgb(41, 40, 35);
     background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
@@ -59,6 +59,12 @@ Splitter > Label {
 HorizontalTree Label {
     font: 9pt Tahoma;
     color: white;
+}
+
+HorizontalTree Label:active {
+    border-top: 1px solid rgb(180, 114, 30);
+    border-bottom: 1px solid rgb(162, 97, 19);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
 }
 
 #htree-list-1 Label.header {
