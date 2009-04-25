@@ -851,8 +851,8 @@ th.observe = function(source, eventName, listener, context) {
 }
 
 th.trim = String.prototype.trim ?
-	function(str){ return str.trim(); } :
-	function(str){ return str.replace(/^\s\s*/, '').replace(/\s\s*$/, ''); };
+	function(str){ if (str == undefined) return str; return str.trim(); } :
+	function(str){ if (str == undefined) return str; return str.replace(/^\s\s*/, '').replace(/\s\s*$/, ''); };
 
 th.mixin = function(obj, props) {
     if (!obj) { obj = {}; }
@@ -960,7 +960,7 @@ th.parenAwareSplit = function(delim, input) {
     if (delim.length != 1) throw "Invalid delimiter passed to parenAwareSplit: '" + delim + "'";
 
     var pieces = [];
-    var inParens = false;
+    var inParens = 0;
     var currentCharacter;
     var currentPiece = "";
 
@@ -974,9 +974,9 @@ th.parenAwareSplit = function(delim, input) {
                continue;
            }
        } else if (currentCharacter == '(') {
-           inParens = true;
+           inParens++;
        } else if (currentCharacter == ')') {
-           inParens = false;
+           inParens--;
        }
        currentPiece += currentCharacter;
     }
@@ -1308,8 +1308,6 @@ th.ComponentHelpers = new Trait({
         resolveCss: function() {
             var resources = th.global_resources;
 
-            if (!resources.resolvedCssCache) resources.resolvedCssCache = {};
-
             var declarations;
 
             var cacheKey = th.getHierarchyString(this);
@@ -1497,16 +1495,35 @@ th.ComponentHelpers = new Trait({
 
             if (this.cssValue("background-image")) {
                 var img = this.cssValue("background-image");
+                var repeat = this.cssValue("background-repeat");
+                var position = this.cssValue("background-position");
 
-                img = this.processImage(img, w, h);
+                var imgs = th.getCommaDelimitedItems(img);
+                var repeats = (repeat) ? repeat.split(",") : [ undefined ];
+                var positions = (position) ? position.split(",") : [ undefined ];
 
-                if (img) this.paintImage(ctx, img, this.cssValue("background-repeat"), this.cssValue("background-position"), x, y, w, h);
+                var iterations = Math.max(imgs.length, repeats.length, positions.length);
+                for (var i = 0; i < iterations; i++) {
+                    var ci = i;
+                    if (i >= imgs.length) ci = (imgs.length % i) - 1;
+                    var cimg = this.processImage(th.trim(imgs[ci]), w, h);
+
+                    if (cimg) {
+                        var ri = i;
+                        if (i >= repeats.length) ri = (repeats.length % i) - 1;
+
+                        var pi = i;
+                        if (i >= positions.length) pi = (positions.length % i) - 1;
+
+                        this.paintImage(ctx, cimg, th.trim(repeats[ri]), th.trim(positions[pi]), x, y, w, h);
+                    }
+                }
             }
         },
 
 
         processImage: function(img, w, h) {
-            if (img.indexOf && img.indexOf("-webkit-gradient") == 0) {
+            if (img.indexOf("-webkit-gradient") == 0) {
 
                 var parmstring = img.substring(img.indexOf("(") + 1, img.length - 1);
 
@@ -1569,7 +1586,11 @@ th.ComponentHelpers = new Trait({
                 ctx.fillRect(0, 0, w, h);
                 return canvas;
             } else {
-                return img;
+                if (!th.global_resources.images[img]) {
+                    console.log("Warning: image identified by '" + img + "'");
+                } else {
+                    return th.global_resources.images[img];
+                }
             }
         },
 
@@ -1857,6 +1878,8 @@ th.Resources = Class.define({
             this.authorCss = [];
             this.userCss = [];
 
+            this.resolvedCssCache = {};
+
             this.blockUntilImagesLoaded = true;
 
             this.images = {};
@@ -1970,11 +1993,20 @@ th.Resources = Class.define({
                     property = properties[i];
                     var value = array[index][rule][property];
 
-                    if (value.indexOf("url(") == 0 && value.indexOf(")") == value.length - 1) {
-                        var url = value.substring(4, value.length - 1);
+                    var imageSearchPos = 0;
+                    var urlFoundPos = -1;
+                    while ((urlFoundPos = value.indexOf("url(", imageSearchPos)) != -1) {
+                        var endOfUrlPos = value.indexOf(")", urlFoundPos);
+                        if (endOfUrlPos == -1) {
+                            console.log("Warning: malformed url found ('" + value + "')");
+                            break;
+                        }
 
-                        if (url.indexOf("'") == 0 || url.indexOf("\"") == 0) {
-                            url = value.substring(1, value.length - 1);
+                        var cacheUrl = value.substring(urlFoundPos, endOfUrlPos);
+                        var url = cacheUrl.substring(4);
+
+                        if (url.charAt(0) == "'" || url.charAt(0) == "\"") {
+                            url = url.substring(1, url.length - 1);
                         }
 
                         this.imageCount++;
@@ -1994,7 +2026,7 @@ th.Resources = Class.define({
                         image.src = url;
                         this.images[value] = image;
 
-                        array[index][rule][property] = image;
+                        imageSearchPos = endOfUrlPos + 1;
                     }
 
                     if (property == "margin" || property == "padding") {
@@ -3839,6 +3871,10 @@ th.Button = Class.define({
             var mid = this.cssValue("-th-middle-image");
             var bot = this.cssValue("-th-bottom-image");
 
+            if (top) top = th.global_resources.images[top];
+            if (mid) mid = th.global_resources.images[mid];
+            if (bot) bot = th.global_resources.images[bot];
+
             if (top && mid && bot) {
                 if (d.b.h >= top.height + bot.height) {
                     ctx.drawImage(top, 0, 0);
@@ -3968,6 +4004,10 @@ th.Scrollbar = Class.define({
             var top = this.cssValue("-th-vertical-top-image");
             var mid = this.cssValue("-th-vertical-middle-image");
             var bot = this.cssValue("-th-vertical-bottom-image");
+
+            if (top) top = th.global_resources.images[top];
+            if (mid) mid = th.global_resources.images[mid];
+            if (bot) bot = th.global_resources.images[bot];
 
             if (top) ctx.drawImage(top, 1, this.up.bounds.height);
             if (mid) ctx.drawImage(mid, 1, this.up.bounds.height + top.height, mid.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));

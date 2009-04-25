@@ -41,7 +41,9 @@ Splitter > Label {
 #htree-list-1 Label.evenmore, #htree-list-1 Label.oddmore {
     border-top: 1px solid rgb(75, 74, 67);
     border-bottom: 1px solid rgb(41, 40, 35);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730)), url(../images/dash_icn_more.png);
+    background-repeat: repeat-x, no-repeat;
+    background-position: left top, right center;
     padding-top: 2px;
     padding-bottom: 2px;
 }
@@ -51,10 +53,12 @@ HorizontalTree Label {
     color: white;
 }
 
-HorizontalTree Label:active {
+HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
     border-top: 1px solid rgb(180, 114, 30);
     border-bottom: 1px solid rgb(162, 97, 19);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png);
+    background-repeat: repeat-x, no-repeat;
+    background-position: left top, right center;
 }
 
 #htree-list-1 Label.header {
