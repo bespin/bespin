@@ -3984,7 +3984,7 @@ th.Scrollbar = Class.define({
 
             if (this.orientation == th.VERTICAL) {
                 var w = d.b.iw;
-                var h = 12;
+                var h = 15;
                 this.up.bounds = { x: d.i.l + 1, y: d.i.t, width: w, height: h };
                 this.down.bounds = { x: d.i.l + 1, y: d.b.ih - h, width: w, height: h };
 
@@ -4130,7 +4130,7 @@ th.ResizeNib = Class.define({
 th.Splitter = Class.define({
     type: "Splitter",
 
-    superclass: th.Container,
+    superclass: th.Panel,
 
     members: {
         init: function(parms) {
@@ -4190,30 +4190,9 @@ th.Splitter = Class.define({
         },
 
         paintSelf: function(ctx) {
-            var d = this.d();
-            if (this.orientation == th.VERTICAL) {
-                ctx.fillStyle = "rgb(73, 72, 66)";
-                ctx.fillRect(0, 0, d.b.w, 1);
-                ctx.fillStyle = "black";
-                ctx.fillRect(0, d.b.h - 1, d.b.w, 1);
-
-                var gradient = ctx.createLinearGradient(0, 1, 0, d.b.h - 1);
-                gradient.addColorStop(0, "rgb(50, 48, 42)");
-                gradient.addColorStop(1, "rgb(22, 22, 19)");
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 1, d.b.w, d.b.h - 2);
-            } else {
-                ctx.fillStyle = "rgb(105, 105, 99)";
-                ctx.fillRect(0, 0, 1, d.b.h);
-                ctx.fillStyle = "black";
-                ctx.fillRect(d.b.w - 1, 0, 1, d.b.h);
-
-                var gradient = ctx.createLinearGradient(1, 0, d.b.w - 2, 0);
-                gradient.addColorStop(0, "rgb(56, 55, 49)");
-                gradient.addColorStop(1, "rgb(62, 61, 55)");
-                ctx.fillStyle = gradient;
-                ctx.fillRect(1, 0, d.b.w - 2, d.b.h);
-            }
+            this.className = (this.orientation == th.VERTICAL) ? "vertical" : "horizontal";
+            this.resolveCss();
+            this._super(ctx);
         }
     }
 });
@@ -4990,7 +4969,7 @@ th.HorizontalTree = Class.define({
         }
     }
 });
-th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);}Scrollbar > Button.bar {-th-top-image: url(/images/dash_vscroll_top.png);-th-middle-image: url(/images/dash_vscroll_middle.png);-th-bottom-image: url(/images/dash_vscroll_bottom.png);}Scrollbar > Button.up {background-image: url(/images/dash_vscroll_up_arrow.png);}Scrollbar > Button.down {background-image: url(/images/dash_vscroll_down_arrow.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}";
+th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}";
 /**
  * Copyright 2009 Tim Down.
  *

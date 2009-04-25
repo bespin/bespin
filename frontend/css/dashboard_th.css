@@ -1,3 +1,15 @@
+Splitter.horizontal {
+    border-left: 1px solid rgb(106, 105, 98);
+    border-right: 1px solid black;
+    background-image: -webkit-gradient(linear, left top, right top, from(#44423A), to(#3F3D36)) 
+}
+
+Splitter.vertical {
+    border-top: 1px solid rgb(73, 72, 66);
+    border-bottom: 1px solid black;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613))
+}
+
 BespinSessionPanel {
     padding: 5px;
     border-top: 1px solid rgb(93, 91, 84);
@@ -51,6 +63,12 @@ Splitter > Label {
 HorizontalTree Label {
     font: 9pt Tahoma;
     color: white;
+}
+
+HorizontalTree Label:active {
+    border-top: 1px solid rgb(180, 114, 30);
+    border-bottom: 1px solid rgb(162, 97, 19);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
 }
 
 HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
