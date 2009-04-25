@@ -43,7 +43,7 @@ bespin.syntax.HTMLConstants = {
 
 
 dojo.declare("bespin.syntax.simple.HTML", null, {
-    keywordRegex: "/*(html|head|body|doctype|link|script|div|span|img|h1|h2|h3|h4|h5|h6|ul|li|ol|blockquote)",
+    keywordRegex: "/*(html|head|body|doctype|link|script|div|span|img|h1|h2|h3|h4|h5|h6|ul|li|ol|blockquote|feature)",
 
     punctuation: '< > = " \'',
 

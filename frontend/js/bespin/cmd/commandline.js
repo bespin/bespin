@@ -246,14 +246,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
     
     infoResizer: function() {
-    	if(dojo.style('info','display')!='none') {
-    		dojo.style('info','height','');
-    		var browserY=window.innerHeight-dojo.style('commandline','height');
-    		var infoY=dojo.style('info','height');
-    		if((infoY/browserY)*100>35) {
-    			var nHeight=(browserY*.35)+'px';
-    			dojo.style('info','height',nHeight);  
-    		}    		
+    	if (dojo.style('info', 'display') != 'none') {
+    		dojo.style('info', 'height', '');
+    		var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height') - dojo.style('subheader', 'height');
+    		var infoY = dojo.style('info', 'height');
+    		if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
+    		    dojo.style('info', 'height', (editorY - 30) + 'px');
+    		}
     	}
     },
 

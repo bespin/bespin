@@ -25,6 +25,7 @@
 dojo.provide("bespin.cmd.editorcommands");
 
 dojo.require("bespin.vcs");
+dojo.require("bespin.jetpack");
 
 // = Editor Commands =
 //

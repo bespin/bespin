@@ -130,13 +130,15 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:newfile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var newfilename = event.newfilename || "new.txt";
+            var content = event.content || " ";
 
             bespin.get('files').newFile(project, newfilename, function() {
                 bespin.publish("editor:openfile:opensuccess", { file: {
                     name: newfilename,
-                    content: " ",
+                    content: content,
                     timestamp: new Date().getTime()
                 }});
+                bespin.publish("editor:dirty");
             });        
         });
 
