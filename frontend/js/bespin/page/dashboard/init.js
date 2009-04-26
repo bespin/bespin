@@ -79,13 +79,17 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
         prepareFilesForTree: function(files) {
             if (files.length == 0) return [];
 
+            var name;
             var fdata = [];
+            var settings = bespin.get('settings');
             for (var i = 0; i < files.length; i++) {
-                var name = files[i].name;
+                name = files[i].name;
+                if (settings && settings.isSettingOff('dotmode') && name[0] == '.') {
+                    continue;
+                }
                 if (/\/$/.test(name)) {
                     name = name.substring(0, name.length - 1);
-                    var contents = bd.fetchFiles;
-                    fdata.push({ name: name, contents: contents });
+                    fdata.push({ name: name, contents: bd.fetchFiles });
                 } else {
                     fdata.push({ name: name });
                 }
