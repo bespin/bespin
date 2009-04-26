@@ -488,6 +488,9 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     mouseDownSelect: function(e) {
+        // only select if the editor has the focus!
+        if (!this.editor.focus) return;
+        
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -522,10 +525,16 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     mouseMoveSelect: function(e) {
+        // only select if the editor has the focus!
+        if (!this.editor.focus) return;
+        
         this.setSelection(e);
     },
 
     mouseUpSelect: function(e) {
+        // only select if the editor has the focus!
+        if (!this.editor.focus) return;
+        
         this.setSelection(e);
         this.selectMouseDownPos = undefined;
     },
@@ -739,12 +748,14 @@ dojo.declare("bespin.editor.UI", null, {
 
         // SEARCH / FIND
         listener.bindKeyString("", Key.ESCAPE, this.actions.escape, "Clear fields and dialogs");
-        listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
-        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
-        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
+        // This is at the moment done by a observe(window) within init.js
+        // listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
+        // listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
+        // listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
-
+        
+        // handle key to jump between editor and other windows / commandline
         listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Focus Commandline");
 
@@ -1515,12 +1526,15 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     setSearchString: function(str) {
-        if (str) {
+        if (str && str != '') {
             this.searchString = str;
         } else {
             delete this.searchString;
         }
+        
         this.model.searchStringChanged(this.searchString);
+        
+        this.editor.paint(true);
     }
 });
 

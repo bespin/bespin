@@ -57,6 +57,12 @@
         <div id="search">
             <div style="float: left"><input id="searchquery" type="text" spellcheck="false"></div>
             <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"></div>
+            <div id="searchresult" style="display:none">
+                <span id="searchfeedback">36 Matches</span>
+                <img src='images/button_done.png' id="searchdone" alt='done'>
+                <img src='images/button_right.png' id="searchnext" alt='>'>
+                <img src='images/button_left.png' id="searchprev" alt='<'>
+            </div>
         </div>
 
         <div id="status"><canvas id="projectLabel"></canvas></div>
@@ -72,8 +78,8 @@
         <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser" style="padding-right: 20px">
         <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
     </div>
-  	<div id="editor"></div>
-  	<div id="preview" style="display:none"></div>
+    <div id="editor"></div>
+    <div id="preview" style="display:none"></div>
     <div id="footer">
         <table cellpadding="0">
             <tr>
@@ -165,7 +171,15 @@
         </table>
     </div>
     <div id="centerpopup" style="display:none;"></div>
-	<div id="popup_insert_point"></div>
+    <div id="popup_insert_point"></div>
+    <div id="quickopen" class="popupWindow"></div>
+    <div id="filesearch" class="popupWindow">
+        <input id="search_text" type="text">
+        <input id="replace_text" type="text">
+        <input id="bu_replace_all" type="button" value="Replace All">
+        <input id="bu_search_next" type="button" value="Next">
+        <input id="bu_search_prev" type="button" value="Previous">
+    </div>
     <div id="overlay" style="display: none;"></div>
 </body>
 </html>

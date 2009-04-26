@@ -589,10 +589,11 @@ dojo.declare("th.Window", null, {
             return;            
         }
         
-        if (dojo.byId(this.containerId)) {
-            console.error('There is already a element with the id "'+this.containerId+'"!');
-            return;
-        }
+        // for the moment, this is done by hand!
+        // if (dojo.byId(this.containerId)) {
+        //             console.error('There is already a element with the id "'+this.containerId+'"!');
+        //             return;
+        //         }
                 
         if (!parms.userPanel) {
             console.error('The "userPanel" must be given!');
@@ -613,11 +614,11 @@ dojo.declare("th.Window", null, {
         }*/
         
         // insert the HTML to the document for the new window and create the scene
-        dojo.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
+        // dojo.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
         this.container = dojo.byId(this.containerId);
         dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
 
-        this.container.innerHTML = "<canvas id='"+this.containerId+"_canvas'></canvas>";
+        this.container.innerHTML += "<canvas id='"+this.containerId+"_canvas'></canvas>";
         this.canvas = dojo.byId(this.containerId + '_canvas');
         dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
         
@@ -637,8 +638,6 @@ dojo.declare("th.Window", null, {
             var d = dojo.coords(this.container);
             if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
                 this.toggle();
-            } else {
-                dojo.stopEvent(e);
             }
         }));
         

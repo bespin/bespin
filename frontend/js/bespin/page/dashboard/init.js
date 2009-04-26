@@ -51,6 +51,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
         tree: null,
         lastSelectedPath: null,
         urlTimeout: null,
+        isLoggedIn: false,
         
         sizeCanvas: function(canvas) {
             if (!heightDiff) {
@@ -61,6 +62,10 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
         },
         
         loggedIn: function(userinfo)  {
+            // in some cases the user gets logged in twice => causes problems with restorePath()...
+            if (bd.isLoggedIn) return;
+            
+            bd.isLoggedIn = true;
             editSession.setUserinfo(userinfo);
 
             server.list(null, null, bd.displayProjects); // get projects
@@ -74,13 +79,17 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
         prepareFilesForTree: function(files) {
             if (files.length == 0) return [];
 
+            var name;
             var fdata = [];
+            var settings = bespin.get('settings');
             for (var i = 0; i < files.length; i++) {
-                var name = files[i].name;
+                name = files[i].name;
+                if (settings && settings.isSettingOff('dotmode') && name[0] == '.') {
+                    continue;
+                }
                 if (/\/$/.test(name)) {
                     name = name.substring(0, name.length - 1);
-                    var contents = bd.fetchFiles;
-                    fdata.push({ name: name, contents: contents });
+                    fdata.push({ name: name, contents: bd.fetchFiles });
                 } else {
                     fdata.push({ name: name });
                 }
@@ -100,7 +109,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
             return filepath;
         },
         
-        fetchFiles: function(path, tree) {            
+        fetchFiles: function(path, tree) {
             var filepath = bd.getFilePath(path);
 
             server.list(filepath, null, function(files) {
@@ -129,7 +138,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
             infoPanel.render();
         },
 
-        restorePath: function(newPath) {            
+        restorePath: function(newPath) {         
             bd.lastSelectedPath = bd.lastSelectedPath || '';
             newPath = newPath || '';
             var oldPath = bd.lastSelectedPath;
@@ -175,7 +184,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
             // this function should stay here, as this funciton is accessing "pathContents" and "countSetupPaths"
             var displayFetchedFiles = function(files) {
                 // "this" is the callbackData object!
-                var contents =  bd.prepareFilesForTree(files);
+                var contents = bd.prepareFilesForTree(files);
                 if (this.index != 0) {
                     contentsPath[this.index] = contents;
                 }
@@ -227,6 +236,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
             for (var i = 0; i < projectItems.length; i++) {
                 projectItems[i] = { name: projectItems[i].name.substring(0, projectItems[i].name.length - 1) , contents: bd.fetchFiles};
             }
+            
             tree.replaceList(0, projectItems);
                                     
             // Restore the last selected file
@@ -345,6 +355,7 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
 
             var key = bespin.util.keys.Key;
             var path = this.getSelectedPath();
+            if (path === undefined) return;
             // things to make life much more easy :)
             var index = path.length - 1;
             var list = this.lists[index];

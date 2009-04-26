@@ -79,11 +79,11 @@ dojo.declare("bespin.client.settings.Core", null, {
     },
 
     isOn: function(value) {
-        return value == 'on' || value == 'true';
+        return value == 'on' || value == 'true' || value !== undefined;
     },
 
     isOff: function(value) {
-        return value == 'off' || value == 'false';
+        return value == 'off' || value == 'false' || value === undefined;
     },
     
     isSettingOn: function(key) {
