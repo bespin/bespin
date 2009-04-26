@@ -706,7 +706,7 @@ dojo.declare("bespin.editor.Actions", null, {
                     break;
                 }
             }
-            var outText = stringArray.join("\n");            
+            var outText = stringArray.join("\n");
 
             this.model.deleteChunk(args.selectionObject);
             this.model.insertChunk(args.selectionObject.startModelPos, outText);
@@ -775,21 +775,21 @@ dojo.declare("bespin.editor.Actions", null, {
         dojo.byId('searchquery').focus();
     },
     // END SEARCH ACTIONS
-    
+
     toggleQuickopen: function() {
         var quickopen = bespin.get('quickopen');
         if (quickopen) {
             quickopen.window.toggle();
-        }  
+        }
     },
-    
+
     focusCommandline: function() {
         var commandLine = bespin.get('commandLine');
         if (commandLine) {
             commandLine.commandLine.focus();
         }
     },
-        
+
     repaint: function() {
         if (!this.ignoreRepaints) {
             this.editor.ui.ensureCursorVisible();

@@ -28,7 +28,7 @@ dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.commandline");
 
-// Command store for the VCS commands 
+// Command store for the VCS commands
 // (which are subcommands of the main 'vcs' command)
 bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'vcs',

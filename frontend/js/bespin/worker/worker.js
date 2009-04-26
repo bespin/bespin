@@ -49,22 +49,22 @@ if (typeof Worker == "undefined") {
     BespinGearsInitializeGears(); // this functions initializes Gears only if we need it
     if(window.google && google.gears) {
         USE_GEARS   = true; // OK, gears is here
-        
+
         var wp      = google.gears.factory.create('beta.workerpool');
         var workers = {};
         Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
-            
+
             this.id = wp.createWorker(source);
             workers[this.id] = this;
         };
-        
+
         Worker.prototype = { // we can post messages to the worker
             postMessage: function(data) {
                 wp.sendMessage(data, this.id)
             }
         };
-        
+
         // upon receiving a message we call our onmessage callback
         // DOM-Message-Events are not supported
         wp.onmessage = function(a, b, message) {
@@ -83,7 +83,7 @@ if (typeof Worker == "undefined") {
 // Takes an objects and build a facade object for it.
 // Creates source code for a web worker that implements the same functionality as the original object
 // and sends the source code to the web worker (The source code is created recursively, so complex
-// objects are supported). 
+// objects are supported).
 // Methods which are send to the facade are from now one delegated to the worker.
 //
 // Because all method calls are now async, the methods of the facade object return an object
@@ -108,43 +108,43 @@ if (typeof Worker == "undefined") {
 
 dojo.declare("bespin.worker.WorkerFacade", null, {
     constructor: function(obj, workerCount, libs) { // only use workerCount > 1 if the object is stateless
-        
+
         // Properties use __name__ notation to avoid conflicts with facade methods
-    
+
         this.__obj__ = obj;
-        
+
         var callbacks = {};
         this.__callbacks__ = callbacks;
-        
+
         this.__workerCount__ = workerCount || WORKER_COUNT;
-        
+
         // __hasWorkers__ is a public API of the facade
         this.__hasWorkers__ = false;
-        
+
         if(typeof Worker != "undefined") { // We have a Worker implementation
             this.__hasWorkers__ = true;
-            
+
             var source  = this.createWorkerSource(obj, libs);
             var workers = this.createWorkers(source);
             this.__workers__ = workers;
         }
-        
+
         this.createFacade(obj);
-        
+
     },
-    
+
     // We support pools of workers which share the load
     __getWorker__: function() {
         var index = WORKER_INDEX++ % this.__workerCount__; // round robin scheduling
         // TODO maintain a smarter queue based on which workers are actually idle
         return this.__workers__[index];
     },
-    
+
     // Create N workers based on source
     createWorkers: function(source) { // round robin scheduling
         var self    = this;
         var workers = [];
-        
+
         // The standard callback choose a callback for the particular method using
         // the callIndex that is set upon sending the method
         var cb = function(event) {
@@ -153,23 +153,23 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 data = dojo.fromJson(data);
             }
             var index = data.callIndex;
-            
+
             var callback = self.__callbacks__[index];
             delete self.__callbacks__[index];
             if(callback) {
                 callback(data.returnValue);
             }
         };
-        
+
         var loadScript = function (index, url) {
             var worker = this;
-            bespin.get("server").request('GET', url, null, { 
+            bespin.get("server").request('GET', url, null, {
                 onSuccess: function (src) {
                     worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src);
-                } 
+                }
             });
         }
-        
+
         var onmessage = function(event) {
             var message = event.data
             if(typeof message == "string") {
@@ -189,9 +189,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 }
             }
             cb.call(this, event)
-            
+
         }
-        
+
         for(var i = 0; i < this.__workerCount__;i++) {
             //console.log("Create worker")
             var worker = new Worker("/js/bespin/bootstrap_worker.js", source);
@@ -207,12 +207,12 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         }
         return workers
     },
-    
+
     // create a shallow facade for object
     createFacade: function(obj) {
-        
+
         var facade = this;
-        
+
         for(var prop in obj) {
             if(prop.charAt(0) != "_") { // supposedly we dont need "private" methods. Delete if assumption is wrong
                 (function() { // make a lexical scope
@@ -260,7 +260,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                                              mutex.stop()
                                          }
                                      }
-                                     
+
                                      self.__callbacks__[index] = function() {
                                          paras = Array.prototype.slice.call(arguments).concat(paras)
                                          func.apply(context, paras)
@@ -276,7 +276,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             }
         }
     },
-    
+
     // Determines whether there are functions (deeply) inside a JS object
     hasFunctions: function(obj) {
         for(var i in obj) {
@@ -292,12 +292,12 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         }
         return false
     },
-    
+
     // Recursively turn a JS object into its source including functions
     serializeToPortableSource: function(obj) {
         var self   = this;
         var source = "{\n"
-        
+
         for(var prop in obj) {
             // console.log("Serializing "+prop);
             (function() { // lexical scope
@@ -318,25 +318,25 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 else {
                     src = dojo.toJson(val)
                 }
-                
+
                 // Make sure to encode the property so nobody can insert arbitrary string into our JS
                 prop = '"'+prop.replace(/"/g, '\\"', 'g')+'"'
-                
+
                 source += prop+": "+src+",\n"
             })()
         }
-        
+
         source += "}\n";
-        
+
         return source;
     },
-    
+
     createWorkerSource: function(obj, libs) {
         var con = function(msg) {
             postMessage("log="+msg)
         }
         var source = "console = { log: "+con.toString()+" };\n"
-            
+
         if(libs) {
             var quoted = [];
             dojo.forEach(libs, function(lib) {
@@ -344,9 +344,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             })
             source += "importScripts("+quoted.join(", ")+");\n"
         }
-            
+
         source += "var theObject = "+this.serializeToPortableSource(obj)
-        
+
         // onmessage handler for use inside the worker
         var onmessage  = function(event) {
             var body         = event.data
@@ -359,7 +359,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     if(match) {
                         var index = parseInt(match[1], 10);
                         __evalScriptFromImport(index, source)
-                        
+
                     }
                     return
                 }
@@ -371,28 +371,28 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 }
             }
             var method = body.method;
-                
+
             var o      = theObject
-            
+
             // actually call the method
             var ret    = o[body.method].apply(o, body.paras)
-            
+
             var data   = {
                 method: body.method,
                 returnValue: ret,
                 callIndex: body.callIndex // the original callIndex to find callback
             }
-                
+
             if(dataIsString) { // If data came as a json string encode data as JSON
                 data = JSON.stringify(data)
             }
-            
+
             //console.log("Sending "+data)
             postMessage(data)
         }
-        
+
         function ajaxRequest (method, url, data, callback, errorCallback) {
-                
+
             var request
             if(this.clientHasGears()) {
                 request = google.gears.factory.create('beta.httprequest');
@@ -410,7 +410,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 theUrl += "?"+dataString
             }
             request.open(method, theUrl, true);
-                
+
             request.onreadystatechange = function onreadystatechange () {
                 if (request.readyState == 4) {
                     if(request.status >= 200 && request.status < 400) {
@@ -427,14 +427,14 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             };
             if(data && method == "POST") {
                 // FIXME determine page encoding instead of always using UTF8
-                request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8"); 
+                request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 request.send(dataString)
             } else {
                 dataString = ""
                 request.send(dataString);
             }
         }
-        
+
         if(USE_GEARS) { // For Gears we need to create a fake postMessage function
             var gearsCB = function(a, b, message) {
                 var sender = message.sender
@@ -445,9 +445,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     data: message.body
                 })
             }
-            
+
             source += "\nvar wp = google.gears.workerPool; wp.onmessage = "+gearsCB.toString()+"\n";
-            
+
             // emulate importScripts in Gears.
             var importScripts = function importScripts () {
                 var global = this;
@@ -458,7 +458,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     request.open('GET', url);
                     request.onreadystatechange = function() {
                         if(request.readyState == 4) {
-                            if(request.status >= 200 && request.status < 400) {     
+                            if(request.status >= 200 && request.status < 400) {
                                 var res = request.responseText;
                                 src += res+"\n";
                                 callback()
@@ -480,17 +480,17 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 }
                 loader()
             }
-            
+
             source += importScripts.toString();
         }
-        
+
         source += "\nonmessage = "+onmessage.toString()+"; \n"
-        
+
         //console.log(source)
-            
+
         return source
     }
-    
+
 });
 
 //** {{{ bespin.worker.Mutex }}} **
@@ -568,7 +568,7 @@ dojo.declare("bespin.worker.Mutex", null, {
 // issues. Applications that use the code below will continue to work seamlessly
 // when that happens.
 
-// Sorry Google for modifying this :) 
+// Sorry Google for modifying this :)
 function BespinGearsInitializeGears() {
   // We are already defined. Hooray!
   if (window.google && google.gears) {

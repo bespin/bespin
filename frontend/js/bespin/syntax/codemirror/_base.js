@@ -542,7 +542,7 @@ dojo.declare("bespin.syntax.codemirror.Base", null, {
 
         return lineInfos;
     }
-}); 
+});
 
 // -- Add core syntax files here, can load others later
 dojo.require("bespin.syntax.codemirror.javascript");

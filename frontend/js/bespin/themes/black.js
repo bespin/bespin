@@ -76,12 +76,12 @@ bespin.themes.black = {
     important: "#990000",
     cssclass: "#BF9464",
     cssid: "#bdae9d"
-    
+
     // Codemirror additions
     // TODO:
 };
 
 // ** Black Zebra Theme **
 bespin.themes.blackzebra = {};
-dojo.mixin(bespin.themes.blackzebra, bespin.themes.black); 
+dojo.mixin(bespin.themes.blackzebra, bespin.themes.black);
 bespin.themes.blackzebra.zebraStripeColor = '#111111';

@@ -21,7 +21,7 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
-    
+
 // = Command Line =
 //
 // This command line module provides everything that the command line interface needs:
@@ -40,15 +40,15 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
     constructor: function(opts) {
         this.commands = {};
         this.aliases = {};
-        
+
         if (opts.subCommand) {
             this.subcommandFor = opts.subCommand.name; // save the fact that we are a subcommand for this chap
             opts.subCommand.takes = ['*']; // implicit that it takes something
             opts.subCommand.subcommands = this; // link back to this store
-            
+
             bespin.cmd.commands.add(opts.subCommand); // add the sub command to the root store
         }
-        
+
         if (opts.initCommands) this.addCommands(opts.initCommands); // initialize the commands for the cli
     },
 
@@ -72,32 +72,32 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             bespin.get('commandLine').showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
             return;
         }
-        
+
         if (command.subcommands) {
             if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
             return command.subcommands.splitCommandAndArgs(data.join(" "));
         }
-        
+
         return [command, this.getArgs(argstr.split(' '), command)];
-        
+
     },
-      
+
     addCommand: function(command) {
         if (!command) {
             return;
         }
         // -- Allow for the default [ ] takes style by expanding it to something bigger
         if (command.takes && dojo.isArray(command.takes)) {
-            command = this.normalizeTakes(command); 
-        }  
+            command = this.normalizeTakes(command);
+        }
 
         // -- Add bindings
-        if (command.withKey) {             
+        if (command.withKey) {
             var args = bespin.util.keys.fillArguments(command.withKey);
 
             args.action = "command:execute;name=" + command.name;
             bespin.publish("editor:bindkey", args);
-        }   
+        }
 
         this.commands[command.name] = command;
 
@@ -108,12 +108,12 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         }
     },
 
-    addCommands: function(commands) {   
+    addCommands: function(commands) {
         dojo.forEach(commands, dojo.hitch(this, function(command) {
             if (dojo.isString(command)) command = bespin.cmd.commands.get(command);
             this.addCommand(command);
         }));
-        
+
     },
 
     hasCommand: function(commandname) {
@@ -156,7 +156,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
     // ** {{{ getArgs }}} **
     //
-    // Calculate the args object to be passed into the command. 
+    // Calculate the args object to be passed into the command.
     // If it only takes one argument just send in that data, but if it wants more, split it all up for the command and send in an object.
 
     getArgs: function(fromUser, command) {
@@ -172,7 +172,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             args.varargs = args.pieces; // directly grab the token pieces as an array
         } else if (command.takes && command.takes.order.length < 2) { // One argument, so just return that
             args = userString;
-        } else {           
+        } else {
             args = new bespin.util.TokenObject(userString, { params: command.takes.order.join(' ') });
             args.rawinput = userString;
         }
@@ -226,13 +226,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     showInfo: function(html, autohide) {
         if (this.suppressInfo) return; // bypass
 
-        this.hideInfo();                
+        this.hideInfo();
         dojo.byId('info_text').innerHTML = html;
-        dojo.style('info', 'display', 'block'); 
-        
+        dojo.style('info', 'display', 'block');
+
         this.infoResizer();
         dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
-        
+
         if (autohide) {
             this.infoTimeout = setTimeout(dojo.hitch(this, function() {
                 this.hideInfo();
@@ -244,7 +244,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         dojo.style('info', 'display', 'none');
         if (this.infoTimeout) clearTimeout(this.infoTimeout);
     },
-    
+
     infoResizer: function() {
     	if (dojo.style('info', 'display') != 'none') {
     		dojo.style('info', 'height', '');
@@ -260,7 +260,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var matches = this.commandStore.findCompletions(value);
         if (matches.length == 1) {
             var commandLineValue = matches[0];
-            
+
             var command = this.commandStore.commands[matches[0]];
 
             if (command) {
@@ -282,7 +282,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             this.commandLine.value = commandLineValue;
         }
     },
-    
+
     executeCommand: function(value) {
         var ca = this.commandStore.splitCommandAndArgs(value);
         if (typeof ca === "undefined") return; // error out if no commands were found
@@ -296,7 +296,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.commandLine.value = ''; // clear after the command
         return result;
     },
-    
+
 
     handleCommandLineFocus: function(e) {
         if (this.inCommandLine) return true; // in the command line!
@@ -318,11 +318,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {
         var settings = bespin.get("settings");
-                
-        // -- Tie to the commandLine element itself     
+
+        // -- Tie to the commandLine element itself
         dojo.connect(cl.commandLine, "onfocus", cl, function() {
             bespin.publish("cmdline:focus");
-            
+
             this.inCommandLine = true;
             dojo.byId('promptimg').src = 'images/icn_command_on.png';
         });
@@ -330,7 +330,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             this.inCommandLine = false;
             dojo.byId('promptimg').src = 'images/icn_command.png';
         });
-        
+
         dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
             var command;
             if (e.keyCode >= "A".charCodeAt() && e.keyCode < "Z".charCodeAt()) { // only real letters
@@ -343,7 +343,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                         var spacing = (this.commandStore.commandTakesArgs(command)) ? ' ' : '';
                         dojo.byId('command').value = commandString + spacing;
-                
+
                         if (command['completeText']) {
                             this.showInfo(command['completeText']);
                         } else {
@@ -366,8 +366,8 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                     }
                 }
             }
-        });             
-        
+        });
+
         dojo.connect(cl.commandLine, "onkeypress", cl, function(e) {
             var Key = bespin.util.keys.Key;
 
@@ -401,9 +401,9 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 this.executeCommand(dojo.byId('command').value);
 
                 return false;
-            } else if (e.keyCode == Key.TAB) { 
+            } else if (e.keyCode == Key.TAB) {
                 dojo.stopEvent(e);
-                
+
                 this.complete(dojo.byId('command').value);
                 return false;
             }
@@ -534,7 +534,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     },
 
     save: function(commands) {
-        // save commands back to server asynchronously        
+        // save commands back to server asynchronously
         bespin.get('files').saveFile(bespin.userSettingsProject, {
             name: "command.history",
             content: commands.join("\n") || "help",
@@ -550,7 +550,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
         // ** {{{ Event: message }}} **
-        // 
+        //
         // Observe when others want to show the info bar for the command line
         bespin.subscribe("message", function(event) {
             var msg = event.msg;
@@ -559,31 +559,31 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
 
         // ** {{{ Event: cmdline:suppressinfo }}} **
-        // 
+        //
         // Turn on info bar suppression
         bespin.subscribe("cmdline:suppressinfo", function(event) {
             commandline.suppressInfo = true;
         });
 
         // ** {{{ Event: cmdline:unsuppressinfo }}} **
-        // 
+        //
         // Turn off info bar suppression
         bespin.subscribe("cmdline:unsuppressinfo", function(event) {
             commandline.suppressInfo = false;
         });
 
         // ** {{{ Event: command:executed }}} **
-        // 
+        //
         // Once the command has been executed, do something.
         // In this case, save it for the history
         bespin.subscribe("command:executed", function(event) {
             var command = event.commandString || event.command.name + " " + event.args.join(' '); // try to get the raw input
             commandline.commandLineHistory.add(command); // only add to the history when a valid command
         });
-        
+
         // ** {{{ Event: command:executed }}} **
-        // 
-        // Once the command has been executed, do something.        
+        //
+        // Once the command has been executed, do something.
         bespin.subscribe("command:execute", function(event) {
             var command = event.name;
             var args    = event.args;
@@ -593,17 +593,17 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
 
             if (command) commandline.executeCommand(command);
         });
-        
+
         // -- Files
         // ** {{{ Event: editor:openfile:openfail }}} **
-        // 
+        //
         // If an open file action failed, tell the user.
         bespin.subscribe("editor:openfile:openfail", function(event) {
             commandline.showInfo('Could not open file: ' + event.filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
         });
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
-        // 
+        //
         // The open file action worked, so tell the user
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             commandline.showInfo('Loaded file: ' + event.file.name, true);
@@ -611,7 +611,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
 
         // -- Projects
         // ** {{{ Event: project:set }}} **
-        // 
+        //
         // When the project changes, alert the user
         bespin.subscribe("project:set", function(event) {
             var project = event.project;

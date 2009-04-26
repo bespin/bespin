@@ -168,16 +168,16 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             } 
         }));
                 
-        // handle ARROW_UP and ARROW_DOWN to select items in the list and other stuff
+        // handle UP_ARROW and DOWN_ARROW to select items in the list and other stuff
         dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
             if (!this.window.isVisible) return; // short circuit if the popup isn't up
             
             var key = bespin.util.keys.Key;
             
-            if (e.keyCode == key.ARROW_UP) {                
+            if (e.keyCode == key.UP_ARROW) {                
                 this.panel.list.moveSelectionUp();
                 dojo.stopEvent(e);
-            } else if (e.keyCode == key.ARROW_DOWN) {
+            } else if (e.keyCode == key.DOWN_ARROW) {
                 this.panel.list.moveSelectionDown();
                 dojo.stopEvent(e);
             } else if (e.keyCode == key.ENTER) {

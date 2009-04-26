@@ -668,7 +668,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
             } else {
                 pass(forspec2);
             }
-        } 
+        }
 
         function formaybein(type, value) {
             if (value == "in") {
@@ -677,7 +677,7 @@ dojo.declare("bespin.syntax.codemirror.JavaScript", bespin.syntax.codemirror.Bas
                 cont(maybeoperator, forspec2);
             }
         }
-        
+
         function forspec2(type, value) {
             if (type == ";") {
                 cont(forspec3);
