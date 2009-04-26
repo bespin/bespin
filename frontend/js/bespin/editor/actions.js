@@ -672,6 +672,20 @@ dojo.declare("bespin.editor.Actions", null, {
         this.cursorManager.moveCursor({ row: saveCursorRow });
     },
 
+    getOppositeCase: function(stringCase) {
+        if (!stringCase) return undefined;
+
+        switch (stringCase) {
+            case 'u':
+                return 'l';
+            break;
+
+            case 'l':
+                return 'u';
+            break;
+        }
+    },
+
     selectionChangeCase: function(args) {
         console.log('selectionChangeCase Fired!');
         if (this.editor.selection) {
@@ -682,11 +696,14 @@ dojo.declare("bespin.editor.Actions", null, {
             var selection = this.model.getChunk(args.selectionObject);
             var stringArray = selection.split("\n");
             for (i in stringArray) {
-                if (args.stringCase ==="l") {
-                    stringArray[i] = stringArray[i].toLowerCase();
-                }
-                else {
-                    stringArray[i] = stringArray[i].toUpperCase();
+                switch (args.stringCase) {
+                    case 'l':
+                        stringArray[i] = stringArray[i].toLowerCase();
+                    break;
+
+                    case 'u':
+                        stringArray[i] = stringArray[i].toUpperCase();
+                    break;
                 }
             }
             var outText = stringArray.join("\n");
@@ -697,10 +714,22 @@ dojo.declare("bespin.editor.Actions", null, {
 
             args.action = "selectionChangeCase";
             var redoOperation = args;
-            var undoArgs = { action: "undoSelectionChangeCase", selectionObject: args.selectionObject, text: selection, stringCase: args.stringCase };
+            var undoArgs = { action: "undoSelectionChangeCase", selectionObject: args.selectionObject, text: selection, stringCase: this.getOppositeCase(args.stringCase) };
             var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
+    },
+
+    undoSelectionChangeCase: function(args) {
+        this.model.deleteChunk(args.selectionObject);
+        var selection = this.model.insertChunk(args.selectionObject.startModelPos, args.text);
+        this.select(args.selectionObject);
+
+/*        args.action = "undoSelectionChangeCase";
+        var redoOperation = args;
+        var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, text: selection, stringCase: this.getOppositeCase(args.stringCase) };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));*/
     },
 
     // START SEARCH ACTIONS
@@ -839,18 +868,6 @@ dojo.declare("bespin.editor.Actions", null, {
         if (commandLine) {
             commandLine.commandLine.focus();
         }
-    },
-
-    undoSelectionChangeCase: function(args) {
-        this.model.deleteChunk(args.selectionObject);
-        this.model.insertChunk(args.selectionObject.startModelPos, args.text);
-        this.select(args.selectionObject);
-
-        /*args.action = "undoSelectionChangeCase";
-        var redoOperation = args;
-        var undoArgs = { action: "selectionChangeCase", selectionObject: args.selectionObject, stringCase: args.stringCase};
-        var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));*/
     },
 
     repaint: function() {
