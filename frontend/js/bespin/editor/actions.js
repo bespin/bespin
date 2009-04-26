@@ -673,7 +673,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     selectionChangeCase: function(args) {
-		console.log('selectionChangeCase Fired!');
+        console.log('selectionChangeCase Fired!');
         if (this.editor.selection) {
             if (!args.selectionObject) {
                 args.selectionObject = this.editor.getSelection();
