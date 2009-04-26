@@ -30,7 +30,6 @@
 
 dojo.provide("bespin.syntax.base");
 
-
 // ** {{{ bespin.syntax.Model }}} **
 //
 // Base model for tracking syntax highlighting data.
