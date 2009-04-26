@@ -4999,11 +4999,3 @@ JSLINT = (function () {
     return itself;
 
 }());
-
-var onmessage = function(event) {
-    postMessage({
-        result: JSLINT(event.data),
-        errors: JSLINT.errors,
-        report: JSLINT.report(false)
-    });
-}

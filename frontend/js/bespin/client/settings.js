@@ -710,14 +710,5 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             bespin.publish("editor:config:run");
         });
-
-        // ** {{{ Event: settings:jslint }}} **
-        //
-        // When changing the jslint setting, restart the parser
-        bespin.subscribe("jslint", function(event) {
-            bespin.publish("parser:stop");
-            bespin.publish("parser:start");
-            bespin.get("parser").fetch();
-        });
     }
 });
