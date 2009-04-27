@@ -91,6 +91,8 @@ def expose(url_pattern, method=None, auth=True):
                 response = Response(status='401')
                 _add_base_headers(response)
                 return response(environ, start_response)
+            config.c.stats.incr("requests_DATE")
+            config.c.stats.incr("requests")
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
             user = request.user

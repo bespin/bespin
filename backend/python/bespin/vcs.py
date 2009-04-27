@@ -114,6 +114,7 @@ def clone_run(qi):
     retvalue = model.Message(user_id=user.id, 
         message=simplejson.dumps(result))
     s.add(retvalue)
+    config.c.stats.incr('vcs_DATE')
 
 def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
             authtype=None, username=None, password=None, kcpass="",
@@ -202,6 +203,7 @@ def run_command_run(qi):
     retvalue = model.Message(user_id=user.id, 
         message=simplejson.dumps(result))
     s.add(retvalue)
+    config.c.stats.incr('vcs_DATE')
 
 def _run_command_impl(user, project, args, kcpass):
     """Synchronous implementation of run_command."""

@@ -847,6 +847,7 @@ def db_middleware(app):
                 session.rollback()
         except:
             session.rollback()
+            c.stats.incr("exceptions_DATE")
             log.exception("Error raised during request: %s", environ)
             raise
         return result
