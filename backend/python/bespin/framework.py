@@ -96,6 +96,9 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
                 _add_base_headers(response)
                 return response(environ, start_response)
 
+            config.c.stats.incr("requests_DATE")
+            config.c.stats.incr("requests")
+            
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
             skip_test = environ.get("BespinTestApp")

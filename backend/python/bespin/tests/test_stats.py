@@ -14,5 +14,9 @@ def test_stats_operations():
     
     result = ms.incr("foo_DATE", 100)
     
-    assert "foo_" + date.today().strftime("%Y%m%d") in ms.storage
+    datekey = "foo_" + date.today().strftime("%Y%m%d")
+    assert datekey in ms.storage
+    
+    result = ms.multiget(['foo', datekey])
+    assert result == {'foo':100, datekey:100}
     
