@@ -127,7 +127,7 @@ def set_profile(profile):
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
         c.default_quota=10000
-        c.log_requests_to_stdout = True
+        c.log_requests_to_stdout = False
         
         c.async_jobs = False
         c.fslevels = 0

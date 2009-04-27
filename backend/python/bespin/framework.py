@@ -1,19 +1,13 @@
 #  ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1
 # 
-# The contents of this file are subject to the Mozilla Public License  
-# Version
-# 1.1 (the "License"); you may not use this file except in compliance  
-# with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
+# The contents of this file are subject to the Mozilla Public License  Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
 # 
-# Software distributed under the License is distributed on an "AS IS"  
-# basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
-# License
-# for the specific language governing rights and limitations under the
-# License.
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the License.
 # 
 # The Original Code is Bespin.
 # 
@@ -39,13 +33,13 @@ class BadRequest(Exception):
 
 class BespinRequest(Request):
     """Custom request object for Bespin.
-    
+
     Provides the user object and the username of the
     logged in user, among other features."""
     def __init__(self, environ):
         super(BespinRequest, self).__init__(environ)
         self.session = self.environ['bespin.dbsession']
-        
+
         if 'bespin.user' in environ:
             self._user = environ['bespin.user']
         else:
@@ -69,10 +63,10 @@ class BespinResponse(Response):
         super(BespinResponse, self).__init__(**kw)
         self.environ = environ
         self.start_request = start_request
-    
+
     def __call__(self):
         return super(BespinResponse, self).__call__(self.environ, self.start_request)
-        
+
     def error(self, status, e):
         self.status = status
         self.body = str(e)
@@ -108,12 +102,10 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
                 reply_token = environ.get("HTTP_DOMAIN_TOKEN")
 
                 if query_token is None or reply_token != query_token:
-                    print environ
-                    print("request.url=%s" % request.url)
-                    print("request.cookies['Domain-Token']=%s" % query_token)
-                    print("environ['HTTP_DOMAIN_TOKEN']=%s" % reply_token)
-                    print("ERROR! The anti CSRF attack trip wire just went off. If you see this message and no-one is hacking you, please tell bespin-core@googlegroups.com")
-                    #response.error("401 Not Authorized", "CSRF Token Error")
+                    log.error("request.url=%s" % request.url)
+                    log.error("request.cookies['Domain-Token']=%s" % query_token)
+                    log.error("environ['HTTP_DOMAIN_TOKEN']=%s" % reply_token)
+                    log.error("ERROR! The anti CSRF attack trip wire just went off. If you see this message and no-one is hacking you, please tell bespin-core@googlegroups.com")
 
             user = request.user
             _add_base_headers(response)
@@ -138,4 +130,4 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
                 response.error("400 Bad Request", e)
             return response()
     return entangle
-    
+
