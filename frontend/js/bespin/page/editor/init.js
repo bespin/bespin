@@ -135,23 +135,23 @@ dojo.provide("bespin.page.editor.init");
         // bind in things for search :)
         // some of the key-bindings go to the window object direct, to make them happen all over the window
         dojo.connect(window, 'keydown', function(e) {
-            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.ctrlKey)) {
-                bespin.get('actions').toggleFilesearch();
-                dojo.stopEvent(e);
-            } else if (e.keyCode == bespin.util.keys.Key.G && (e.metaKey || e.ctrlKey)) {
-                if (e.shiftKey) {
-                    bespin.get('actions').findPrev();
-                } else {
-                    bespin.get('actions').findNext();
-                }
-                dojo.stopEvent(e);
-            }
-        });
-
-        // Handle Enter & Escape
+           if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.altKey)) {
+               bespin.get('actions').toggleFilesearch();
+               dojo.stopEvent(e);
+           } else if (e.keyCode == bespin.util.keys.Key.G && (e.metaKey || e.altKey)) {
+               if (e.shiftKey) {
+                   bespin.get('actions').findPrev();
+               } else {
+                   bespin.get('actions').findNext();
+               }
+               dojo.stopEvent(e);
+           }
+       });
+               
+        // // Handle Enter & Escape
         dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
             var key = bespin.util.keys.Key;
-
+    
             if (e.keyCode == key.ESCAPE) {
                 dojo.byId('searchresult').style.display = 'none';
                 dojo.byId('searchquery').blur();
@@ -162,14 +162,16 @@ dojo.provide("bespin.page.editor.init");
                 dojo.stopEvent(e);
             }
         });
-
+        
         // preform a new search after a character has been added to the searchquery-input-field
         dojo.connect(dojo.byId('searchquery'), 'keypress', function(e) {
             var key = bespin.util.keys.Key;    
             var isOkay = false;
-        
+                
             // check to let only some keys perform a new search!
-            if ([key.ENTER, key.BACKSPACE, key.DELETE].indexOf(e.keyCode) != -1) isOkay = true;
+            if (key.ENTER == e.keyCode) return;
+            if ((e.charCode == 103 /* where does 103 come from???*/ || e.charCode == key.G) && (e.metaKey || e.altKey)) return;
+            if ([key.BACKSPACE, key.DELETE].indexOf(e.keyCode) != -1) isOkay = true;
             if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1)  isOkay = true;
             if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) isOkay = true;
         
@@ -177,7 +179,7 @@ dojo.provide("bespin.page.editor.init");
                 // the key was not a character!
                 return;
             }
-        
+                
             // perform a search only each 300ms
             var ui = bespin.get('editor').ui;
             if (ui.serachTimeout) {
@@ -187,7 +189,7 @@ dojo.provide("bespin.page.editor.init");
                 this.actions.startSearch(dojo.byId('searchquery').value, 'toolbar');
             }), 300);   
         });
-
+        
         // handle things when search field get focused
         dojo.connect(dojo.byId('searchquery'), 'focus', function(e) {
             bespin.get('editor').setFocus(false);
@@ -199,7 +201,7 @@ dojo.provide("bespin.page.editor.init");
             dojo.connect(elm, 'mouseover', function() {
                 elm.src = "images/" + filename + "_on.png";
             });
-
+        
             dojo.connect(elm, 'mouseout', function() {
                 elm.src = "images/" + filename + ".png";
             });
@@ -211,7 +213,7 @@ dojo.provide("bespin.page.editor.init");
         addButtonEvents(dojo.byId('searchprev'), 'button_left', function() {
             bespin.get('actions').findPrev();
         });
-
+        
         addButtonEvents(dojo.byId('searchnext'), 'button_right', function() {
             bespin.get('actions').findNext();    
         });
