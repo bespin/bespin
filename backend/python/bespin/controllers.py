@@ -831,12 +831,15 @@ def stats(request, response):
     if username not in c.stats_users:
         raise NotAuthorized("Not allowed to access stats")
     today = date.today().strftime("%Y%m%d")
-    result = c.stats.multiget(["exceptions_" + today,
-                               'requests_' + today,
-                               'users',
-                               'files',
-                               'projects',
-                               'vcs_' + today])
+    keys = ["exceptions_" + today,
+           'requests_' + today,
+           'users',
+           'files',
+           'projects',
+           'vcs_' + today]
+    more_keys = [k.replace("_DATE", today) for k in c.stats_display]
+    keys.extend(more_keys)
+    result = c.stats.multiget(keys)
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
