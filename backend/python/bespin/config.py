@@ -1,30 +1,30 @@
 #  ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1
-# 
-# The contents of this file are subject to the Mozilla Public License  
+#
+# The contents of this file are subject to the Mozilla Public License
 # Version
-# 1.1 (the "License"); you may not use this file except in compliance  
+# 1.1 (the "License"); you may not use this file except in compliance
 # with
 # the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
-# 
-# Software distributed under the License is distributed on an "AS IS"  
+#
+# Software distributed under the License is distributed on an "AS IS"
 # basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
 # License
 # for the specific language governing rights and limitations under the
 # License.
-# 
+#
 # The Original Code is Bespin.
-# 
+#
 # The Initial Developer of the Original Code is Mozilla.
 # Portions created by the Initial Developer are Copyright (C) 2009
 # the Initial Developer. All Rights Reserved.
-# 
+#
 # Contributor(s):
-# 
+#
 # ***** END LICENSE BLOCK *****
-# 
+#
 
 import os
 import logging
@@ -44,7 +44,7 @@ class Bunch(dict):
             return self[attr]
         except KeyError:
             raise AttributeError("%s not found" % attr)
-    
+
     def __setattr__(self, attr, value):
         self[attr] = value
 
@@ -105,13 +105,13 @@ def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
         c.dburl = "sqlite://"
-        c.fsroot = os.path.abspath("%s/../testfiles" 
+        c.fsroot = os.path.abspath("%s/../testfiles"
                         % os.path.dirname(__file__))
         c.async_jobs = False
         c.fslevels = 0
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
-        c.fsroot = os.path.abspath("%s/../../../devfiles" 
+        c.fsroot = os.path.abspath("%s/../../../devfiles"
                         % os.path.dirname(__file__))
         root_log = logging.getLogger()
         root_log.setLevel(logging.DEBUG)
@@ -121,22 +121,22 @@ def set_profile(profile):
 
         paste_log = logging.getLogger("paste.httpserver.ThreadPool")
         paste_log.setLevel(logging.ERROR)
-        
+
         # turn off the secure cookie, because localhost connections
         # will be HTTP
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
         c.default_quota=10000
-        c.log_requests_to_stdout = False
-        
+        c.log_requests_to_stdout = True
+
         c.async_jobs = False
         c.fslevels = 0
-    
+
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
     cp.read(configfile)
     c.update(cp.items("config"))
-    
+
 def activate_profile():
     c.dbengine = create_engine(c.dburl)
     #c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
@@ -144,14 +144,14 @@ def activate_profile():
     c.fsroot = path(c.fsroot)
     if not c.fsroot.exists:
         c.fsroot.makedirs()
-    
+
     if c.async_jobs:
         if c.queue_port:
             c.queue_port = int(c.queue_port)
 
         from bespin import queue
         c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
-    
+
     if c.stats_type == "redis":
         from bespin import redis
         if c.redis_port:
@@ -162,10 +162,10 @@ def activate_profile():
         c.stats = stats.MemoryStats()
     else:
         c.stats = stats.DoNothingStats()
-    
+
     if isinstance(c.stats_users, basestring):
         c.stats_users = set(c.stats_users.split(','))
-    
+
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
     set_profile('dev')
@@ -178,4 +178,4 @@ def dev_spawning_factory(spawning_config):
 def dev_factory(config):
     from bespin.controllers import make_app
     return make_app()
-    
+
