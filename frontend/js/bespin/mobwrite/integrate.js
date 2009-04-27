@@ -56,6 +56,7 @@ mobwrite.shareBespinObj.prototype.setClientText = function(text) {
     // Was:
     // this.element.value = text;
     // this.fireChange(this.element);
+    text = mobwrite.shareBespinObj.unnormalizeLinebreaks_(text);
     this._editSession.editor.model.insertDocument(text);
 };
 
@@ -113,6 +114,31 @@ mobwrite.shareBespinObj.normalizeLinebreaks_ = function(text) {
     oldtext = text;
     text = text.replace(/([^\r])\n/g, '$1\r\n');
     text = text.replace(/\r([^\n])/g, '\r\n$1');
+  }
+  return text;
+};
+
+/**
+ * Ensure that all linebreaks are CR+LF
+ * @param {string} text Text with unknown line breaks
+ * @return {string} Text with normalized linebreaks
+ * @private
+ */
+mobwrite.shareBespinObj.unnormalizeLinebreaks_ = function(text) {
+  var oldtext = '';
+  if (text != '') {
+    // First, fix the first/last chars.
+    if (text.charAt(0) == '\n') {
+      text = '\r' + text;
+    }
+    if (text.charAt(text.length - 1) == '\r') {
+      text = text + '\n';
+    }
+  }
+  // Second, fix the middle chars.
+  while (oldtext != text) {
+    oldtext = text;
+    text = text.replace(/\r\n/g, '\n');
   }
   return text;
 };
