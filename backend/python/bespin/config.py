@@ -94,6 +94,13 @@ c.log_requests_to_stdout = False
 # (see bespin.model._check_identifiers)
 c.restrict_identifiers = True
 
+# The set of users that are allowed to view the system stats
+# at /stats/. stats_type should either be
+# memory or redis for this to make any sense
+# this can either be a set in Python or
+# a comma separated string
+c.stats_users = set()
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
@@ -155,6 +162,9 @@ def activate_profile():
         c.stats = stats.MemoryStats()
     else:
         c.stats = stats.DoNothingStats()
+    
+    if isinstance(c.stats_users, basestring):
+        c.stats_users = set(c.stats_users.split(','))
     
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

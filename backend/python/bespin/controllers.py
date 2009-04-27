@@ -31,6 +31,7 @@ import urllib2
 import httplib2
 from urlparse import urlparse
 import logging
+from datetime import date
 
 from urlrelay import URLRelay, url, register
 from paste.auth import auth_tkt
@@ -41,6 +42,7 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model, vcs
+from bespin.model import NotAuthorized
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 import socket
@@ -821,6 +823,22 @@ def messages(request, response):
     
     response.content_type = "application/json"
     response.body = body.encode("utf8")
+    return response()
+    
+@expose('^/stats/$', 'GET')
+def stats(request, response):
+    username = request.username
+    if username not in c.stats_users:
+        raise NotAuthorized("Not allowed to access stats")
+    today = date.today().strftime("%Y%m%d")
+    result = c.stats.multiget(["exceptions_" + today,
+                               'requests_' + today,
+                               'users',
+                               'files',
+                               'projects',
+                               'vcs_' + today])
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(result)
     return response()
 
 def db_middleware(app):

@@ -11,6 +11,9 @@ class DoNothingStats(object):
         
     def decr(self, key, by=1):
         return 0
+    
+    def multiget(self, keys):
+        return dict()
 
 def _get_key(key):
     if "_DATE" in key:
@@ -30,6 +33,9 @@ class MemoryStats(object):
         
     def decr(self, key, by=1):
         return self.incr(key, -1*by)
+    
+    def multiget(self, keys):
+        return dict((key, self.storage.get(key)) for key in keys)
         
         
 class RedisStats(object):
@@ -50,4 +56,6 @@ class RedisStats(object):
         except:
             log.exception("Problem decrementing stat %s", key)
         
-    
+    def multiget(self, keys):
+        return dict(zip(keys, self.redis.mget(*keys)))
+        
