@@ -149,7 +149,7 @@ body {
     margin-right: 30px;
     height: 20px;
     width: 220px;
-    padding-top: 5px;
+    padding-top: 7px;
     padding-left: 5px;
     padding-right: 5px;
     font-size: 12px;
@@ -160,20 +160,6 @@ body {
 
 #searchresult img {
     margin: 0px;
-}
-
-#searchprev {
-    float: right;
-}
-
-#searchnext {
-    float: right;
-}
-
-#searchdone {
-    float: right;
-    margin-left: 10px;
-    padding-left: 10px;
 }
 
 #toolbar_collaboration {
