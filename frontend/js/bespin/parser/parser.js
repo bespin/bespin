@@ -43,7 +43,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         
         this.currentMetaInfo;
         this.lineMarkers = [];
-
+        
         // ** {{{ Event: parser:error }}} **
         // 
         // Parser found an error in the source code
@@ -106,11 +106,11 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     // will start listening for doc change events and run the parser every time
     start: function() {
         var self = this;
-        
+
         // if we are not supposed to run, don't run
         var settings = bespin.get("settings");
-        if(settings.isOff(settings.get("syntaxcheck"))) {
-            return
+        if (settings.isOff(settings.get("syntaxcheck"))) {
+            return;
         }
         
         var editor = bespin.get("editor");
