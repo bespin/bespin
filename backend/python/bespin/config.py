@@ -101,6 +101,9 @@ c.restrict_identifiers = True
 # a comma separated string
 c.stats_users = set()
 
+# a list of keys to display other than the base set
+c.stats_display = set()
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
@@ -165,6 +168,8 @@ def activate_profile():
 
     if isinstance(c.stats_users, basestring):
         c.stats_users = set(c.stats_users.split(','))
+    if isinstance(c.stats_display, basestring):
+        c.stats_display = set(c.stats_display.split(','))
 
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

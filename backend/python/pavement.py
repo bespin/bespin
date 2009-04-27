@@ -49,6 +49,7 @@ options(
         entry_points="""
 [console_scripts]
 bespin_worker=bespin.queue:process_queue
+queue_stats=bespin.queuewatch:command
 """
     )
 )
