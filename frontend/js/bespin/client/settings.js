@@ -48,13 +48,13 @@ dojo.declare("bespin.client.settings.Core", null, {
         this.fromURL = new bespin.client.settings.URL();
         this.customEvents = new bespin.client.settings.Events(this);
 
-        this.loadStore(store);    // Load up the correct settings store
+        this.loadStore(store); // Load up the correct settings store
     },
 
     loadSession: function() {
         var path    = this.fromURL.get('path') || this.get('_path');
         var project = this.fromURL.get('project') || this.get('_project');
-        
+
         bespin.publish("settings:init", { // -- time to init my friends
             path: path,
             project: project
@@ -675,7 +675,8 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (newfile) { // scratch file
                 bespin.publish("editor:newfile", {
                    project: project,
-                   newfilename: path
+                   newfilename: path,
+                   content: settings.fromURL.get('content') || " "
                 });
             // existing file, so open it
             } else {

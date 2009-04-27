@@ -78,6 +78,7 @@ dojo.require("bespin.client.settings");
             if (project) args.push("project=" + project);
             if (path) args.push("path=" + path);
             if (opts.newFile) args.push("new=true");
+            if (opts.content) args.push("content=" + escape(opts.content));
 
             var selectedPath = bespin.page.dashboard.tree.getSelectedPath(true);
             if (selectedPath) args.push('fromDashboardPath=' + selectedPath);

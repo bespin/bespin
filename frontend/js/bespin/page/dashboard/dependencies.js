@@ -43,7 +43,8 @@ dojo.require("bespin.client.session");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
-dojo.require("bespin.vcs");
+dojo.require("bespin.vcs");      // load up VCS module and its commands
+dojo.require("bespin.jetpack");  // load up Jetpack module and its commands
 dojo.require("bespin.cmd.dashboardcommands");
 
 // -- The main dashboard subsystems
