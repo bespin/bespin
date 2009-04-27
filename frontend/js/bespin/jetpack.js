@@ -33,7 +33,7 @@ dojo.require("bespin.cmd.commandline");
 bespin.jetpack.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'jetpack',
     preview: 'play with jetpack features',
-    completeText: 'subcommands: create [featurename], install [featurename]',
+    completeText: 'subcommands: create [featurename], install [featurename], list',
     subcommanddefault: 'help'
 }});
 
@@ -52,7 +52,7 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: help}}} **
+// ** {{{Command: create}}} **
 bespin.jetpack.commands.addCommand({
     name: 'create',
     takes: ['name'],
@@ -71,7 +71,7 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: help}}} **
+// ** {{{Command: install}}} **
 bespin.jetpack.commands.addCommand({
     name: 'install',
     takes: ['name'],
@@ -98,5 +98,31 @@ bespin.jetpack.commands.addCommand({
                 name: name
             }, dojo.body());
         }
+    }
+});
+
+// ** {{{Command: list}}} **
+bespin.jetpack.commands.addCommand({
+    name: 'list',
+    preview: 'list out the Jetpacks that you have written',
+    description: 'Which Jetpacks have you written and have available in BespinSettings/jetpacks. NOTE: This is not the same as which Jetpacks you have installed in Firefox!',
+    execute: function(self, extra) {
+        bespin.get('server').list(bespin.userSettingsProject, 'jetpack/', function(jetpacks) {
+            var output;
+
+            if (!jetpacks || jetpacks.length < 1) {
+                output = "You haven't installed any Jetpacks. Run '> jetpack create' to get going.";
+            } else {
+                output = "<u>Your Jetpacks</u><br/><br/>";
+
+                output += dojo.map(dojo.filter(jetpacks, function(file) {
+                    return bespin.util.endsWith(file.name, '\\.html');
+                }), function(c) {
+                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open jetpack/" + c.name + " BespinSettings');\">" + c.name.replace(/\.html$/, '') + "</a>";
+                }).join("<br>");
+            }
+
+            bespin.publish("message", { msg: output });
+        });
     }
 });

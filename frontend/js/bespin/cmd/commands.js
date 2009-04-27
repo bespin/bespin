@@ -406,13 +406,11 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'load',
     aliases: ['open'],
-    takes: ['filename'],
+    takes: ['filename', 'project'],
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
-    execute: function(self, filename) {
-        bespin.publish("editor:openfile", {
-            filename: filename
-        });
+    execute: function(self, opts) {
+        bespin.publish("editor:openfile", opts);
     }
 });
 
