@@ -1,7 +1,6 @@
 
-
 (function () {
-    
+
 var __GLOBAL__ = this;
 
 __GLOBAL__.console = {
@@ -16,15 +15,15 @@ var SCRIPT_COUNT = 0;
 var LOADED_SCRIPTS = 0;
 var EMULATE_LOAD   = false;
 
-if(typeof importScripts == "undefined") {
+if (typeof importScripts == "undefined") {
     EMULATE_LOAD = true;
     __GLOBAL__.importScripts = function () {
         for(var i = 0; i < arguments.length; ++i) {
             var script = arguments[i];
-            postMessage(internalMessageIdentifier+"["+(SCRIPT_COUNT++)+", '"+script+"']");
+            postMessage(internalMessageIdentifier + "["+(SCRIPT_COUNT++) + ", '" + script + "']");
         }
     };
-    
+
     var loaded = [];
     var nextLoad = 0;
     // make sure we eval scripts in requested order
@@ -32,10 +31,12 @@ if(typeof importScripts == "undefined") {
         loaded[index] = source;
         // console.log("Received script "+index + ". ")
         for(var i = nextLoad; i < loaded.length; ++i) {
-            if(loaded[i]) {
+            if (loaded[i]) {
                 nextLoad = i+1;
                 // console.log("Evalling "+i)
-                __GLOBAL__.eval(loaded[i]);
+                try {
+                    __GLOBAL__.eval(loaded[i]);
+                } catch (e) {}
                 // console.log("evaled "+i)
             } else {
                 break;
@@ -44,26 +45,22 @@ if(typeof importScripts == "undefined") {
     };
 }
 
-
-
 onmessage = function(event) {
     var source = event.data;
-    if(source.indexOf("// YOUcannotGuessMe") == 0) {
-        if(EMULATE_LOAD) {
+    if (source.indexOf("// YOUcannotGuessMe") == 0) {
+        if (EMULATE_LOAD) {
             __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, source);
         } else {
-            __GLOBAL__.eval(source);
+            try {
+                __GLOBAL__.eval(source);
+            } catch (e) {}
         }
-    } 
-    
-    else {
-        postMessage("Ignoring message: "+source);
+    } else {
+        postMessage("Ignoring message: " + source);
     }
 };
 
 })();
-
-
 
 
 //Downloaded unchanged from http://www.json.org/json2.js
