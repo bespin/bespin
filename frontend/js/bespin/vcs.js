@@ -33,6 +33,7 @@ dojo.require("bespin.cmd.commandline");
 bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'vcs',
     preview: 'run a version control command',
+    completeText: 'subcommands: add, clone, commit, diff, getkey, help, push, remove, resolved, update',
     subcommanddefault: 'help'
 }});
 

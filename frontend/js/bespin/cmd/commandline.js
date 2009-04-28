@@ -131,7 +131,20 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         return false;
     },
 
-    findCompletions: function(value) {
+    findCompletions: function(value, root) {
+        var completions = {};
+
+        if (root) {
+            completions.root = root;
+        }
+
+        if (value.match(' ')) {
+            var command = this.rootCommand(value);
+            if (command && command.subcommands) {
+                return command.subcommands.findCompletions(value.replace(new RegExp('^' + command.name + '\\s*'), ''), command.name);
+            }
+        }
+
         var matches = [];
 
         if (value.length > 0) {
@@ -147,7 +160,9 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
                 }
             }
         }
-        return matches;
+
+        completions.matches = matches;
+        return completions;
     },
 
     commandTakesArgs: function(command) {
@@ -193,6 +208,10 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         });
 
         return command;
+    },
+
+    rootCommand: function(value) {
+        return this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
     }
 });
 
@@ -257,11 +276,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     complete: function(value) {
-        var matches = this.commandStore.findCompletions(value);
+        var completions = this.commandStore.findCompletions(value);
+        var matches = completions.matches;
+
         if (matches.length == 1) {
             var commandLineValue = matches[0];
 
-            var command = this.commandStore.commands[matches[0]];
+            var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
 
             if (command) {
                 if (this.commandStore.commandTakesArgs(command)) {
@@ -279,7 +300,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 this.showInfo(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
                 commandLineValue += ' ';
             }
-            this.commandLine.value = commandLineValue;
+
+            this.commandLine.value = (completions.root ? (completions.root + ' ') : '') + commandLineValue;
         }
     },
 
@@ -334,7 +356,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
             var command;
             if (e.keyCode >= "A".charCodeAt() && e.keyCode < "Z".charCodeAt()) { // only real letters
-                var completions = this.commandStore.findCompletions(dojo.byId('command').value);
+                var completions = this.commandStore.findCompletions(dojo.byId('command').value).matches;
                 var commandString = completions[0];
                 if (completions.length > 0) {
                     var isAutoComplete = (settings && settings.isSettingOn('autocomplete'));
