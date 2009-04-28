@@ -22,11 +22,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
+ * Jetpack Plugin
+ * --------------
+ *
+ * The Jetpack plugin aims to make Bespin a good environment for creating and hosting Jetpack extensions.
+ *
+ * Read more about Jetpack at: https://wiki.mozilla.org/Labs/Jetpack/API
+ */
+
 dojo.provide("bespin.jetpack");
 
 dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.commandline");
+
+bespin.jetpack.projectName = "jetpacks";
 
 // Command store for the Jetpack commands
 // (which are subcommands of the main 'jetpack' command)
@@ -62,10 +73,14 @@ bespin.jetpack.commands.addCommand({
     template: "<feature id='TEMPLATE_NAME' name='TEMPLATE_NAME Sidebar Extension' version='0.1' description='TEMPLATE_NAME Sidebar Test Extension. Opens a sidebar with some HTML code.'>\n<!-- For more help, read the API documentation at: https://wiki.mozilla.org/Labs/Jetpack/API -->\n   <script>\n    let sidebar;\n\n    function install() {\n      sidebar =\n        Jetpack.UI.Sidebars.create(\n          { id: 'test', name: 'TEMPLATE_NAME Test Sidebar',\n            content: $('#sidebar-content')[0] });\n      window.setInterval(function() { updateTime(); }, 1000);\n    }\n\n    function updateTime() {\n      $('#time')[0].textContent = (new Date()).toString();\n      Jetpack.UI.Sidebars.update({ sidebar : sidebar });\n    }\n\n    function uninstall() {\n    }\n  </script>\n  <div id='sidebar-content'>\n    <h1>Success!</h1>\n    <p>Your sidebar extension was installed correctly!</p>\n    <p>The current <strong>date and time</strong> is:</p>\n    <ul>\n    <li id='time'></li>\n    </ul>\n    <p>And the code:</p>\n    <code><pre>\n    let sidebar;\n\n    function install() {\n      sidebar =\n        Jetpack.UI.Sidebars.create(\n          { id: 'test', name: 'Test Sidebar',\n            content: $('#sidebar-content')[0] });\n      window.setInterval(function() { updateTime(); }, 1000);\n    }\n\n    function updateTime() {\n      $('#time')[0].textContent = (new Date()).toString();\n      Jetpack.UI.Sidebars.update({sidebar : sidebar});\n    }\n    </pre></code>\n  </div>\n</feature>",
     execute: function(self, name) {
         name = name || 'newjetpack';
+
+        // make sure that the jetpacks project is alive!
+        bespin.get('files').makeDirectory(bespin.jetpack.projectName, "");
+
         // create a new file in BespinSettings/jetpack/{name}.html
         bespin.publish("editor:newfile", {
-            project: bespin.userSettingsProject,
-            newfilename: 'jetpack/' + name + '.html',
+            project: bespin.jetpack.projectName,
+            newfilename: name + '.html',
             content: this.template.replace(/TEMPLATE_NAME/g, name)
         });
     }
@@ -82,7 +97,7 @@ bespin.jetpack.commands.addCommand({
         // Use the given name, or default to the current jetpack
         name = name || (function() {
             var editSession = bespin.get('editSession');
-            if (editSession.project != bespin.userSettingsProject || editSession.path.indexOf('jetpack') < 0) return; // jump out if not in the jetpack project
+            if (editSession.project != bespin.jetpack.projectName) return; // jump out if not in the jetpack project
             var bits = editSession.path.split('.');
             return bits[bits.length - 2];
         })();
@@ -94,7 +109,7 @@ bespin.jetpack.commands.addCommand({
             // <link rel="jetpack" href="1.0/main.html" name="testExtension">
             var link = dojo.create("link", {
                 rel: 'jetpack',
-                href: bespin.util.path.combine("preview/at", bespin.userSettingsProject, name + ".html"),
+                href: bespin.util.path.combine("preview/at", bespin.jetpack.projectName, name + ".html"),
                 name: name
             }, dojo.body());
         }
@@ -107,7 +122,7 @@ bespin.jetpack.commands.addCommand({
     preview: 'list out the Jetpacks that you have written',
     description: 'Which Jetpacks have you written and have available in BespinSettings/jetpacks. NOTE: This is not the same as which Jetpacks you have installed in Firefox!',
     execute: function(self, extra) {
-        bespin.get('server').list(bespin.userSettingsProject, 'jetpack/', function(jetpacks) {
+        bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
             var output;
 
             if (!jetpacks || jetpacks.length < 1) {
@@ -118,7 +133,7 @@ bespin.jetpack.commands.addCommand({
                 output += dojo.map(dojo.filter(jetpacks, function(file) {
                     return bespin.util.endsWith(file.name, '\\.html');
                 }), function(c) {
-                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open jetpack/" + c.name + " BespinSettings');\">" + c.name.replace(/\.html$/, '') + "</a>";
+                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open " + c.name + " " + bespin.jetpack.projectName + "');\">" + c.name.replace(/\.html$/, '') + "</a>";
                 }).join("<br>");
             }
 
