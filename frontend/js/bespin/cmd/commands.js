@@ -68,7 +68,7 @@ bespin.cmd.commands.toArgArray = function(args) {
 // == Start adding commands to the store ==
 //
 
-bespin.cmd.displayHelp = function(commandStore, commandLine, extra) {
+bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutput) {
     var commands = [];
     var command, name;
 
@@ -109,7 +109,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra) {
             commands.push('<b>' + name + args + '</b>: ' + command.preview);
         }
     }
-    commandLine.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + "</div>");
+    commandLine.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + (morehelpoutput || "") + "</div>");
 }
 
 // ** {{{Command: help}}} **
