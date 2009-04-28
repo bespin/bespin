@@ -290,6 +290,29 @@ bespin.vcs.commands.addCommand({
     }
 });
 
+// ** {{{Command: status}}} **
+bespin.vcs.commands.addCommand({
+    name: 'status',
+    preview: 'Display the status of the repository files.',
+    description: 'Shows the current state of the files in the repository<br>M for modified, ? for unknown (you may need to add), R for removed, ! for files that are deleted but not removed',
+    // ** {{{execute}}} **
+    execute: function(self, args) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+
+        bespin.get('server').vcs(project,
+                                {command: ['status']},
+                                bespin.vcs.standardHandler);
+    }
+});
 
 // ** {{{Command: diff}}} **
 bespin.vcs.commands.addCommand({
@@ -474,6 +497,48 @@ bespin.vcs.commands.addCommand({
     completeText: 'optionally, narrow down the search',
     execute: function(self, extra) {
         bespin.cmd.displayHelp(bespin.vcs.commands, self, extra);
+    }
+});
+
+// Command store for the Mercurial commands
+// (which are subcommands of the main 'hg' command)
+bespin.vcs.hgCommands = new bespin.cmd.commandline.CommandStore({ subCommand: {
+    name: 'hg',
+    preview: 'run a Mercurial command',
+    subcommanddefault: 'help'
+}});
+
+// ** {{{Command: help}}} **
+bespin.vcs.hgCommands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for hg subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(self, extra) {
+        bespin.cmd.displayHelp(bespin.vcs.hgCommands, self, extra);
+    }
+});
+
+// ** {{{Command: init}}} **
+bespin.vcs.hgCommands.addCommand({
+    name: 'init',
+    preview: 'initialize a new hg repository',
+    description: 'This will create a new repository in this project.',
+    execute: function(self) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            self.showInfo("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project,
+                                {command: ['hg', 'init']},
+                                bespin.vcs.standardHandler);
     }
 });
 
