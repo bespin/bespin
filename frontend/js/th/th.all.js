@@ -731,10 +731,10 @@
 
 
 if (!("console" in window)) {
-  window.console = {
-    log: function(s) {
+    window.console = {
+        log: function(s) {
+        }
     }
-  }
 }
 
 if (location.href.indexOf("file:") == 0) {
@@ -4496,8 +4496,13 @@ th.Label = Class.define({
         styleContext: function(ctx) {
             if (!ctx) return;
 
-            ctx.font = this.cssValue("font");
-            ctx.fillStyle = this.cssValue("color");
+            try {
+                ctx.font = this.cssValue("font");
+                ctx.fillStyle = this.cssValue("color");
+            } catch (e) {
+                console.log("Warning: error thrown while setting font and fillStyle on a context");
+                console.log(e);
+            }
 
             return ctx;
         },

@@ -61,6 +61,10 @@ Splitter > Label {
     padding-bottom: 2px;
 }
 
+HorizontalTree {
+    background-color: rgb(61, 59, 52);
+}
+
 HorizontalTree Label {
     font: 9pt Tahoma;
     color: white;
