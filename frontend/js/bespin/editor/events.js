@@ -138,6 +138,7 @@ dojo.declare("bespin.editor.Events", null, {
                     content: content,
                     timestamp: new Date().getTime()
                 }});
+
                 bespin.publish("editor:dirty");
             });        
         });

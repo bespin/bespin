@@ -122,8 +122,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             return;
         }
 
-        if (!bespin.util.include(['js', 'html', 'css'], editor.language)) {
+        if (!bespin.util.include(['js'], editor.language)) {
             // don't run the syntax parser for files that we can't grok yet!
+            // for now just js, and when the jslint plugin groks HTML and CSS we need to add
+            // that info here 
             // TODO: put this elsewhere and allow plugins to add to the list
 
             return;
@@ -501,7 +503,7 @@ bespin.parser.EngineResolver = function() {
       resolve: function(type) {
           //for some odd reason this doesn't work: return this.engines[type] || [];
           var ar = this.engines[type];
-          if (dojo.isArray(ar)) {
+          if (ar instanceof Array || typeof ar == "array") {
               if (ar[1]) {
                   return [ar[0]].concat([ar[1]]);
               }
@@ -527,8 +529,8 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
 
 // As soon as a doc is opened we are a go
 bespin.subscribe("editor:openfile:opensuccess", function() {
-    bespin.register("parser", new bespin.parser.CodeInfo())
-    bespin.get("parser").start()
+    bespin.register("parser", new bespin.parser.CodeInfo());
+    bespin.get("parser").start();
 
     // ** {{{ Event: parser:start }}} **
     //
