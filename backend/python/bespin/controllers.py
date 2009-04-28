@@ -839,7 +839,7 @@ def stats(request, response):
            'files',
            'projects',
            'vcs_' + today]
-    more_keys = [k.replace("_DATE", today) for k in c.stats_display]
+    more_keys = [k.replace("_DATE", "_" + today) for k in c.stats_display]
     keys.extend(more_keys)
     result = c.stats.multiget(keys)
     response.content_type = "application/json"
