@@ -908,6 +908,9 @@ th.isCssPixel = function(str) {
 };
 
 th.isCssLength = function(str) {
+    if (str === undefined) return false;
+    if (str == 0) return true;
+
     return /^[\d\.]+(em|ex|px|\%|in|cm|mm|pt|pc)$/.test(str);
 };
 
@@ -1030,6 +1033,8 @@ th.isBorderLength = function(length) {
 }
 
 th.convertLengthToPixels = function(length, component) {
+    if (length == 0) return 0;
+
     if (th.isBorderLength(length)) {
         return th.convertBorderLengthToPixels(length);
     } else if (th.absoluteUnitRegex.test(length)) {
@@ -1359,6 +1364,7 @@ th.ComponentHelpers = new Trait({
                 }
 
                 resources.resolvedCssCache[cacheKey] = declarations;
+                this.blowCssCaches();
             }
 
             this.styles = {};
@@ -1521,6 +1527,16 @@ th.ComponentHelpers = new Trait({
             }
         },
 
+        getFirstBackgroundImage: function() {
+            var img = this.cssValue("background-image");
+            if (img) {
+                var imgs = th.getCommaDelimitedItems(img);
+                if (imgs[0]) {
+                    img = th.global_resources.images[imgs[0]];
+                    if (img) return img;
+                }
+            }
+        },
 
         processImage: function(img, w, h) {
             if (img.indexOf("-webkit-gradient") == 0) {
@@ -1680,15 +1696,21 @@ th.ComponentHelpers = new Trait({
             }
         },
 
-        calculateInsets: function(cssPrefix, cssSuffix, insets) {
-            if (!this["insetCache"]) this.insetCache = {};
+        calculateInsets: function(cssPrefix, cssSuffix, oldInsets) {
+            var component = (this.component) ? this.component : this;
 
             var cacheKey = cssPrefix + cssSuffix;
-            if (this.insetCache[cacheKey]) return this.insetCache[cacheKey];
 
-            if (!insets) insets = { top: 0, bottom: 0, left: 0, right: 0 };
+            if (component["insetCache"]) {
+            }
 
-            var component = (this.component) ? this.component : this;
+            var insets = { top: 0, bottom: 0, left: 0, right: 0 };
+            if (oldInsets) {
+                insets.top += oldInsets.top;
+                insets.left += oldInsets.left;
+                insets.right += oldInsets.right;
+                insets.bottom += oldInsets.bottom;
+            }
 
             for (var side in insets) {
                 var value = th.safeget(component.cssValue(cssPrefix + side + cssSuffix), 0);
@@ -1696,7 +1718,8 @@ th.ComponentHelpers = new Trait({
                 insets[side] += value;
             }
 
-            this.insetCache[cacheKey] = insets;
+            if (!component["insetCache"]) component.insetCache = {};
+            component.insetCache[cacheKey] = insets;
 
             return insets;
         },
@@ -1748,10 +1771,7 @@ th.ComponentHelpers = new Trait({
             if (th.isString(propertyOrHashOfProperties)) {
                 var prop = propertyOrHashOfProperties;
 
-                if (prop.indexOf("border") != -1 || prop.indexOf("padding") != -1 || prop.indexOf("margin") != -1) {
-                    this.insetsCache = {};
-                    this.border.insetsCache = {};
-                }
+                this.blowCssCaches(prop);
 
                 if (pseudoBit === undefined) pseudoBit = "(default)";
                 if (this.localStyles[pseudoBit] === undefined) this.localStyles[pseudoBit] = {};
@@ -1812,6 +1832,19 @@ th.ComponentHelpers = new Trait({
             var container = this.parent;
             while (!container.scene && container.parent) container = container.parent;
             return container.scene;
+        },
+
+        blowCssCaches: function(prop) {
+            if (this.component) console.log("WARNING: BLOW CACHE has a component reference");
+
+            if (prop === undefined) {
+                delete this.insetCache;
+                return;
+            }
+
+            if (prop.indexOf("border") != -1 || prop.indexOf("margin") != -1 || prop.indexOf("padding") != -1) {
+                delete this.insetCache;
+            }
         }
     }
 });
@@ -2380,11 +2413,15 @@ th.Scene = Class.define({
                 if (!this.smartRedraw) {
                     ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
                 }
+
                 ctx.beginPath();
                 ctx.rect(0, 0, component.bounds.width, component.bounds.height);
                 ctx.closePath();
                 ctx.clip();
+
                 component.paint(ctx);
+
+                if (component.border) component.border.paint(ctx);
 
                 ctx.restore();
             }
@@ -2602,7 +2639,7 @@ th.SimpleBorder = Class.define({
         },
 
         getInsets: function() {
-            return this.calculateInsets();
+            return this.calculateInsets("border-", "-width");
         },
 
         paint: function(ctx) {
@@ -3436,7 +3473,7 @@ th.Component = Class.define({
         getInsets: function() {
             var insets = this.border.getInsets();
 
-            this.calculateInsets("padding-", "", insets);
+            insets = this.calculateInsets("padding-", "", insets);
 
             return insets;
         },
@@ -3615,13 +3652,10 @@ th.Container = Class.define({
 
                 ctx.save();
                 this.children[i].paint(ctx);
-                ctx.restore();
-
                 if (this.children[i].border) {
-                    ctx.save();
                     this.children[i].border.paint(ctx);
-                    ctx.restore();
                 }
+                ctx.restore();
 
                 ctx.restore();
             }
@@ -3864,9 +3898,35 @@ th.Button = Class.define({
             this._super(parms);
         },
 
-        paint: function(ctx) {
-            var d = this.d();
+        getPreferredSize: function() {
+            var i = this.getInsets();
+            var iw = i.left + i.right;
+            var ih = i.top + i.bottom;
 
+            var height = this.cssValue("height");
+            if (height !== undefined) height = th.convertLengthToPixels(height, this);
+
+            var width = this.cssValue("width");
+            if (width !== undefined) width = th.convertLengthToPixels(width, this);
+
+            if (height !== undefined && width !== undefined) return { width: width + iw, height: height + ih };
+
+            var im = this.tmb();
+            if (im.top && im.mid && im.bot) {
+                if (height === undefined) height = im.top.height + im.mid.height + im.bot.height;
+                if (width === undefined) width = im.top.width;
+                return { width: width + iw, height: height + ih };
+            }
+
+            var img = this.getFirstBackgroundImage();
+            if (img) {
+                return { width: img.width + iw, height: img.height + ih };
+            }
+
+            return { width: iw, height: ih };
+        },
+
+        tmb: function() {
             var top = this.cssValue("-th-top-image");
             var mid = this.cssValue("-th-middle-image");
             var bot = this.cssValue("-th-bottom-image");
@@ -3876,14 +3936,25 @@ th.Button = Class.define({
             if (bot) bot = th.global_resources.images[bot];
 
             if (top && mid && bot) {
-                if (d.b.h >= top.height + bot.height) {
-                    ctx.drawImage(top, 0, 0);
-                    if (d.b.h > top.height + bot.height) {
-                        ctx.drawImage(mid, 0, top.height, mid.width, d.b.h - top.height - bot.height);
+                return { top: top, mid: mid, bot: bot };
+            }
+        },
+
+        paint: function(ctx) {
+            var d = this.d();
+
+            var imgs = this.tmb();
+            if (!imgs) imgs = {};
+
+            if (imgs.top && imgs.mid && imgs.bot) {
+                if (d.b.h >= imgs.top.height + imgs.bot.height) {
+                    ctx.drawImage(imgs.top, 0, 0);
+                    if (d.b.h > imgs.top.height + imgs.bot.height) {
+                        ctx.drawImage(imgs.mid, 0, imgs.top.height, imgs.mid.width, d.b.h - imgs.top.height - imgs.bot.height);
                     }
-                    ctx.drawImage(bot, 0, d.b.h - bot.height);
+                    ctx.drawImage(imgs.bot, 0, d.b.h - imgs.bot.height);
                 }
-            } else {
+            } else {    // otherwise delegate to the normal background painting routine
                 this.paintBackground(ctx);
             }
         }
@@ -3965,6 +4036,41 @@ th.Scrollbar = Class.define({
             }
         },
 
+        tmb: function() {
+            var top = this.cssValue("-th-vertical-top-image");
+            var mid = this.cssValue("-th-vertical-middle-image");
+            var bot = this.cssValue("-th-vertical-bottom-image");
+
+            if (top) top = th.global_resources.images[top];
+            if (mid) mid = th.global_resources.images[mid];
+            if (bot) bot = th.global_resources.images[bot];
+
+            if (top && mid && bot) {
+                return { top: top, mid: mid, bot: bot };
+            }
+        },
+
+        getPreferredSize: function() {
+            var i = this.getInsets();
+            var iw = i.left + i.right;
+            var ih = i.top + i.bottom;
+
+            var height = this.cssValue("height");
+            if (height !== undefined) height = th.convertLengthToPixels(height, this);
+
+            var width = this.cssValue("width");
+            if (width !== undefined) width = th.convertLengthToPixels(width, this);
+
+            if (height !== undefined && width !== undefined) return { width: width + iw, height: height + ih };
+
+            var im = this.tmb();
+            if (im.top && im.mid && im.bot) {
+                if (height === undefined) height = im.top.height + im.mid.height + im.bot.height;
+                if (width === undefined) width = im.top.width;
+                return { width: width + iw, height: height + ih };
+            }
+        },
+
         layout: function() {
             var d = this.d();
 
@@ -3985,33 +4091,30 @@ th.Scrollbar = Class.define({
             if (this.orientation == th.VERTICAL) {
                 var w = d.b.iw;
                 var h = 15;
-                this.up.bounds = { x: d.i.l + 1, y: d.i.t, width: w, height: h };
-                this.down.bounds = { x: d.i.l + 1, y: d.b.ih - h, width: w, height: h };
+                this.up.bounds = { x: d.i.l, y: d.i.t, width: w, height: h };
+                this.down.bounds = { x: d.i.l, y: d.b.ih - h, width: w, height: h };
 
                 var scroll_track_height = d.b.ih - this.up.bounds.height - this.down.bounds.height;
 
                 var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
                 var extent_top = Math.floor(this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) ));
-                this.bar.bounds = { x: d.i.l + 1, y: extent_top, width: d.b.iw, height: extent_length };
+                this.bar.bounds = { x: d.i.l, y: extent_top, width: d.b.iw, height: extent_length };
             } else {
 
             }
         },
 
         paint: function(ctx) {
+            var d = this.d();
+
             if (this.max < 0) return;
 
-            var top = this.cssValue("-th-vertical-top-image");
-            var mid = this.cssValue("-th-vertical-middle-image");
-            var bot = this.cssValue("-th-vertical-bottom-image");
+            var imgs = this.tmb();
+            if (!imgs) return;
 
-            if (top) top = th.global_resources.images[top];
-            if (mid) mid = th.global_resources.images[mid];
-            if (bot) bot = th.global_resources.images[bot];
-
-            if (top) ctx.drawImage(top, 1, this.up.bounds.height);
-            if (mid) ctx.drawImage(mid, 1, this.up.bounds.height + top.height, mid.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
-            if (bot) ctx.drawImage(bot, 1, this.down.bounds.y - bot.height);
+            if (imgs.top) ctx.drawImage(imgs.top, d.i.l, this.up.bounds.height);
+            if (imgs.mid) ctx.drawImage(imgs.mid, d.i.l, this.up.bounds.height + imgs.top.height, imgs.mid.width, this.down.bounds.y - this.down.bounds.height - (this.up.bounds.x - this.up.bounds.height));
+            if (imgs.bot) ctx.drawImage(imgs.bot, d.i.l, this.down.bounds.y - imgs.bot.height);
 
             this._super(ctx);
         }
@@ -4149,6 +4252,8 @@ th.Splitter = Class.define({
             this.bus.bind("drag", [ this.topNib, this.bottomNib ], this.ondrag, this);
             this.bus.bind("dragstart", [ this.topNib, this.bottomNib ], this.ondragstart, this);
             this.bus.bind("dragstop", [ this.topNib, this.bottomNib ], this.ondragstop, this);
+
+            this.className = (this.orientation == th.VERTICAL) ? "vertical" : "horizontal";
         },
 
         ondrag: function(e) {
@@ -4164,7 +4269,24 @@ th.Splitter = Class.define({
         },
 
         getPreferredSize: function() {
-            return { height: 20, width: 16 };
+            var i = this.getInsets();
+            var iw = i.left + i.right;
+            var ih = i.top + i.bottom;
+
+            var height = this.cssValue("height");
+            if (height !== undefined) height = th.convertLengthToPixels(height, this);
+
+            var width = this.cssValue("width");
+            if (width !== undefined) width = th.convertLengthToPixels(width, this);
+
+            if (height !== undefined && width !== undefined) return { width: width + iw, height: height + ih };
+
+            if (this.scrollbar && this.scrollbar.shouldLayout() ) {
+                var pref = this.scrollbar.getPreferredSize();
+                if (pref) return { width: pref.width + iw, height: pref.height + ih };
+            }
+
+            return { width: (width === undefined) ? iw : width + iw, height: (height === undefined) ? ih : height + ih };
         },
 
         layout: function() {
@@ -4173,26 +4295,20 @@ th.Splitter = Class.define({
             if (!this.orientation) this.orientation = (this.bounds.height > this.bounds.width) ? th.HORIZONTAL : th.VERTICAL;
 
             if (this.orientation == th.HORIZONTAL) {
-                this.topNib.bounds = { x: 0, y: 0, height: d.b.w, width: d.b.w };
-                this.bottomNib.bounds = { x: 0, y: this.bounds.height - d.b.w, height: d.b.w, width: d.b.w };
+                this.topNib.bounds = { x: d.i.l, y: d.i.t, height: d.b.iw, width: d.b.iw };
+                this.bottomNib.bounds = { x: d.i.l, y: d.b.ih - d.b.iw, height: d.b.iw, width: d.b.iw };
 
                 if (this.scrollbar && this.scrollbar.shouldLayout()) {
-                    this.scrollbar.bounds = { x: 0, y: this.topNib.bounds.height, height: d.b.h - (this.topNib.bounds.height * 2), width: d.b.w };
+                    this.scrollbar.bounds = { x: d.i.l, y: this.topNib.bounds.height, height: d.b.ih - (this.topNib.bounds.height * 2), width: d.b.iw };
                 }
             } else {
-                this.topNib.bounds = { x: 0, y: 0, height: d.b.h, width: d.b.h };
-                this.bottomNib.bounds = { x: d.b.w - d.b.h, y: 0, height: d.b.h, width: d.b.h };
+                this.topNib.bounds = { x: d.i.l, y: d.i.t, height: d.b.ih, width: d.b.ih };
+                this.bottomNib.bounds = { x: d.b.iw - d.b.ih, y: d.i.t, height: d.b.ih, width: d.b.ih };
 
                 if (this.label) {
-                    this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: 0, height: d.b.h, width: d.b.w - (d.b.h * 2) };
+                    this.label.bounds = { x: this.topNib.bounds.x + this.topNib.bounds.width, y: d.i.t, height: d.b.ih, width: d.b.iw - (d.b.ih * 2) };
                 }
             }
-        },
-
-        paintSelf: function(ctx) {
-            this.className = (this.orientation == th.VERTICAL) ? "vertical" : "horizontal";
-            this.resolveCss();
-            this._super(ctx);
         }
     }
 });
@@ -4388,12 +4504,13 @@ th.Label = Class.define({
 
         getPreferredSize: function() {
             var ctx = this.styleContext(this.parent.getScratchContext());
+            var i = this.getInsets();
 
             var w = ctx.measureText(this.text).width + 2;
-            w += this.getInsets().left + this.getInsets().right;
+            w += i.left + i.right;
 
             var h = Math.floor(ctx.measureText(this.text).ascent * 1.5);   // multiplying by 2 to fake a descent and leading
-            h += this.getInsets().top + this.getInsets().bottom;
+            h += i.top + i.bottom;
 
             return { height: h, width: w };
         },
@@ -4407,11 +4524,11 @@ th.Label = Class.define({
 
             var textMetrics = ctx.measureText(this.text);
 
+            if (this.text === undefined) this.text = "";
             var textToRender = this.text;
-            if (!textToRender) textToRender = "";
             var lastLength = textToRender.length - 2;
             while (textMetrics.width > (d.b.w - d.i.w)) {
-                if (lastLength == 0) {
+                if (lastLength <= 0) {
                     textToRender = "...";
                     break;
                 }
@@ -4424,10 +4541,10 @@ th.Label = Class.define({
                 lastLength -= 1;
             }
 
-            var y = this.getInsets().top + textMetrics.ascent;
+            var y = d.i.t + textMetrics.ascent;
             if (th.browser.WebKit) y += 1;  // strings are one pixel too high in Safari 4 and Webkit nightly
 
-            ctx.fillText(textToRender, this.getInsets().left, y);
+            ctx.fillText(textToRender, d.i.l, y);
         }
     }
 });
@@ -4650,8 +4767,10 @@ th.List = Class.define({
 
                 var prefHeight = this.label.getPreferredSize().height;
                 this.label.bounds = { y: y, x: d.i.l, height: prefHeight, width: d.b.w };
+
                 this.label.paint(ctx);
                 this.label.border.paint(ctx);
+
                 y += prefHeight;
 
                 this.label.addCss("visibility", "hidden");   // prevent Th from rendering the label; we'll do it ourselves
@@ -4969,7 +5088,7 @@ th.HorizontalTree = Class.define({
         }
     }
 });
-th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}";
+th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;";
 /**
  * Copyright 2009 Tim Down.
  *
