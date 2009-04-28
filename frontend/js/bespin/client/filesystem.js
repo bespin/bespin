@@ -21,15 +21,15 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 // = FileSystem =
 //
 // This abstracts the remote Web Service file system, and in the future
 // local file systems too.
-// 
+//
 // It ties into the {{{bespin.client.Server}}} object for remote access
 
-dojo.provide("bespin.client.filesystem"); 
+dojo.provide("bespin.client.filesystem");
 
 dojo.declare("bespin.client.FileSystem", null, {
     constructor: function(server) {
@@ -99,8 +99,7 @@ dojo.declare("bespin.client.FileSystem", null, {
 
         if (collab) {
             bespin.get('editSession').startSession(project, path, onSuccess);
-        }
-        else {
+        } else {
             this.loadContents(project, path, onSuccess);
         }
     },
@@ -220,7 +219,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     //   elseFailed (file does not exist)
     whenFileExists: function(project, path, callbacks) {
         this.server.list(project, bespin.util.path.directory(path), function(files) {
-            if (files && dojo.some(files, function(file){ return (file.name == path); })) {   
+            if (files && dojo.some(files, function(file){ return (file.name == path); })) {
                 callbacks['execute']();
             } else {
                 if (callbacks['elseFailed']) callbacks['elseFailed']();

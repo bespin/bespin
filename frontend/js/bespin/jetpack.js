@@ -44,14 +44,14 @@ bespin.jetpack.projectName = "jetpacks";
 bespin.jetpack.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'jetpack',
     preview: 'play with jetpack features',
-    completeText: 'subcommands: create [featurename], install [featurename], list',
+    completeText: 'subcommands: create [name], install [name], list, edit [name]',
     subcommanddefault: 'help'
 }});
 
 // = Commands =
 // Jetpack related commands
 
-// ** {{{Command: help}}} **
+// ** {{{Command: jetpack help}}} **
 bespin.jetpack.commands.addCommand({
     name: 'help',
     takes: ['search'],
@@ -63,60 +63,60 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: create}}} **
+// ** {{{Command: jetpack create}}} **
 bespin.jetpack.commands.addCommand({
     name: 'create',
-    takes: ['name'],
+    takes: ['feature'],
     preview: 'create a new jetpack feature',
     description: 'Create a new jetpack feature that you can install into Firefox with the new Jetpack goodness.',
     completeText: 'name of the feature',
     template: "<feature id='TEMPLATE_NAME' name='TEMPLATE_NAME Sidebar Extension' version='0.1' description='TEMPLATE_NAME Sidebar Test Extension. Opens a sidebar with some HTML code.'>\n<!-- For more help, read the API documentation at: https://wiki.mozilla.org/Labs/Jetpack/API -->\n   <script>\n    let sidebar;\n\n    function install() {\n      sidebar =\n        Jetpack.UI.Sidebars.create(\n          { id: 'test', name: 'TEMPLATE_NAME Test Sidebar',\n            content: $('#sidebar-content')[0] });\n      window.setInterval(function() { updateTime(); }, 1000);\n    }\n\n    function updateTime() {\n      $('#time')[0].textContent = (new Date()).toString();\n      Jetpack.UI.Sidebars.update({ sidebar : sidebar });\n    }\n\n    function uninstall() {\n    }\n  </script>\n  <div id='sidebar-content'>\n    <h1>Success!</h1>\n    <p>Your sidebar extension was installed correctly!</p>\n    <p>The current <strong>date and time</strong> is:</p>\n    <ul>\n    <li id='time'></li>\n    </ul>\n    <p>And the code:</p>\n    <code><pre>\n    let sidebar;\n\n    function install() {\n      sidebar =\n        Jetpack.UI.Sidebars.create(\n          { id: 'test', name: 'Test Sidebar',\n            content: $('#sidebar-content')[0] });\n      window.setInterval(function() { updateTime(); }, 1000);\n    }\n\n    function updateTime() {\n      $('#time')[0].textContent = (new Date()).toString();\n      Jetpack.UI.Sidebars.update({sidebar : sidebar});\n    }\n    </pre></code>\n  </div>\n</feature>",
-    execute: function(self, name) {
-        name = name || 'newjetpack';
+    execute: function(self, feature) {
+        feature = feature || 'newjetpack';
 
         // make sure that the jetpacks project is alive!
         bespin.get('files').makeDirectory(bespin.jetpack.projectName, "");
 
-        // create a new file in BespinSettings/jetpack/{name}.html
+        // create a new file in BespinSettings/jetpack/{feature}.html
         bespin.publish("editor:newfile", {
             project: bespin.jetpack.projectName,
-            newfilename: name + '.html',
-            content: this.template.replace(/TEMPLATE_NAME/g, name)
+            newfilename: feature + '.html',
+            content: this.template.replace(/TEMPLATE_NAME/g, feature)
         });
     }
 });
 
-// ** {{{Command: install}}} **
+// ** {{{Command: jetpack install}}} **
 bespin.jetpack.commands.addCommand({
     name: 'install',
-    takes: ['name'],
+    takes: ['feature'],
     preview: 'install a jetpack feature',
     description: 'Install a Jetpack feature, either the current file, or the named feature',
     completeText: 'optionally, the name of the feature to install',
-    execute: function(self, name) {
+    execute: function(self, feature) {
         // Use the given name, or default to the current jetpack
-        name = name || (function() {
+        feature = feature || (function() {
             var editSession = bespin.get('editSession');
             if (editSession.project != bespin.jetpack.projectName) return; // jump out if not in the jetpack project
             var bits = editSession.path.split('.');
             return bits[bits.length - 2];
         })();
 
-        if (!name) {
+        if (!feature) {
             bespin.publish("message", { msg: "Please pass in the name of the Jetpack feature you would like to install" });
         } else {
             // add the link tag to the body
             // <link rel="jetpack" href="1.0/main.html" name="testExtension">
             var link = dojo.create("link", {
                 rel: 'jetpack',
-                href: bespin.util.path.combine("preview/at", bespin.jetpack.projectName, name + ".html"),
-                name: name
+                href: bespin.util.path.combine("preview/at", bespin.jetpack.projectName, feature + ".html"),
+                name: feature
             }, dojo.body());
         }
     }
 });
 
-// ** {{{Command: list}}} **
+// ** {{{Command: jetpack list}}} **
 bespin.jetpack.commands.addCommand({
     name: 'list',
     preview: 'list out the Jetpacks that you have written',
@@ -128,7 +128,7 @@ bespin.jetpack.commands.addCommand({
             if (!jetpacks || jetpacks.length < 1) {
                 output = "You haven't installed any Jetpacks. Run '> jetpack create' to get going.";
             } else {
-                output = "<u>Your Jetpacks</u><br/><br/>";
+                output = "<u>Your Jetpack Features</u><br/><br/>";
 
                 output += dojo.map(dojo.filter(jetpacks, function(file) {
                     return bespin.util.endsWith(file.name, '\\.html');
@@ -138,6 +138,37 @@ bespin.jetpack.commands.addCommand({
             }
 
             bespin.publish("message", { msg: output });
+        });
+    }
+});
+
+// ** {{{Command: jetpack edit}}} **
+bespin.jetpack.commands.addCommand({
+    name: 'edit',
+    takes: ['feature'],
+    preview: 'edit the given Jetpack feature',
+    completeText: 'feature name to edit (required)',
+    usage: '[feature]: feature name required.',
+    execute: function(self, feature) {
+        if (!feature) {
+            self.showUsage(this);
+            return;
+        }
+
+        var path = feature + '.html';
+
+        bespin.get('files').whenFileExists(bespin.jetpack.projectName, path, {
+            execute: function() {
+                bespin.publish("editor:openfile", {
+                    project: bespin.jetpack.projectName,
+                    filename: path
+                });
+            },
+            elseFailed: function() {
+                bespin.publish("message", {
+                    msg: "No feature called " + feature + ".<br><br><em>Run 'jetpack list' to see what is available.</em>"
+                });
+            }
         });
     }
 });
