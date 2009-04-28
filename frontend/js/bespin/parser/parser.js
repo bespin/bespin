@@ -503,7 +503,7 @@ bespin.parser.EngineResolver = function() {
       resolve: function(type) {
           //for some odd reason this doesn't work: return this.engines[type] || [];
           var ar = this.engines[type];
-          if (dojo.isArray(ar)) {
+          if (ar instanceof Array || typeof ar == "array") {
               if (ar[1]) {
                   return [ar[0]].concat([ar[1]]);
               }
