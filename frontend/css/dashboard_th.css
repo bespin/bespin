@@ -1,13 +1,13 @@
 Splitter.horizontal {
     border-left: 1px solid rgb(106, 105, 98);
     border-right: 1px solid black;
-    background-image: -webkit-gradient(linear, left top, right top, from(#44423A), to(#3F3D36)) 
+    background-image: -webkit-gradient(linear, left top, right top, from(#44423A), to(#3F3D36));
 }
 
 Splitter.vertical {
     border-top: 1px solid rgb(73, 72, 66);
     border-bottom: 1px solid black;
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613))
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
 }
 
 BespinSessionPanel {
@@ -48,6 +48,7 @@ Splitter > Label {
 /* this selects the project list in the horizontal tree */
 #htree-list-1 Label {
     background-color: rgb(61, 59, 52);
+    border: 0;
 }
 
 #htree-list-1 Label.evenmore, #htree-list-1 Label.oddmore {
@@ -72,8 +73,6 @@ HorizontalTree Label:active {
 }
 
 HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
-    border-top: 1px solid rgb(180, 114, 30);
-    border-bottom: 1px solid rgb(162, 97, 19);
     background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png);
     background-repeat: repeat-x, no-repeat;
     background-position: left top, right center;
@@ -90,19 +89,23 @@ HorizontalTree Label.evenmore, HorizontalTree Label.oddmore {
     background-image: url(../images/dash_icn_more.png);
     background-repeat: no-repeat;
     background-position: right center;
-    padding-top: 4px;
-    padding-bottom: 2px;
+    padding-top: 3px;
+    padding-bottom: 1px;
 }
 
 HorizontalTree Label.even, HorizontalTree Label.odd {
-    padding-top: 4px;
-    padding-bottom: 2px;
+    padding-top: 3px;
+    padding-bottom: 1px;
 }
 
 HorizontalTree Label.even, HorizontalTree Label.evenmore {
     background-color: rgb(76, 75, 65);
+    border-top: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
+    border-bottom: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
 }
 
 HorizontalTree Label.odd, HorizontalTree Label.oddmore {
     background-color: rgb(83, 80, 71);
+    border-top: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */
+    border-bottom: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */ 
 }
