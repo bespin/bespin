@@ -94,6 +94,12 @@ bespin.jetpack.commands.addCommand({
     description: 'Install a Jetpack feature, either the current file, or the named feature',
     completeText: 'optionally, the name of the feature to install',
     execute: function(self, feature) {
+        // For when Aza exposes the Jetpack object :)
+        // if (!window['Jetpack']) {
+        //     bespin.publish("message", { msg: "To install a Jetpack, you need to have installed the extension.<br><br>For now this lives in Firefox only, and you can <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check it out, and download the add-on here</a>." });
+        //     return;
+        // }
+
         // Use the given name, or default to the current jetpack
         feature = feature || (function() {
             var editSession = bespin.get('editSession');
