@@ -92,7 +92,7 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
 
             config.c.stats.incr("requests_DATE")
             config.c.stats.incr("requests")
-            
+
             request = BespinRequest(environ)
             response = BespinResponse(environ, start_response)
             skip_test = environ.get("BespinTestApp")
@@ -106,6 +106,7 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
                     log.error("request.cookies['Domain-Token']=%s" % query_token)
                     log.error("environ['HTTP_DOMAIN_TOKEN']=%s" % reply_token)
                     log.error("ERROR! The anti CSRF attack trip wire just went off. If you see this message and no-one is hacking you, please tell bespin-core@googlegroups.com")
+                    config.c.stats.incr("csrf_fail_DATE")
 
             user = request.user
             _add_base_headers(response)

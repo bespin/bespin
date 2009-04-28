@@ -31,8 +31,11 @@
     <link type="text/css" rel="stylesheet" href="css/dashboard.css">
     <link type="text/css" rel="stylesheet" href="css/shared.css">
 
-    <!-- begin script tags -->
+    <!-- this script tag needs to be included as is -->
     <script type="text/javascript" src="js/th/th.all.js"></script>
+    <!-- the script tags below will be replaced during the build -->
+    
+    <!-- begin script tags -->
     <script type="text/javascript">
         var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
@@ -65,7 +68,7 @@
             </tr>
         </table>
     </div>
-    <div id="info" style="display: none;"></div>
+    <div id="info" style="display: none;"><div id="info_text" style="overflow: auto; height: 100%"></div></div>
     <div id="centerpopup" style="display:none;"></div>
     <div id="overlay" style="display: none;"></div>
     </body>

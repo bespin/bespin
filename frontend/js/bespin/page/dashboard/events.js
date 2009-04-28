@@ -21,7 +21,7 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 dojo.provide("bespin.page.dashboard.events");
 
 if (!bespin.page.dashboard) bespin.page.dashboard = {};
@@ -33,9 +33,9 @@ bespin.subscribe("project:imported", function(event) {
 
 bespin.subscribe("project:set", function(event) {
     bespin.get('editSession').project = event.project; // set it in the session
-    
+
     if (!event.fromDashboardItemSelected) {
-        // selects the project in the tree and fire the itemselected event    
+        // selects the project in the tree and fire the itemselected event
         bespin.page.dashboard.tree.lists[0].selectItemByText(event.project);
         bespin.page.dashboard.tree.itemSelected({thComponent: bespin.page.dashboard.tree.lists[0], item: bespin.page.dashboard.tree.lists[0].selected});
     }
@@ -50,26 +50,26 @@ bespin.subscribe("project:delete", function(event) {
 });
 
 // ** {{{ Event: session:status }}} **
-// 
+//
 // Observe a request for session status
 bespin.subscribe("session:status", function(event) {
     var editSession = bespin.get('editSession');
     var msg = 'Hey ' + editSession.username;
-    
+
     if (editSession.project) {
         msg += ', you appear to be highlighting the project ' + editSession.project;
     } else {
         msg += ", you haven't select a project yet.";
     }
-    
+
     bespin.publish("message", { msg: msg });
 });
 
 // ** {{{ Event: editor:newfile }}} **
-// 
+//
 // Observe a request for a new file to be created
 bespin.subscribe("editor:newfile", function(event) {
-    var project = event.project || bespin.get('editSession').project; 
+    var project = event.project || bespin.get('editSession').project;
 
     if (!project) {
         bespin.publish("message", { msg: 'The new file action requires a project' });
@@ -78,5 +78,8 @@ bespin.subscribe("editor:newfile", function(event) {
 
     var newfilename = event.newfilename || "new.txt";
 
-    bespin.util.navigate.editor(project, newfilename);
+    var opts = { newFile: true };
+    if (event.content) opts.content = event.content;
+
+    bespin.util.navigate.editor(project, newfilename, opts);
 });

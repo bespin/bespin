@@ -518,8 +518,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
         if (bespin.authenticated) {
             self.seed();
-        }
-        else {
+        } else {
             bespin.subscribe("authenticated", function() {
                 self.seed();
             });

@@ -67,6 +67,8 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
             
             bd.isLoggedIn = true;
             editSession.setUserinfo(userinfo);
+            
+            bespin.publish("authenticated");
 
             server.list(null, null, bd.displayProjects); // get projects
             server.listOpen(bd.displaySessions); // get sessions
