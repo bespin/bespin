@@ -67,6 +67,18 @@ dojo.declare("bespin.client.session.EditSession", null, {
         });
     },
 
+    reportCollaborators: function(usernames) {
+        var contents = "";
+        dojo.forEach(usernames, function(username) {
+            contents += "<div class='collab_person'>";
+            contents += "  <div class='collab_icon'></div>";
+            contents += "  <div class='collab_name'>" + username + "</div>";
+            contents += "  <div class='collab_description'>Editing</div>";
+            contents += "</div>";
+        });
+        dojo.byId("collab_list").innerHTML = contents;
+    },
+
     stopSession: function() {
         this.project = undefined;
         this.path = undefined;

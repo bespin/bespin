@@ -188,8 +188,9 @@ class ViewObj:
   # .lock - Access control for writing to the text on this object.
   # .textobj - The shared text object being worked on.
 
-  def __init__(self, username, filename, persister):
+  def __init__(self, username, filename, handle, persister):
     # Setup this object
+    self.handle = handle
     self.username = username
     self.filename = filename
     self.lasttime = time.time()
@@ -222,7 +223,7 @@ class ViewObj:
     lock_views.release()
 
 
-def fetch_viewobj(username, filename, persister):
+def fetch_viewobj(username, filename, handle, persister):
   # Retrieve the named view object.  Create it if it doesn't exist.
   # Don't let two simultaneous creations happen, or a deletion during a
   # retrieval.
@@ -236,7 +237,7 @@ def fetch_viewobj(username, filename, persister):
     if MAX_VIEWS != 0 and len(views) > MAX_VIEWS:
       # Overflow, stop hammering my server.
       return None
-    viewobj = ViewObj(username, filename, persister)
+    viewobj = ViewObj(username, filename, handle, persister)
     log.debug("Creating view: '%s %s'" % key)
   lock_views.release()
   return viewobj
@@ -392,8 +393,10 @@ class MobwriteWorker:
     actions = []
     username = None
     filename = None
+    handle = None
     server_version = None
     echo_username = False
+    echo_collaborators = False
     for line in data.splitlines():
       if not line:
         # Terminate on blank line.
@@ -446,6 +449,13 @@ class MobwriteWorker:
           # Client requests explicit usernames in response.
           echo_username = True
 
+      elif name == "h" or name == "H":
+        # Remember the username.
+        handle = value
+        if name == "H":
+          # Client requests explicit collaborator handles in response.
+          echo_collaborators = True
+
       elif name == "f" or name == "F":
         # Remember the filename and version.
         filename = value
@@ -467,6 +477,7 @@ class MobwriteWorker:
         action["server_version"] = server_version
         action["client_version"] = version
         action["data"] = value
+        action["handle"] = handle
         if username and filename and action["mode"]:
           action["username"] = username
           action["filename"] = filename
@@ -474,12 +485,13 @@ class MobwriteWorker:
         else:
           log.warning("Skipping " + str(action) + ": username=" + str(username) + ", filename=" + str(filename) + ", action[mode]=" + str(action["mode"]))
 
-    output.append(self.doActions(actions, echo_username))
+    answers = self.doActions(actions, echo_username, echo_collaborators)
+    output.append(answers)
 
     return "".join(output)
 
 
-  def doActions(self, actions, echo_username):
+  def doActions(self, actions, echo_username, echo_collaborators):
     output = []
     last_username = None
     last_filename = None
@@ -492,7 +504,7 @@ class MobwriteWorker:
 
       # Fetch the requested view object.
       if not viewobj:
-        viewobj = fetch_viewobj(action["username"], action["filename"], self.persister)
+        viewobj = fetch_viewobj(action["username"], action["filename"], action["handle"], self.persister)
         viewobj.lock.acquire()
         delta_ok = True
         if viewobj == None:
@@ -613,7 +625,15 @@ class MobwriteWorker:
         viewobj.lock.release()
         viewobj = None
 
-    return "".join(output)
+    if echo_collaborators:
+      collaborators = set([view.handle for view in texts[action["filename"]].views])
+      #collaborators -= actions["handle"]
+      line = "C:" + (",".join(collaborators))
+      output.append(line)
+
+    answer = "".join(output)
+
+    return answer
 
 
   def generateDiffs(self, viewobj, last_username, last_filename,
@@ -703,7 +723,9 @@ class EchoRequestHandler(SocketServer.StreamRequestHandler, MobwriteWorker):
       data.append(line)
       if not line.rstrip("\r\n"):
         # Terminate and execute on blank line.
-        self.wfile.write(self.parseRequest("".join(data)))
+        question = "".join(data)
+        answer = self.parseRequest(question)
+        self.wfile.write(answer)
         break
 
     # Goodbye
