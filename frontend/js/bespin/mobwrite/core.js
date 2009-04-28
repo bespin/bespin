@@ -608,6 +608,11 @@ mobwrite.syncRun2_ = function(text) {
           }
         }
       }
+    } else if (name == 'C' || name == 'c') {
+      var users = value.split(",");
+      console.log("Collab:", users);
+      console.log(file);
+      var token = file._editSession.reportCollaborators(users);
     }
   }
 

@@ -671,6 +671,8 @@ def mobwrite(request, response):
         raise BadRequest("Missing q= or p=")
     question = question[2:]
 
+    question = "H:" + str(request.user.username) + "\n" + question
+
     # TODO: select the implementation based on a runtime flag
     worker = InProcessMobwriteWorker(request.user_manager)
     #worker = MobwriteWorkerProxy()
