@@ -63,8 +63,8 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.2.0",
-        name="Sassy Cirrus",
+        number="0.2.1",
+        name="Cheeky Cirrus",
         api="4"
     ),
     build_top=path("build"),
