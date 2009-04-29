@@ -69,12 +69,14 @@ dojo.provide("bespin.cmd.debugcommands");
     // ** {{{Command: showevents}}} **
     commandStore.addCommand({
         name: 'showevents',
+        takes: ['arg'],
         preview: 'Display the events available via pub/sub.',
         hidden: true,
-        execute: function(self) {
+        execute: function(self, arg) {
+            var all = typeof arg != "undefined" && arg == "all";
             var html = "<u>Showing all Bespin Events</u><br><br>";
             for (var topic in dojo._topics) {
-                if (topic.indexOf("bespin:") == 0) {
+                if (all || topic.indexOf("bespin:") == 0) {
                     html += topic + "<br>";
                 }
             }
