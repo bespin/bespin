@@ -3912,7 +3912,7 @@ th.Button = Class.define({
             if (height !== undefined && width !== undefined) return { width: width + iw, height: height + ih };
 
             var im = this.tmb();
-            if (im.top && im.mid && im.bot) {
+            if ((im) && (im.top && im.mid && im.bot)) {
                 if (height === undefined) height = im.top.height + im.mid.height + im.bot.height;
                 if (width === undefined) width = im.top.width;
                 return { width: width + iw, height: height + ih };
@@ -3999,9 +3999,11 @@ th.Scrollbar = Class.define({
                 return;
             }
 
+            var d = this.d();
+
             var diff = currentPosition - this.dragstart_mouse;  // difference in pixels; needs to be translated to a difference in value
 
-            var pixel_range = this.bounds.height - this.up.bounds.height - this.down.bounds.height - this.bar.bounds.height; // total number of pixels that map to the value range
+            var pixel_range = d.b.ih - this.up.bounds.height - this.down.bounds.height - this.bar.bounds.height;
 
             var pixel_to_value_ratio = (this.max - this.min) / pixel_range;
 
@@ -4074,9 +4076,10 @@ th.Scrollbar = Class.define({
         layout: function() {
             var d = this.d();
 
+            var scrollable_info = undefined;
             if (this.scrollable) {
                 var view_height = this.scrollable.bounds.height;
-                var scrollable_info = this.scrollable.getScrollInfo();
+                scrollable_info = this.scrollable.getScrollInfo();
                 this.min = 0;
                 this.max = scrollable_info.scrollHeight - view_height;
                 this.value = scrollable_info.scrollTop;
@@ -4090,7 +4093,7 @@ th.Scrollbar = Class.define({
 
             if (this.orientation == th.VERTICAL) {
                 var w = d.b.iw;
-                var h = 15;
+                var h = this.up.getPreferredSize().height;
                 this.up.bounds = { x: d.i.l, y: d.i.t, width: w, height: h };
                 this.down.bounds = { x: d.i.l, y: d.b.ih - h, width: w, height: h };
 
@@ -4098,6 +4101,17 @@ th.Scrollbar = Class.define({
 
                 var extent_length = Math.min(Math.floor(scroll_track_height - (this.extent * scroll_track_height), d.b.ih - this.up.bounds.height - this.down.bounds.height));
                 var extent_top = Math.floor(this.up.bounds.height + Math.min( (this.value / (this.max - this.min)) * (scroll_track_height - extent_length) ));
+
+                var overflow = (extent_top + extent_length) - this.down.bounds.y;
+                if (overflow > 0) {
+                    extent_top -= overflow;
+                    if (this.scrollable) {
+                        this.value = this.max;
+                        this.scrollable.scrollTop = this.value;
+                        this.scrollable.repaint();
+                    }
+                }
+
                 this.bar.bounds = { x: d.i.l, y: extent_top, width: d.b.iw, height: extent_length };
             } else {
 
