@@ -4548,7 +4548,11 @@ th.Label = Class.define({
             var lastLength = textToRender.length - 2;
             while (textMetrics.width > (d.b.w - d.i.w)) {
                 if (lastLength <= 0) {
-                    textToRender = "...";
+                    if (this.text.length > 1) {
+                        textToRender = "...";
+                    } else {
+                        textToRender = this.text;
+                    }
                     break;
                 }
 
