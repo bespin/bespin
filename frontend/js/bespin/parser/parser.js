@@ -179,7 +179,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 var source = editor.model.getDocument();
                 self.lineMarkers = [];
                 bespin.parser.AsyncEngineResolver.parse(type, source).and(function(data) {
-                    for (var i = 0; i < data.errors.length; i++) {
+                    if (data.errors) for (var i = 0; i < data.errors.length; i++) {
                         bespin.publish("parser:error", {
                             message: data.errors[i].message,
                             row: data.errors[i].line,
