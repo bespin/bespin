@@ -251,6 +251,19 @@ def install_template(request, response):
     response.content_type = "text/plain"
     response.body = ""
     return response()
+    
+@expose(r'^/file/template/(?P<path>.*)', 'PUT')
+def install_file_template(request, response):
+    user = request.user
+    owner, project, path = _split_path(request)
+    
+    project = model.get_project(user, user, project, create=True)
+    options = simplejson.loads(request.body)
+    project.install_template_file(path, options)
+    
+    response.body = ""
+    response.content_type = "text/plain"
+    return response()
 
 @expose(r'^/file/list_all/(?P<project_name>.*)/$', 'GET')
 def file_list_all(request, response):
@@ -845,6 +858,7 @@ def stats(request, response):
     response.content_type = "application/json"
     response.body = simplejson.dumps(result)
     return response()
+    
 
 def db_middleware(app):
     def wrapped(environ, start_response):

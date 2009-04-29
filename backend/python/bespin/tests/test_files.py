@@ -804,3 +804,15 @@ def test_list_all_files():
     data = simplejson.loads(resp.body)
     assert len(data) == 3
     
+def test_install_template_files():
+    _init_data()
+    app.put("/file/template/jetpacks/mysidebar.html",
+            simplejson.dumps(dict(stdtemplate="jetpacks/sidebar.html",
+                values=dict(templateName="mysidebar"))))
+    jetpacks = get_project(macgyver, macgyver, "jetpacks")
+    datafile = jetpacks.get_file_object("mysidebar.html")
+    
+    data = datafile.data
+    assert "mysidebar" in data
+    assert "Sidebar Extension" in data
+    

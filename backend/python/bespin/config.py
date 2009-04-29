@@ -52,7 +52,10 @@ c = Bunch()
 c.dburl = None
 c.secret = "This is the phrase that is used for secret stuff."
 c.pw_secret = "This phrase encrypts passwords."
-c.static_dir = os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__))
+c.static_dir = path(os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__)))
+
+c.template_file_dir = c.static_dir / "templates"
+
 c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.default_quota = 15
