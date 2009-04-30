@@ -101,15 +101,18 @@ class Connection(Base):
 
 class Message(Base):
     __tablename__ = "messages"
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     when = Column(DateTime, default=datetime.now)
     message = Column(Text)
 
+    def __str__(self):
+        return "Message[id=%s, msg=%s]" % (self.id, self.message)
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True)
     username = Column(String(128), unique=True)
@@ -121,7 +124,7 @@ class User(Base):
     file_location = Column(String(200))
     everyone_viewable = Column(Boolean, default=False)
     messages = relation(Message, order_by=Message.when, backref="user")
-    
+
     i_follow = relation(Connection,
                         primaryjoin=Connection.following_id==id,
                         secondary=Connection.__table__,
@@ -131,7 +134,7 @@ class User(Base):
                             primaryjoin=Connection.followed_id==id,
                             secondary=Connection.__table__,
                             secondaryjoin=id==Connection.following_id)
-    
+
     def __init__(self, username, password, email):
         self.username = username
         self.email = email
@@ -149,7 +152,7 @@ class User(Base):
             file_location = "/".join(file_location[:levels]) + "/" + file_location
             
         self.file_location = file_location
-        
+
     def __str__(self):
         return "User[%s id=%s]" % (self.username, self.id)
 
@@ -158,11 +161,11 @@ class User(Base):
         if the user has enough available in their quota, False otherwise.
         """
         return (self.quota * QUOTA_UNITS - self.amount_used - amount) > 0
-        
+
     def quota_info(self):
         """Returns the tuple of quota and amount_used"""
         return (self.quota * QUOTA_UNITS, self.amount_used)
-    
+
     def get_location(self):
         file_loc = self.file_location
         if file_loc.startswith("/"):
@@ -291,6 +294,63 @@ class User(Base):
             settings[info[0]] = info[1]
         return settings
 
+    def users_i_follow(self):
+        """Retrieve a list of the users that someone follows."""
+        return _get_session().query(Connection).filter_by(following=self).all()
+
+    def users_following_me(self):
+        """Retrieve a list of the users that someone is following"""
+        return _get_session().query(Connection).filter_by(followed=self).all()
+
+    def follow(self, followed_user):
+        """Add a follow connection between 2 users"""
+        if (followed_user == self):
+            raise ConflictError("You can't follow yourself")
+
+        following_user_name = self.username;
+        followed_user_name = followed_user.username;
+        _get_session().add(Connection(followed=followed_user, following=self))
+        try:
+            _get_session().flush()
+        except DBAPIError:
+            _get_session().rollback()
+            raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
+
+    def unfollow(self, followed_user):
+        """Remove a follow connection between 2 users"""
+        following_user_name = self.username;
+        followed_user_name = followed_user.username;
+        rows = _get_session().query(Connection) \
+            .filter_by(followed=followed_user) \
+            .filter_by(following=self) \
+            .delete()
+        if rows == 0:
+            raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
+
+    def get_group(self, group_name, create_on_not_found=False, raise_on_not_found=False):
+        """Check to see if the given member name represents a group"""
+        match = _get_session().query(Group) \
+            .filter_by(owner_id=self.id) \
+            .filter_by(name=group_name) \
+            .first()
+
+        if match != None:
+            return match
+
+        if create_on_not_found:
+            return self.add_group(group_name)
+        elif raise_on_not_found:
+            raise ConflictError("%s does not have a group called '%s'" % (self.username, group_name))
+        else:
+            return None
+
+    def add_group(self, group_name):
+        """Create (and return) a new group for the given user, with the given name"""
+        group = Group(self, group_name)
+        _get_session().add(group)
+        _get_session().flush()
+        return group
+
 class Group(Base):
     __tablename__ = "groups"
 
@@ -408,8 +468,8 @@ def _check_identifiers(kind, value):
         raise BadValue("%s must only contain letters, numbers and dashes and must start with a letter or number." % (kind))
 
 class UserManager(object):
-    def __init__(self, session):
-        self.session = session
+    def __init__(self):
+        self.session = config.c.session_factory()
 
     def create_user(self, username, password, email, override_location=None):
         """Adds a new user with the given username and password.
@@ -449,7 +509,7 @@ class UserManager(object):
             if member == 'everyone':
                 return member
             else:
-                group = self.get_group(user, member)
+                group = user.get_group(member)
                 if group != None:
                     return group
                 else:
@@ -468,44 +528,12 @@ class UserManager(object):
                 if not name.basename().startswith(".")]
         result = sorted(result, key=lambda item: item.name)
         if include_shared:
-            for followee_connection in self.users_i_follow(user):
+            for followee_connection in user.users_i_follow():
                 followee = followee_connection.followed
                 for project in followee.projects:
                     if self.is_project_shared(followee, project, user):
                         result.append(project)
         return result
-
-    def users_i_follow(self, following_user):
-        """Retrieve a list of the users that someone follows."""
-        return self.session.query(Connection).filter_by(following=following_user).all()
-
-    def users_following_me(self, followed_user):
-        """Retrieve a list of the users that someone is following"""
-        return self.session.query(Connection).filter_by(followed=followed_user).all()
-
-    def follow(self, following_user, followed_user):
-        """Add a follow connection between 2 users"""
-        if (followed_user == following_user):
-            raise ConflictError("You can't follow yourself")
-
-        following_user_name = following_user.username;
-        followed_user_name = followed_user.username;
-        self.session.add(Connection(followed=followed_user, following=following_user))
-        try:
-            self.session.flush()
-        except DBAPIError:
-            raise ConflictError("%s is already following %s" % (following_user_name, followed_user_name))
-
-    def unfollow(self, following_user, followed_user):
-        """Remove a follow connection between 2 users"""
-        following_user_name = following_user.username;
-        followed_user_name = followed_user.username;
-        rows = self.session.query(Connection) \
-            .filter_by(followed=followed_user) \
-            .filter_by(following=following_user) \
-            .delete()
-        if rows == 0:
-            raise ConflictError("%s is not following %s" % (following_user_name, followed_user_name))
 
     def get_groups(self, user, with_member=None):
         """Retrieve a list of the groups created by a given user."""
@@ -516,33 +544,9 @@ class UserManager(object):
         return query.all()
 
     def debug(self):
-        for table in [ User, Group, GroupMembership ]:            
+        for table in [ User, Group, GroupMembership ]:
             for found in self.session.query(table).all():
                 print found
-
-    def get_group(self, user, group_name, create_on_not_found=False, raise_on_not_found=False):
-        """Check to see if the given member name represents a group"""
-        match = self.session.query(Group) \
-            .filter_by(owner_id=user.id) \
-            .filter_by(name=group_name) \
-            .first()
-
-        if match != None:
-            return match
-
-        if create_on_not_found:
-            return self.add_group(user, group_name)
-        elif raise_on_not_found:
-            raise ConflictError("%s does not have a group called '%s'" % (user.username, group_name))
-        else:
-            return None
-
-    def add_group(self, user, group_name):
-        """Create (and return) a new group for the given user, with the given name"""
-        group = Group(user, group_name)
-        self.session.add(group)
-        self.session.flush()
-        return group
 
     def remove_group(self, group):
         """Remove a group (and all its members) from the owning users profile"""
@@ -1627,3 +1631,5 @@ def _find_common_base(member_names):
             break
     return base
     
+def _get_session():
+    return config.c.session_factory()

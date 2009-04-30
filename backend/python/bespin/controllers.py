@@ -1,19 +1,14 @@
 #  ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1
 # 
-# The contents of this file are subject to the Mozilla Public License  
-# Version
-# 1.1 (the "License"); you may not use this file except in compliance  
-# with
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
 # the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
 # 
-# Software distributed under the License is distributed on an "AS IS"  
-# basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
-# License
-# for the specific language governing rights and limitations under the
-# License.
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the License.
 # 
 # The Original Code is Bespin.
 # 
@@ -472,21 +467,21 @@ def rename_project(request, response):
 
 @expose(r'^/network/followers/', 'GET')
 def follow(request, response):
-    return _users_followed_response(request.user_manager, request.user, response)
+    return _users_followed_response(request.user, response)
 
 @expose(r'^/network/follow/', 'POST')
 def follow(request, response):
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
         request.user_manager.follow(request.user, other_user)
-    return _users_followed_response(request.user_manager, request.user, response)
+    return _users_followed_response(request.user, response)
 
 @expose(r'^/network/unfollow/', 'POST')
 def unfollow(request, response):
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
-        request.user_manager.unfollow(request.user, other_user)
-    return _users_followed_response(request.user_manager, request.user, response)
+        request.user.unfollow(other_user)
+    return _users_followed_response(request.user, response)
 
 @expose(r'^/group/list/all', 'GET')
 def group_list_all(request, response):
@@ -497,7 +492,7 @@ def group_list_all(request, response):
 @expose(r'^/group/list/(?P<group>[^/]+)/$', 'GET')
 def group_list(request, response):
     group_name = request.kwargs['group']
-    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    group = request.user.get_group(group_name, raise_on_not_found=True)
     members = request.user_manager.get_group_members(group)
     members = [ member.user.username for member in members ]
     return _respond_json(response, members)
@@ -505,7 +500,7 @@ def group_list(request, response):
 @expose(r'^/group/remove/all/(?P<group>[^/]+)/$', 'POST')
 def group_remove_all(request, response):
     group_name = request.kwargs['group']
-    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    group = request.user.get_group(group_name, raise_on_not_found=True)
     rows = 0
     rows += request.user_manager.remove_all_group_members(group)
     rows += request.user_manager.remove_group(group)
@@ -514,7 +509,7 @@ def group_remove_all(request, response):
 @expose(r'^/group/remove/(?P<group>[^/]+)/$', 'POST')
 def group_remove(request, response):
     group_name = request.kwargs['group']
-    group = request.user_manager.get_group(request.user, group_name, raise_on_not_found=True)
+    group = request.user.get_group(group_name, raise_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     rows = 0
     for other_user in users:
@@ -527,7 +522,7 @@ def group_remove(request, response):
 @expose(r'^/group/add/(?P<group>[^/]+)/$', 'POST')
 def group_add(request, response):
     group_name = request.kwargs['group']
-    group = request.user_manager.get_group(request.user, group_name, create_on_not_found=True)
+    group = request.user.get_group(group_name, raise_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
         request.user_manager.add_group_member(group, other_user)
@@ -551,8 +546,8 @@ def _lookup_usernames(user_manager, usernames):
         return user
     return map(lookup_username, usernames)
 
-def _users_followed_response(user_manager, user, response):
-    list = user_manager.users_i_follow(user)
+def _users_followed_response(user, response):
+    list = user.users_i_follow()
     list = [connection.followed.username for connection in list]
     response.body = simplejson.dumps(list)
     response.content_type = "text/plain"
@@ -851,9 +846,8 @@ def db_middleware(app):
         from bespin import model
         from sqlalchemy.orm import scoped_session
         session = c.session_factory()
-        environ['bespin.dbsession'] = session
         environ['bespin.docommit'] = True
-        environ['user_manager'] = model.UserManager(session)
+        environ['user_manager'] = model.UserManager()
         try:
             # If you need to work out what <script> tags to insert into a
             # page to get Dojo to behave properly, then uncomment these 3

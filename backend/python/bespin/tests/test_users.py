@@ -49,7 +49,7 @@ def _get_user_manager(clear=False):
     if clear:
         _clear_db()
     s = config.c.session_factory()
-    user_manager = UserManager(s)
+    user_manager = UserManager()
     return s, user_manager
     
 # Model tests    

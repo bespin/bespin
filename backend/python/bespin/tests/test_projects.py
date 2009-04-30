@@ -71,7 +71,7 @@ def _init_data():
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
     
-    user_manager = model.UserManager(s)
+    user_manager = model.UserManager()
     someone_else = user_manager.create_user("SomeoneElse", "", "someone@else.com")
     murdoc = user_manager.create_user("Murdoc", "", "murdoc@badpeople.bad")
     

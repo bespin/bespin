@@ -6,6 +6,7 @@ from path import path
 
 from bespin import vcs, config, controllers, model
 
+user_manager = None
 macgyver = None
 app = None
 
@@ -29,12 +30,14 @@ def _init_data():
     model.Base.metadata.drop_all(bind=config.c.dbengine)
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
-    user_manager = model.UserManager(s)
+    global user_manager
+    user_manager = model.UserManager()
     
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
         
     macgyver = user_manager.get_user("MacGyver")
+    s.flush()
 
 
 clone_output = """requesting all changes
@@ -197,7 +200,9 @@ def test_hg_clone_on_web(run_command_params):
     command, context = run_command_params
     
     working_dir = context.working_dir
-    
+
+    global macgyver
+    macgyver = user_manager.get_user("MacGyver")
     command_line = " ".join(command.get_command_line())
     assert command_line == "hg clone http://someuser:theirpass@hg.mozilla.org/labs/bespin bigmac"
     assert working_dir == macgyver.get_location()
@@ -232,7 +237,9 @@ def test_hg_clone_on_web_with_ssh(run_command_params):
     command, context = run_command_params
     
     working_dir = context.working_dir
-    
+
+    global macgyver
+    macgyver = user_manager.get_user("MacGyver")
     command_line = command.get_command_line()
     assert command_line[0:3] == ["hg", "clone", "-e"]
     assert command_line[3].startswith("ssh -i")
@@ -304,6 +311,8 @@ def test_hg_diff_on_web(run_command_params):
     command_line = " ".join(command.get_command_line())
     assert command_line == "hg diff"
     assert working_dir == bigmac.location
+    print "output=" + output
+    print "diff_output=" + diff_output
     assert output == diff_output
 
 def test_keychain_creation():
