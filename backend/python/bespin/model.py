@@ -351,6 +351,14 @@ class User(Base):
         _get_session().flush()
         return group
 
+    def get_groups(self, with_member=None):
+        """Retrieve a list of the groups created by a given user."""
+        query = _get_session().query(Group).filter_by(owner_id=self.id)
+        if with_member != None:
+            query = query.filter(GroupMembership.user_id==with_member.id) \
+                .filter(Group.id==GroupMembership.group_id)
+        return query.all()
+
 class Group(Base):
     __tablename__ = "groups"
 
@@ -368,6 +376,39 @@ class Group(Base):
 
     def __str__(self):
         return "Group[%s id=%s owner_id=%s]" % (self.name, self.id, self.owner_id)
+
+    def remove(self):
+        """Remove a group (and all its members) from the owning users profile"""
+        return _get_session().query(Group). \
+            filter_by(id=self.id). \
+            delete()
+
+    def get_members(self):
+        """Retrieve a list of the members of a given users group"""
+        return _get_session().query(GroupMembership) \
+            .filter_by(group_id=self.id) \
+            .all()
+
+    def add_member(self, other_user):
+        """Add a member to a given users group."""
+        if self.owner_id == other_user.id:
+            raise ConflictError("You can't be a member of your own group")
+        membership = GroupMembership(self, other_user)
+        _get_session().add(membership)
+        return membership
+
+    def remove_member(self, other_user):
+        """Remove a member from a given users group."""
+        return _get_session().query(GroupMembership) \
+            .filter_by(group_id=self.id) \
+            .filter_by(user_id=other_user.id) \
+            .delete()
+
+    def remove_all_members(self):
+        """Remove all the members of a given group"""
+        return _get_session().query(GroupMembership) \
+            .filter_by(group_id=self.id) \
+            .delete()
 
 class GroupMembership(Base):
     __tablename__ = "group_memberships"
@@ -535,51 +576,10 @@ class UserManager(object):
                         result.append(project)
         return result
 
-    def get_groups(self, user, with_member=None):
-        """Retrieve a list of the groups created by a given user."""
-        query = self.session.query(Group).filter_by(owner_id=user.id)
-        if with_member != None:
-            query = query.filter(GroupMembership.user_id==with_member.id) \
-                .filter(Group.id==GroupMembership.group_id)
-        return query.all()
-
     def debug(self):
         for table in [ User, Group, GroupMembership ]:
             for found in self.session.query(table).all():
                 print found
-
-    def remove_group(self, group):
-        """Remove a group (and all its members) from the owning users profile"""
-        return self.session.query(Group). \
-            filter_by(id=group.id). \
-            delete()
-
-    def get_group_members(self, group):
-        """Retrieve a list of the members of a given users group"""
-        return self.session.query(GroupMembership) \
-            .filter_by(group_id=group.id) \
-            .all()
-
-    def add_group_member(self, group, other_user):
-        """Add a member to a given users group."""
-        if group.owner_id == other_user.id:
-            raise ConflictError("You can't be a member of your own group")
-        membership = GroupMembership(group, other_user)
-        self.session.add(membership)
-        return membership
-
-    def remove_group_member(self, group, other_user):
-        """Remove a member from a given users group."""
-        return self.session.query(GroupMembership) \
-            .filter_by(group_id=group.id) \
-            .filter_by(user_id=other_user.id) \
-            .delete()
-
-    def remove_all_group_members(self, group):
-        """Remove all the members of a given group"""
-        return self.session.query(GroupMembership) \
-            .filter_by(group_id=group.id) \
-            .delete()
 
     def get_sharing(self, user, project=None, member=None):
         """Retrieve a list of the shares (at all levels) made by a given user,
@@ -604,17 +604,6 @@ class UserManager(object):
                            self.get_group_sharing(user, project, member) + \
                            self.get_everyone_sharing(user, project)
 
-    def _create_share_record(self, owner_name, type, sharing):
-        """For internal use by the get_*_sharing methods"""
-        return {
-            'owner':owner_name,
-            'project':sharing.project_name,
-            'type':type,
-            'recipient':sharing.invited_name,
-            'edit':sharing.edit,
-            'loadany':sharing.loadany
-        }
-
     def get_user_sharing(self, user, project=None, invited_user=None):
         """Retrieve a list of the user level shares made by a user, optionally
         filtered by project and by invited user"""
@@ -623,7 +612,7 @@ class UserManager(object):
             query = query.filter_by(project_name=project.name)
         if invited_user != None:
             query = query.filter_by(invited_user_id=invited_user.id)
-        return [self._create_share_record(user.username, 'user', sharing) for sharing in query.all()]
+        return [_create_share_record(user.username, 'user', sharing) for sharing in query.all()]
 
     def get_group_sharing(self, user, project=None, invited_group=None):
         """Retrieve a list of the group level shares made by a user, optionally
@@ -633,7 +622,7 @@ class UserManager(object):
             query = query.filter_by(project_name=project.name)
         if invited_group != None:
             query = query.filter_by(invited_group_id=invited_group.id)
-        return [self._create_share_record(user.username, 'group', sharing) for sharing in query.all()]
+        return [_create_share_record(user.username, 'group', sharing) for sharing in query.all()]
 
     def get_everyone_sharing(self, user, project=None):
         """Retrieve a list of the public level shares made by a user, optionally
@@ -641,7 +630,7 @@ class UserManager(object):
         query = self.session.query(EveryoneSharing).filter_by(owner_id=user.id)
         if project != None:
             query = query.filter_by(project_name=project.name)
-        return [self._create_share_record(user.username, 'everyone', sharing) for sharing in query.all()]
+        return [_create_share_record(user.username, 'everyone', sharing) for sharing in query.all()]
 
     def remove_user_sharing(self, user, project, invited_user=None):
         user_query = self.session.query(UserSharing).filter_by(owner_id=user.id)
@@ -710,7 +699,7 @@ class UserManager(object):
             return True
         if self.is_project_user_shared(owner, project, user):
             return True
-        groups = self.get_groups(owner, user)
+        groups = owner.get_groups(user)
         for group in groups:
             if self.is_project_group_shared(owner, project, group):
                 return True
@@ -757,6 +746,17 @@ class UserManager(object):
             messages.append(message.message)
             self.session.delete(message)
         return messages
+
+def _create_share_record(self, owner_name, type, sharing):
+    """For internal use by the get_*_sharing methods"""
+    return {
+        'owner':owner_name,
+        'project':sharing.project_name,
+        'type':type,
+        'recipient':sharing.invited_name,
+        'edit':sharing.edit,
+        'loadany':sharing.loadany
+    }
 
 class Directory(object):
     def __init__(self, project, name):

@@ -493,7 +493,7 @@ def group_list_all(request, response):
 def group_list(request, response):
     group_name = request.kwargs['group']
     group = request.user.get_group(group_name, raise_on_not_found=True)
-    members = request.user_manager.get_group_members(group)
+    members = group.get_members()
     members = [ member.user.username for member in members ]
     return _respond_json(response, members)
 
@@ -502,8 +502,8 @@ def group_remove_all(request, response):
     group_name = request.kwargs['group']
     group = request.user.get_group(group_name, raise_on_not_found=True)
     rows = 0
-    rows += request.user_manager.remove_all_group_members(group)
-    rows += request.user_manager.remove_group(group)
+    rows += group.remove_all_members()
+    rows += group.remove()
     return _respond_json(response, rows)
 
 @expose(r'^/group/remove/(?P<group>[^/]+)/$', 'POST')
@@ -513,10 +513,10 @@ def group_remove(request, response):
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     rows = 0
     for other_user in users:
-        rows += request.user_manager.remove_group_member(group, other_user)
-    members = request.user_manager.get_group_members(group)
+        rows += group.remove_member(other_user)
+    members = group.get_members()
     if len(members) == 0:
-        rows += request.user_manager.remove_group(group)
+        rows += group.group()
     return _respond_json(response, rows)
 
 @expose(r'^/group/add/(?P<group>[^/]+)/$', 'POST')
@@ -525,7 +525,7 @@ def group_add(request, response):
     group = request.user.get_group(group_name, raise_on_not_found=True)
     users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
     for other_user in users:
-        request.user_manager.add_group_member(group, other_user)
+        group.add_member(other_user)
     return _respond_blank(response)
 
 def _respond_blank(response):

@@ -71,10 +71,10 @@ def _reset():
     ev = user_manager.create_user("ev", "ev", "ev")
     joe = user_manager.create_user("joe", "joe", "joe")
     group = joe.add_group("group")
-    user_manager.add_group_member(group, mattb)
-    user_manager.add_group_member(group, zuck)
-    user_manager.add_group_member(group, tom)
-    user_manager.add_group_member(group, ev)
+    group.add_member(mattb)
+    group.add_member(zuck)
+    group.add_member(tom)
+    group.add_member(ev)
 
     global app
     app = controllers.make_app()
@@ -97,90 +97,90 @@ def _group_member_names(group_memberships):
 def test_groups():
     _reset()
 
-    assert_equals(len(user_manager.get_groups(joe)), 1)
+    assert_equals(len(joe.get_groups()), 1)
 
     homies = joe.get_group("homies", create_on_not_found=True)
-    assert_equals(_group_names(user_manager.get_groups(joe)), set([ "homies", "group" ]))
-    assert_equals(_group_names(user_manager.get_groups(joe, mattb)), set([ "group" ]))
+    assert_equals(_group_names(joe.get_groups()), set([ "homies", "group" ]))
+    assert_equals(_group_names(joe.get_groups(mattb)), set([ "group" ]))
 
-    user_manager.add_group_member(homies, mattb)
-    assert_equals(_group_names(user_manager.get_groups(joe, mattb)), set([ "homies", "group" ]))
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb" ]))
+    homies.add_member(mattb)
+    assert_equals(_group_names(joe.get_groups(mattb)), set([ "homies", "group" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb" ]))
 
-    user_manager.add_group_member(homies, zuck)
-    user_manager.add_group_member(homies, tom)
-    user_manager.add_group_member(homies, ev)
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "tom", "ev" ]))
+    homies.add_member(zuck)
+    homies.add_member(tom)
+    homies.add_member(ev)
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "tom", "ev" ]))
 
-    deleted = user_manager.remove_group_member(homies, tom)
+    deleted = homies.remove_member(tom)
     assert deleted > 0
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "ev" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "ev" ]))
 
-    deleted = user_manager.remove_group_member(homies, tom)
+    deleted = homies.remove_member(tom)
     assert_equals(deleted, 0)
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "ev" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "ev" ]))
 
-    deleted = user_manager.remove_all_group_members(homies)
+    deleted = homies.remove_all_members()
     assert deleted > 0
-    assert_equals(user_manager.get_group_members(homies), [])
+    assert_equals(homies.get_members(), [])
 
-    deleted = user_manager.remove_all_group_members(homies)
+    deleted = homies.remove_all_members()
     assert_equals(deleted, 0)
-    assert_equals(user_manager.get_group_members(homies), [])
+    assert_equals(homies.get_members(), [])
 
-    user_manager.add_group_member(homies, mattb)
-    user_manager.add_group_member(homies, zuck)
-    user_manager.add_group_member(homies, tom)
-    user_manager.add_group_member(homies, ev)
+    homies.add_member(mattb)
+    homies.add_member(zuck)
+    homies.add_member(tom)
+    homies.add_member(ev)
 
     session.commit()
     try:
-        user_manager.add_group_member(homies, joe)
+        homies.add_member(joe)
         assert False, "Missing ConflictError"
     except model.ConflictError:
         session.rollback()
 
-    deleted = user_manager.remove_group(homies)
+    deleted = homies.remove()
     assert deleted > 0
-    assert_equals(_group_names(user_manager.get_groups(joe)), set([ "group" ]))
+    assert_equals(_group_names(joe.get_groups()), set([ "group" ]))
 
 # Group tests
 def _test_groups_with_app():
     _reset()
 
-    assert_equals(len(user_manager.get_groups(joe)), 1)
+    assert_equals(len(joe.get_groups()), 1)
 
     app.get("/group/list/homies/", status=409)
     app.post("/group/add/homies/", '["mattb"]')
 
     homies = joe.get_group("homies", raise_on_not_found=True)
 
-    assert_equals(_group_names(user_manager.get_groups(joe)), set([ "homies", "group" ]))
-    assert_equals(_group_names(user_manager.get_groups(joe, mattb)), set([ "homies" ]))
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb" ]))
+    assert_equals(_group_names(joe.get_groups()), set([ "homies", "group" ]))
+    assert_equals(_group_names(joe.get_groups(mattb)), set([ "homies" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb" ]))
 
     app.post("/group/add/homies/", '["zuck", "tom", "ev"]')
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "tom", "ev" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "tom", "ev" ]))
 
     response = app.post("/group/remove/homies/", '["tom"]')
     assert int(response.body) >= 1
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "ev" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "ev" ]))
 
     response = app.post("/group/remove/homies/", '["tom"]')
     assert_equals(response.body, "0")
-    assert_equals(_group_member_names(user_manager.get_group_members(homies)), set([ "mattb", "zuck", "ev" ]))
+    assert_equals(_group_member_names(homies.get_members()), set([ "mattb", "zuck", "ev" ]))
 
     response = app.post("/group/remove/all/homies/")
     assert int(response.body) >= 1
-    assert_equals(user_manager.get_group_members(homies), [])
+    assert_equals(homies.get_members(), [])
 
     app.post("/group/remove/all/homies/", status=409)
 
     app.post("/group/add/homies/", '["mattb", "zuck", "tom", "ev"]')
     response = app.post("/group/remove/all/homies/")
     assert int(response.body) >= 1
-    assert_equals(user_manager.get_group_members(homies), [])
-    assert_equals(_group_names(user_manager.get_groups(joe)), set([ "group" ]))
+    assert_equals(homies.get_members(), [])
+    assert_equals(_group_names(joe.get_groups()), set([ "group" ]))
 
 # Sharing tests
 def test_sharing():
@@ -216,8 +216,8 @@ def test_sharing():
 
     # Joe's homies are mattb and zuck
     homies = joe.get_group("homies", create_on_not_found=True)
-    user_manager.add_group_member(homies, mattb)
-    user_manager.add_group_member(homies, zuck)
+    homies.add_member(mattb)
+    homies.add_member(zuck)
     user_manager.add_sharing(joe, joes_project, homies, False, False)
 
     # But mattb and zuck don't care they're not following joe
@@ -324,8 +324,8 @@ def test_sharing_with_app():
 
     # Joe's homies are mattb and zuck
     homies = joe.get_group("homies", create_on_not_found=True)
-    user_manager.add_group_member(homies, mattb)
-    user_manager.add_group_member(homies, zuck)
+    homies.add_member(mattb)
+    homies.add_member(zuck)
     user_manager.add_sharing(joe, joes_project, homies, False, False)
 
     # But mattb and zuck don't care they're not following joe
