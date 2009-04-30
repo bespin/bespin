@@ -27,13 +27,12 @@
 
 import simplejson
 from bespin import config, controllers, model
-from bespin.model import get_project, File, Project, User, Connection, UserManager
+from bespin.model import get_project, File, Project, User, Connection
 
 from nose.tools import assert_equals
 from __init__ import BespinTestApp
 
 session = None
-user_manager = None
 mattb = None
 zuck = None
 tom = None
@@ -61,15 +60,12 @@ def _reset():
     assert_equals(num_users, 0)
     session.commit()
 
-    global user_manager
-    user_manager = UserManager()
-
     global mattb, zuck, tom, ev, joe
-    mattb = user_manager.create_user("mattb", "mattb", "mattb")
-    zuck = user_manager.create_user("zuck", "zuck", "zuck")
-    tom = user_manager.create_user("tom", "tom", "tom")
-    ev = user_manager.create_user("ev", "ev", "ev")
-    joe = user_manager.create_user("joe", "joe", "joe")
+    mattb = User.create_user("mattb", "mattb", "mattb")
+    zuck = User.create_user("zuck", "zuck", "zuck")
+    tom = User.create_user("tom", "tom", "tom")
+    ev = User.create_user("ev", "ev", "ev")
+    joe = User.create_user("joe", "joe", "joe")
     group = joe.add_group("group")
     group.add_member(mattb)
     group.add_member(zuck)
@@ -189,19 +185,19 @@ def test_sharing():
     assert_equals(len(joe.projects), 1) # We start with a SampleProject
     joes_project = get_project(joe, joe, "joes_project", create=True)
     assert_equals(len(joe.projects), 2)
-    assert_equals(user_manager.get_sharing(joe), [])
+    assert_equals(joe.get_sharing(), [])
 
-    user_manager.add_sharing(joe, joes_project, ev, False, False)
-    sharing = user_manager.get_sharing(joe)
+    joe.add_sharing(joes_project, ev, False, False)
+    sharing = joe.get_sharing()
     assert_equals(sharing, [{'loadany':False, 'edit':False, 'type':'user', 'project':'joes_project', 'owner':'joe', 'recipient':'ev'}])
 
     # Joe has shared a project with ev but without anyone following him nothing changes
     assert_equals(len(ev.projects), 1)
     assert_equals(len(tom.projects), 1)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     ev.follow(joe)
 
@@ -209,74 +205,74 @@ def test_sharing():
     assert_equals(len(ev.projects), 1)
     assert_equals(len(tom.projects), 1)
 
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     # Joe's homies are mattb and zuck
     homies = joe.get_group("homies", create_on_not_found=True)
     homies.add_member(mattb)
     homies.add_member(zuck)
-    user_manager.add_sharing(joe, joes_project, homies, False, False)
+    joe.add_sharing(joes_project, homies, False, False)
 
     # But mattb and zuck don't care they're not following joe
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     mattb.follow(joe)
     zuck.follow(joe)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     # So now joe shares it with everyone
-    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+    joe.add_sharing(joes_project, 'everyone', False, False)
 
     # Once again, tom doesn't care, because he's not following joe
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     tom.follow(joe)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 2)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     # Check that we can undo in a different order
-    user_manager.remove_sharing(joe, joes_project, 'everyone')
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    joe.remove_sharing(joes_project, 'everyone')
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
-    user_manager.remove_sharing(joe, joes_project, ev)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    joe.remove_sharing(joes_project, ev)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
-    user_manager.remove_sharing(joe, joes_project, homies)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    joe.remove_sharing(joes_project, homies)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     # Share again to check fast removal
-    user_manager.add_sharing(joe, joes_project, ev, False, False)
-    user_manager.add_sharing(joe, joes_project, homies, False, False)
-    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+    joe.add_sharing(joes_project, ev, False, False)
+    joe.add_sharing(joes_project, homies, False, False)
+    joe.add_sharing(joes_project, 'everyone', False, False)
 
-    user_manager.remove_sharing(joe, joes_project)
-    assert_equals(user_manager.get_sharing(joe), [])
+    joe.remove_sharing(joes_project)
+    assert_equals(joe.get_sharing(), [])
 
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 1)
 
     joes_project.delete()
 
@@ -306,10 +302,10 @@ def test_sharing_with_app():
     # Joe has shared a project with ev but without anyone following him nothing changes
     assert_equals(len(ev.projects), 1)
     assert_equals(len(tom.projects), 1)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     ev.follow(joe)
 
@@ -317,74 +313,74 @@ def test_sharing_with_app():
     assert_equals(len(ev.projects), 1)
     assert_equals(len(tom.projects), 1)
 
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     # Joe's homies are mattb and zuck
     homies = joe.get_group("homies", create_on_not_found=True)
     homies.add_member(mattb)
     homies.add_member(zuck)
-    user_manager.add_sharing(joe, joes_project, homies, False, False)
+    joe.add_sharing(joes_project, homies, False, False)
 
     # But mattb and zuck don't care they're not following joe
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     mattb.follow(joe)
     zuck.follow(joe)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     # So now joe shares it with everyone
-    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+    joe.add_sharing(joes_project, 'everyone', False, False)
 
     # Once again, tom doesn't care, because he's not following joe
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     tom.follow(joe)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 2)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
     # Check that we can undo in a different order
-    user_manager.remove_sharing(joe, joes_project, 'everyone')
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    joe.remove_sharing(joes_project, 'everyone')
+    assert_equals(len(ev.get_all_projects(True)), 2)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
-    user_manager.remove_sharing(joe, joes_project, ev)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 2)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 2)
+    joe.remove_sharing(joes_project, ev)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 2)
+    assert_equals(len(mattb.get_all_projects(True)), 2)
 
-    user_manager.remove_sharing(joe, joes_project, homies)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(zuck, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(mattb, True)), 1)
+    joe.remove_sharing(joes_project, homies)
+    assert_equals(len(ev.get_all_projects(True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(zuck.get_all_projects(True)), 1)
+    assert_equals(len(mattb.get_all_projects(True)), 1)
 
     # Share again to check fast removal
-    user_manager.add_sharing(joe, joes_project, ev, False, False)
-    user_manager.add_sharing(joe, joes_project, homies, False, False)
-    user_manager.add_sharing(joe, joes_project, 'everyone', False, False)
+    joe.add_sharing(joes_project, ev, False, False)
+    joe.add_sharing(joes_project, homies, False, False)
+    joe.add_sharing(joes_project, 'everyone', False, False)
 
-    user_manager.remove_sharing(joe, joes_project)
-    assert_equals(user_manager.get_sharing(joe), [])
+    joe.remove_sharing(joes_project)
+    assert_equals(joe.get_sharing(), [])
 
-    assert_equals(len(user_manager.get_user_projects(tom, True)), 1)
-    assert_equals(len(user_manager.get_user_projects(ev, True)), 1)
+    assert_equals(len(tom.get_all_projects(True)), 1)
+    assert_equals(len(ev.get_all_projects(True)), 1)
 
     joes_project.delete()
 

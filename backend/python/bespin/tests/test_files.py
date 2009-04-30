@@ -73,9 +73,8 @@ def _init_data():
     model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
     
-    user_manager = model.UserManager()
-    someone_else = user_manager.create_user("SomeoneElse", "", "someone@else.com")
-    murdoc = user_manager.create_user("Murdoc", "", "murdoc@badpeople.bad")
+    someone_else = User.create_user("SomeoneElse", "", "someone@else.com")
+    murdoc = User.create_user("Murdoc", "", "murdoc@badpeople.bad")
     
     otherproject = get_project(someone_else, someone_else,
                                             "otherproject", create=True)
@@ -84,7 +83,7 @@ def _init_data():
     app.post("/register/new/MacGyver", 
         dict(password="richarddean", email="rich@sg1.com"))
         
-    macgyver = user_manager.get_user("MacGyver")
+    macgyver = User.find_user("MacGyver")
 
 def test_basic_file_creation():
     _init_data()

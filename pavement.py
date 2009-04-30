@@ -596,16 +596,14 @@ def mobwrite():
 @task
 def seeddb():
     from bespin import config, model
-    from bespin.model import User, Connection, UserManager
+    from bespin.model import User, Connection
     config.set_profile("dev")
     config.activate_profile()
-    session = config.c.session_factory()
-    user_manager = UserManager(session)
 
     def get_user(name):
-        user = user_manager.get_user(name)
+        user = User.find_user(name)
         if user == None:
-            user = user_manager.create_user(name, name, name + "@foo.com")
+            user = User.create_user(name, name, name + "@foo.com")
             session.commit()
             info("Created user called '" + name + "'")
         try:
@@ -626,21 +624,20 @@ def seeddb():
     ev = get_user("ev")
     j = get_user("j")
 
-    user_manager.follow(bgalbraith, j)
-    user_manager.follow(kdangoor, j)
-    user_manager.follow(dalmaer, j)
-    user_manager.follow(mattb, j)
-    user_manager.follow(zuck, j)
-    user_manager.follow(tom, j)
-    user_manager.follow(ev, j)
+    bgalbraith.follow(j)
+    kdangoor.follow(j)
+    dalmaer.follow(j)
+    mattb.follow(j)
+    zuck.follow(j)
+    tom.follow(j)
+    ev.follow(j)
 
     jproject = model.get_project(j, j, "SampleProject", create=True)
 
-    user_manager.add_sharing(j, jproject, bgalbraith, edit=True)
-    user_manager.add_sharing(j, jproject, kdangoor, edit=True)
-    user_manager.add_sharing(j, jproject, dalmaer, edit=True)
-    user_manager.add_sharing(j, jproject, mattb, edit=False)
-    user_manager.add_sharing(j, jproject, zuck, edit=False)
-    user_manager.add_sharing(j, jproject, tom, edit=False)
-    user_manager.add_sharing(j, jproject, ev, edit=False)
-
+    j.add_sharing(jproject, bgalbraith, edit=True)
+    j.add_sharing(jproject, kdangoor, edit=True)
+    j.add_sharing(jproject, dalmaer, edit=True)
+    j.add_sharing(jproject, mattb, edit=False)
+    j.add_sharing(jproject, zuck, edit=False)
+    j.add_sharing(jproject, tom, edit=False)
+    j.add_sharing(jproject, ev, edit=False)

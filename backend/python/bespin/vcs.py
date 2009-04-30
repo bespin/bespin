@@ -20,6 +20,7 @@ from uvc.main import is_new_project_command
 from Crypto.Cipher import AES
 
 from bespin import model, config, queue
+from bespin.model import User
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -75,12 +76,11 @@ def vcs_error(qi, e):
     """Handles exceptions that come up during VCS operations.
     A message is added to the user's message queue."""
     s = model._get_session()
-    user_manager = model.UserManager()
     user = qi.message['user']
     # if the user hadn't already been looked up, go ahead and pull
     # them out of the database
     if isinstance(user, basestring):
-        user = user_manager.get_user(user)
+        user = User.find_user(user)
     else:
         s.add(user)
     
@@ -105,8 +105,7 @@ def clone_run(qi):
     """Runs the queued up clone job."""
     message = qi.message
     s = model._get_session()
-    user_manager = model.UserManager()
-    user = user_manager.get_user(message['user'])
+    user = User.find_user(message['user'])
     message['user'] = user
     result = _clone_impl(**message)
     result.update(dict(eventName="vcs:response",
@@ -190,8 +189,7 @@ def run_command_run(qi):
     """Runs the queued up run_command job."""
     message = qi.message
     s = model._get_session()
-    user_manager = model.UserManager()
-    user = user_manager.get_user(message['user'])
+    user = User.find_user(message['user'])
     message['user'] = user
     message['project'] = model.get_project(user, user, message['project'])
     

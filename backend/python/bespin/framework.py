@@ -3,7 +3,8 @@
 # 
 # The contents of this file are subject to the Mozilla Public License  Version
 # 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
 # 
 # Software distributed under the License is distributed on an "AS IS" basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
@@ -25,6 +26,7 @@ from webob import Request, Response
 import logging
 
 from bespin import model, config, API_VERSION
+from bespin.model import User
 
 log = logging.getLogger("bespin.framework")
 
@@ -44,7 +46,6 @@ class BespinRequest(Request):
         else:
             self._user = None
         self.username = environ.get('REMOTE_USER')
-        self.user_manager = self.environ['user_manager']
         self.kwargs = environ.get('wsgiorg.routing_args')[1]
         self.session_token = environ.get("HTTP_DOMAIN_TOKEN")
 
@@ -53,7 +54,7 @@ class BespinRequest(Request):
         if self._user:
             return self._user
         if self.username:
-            self._user = self.user_manager.get_user(self.username)
+            self._user = User.find_user(self.username)
             return self._user
         return None
 

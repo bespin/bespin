@@ -747,19 +747,18 @@ class Persister:
   def __decomposeName(self, name):
     from bespin import config, model
     from bespin.config import c
-    user_manager = model.UserManager(c.session_factory())
     (user_name, project_name, path) = name.split("/", 2)
 
-    user = user_manager.get_user(user_name)
+    user = User.find_user(user_name)
 
     parts = project_name.partition('+')
     if parts[1] == '':
         owner = user
     else:
-        owner = user_manager.get_user(parts[0])
+        owner = User.find_user(parts[0])
         project_name = parts[2]
 
-    project = model.get_project(user, owner, project_name, user_manager=user_manager)
+    project = model.get_project(user, owner, project_name)
     return (project, path)
 
 

@@ -37,7 +37,7 @@ from webob import Request, Response
 from bespin.config import c
 from bespin.framework import expose, BadRequest
 from bespin import model, vcs
-from bespin.model import NotAuthorized
+from bespin.model import User, NotAuthorized
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 import socket
@@ -53,7 +53,7 @@ def new_user(request, response):
         password = request.POST['password']
     except KeyError:
         raise BadRequest("username, email and password are required.")
-    user = request.user_manager.create_user(username, password, email)
+    user = User.create_user(username, password, email)
     
     settings_project = model.get_project(user, user,
                         "BespinSettings", create=True)
@@ -81,7 +81,7 @@ def get_registered(request, response):
 def login(request, response):
     username = request.kwargs['login_username']
     password = request.POST.get('password')
-    user = request.user_manager.get_user(username)
+    user = User.find_user(username)
     if not user or (user and user.password != password):
         response.status = "401 Not Authorized"
         response.body = "Invalid login"
@@ -149,7 +149,7 @@ def _split_path(request):
     if parts[1] == '':
         result.insert(0, request.user)
     else:
-        result.insert(0, request.user_manager.get_user(parts[0]))
+        result.insert(0, User.find_user(parts[0]))
         result[1] = parts[2]
     return result
 
@@ -166,7 +166,7 @@ def putfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, create=True, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project, create=True)
 
     if path:
         project.save_file(path, request.body)
@@ -177,7 +177,7 @@ def getfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project)
 
     mode = request.GET.get('mode', 'rw')
     contents = project.get_file(path, mode)
@@ -189,7 +189,7 @@ def postfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project)
 
     project.close(path)
     return response()
@@ -199,7 +199,7 @@ def deletefile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project)
 
     project.delete(path)
     return response()
@@ -211,7 +211,7 @@ def listfiles(request, response):
     result = []
 
     if not path:
-        projects = request.user_manager.get_user_projects(user, True)
+        projects = request.user.get_all_projects(True)
         for project in projects:
             if project.owner == user:
                 result.append({ 'name':project.short_name })
@@ -225,7 +225,7 @@ def listfiles(request, response):
             path = ''
 
         if project:
-            project = model.get_project(user, owner, project, user_manager=request.user_manager)
+            project = model.get_project(user, owner, project)
 
         files = project.list_files(path)
 
@@ -286,7 +286,7 @@ def filestats(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project)
 
     file_obj = project.get_file_object(path)
     result = {}
@@ -301,7 +301,7 @@ def filestats(request, response):
 #     user = request.user
 #
 #     owner, project, path = _split_path(request)
-#     project = model.get_project(user, owner, project, create=True, user_manager=request.user_manager)
+#     project = model.get_project(user, owner, project, create=True)
 #
 #     fm.save_edit(user, project, path, request.body)
 #     return response()
@@ -311,7 +311,7 @@ def filestats(request, response):
 #     user = request.user
 #
 #     owner, project, path = _split_path(request)
-#     project = fm.get_project(user, owner, project, user_manager=request.user_manager)
+#     project = fm.get_project(user, owner, project)
 #
 #     edits = fm.list_edits(user, project, path, start_at)
 #     return _respond_json(response, edits)
@@ -336,7 +336,7 @@ def filestats(request, response):
 #     user = request.user
 #     
 #     owner, project, path = _split_path(request)
-#     project = fm.get_project(user, owner, project, user_manager=request.user_manager)
+#     project = fm.get_project(user, owner, project)
 #     
 #     fm.reset_edits(user, project, path)
 #     return response()
@@ -447,7 +447,7 @@ def preview_file(request, response):
     user = request.user
     
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, user_manager=request.user_manager)
+    project = model.get_project(user, owner, project)
     
     file_obj = project.get_file_object(path)
     response.body = str(file_obj.data)
@@ -471,21 +471,21 @@ def follow(request, response):
 
 @expose(r'^/network/follow/', 'POST')
 def follow(request, response):
-    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    users = _lookup_usernames(simplejson.loads(request.body))
     for other_user in users:
-        request.user_manager.follow(request.user, other_user)
+        request.user.follow(other_user)
     return _users_followed_response(request.user, response)
 
 @expose(r'^/network/unfollow/', 'POST')
 def unfollow(request, response):
-    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    users = _lookup_usernames(simplejson.loads(request.body))
     for other_user in users:
         request.user.unfollow(other_user)
     return _users_followed_response(request.user, response)
 
 @expose(r'^/group/list/all', 'GET')
 def group_list_all(request, response):
-    groups = request.user_manager.get_groups(request.user)
+    groups = request.user.get_groups()
     groups = [ group.name for group in groups ]
     return _respond_json(response, groups)
 
@@ -510,7 +510,7 @@ def group_remove_all(request, response):
 def group_remove(request, response):
     group_name = request.kwargs['group']
     group = request.user.get_group(group_name, raise_on_not_found=True)
-    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    users = _lookup_usernames(simplejson.loads(request.body))
     rows = 0
     for other_user in users:
         rows += group.remove_member(other_user)
@@ -523,7 +523,7 @@ def group_remove(request, response):
 def group_add(request, response):
     group_name = request.kwargs['group']
     group = request.user.get_group(group_name, raise_on_not_found=True)
-    users = _lookup_usernames(request.user_manager, simplejson.loads(request.body))
+    users = _lookup_usernames(simplejson.loads(request.body))
     for other_user in users:
         group.add_member(other_user)
     return _respond_blank(response)
@@ -538,9 +538,9 @@ def _respond_json(response, data):
     response.content_type = "application/json"
     return response()
 
-def _lookup_usernames(user_manager, usernames):
+def _lookup_usernames(usernames):
     def lookup_username(username):
-        user = user_manager.get_user(username)
+        user = User.find_user(username)
         if user == None:
             raise BadRequest("Username not found: %s" % username)
         return user
@@ -556,73 +556,73 @@ def _users_followed_response(user, response):
 @expose(r'^/share/list/all/$', 'GET')
 def share_list_all(request, response):
     "List all project shares"
-    data = request.user_manager.get_sharing(request.user)
+    data = request.user.get_sharing()
     return _respond_json(response, data)
 
 @expose(r'^/share/list/(?P<project>[^/]+)/$', 'GET')
 def share_list_project(request, response):
     "List sharing for a given project"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    data = request.user_manager.get_sharing(request.user, project)
+    data = request.user.get_sharing(project)
     return _respond_json(response, data)
 
 @expose(r'^/share/list/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'GET')
 def share_list_project_member(request, response):
     "List sharing for a given project and member"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.user_manager.find_member(request.user, request.kwargs['member'])
-    data = request.user_manager.get_sharing(request.user, project, member)
+    member = request.user.find_member(request.kwargs['member'])
+    data = request.user.get_sharing(project, member)
     return _respond_json(response, data)
 
 @expose(r'^/share/remove/(?P<project>[^/]+)/all/$', 'POST')
 def share_remove_all(request, response):
     "Remove all sharing from a project"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    data = request.user_manager.remove_sharing(request.user, project)
+    data = request.user.remove_sharing(project)
     return _respond_json(response, data)
 
 @expose(r'^/share/remove/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_remove(request, response):
     "Remove project sharing from a given member"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.user_manager.find_member(request.user, request.kwargs['member'])
-    data = request.user_manager.remove_sharing(request.user, project, member)
+    member = request.user.find_member(request.kwargs['member'])
+    data = request.user.remove_sharing(project, member)
     return _respond_json(response, data)
 
 @expose(r'^/share/add/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_add(request, response):
     "Add a member to the sharing list for a project"
     project = model.get_project(request.user, request.user, request.kwargs['project'])
-    member = request.user_manager.find_member(request.user, request.kwargs['member'])
+    member = request.user.find_member(request.kwargs['member'])
     options = simplejson.loads(request.body)
-    request.user_manager.add_sharing(request.user, project, member, options)
+    request.user.add_sharing(project, member, options)
     return _respond_blank(response)
 
 @expose(r'^/viewme/list/all/$', 'GET')
 def viewme_list_all(request, response):
     "List all the members with view settings on me"
-    data = request.user_manager.get_viewme(request.user)
+    data = request.user.get_viewme()
     return _respond_json(response, data)
 
 @expose(r'^/viewme/list/(?P<member>[^/]+)/$', 'GET')
 def viewme_list(request, response):
     "List the view settings for a given member"
-    member = request.user_manager.find_member(request.user, request.kwargs['member'])
-    data = request.user_manager.get_viewme(request.user, member)
+    member = request.user.find_member(request.kwargs['member'])
+    data = request.user.get_viewme(member)
     return _respond_json(response, data)
 
 @expose(r'^/viewme/set/(?P<member>[^/]+)/(?P<value>[^/]+)/$', 'POST')
 def viewme_set(request, response):
     "Alter the view setting for a given member"
-    member = request.user_manager.find_member(request.user, request.kwargs['member'])
+    member = request.user.find_member(request.kwargs['member'])
     value = request.kwargs['value']
-    data = request.user_manager.set_viewme(request.user, member, value)
+    data = request.user.set_viewme(member, value)
     return _respond_json(response, data)
 
 class InProcessMobwriteWorker(MobwriteWorker):
     "Talk to an in-process mobwrite"
 
-    def __init__(self, user_manager):
+    def __init__(self):
         persister = Persister()
         MobwriteWorker.__init__(self, persister)
 
@@ -669,7 +669,7 @@ def mobwrite(request, response):
     question = "H:" + str(request.user.username) + "\n" + question
 
     # TODO: select the implementation based on a runtime flag
-    worker = InProcessMobwriteWorker(request.user_manager)
+    worker = InProcessMobwriteWorker()
     #worker = MobwriteWorkerProxy()
     answer = worker.processRequest(question)
 
@@ -689,11 +689,10 @@ test_users = [ "ev", "tom", "mattb", "zuck" ]
 
 @expose(r'^/test/setup/$', 'POST')
 def test_setup(request, response):
-    user_manager = request.user_manager
     for name in test_users:
-        user = user_manager.get_user(name)
+        user = User.find_user(name)
         if (user == None):
-            user = user_manager.create_user(name, name, name)
+            user = User.create_user(name, name, name)
     response.body = ""
     response.content_type = "text/plain"
     return response()
@@ -813,15 +812,12 @@ def get_ssh_key(request, response):
 @expose("^/messages/$", 'POST')
 def messages(request, response):
     user = request.user
-    user_manager = request.user_manager
-    messages = user_manager.pop_messages(user)
-    body = u"[" + ",".join(messages) + \
-            "]"
-    
+    body = u"[" + ",".join(user.pop_messages()) + "]"
+
     response.content_type = "application/json"
     response.body = body.encode("utf8")
     return response()
-    
+
 @expose('^/stats/$', 'GET')
 def stats(request, response):
     username = request.username
@@ -847,7 +843,6 @@ def db_middleware(app):
         from sqlalchemy.orm import scoped_session
         session = c.session_factory()
         environ['bespin.docommit'] = True
-        environ['user_manager'] = model.UserManager()
         try:
             # If you need to work out what <script> tags to insert into a
             # page to get Dojo to behave properly, then uncomment these 3

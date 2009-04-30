@@ -30,7 +30,7 @@ from __init__ import BespinTestApp
 import simplejson
 
 from bespin import config, controllers, model
-from bespin.model import User, UserManager, File
+from bespin.model import User, File
 
 def setup_module(module):
     config.set_profile("test")
@@ -45,39 +45,38 @@ def _clear_db():
     fsroot.makedirs()
     
     
-def _get_user_manager(clear=False):
+def _get_session(clear=False):
     if clear:
         _clear_db()
     s = config.c.session_factory()
-    user_manager = UserManager()
-    return s, user_manager
+    return s
     
 # Model tests    
 def test_create_new_user():
-    s, user_manager = _get_user_manager(True)
+    s = _get_session(True)
     num_users = s.query(User).count()
     assert num_users == 0
-    user = user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    user = User.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
     
 def test_create_duplicate_user():
-    s, user_manager = _get_user_manager(True)
-    user_manager.create_user("BillBixby", "somepass", "bill@bixby.com")
+    s = _get_session(True)
+    User.create_user("BillBixby", "somepass", "bill@bixby.com")
     s.commit()
     try:
-        user_manager.create_user("BillBixby", "otherpass", "bill@bixby.com")
+        User.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
     except model.ConflictError:
         s.rollback()
-    s, user_manager = _get_user_manager(False)
-    user = user_manager.get_user("BillBixby")
+    s = _get_session(False)
+    user = User.find_user("BillBixby")
     assert user.password == "somepass", "Password should not have changed"
     
 def test_get_user_returns_none_for_nonexistent():
-    s, user_manager = _get_user_manager(True)
-    user = user_manager.get_user("NOT THERE. NO REALLY!")
+    s = _get_session(True)
+    user = User.find_user("NOT THERE. NO REALLY!")
     assert user is None
     
 
@@ -92,7 +91,7 @@ def test_register_returns_empty_when_not_logged_in():
 def test_register_and_verify_user():
     config.activate_profile()
     _clear_db()
-    s, user_manager = _get_user_manager()
+    s = _get_session()
     app = controllers.make_app()
     app = BespinTestApp(app)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
@@ -102,7 +101,7 @@ def test_register_and_verify_user():
     assert data == {}
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
-    billbixby = user_manager.get_user("BillBixby")
+    billbixby = User.find_user("BillBixby")
     sample_project = model.get_project(billbixby, billbixby, "SampleProject")
     files = [file.name for file in sample_project.list_files()]
     assert "readme.txt" in files
@@ -126,8 +125,8 @@ def test_register_and_verify_user():
     app.post("/file/close/BespinSettings/config")
     
 def test_logout():
-    s, user_manager = _get_user_manager(True)
-    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    s = _get_session(True)
+    User.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby", 
@@ -136,16 +135,16 @@ def test_logout():
     assert resp.cookies_set['auth_tkt'] == '""'
     
 def test_bad_login_yields_401():
-    s, user_manager = _get_user_manager(True)
-    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    s = _get_session(True)
+    User.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby",
         dict(password="NOTHULK"), status=401)
     
 def test_login_without_cookie():
-    s, user_manager = _get_user_manager(True)
-    user_manager.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
+    s = _get_session(True)
+    User.create_user("BillBixby", "hulkrulez", "bill@bixby.com")
     app = controllers.make_app()
     app = BespinTestApp(app)
     resp = app.post("/register/login/BillBixby",
@@ -163,7 +162,7 @@ def test_static_files_with_auth():
     resp = app.get('/editor.html')
 
 def test_register_existing_user_should_not_authenticate():
-    s, user_manager = _get_user_manager(True)
+    s = _get_session(True)
     app_orig = controllers.make_app()
     app = BespinTestApp(app_orig)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
@@ -173,7 +172,7 @@ def test_register_existing_user_should_not_authenticate():
                                                     password="somethingelse"),
                     status=409)
     assert not resp.cookies_set
-    user = user_manager.get_user("BillBixby")
+    user = User.find_user("BillBixby")
     assert user.password == 'notangry'
     
 def test_bad_ticket_is_ignored():
@@ -210,8 +209,8 @@ def test_messages_sent_from_server_to_user():
     app = BespinTestApp(app)
     resp = app.post("/register/new/macgyver",
         dict(password="foo", email="macgyver@ducttape.macgyver"))
-    s, user_manager = _get_user_manager()
-    macgyver = user_manager.get_user("macgyver")
+    s = _get_session()
+    macgyver = User.find_user("macgyver")
     assert len(macgyver.messages) == 0
     macgyver.publish(dict(my="message"))
     s.commit()
@@ -236,8 +235,8 @@ def test_get_users_settings():
 vcsuser Mack Gyver <gyver@mac.com>
 
 """)
-    s, user_manager = _get_user_manager()
-    macgyver = user_manager.get_user("macgyver")
+    s = _get_session()
+    macgyver = User.find_user("macgyver")
     settings = macgyver.get_settings()
     assert settings == dict(vcsuser="Mack Gyver <gyver@mac.com>")
     
