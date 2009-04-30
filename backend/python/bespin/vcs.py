@@ -74,8 +74,8 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
 def vcs_error(qi, e):
     """Handles exceptions that come up during VCS operations.
     A message is added to the user's message queue."""
-    s = qi.session
-    user_manager = model.UserManager(s)
+    s = model._get_session()
+    user_manager = model.UserManager()
     user = qi.message['user']
     # if the user hadn't already been looked up, go ahead and pull
     # them out of the database
@@ -104,8 +104,8 @@ def vcs_error(qi, e):
 def clone_run(qi):
     """Runs the queued up clone job."""
     message = qi.message
-    s = qi.session
-    user_manager = model.UserManager(s)
+    s = model._get_session()
+    user_manager = model.UserManager()
     user = user_manager.get_user(message['user'])
     message['user'] = user
     result = _clone_impl(**message)
@@ -189,9 +189,8 @@ def run_command(user, project, args, kcpass=None):
 def run_command_run(qi):
     """Runs the queued up run_command job."""
     message = qi.message
-    s = qi.session
-    
-    user_manager = model.UserManager(s)
+    s = model._get_session()
+    user_manager = model.UserManager()
     user = user_manager.get_user(message['user'])
     message['user'] = user
     message['project'] = model.get_project(user, user, message['project'])

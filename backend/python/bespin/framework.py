@@ -38,7 +38,6 @@ class BespinRequest(Request):
     logged in user, among other features."""
     def __init__(self, environ):
         super(BespinRequest, self).__init__(environ)
-        self.session = self.environ['bespin.dbsession']
 
         if 'bespin.user' in environ:
             self._user = environ['bespin.user']
