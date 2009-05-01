@@ -1133,6 +1133,16 @@ th.isFunction = (function(){
     return _isFunction;
 })();
 
+
+th.hitch = function(source, func) {
+    return function() { func.apply(source) };
+}
+
+th.delay = function(func, delay, source) {
+    if (source) func = th.hitch(source, func);
+    setTimeout(func, delay);
+}
+
 if (typeof th == "undefined") th = {};
 
 th.CssParser = Class.define({
@@ -2192,9 +2202,126 @@ th.Bus = Class.define({
     }
 });
 
+/*
+    FocusManager; handles focusing stuff, so that only one component (DOM or TH) can have the focus at once
+ */
+th.FocusManager = Class.define({
+    members: {
+        bus: null,
+
+        KEY_TAB: 9,
+
+        init: function (eventBus) {
+            this.bus = eventBus;
+            this.subscribers = [];
+            this.focused = -1; // the current focused candicate as an index of this.subscribers
+            th.observe(window, "keydown", this.onKeyDown, this);
+        },
+
+        onKeyDown: function (e) {
+            if (e.keyCode == this.KEY_TAB && this.subscribers.length != 0) {
+                e.preventDefault();
+                if (this.focused == -1) {
+                    return;
+                }
+                var newFocus;
+                var focusedComponent = this.subscribers[this.focused];
+                if (e.shiftKey == false)
+                {
+                    newFocus = (focusedComponent.focusNext !== undefined ? this.subscribers.indexOf(focusedComponent.focusNext) : this.focused + 1);
+                } else {
+                    newFocus = (focusedComponent.focusPrev !== undefined ? this.subscribers.indexOf(focusedComponent.focusPrev) : this.focused - 1);
+                }
+                newFocus %= this.subscribers.length;
+                if (newFocus < 0) newFocus +=  this.subscribers.length;
+                this.focus(this.subscribers[newFocus]);
+            }
+        },
+
+        focus: function (component) {
+            var index = this.subscribers.indexOf(component);
+            if (index == -1) {
+                console.error('FocusManager:focus: no such subscribed component!');
+                return;
+            }
+            if (index == this.focused) {
+                console.debug('FocusManager:focus: refocus the component???')
+            }
+
+            e = {};
+            e.getsFocus = component;
+            if (this.focused != -1) {
+                var focused = this.subscribers[this.focused];
+                if (focused.allowLoseFocus !== undefined) {
+                    if (!focused.allowLoseFocus(e)) {
+                        if (focused.dom || component.dom) {
+                            th.delay(function() {
+                                this.bus.fire("focus:received", e, focused);
+                                this.bus.fire("focus:canceled", e, component);
+                            }, 0, this);
+                        }
+
+                        return;
+                    }
+                }
+            }
+
+            if (this.focused != -1) {
+                 this.bus.fire("focus:lost", e, this.subscribers[this.focused]);
+             }
+             this.focused = index;
+             this.bus.fire("focus:received", e, this.subscribers[this.focused]);
+        },
+
+        forceFocus: function (component) {
+            var index = this.subscribers.indexOf(component);
+            if (index == -1) {
+                console.error('FocusManager:focus: no such subscribed component!');
+                return;
+            }
+            if (this.focused != -1) {
+                this.bus.fire("focus:lost", {}, this.subscribed[this.focused]);
+            }
+            this.focused = index;
+            this.bus.fire("focus:received", {}, this.subscribers[this.focused]);
+        },
+
+        subscribe: function (component) {
+            if (!this.hasSubscriber(component)) {
+                this.subscribers.push(component);
+                component.focusManager = this;
+            }
+        },
+
+        hasSubscriber: function (component) {
+            return (this.subscribers.indexOf(component) != -1);
+        },
+
+        unsubscribe: function (component) {
+            var index = this.subscribers.indexOf(components);
+            if (index == -1) {
+                console.error('FocusManager:unsubscribe: no such subscribed component!');
+                return;
+            }
+            this.subscribers.splice(index, 1);
+            if (index == this.focused) {
+                this.bus.fire("focus:lost", {}, component);
+                delete component.focusManager;
+                this.focused = -1;
+            }
+        },
+
+        hasFocus: function (component) {
+            return (this.subscribers.indexOf(component) == this.focused);
+        }
+    }
+});
+
 th.global_event_bus = new th.Bus();
 
 th.global_resources = new th.Resources();
+
+th.global_focus_manager = new th.FocusManager(th.global_event_bus);
 
 th.Scene = Class.define({
     uses: [
@@ -2232,8 +2359,8 @@ th.Scene = Class.define({
             this.root = new th.Panel({ id: "root" });
             this.root.scene = this;
 
-            var testCanvas = document.createElement("canvas");
-            this.scratchContext = testCanvas.getContext("2d");
+            this.testCanvas = document.createElement("canvas");
+            this.scratchContext = this.testCanvas.getContext("2d");
             th.fixCanvas(this.scratchContext);
 
             this.parseTags();
@@ -3888,6 +4015,50 @@ th.Panel = Class.define({
     }
 });
 
+th.DomWrapper = Class.define({
+    type: 'DomWrapper',
+
+    members: {
+		bus: null,	// th.bus to use
+		dom: null,	// ref to the underlaying dom component
+		focusManager: null, // set, when the component is added to the foucsManager by the focusManger itself
+		eventTravels: false,
+
+        init: function (domComponent, bus) {
+			if (!bus) bus = th.global_event_bus;
+			this.bus = bus;
+			this.dom = domComponent;
+			th.observe(this.dom, "focus", this.onDOMFocus, this);
+			this.bus.bind("focus:received", this, this.onFocusReceived, this);
+			this.bus.bind("focus:canceled", this, this.onCanceledFocus, this);
+		},
+
+		onDOMFocus: function(e) {
+			if (this.eventTravels) 	return;
+			this.eventTravels = true;
+			this.focusManager.focus(this);
+		},
+
+		onCanceledFocus: function(e) {
+			this.eventTravels = false;
+		},
+
+        onFocusReceived: function(e) {
+			this.eventTravels = true;
+			this.dom.focus();
+			this.eventTravels = false;
+		},
+
+		setFocusOrder: function(compNext, compPrev) {
+			if (!this.focusManager.hasSubscriber(compNext) || !this.focusManager.hasSubscriber(compPrev)) {
+				console.error('setFocusOrder: component not subscribed!');
+			}
+			this.focusNext = compNext;
+			this.focusPrev = compPrev;
+		}
+	}
+});
+
 th.Button = Class.define({
     type: "Button",
 
@@ -4510,13 +4681,8 @@ th.Label = Class.define({
         styleContext: function(ctx) {
             if (!ctx) return;
 
-            try {
-                ctx.font = this.cssValue("font");
-                ctx.fillStyle = this.cssValue("color");
-            } catch (e) {
-                console.log("Warning: error thrown while setting font and fillStyle on a context");
-                console.log(e);
-            }
+            ctx.font = this.cssValue("font");
+            ctx.fillStyle = this.cssValue("color");
 
             return ctx;
         },
