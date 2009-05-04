@@ -1212,7 +1212,10 @@ class Project(object):
             raise FileNotFound("Template filename %s is invalid" % template_name)
             
         template_file = config.c.template_file_dir / template_name
-        fileobj = template_file.open()
+        try:
+            fileobj = template_file.open()
+        except IOError:
+            raise FileNotFound("There is no template called " + template_name);
         tobj = jsontemplate.FromFile(fileobj)
         try:
             contents = tobj.expand(options['values'])

@@ -640,5 +640,13 @@ dojo.declare("bespin.client.Server", null, {
                 });
         }
         doProcessMessages();
+    },
+    
+    // ** {{{ processMessages() }}}
+    // Starts up message retrieve for this user. Call this only once.
+    fileTemplate: function(project, path, templateOptions, opts) {
+        var url = bespin.util.path.combine('/file/template', project, path);
+        this.request('PUT', url,
+                    dojo.toJson(templateOptions), opts || {});
     }
 });
