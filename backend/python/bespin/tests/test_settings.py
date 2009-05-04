@@ -24,8 +24,8 @@
 from __init__ import BespinTestApp
 import simplejson
 
-from bespin import config, controllers, model
-from bespin.model import User
+from bespin import config, controllers
+from bespin.database import User, Base
 
 app = None
 session = None
@@ -34,8 +34,8 @@ def setup_module(module):
     global app, session
     config.set_profile('test')
     config.activate_profile()
-    model.Base.metadata.drop_all(bind=config.c.dbengine)
-    model.Base.metadata.create_all(bind=config.c.dbengine)
+    Base.metadata.drop_all(bind=config.c.dbengine)
+    Base.metadata.create_all(bind=config.c.dbengine)
     session = config.c.session_factory()
     User.create_user("BillBixby", "", "bill@bixby.com")
     app = controllers.make_app()

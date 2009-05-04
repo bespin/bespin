@@ -27,8 +27,10 @@ from uvc import hg
 import simplejson
 from path import path
 
-from bespin import vcs, config, controllers, model
-from bespin.model import User
+from bespin import vcs, config, controllers
+from bespin.database import User
+from bespin.database import Base
+from bespin.filesystem import get_project, NotAuthorized
 
 macgyver = None
 app = None
@@ -50,8 +52,8 @@ def _init_data():
     
     app.reset()
     
-    model.Base.metadata.drop_all(bind=config.c.dbengine)
-    model.Base.metadata.create_all(bind=config.c.dbengine)
+    Base.metadata.drop_all(bind=config.c.dbengine)
+    Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
     
     app.post("/register/new/MacGyver", 
@@ -83,7 +85,7 @@ def test_run_an_hg_clone(run_command_params):
     assert output['project'] == "bespin"
     assert str(command) == "clone http://hg.mozilla.org/labs/bespin bespin"
     
-    bespin = model.get_project(macgyver, macgyver, "bespin")
+    bespin = get_project(macgyver, macgyver, "bespin")
     metadata = bespin.metadata
     
     assert 'remote_auth' not in metadata
@@ -105,7 +107,7 @@ diff_output = """diff -r ff44251fbb1e uvc/main.py
 @mock_run_command(diff_output)
 def test_run_a_diff(run_command_params):
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     cmd = ["diff"]
     output = vcs._run_command_impl(macgyver, bigmac, cmd, None)
@@ -123,7 +125,7 @@ all on line 10."""
 @mock_run_command(update_output)
 def test_provide_auth_info_to_update_command(run_command_params):
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     metadata = bigmac.metadata
     metadata['remote_url'] = 'http://hg.mozilla.org/labs/bespin'
@@ -146,7 +148,7 @@ def test_provide_auth_info_to_update_command(run_command_params):
 @mock_run_command(update_output)
 def test_dont_provide_auth_info_to_update_command(run_command_params):
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     keychain = vcs.KeyChain(macgyver, "foobar")
     keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
@@ -170,16 +172,16 @@ def test_bad_keychain_password():
         keychain = vcs.KeyChain(macgyver, "blorg")
         keychain.get_ssh_key()
         assert False, "Expected exception for bad keychain password"
-    except model.NotAuthorized:
+    except NotAuthorized:
         pass
         
 def test_get_users_vcs_name():
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     user = vcs._get_vcs_user(macgyver, bigmac)
     assert user == "MacGyver"
     
-    settings = model.get_project(macgyver, macgyver, "BespinSettings")
+    settings = get_project(macgyver, macgyver, "BespinSettings")
     settings.save_file("settings", """
 vcsuser Mack Gyver <gyver@mac.com>
 """)
@@ -229,7 +231,7 @@ def test_hg_clone_on_web(run_command_params):
     assert working_dir == macgyver.get_location()
     assert output == clone_output
     
-    bigmac = model.get_project(macgyver, macgyver, "bigmac")
+    bigmac = get_project(macgyver, macgyver, "bigmac")
     metadata = bigmac.metadata
     assert metadata['remote_auth'] == vcs.AUTH_BOTH
     assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
@@ -269,7 +271,7 @@ def test_hg_clone_on_web_with_ssh(run_command_params):
     assert working_dir == macgyver.get_location()
     assert output == clone_output
     
-    bespin = model.get_project(macgyver, macgyver, "bespin")
+    bespin = get_project(macgyver, macgyver, "bespin")
     metadata = bespin.metadata
     assert metadata['remote_auth'] == vcs.AUTH_BOTH
     assert metadata['push'] == "ssh://hg.mozilla.org/labs/bespin"
@@ -283,7 +285,7 @@ def test_hg_push_on_web(run_command_params):
     kc = vcs.KeyChain(macgyver, "foobar")
     # generate key pair
     kc.get_ssh_key()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     kc.set_ssh_for_project(bigmac, vcs.AUTH_WRITE)
     metadata = bigmac.metadata
     metadata['remote_url'] = "http://hg.mozilla.org/labs/bespin"
@@ -309,7 +311,7 @@ def test_hg_push_on_web(run_command_params):
 @mock_run_command(diff_output)
 def test_hg_diff_on_web(run_command_params):
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     bigmac.save_file(".hg/hgrc", "# test rc file\n")
     
     request = simplejson.dumps({'command' : ['diff']})
@@ -347,7 +349,7 @@ def test_keychain_creation():
     public_key2 = vcs.KeyChain.get_ssh_public_key(macgyver)
     assert public_key2 == public_key
     
-    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     
     kc.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
     
@@ -398,7 +400,7 @@ def test_keychain_creation():
 
 def test_vcs_auth_set_password_on_web():
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, 'bigmac', create=True)
+    bigmac = get_project(macgyver, macgyver, 'bigmac', create=True)
     resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar", 
                             type="password", username="macG", 
                             password="coolpass",
@@ -414,7 +416,7 @@ def test_vcs_auth_set_password_on_web():
     
 def test_vcs_auth_set_ssh_newkey_on_web():
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar",
                     type="ssh", remoteauth="both"))
     assert resp.content_type == "application/json"
@@ -431,7 +433,7 @@ def test_vcs_auth_set_ssh_newkey_on_web():
     
 def test_vcs_auth_set_should_have_good_remote_auth_value():
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     resp = app.post("/vcs/setauth/bigmac/", dict(kcpass="foobar",
                     type="ssh", remoteauth="foo"), status=400)
     
@@ -456,7 +458,7 @@ def test_vcs_get_ssh_key_from_web_without_password_with_pubkey():
     
 def test_find_out_remote_auth_info_from_web():
     _init_data()
-    bigmac = model.get_project(macgyver, macgyver, "bigmac", create=True)
+    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     keychain = vcs.KeyChain(macgyver, "foobar")
     keychain.set_ssh_for_project(bigmac, vcs.AUTH_BOTH)
     resp = app.get("/vcs/remoteauth/bigmac/")
