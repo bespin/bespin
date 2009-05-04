@@ -183,3 +183,98 @@ bespin.jetpack.commands.addCommand({
         });
     }
 });
+
+/*
+ * Jetpack Settings
+ *
+ * If you "set jetpack on", wire up the toolbar to have the jetpack icon
+ */
+
+// ** {{{ Event: settings:set:jetpack }}} **
+//
+// Turn off the toolbar icon if set to off
+bespin.subscribe("settings:set:jetpack", function(event) {
+    var newset = bespin.get("settings").isOff(event.value);
+    var jptb = dojo.byId('toolbar_jetpack');
+
+    if (newset) { // turn it off
+        if (jptb) jptb.style.display = 'none';
+    } else { // turn it on
+        if (jptb) {
+            jptb.style.display = 'inline';
+        } else {
+            // <img id="toolbar_jetpack" src="images/icn_jetpack.png" alt="Jetpack" style="padding-left: 10px;" title="Jetpack (show or hide menu)">
+            dojo.byId('subheader').appendChild(dojo.create("img", {
+               id: "toolbar_jetpack",
+               src: "images/icn_jetpack.png",
+               alt: "Jetpack",
+               style: "padding-left: 10px",
+               title: "Jetpack (show or hide menu)"
+            }));
+
+            // wire up the toolbar fun
+            bespin.get("toolbar").setup("jetpack", "toolbar_jetpack");
+        }
+    }
+});
+
+// Toolbar
+// Add the jetpack toolbar
+
+bespin.subscribe("toolbar:init", function(event) {
+    event.toolbar.addComponent('jetpack', function(toolbar, el) {
+        var jetpack = dojo.byId(el) || dojo.byId("toolbar_jetpack");
+
+        dojo.connect(jetpack, 'mouseover', function() {
+            jetpack.src = "images/icn_jetpack_on.png";
+        });
+
+        dojo.connect(jetpack, 'mouseout', function() {
+            jetpack.src = "images/icn_jetpack.png";
+        });
+
+        // Change the font size between the small, medium, and large settings
+        dojo.connect(jetpack, 'click', function() {
+            var dropdown = dojo.byId('jetpack_dropdown');
+
+            if (!dropdown || dropdown.style.display == 'none') { // no dropdown or hidden, so show
+                dropdown = dropdown || (function() {
+                    var dd = dojo.create("div", {
+                        id: 'jetpack_dropdown',
+                    });
+
+                    var editor_coords = dojo.coords('editor');
+                    var jetpack_coorders = dojo.coords(jetpack);
+                    dojo.style(dd, {
+                        position: 'absolute',
+                        padding: '0px',
+                        top: editor_coords.y + 'px',
+                        left: (jetpack_coorders.x - 30) + 'px',
+                        display: 'none',
+                        zIndex: '150'
+                    })
+
+                    dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" value="jetpack"></td><td><input type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select><option>foo<option>bar</select></td><td><input type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
+
+                    document.body.appendChild(dd);
+                    dd.style.right = '-50000px';
+                    dd.style.display = 'block';
+                    var content_coords = dojo.coords('jetpack_dropdown_content');
+                    dd.style.right = '';
+                    dd.style.display = 'none';
+
+                    dojo.style('jetpack_dropdown_border', {
+                      width: content_coords.w + 'px',
+                      height: content_coords.h + 'px'
+                    })
+
+                    return dd;
+                })();
+
+                dropdown.style.display = 'block';
+            } else { // hide away
+                dropdown.style.display = 'none';
+            }
+        });
+    });
+});

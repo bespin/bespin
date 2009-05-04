@@ -32,12 +32,6 @@ dojo.provide("bespin.editor.toolbar");
 dojo.declare("bespin.editor.Toolbar", null, {
     DEFAULT_TOOLBAR: ["collaboration", "dashboard", "target_browsers", "save",
                       "close", "undo", "redo", "preview", "fontsize"],
-    FONT_SIZES: {
-        1: 8,  // small
-        2: 10, // medium
-        3: 14  // large
-    },
-
     showCollab: false,
     showFiles: false,
     showTarget: false,
@@ -46,9 +40,10 @@ dojo.declare("bespin.editor.Toolbar", null, {
 
     constructor: function(editor, opts) {
         this.editor = editor || bespin.get('editor');
-        this.currentFontSize = 2;
 
         if (opts.setupDefault) this.setupDefault();
+
+        bespin.publish("toolbar:init", { toolbar: this });
     },
 
     setup: function(type, el) {
@@ -66,6 +61,12 @@ dojo.declare("bespin.editor.Toolbar", null, {
             }
         }));
     },
+
+    addComponent: function(type, callback) {
+        this.components[type] = callback;
+    },
+
+    // -- INITIAL COMPONENTS
 
     components: {
         collaboration: function(toolbar, el) {
@@ -203,10 +204,19 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             // Change the font size between the small, medium, and large settings
-            dojo.connect(fontsize, 'click', function() {
-                toolbar.currentFontSize = (toolbar.currentFontSize > 2) ? 1 : toolbar.currentFontSize + 1;
-                bespin.publish("settings:set:fontsize", [{ value: toolbar.FONT_SIZES[toolbar.currentFontSize] }]);
-            });
+            (function() {
+                var currentFontSize = 2;
+                var fontSizes = {
+                    1: 8,  // small
+                    2: 10, // medium
+                    3: 14  // large
+                };
+
+                dojo.connect(fontsize, 'click', function() {
+                    currentFontSize = (currentFontSize > 2) ? 1 : currentFontSize + 1;
+                    bespin.publish("settings:set:fontsize", [{ value: fontSizes[currentFontSize] }]);
+                });
+            })();
         }
     }
 });

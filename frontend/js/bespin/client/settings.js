@@ -85,7 +85,7 @@ dojo.declare("bespin.client.settings.Core", null, {
     isOff: function(value) {
         return value == 'off' || value == 'false' || value === undefined;
     },
-    
+
     isSettingOn: function(key) {
         return this.isOn(this.get(key));
     },
@@ -146,8 +146,8 @@ dojo.declare("bespin.client.settings.Core", null, {
 dojo.declare("bespin.client.settings.InMemory", null, {
     constructor: function(parent) {
         this.parent = parent;
-        this.settings = this.parent.defaultSettings(); 
-        bespin.publish("settings:loaded"); 
+        this.settings = this.parent.defaultSettings();
+        bespin.publish("settings:loaded");
     },
 
     set: function(key, value) {
@@ -205,7 +205,7 @@ dojo.declare("bespin.client.settings.Cookie", null, {
         delete this.settings[key];
         dojo.cookie("settings", dojo.toJson(this.settings), this.cookieSettings);
     }
-});    
+});
 
 // ** {{{ bespin.client.settings.ServerAPI }}} **
 //
@@ -217,7 +217,7 @@ dojo.declare("bespin.client.settings.ServerAPI", null, {
         this.server = bespin.get('server');
         this.settings = this.parent.defaultSettings(); // seed defaults just for now!
 
-        // TODO: seed the settings  
+        // TODO: seed the settings
         this.server.listSettings(dojo.hitch(this, function(settings) {
             this.settings = settings;
             if (settings['tabsize'] === undefined) {
@@ -293,7 +293,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     },
 
     _load: function() {
-        
+
         var self = this;
 
         var checkLoaded = function() {
@@ -400,10 +400,10 @@ Bespin.Settings.DB = Class.create({
 
 // ** {{{ bespin.client.settings.URL }}} **
 //
-// Grab the setting from the URL, either via # or ?   
+// Grab the setting from the URL, either via # or ?
 
 dojo.declare("bespin.client.settings.URL", null, {
-    constructor: function(queryString) {            
+    constructor: function(queryString) {
         this.results = dojo.queryToObject(this.stripHash(queryString || window.location.hash));
     },
 
@@ -414,7 +414,7 @@ dojo.declare("bespin.client.settings.URL", null, {
     set: function(key, value) {
         this.results[key] = value;
     },
-    
+
     stripHash: function(url) {
         var tobe = url.split('');
         tobe.shift();
@@ -424,7 +424,7 @@ dojo.declare("bespin.client.settings.URL", null, {
 
 // ** {{{ bespin.client.settings.Events }}} **
 //
-// Custom Event holder for the Settings work. 
+// Custom Event holder for the Settings work.
 // It deals with both settings themselves, and other events that
 // settings need to watch and look for
 
@@ -434,7 +434,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         var editor = bespin.get('editor');
 
         // ** {{{ Event: settings:set }}} **
-        // 
+        //
         // Watch for someone wanting to do a set operation
         bespin.subscribe("settings:set", function(event) {
             var key = event.key;
@@ -444,7 +444,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
-        // 
+        //
         // Change the session settings when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             editSession.path = event.file.name;
@@ -457,11 +457,11 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
-        // 
+        //
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             var split = event.file.name.split('.');
-            var type = split[split.length - 1]; 
+            var type = split[split.length - 1];
 
             if (type) {
                 bespin.publish("settings:language", { language: type });
@@ -469,14 +469,14 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:language }}} **
-        // 
+        //
         // When the syntax setting is changed, tell the syntax system to change
         bespin.subscribe("settings:set:language", function(event) {
             bespin.publish("settings:language", { language: event.value, fromCommand: true });
         });
 
         // ** {{{ Event: settings:language }}} **
-        // 
+        //
         // Given a new language command, change the editor.language
         bespin.subscribe("settings:language", function(event) {
             var language = event.language;
@@ -487,7 +487,7 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             if (bespin.util.include(['auto', 'on'], language)) {
                 var split = window.location.hash.split('.');
-                var type = split[split.length - 1];                
+                var type = split[split.length - 1];
                 if (type) editor.language = type;
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
@@ -497,14 +497,14 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:collaborate }}} **
-        // 
+        //
         // Turn on the collaboration system if set to be on
         bespin.subscribe("settings:set:collaborate", function(event) {
             editSession.collaborate = settings.isOn(event.value);
         });
 
         // ** {{{ Event: settings:set:fontsize }}} **
-        // 
+        //
         // Change the font size for the editor
         bespin.subscribe("settings:set:fontsize", function(event) {
             var fontsize = parseInt(event.value);
@@ -513,11 +513,11 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:theme }}} **
-        // 
+        //
         // Change the Theme object used by the editor
         bespin.subscribe("settings:set:theme", function(event) {
             var theme = event.value;
-            
+
             var checkSetAndExit = function() {
                 var themeSettings = bespin.themes[theme];
                 if (themeSettings) {
@@ -529,7 +529,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                 }
                 return false;
             }
-            
+
             if (theme) {
                 // Try to load the theme from the themes hash
                 if (checkSetAndExit()) return true;
@@ -552,7 +552,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                         //console.log(e)
                     }
 
-                    if (!checkSetAndExit()) {                    
+                    if (!checkSetAndExit()) {
                         bespin.publish("message", {
                             msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
                         });
@@ -560,13 +560,13 @@ dojo.declare("bespin.client.settings.Events", null, {
                 }), function() {
                     bespin.publish("message", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                    });                    
+                    });
                 });
             }
         });
 
         // ** {{{ Event: settings:set:keybindings }}} **
-        // 
+        //
         // Add in emacs key bindings
         bespin.subscribe("settings:set:keybindings", function(event) {
             var value = event.value;
@@ -623,7 +623,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:cursorblink }}} **
-        // 
+        //
         // The frequency of the cursor blink in milliseconds (defaults to 250)
         bespin.subscribe("settings:set:cursorblink", function(event) {
             var ms = parseInt(event.value); // get the number of milliseconds
@@ -634,7 +634,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:trimonsave }}} **
-        // 
+        //
         // Run the trim command before saving the file
         var _trimOnSave; // store the subscribe handler away
 
@@ -649,7 +649,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:set:syntaxcheck }}} **
-        // 
+        //
         // Turn the syntax parser on or off
         bespin.subscribe("settings:set:syntaxcheck", function (data) {
             if (settings.isOff(data.value)) {
@@ -660,7 +660,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         });
 
         // ** {{{ Event: settings:init }}} **
-        // 
+        //
         // If we are opening up a new file
         bespin.subscribe("settings:init", function(event) {
             var path    = event.path;
