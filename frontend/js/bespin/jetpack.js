@@ -225,12 +225,18 @@ bespin.subscribe("toolbar:init", function(event) {
     event.toolbar.addComponent('jetpack', function(toolbar, el) {
         var jetpack = dojo.byId(el) || dojo.byId("toolbar_jetpack");
 
-        dojo.connect(jetpack, 'mouseover', function() {
+        var highlightOn = function() {
             jetpack.src = "images/icn_jetpack_on.png";
-        });
+        }
 
-        dojo.connect(jetpack, 'mouseout', function() {
+        var highlightOff = function() {
             jetpack.src = "images/icn_jetpack.png";
+        }
+
+        dojo.connect(jetpack, 'mouseover', highlightOn);
+        dojo.connect(jetpack, 'mouseout',  function() {
+            var dropdown = dojo.byId('jetpack_dropdown');
+            if (!dropdown || dropdown.style.display == 'none') highlightOff();
         });
 
         // Change the font size between the small, medium, and large settings
@@ -238,6 +244,8 @@ bespin.subscribe("toolbar:init", function(event) {
             var dropdown = dojo.byId('jetpack_dropdown');
 
             if (!dropdown || dropdown.style.display == 'none') { // no dropdown or hidden, so show
+                highlightOn();
+
                 dropdown = dropdown || (function() {
                     var dd = dojo.create("div", {
                         id: 'jetpack_dropdown',
@@ -254,27 +262,80 @@ bespin.subscribe("toolbar:init", function(event) {
                         zIndex: '150'
                     })
 
-                    dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" value="jetpack"></td><td><input type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select><option>foo<option>bar</select></td><td><input type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
+                    dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" id="jetpack_dropdown_input_create" value="myjetpack"></td><td><input id="jetpack_dropdown_now_create" type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select id="jetpack_dropdown_input_install"><option></option></select></td><td><input id="jetpack_dropdown_now_install" type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
 
                     document.body.appendChild(dd);
-                    dd.style.right = '-50000px';
-                    dd.style.display = 'block';
-                    var content_coords = dojo.coords('jetpack_dropdown_content');
-                    dd.style.right = '';
-                    dd.style.display = 'none';
 
-                    dojo.style('jetpack_dropdown_border', {
-                      width: content_coords.w + 'px',
-                      height: content_coords.h + 'px'
-                    })
+                    // render out of view to get the size info and then hide again
+                    bespin.jetpack.sizeDropDownBorder(dd);
+
+                    var cl = bespin.get("commandLine");
+                    // create a new jetpack
+                    dojo.connect(dojo.byId('jetpack_dropdown_now_create'), 'click', function() {
+                        cl.executeCommand('jetpack create ' + dojo.byId('jetpack_dropdown_input_create').value);
+                        dropdown.style.display = 'none';
+                    });
+
+                    // install a jetpack
+                    dojo.connect(dojo.byId('jetpack_dropdown_now_install'), 'click', function() {
+                        cl.executeCommand('jetpack install ' + dojo.byId('jetpack_dropdown_input_install').value);
+                        dropdown.style.display = 'none';
+                    });
 
                     return dd;
                 })();
 
                 dropdown.style.display = 'block';
+
+                bespin.jetpack.loadInstallScripts();
             } else { // hide away
+                highlightOff();
+
                 dropdown.style.display = 'none';
             }
         });
     });
 });
+
+bespin.jetpack.sizeDropDownBorder = function(dd) {
+    var keephidden = false;
+    if (dd) {
+        keephidden = true;
+    } else {
+        dd = dojo.byId('jetpack_dropdown');
+    }
+
+    if (keephidden) {
+        dd.style.right = '-50000px';
+        dd.style.display = 'block';
+    }
+
+    var content_coords = dojo.coords('jetpack_dropdown_content');
+
+    if (keephidden) {
+        dd.style.right = '';
+        dd.style.display = 'none';
+    }
+
+    dojo.style('jetpack_dropdown_border', {
+        width: content_coords.w + 'px',
+        height: content_coords.h + 'px'
+    });
+}
+
+bespin.jetpack.loadInstallScripts = function() {
+    bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
+        var output;
+
+        if (jetpacks && jetpacks.length > 1) {
+            output += dojo.map(dojo.filter(jetpacks, function(file) {
+                return bespin.util.endsWith(file.name, '\\.html');
+            }), function(c) {
+                return "<option>" + c.name.replace(/\.html$/, '') + "</option>";
+            }).join("");
+        }
+
+        dojo.byId("jetpack_dropdown_input_install").innerHTML = output;
+        bespin.jetpack.sizeDropDownBorder();
+    });
+}

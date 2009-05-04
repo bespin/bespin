@@ -46,7 +46,8 @@ dojo.declare("bespin.editor.Toolbar", null, {
         bespin.publish("toolbar:init", { toolbar: this });
     },
 
-    setup: function(type, el) {
+    setup: function(type, el, callback) {
+        if (dojo.isFunction(callback)) this.addComponent(type, callback); // add the component first
         if (dojo.isFunction(this.components[type])) this.components[type](this, el);
     },
 
