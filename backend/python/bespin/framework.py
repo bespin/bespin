@@ -25,9 +25,8 @@ from urlrelay import url
 from webob import Request, Response
 import logging
 
-from bespin import filesystem, database, config
-from bespin.__init__ import API_VERSION
-from bespin.database import User
+from bespin import model, config, API_VERSION
+from bespin.model import User
 
 log = logging.getLogger("bespin.framework")
 
@@ -113,20 +112,20 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
             _add_base_headers(response)
             try:
                 return func(request, response)
-            except filesystem.NotAuthorized, e:
+            except model.NotAuthorized, e:
                 response.error("401 Not Authorized", e)
-            except filesystem.FileNotFound, e:
+            except model.FileNotFound, e:
                 environ['bespin.good_url_but_not_found'] = True
                 response.error("404 Not Found", e)
-            except filesystem.FileConflict, e:
+            except model.FileConflict, e:
                 response.error("409 Conflict", e)
-            except database.ConflictError, e:
+            except model.ConflictError, e:
                 response.error("409 Conflict", e)
-            except filesystem.OverQuota, e:
+            except model.OverQuota, e:
                 response.error("400 Bad Request", "Over quota")
-            except filesystem.FSException, e:
+            except model.FSException, e:
                 response.error("400 Bad Request", e)
-            except filesystem.BadValue, e:
+            except model.BadValue, e:
                 response.error("400 Bad Request", e)
             except BadRequest, e:
                 response.error("400 Bad Request", e)

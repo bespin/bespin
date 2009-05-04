@@ -33,5 +33,4 @@ backend/python/testfiles
 .settings/
 .externalToolBuilders/
 devconfig.py
-nbproject/
 

@@ -30,15 +30,15 @@ import os
 from cStringIO import StringIO
 import tarfile
 import zipfile
+from datetime import datetime, timedelta
 
 from __init__ import BespinTestApp
 import simplejson
 from path import path
 
-from bespin import config, controllers
+from bespin import config, controllers, model
 
-from bespin.filesystem import get_project, FileNotFound, _find_common_base
-from bespin.database import User, Base
+from bespin.model import get_project, File, Project, User, Directory
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -67,8 +67,8 @@ def _init_data():
 
     app.reset()
 
-    Base.metadata.drop_all(bind=config.c.dbengine)
-    Base.metadata.create_all(bind=config.c.dbengine)
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
 
     someone_else = User.create_user("SomeoneElse", "", "someone@else.com")
@@ -126,7 +126,7 @@ def test_common_base_selection():
     ]
     def run_one(input, output):
         print "Testing %s" % (input)
-        actual = _find_common_base(input)
+        actual = model._find_common_base(input)
         assert actual == output
     for input, output in tests:
         yield run_one, input, output
@@ -298,7 +298,7 @@ def test_rename_project():
     try:
         bigmac = get_project(macgyver, macgyver, "bigmac")
         assert False, "The bigmac project should have been renamed"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
     foobar = get_project(macgyver, macgyver, "foobar")
     assert foobar.metadata['hello'] == 'world'

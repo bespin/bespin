@@ -29,17 +29,16 @@
 from __init__ import BespinTestApp
 import simplejson
 
-from bespin import config, controllers
-from bespin.database import User, Base, ConflictError
-from bespin.filesystem import get_project
+from bespin import config, controllers, model
+from bespin.model import User, File
 
 def setup_module(module):
     config.set_profile("test")
     config.activate_profile()
     
 def _clear_db():
-    Base.metadata.drop_all(bind=config.c.dbengine)
-    Base.metadata.create_all(bind=config.c.dbengine)
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
     fsroot = config.c.fsroot
     if fsroot.exists() and fsroot.basename() == "testfiles":
         fsroot.rmtree()
@@ -69,7 +68,7 @@ def test_create_duplicate_user():
     try:
         User.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
-    except ConflictError:
+    except model.ConflictError:
         s.rollback()
     s = _get_session(False)
     user = User.find_user("BillBixby")
@@ -103,7 +102,7 @@ def test_register_and_verify_user():
     assert resp.cookies_set['auth_tkt']
     assert app.cookies
     billbixby = User.find_user("BillBixby")
-    sample_project = get_project(billbixby, billbixby, "SampleProject")
+    sample_project = model.get_project(billbixby, billbixby, "SampleProject")
     files = [file.name for file in sample_project.list_files()]
     assert "readme.txt" in files
     

@@ -1,14 +1,19 @@
 #  ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1
 # 
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
+# The contents of this file are subject to the Mozilla Public License  
+# Version
+# 1.1 (the "License"); you may not use this file except in compliance  
+# with
 # the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
 # 
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the License.
+# Software distributed under the License is distributed on an "AS IS"  
+# basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the  
+# License
+# for the specific language governing rights and limitations under the
+# License.
 # 
 # The Original Code is Bespin.
 # 
@@ -22,18 +27,20 @@
 # 
 
 import os
+from cStringIO import StringIO
+import tarfile
+import zipfile
 from datetime import datetime, timedelta
+import shutil
 from urllib import urlencode
 
 from __init__ import BespinTestApp
 import simplejson
 from path import path
 
-from bespin import config, controllers, filesystem
+from bespin import config, controllers, model
 
-from bespin.filesystem import File, get_project, ProjectView
-from bespin.filesystem import FSException, FileNotFound, OverQuota, FileConflict, BadValue
-from bespin.database import User, Base
+from bespin.model import File, Project, User, get_project
 
 tarfilename = os.path.join(os.path.dirname(__file__), "ut.tgz")
 zipfilename = os.path.join(os.path.dirname(__file__), "ut.zip")
@@ -62,8 +69,8 @@ def _init_data():
     
     app.reset()
     
-    Base.metadata.drop_all(bind=config.c.dbengine)
-    Base.metadata.create_all(bind=config.c.dbengine)
+    model.Base.metadata.drop_all(bind=config.c.dbengine)
+    model.Base.metadata.create_all(bind=config.c.dbengine)
     s = config.c.session_factory()
     
     someone_else = User.create_user("SomeoneElse", "", "someone@else.com")
@@ -104,13 +111,13 @@ def test_basic_file_creation():
     proj_names = set([proj.name for proj in macgyver.projects])
     assert proj_names == set(['bigmac', "SampleProject", 
                               "BespinSettings"])
-
+    
     # let's update the contents
     bigmac.save_file("reqs", "New content")
     file_obj = File(bigmac, "reqs")
-
+    
     assert file_obj.data == 'New content'
-
+    
 def test_changing_file_contents_changes_amount_used():
     _init_data()
     starting_point = macgyver.amount_used
@@ -122,16 +129,16 @@ def test_changing_file_contents_changes_amount_used():
     
 def test_cannot_save_beyond_quota():
     _init_data()
-    old_units = filesystem.QUOTA_UNITS
-    filesystem.QUOTA_UNITS = 10
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     try:
         bigmac.save_file("foo", "x" * 11)
         assert False, "Expected an OverQuota exception"
-    except OverQuota:
+    except model.OverQuota:
         pass
     finally:
-        filesystem.QUOTA_UNITS = old_units
+        model.QUOTA_UNITS = old_units
         
 def test_amount_used_can_be_recomputed():
     _init_data()
@@ -151,7 +158,7 @@ def test_retrieve_file_obj():
     try:
         bigmac.get_file_object("foo/bar")
         assert False, "expected file not found for missing file"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
         
     file_obj = bigmac.get_file_object("reqs")
@@ -165,7 +172,7 @@ def test_error_if_you_try_to_replace_dir_with_file():
     try:
         bigmac.save_file("foo/bar", "NOT GONNA DO IT!")
         assert False, "Expected a FileConflict exception"
-    except FileConflict:
+    except model.FileConflict:
         pass
     
 def test_get_file_opens_the_file():
@@ -197,9 +204,9 @@ def test_get_file_raises_exception_if_its_a_directory():
     try:
         contents = bigmac.get_file("foo/bar/")
         assert False, "Expected exception for directory"
-    except FSException:
+    except model.FSException:
         pass
-
+    
 def test_get_file_raises_not_found_exception():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
@@ -207,9 +214,9 @@ def test_get_file_raises_not_found_exception():
     try:
         contents = bigmac.get_file("NOTFOUND")
         assert False, "Expected exception for not found"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
-
+    
 def test_directory_shortname_computed_to_have_last_dir():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
@@ -220,7 +227,7 @@ def test_directory_shortname_computed_to_have_last_dir():
     d = res[0]
     shortname = d.short_name
     assert shortname == "bar/"
-
+    
 def test_can_delete_empty_directory():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
@@ -228,20 +235,20 @@ def test_can_delete_empty_directory():
     bigmac.delete("foo/bar/")
     location = bigmac.location / "foo/bar"
     assert not location.exists()
-
+    
 def test_delete_raises_file_not_found():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
     try:
         bigmac.delete("DOESNT MATTER")
         assert False, "Expected not found for missing project"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
     bigmac.save_file("foo/bar/baz", "biz")
     try:
         bigmac.delete("STILL DOESNT MATTER")
         assert False, "Expected not found for missing file"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
     flist = bigmac.list_files()
     assert flist[0].name == "foo/"
@@ -253,12 +260,12 @@ def test_cannot_delete_file_open_by_someone_else():
     bigmac.save_file("foo/bar/baz", "biz")
     bigmac.get_file("foo/bar/baz")
     
-    sebigmac = ProjectView(someone_else, macgyver, "bigmac", 
+    sebigmac = model.ProjectView(someone_else, macgyver, "bigmac", 
                     macgyver.get_location() / "bigmac")
     try:
         sebigmac.delete("foo/bar/baz")
         assert False, "Expected FileConflict exception for deleting open file"
-    except FileConflict:
+    except model.FileConflict:
         pass
         
 def test_can_delete_file_open_by_me():
@@ -287,7 +294,7 @@ def test_successful_deletion():
     try:
         bigmac.get_file("foo/bar/baz")
         assert False, "Expected FileNotFound because the file is gone"
-    except FileNotFound:
+    except model.FileNotFound:
         pass
     files = bigmac.list_files("foo/bar/")
     assert not files
@@ -452,12 +459,12 @@ def test_bad_project_names():
     try:
         badone = get_project(macgyver, macgyver, "..", create=True)
         assert False, "Expected BadValue exception for bad name"
-    except BadValue:
+    except model.BadValue:
         pass
     try:
         badone = get_project(macgyver, macgyver, "foo/bar", create=True)
         assert False, "Expected BadValue exception for bad name"
-    except BadValue:
+    except model.BadValue:
         pass
 
 def test_bad_files_and_directories():
@@ -466,7 +473,7 @@ def test_bad_files_and_directories():
     try:
         bigmac.save_file("../foo/bar", "hi")
         assert False, "Expected BadValue exception for bad name"
-    except BadValue:
+    except model.BadValue:
         pass
     
     bigmac.save_file("/tmp/foo", "hi")
@@ -487,7 +494,7 @@ def test_bad_directory_names():
         try:
             files = bigmac.list_files(p)
             assert False, "Expected exception for absolute dir"
-        except BadValue:
+        except model.BadValue:
             pass
     finally:
         p.rmtree()
@@ -613,7 +620,7 @@ def test_project_rename_should_be_secure():
         try:
             bigmac.rename("/tmp/foo")
             assert not p.exists()
-        except BadValue:
+        except model.BadValue:
             pass
     finally:
         if p.exists():
@@ -762,14 +769,14 @@ def test_preview_mode():
     
 def test_quota_limits_on_the_web():
     _init_data()
-    old_units = filesystem.QUOTA_UNITS
-    filesystem.QUOTA_UNITS = 10
+    old_units = model.QUOTA_UNITS
+    model.QUOTA_UNITS = 10
     try:
         resp = app.put("/file/at/bigmac/foo", "x" * 11, status=400)
         assert resp.body == "Over quota"
     finally:
-        filesystem.QUOTA_UNITS = old_units
-
+        model.QUOTA_UNITS = old_units
+    
 def test_search_from_the_web():
     _init_data()
     bigmac = _setup_search_data()
