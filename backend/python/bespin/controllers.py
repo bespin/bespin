@@ -28,16 +28,17 @@ from urlparse import urlparse
 import logging
 from datetime import date
 
-from urlrelay import URLRelay, url, register
+from urlrelay import URLRelay, register
 from paste.auth import auth_tkt
 import simplejson
 import tempfile
-from webob import Request, Response
+from webob import Request
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
-from bespin import model, vcs
-from bespin.model import User, NotAuthorized
+from bespin import vcs
+from bespin.database import User, get_project
+from bespin.filesystem import NotAuthorized, OverQuota, File
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 import socket
@@ -54,9 +55,8 @@ def new_user(request, response):
     except KeyError:
         raise BadRequest("username, email and password are required.")
     user = User.create_user(username, password, email)
-    
-    settings_project = model.get_project(user, user,
-                        "BespinSettings", create=True)
+
+    settings_project = get_project(user, user, "BespinSettings", create=True)
     settings_project.install_template('usertemplate')
     response.content_type = "application/json"
     response.body = "{}"
@@ -166,7 +166,7 @@ def putfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project, create=True)
+    project = get_project(user, owner, project, create=True)
 
     if path:
         project.save_file(path, request.body)
@@ -177,7 +177,7 @@ def getfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project)
+    project = get_project(user, owner, project)
 
     mode = request.GET.get('mode', 'rw')
     contents = project.get_file(path, mode)
@@ -189,7 +189,7 @@ def postfile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project)
+    project = get_project(user, owner, project)
 
     project.close(path)
     return response()
@@ -199,7 +199,7 @@ def deletefile(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project)
+    project = get_project(user, owner, project)
 
     project.delete(path)
     return response()
@@ -225,7 +225,7 @@ def listfiles(request, response):
             path = ''
 
         if project:
-            project = model.get_project(user, owner, project)
+            project = get_project(user, owner, project)
 
         files = project.list_files(path)
 
@@ -241,7 +241,7 @@ def install_template(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     template_name = request.body
-    project = model.get_project(user, user, project_name, create=True)
+    project = get_project(user, user, project_name, create=True)
     project.install_template(template_name)
     response.content_type = "text/plain"
     response.body = ""
@@ -251,7 +251,7 @@ def install_template(request, response):
 def file_list_all(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     metadata = project.metadata
 
     files = metadata.get_file_list()
@@ -270,12 +270,12 @@ def file_search(request, response):
         limit = 20
     project_name = request.kwargs['project_name']
 
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     result = project.search_files(query, limit)
     return _respond_json(response, result)
 
 def _populate_stats(item, result):
-    if isinstance(item, model.File):
+    if isinstance(item, File):
         result['size'] = item.saved_size
         result['created'] = item.created.strftime("%Y%m%dT%H%M%S")
         result['modified'] = item.modified.strftime("%Y%m%dT%H%M%S")
@@ -286,7 +286,7 @@ def filestats(request, response):
     user = request.user
 
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project)
+    project = get_project(user, owner, project)
 
     file_obj = project.get_file_object(path)
     result = {}
@@ -301,7 +301,7 @@ def filestats(request, response):
 #     user = request.user
 #
 #     owner, project, path = _split_path(request)
-#     project = model.get_project(user, owner, project, create=True)
+#     project = get_project(user, owner, project, create=True)
 #
 #     fm.save_edit(user, project, path, request.body)
 #     return response()
@@ -367,7 +367,7 @@ def import_project(request, response):
     return response()
     
 def _perform_import(user, project_name, filename, fileobj):
-    project = model.get_project(user, user, project_name, clean=True)
+    project = get_project(user, user, project_name, clean=True)
     if filename.endswith(".tgz") or filename.endswith(".tar.gz"):
         func = project.import_tarball
     elif filename.endswith(".zip"):
@@ -400,7 +400,7 @@ def import_from_url(request, response):
     if content_length:
         content_length = int(content_length)
         if not request.user.check_save(content_length):
-            raise model.OverQuota()
+            raise OverQuota()
     
     try:
         datafile = urllib2.urlopen(url)
@@ -423,7 +423,7 @@ def export_project(request, response):
     project_name = request.kwargs['project_name']
     project_name, extension = os.path.splitext(project_name)
 
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     
     if extension == ".zip":
         func = project.export_zipfile
@@ -447,7 +447,7 @@ def preview_file(request, response):
     user = request.user
     
     owner, project, path = _split_path(request)
-    project = model.get_project(user, owner, project)
+    project = get_project(user, owner, project)
     
     file_obj = project.get_file_object(path)
     response.body = str(file_obj.data)
@@ -459,7 +459,7 @@ def rename_project(request, response):
     user = request.user
 
     project_name = request.kwargs['project_name']
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     project.rename(request.body)
     response.body = ""
     response.content_type = "text/plain"
@@ -562,14 +562,14 @@ def share_list_all(request, response):
 @expose(r'^/share/list/(?P<project>[^/]+)/$', 'GET')
 def share_list_project(request, response):
     "List sharing for a given project"
-    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    project = get_project(request.user, request.user, request.kwargs['project'])
     data = request.user.get_sharing(project)
     return _respond_json(response, data)
 
 @expose(r'^/share/list/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'GET')
 def share_list_project_member(request, response):
     "List sharing for a given project and member"
-    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.user.find_member(request.kwargs['member'])
     data = request.user.get_sharing(project, member)
     return _respond_json(response, data)
@@ -577,14 +577,14 @@ def share_list_project_member(request, response):
 @expose(r'^/share/remove/(?P<project>[^/]+)/all/$', 'POST')
 def share_remove_all(request, response):
     "Remove all sharing from a project"
-    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    project = get_project(request.user, request.user, request.kwargs['project'])
     data = request.user.remove_sharing(project)
     return _respond_json(response, data)
 
 @expose(r'^/share/remove/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_remove(request, response):
     "Remove project sharing from a given member"
-    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.user.find_member(request.kwargs['member'])
     data = request.user.remove_sharing(project, member)
     return _respond_json(response, data)
@@ -592,7 +592,7 @@ def share_remove(request, response):
 @expose(r'^/share/add/(?P<project>[^/]+)/(?P<member>[^/]+)/$', 'POST')
 def share_add(request, response):
     "Add a member to the sharing list for a project"
-    project = model.get_project(request.user, request.user, request.kwargs['project'])
+    project = get_project(request.user, request.user, request.kwargs['project'])
     member = request.user.find_member(request.kwargs['member'])
     options = simplejson.loads(request.body)
     request.user.add_sharing(project, member, options)
@@ -732,7 +732,7 @@ def vcs_command(request, response):
     if vcs.is_new_project_command(args):
         raise BadRequest("Use /vcs/clone/ to create a new project")
     else:
-        project = model.get_project(user, user, project_name)
+        project = get_project(user, user, project_name)
         jobid = vcs.run_command(user, project, args, kcpass)
     
     response.content_type = "application/json"
@@ -744,7 +744,7 @@ def vcs_remoteauth(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     metadata = project.metadata
     value = metadata.get(vcs.AUTH_PROPERTY, "")
     
@@ -756,7 +756,7 @@ def vcs_remoteauth(request, response):
 def keychain_setauth(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
-    project = model.get_project(user, user, project_name)
+    project = get_project(user, user, project_name)
     
     try:
         kcpass = request.POST['kcpass']
@@ -877,13 +877,13 @@ def make_app():
     from webob import Response
     import static
     static_app = static.Cling(c.static_dir)
-    
+
     docs_app = pathpopper_middleware(static.Cling(c.docs_dir))
     code_app = pathpopper_middleware(static.Cling(c.static_dir + "/js"), 2)
-    
+
     register("^/docs/code/", code_app)
     register("^/docs/", docs_app)
-    
+
     app = URLRelay(default=static_app)
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
                 include_ip=False, httponly=True,

@@ -30,7 +30,6 @@ from here:
 
 http://www.codekoala.com/blog/2009/mar/16/aes-encryption-python-using-pycrypto/
 """
-import sys
 import os
 import tempfile
 import random
@@ -42,8 +41,9 @@ from uvc import main
 from uvc.main import is_new_project_command
 from Crypto.Cipher import AES
 
-from bespin import model, config, queue
-from bespin.model import User
+from bespin import config, queue, database, filesystem
+from bespin.database import User, Message
+from bespin.filesystem import FSException, NotAuthorized, get_project
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -98,7 +98,7 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
 def vcs_error(qi, e):
     """Handles exceptions that come up during VCS operations.
     A message is added to the user's message queue."""
-    s = model._get_session()
+    s = database._get_session()
     user = qi.message['user']
     # if the user hadn't already been looked up, go ahead and pull
     # them out of the database
@@ -110,7 +110,7 @@ def vcs_error(qi, e):
     # if we didn't find the user in the database, there's not much
     # we can do.
     if user:
-        if isinstance(e, (model.FSException, main.UVCError)):
+        if isinstance(e, (FSException, main.UVCError)):
             # for exceptions that are our types, just display the
             # error message
             tb = str(e)
@@ -120,20 +120,20 @@ def vcs_error(qi, e):
             tb = format_exc()
         message = dict(eventName="vcs:error", output=tb)
         message['asyncDone'] = True
-        retval = model.Message(user_id=user.id, 
+        retval = Message(user_id=user.id, 
                             message=simplejson.dumps(message))
         s.add(retval)
 
 def clone_run(qi):
     """Runs the queued up clone job."""
     message = qi.message
-    s = model._get_session()
+    s = database._get_session()
     user = User.find_user(message['user'])
     message['user'] = user
     result = _clone_impl(**message)
     result.update(dict(eventName="vcs:response",
                         asyncDone=True))
-    retvalue = model.Message(user_id=user.id, 
+    retvalue = Message(user_id=user.id, 
         message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
@@ -176,7 +176,7 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
         if keyfile:
             keyfile.delete()
     
-    project = model.get_project(user, user, command.dest)
+    project = filesystem.get_project(user, user, command.dest)
     
     if authtype == "ssh":
         keychain.set_ssh_for_project(project, remoteauth)
@@ -211,16 +211,16 @@ def run_command(user, project, args, kcpass=None):
 def run_command_run(qi):
     """Runs the queued up run_command job."""
     message = qi.message
-    s = model._get_session()
+    s = database._get_session()
     user = User.find_user(message['user'])
     message['user'] = user
-    message['project'] = model.get_project(user, user, message['project'])
+    message['project'] = get_project(user, user, message['project'])
     
     result = _run_command_impl(**message)
     result.update(dict(eventName="vcs:response",
                         asyncDone=True))
                         
-    retvalue = model.Message(user_id=user.id, 
+    retvalue = Message(user_id=user.id, 
         message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
@@ -264,7 +264,7 @@ def _run_command_impl(user, project, args, kcpass):
             remote_auth = metadata.get(AUTH_PROPERTY)
             if command_class.writes_remote or remote_auth == AUTH_BOTH:
                 if not kcpass:
-                    raise model.NotAuthorized("Keychain password is required for this command.")
+                    raise NotAuthorized("Keychain password is required for this command.")
                 keychain = KeyChain(user, kcpass)
                 credentials = keychain.get_credentials_for_project(project)
                 if credentials['type'] == 'ssh':
@@ -335,7 +335,7 @@ class KeyChain(object):
         kc = cls(user, "")
         pubfile = kc.public_key_file
         if not pubfile.exists():
-            raise model.NotAuthorized("Keychain is not set up. Please initialize with a password.")
+            raise NotAuthorized("Keychain is not set up. Please initialize with a password.")
         return pubfile.bytes()
     
     def get_ssh_key(self):
@@ -371,7 +371,7 @@ class KeyChain(object):
                 text = DecodeAES(cipher, text)
                 
                 if not text.startswith("{"):
-                    raise model.NotAuthorized("Bad keychain password")
+                    raise NotAuthorized("Bad keychain password")
                 
                 self._kcdata = simplejson.loads(text)
         return self._kcdata

@@ -26,8 +26,9 @@
 #import simplejson
 
 import simplejson
-from bespin import config, controllers, model
-from bespin.model import get_project, File, Project, User, Connection
+from bespin import config, controllers
+from bespin.filesystem import get_project
+from bespin.database import User, Base, ConflictError
 
 from nose.tools import assert_equals
 from __init__ import BespinTestApp
@@ -47,8 +48,8 @@ def setup_module(module):
     _reset()
 
 def _reset():
-    model.Base.metadata.drop_all(bind=config.c.dbengine)
-    model.Base.metadata.create_all(bind=config.c.dbengine)
+    Base.metadata.drop_all(bind=config.c.dbengine)
+    Base.metadata.create_all(bind=config.c.dbengine)
     fsroot = config.c.fsroot
     if fsroot.exists() and fsroot.basename() == "testfiles":
         fsroot.rmtree()
@@ -133,7 +134,7 @@ def test_groups():
     try:
         homies.add_member(joe)
         assert False, "Missing ConflictError"
-    except model.ConflictError:
+    except ConflictError:
         session.rollback()
 
     deleted = homies.remove()
@@ -433,7 +434,7 @@ def test_follow():
     try:
         zuck.follow(joe)
         assert False, "Missing ConflictError"
-    except model.ConflictError:
+    except ConflictError:
         session.rollback()
     assert_equals(len(joe.users_i_follow()), 0)
     assert_equals(_followed_names(mattb.users_i_follow()), set([ "joe" ]))
@@ -451,7 +452,7 @@ def test_follow():
     try:
         tom.follow(tom)
         assert False, "Missing ConflictError"
-    except model.ConflictError:
+    except ConflictError:
         session.rollback()
     assert_equals(len(joe.users_i_follow()), 0)
     assert_equals(_followed_names(mattb.users_i_follow()), set([ "joe" ]))
@@ -577,5 +578,5 @@ def test_follow():
     try:
         zuck.unfollow(tom)
         assert False, "Missing ConflictError"
-    except model.ConflictError:
+    except ConflictError:
         session.rollback()
