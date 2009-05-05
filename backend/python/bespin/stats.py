@@ -14,6 +14,9 @@ class DoNothingStats(object):
     
     def multiget(self, keys):
         return dict()
+        
+    def disconnect(self):
+        pass
 
 def _get_key(key):
     if "_DATE" in key:
@@ -37,6 +40,8 @@ class MemoryStats(object):
     def multiget(self, keys):
         return dict((key, self.storage.get(key)) for key in keys)
         
+    def disconnect(self):
+        pass
         
 class RedisStats(object):
     def __init__(self, redis):
@@ -58,4 +63,7 @@ class RedisStats(object):
         
     def multiget(self, keys):
         return dict(zip(keys, self.redis.mget(*keys)))
+    
+    def disconnect(self):
+        self.redis.disconnect()
         

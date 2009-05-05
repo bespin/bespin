@@ -252,7 +252,7 @@ def install_file_template(request, response):
     user = request.user
     owner, project, path = _split_path(request)
     
-    project = model.get_project(user, user, project, create=True)
+    project = get_project(user, user, project, create=True)
     options = simplejson.loads(request.body)
     project.install_template_file(path, options)
     
@@ -876,6 +876,7 @@ def db_middleware(app):
             c.stats.incr("exceptions_DATE")
             log.exception("Error raised during request: %s", environ)
             raise
+        c.stats.disconnect()
         return result
     return wrapped
 
