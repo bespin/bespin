@@ -219,14 +219,14 @@ def clean_data():
 @task
 def create_db():
     """Creates the development database"""
-    from bespin import config, model, db_versions
+    from bespin import config, database, db_versions
     from migrate.versioning.shell import main
     
     if path("devdata.db").exists():
         raise BuildFailure("Development database already exists")
     config.set_profile('dev')
     config.activate_profile()
-    dry("Create database tables", model.Base.metadata.create_all, bind=config.c.dbengine)
+    dry("Create database tables", database.Base.metadata.create_all, bind=config.c.dbengine)
     
     repository = str(path(db_versions.__file__).dirname())
     dburl = config.c.dburl
@@ -560,14 +560,14 @@ def editbespin(options):
     user = options.editbespin.user
     
     from bespin import config
-    from bespin import model
+    from bespin import database, filesystem
     from sqlalchemy.orm.exc import NoResultFound
     
     config.set_profile("dev")
     config.activate_profile()
     session = config.c.session_factory()
     try:
-        user = session.query(model.User).filter_by(username=user).one()
+        user = session.query(database.User).filter_by(username=user).one()
     except NoResultFound:
         raise BuildFailure("I couldn't find %s in the database. Sorry!" % (user))
     
@@ -577,7 +577,7 @@ def editbespin(options):
     session.commit()
     bespinsettings_loc = location / "BespinSettings"
     if not bespinsettings_loc.exists():
-        project = model.get_project(user, user, "BespinSettings", create=True)
+        project = filesystem.get_project(user, user, "BespinSettings", create=True)
         project.install_template('usertemplate')
     info("User %s set up to access directory %s" % (user, location))
 
@@ -595,8 +595,8 @@ def mobwrite():
 
 @task
 def seeddb():
-    from bespin import config, model
-    from bespin.model import User, Connection
+    from bespin import config, filesystem
+    from bespin.database import User, Connection
     config.set_profile("dev")
     config.activate_profile()
 
@@ -607,9 +607,9 @@ def seeddb():
             session.commit()
             info("Created user called '" + name + "'")
         try:
-            model.get_project(user, user, "BespinSettings")
+            filesystem.get_project(user, user, "BespinSettings")
         except:
-            settings = model.get_project(user, user, "BespinSettings", create=True)
+            settings = filesystem.get_project(user, user, "BespinSettings", create=True)
             settings.install_template('usertemplate')
             info("Created BespinSettings project for '" + name + "'")
         return user
@@ -632,7 +632,7 @@ def seeddb():
     tom.follow(j)
     ev.follow(j)
 
-    jproject = model.get_project(j, j, "SampleProject", create=True)
+    jproject = filesystem.get_project(j, j, "SampleProject", create=True)
 
     j.add_sharing(jproject, bgalbraith, edit=True)
     j.add_sharing(jproject, kdangoor, edit=True)
