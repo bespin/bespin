@@ -91,9 +91,7 @@ bespin.jetpack.commands.addCommand({
                     bespin.util.navigate.editor(project, filename, {});
                 },
                 onFailure: function(xhr) {
-                        this.showInfo("Unable to create " 
-                            + filename + ": "
-                            + xhr.responseText);
+                    self.showInfo("Unable to create " + filename + ": " + xhr.responseText);
                 }
             }
         );
