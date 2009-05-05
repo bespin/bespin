@@ -83,6 +83,7 @@ dojo.provide("bespin.util.keys");
       Z: 90,
 
       // Special keys that dojo.keys doesn't have
+      SLASH: 191,
       TILDE: 192
     };
 
@@ -113,7 +114,7 @@ bespin.util.keys.fillArguments = function(string, args) {
     var keys = string.split(' ');
     args = args || {};
 
-    var modifiers = [];   
+    var modifiers = [];
     dojo.forEach(keys, function(key) {
        if (key.length > 1) { // more than just an alpha/numeric
            modifiers.push(key);
@@ -135,17 +136,17 @@ bespin.util.keys.fillArguments = function(string, args) {
 //
 // Cache the character codes that we want to pass through to the browser
 // Should map to list below
-bespin.util.keys.PassThroughCharCodes = dojo.map(["k", "l", "n", "o", "t", "w", "+", "-", "~", 
+bespin.util.keys.PassThroughCharCodes = dojo.map(["k", "l", "n", "o", "t", "w", "+", "-", "~",
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], function(item){ return item.charCodeAt(0); });
 
 // ** {{{ bespin.util.keys.PassThroughKeyCodes }}} **
 //
 // Cache the key codes that we want to pass through to the browser
-// Should map to list above 
+// Should map to list above
 bespin.util.keys.PassThroughKeyCodes = (function() {
     var Key = bespin.util.keys.Key;
     return [Key.C, Key.X, Key.V, Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.NUMPAD_PLUS, Key.NUMPAD_MINUS, Key.TILDE,
-            Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];   
+            Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];
 })();
 
 // ** {{{ bespin.util.keys.passThroughToBrowser }}} **
@@ -161,10 +162,10 @@ bespin.util.keys.passThroughToBrowser = function(e) {
     if (!e.ctrlKey) { // let normal characters through
         return true;
     } else if (e.metaKey || e.altKey) { // Apple or Alt key
-        if (e.type == "keypress") {   
-            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;  
+        if (e.type == "keypress") {
+            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;
         } else {
-            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true; 
+            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true;
         }
     }
 
