@@ -228,7 +228,7 @@ class File(object):
         return self.info['modified_time']
 
     def save(self, contents):
-        file_obj = self.location.write_bytes(contents)
+        self.location.write_bytes(contents)
 
     @property
     def statusfile(self):
@@ -256,7 +256,7 @@ class File(object):
             lock.unlock()
         except PULockError, e:
             raise LockError("Problem tracking open status for file %s: %s" %
-                        (file_obj.name, str(e)))
+                        (self.name, str(e)))
 
     @property
     def users(self):
@@ -302,7 +302,7 @@ class File(object):
             lock.unlock()
         except PULockError, e:
             raise LockError("Problem tracking open status for file %s: %s" %
-                        (file_obj.name, str(e)))
+                        (self.name, str(e)))
 
     def __repr__(self):
         return "File: %s" % (self.name)
