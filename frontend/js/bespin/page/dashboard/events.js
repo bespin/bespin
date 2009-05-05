@@ -84,7 +84,7 @@ bespin.subscribe("editor:newfile", function(event) {
     bespin.util.navigate.editor(project, newfilename, opts);
 });
 
-// ** {{{ Event: editor:newfile }}} **
+// ** {{{ Event: editor:openfile }}} **
 //
 // Cause the editor to launch
 bespin.subscribe("editor:openfile", function(event) {
