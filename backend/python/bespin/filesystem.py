@@ -413,6 +413,37 @@ class Project(object):
         self.owner.amount_used += size_delta
         return file
 
+    def install_template_file(self, path, options):
+        """Installs a single template file at the path
+        provided, using template information specified in options.
+        
+        Options is a dictionary containing the following
+        attributes:
+        
+        stdtemplate: the name of a template file in the frontend/templates
+        directory.
+        
+        values: a dictionary of values to be plugged into the template.
+        
+        Note that the template file itself is a JSON Template template.
+        """
+        template_name = options['stdtemplate']
+        if template_name.startswith("/") or ".." in template_name:
+            raise FileNotFound("Template filename %s is invalid" % template_name)
+            
+        template_file = config.c.template_file_dir / template_name
+        try:
+            fileobj = template_file.open()
+        except IOError:
+            raise FileNotFound("There is no template called " + template_name);
+        tobj = jsontemplate.FromFile(fileobj)
+        try:
+            contents = tobj.expand(options['values'])
+        finally:
+            fileobj.close()
+            
+        self.save_file(path, contents)
+
     def install_template(self, template="template", other_vars=None):
         """Installs a set of template files into a new project.
 

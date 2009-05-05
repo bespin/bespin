@@ -1,0 +1,57 @@
+meta: {{}}
+
+<feature id="{{templateName}}" name="{{templateName}} Sidebar Extension" version="0.1" description="{{templateName}} Sidebar Test Extension. Opens a sidebar with some HTML code.">
+<!-- SAMPLE SIDEBAR JETPACK FEATURE -->
+<!-- For more help, read the API documentation at: https://wiki.mozilla.org/Labs/Jetpack/API -->
+   <script>
+    let sidebar;
+
+    function install() {
+        sidebar =
+        Jetpack.UI.Sidebars.create(
+        {
+            id: 'test',
+            name: '{{templateName}} Test Sidebar',
+            content: $('#sidebar-content')[0]
+        });
+        window.setInterval(function() {
+            updateTime();
+        }, 1000);
+    }
+
+    function updateTime() {
+        $('#time')[0].textContent = (new Date()).toString();
+        Jetpack.UI.Sidebars.update({
+            sidebar: sidebar
+        });
+    }
+
+    function uninstall() {
+    }
+  </script>
+  <div id="sidebar-content">
+    <h1>Success!</h1>
+    <p>Your sidebar extension was installed correctly!</p>
+    <p>The current <strong>date and time</strong> is:</p>
+    <ul>
+    <li id="time"></li>
+    </ul>
+    <p>And the code:</p>
+    <code><pre>
+    let sidebar;
+
+    function install() {
+      sidebar =
+        Jetpack.UI.Sidebars.create(
+          { id: 'test', name: 'Test Sidebar',
+            content: $('#sidebar-content')[0] });
+      window.setInterval(function() { updateTime(); }, 1000);
+    }
+
+    function updateTime() {
+      $('#time')[0].textContent = (new Date()).toString();
+      Jetpack.UI.Sidebars.update({sidebar : sidebar});
+    }
+    </pre></code>
+  </div>
+</feature>
