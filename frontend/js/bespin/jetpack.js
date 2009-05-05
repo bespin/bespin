@@ -88,7 +88,10 @@ bespin.jetpack.commands.addCommand({
             templateOptions,
             {
                 onSuccess: function(xhr) {
-                    bespin.util.navigate.editor(project, filename, {});
+                    bespin.publish("editor:openfile", {
+                        project: project,
+                        filename: filename
+                    });
                 },
                 onFailure: function(xhr) {
                     self.showInfo("Unable to create " + filename + ": " + xhr.responseText);
