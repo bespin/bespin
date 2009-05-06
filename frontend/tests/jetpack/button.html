@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Install JetPack Button Playground</title>
+    <style type="text/css">
+        #fakebespin {
+            background-color: #2A211C;
+            width: 600px;
+            height: 500px;
+        }
+        #fakegutter {
+            position: relative;
+            left: 0;
+            top: 0;
+            height: 500px;
+            width: 40px;
+            background-color: #4C4A41;
+        }
+        #buttonrow {
+            position: relative;
+            top: -35px;
+            left: 0;
+            width: 600px;
+            height: 40px;
+            background-image: url('footer_bg.png');
+            background-repeat: repeat-x;
+            color: white;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        #buttonrow div {
+            padding: 17px 12px;
+            float: left;
+        }
+
+        #buttonrow div.button {
+            float: right;
+            padding: 13px 0;
+        }
+
+        #buttonrow button {
+            margin:0 7px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="fakebespin">
+        <div id="fakegutter"></div>
+        <div id="buttonrow">
+            <div class="button"><button id="install">&uarr; Install This JetPack Feature</button></div>
+            <div>Hey, install JetPack first.</div>
+        </div>
+    </div>
+</body>
+</html>
