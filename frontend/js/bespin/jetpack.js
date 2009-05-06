@@ -44,7 +44,7 @@ bespin.jetpack.projectName = "jetpacks";
 bespin.jetpack.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'jetpack',
     preview: 'play with jetpack features',
-    completeText: 'subcommands: create [name] [type], install [name], list, edit [name]',
+    completeText: 'jetpack subcommands:<br><br> create [name] [type]<br> install [name]<br> list<br> edit [name]',
     subcommanddefault: 'help'
 }});
 
@@ -75,15 +75,15 @@ bespin.jetpack.commands.addCommand({
         var type = opts.type || 'sidebar';
         var project = bespin.jetpack.projectName;
         var filename = feature + ".html";
-        
+
         var templateOptions = {
             stdtemplate: "jetpacks/" + type + ".html",
             values: {
                 templateName: feature
             }
         };
-        
-        bespin.get("server").fileTemplate(project, 
+
+        bespin.get("server").fileTemplate(project,
             filename,
             templateOptions,
             {
@@ -127,13 +127,24 @@ bespin.jetpack.commands.addCommand({
         if (!feature) {
             bespin.publish("message", { msg: "Please pass in the name of the Jetpack feature you would like to install" });
         } else {
-            // add the link tag to the body
-            // <link rel="jetpack" href="1.0/main.html" name="testExtension">
-            var link = dojo.create("link", {
-                rel: 'jetpack',
-                href: bespin.util.path.combine("preview/at", bespin.jetpack.projectName, feature + ".html"),
-                name: feature
-            }, dojo.body());
+            // Use the custom event to install
+            var event = document.createEvent("Events");
+            var element = dojo.byId("jetpackInstallEvent");
+
+            // create a jetpack event element if it doesn't exist.
+            if (!element) {
+                element = dojo.create("div", {
+                   id: "jetpackEvent",
+                   hidden: true
+                }, dojo.body());
+            }
+
+            // set the code string to the "mozjpcode" attribute.
+            element.setAttribute("mozjpcode", bespin.get("editor").model.getDocument());
+
+            // init and dispatch the event.
+            event.initEvent("mozjpinstall", true, false);
+            element.dispatchEvent(event);
         }
     }
 });
