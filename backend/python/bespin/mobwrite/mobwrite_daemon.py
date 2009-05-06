@@ -745,20 +745,19 @@ class Persister:
     project.save_file(path, contents)
 
   def __decomposeName(self, name):
-    from bespin import config, model
-    from bespin.config import c
+    from bespin.database import User, get_project
     (user_name, project_name, path) = name.split("/", 2)
 
     user = User.find_user(user_name)
 
     parts = project_name.partition('+')
     if parts[1] == '':
-        owner = user
+      owner = user
     else:
-        owner = User.find_user(parts[0])
-        project_name = parts[2]
+      owner = User.find_user(parts[0])
+      project_name = parts[2]
 
-    project = model.get_project(user, owner, project_name)
+    project = get_project(user, owner, project_name)
     return (project, path)
 
 
@@ -767,7 +766,7 @@ class AutoPersisterEchoRequestHandler(EchoRequestHandler):
   def __init__(self, p1, p2, p3):
     persister = Persister()
     EchoRequestHandler.__init__(self, p1, p2, p3, persister)
-    
+
 
 def main():
   # Start up a thread that does timeouts and cleanup
@@ -775,7 +774,7 @@ def main():
 
   from bespin import config, controllers
   from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
-  config.set_profile('dev')    
+  config.set_profile('dev')
   config.activate_profile()
 
   logging.info("Listening on port %d..." % LOCAL_PORT)
