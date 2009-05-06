@@ -210,7 +210,7 @@ bespin.subscribe("groups:list:all", function() {
                 bespin.publish("message", { msg:"You have no groups" });
             }
             else {
-                var message = "You have the following groups: " + bespin.cmd.formatStringArray(groups);
+                var message = "You have the following groups: " + groups.join(", ");
                 bespin.publish("message", { msg:message });
             }
         },
@@ -231,7 +231,7 @@ bespin.subscribe("groups:list", function(group) {
                 bespin.publish("message", { msg: "" + group + " has no members." });
             }
             else {
-                var message = "Members of " + group + ": " + bespin.cmd.formatStringArray(members);
+                var message = "Members of " + group + ": " + members.join(", ");
                 bespin.publish("message", { msg:message });
             }
         },
