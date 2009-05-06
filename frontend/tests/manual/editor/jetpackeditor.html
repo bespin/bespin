@@ -26,7 +26,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>The Bespin Editor Component</title>
+    <title>The Bespin Editor Component with Jetpack</title>
     <style type="text/css">*:focus { outline: 0; }</style>
 
     <!-- begin script tags -->
@@ -44,11 +44,10 @@
         // You can use dojo.addOnLoad(...); but for that you will need to load up dojo.js first
         window.onload = function() {
             _editorComponent = new bespin.editor.Component('editor', {
-                language: "js",
+                language: "html",
                 loadfromdiv: true,
-                set: {
-                    strictlines: 'off'
-                }
+                jetpack: true,
+                commandline: true
             });
         };
 
@@ -68,17 +67,51 @@
     <!-- end script tags -->
 </head>
 <body>
-    <h3>Sample Editor as a Component</h3>
-    <div id="editor" style="margin: 0; padding: 0; border: 0; height: 300px; border: 10px solid #ddd; -moz-border-radius: 10px; -webkit-border-radius: 10px;">var foo = "whee";
+    <h3>Editor Component with Jetpack Features</h3>
+    <div id="editor" style="margin: 0; padding: 0 0 30px 0; border: 0; height: 300px; border: 10px solid #ddd; -moz-border-radius: 10px; -webkit-border-radius: 10px;"><textarea id="BESPIN_EDITOR_CODE"><feature id="yourfirstjetpack" name="mysidebar Sidebar Extension" version="0.1" description="mysidebar Sidebar Test Extension. Opens a sidebar with some HTML code.">
+    <!-- SAMPLE SIDEBAR JETPACK FEATURE -->
+    <!-- For more help, read the API documentation at: https://wiki.mozilla.org/Labs/Jetpack/API -->
+    <script>
+        let sidebar;
 
-function flubber() {
-    return "tweeble";
-}</div>
+        function install() {
+            sidebar =
+            Jetpack.UI.Sidebars.create(
+            {
+                id: 'test',
+                name: 'mysidebar Test Sidebar',
+                content: $('#sidebar-content')[0]
+            });
+            window.setInterval(function() {
+                updateTime();
+            }, 1000);
+        }
+
+        function updateTime() {
+            $('#time')[0].textContent = (new Date()).toString();
+            Jetpack.UI.Sidebars.update({
+                sidebar: sidebar
+            });
+        }
+
+        function uninstall() {
+        }
+    </script>
+    <div id="sidebar-content">
+        <h1>Success!</h1>
+        <p>Your sidebar extension was installed correctly!</p>
+        <p>The current <strong>date and time</strong> is:</p>
+        <ul>
+        <li id="time"></li>
+        </ul>
+    </div>
+</feature></textarea></div>
 
     <div style="padding: 20px">
     <b style="display: block; border-bottom: 1px solid #ddd;">Play with the editor</b><br>
     Enter language and blur out: <input type="text" id="syntax" value="" onblur="setSyntax(this.value)"><br>
     Push a new setting: <input type="text" id="key" value="strictlines"> <input type="text" id="value" value="on"> <input type="button" value="set" onclick="_editorComponent.set(dojo.byId('key').value, dojo.byId('value').value)"><br>
+    Run a command: <input type="text" id="cmd" value="goto 3"> <input type="button" value="execute" onclick="_editorComponent.executeCommand(dojo.byId('cmd').value)"><br>
 
     <textarea id="inandout" cols="100" rows="10"></textarea><br>
     <input type="button" value="Copy to Textarea" onclick="copyToTextarea()">

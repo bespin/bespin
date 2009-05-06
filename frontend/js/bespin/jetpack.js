@@ -135,8 +135,8 @@ bespin.jetpack.commands.addCommand({
             if (!element) {
                 element = dojo.create("div", {
                    id: "jetpackEvent",
-                   hidden: true
                 }, dojo.body());
+                element.setAttribute("hidden", true);
             }
 
             // set the code string to the "mozjpcode" attribute.

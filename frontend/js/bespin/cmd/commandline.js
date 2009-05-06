@@ -307,6 +307,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     executeCommand: function(value) {
         var ca = this.commandStore.splitCommandAndArgs(value);
+
         if (typeof ca === "undefined") return; // error out if no commands were found
 
         var command = ca[0];
@@ -346,11 +347,11 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             bespin.publish("cmdline:focus");
 
             this.inCommandLine = true;
-            dojo.byId('promptimg').src = 'images/icn_command_on.png';
+            if (dojo.byId('promptimg')) dojo.byId('promptimg').src = 'images/icn_command_on.png';
         });
         dojo.connect(cl.commandLine, "onblur", cl, function() {
             this.inCommandLine = false;
-            dojo.byId('promptimg').src = 'images/icn_command.png';
+            if (dojo.byId('promptimg')) dojo.byId('promptimg').src = 'images/icn_command.png';
         });
 
         dojo.connect(cl.commandLine, "onkeyup", cl, function(e) {
@@ -598,8 +599,12 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         // Once the command has been executed, do something.
         // In this case, save it for the history
         bespin.subscribe("command:executed", function(event) {
-            var command = event.commandString || event.command.name + " " + event.args.join(' '); // try to get the raw input
-            commandline.commandLineHistory.add(command); // only add to the history when a valid command
+            var command = event.commandString || (event.command.name + " " + event.args.join(' ')); // try to get the raw input
+            try {
+                commandline.commandLineHistory.add(command); // only add to the history when a valid command
+            } catch (c) {
+                // catch dojo.cookie weird error
+            }
         });
 
         // ** {{{ Event: command:executed }}} **

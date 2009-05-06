@@ -377,7 +377,7 @@ dojo.declare("th.Scene", th.helpers.EventHelpers, {
                     ctx.translate(child.bounds.x, child.bounds.y);
                 } catch (e) {
                     console.log("translate error (" + child.type + ")");
-                    console.log(child.bounds);
+                    console.log("child bounds:", child.bounds);
                     return;
                 }
                 child = parent;
