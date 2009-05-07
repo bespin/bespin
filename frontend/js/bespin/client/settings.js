@@ -317,9 +317,8 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
             }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
         };
 
-        setTimeout(loadSettings, 0);
+        // setTimeout(loadSettings, 0);
 
-        /*
         if (bespin.authenticated) {
             loadSettings();
         }
@@ -328,7 +327,6 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
                 loadSettings();
             });
         }
-        */
     }
 });
 
