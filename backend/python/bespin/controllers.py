@@ -81,8 +81,8 @@ def get_registered(request, response):
 def login(request, response):
     username = request.kwargs['login_username']
     password = request.POST.get('password')
-    user = User.find_user(username)
-    if not user or (user and user.password != password):
+    user = User.find_user(username, password)
+    if not user:
         response.status = "401 Not Authorized"
         response.body = "Invalid login"
         return response()

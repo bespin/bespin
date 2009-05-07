@@ -26,7 +26,7 @@
 # ***** END LICENSE BLOCK *****
 # 
 
-from __init__ import BespinTestApp
+from bespin.tests import BespinTestApp
 import simplejson
 
 from bespin import config, controllers
@@ -64,8 +64,9 @@ def test_create_new_user():
     
 def test_create_duplicate_user():
     s = _get_session(True)
-    User.create_user("BillBixby", "somepass", "bill@bixby.com")
+    u = User.create_user("BillBixby", "somepass", "bill@bixby.com")
     s.commit()
+    original_password = u.password
     try:
         User.create_user("BillBixby", "otherpass", "bill@bixby.com")
         assert False, "Should have gotten a ConflictError"
@@ -73,7 +74,7 @@ def test_create_duplicate_user():
         s.rollback()
     s = _get_session(False)
     user = User.find_user("BillBixby")
-    assert user.password == "somepass", "Password should not have changed"
+    assert user.password == original_password, "Password should not have changed"
     
 def test_get_user_returns_none_for_nonexistent():
     s = _get_session(True)
@@ -173,8 +174,8 @@ def test_register_existing_user_should_not_authenticate():
                                                     password="somethingelse"),
                     status=409)
     assert not resp.cookies_set
-    user = User.find_user("BillBixby")
-    assert user.password == 'notangry'
+    user = User.find_user("BillBixby", 'notangry')
+    assert user is not None
     
 def test_bad_ticket_is_ignored():
     _clear_db()

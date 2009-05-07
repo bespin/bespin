@@ -26,13 +26,14 @@ from datetime import datetime
 import logging
 from uuid import uuid4
 import simplejson
+from hashlib import sha256
 
 from path import path as path_obj
 from pathutils import LockError as PULockError, Lock, LockFile
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, PickleType, String, Integer,
-                    Boolean, ForeignKey,
+                    Boolean, ForeignKey, Binary,
                     DateTime, Text)
 from sqlalchemy.orm import relation
 from sqlalchemy.exc import DBAPIError
@@ -85,7 +86,7 @@ class User(Base):
     uuid = Column(String(36), unique=True)
     username = Column(String(128), unique=True)
     email = Column(String(128))
-    password = Column(String(20))
+    password = Column(Binary(32))
     settings = Column(PickleType())
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
@@ -111,6 +112,10 @@ class User(Base):
         _check_identifiers("Usernames", username)
 
         log.debug("Creating user %s", username)
+        password_hash = sha256()
+        password_hash.update(config.c.pw_secret + password)
+        password = password_hash.digest()
+        
         user = cls(username, password, email)
         if override_location is not None:
             user.file_location = override_location
@@ -127,10 +132,18 @@ class User(Base):
         return user
 
     @classmethod
-    def find_user(cls, username):
-        """Looks up a user by username. Returns None if the user is not
-        found."""
-        return _get_session().query(cls).filter_by(username=username).first()
+    def find_user(cls, username, password=None):
+        """Looks up a user by username. If password is provided, the password
+        will be verified. Returns None if the user is not
+        found or the password does not match."""
+        user = _get_session().query(cls).filter_by(username=username).first()
+        if user and password is not None:
+            password_hash = sha256()
+            password_hash.update(config.c.pw_secret + password)
+            digest = password_hash.digest()
+            if str(user.password) != digest:
+                user = None
+        return user
 
     def __init__(self, username, password, email):
         self.username = username
