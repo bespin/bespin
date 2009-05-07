@@ -54,7 +54,6 @@ if (typeof Worker == "undefined") {
         var workers = {};
         Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
-
             this.id = wp.createWorker(source);
             workers[this.id] = this;
         };
@@ -296,7 +295,10 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     // Recursively turn a JS object into its source including functions
     serializeToPortableSource: function(obj) {
         var self   = this;
-        var source = "{\n"
+        
+        var isArray = dojo.isArray(obj);
+        
+        var source = isArray ? "[\n" : "{\n"
 
         for(var prop in obj) {
             // console.log("Serializing "+prop);
@@ -320,13 +322,15 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 }
 
                 // Make sure to encode the property so nobody can insert arbitrary string into our JS
-                prop = '"'+prop.replace(/"/g, '\\"', 'g')+'"'
-
-                source += prop+": "+src+",\n"
+                prop = '"'+prop.replace(/"/g, '\\"', 'g')+'"';
+                
+                source += isArray ? "" : prop+": ";        
+                
+                source += src+",\n"
             })()
         }
 
-        source += "}\n";
+        source += isArray ? "]\n" : "}\n";
 
         return source;
     },
