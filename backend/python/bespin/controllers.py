@@ -81,12 +81,20 @@ def get_registered(request, response):
 def login(request, response):
     username = request.kwargs['login_username']
     password = request.POST.get('password')
+    fli = c.login_tracker.can_log_in(username)
+    if not fli.can_log_in:
+        response.status = "401 Not Authorized"
+        response.body = "Locked out due to failed login attempts."
+        return response()
+        
     user = User.find_user(username, password)
     if not user:
+        c.login_tracker.login_failed(fli)
         response.status = "401 Not Authorized"
         response.body = "Invalid login"
         return response()
     
+    c.login_tracker.login_successful(fli)
     request.environ['paste.auth_tkt.set_user'](username)
     
     response.content_type = "application/json"

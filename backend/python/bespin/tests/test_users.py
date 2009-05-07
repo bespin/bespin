@@ -29,7 +29,7 @@
 from bespin.tests import BespinTestApp
 import simplejson
 
-from bespin import config, controllers
+from bespin import config, controllers, auth
 from bespin.database import User, Base, ConflictError
 from bespin.filesystem import get_project
 
@@ -241,4 +241,24 @@ vcsuser Mack Gyver <gyver@mac.com>
     macgyver = User.find_user("macgyver")
     settings = macgyver.get_settings()
     assert settings == dict(vcsuser="Mack Gyver <gyver@mac.com>")
+    
+def test_users_can_be_locked_out():
+    config.set_profile("test")
+    config.c.login_failure_tracking = "memory"
+    config.c.login_attempts = "1"
+    config.c.lockout_period = "1"
+    config.activate_profile()
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    _clear_db()
+    
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    resp = app.post("/register/login/BillBixby",
+        dict(password="NOTHULK"), status=401)
+    
+    # fail with good password now, because we're locked out
+    resp = app.post("/register/login/BillBixby",
+        dict(password="notangry"), status=401)
+    
     

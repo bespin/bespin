@@ -36,7 +36,10 @@ from path import path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from bespin import stats
+from bespin import stats, auth
+
+class InvalidConfiguration(Exception):
+    pass
 
 class Bunch(dict):
     def __getattr__(self, attr):
@@ -79,6 +82,20 @@ c.queue = None
 c.stats_type = "none"
 c.redis_host = None
 c.redis_port = None
+
+# login failure tracking: none, memory, redis
+# memory holds the login failure attempts in a dictionary and should
+# not be used in production
+# redis holds the login failures in redis (using the same redis
+# as above for stats)
+c.login_failure_tracking = "none"
+
+# number of attempts before a user is locked out
+c.login_attempts = 10
+
+# how long a user is locked out (in seconds)
+c.lockout_period = 600
+
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
@@ -156,12 +173,19 @@ def activate_profile():
 
         from bespin import queue
         c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
-
-    if c.stats_type == "redis":
+    
+    if c.redis_port:
+        c.redis_port = int(c.redis_port)
+    
+    if c.stats_type == "redis" or c.login_failure_tracking == "redis":
         from bespin import redis
-        if c.redis_port:
-            c.redis_port = int(c.redis_port)
         redis_client = redis.Redis(c.redis_host, c.redis_port)
+    else:
+        redis_client = None
+        
+    if c.stats_type == "redis":
+        if not redis_client:
+            raise InvalidConfiguration("Stats is set to redis, but redis is not configured")
         c.stats = stats.RedisStats(redis_client)
     elif c.stats_type == "memory":
         c.stats = stats.MemoryStats()
@@ -172,6 +196,23 @@ def activate_profile():
         c.stats_users = set(c.stats_users.split(','))
     if isinstance(c.stats_display, basestring):
         c.stats_display = set(c.stats_display.split(','))
+        
+    
+    if c.login_attempts:
+        c.login_attempts = int(c.login_attempts)
+    
+    if c.lockout_period:
+        c.lockout_period = int(c.lockout_period)
+        
+    if c.login_failure_tracking == "redis":
+        if not redis_client:
+            raise InvalidConfiguration("Login failure tracking is set to redis, but redis is not configured")
+    elif c.login_failure_tracking == "memory":
+        c.login_tracker = auth.MemoryFailedLoginTracker(c.login_attempts, 
+                                                        c.lockout_period)
+    else:
+        c.login_tracker = auth.DoNothingFailedLoginTracker()
+        
 
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]

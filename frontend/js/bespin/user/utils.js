@@ -35,8 +35,8 @@ dojo.mixin(bespin.user.utils, {
         bespin.util.navigate.dashboard();
     },
 
-    whenLoginFailed: function() {
-        bespin.util.webpieces.showStatus("Sorry, login didn't work. Try again? Caps lock on?");
+    whenLoginFailed: function(xhr) {
+        bespin.util.webpieces.showStatus("Sorry, login didn't work. Try again? Caps lock on? (" + xhr.responseText + ")");
     },
 
     whenUsernameInUse: function() {
