@@ -374,25 +374,16 @@ def compress_js():
 
     builder_dir = destination / "util/buildscripts"
     profile_file = destination / "buildProfile.js"
-    embed_profile = destination / "embedProfile.js"
     release_dir = (options.build_dir / "frontend").abspath()
-    embed_release_dir = (options.build_top / "embed" ).abspath()
     cwd = path.getcwd()
     try:
         builder_dir.chdir()
-        sh("sh build.sh action=release profileFile=%s version=%s "
-            "releaseDir=%s optimize=shrinksafe releaseName=js "
-            'scopeMap=[[\\"dojo\\",\\"bespindojo\\"],[\\"th\\",\\"bespinth\\"],[\\"dijit\\",\\"bespindijit\\"]]' 
-            % (embed_profile, options.version.number, embed_release_dir))
         sh("sh build.sh action=release profileFile=%s version=%s "
             "releaseDir=%s optimize=shrinksafe releaseName=js" 
             % (profile_file, options.version.number, release_dir))
     finally:
         cwd.chdir()
         restore_javascript_version(replaced_lines)
-    
-    dojo_js = embed_release_dir / "js" / "dojo/dojo.js"
-    dojo_js.copy(options.build_top / "embed.js")
 
     front_end_target = options.build_dir / "frontend"
     
