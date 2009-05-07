@@ -681,6 +681,16 @@ dojo.declare("bespin.client.settings.Events", null, {
                 if (path) {
                     bespin.publish("editor:openfile", { filename: path });
                 }
+                else {
+                    // Try to find what we were last editing and open that
+                    bespin.publish("project:set", {
+                        project: settings.get("lastproject") || "SampleProject"
+                    });
+
+                    bespin.publish("editor:openfile", {
+                        filename:settings.get("lastfilename") || "readme.txt"
+                    });
+                }
             }
         });
 
