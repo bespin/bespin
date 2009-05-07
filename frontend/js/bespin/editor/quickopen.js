@@ -188,7 +188,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             }
         }));
         
-        // look at the seachinput => has it changed?
+        // look at the search input => has it changed?
         dojo.connect(this.input, "keyup", dojo.hitch(this, function() {            
             if (this.lastText != this.input.value) {
                 // the text has changed!
@@ -203,7 +203,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             }
         }));
         
-        // load the current opend files at startup
+        // load the current opened files at startup
         bespin.subscribe('settings:loaded', function() {            
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
