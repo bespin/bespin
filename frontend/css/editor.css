@@ -15,6 +15,7 @@ body {
     right: 0;
     background-image: url("../images/toolbar_sub_bg.png");
     z-index: 100;
+    overflow: hidden;
 }
 
 #subheader img {
@@ -139,7 +140,6 @@ body {
     background-repeat: no-repeat;
     padding: 1px 5px;
     color: #DDDDDD;
-    margin-left: 104px;
 }
 
 #searchresult {
