@@ -35,13 +35,17 @@ def upgrade():
         pwbackup.write("%s %s\n" % (row.username, row.password))
         pwinfo[row.username] = row.password
     pwbackup.close()
-    user_table.c.password.alter(type=Binary(32))
+
+    conn2 = migrate_engine.connect()
+    conn2.execute("""ALTER TABLE users 
+CHANGE password password BINARY(32)""")
+    
     count = 0
     for username, password in pwinfo.items():
         password_hash = sha256()
         password_hash.update(c.pw_secret + password)
         
-        update(user_table).where(username=username).execute(password=password_hash.digest())
+        update(user_table).where(user_table.c.username==username).execute(password=password_hash.digest())
         count += 1
         if count % 500 == 0:
             print count
@@ -49,10 +53,12 @@ def upgrade():
 def downgrade():
     # Operations to reverse the above upgrade go here.
     user_table = User.__table__
-    user_table.c.password.alter(type=String(32))
+    conn2 = migrate_engine.connect()
+    conn2.execute("""ALTER TABLE users 
+CHANGE password password VARCHAR(32)""")
     count = 0
     for username, password in pwinfo.items():
-        update(user_table).where(username=username).execute(password=password)
+        update(user_table).where(user_table.c.username==username).execute(password=password)
         count += 1
         if count % 500 == 0:
             print count
