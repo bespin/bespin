@@ -66,9 +66,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self.currentMetaInfo.html   :
                 "Outline not yet available";
             bespin.publish("message", { 
-                
                 msg: html
-           });
+            });
         });
 
         // ** {{{ Event: parser:gotofunction }}} **
