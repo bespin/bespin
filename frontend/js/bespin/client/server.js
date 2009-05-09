@@ -178,13 +178,12 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{pass}}} is the password
     // * {{{onSuccess}}} fires when the user is logged in
     // * {{{onFailure}}} fires when the user failed to login
-    login: function(user, pass, token, onSuccess, onFailure) {
+    login: function(user, pass, onSuccess, onFailure) {
         var url = "/register/login/" + user;
         this.request('POST', url, "password=" + escape(pass), { 
             onSuccess: onSuccess,
             on401: onFailure,
-            log: 'Login complete.',
-            headers: { 'DoubleSubmitCookie': token }
+            log: 'Login complete.'
         });
     },
 
