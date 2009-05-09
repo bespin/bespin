@@ -193,14 +193,18 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self._running = true;
                 bespin.parser.AsyncEngineResolver.parse(type, source).and(function(data) {
                     //console.log("Worker Response "+dojo.toJson(data))
-                    if (data.errors) for (var i = 0; i < data.errors.length; i++) {
-                        bespin.publish("parser:error", {
-                            message: data.errors[i].message,
-                            row: data.errors[i].line,
-                            jslint: data.errors[i].jslint
-                        });
+                    if (data.errors && data.errors.length > 0) {
+                        for (var i = 0; i < data.errors.length; i++) {
+                            bespin.publish("parser:error", {
+                                message: data.errors[i].message,
+                                row: data.errors[i].line,
+                                jslint: data.errors[i].jslint
+                            });
+                        }
                     }
-                    self.currentMetaInfo = data.metaInfo;
+                    if(data.metaInfo) {
+                        self.currentMetaInfo = data.metaInfo;
+                    }
                     self._running = false;
                 })
             }
@@ -209,6 +213,13 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
     getLineMarkers: function() {
         return this.lineMarkers;
+    },
+    
+    getFunctions: function () {
+        if(this.currentMetaInfo) {
+            return this.currentMetaInfo.functions
+        }
+        return []
     }
 
 })
@@ -542,6 +553,7 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
 
 // As soon as a doc is opened we are a go
 bespin.subscribe("settings:language", function() {
+
     bespin.register("parser", new bespin.parser.CodeInfo());
     bespin.get("parser").start();
 
