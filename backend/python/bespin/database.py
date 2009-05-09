@@ -404,7 +404,7 @@ class User(Base):
             if member == 'everyone':
                 # The user and group shares are irrelevant if we're only looking
                 # at everyone sharing
-                return self.get_everyone_sharing(project)
+                return self._get_everyone_sharing(project)
             else:
                 if isinstance(member, Group):
                     # The user shares are irrelevant if we're only looking at
