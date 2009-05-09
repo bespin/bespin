@@ -930,7 +930,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
-        //refreshCanvas = true;
+        // refreshCanvas = true;
 
         // START RENDERING
 
