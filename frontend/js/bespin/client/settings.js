@@ -668,6 +668,13 @@ dojo.declare("bespin.client.settings.Events", null, {
                 bespin.publish("project:set", { project: project });
             }
 
+            // Now we know what are settings are we can decide if we need to
+            // open the new user wizard
+            var oldHand = settings.isSettingOn("oldhand");
+            if (!oldHand) {
+                bespin.publish("wizard:show", { type:"newuser" });
+            }
+
             // if this is a new file, deal with it and setup the state
             var newfile = settings.fromURL.get('new');
             if (newfile) { // scratch file
@@ -676,8 +683,9 @@ dojo.declare("bespin.client.settings.Events", null, {
                    newfilename: path,
                    content: settings.fromURL.get('content') || " "
                 });
-            // existing file, so open it
-            } else {
+            }
+            else {
+                // existing file, so open it
                 if (path) {
                     bespin.publish("editor:openfile", { filename: path });
                 }
