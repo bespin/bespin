@@ -156,7 +156,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if(self._running) {
                         self.run_timeout = setTimeout(arguments.callee, delay)
                     } else {
-                        console.log("Syntax-Check");
+                        //console.log("Syntax-Check");
                         self.fetch();
                     }
                 }, delay)
@@ -192,7 +192,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 
                 self._running = true;
                 bespin.parser.AsyncEngineResolver.parse(type, source).and(function(data) {
-                    console.log("Worker Response "+dojo.toJson(data))
+                    //console.log("Worker Response "+dojo.toJson(data))
                     if (data.errors) for (var i = 0; i < data.errors.length; i++) {
                         bespin.publish("parser:error", {
                             message: data.errors[i].message,
