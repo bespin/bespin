@@ -40,6 +40,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     constructor: function(source) {
         var self       = this;
         this._started  = false;
+        this._running  = false;
 
         this.currentMetaInfo;
         this.lineMarkers = [];
@@ -141,19 +142,24 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
             self.fetch();
 
-            var timeout;
+            self.run_timeout;
+            var delay = 400;
 
             // rerun parser every time the doc changes
             var rerun = function() {
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
-                if (timeout) {
-                    clearTimeout(timeout);
+                if (self.run_timeout) {
+                    clearTimeout(self.run_timeout);
                 }
-                timeout = setTimeout(function() {
-                    //console.log("Syntax-Check");
-                    self.fetch();
-                }, 400)
+                self.run_timeout = setTimeout(function() {
+                    if(self._running) {
+                        self.run_timeout = setTimeout(arguments.callee, delay)
+                    } else {
+                        console.log("Syntax-Check");
+                        self.fetch();
+                    }
+                }, delay)
             }
             var onChange = bespin.subscribe("editor:document:changed", rerun);
             bespin.subscribe("settings:set:jslint", rerun);
@@ -183,8 +189,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             if (type) {
                 var source = editor.model.getDocument();
                 self.lineMarkers = [];
+                
+                self._running = true;
                 bespin.parser.AsyncEngineResolver.parse(type, source).and(function(data) {
-                    //console.log("Worker Response "+dojo.toJson(data))
+                    console.log("Worker Response "+dojo.toJson(data))
                     if (data.errors) for (var i = 0; i < data.errors.length; i++) {
                         bespin.publish("parser:error", {
                             message: data.errors[i].message,
@@ -193,6 +201,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                         });
                     }
                     self.currentMetaInfo = data.metaInfo;
+                    self._running = false;
                 })
             }
         }
