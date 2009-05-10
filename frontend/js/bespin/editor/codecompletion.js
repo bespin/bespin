@@ -25,68 +25,66 @@
 dojo.provide("bespin.editor.codecompletion");
 
 dojo.declare("bespin.editor.codecompletion.Suggester", null, {
-    constructor: function(parms) {
-        
-    },
-    
+    constructor: function(parms) {},
+
     complete: function () {
         var self = this;
         var editor = bespin.get("editor");
-        
-        var pos    = editor.getCursorPos()
-        
+
+        var pos    = editor.getCursorPos();
+
         var row    = editor.model.getRowArray(pos.row);
         var startIndex  = pos.col - 1;
         var substr = "";
-        for(var i = startIndex; i >= 0; --i) {
-            var char = row[i];
-            if(this.charMarksStartOfIdentifier(char) && substr.length >= 1) {
-                this.findCompletion(substr)
-                break
+        for (var i = startIndex; i >= 0; --i) {
+            var ch = row[i];
+            if (this.charMarksStartOfIdentifier(ch) && substr.length >= 1) {
+                this.findCompletion(substr);
+                break;
             } else {
-                substr = char + substr
+                substr = ch + substr;
             }
         }
     },
-    
+
     findCompletion: function (substr) {
         var parser = bespin.get("parser");
         var functions = parser.getFunctions();
         var candidates = [];
-        for(var i = 0, len = functions.length; i < len; ++i) {
+        for (var i = 0, len = functions.length; i < len; ++i) {
             var name = functions[i].name;
-            if(name) {
-                if(name.indexOf(substr) == 0) {
-                    candidates.push(name)
+            if (name) {
+                if (name.indexOf(substr) == 0 && name != "constructor") {
+                    candidates.push(name);
                 }
             }
         }
-        if(candidates.length > 0) {
+        if (candidates.length > 0) {
             bespin.publish("message", {
-                msg: "Completions<br>"+candidates.join("<br>"),
+                msg: "Code Completions<br><br>" + candidates.join("<br>"),
                 tag: "autohide"
-            })
+            });
         }
     },
-    
+
     charMarksStartOfIdentifier: function (char) {
-        return char === "." || char === " " || char === "\t" // rough estimation
+        return char === "." || char === " " || char === "\t"; // rough estimation
     },
-    
+
     subscribe: function () {
         var self = this;
         this.subscription = bespin.subscribe("editor:document:changed", function () {
-            self.complete()
-        }, 400)
+            self.complete();
+        }, 400);
     },
-    
+
     unsubscribe: function () {
-        if(this.subscription) {
-            bespin.unsubscribe(this.subscription)
+        if (this.subscription) {
+            bespin.unsubscribe(this.subscription);
             this.subscription = null;
         }
     }
-    
+
 });
 
 (function () {
@@ -95,9 +93,9 @@ var suggester = new bespin.editor.codecompletion.Suggester();
 bespin.subscribe("settings:set:codecomplete", function (data) {
     var settings = bespin.get("settings");
     if (settings.isOn(data.value)) {
-        suggester.subscribe()
+        suggester.subscribe();
     } else {
-        suggester.unsubscribe()
+        suggester.unsubscribe();
     }
 });
 
