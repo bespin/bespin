@@ -95,18 +95,61 @@ if (typeof importScripts == "undefined") {
 }
 
 onmessage = function(event) {
-    var source = event.data;
-    if (source.indexOf("// YOUcannotGuessMe") == 0) {
-        if (EMULATE_LOAD) {
-            __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, source);
-        } else {
-            try {
-                __GLOBAL__.eval(source);
-            } catch (e) {}
+    var body = event.data;
+    var dataIsString = false;
+    if(typeof body == "string") {
+        // special case: somebody post source to us
+        if (body.indexOf("// YOUcannotGuessMe") == 0) {
+            if (EMULATE_LOAD) {
+                __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, body);
+            } else {
+                __GLOBAL__.eval(body);
+            }
+            return
         }
-    } else {
-        postMessage("Ignoring message: " + source);
+        // special case: outside asks us to load source
+        else if(body.indexOf("__IMPORT_SCRIPT__") == 0) {
+            var source = body.substr("__IMPORT_SCRIPT__".length);
+            var match = source.match(/^\/\/(\d+)/)
+            if(match) {
+                var index = parseInt(match[1], 10);
+                __evalScriptFromImport(index, source)
+
+            }
+            return
+        }
+        else {
+            dataIsString = true;
+            try {
+                body = JSON.parse(body)
+            } catch(e) {
+                throw e+""+body
+            }
+        }
     }
+    
+    // regular postMessage
+    // body has now been parsed.
+    
+    var method = body.method;
+
+    var o      = theObject
+
+    // actually call the method
+    var ret    = o[body.method].apply(o, body.paras)
+
+    var data   = {
+        method: body.method,
+        returnValue: ret,
+        callIndex: body.callIndex // the original callIndex to find callback
+    }
+
+    if(dataIsString) { // If data came as a json string encode data as JSON
+        data = JSON.stringify(data)
+    }
+
+    //console.log("Sending "+data)
+    postMessage(data)
 };
 
 })();
