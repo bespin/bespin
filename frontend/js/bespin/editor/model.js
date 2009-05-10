@@ -153,6 +153,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
     splitRow: function(modelPos, autoindentAmount) {
         this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
+        this.setRowDirty(modelPos.row);
 
         var row = this.getRowArray(modelPos.row); 
 
@@ -174,17 +175,24 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             newRows.push(newRow);
             newRows = newRows.concat(this.rows);
             this.rows = newRows;
+
+            var newCacheRowMetadata = this.cacheRowMetadata.splice(0, modelPos.row + 1);
+            newCacheRowMetadata.push(undefined);
+            this.cacheRowMetadata = newCacheRowMetadata.concat(this.cacheRowMetadata);
         } 
     },
 
     // joins the passed row with the row beneath it
     joinRow: function(rowIndex) {
         this.editor.ui.syntaxModel.invalidateCache(rowIndex); 
+        this.setRowDirty(rowIndex);
 
         if (rowIndex >= this.rows.length - 1) return;        
         var row = this.getRowArray(rowIndex);
         this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
         this.rows.splice(rowIndex + 1, 1);
+        
+        this.cacheRowMetadata.splice(rowIndex + 1, 1);
     },
 
     // returns the number of rows in the model

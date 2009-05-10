@@ -100,8 +100,8 @@ dojo.declare("bespin.editor.Events", null, {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
                     bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
-                    bespin.get("settings").set("lastproject", project);
-                    bespin.get("settings").set("lastfilename", filename);
+                    bespin.get("settings").set("_lastproject", project);
+                    bespin.get("settings").set("_lastfilename", filename);
                 }
             });
         });

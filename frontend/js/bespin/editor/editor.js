@@ -280,7 +280,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeydown: function(e) {
         // handle keys only if editor has the focus!
-        if (!this.editor.focus) return false;
+        if (!this.editor.focus) return;
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
@@ -309,7 +309,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeypress: function(e) {
         // handle keys only if editor has the focus!
-        if (!this.editor.focus) return false;
+        if (!this.editor.focus) return;
 
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
@@ -930,7 +930,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
-        //refreshCanvas = true;
+        // refreshCanvas = true;
 
         // START RENDERING
 
