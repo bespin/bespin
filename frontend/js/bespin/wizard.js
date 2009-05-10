@@ -24,29 +24,69 @@
 
 dojo.provide("bespin.wizard");
 
-//** {{{ Command: wizard }}} **
-bespin.cmd.commands.add({
-    name: 'wizard',
-    takes: ['type'],
-    preview: 'display a named wizard to step through some process',
-    completeText: 'The name of the wizard to run. Initially this is limited to \'newuser\'.',
-    usage: "[type] ...<br><br><em>[type] The name of the user to run</em>",
-    // ** {{{execute}}}
-    execute: function(self, type) {
-        if (!type) {
-            bespin.publish("message", { msg: "Please specify the type of wizard to display" });
-        }
-        else {
-            bespin.publish("wizard:show", { type:type });
+bespin.wizard.wizards = {
+    newuser:{
+        url: "/overlays/newuser.html",
+        onClose: function() {
+            bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
+        },
+        onDie: function() {
+            bespin.get("settings").set("oldhand", "true");
+            bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
         }
     }
-});
+};
 
 (function() {
-    // ** {{{ Event: editor:openfile:opensuccess }}} **
+    //** {{{ Command: wizard }}} **
+    bespin.cmd.commands.add({
+        name: 'wizard',
+        takes: ['type'],
+        preview: 'display a named wizard to step through some process',
+        completeText: 'The name of the wizard to run. Initially this is limited to \'newuser\'.',
+        usage: "[type] ...<br><br><em>[type] The name of the user to run</em>",
+        // ** {{{execute}}}
+        execute: function(self, type) {
+            if (!type) {
+                bespin.publish("message", { msg: "Please specify the type of wizard to display" });
+                return;
+            }
+
+            bespin.publish("wizard:show", { type:type, warnOnFail:true });
+        }
+    });
+
+    // When the HTML fetch succeeds, display it in the centerpopup div
+    var onSuccess = function(data) {
+        bespin.wizard.el = dojo.byId('centerpopup');
+        bespin.wizard.el.innerHTML = data;
+        dojo.query("#centerpopup script").forEach(function(node) {
+            console.log("found script" + node.innerHTML);
+            eval(node.innerHTML);
+        });
+        bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
+    };
+
+    // Warn when the HTML fetch fails
+    var onFailure = function(xhr) {
+        bespin.publish("message", { msg: "Failed to display wizard: " + xhr.responseText });
+    };
+
+    // ** {{{ Event: wizard:show }}} **
     //
     // Change the session settings when a new file is opened
     bespin.subscribe("wizard:show", function(event) {
-        console.log(event);
+        if (!event.type) {
+            throw new Error("wizard:show event must have a type member");
+        }
+
+        var wizard = bespin.wizard.wizards[event.type];
+        if (!wizard) {
+            bespin.publish("message", { msg: "Unknown wizard: " + event.type });
+            return;
+        }
+
+        var localOnFailure = event.warnOnFail ? onFailure : null;
+        bespin.get('server').fetchResource(wizard.url, onSuccess, localOnFailure);
     });
 })();
