@@ -672,7 +672,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             // open the new user wizard
             var oldHand = settings.isSettingOn("oldhand");
             if (!oldHand) {
-                bespin.publish("wizard:show", { type:"newuser" });
+                bespin.publish("wizard:show", { type:"newuser", warnOnFail:false });
             }
 
             // if this is a new file, deal with it and setup the state

@@ -141,6 +141,17 @@ dojo.declare("bespin.client.Server", null, {
         return pass;
     },
 
+    // ** {{{ fetchResource() }}}
+    //
+    // Generic system to read resources from a URL and return the read data to
+    // a callback.
+    fetchResource: function(name, onSuccess, onFailure) {
+        this.request('GET', name, null, { 
+            onSuccess: onSuccess,
+            onFailure: onFailure
+        });
+    },
+
     // ** {{{ asyncStarted() }}}
     //
     // Keeps track of jobs that are asynchronous on the server, so
