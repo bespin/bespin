@@ -15,6 +15,55 @@ var SCRIPT_COUNT = 0;
 var LOADED_SCRIPTS = 0;
 var EMULATE_LOAD   = false;
 
+// Gears
+if(typeof google != "undefined") { // For Gears we need to create a fake postMessage function
+    var wp = google.gears.workerPool; 
+    
+    wp.onmessage =  function(a, b, message) {
+        var sender = message.sender
+        postMessage = function(data) {
+            wp.sendMessage(data, sender)
+        }
+        onmessage({ // call the onmessage function defined below
+            data: message.body
+        })
+    }
+
+    // emulate importScripts in Gears.
+    var importScripts = function importScripts () {
+        var global = this;
+        var src = "";
+        var i = 0;
+        var load = function(url, callback) {
+            var request = google.gears.factory.create('beta.httprequest');
+            request.open('GET', url);
+            request.onreadystatechange = function() {
+                if(request.readyState == 4) {
+                    if(request.status >= 200 && request.status < 400) {
+                        var res = request.responseText;
+                        src += res+"\n";
+                        callback()
+                    } else {
+                        throw new Error("Error fetching script "+url+". Response code: " + request.status + " Response text: "+request.responseText)
+                    }
+                }
+            };
+            request.send()
+        }
+        var urls = Array.prototype.splice.call(arguments, 0);
+        var loader = function() {
+            var url = urls.shift()
+            if(url) {
+                load(url, loader)
+            } else {
+                global.eval(src)
+            }
+        }
+        loader()
+    }
+}
+
+// No importScripts and no Gears -> Safari 4
 if (typeof importScripts == "undefined") {
     EMULATE_LOAD = true;
     __GLOBAL__.importScripts = function () {

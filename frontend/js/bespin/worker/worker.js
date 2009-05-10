@@ -54,7 +54,7 @@ if (typeof Worker == "undefined") {
         var workers = {};
         Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
-            this.id = wp.createWorker(source);
+            this.id = wp.createWorkerFromUrl(JS_WORKER_SOURCE);
             workers[this.id] = this;
         };
 
@@ -197,11 +197,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             //console.log("Worker created")
             worker.onmessage = onmessage;
             source = "// YOUcannotGuessMe\n" + source
-            if(!USE_GEARS) {
-                window.setTimeout(function() {
-                    worker.postMessage(source)
-                },0)
-            }
+            window.setTimeout(function() {
+                worker.postMessage(source)
+            },0)
             workers.push(worker)
         }
         return workers
