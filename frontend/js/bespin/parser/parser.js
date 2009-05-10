@@ -104,6 +104,27 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             }
             bespin.publish("message", { msg: html });
         });
+        
+        // ** {{{ Event: parser:engine:parseDone }}} **
+        //
+        // Fires when the parser engine finished a parsing run
+        bespin.subscribe("parser:engine:parseDone", function(event) {
+            var data = event.info;
+            //console.log("Worker Response "+dojo.toJson(data))
+            if (data.errors && data.errors.length > 0) {
+                for (var i = 0; i < data.errors.length; i++) {
+                    bespin.publish("parser:error", {
+                        message: data.errors[i].message,
+                        row: data.errors[i].line,
+                        jslint: data.errors[i].jslint
+                    });
+                }
+            }
+            if(data.metaInfo) {
+                self.currentMetaInfo = data.metaInfo;
+            }
+            self._running = false;
+        })
     },
 
     // ** {{{ start }}} **
@@ -191,22 +212,12 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self.lineMarkers = [];
                 
                 self._running = true;
-                bespin.parser.AsyncEngineResolver.parse(type, source).and(function(data) {
-                    //console.log("Worker Response "+dojo.toJson(data))
-                    if (data.errors && data.errors.length > 0) {
-                        for (var i = 0; i < data.errors.length; i++) {
-                            bespin.publish("parser:error", {
-                                message: data.errors[i].message,
-                                row: data.errors[i].line,
-                                jslint: data.errors[i].jslint
-                            });
-                        }
-                    }
-                    if(data.metaInfo) {
-                        self.currentMetaInfo = data.metaInfo;
-                    }
-                    self._running = false;
+                
+                bespin.publish("parser:engine:parse", {
+                    type: type,
+                    source: source 
                 })
+                
             }
         }
     },
@@ -291,10 +302,12 @@ dojo.declare("bespin.parser.JavaScript", null, {
 
         // preprocess for speed
         for(var type in codePatterns) {
-            var ns = codePatterns[type].declaration.split(".");
-            var indicator = ns.pop();
-            codePatterns[type]._indicator = indicator;
-            codePatterns[type]._ns        = ns;
+            if(codePatterns.hasOwnProperty(type)) {
+                var ns = codePatterns[type].declaration.split(".");
+                var indicator = ns.pop();
+                codePatterns[type]._indicator = indicator;
+                codePatterns[type]._ns        = ns;
+            }
         }
 
         var FUNCTION = 74; // from narcissus
@@ -536,6 +549,17 @@ bespin.parser.EngineResolver = function() {
       // Hunt down the engines for the given {{{type}}} (e.g. css, js, html)
       resolve: function(type) {
           return this.engines[type] || [];
+      },
+      
+      initialize: function () {
+          var engine = this;
+          bespin.subscribe("parser:engine:parse", function (event) {
+              var ret = engine.parse(event.type, event.source);
+              bespin.publish("parser:engine:parseDone", {
+                  type: event.type,
+                  info: ret
+              })
+          })
       }
   };
 }();
@@ -555,7 +579,7 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
 bespin.subscribe("settings:language", function() {
 
     bespin.register("parser", new bespin.parser.CodeInfo());
-    bespin.get("parser").start();
+    bespin.publish("parser:start")
 
     // ** {{{ Event: parser:start }}} **
     //

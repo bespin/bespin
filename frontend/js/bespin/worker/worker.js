@@ -169,32 +169,51 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             });
         }
 
-        var onmessage = function(event) {
-            var message = event.data
-            if(typeof message == "string") {
-                if(message.indexOf("log=") == 0) {
-                    console.log("From Worker: "+message.substr(4))
-                    return
-                }
-                else
-                if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
-                    var json = message.substr("__IMPORT_SCRIPT__".length)
-                    var paras = dojo.fromJson(json)
-                    loadScript.apply(this, paras)
-                    return
-                }
-                else {
-                    message = dojo.fromJson(message)
-                }
-            }
-            cb.call(this, event)
-
-        }
 
         for(var i = 0; i < this.__workerCount__;i++) {
             //console.log("Create worker")
             var worker = new Worker("/js/bespin/bootstrap_worker.js", source);
             //console.log("Worker created")
+            
+            var onmessage = function(event) {
+                var message = event.data
+                if(typeof message == "string") {
+                    if(message.indexOf("log=") == 0) {
+                        console.log("From Worker: "+message.substr(4))
+                        return
+                    }
+                    else
+                    if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
+                        var json = message.substr("__IMPORT_SCRIPT__".length)
+                        var paras = dojo.fromJson(json)
+                        loadScript.apply(this, paras)
+                        return
+                    }
+                    else {
+                        message = dojo.fromJson(message)
+                    }
+                }
+                
+                if(message.type == "subscribe") {
+                    var index = message.index
+                    bespin.subscribe(message.name, function (event) {
+                        var ret = {
+                            index: index,
+                            event: event
+                        }
+                        worker.postMessage(USE_GEARS ? ret : dojo.toJson(ret))
+                    })
+                }
+                else if(message.type == "publish") {
+                    bespin.publish(message.name, message.event)
+                }
+                else {
+                    throw message
+                    cb.call(this, event)
+                }
+
+            }
+            
             worker.onmessage = onmessage;
             source = "// YOUcannotGuessMe\n" + source
             window.setTimeout(function() {
@@ -337,7 +356,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         var con = function(msg) {
             postMessage("log="+msg)
         }
-        var source = "console = { log: "+con.toString()+" };\n"
+        var source = ""
 
         if(libs) {
             var quoted = [];
@@ -347,52 +366,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             source += "importScripts("+quoted.join(", ")+");\n"
         }
 
-        source += "var theObject = "+this.serializeToPortableSource(obj)
-
-
-        function ajaxRequest (method, url, data, callback, errorCallback) {
-
-            var request
-            if(this.clientHasGears()) {
-                request = google.gears.factory.create('beta.httprequest');
-            } else {
-                request = window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
-            }
-            var dataString    = ""
-            if(data) {
-                for(var i in data) {
-                    dataString += encodeURIComponent(i)+"="+encodeURIComponent(data[i])+"&"
-                }
-            }
-            var theUrl = url;
-            if(data && method == "GET") {
-                theUrl += "?"+dataString
-            }
-            request.open(method, theUrl, true);
-
-            request.onreadystatechange = function onreadystatechange () {
-                if (request.readyState == 4) {
-                    if(request.status >= 200 && request.status < 400) {
-                        var res = request.responseText;
-                        callback(res)
-                    } else {
-                        if(errorCallback) {
-                            return errorCallback(request)
-                        } else {
-                            throw new Error("Error fetching url "+theUrl+". Response code: " + request.status + " Response text: "+request.responseText)
-                        }
-                    }
-                }
-            };
-            if(data && method == "POST") {
-                // FIXME determine page encoding instead of always using UTF8
-                request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                request.send(dataString)
-            } else {
-                dataString = ""
-                request.send(dataString);
-            }
-        }
+        source += "var theObject = "+this.serializeToPortableSource(obj);
 
         //console.log(source)
 
