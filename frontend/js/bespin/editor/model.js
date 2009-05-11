@@ -147,7 +147,10 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     deleteRows: function(row, count) {
         var diff = (row + count - 1) - this.rows.length;
         if (diff > 0) count -= diff;
-        if (count > 0) this.rows.splice(row, count);
+        if (count > 0) {
+            this.rows.splice(row, count);
+            this.cacheRowMetadata.splice(row, count);
+        }
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row

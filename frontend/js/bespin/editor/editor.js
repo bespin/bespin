@@ -27,7 +27,7 @@ dojo.provide("bespin.editor.editor");
 dojo.require("bespin.editor.clipboard");
 
 // = Editor =
-//
+// 
 // This is the guts. The metal. The core editor has most of its classes living in here:
 //
 // * {{{bespin.editor.API}}} : The editor API itself
