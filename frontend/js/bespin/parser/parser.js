@@ -177,7 +177,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if(self._running) {
                         self.run_timeout = setTimeout(arguments.callee, delay)
                     } else {
-                        //console.log("Syntax-Check");
+                        console.log("Syntax-Check");
                         self.fetch();
                     }
                 }, delay)
@@ -303,6 +303,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         // preprocess for speed
         for(var type in codePatterns) {
             if(codePatterns.hasOwnProperty(type)) {
+                console.log(type)
                 var ns = codePatterns[type].declaration.split(".");
                 var indicator = ns.pop();
                 codePatterns[type]._indicator = indicator;
@@ -418,34 +419,47 @@ dojo.declare("bespin.parser.JavaScript", null, {
             html: html
         }
     },
+    
+    codePatterns: {
+        dojoClass: {
+            declaration: "dojo.declare",
+            description: "Class"
+        },
+        bespinEventPublish: {
+            declaration: "bespin.publish",
+            description: "Publish"
+        },
+        bespinEventSubscription: {
+            declaration: "bespin.subscribe",
+            description: "Subscribe to"
+        },
+        jooseClass: {
+            declaration: "Class"
+        },
+        jooseModule: {
+            declaration: "Module"
+        },
+        jooseType: {
+            declaration: "Type"
+        },
+        jooseRole: {
+            declaration: "Role"
+        }
+    },
 
     getCodePatterns: function () {
-        return {
-            dojoClass: {
-                declaration: "dojo.declare",
-                description: "Class"
-            },
-            bespinEventPublish: {
-                declaration: "bespin.publish",
-                description: "Publish"
-            },
-            bespinEventSubscription: {
-                declaration: "bespin.subscribe",
-                description: "Subscribe to"
-            },
-            jooseClass: {
-                declaration: "Class"
-            },
-            jooseModule: {
-                declaration: "Module"
-            },
-            jooseType: {
-                declaration: "Type"
-            },
-            jooseRole: {
-                declaration: "Role"
+        return this.codePatterns
+    },
+    
+    initialize: function () {
+        var self = this;
+        console.log("SubInit")
+        bespin.subscribe("parser:js:codePatterns", function (patterns) {
+            for(pattern in patterns) {
+                console.log(pattern)
+                self.codePatterns[pattern] = patterns[pattern]
             }
-        }
+        })
     },
 
     parse: function(source) {
@@ -560,6 +574,22 @@ bespin.parser.EngineResolver = function() {
                   info: ret
               })
           })
+          
+          // forward initialize to engines
+          for(var type in this.engines) {
+              var list = this.engines[type];
+              for(var i = 0; i < list.length; i++) {
+                  var eng = list[i];
+                  if(!eng._init) { // make sure we only init once (engine can occur multiple times)
+                      if(eng.initialize) {
+                          eng.initialize()
+                      }
+                      eng._init = true;
+                  }
+              }
+          }
+          
+          bespin.publish("parser:engine:initialized", {})
       }
   };
 }();
