@@ -32,7 +32,7 @@ dojo.require("bespin.util.webpieces");
 
 dojo.mixin(bespin.user.utils, {
     whenLoginSucceeded: function() {
-        bespin.util.navigate.dashboard();
+        bespin.util.navigate.editor();
     },
 
     whenLoginFailed: function(xhr) {

@@ -280,7 +280,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeydown: function(e) {
         // handle keys only if editor has the focus!
-        if (!this.editor.focus) return false;
+        if (!this.editor.focus) return;
 
         var args = { event: e,
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
@@ -309,7 +309,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     onkeypress: function(e) {
         // handle keys only if editor has the focus!
-        if (!this.editor.focus) return false;
+        if (!this.editor.focus) return;
 
         // This is to get around the Firefox bug that happens the first time of jumping between command line and editor
         // Bug https://bugzilla.mozilla.org/show_bug.cgi?id=478686
@@ -490,7 +490,7 @@ dojo.declare("bespin.editor.UI", null, {
     mouseDownSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-        
+
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -527,14 +527,14 @@ dojo.declare("bespin.editor.UI", null, {
     mouseMoveSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-        
+
         this.setSelection(e);
     },
 
     mouseUpSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-        
+
         this.setSelection(e);
         this.selectMouseDownPos = undefined;
     },
@@ -754,7 +754,7 @@ dojo.declare("bespin.editor.UI", null, {
         // listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
-        
+
         // handle key to jump between editor and other windows / commandline
         listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Focus Commandline");
@@ -930,7 +930,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
-        //refreshCanvas = true;
+        // refreshCanvas = true;
 
         // START RENDERING
 
@@ -1531,9 +1531,9 @@ dojo.declare("bespin.editor.UI", null, {
         } else {
             delete this.searchString;
         }
-        
+
         this.model.searchStringChanged(this.searchString);
-        
+
         this.editor.paint(true);
     }
 });

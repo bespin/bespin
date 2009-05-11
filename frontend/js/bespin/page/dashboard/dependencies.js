@@ -47,6 +47,8 @@ dojo.require("bespin.vcs");      // load up VCS module and its commands
 dojo.require("bespin.jetpack");  // load up Jetpack module and its commands
 dojo.require("bespin.cmd.dashboardcommands");
 
+// dojo.require("bespin.social");
+
 // -- The main dashboard subsystems
 dojo.require("bespin.page.dashboard.components");
 dojo.require("bespin.page.dashboard.events");
