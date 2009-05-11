@@ -86,7 +86,7 @@ class User(Base):
     uuid = Column(String(36), unique=True)
     username = Column(String(128), unique=True)
     email = Column(String(128))
-    password = Column(Binary(32))
+    password = Column(String(64))
     settings = Column(PickleType())
     quota = Column(Integer, default=10)
     amount_used = Column(Integer, default=0)
@@ -114,7 +114,7 @@ class User(Base):
         log.debug("Creating user %s", username)
         password_hash = sha256()
         password_hash.update(config.c.pw_secret + password)
-        password = password_hash.digest()
+        password = password_hash.hexdigest()
         
         user = cls(username, password, email)
         if override_location is not None:
@@ -140,7 +140,7 @@ class User(Base):
         if user and password is not None:
             password_hash = sha256()
             password_hash.update(config.c.pw_secret + password)
-            digest = password_hash.digest()
+            digest = password_hash.hexdigest()
             if str(user.password) != digest:
                 user = None
         return user
