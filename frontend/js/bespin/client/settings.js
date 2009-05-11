@@ -670,7 +670,7 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
-            var oldHand = settings.isSettingOn("oldhand");
+            var oldHand = settings.isSettingOn("shownewuseronload");
             if (!oldHand) {
                 bespin.publish("wizard:show", { type:"newuser", warnOnFail:false });
             }

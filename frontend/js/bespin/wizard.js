@@ -24,14 +24,17 @@
 
 dojo.provide("bespin.wizard");
 
-bespin.wizard.wizards = {
+// This list of wizards that we can run. Each must have a url, which is a
+// pointer to the server side resource to display, and a set of functions that
+// are run by parts of the resource
+bespin.wizard._wizards = {
     newuser:{
         url: "/overlays/newuser.html",
         onClose: function() {
             bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
         },
         onDie: function() {
-            bespin.get("settings").set("oldhand", "true");
+            bespin.get("settings").set("shownewuseronload", "true");
             bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
         }
     }
@@ -42,12 +45,16 @@ bespin.cmd.commands.add({
     name: 'wizard',
     takes: ['type'],
     preview: 'display a named wizard to step through some process',
-    completeText: 'The name of the wizard to run. Initially this is limited to \'newuser\'.',
-    usage: "[type] ...<br><br><em>[type] The name of the user to run</em>",
+    completeText: 'The name of the wizard to run. Leave blank to list known wizards',
+    usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
     // ** {{{execute}}}
     execute: function(self, type) {
         if (!type) {
-            bespin.publish("message", { msg: "Please specify the type of wizard to display" });
+            var list = "";
+            for (name in bespin.wizard._wizards) {
+                list += ", " + name;
+            }
+            bespin.publish("message", { msg: "Known wizards: " + list.substring(2) });
             return;
         }
 
@@ -56,7 +63,7 @@ bespin.cmd.commands.add({
 });
 
 // When the HTML fetch succeeds, display it in the centerpopup div
-bespin.wizard.onSuccess = function(data) {
+bespin.wizard._onSuccess = function(data) {
     bespin.wizard.el = dojo.byId('centerpopup');
     bespin.wizard.el.innerHTML = data;
     dojo.query("#centerpopup script").forEach(function(node) {
@@ -67,7 +74,7 @@ bespin.wizard.onSuccess = function(data) {
 };
 
 // Warn when the HTML fetch fails
-bespin.wizard.onFailure = function(xhr) {
+bespin.wizard._onFailure = function(xhr) {
     bespin.publish("message", { msg: "Failed to display wizard: " + xhr.responseText });
 };
 
@@ -79,12 +86,12 @@ bespin.subscribe("wizard:show", function(event) {
         throw new Error("wizard:show event must have a type member");
     }
 
-    var wizard = bespin.wizard.wizards[event.type];
+    var wizard = bespin.wizard._wizards[event.type];
     if (!wizard) {
         bespin.publish("message", { msg: "Unknown wizard: " + event.type });
         return;
     }
 
-    var localOnFailure = event.warnOnFail ? bespin.wizard.onFailure : null;
-    bespin.get('server').fetchResource(wizard.url, bespin.wizard.onSuccess, localOnFailure);
+    var localOnFailure = event.warnOnFail ? bespin.wizard._onFailure : null;
+    bespin.get('server').fetchResource(wizard.url, bespin.wizard._onSuccess, localOnFailure);
 });
