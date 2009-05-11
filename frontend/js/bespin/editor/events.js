@@ -100,6 +100,38 @@ dojo.declare("bespin.editor.Events", null, {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
                     bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+
+                    var settings = bespin.get("settings");
+
+                    // Get the array of lastused files
+                    var lastUsed = settings.getObject("lastused");
+                    if (!lastUsed) {
+                        lastUsed = [];
+                    }
+
+                    // We want to add this to the top
+                    var newItem = {
+                        project:project,
+                        filename:filename
+                    }
+
+                    // Remove newItem from down in the list and place at top
+                    var cleanLastUsed = [];
+                    dojo.forEach(lastUsed, function(item) {
+                        if (item.project != newItem.project || item.filename != newItem.filename) {
+                            cleanLastUsed.unshift(item);
+                        }
+                    });
+                    cleanLastUsed.unshift(newItem);
+                    lastUsed = cleanLastUsed;
+
+                    // Trim to 10 members
+                    if (lastUsed.length > 10) {
+                        lastUsed = lastUsed.slice(0, 10);
+                    }
+
+                    // Maybe this should have a _ prefix: but then it does not persist??
+                    settings.setObject("lastused", lastUsed);
                 }
             });
         });

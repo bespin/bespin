@@ -33,28 +33,19 @@ dojo.provide("bespin.user.register");
     
     dojo.mixin(bespin.user, {
         login: function() {
-            if (utils.showingBrowserCompatScreen()) return;
-
-            if (dojo.byId("username").value && dojo.byId("password").value) {
-                // try to find the httpSessionId
-                var cookies = document.cookie.split(';');
-                var foundValue = "";
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = cookies[i];
-                    while (cookie.charAt(0) == ' ') cookie = cookie.substring(1, cookie.length);
-                    if (cookie.indexOf("anticsrf=") == 0) {
-                        foundValue = cookie.substring(dwr.engine._sessionCookieName.length + 1, cookie.length);
-                        break;
-                    }
-                }
-
-                server.login(dojo.byId("username").value, dojo.byId("password").value, 
-                    foundValue, 
-                    utils.whenLoginSucceeded,
-                    utils.whenLoginFailed);
-            } else {
-                webpieces.showStatus("Please give me both a username and a password");
+            if (utils.showingBrowserCompatScreen()) {
+                return;
             }
+
+            var username = dojo.byId("username").value;
+            var password = dojo.byId("password").value;
+
+            if (!username || !password) {
+                webpieces.showStatus("Please give me both a username and a password");
+                return;
+            }
+
+            server.login(username, password, utils.whenLoginSucceeded, utils.whenLoginFailed);
         },
 
         logout: function() {

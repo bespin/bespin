@@ -523,6 +523,7 @@ dojo.extend(bespin.client.Server, {
 
 // ====================================================================== VIEWME
 
+/*
 // ** {{{Command: viewme}}} **
 bespin.cmd.commands.add({
     name: 'viewme',
@@ -621,3 +622,4 @@ dojo.extend(bespin.client.Server, {
         this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
     }
 });
+*/

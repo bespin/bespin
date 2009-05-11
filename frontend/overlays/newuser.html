@@ -1,0 +1,57 @@
+
+<style>
+.wizardButton { width:200px; height:70px; border:0; margin:2px; cursor:pointer; }
+.wizardTop {
+  font-size: 16px;
+  font-family: Calibri, Arial, sans-serif;
+  border: 1px solid #000;
+}
+.wizardBody {
+  background:white; padding:10px;
+}
+.wizardTitle { background-color:#666; color:#fff; padding:5px; border-bottom: 1px solid #000; }
+.wizardTitleButtons { float:right; margin-left:20px; }
+.wizardTitleButton { }
+</style>
+
+<div class="wizardTop">
+  <div class="wizardTitle">
+    <div class="wizardTitleButtons">
+      <button class="wizardTitleButton" onclick="bespin.wizard._wizards.newuser.onClose();">
+        Go Away
+      </button>
+      <button class="wizardTitleButton" onclick="bespin.wizard._wizards.newuser.onDie();">
+        Don't Come Back
+      </button>
+    </div>
+    Welcome to Bespin
+  </div>
+  <div class="wizardBody">
+    <div style="float:right;">
+      <div>Recently Edited</div>
+      <ul>
+        <li>Blah</li>
+        <li>Blah</li>
+        <li>Blah</li>
+        <li>Blah</li>
+      </ul>
+    </div>
+    <div>
+      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
+        [Fancy Background Image ...]<br/>
+        What Is Bespin?
+      </button>
+      <br/>
+      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
+        [Fancy Background Image ...]<br/>
+        Command Reference
+      </button>
+      <br/>
+      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
+        [Fancy Background Image ...]<br/>
+        I want to make Bespin better
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -63,6 +63,7 @@ dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.undo");
 dojo.require("bespin.editor.quickopen");
 dojo.require("bespin.editor.filesearch");
+dojo.require("bespin.editor.codecompletion");
 
 dojo.require("bespin.themes.default");
 
@@ -79,10 +80,13 @@ dojo.require("bespin.parser.parser");
 
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
+
+dojo.require("bespin.wizard");
+//dojo.require("bespin.social");
+
 dojo.require("bespin.cmd.editorcommands");
 
 /*
-dojo.require("bespin.social");
 dojo.require("bespin.mobwrite.core");
 dojo.require("bespin.mobwrite.diff");
 dojo.require("bespin.mobwrite.form");
