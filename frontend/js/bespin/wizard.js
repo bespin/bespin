@@ -26,7 +26,8 @@ dojo.provide("bespin.wizard");
 
 // This list of wizards that we can run. Each must have a url, which is a
 // pointer to the server side resource to display, and a set of functions that
-// are run by parts of the resource
+// are run by parts of the resource. A special onLoad function (note the exact
+// case) will be called when the wizard is first displayed.
 bespin.wizard._wizards = {
     newuser:{
         url: "/overlays/newuser.html",
@@ -39,6 +40,19 @@ bespin.wizard._wizards = {
             settings.set("shownewuseronload", "true");
 
             bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
+        },
+        onLoad: function() {
+            var settings = bespin.get("settings");
+            var lastUsed = settings.getObject("lastused");
+            if (!lastUsed) {
+                dojo.create('li', { innerHTML:"No recent files" }, "wizardQuickLinks", 'last');
+            }
+            else {
+                dojo.forEach(lastUsed, function(item) {
+                    console.log(item);
+                    dojo.create('li', { innerHTML:item.project + "/" + item.filename }, "wizardQuickLinks", 'last');
+                });
+            }
         }
     }
 };
@@ -66,14 +80,13 @@ bespin.cmd.commands.add({
 });
 
 // When the HTML fetch succeeds, display it in the centerpopup div
-bespin.wizard._onSuccess = function(data) {
+bespin.wizard._onSuccess = function(data, wizard) {
     bespin.wizard.el = dojo.byId('centerpopup');
     bespin.wizard.el.innerHTML = data;
-    dojo.query("#centerpopup script").forEach(function(node) {
-        console.log("found script" + node.innerHTML);
-        eval(node.innerHTML);
-    });
     bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
+    if (typeof wizard.onLoad == "function") {
+        wizard.onLoad();
+    }
 };
 
 // Warn when the HTML fetch fails
@@ -96,5 +109,9 @@ bespin.subscribe("wizard:show", function(event) {
     }
 
     var localOnFailure = event.warnOnFail ? bespin.wizard._onFailure : null;
-    bespin.get('server').fetchResource(wizard.url, bespin.wizard._onSuccess, localOnFailure);
+    var localOnSuccess = function(data) {
+        bespin.wizard._onSuccess(data, wizard);
+    };
+
+    bespin.get('server').fetchResource(wizard.url, localOnSuccess, localOnFailure);
 });
