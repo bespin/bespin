@@ -185,7 +185,7 @@ dojo.declare("bespin.client.settings.Cookie", null, {
                 'fontsize': '10',
                 'autocomplete': 'off',
                 'collaborate': 'off',
-                '_username': 'dion'
+                '_username': 'dion' // Really?
             };
             dojo.cookie("settings", dojo.toJson(this.settings), this.cookieSettings);
         }
