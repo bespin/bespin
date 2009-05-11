@@ -611,8 +611,15 @@ dojo.declare("bespin.editor.UI", null, {
         setTimeout(function() { ui.toggleCursor(ui); }, ui.toggleCursorFrequency);
     },
 
-    ensureCursorVisible: function() {
+    ensureCursorVisible: function(softEnsure) {
         if ((!this.lineHeight) || (!this.charWidth)) return;    // can't do much without these
+
+        if(bespin.get('settings')) {
+            var pageScroll = parseFloat(bespin.get('settings').get('pagescroll')) || 0;
+        } else {
+            var pageScroll = 0;
+        }
+        pageScroll = (!softEnsure ? Math.max(0, Math.min(1, pageScroll)) : 0.25);
 
         var y = this.lineHeight * this.editor.cursorManager.getCursorPosition().row;
         var x = this.charWidth * this.editor.cursorManager.getCursorPosition().col;
@@ -621,9 +628,10 @@ dojo.declare("bespin.editor.UI", null, {
         var cwidth = this.getWidth() - this.gutterWidth;
 
         if (Math.abs(this.yoffset) > y) {               // current row before top-most visible row
-            this.yoffset = Math.min(-y + cheight * 0.25, 0);
+            this.yoffset = Math.min(-y + cheight * pageScroll, 0);
         } else if ((Math.abs(this.yoffset) + cheight) < (y + this.lineHeight)) {       // current row after bottom-most visible row
-            this.yoffset = -((y + this.lineHeight) - cheight * 0.75);
+            this.yoffset = -((y + this.lineHeight) - cheight * (1 - pageScroll));
+            this.yoffset = Math.max(this.yoffset, cheight - this.lineHeight * this.model.getRowCount());
         }
 
         if (Math.abs(this.xoffset) > x) {               // current col before left-most visible col

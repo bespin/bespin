@@ -809,7 +809,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (found) {
             this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
             this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
-            this.editor.ui.ensureCursorVisible();
+            this.editor.ui.ensureCursorVisible(true);
             this.repaint();
 
             return true;
@@ -831,7 +831,7 @@ dojo.declare("bespin.editor.Actions", null, {
         if (found) {
             this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
             this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
-            this.editor.ui.ensureCursorVisible();
+            this.editor.ui.ensureCursorVisible(true);
             this.repaint();
         }
     },
