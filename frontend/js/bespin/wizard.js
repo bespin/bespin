@@ -34,7 +34,10 @@ bespin.wizard._wizards = {
             bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
         },
         onDie: function() {
-            bespin.get("settings").set("shownewuseronload", "true");
+            var settings = bespin.get("settings");
+            // Maybe this should have a _ prefix: but then it does not persist??
+            settings.set("shownewuseronload", "true");
+
             bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
         }
     }

@@ -100,8 +100,25 @@ dojo.declare("bespin.editor.Events", null, {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
                     bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
-                    bespin.get("settings").set("_lastproject", project);
-                    bespin.get("settings").set("_lastfilename", filename);
+
+                    var settings = bespin.get("settings");
+
+                    var lastUsed = settings.getObject("lastused");
+                    if (!lastUsed) {
+                        lastUsed = [];
+                    }
+                    // TODO: Before we push, we should check to see if the item
+                    // is on the list already, and remove it
+                    lastUsed.unshift({
+                        project:project,
+                        filename:filename
+                    });
+                    // Trim to 10 members
+                    if (lastUsed.length > 10) {
+                        lastUsed = lastUsed.slice(0, 10);
+                    }
+
+                    settings.setObject("lastused", lastUsed);
                 }
             });
         });
