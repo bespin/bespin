@@ -54,7 +54,7 @@ if (typeof Worker == "undefined") {
         var workers = {};
         Worker      = function(uri, source) { // The worker class, non standard second source para
             this.isGears = true;
-            this.id = wp.createWorker(source);
+            this.id = wp.createWorkerFromUrl(JS_WORKER_SOURCE);
             workers[this.id] = this;
         };
 
@@ -169,39 +169,56 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             });
         }
 
-        var onmessage = function(event) {
-            var message = event.data
-            if(typeof message == "string") {
-                if(message.indexOf("log=") == 0) {
-                    console.log("From Worker: "+message.substr(4))
-                    return
-                }
-                else
-                if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
-                    var json = message.substr("__IMPORT_SCRIPT__".length)
-                    var paras = dojo.fromJson(json)
-                    loadScript.apply(this, paras)
-                    return
-                }
-                else {
-                    message = dojo.fromJson(message)
-                }
-            }
-            cb.call(this, event)
-
-        }
 
         for(var i = 0; i < this.__workerCount__;i++) {
             //console.log("Create worker")
             var worker = new Worker("/js/bespin/bootstrap_worker.js", source);
             //console.log("Worker created")
+            
+            var onmessage = function(event) {
+                var message = event.data
+                if(typeof message == "string") {
+                    if(message.indexOf("log=") == 0) {
+                        console.log("From Worker: "+message.substr(4))
+                        return
+                    }
+                    else
+                    if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
+                        var json = message.substr("__IMPORT_SCRIPT__".length)
+                        var paras = dojo.fromJson(json)
+                        loadScript.apply(this, paras)
+                        return
+                    }
+                    else {
+                        message = dojo.fromJson(message)
+                    }
+                }
+                
+                if(message.type == "subscribe") {
+                    var index = message.index
+                    bespin.subscribe(message.name, function (event) {
+                        var ret = {
+                            index: index,
+                            event: event
+                        }
+                        worker.postMessage(USE_GEARS ? ret : dojo.toJson(ret))
+                    })
+                }
+                else if(message.type == "publish") {
+                    bespin.publish(message.name, message.event)
+                }
+                else {
+                    throw message
+                    cb.call(this, event)
+                }
+
+            }
+            
             worker.onmessage = onmessage;
             source = "// YOUcannotGuessMe\n" + source
-            if(!USE_GEARS) {
-                window.setTimeout(function() {
-                    worker.postMessage(source)
-                },0)
-            }
+            window.setTimeout(function() {
+                worker.postMessage(source)
+            },0)
             workers.push(worker)
         }
         return workers
@@ -339,7 +356,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         var con = function(msg) {
             postMessage("log="+msg)
         }
-        var source = "console = { log: "+con.toString()+" };\n"
+        var source = ""
 
         if(libs) {
             var quoted = [];
@@ -349,146 +366,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             source += "importScripts("+quoted.join(", ")+");\n"
         }
 
-        source += "var theObject = "+this.serializeToPortableSource(obj)
-
-        // onmessage handler for use inside the worker
-        var onmessage  = function(event) {
-            var body         = event.data
-            //console.log("Received "+body)
-            var dataIsString = false;
-            if(typeof body == "string") { // if the data is a string, assume that it is JSON
-                if(body.indexOf("__IMPORT_SCRIPT__") == 0) {
-                    var source = body.substr("__IMPORT_SCRIPT__".length);
-                    var match = source.match(/^\/\/(\d+)/)
-                    if(match) {
-                        var index = parseInt(match[1], 10);
-                        __evalScriptFromImport(index, source)
-
-                    }
-                    return
-                }
-                dataIsString = true;
-                try {
-                    body = JSON.parse(body)
-                } catch(e) {
-                    throw e+""+body
-                }
-            }
-            var method = body.method;
-
-            var o      = theObject
-
-            // actually call the method
-            var ret    = o[body.method].apply(o, body.paras)
-
-            var data   = {
-                method: body.method,
-                returnValue: ret,
-                callIndex: body.callIndex // the original callIndex to find callback
-            }
-
-            if(dataIsString) { // If data came as a json string encode data as JSON
-                data = JSON.stringify(data)
-            }
-
-            //console.log("Sending "+data)
-            postMessage(data)
-        }
-
-        function ajaxRequest (method, url, data, callback, errorCallback) {
-
-            var request
-            if(this.clientHasGears()) {
-                request = google.gears.factory.create('beta.httprequest');
-            } else {
-                request = window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
-            }
-            var dataString    = ""
-            if(data) {
-                for(var i in data) {
-                    dataString += encodeURIComponent(i)+"="+encodeURIComponent(data[i])+"&"
-                }
-            }
-            var theUrl = url;
-            if(data && method == "GET") {
-                theUrl += "?"+dataString
-            }
-            request.open(method, theUrl, true);
-
-            request.onreadystatechange = function onreadystatechange () {
-                if (request.readyState == 4) {
-                    if(request.status >= 200 && request.status < 400) {
-                        var res = request.responseText;
-                        callback(res)
-                    } else {
-                        if(errorCallback) {
-                            return errorCallback(request)
-                        } else {
-                            throw new Error("Error fetching url "+theUrl+". Response code: " + request.status + " Response text: "+request.responseText)
-                        }
-                    }
-                }
-            };
-            if(data && method == "POST") {
-                // FIXME determine page encoding instead of always using UTF8
-                request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                request.send(dataString)
-            } else {
-                dataString = ""
-                request.send(dataString);
-            }
-        }
-
-        if(USE_GEARS) { // For Gears we need to create a fake postMessage function
-            var gearsCB = function(a, b, message) {
-                var sender = message.sender
-                postMessage = function(data) {
-                    wp.sendMessage(data, sender)
-                }
-                onmessage({ // call the onmessage function defined above
-                    data: message.body
-                })
-            }
-
-            source += "\nvar wp = google.gears.workerPool; wp.onmessage = "+gearsCB.toString()+"\n";
-
-            // emulate importScripts in Gears.
-            var importScripts = function importScripts () {
-                var global = this;
-                var src = "";
-                var i = 0;
-                var load = function(url, callback) {
-                    var request = google.gears.factory.create('beta.httprequest');
-                    request.open('GET', url);
-                    request.onreadystatechange = function() {
-                        if(request.readyState == 4) {
-                            if(request.status >= 200 && request.status < 400) {
-                                var res = request.responseText;
-                                src += res+"\n";
-                                callback()
-                            } else {
-                                throw new Error("Error fetching script "+url+". Response code: " + request.status + " Response text: "+request.responseText)
-                            }
-                        }
-                    };
-                    request.send()
-                }
-                var urls = Array.prototype.splice.call(arguments, 0);
-                var loader = function() {
-                    var url = urls.shift()
-                    if(url) {
-                        load(url, loader)
-                    } else {
-                        global.eval(src)
-                    }
-                }
-                loader()
-            }
-
-            source += importScripts.toString();
-        }
-
-        source += "\nonmessage = "+onmessage.toString()+"; \n"
+        source += "var theObject = "+this.serializeToPortableSource(obj);
 
         //console.log(source)
 
