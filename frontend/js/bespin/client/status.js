@@ -20,8 +20,8 @@
  * Contributor(s):
  *   Bespin Team (bespin@mozilla.com)
  *
- * ***** END LICENSE BLOCK ***** */  
- 
+ * ***** END LICENSE BLOCK ***** */
+
 dojo.provide("bespin.client.status");
 
 // = StatusChecker =

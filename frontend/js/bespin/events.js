@@ -21,7 +21,7 @@
  *   Bespin Team (bespin@mozilla.com)
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 dojo.provide("bespin.events");
 
 dojo.require("bespin.util.util");
@@ -35,7 +35,7 @@ dojo.require("bespin.util.util");
 // * {{{bespin.client.settings.Events}}}
 
 // ** {{{ Event: editor:titlechange }}} **
-// 
+//
 // Observe a title change event and then... change the document.title!
 bespin.subscribe("editor:titlechange", function(event) {
     var title;
@@ -47,7 +47,7 @@ bespin.subscribe("editor:titlechange", function(event) {
 });
 
 // ** {{{ Event: editor:evalfile }}} **
-// 
+//
 // Load up the given file and try to run it
 bespin.subscribe("editor:evalfile", function(event) {
     var project  = event.project;
@@ -139,18 +139,18 @@ bespin.subscribe("editor:preview", function(event) {
 });
 
 // ** {{{ Event: editor:closefile }}} **
-// 
+//
 // Close the given file (wrt the session)
 bespin.subscribe("editor:closefile", function(event) {
     var editSession = bespin.get('editSession');
     var filename = event.filename || editSession.path;  // default to current page
-    var project  = event.project  || editSession.project;   
-    
+    var project  = event.project  || editSession.project;
+
     bespin.get('files').closeFile(project, filename, function() {
-        bespin.publish("editor:closedfile", { filename: filename }); 
-        
+        bespin.publish("editor:closedfile", { filename: filename });
+
         // if the current file, move on to a new one
-        if (filename == editSession.path) bespin.publish("editor:newfile");    
+        if (filename == editSession.path) bespin.publish("editor:newfile");
 
         bespin.publish("message", { msg: 'Closed file: ' + filename });
     });
@@ -167,7 +167,7 @@ bespin.subscribe("editor:config:run", function(event) {
 });
 
 // ** {{{ Event: editor:config:edit }}} **
-// 
+//
 // Open the users special config file
 bespin.subscribe("editor:config:edit", function(event) {
     if (!bespin.userSettingsProject) {
@@ -182,7 +182,7 @@ bespin.subscribe("editor:config:edit", function(event) {
 });
 
 // ** {{{ Event: command:executed }}} **
-// 
+//
 // Set the last command in the status window
 bespin.subscribe("command:executed", function(event) {
     var commandname = event.command.name;
@@ -192,11 +192,11 @@ bespin.subscribe("command:executed", function(event) {
 });
 
 // ** {{{ Event: command:load }}} **
-// 
+//
 // Create a new command in your special command directory
 bespin.subscribe("command:load", function(event) {
     var commandname = event.commandname;
-    
+
     if (!commandname) {
         bespin.publish("message", { msg: "Please pass me a command name to load." });
         return;
@@ -212,11 +212,11 @@ bespin.subscribe("command:load", function(event) {
 });
 
 // ** {{{ Event: command:edit }}} **
-// 
+//
 // Edit the given command
 bespin.subscribe("command:edit", function(event) {
     var commandname = event.commandname;
-    
+
     if (!bespin.userSettingsProject) {
         bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
         return;
@@ -226,7 +226,7 @@ bespin.subscribe("command:edit", function(event) {
         bespin.publish("message", { msg: "Please pass me a command name to edit." });
         return;
     }
-    
+
     bespin.publish("editor:forceopenfile", {
         project: bespin.userSettingsProject,
         filename: "commands/" + commandname + ".js",
@@ -235,7 +235,7 @@ bespin.subscribe("command:edit", function(event) {
 });
 
 // ** {{{ Event: command:list }}} **
-// 
+//
 // List the custom commands that a user has
 bespin.subscribe("command:list", function(event) {
     if (!bespin.userSettingsProject) {
@@ -245,27 +245,27 @@ bespin.subscribe("command:list", function(event) {
 
     bespin.get('server').list(bespin.userSettingsProject, 'commands/', function(commands) {
         var output;
-        
+
         if (!commands || commands.length < 1) {
             output = "You haven't installed any custom commands.<br>Want to <a href='https://wiki.mozilla.org/Labs/Bespin/Roadmap/Commands'>learn how?</a>";
         } else {
             output = "<u>Your Custom Commands</u><br/><br/>";
-            
+
             output += dojo.map(dojo.filter(commands, function(file) {
                 return bespin.util.endsWith(file.name, '\\.js');
             }), function(c) { return c.name.replace(/\.js$/, ''); }).join("<br>");
         }
-        
+
         bespin.publish("message", { msg: output });
     });
 });
 
 // ** {{{ Event: command:delete }}} **
-// 
+//
 // Delete the named command
 bespin.subscribe("command:delete", function(event) {
     var commandname = event.commandname;
-    
+
     var editSession = bespin.get('editSession');
     var files = bespin.get('files');
 
@@ -280,20 +280,20 @@ bespin.subscribe("command:delete", function(event) {
     }
 
     var commandpath = "commands/" + commandname + ".js";
-    
+
     files.removeFile(bespin.userSettingsProject, commandpath, function() {
         if (editSession.checkSameFile(bespin.userSettingsProject, commandpath)) bespin.get('editor').model.clear(); // only clear if deleting the same file
         bespin.publish("message", { msg: 'Removed command: ' + commandname, tag: 'autohide' });
     }, function(xhr) {
-        bespin.publish("message", { 
-            msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText, 
+        bespin.publish("message", {
+            msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText,
             tag: 'autohide'
         });
     });
 });
 
 // ** {{{ Event: directory:create }}} **
-// 
+//
 // Create a new directory
 bespin.subscribe("directory:create", function(event) {
     var editSession = bespin.get('editSession');
@@ -301,10 +301,10 @@ bespin.subscribe("directory:create", function(event) {
 
     var project = event.project || editSession.project;
     var path = event.path || '';
-    
+
     files.makeDirectory(project, path, function() {
         if (path == '') bespin.publish("project:set", { project: project });
-        bespin.publish("message", { 
+        bespin.publish("message", {
             msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
         bespin.publish("message", {
@@ -313,7 +313,7 @@ bespin.subscribe("directory:create", function(event) {
 });
 
 // ** {{{ Event: directory:delete }}} **
-// 
+//
 // Delete a directory
 bespin.subscribe("directory:delete", function(event) {
     var editSession = bespin.get('editSession');
@@ -321,12 +321,12 @@ bespin.subscribe("directory:delete", function(event) {
 
     var project = event.project || editSession.project;
     var path = event.path || '';
-    
+
     if (project == bespin.userSettingsProject && path == '/') return; // don't delete the settings project
-    
+
     files.removeDirectory(project, path, function() {
         if (path == '/') bespin.publish("project:set", { project: '' }); // reset
-        bespin.publish("message", { 
+        bespin.publish("message", {
             msg: 'Successfully deleted directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
         bespin.publish("message", {
@@ -335,32 +335,32 @@ bespin.subscribe("directory:delete", function(event) {
 });
 
 // ** {{{ Event: project:create }}} **
-// 
+//
 // Create a new project
 bespin.subscribe("project:create", function(event) {
     var project = event.project || bespin.get('editSession').project;
-    
+
     bespin.publish("directory:create", { project: project });
 });
 
 // ** {{{ Event: project:delete }}} **
-// 
+//
 // Delete a project
 bespin.subscribe("project:delete", function(event) {
     var project = event.project;
     if (!project || project == bespin.userSettingsProject) return; // don't delete the settings project
-    
+
     bespin.publish("directory:delete", { project: project });
 });
 
 // ** {{{ Event: project:rename }}} **
-// 
+//
 // Rename a project
 bespin.subscribe("project:rename", function(event) {
     var currentProject = event.currentProject;
     var newProject = event.newProject;
     if ( (!currentProject || !newProject) || (currentProject == newProject) ) return;
-    
+
     bespin.get('server').renameProject(currentProject, newProject, {
         onSuccess: function() {
             bespin.publish("project:set", { project: newProject });
@@ -373,7 +373,7 @@ bespin.subscribe("project:rename", function(event) {
 
 
 // ** {{{ Event: project:import }}} **
-// 
+//
 // Import a project
 bespin.subscribe("project:import", function(event) {
     var project = event.project;
@@ -389,7 +389,7 @@ bespin.subscribe("project:import", function(event) {
 
 
 // == Events
-// 
+//
 // ** {{{ bespin.events }}} **
 //
 // Helpers for the event subsystem
@@ -401,8 +401,8 @@ bespin.subscribe("project:import", function(event) {
 // Example events:
 //
 // * {{{command:execute;name=ls,args=bespin}}}
-// * {{{command:execute}}} 
-    
+// * {{{command:execute}}}
+
 dojo.mixin(bespin.events, {
     toFire: function(eventString) {
         var event = {};
@@ -422,7 +422,7 @@ dojo.mixin(bespin.events, {
 // Return a default scope to be used for evaluation files
 bespin.events.defaultScope = function() {
     if (bespin.events._defaultScope) return bespin.events._defaultScope;
-    
+
     var scope = {
         bespin: bespin,
         include: function(file) {

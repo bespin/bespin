@@ -52,7 +52,7 @@ dojo.mixin(bespin, {
     versionCodename: 'DEVELOPMENT MODE',
     apiVersion: 'dev',
     // END VERSION BLOCK
-    
+
     defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
 
@@ -86,7 +86,7 @@ dojo.mixin(bespin, {
                     delete lazySubscriptionTimeout[count];
                 }), minTimeBetweenPublishMillis);
             };
-            
+
         }
         return dojo.subscribe("bespin:" + topic, callback);
     },
@@ -138,3 +138,4 @@ dojo.mixin(bespin, {
 
 });
 })()
+

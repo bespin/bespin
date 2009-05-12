@@ -41,7 +41,7 @@ dojo.provide("bespin.client.session");
 // model with received changes.
 
 dojo.declare("bespin.client.session.EditSession", null, {
-    constructor: function(editor) {        
+    constructor: function(editor) {
         this.editor = editor;
     },
 

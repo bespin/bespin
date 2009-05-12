@@ -1,55 +1,57 @@
 
 <style>
-.wizardButton { width:200px; height:70px; border:0; margin:2px; cursor:pointer; }
-.wizardTop {
-  font-size: 16px;
-  font-family: Calibri, Arial, sans-serif;
-  border: 1px solid #000;
+.newuserTop {
+  font-size:16px;
+  font-family:Calibri, Arial, sans-serif;
+  border:1px solid #000;
 }
-.wizardBody {
-  background:white; padding:10px;
-}
-.wizardTitle { background-color:#666; color:#fff; padding:5px; border-bottom: 1px solid #000; }
-.wizardTitleButtons { float:right; margin-left:100px; }
-.wizardTitleButton { }
-#wizardQuickLinks { padding-left:0px; }
-#wizardQuickLinks li { list-style-type:none; }
+.newuserTitle { background-color:#411; color:#fff; padding:5px; border-bottom:1px solid #000; }
+.newuserTitleButtons { float:right; margin-left:80px; }
+.newuserTitleButton { }
+
+.newuserButton { width:200px; height:100px; margin:0; padding:0; border:0; cursor:pointer; vertical-align:top; font-size:20px; font-weight:bold; color:#411; }
+.newuserBody { background:white; }
+#newuserClock { background-image:url(overlays/newuser-clock.jpg); }
+#newuserBook { background-image:url(overlays/newuser-book.jpg); }
+#newuserBooks { background-image:url(overlays/newuser-books.jpg); }
+#newuserDeveloper { background-image:url(overlays/newuser-developer.jpg); }
 </style>
 
-<div class="wizardTop">
-  <div class="wizardTitle">
-    <div class="wizardTitleButtons">
-      <button class="wizardTitleButton" onclick="bespin.wizard._wizards.newuser.onClose();">
-        Go Away
+<script>
+function goAndDontComeBack() {
+    bespin.get("settings").set("shownewuseronload", "true");
+    bespin.wizard.onClose();
+}
+</script>
+
+<div class="newuserTop">
+  <div class="newuserTitle">
+    <div class="newuserTitleButtons">
+      <button class="newuserTitleButton" onclick="bespin.wizard.onClose();">
+        Close
       </button>
-      <button class="wizardTitleButton" onclick="bespin.wizard._wizards.newuser.onDie();">
+      <button class="newuserTitleButton" onclick="goAndDontComeBack();">
         Don't Come Back
       </button>
     </div>
     Welcome to Bespin
   </div>
-  <div class="wizardBody">
-    <div style="float:right;">
-      <div>Recently Edited</div>
-      <ul id="wizardQuickLinks">
-      </ul>
-    </div>
+  <div class="newuserBody">
     <div>
-      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
-        [Fancy Background Image ...]<br/>
-        What Is Bespin?
+      <button class="newuserButton" id="newuserClock" onclick="bespin.wizard.onWizard('overview');">
+        Bespin in<br/>
+        20 seconds, with<br/>
+        1 mouse click
+      </button><button class="newuserButton" id="newuserBook" onclick="bespin.wizard.onJump('https://wiki.mozilla.org/Labs/Bespin/UserGuide');">
+        Documentation
       </button>
       <br/>
-      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
-        [Fancy Background Image ...]<br/>
+      <button class="newuserButton" id="newuserBooks" onclick="bespin.wizard.onJump('https://wiki.mozilla.org/Labs/Bespin/Commands');">
         Command Reference
-      </button>
-      <br/>
-      <button class="wizardButton" onclick="bespin.wizard.wizards.newuser.onJump('about:blank');">
-        [Fancy Background Image ...]<br/>
-        I want to make Bespin better
+      </button><button class="newuserButton" id="newuserDeveloper" onclick="bespin.wizard.onJump('https://wiki.mozilla.org/Labs/Bespin#Source_Code');">
+        Want more?<br/>
+        Develop Bespin
       </button>
     </div>
   </div>
-
 </div>
