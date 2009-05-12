@@ -109,7 +109,7 @@ dojo.declare("bespin.client.Server", null, {
                 token = server._randomPassword();
                 dojo.cookie("Domain-Token", token);
             }
-            xhr.setRequestHeader("Domain-Token", token);
+            xhr.setRequestHeader("X-Domain-Token", token);
             xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
             if (options.headers) {
                 for (var key in options.headers) {

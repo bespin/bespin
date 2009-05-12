@@ -48,7 +48,7 @@ class BespinRequest(Request):
             self._user = None
         self.username = environ.get('REMOTE_USER')
         self.kwargs = environ.get('wsgiorg.routing_args')[1]
-        self.session_token = environ.get("HTTP_DOMAIN_TOKEN")
+        self.session_token = environ.get("HTTP_X_DOMAIN_TOKEN")
 
     @property
     def user(self):
@@ -99,13 +99,13 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
             skip_test = environ.get("BespinTestApp")
 
             if not skip_token_check and skip_test != "True":
-                query_token = request.cookies.get("Domain-Token")
-                reply_token = environ.get("HTTP_DOMAIN_TOKEN")
+                cookie_token = request.cookies.get("Domain-Token")
+                header_token = environ.get("HTTP_X_DOMAIN_TOKEN")
 
-                if query_token is None or reply_token != query_token:
+                if cookie_token is None or header_token != cookie_token:
                     log.error("request.url=%s" % request.url)
-                    log.error("request.cookies['Domain-Token']=%s" % query_token)
-                    log.error("environ['HTTP_DOMAIN_TOKEN']=%s" % reply_token)
+                    log.error("cookies[Domain-Token]=%s" % cookie_token)
+                    log.error("headers[X-Domain-Token]=%s" % header_token)
                     log.error("ERROR! The anti CSRF attack trip wire just went off. If you see this message and no-one is hacking you, please tell bespin-core@googlegroups.com")
                     config.c.stats.incr("csrf_fail_DATE")
 
