@@ -121,3 +121,4 @@ bespin.wizard._onSuccess = function(data, wizard) {
 bespin.wizard._onFailure = function(xhr) {
     bespin.publish("message", { msg: "Failed to display wizard: " + xhr.responseText });
 };
+
