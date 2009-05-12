@@ -1,0 +1,57 @@
+
+<style>
+.palmstartTop {
+  font-size:16px;
+  font-family:Calibri, Arial, sans-serif;
+  border:1px solid #000;
+}
+.palmstartTitle { background-color:#411; color:#fff; padding:5px; border-bottom:1px solid #000; }
+.palmstartTitleButtons { float:right; margin-left:80px; }
+.palmstartTitleButton { }
+
+.palmstartButton { width:200px; height:100px; margin:0; padding:0; border:0; cursor:pointer; vertical-align:top; font-size:20px; font-weight:bold; color:#411; }
+.palmstartBody { background:white; }
+#palmstartClock { background-image:url(overlays/palmstart-clock.jpg); }
+#palmstartBook { background-image:url(overlays/palmstart-book.jpg); }
+#palmstartBooks { background-image:url(overlays/palmstart-books.jpg); }
+#palmstartDeveloper { background-image:url(overlays/palmstart-developer.jpg); }
+</style>
+
+<script>
+function createProject() {
+    // This will break
+    bespin.createProject();
+    bespin.wizard.onClose();
+}
+</script>
+
+<div class="palmstartTop">
+  <div class="palmstartTitle">
+    <div class="palmstartTitleButtons">
+      <button class="palmstartTitleButton" onclick="bespin.wizard.onClose();">
+        Close
+      </button>
+    </div>
+    Welcome to the Palm Pre SDK
+  </div>
+  <div class="palmstartBody">
+    <div>
+      <button class="palmstartButton" id="palmstartClock" onclick="bespin.wizard.onWizard('overview');">
+        Bespin in<br/>
+        20 seconds, with<br/>
+        1 mouse click
+      </button><button class="palmstartButton" id="palmstartBook" onclick="createProject();">
+        Create a new WebOS project
+      </button>
+      <br/>
+      <button class="palmstartButton" id="palmstartBooks" onclick="bespin.wizard.onJump('http://www.palm.com/pre/sdk/docs');">
+        Palm SDK<br/>
+        Sample Projects
+      </button><button class="palmstartButton" id="palmstartDeveloper" onclick="bespin.wizard.onJump('https://wiki.mozilla.org/Labs/Bespin');">
+        About<br/>
+        Bespin
+      </button>
+    </div>
+  </div>
+
+</div>

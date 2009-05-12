@@ -30,12 +30,7 @@ dojo.provide("bespin.wizard");
 // case) will be called when the wizard is first displayed.
 bespin.wizard._wizards = {
     newuser: {
-        url: "/overlays/newuser.html",
-        onDie: function() {
-            // Maybe this should have a _ prefix: but then it does not persist??
-            bespin.get("settings").set("shownewuseronload", "true");
-            bespin.wizard.onClose();
-        }
+        url: "/overlays/newuser.html"
     },
     overview: {
         url: "/overlays/overview.html"
@@ -113,6 +108,9 @@ bespin.subscribe("wizard:show", function(event) {
 bespin.wizard._onSuccess = function(data, wizard) {
     bespin.wizard.el = dojo.byId('centerpopup');
     bespin.wizard.el.innerHTML = data;
+    dojo.query("#centerpopup script").forEach(function(node) {
+        dojo.eval(node.innerHTML);
+    });
     bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
     if (typeof wizard.onLoad == "function") {
         wizard.onLoad();

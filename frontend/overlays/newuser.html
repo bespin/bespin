@@ -17,13 +17,20 @@
 #newuserDeveloper { background-image:url(overlays/newuser-developer.jpg); }
 </style>
 
+<script>
+function goAndDontComeBack() {
+    bespin.get("settings").set("shownewuseronload", "true");
+    bespin.wizard.onClose();
+}
+</script>
+
 <div class="newuserTop">
   <div class="newuserTitle">
     <div class="newuserTitleButtons">
       <button class="newuserTitleButton" onclick="bespin.wizard.onClose();">
         Close
       </button>
-      <button class="newuserTitleButton" onclick="bespin.wizard._wizards.newuser.onDie();">
+      <button class="newuserTitleButton" onclick="goAndDontComeBack();">
         Don't Come Back
       </button>
     </div>
@@ -47,5 +54,4 @@
       </button>
     </div>
   </div>
-
 </div>
