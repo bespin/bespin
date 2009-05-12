@@ -65,6 +65,11 @@ c.default_quota = 15
 c.secure_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
 
+# additional mappings from top-level of URL to directory
+# in the config file, this can be provided as
+# static_map=foo=/path/to/files;bar=/path/to/other/files
+c.static_map = {}
+
 # turns on asynchronous running of long jobs (like vcs)
 c.async_jobs = True
 
@@ -161,6 +166,13 @@ def load_config(configfile):
     c.update(cp.items("config"))
 
 def activate_profile():
+    if isinstance(c.static_map, basestring):
+        static_map = {}
+        mappings = c.static_map.split(";")
+        for mapping in mappings:
+            name, directory = mapping.split("=")
+            static_map[name] = directory
+            
     c.dbengine = create_engine(c.dburl)
     c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
     c.fsroot = path(c.fsroot)

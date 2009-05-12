@@ -906,6 +906,10 @@ def make_app():
 
     register("^/docs/code/", code_app)
     register("^/docs/", docs_app)
+    
+    for location, directory in c.static_map.items():
+        more_static = pathpopper_middleware(static.Cling(directory))
+        register("^/%s/" % location, more_static)
 
     app = URLRelay(default=static_app)
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
