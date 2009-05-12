@@ -1,4 +1,3 @@
-dojo.provide("bespin.client.server");
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1
  *
@@ -23,6 +22,8 @@ dojo.provide("bespin.client.server");
  *
  * ***** END LICENSE BLOCK ***** */
 
+dojo.provide("bespin.client.server");
+
 // = Server =
 //
 // The Server object implements the [[https://wiki.mozilla.org/BespinServerAPI|Bespin Server API]]
@@ -44,7 +45,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ request(method, url, payload, callbackOptions) }}}
     //
     // The core way to access the backend system.
-    // Similar to the Prototype Ajax.Request wrapper 
+    // Similar to the Prototype Ajax.Request wrapper
     //
     // * {{{method}}} is the HTTP method (GET|POST|PUT|DELETE)
     // * {{{url}}} is the sub url to hit (after the base url)
@@ -73,27 +74,27 @@ dojo.declare("bespin.client.Server", null, {
                 if (xhr.readyState == 4) {
                     if (xhr.status && xhr.status != 0 && (xhr.status >= 200 && xhr.status < 300)) {
                         var response = xhr.responseText;
-                        
+
                         if (options['evalJSON'] && response) {
                             try {
                                 response = dojo.fromJson(response);
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + response + " (SyntaxError: " + syntaxException + ")");
                             }
-                            
+
                             if (options.serverAsync && response.taskname) {
-                                bespin.publish("message", 
+                                bespin.publish("message",
                                     {msg: "Server is running : " + response.taskname,
                                     tag: "autohide"});
                             }
                         }
-                        
+
                         if (dojo.isFunction(options['onSuccess'])) {
                             options['onSuccess'](response, xhr);
                         } else if (options['log']) {
                             console.log(options['log']);
                         }
-                    } else {                        
+                    } else {
                         var onStatus = 'on' + xhr.status;
                         if (options[onStatus]) {
                             options[onStatus](xhr);
@@ -146,7 +147,7 @@ dojo.declare("bespin.client.Server", null, {
     // Generic system to read resources from a URL and return the read data to
     // a callback.
     fetchResource: function(name, onSuccess, onFailure) {
-        this.request('GET', name, null, { 
+        this.request('GET', name, null, {
             onSuccess: onSuccess,
             onFailure: onFailure
         });
@@ -184,14 +185,14 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ login(user, pass, token, onSuccess, notloggedin) }}}
     //
     // Try to login to the backend system.
-    // 
+    //
     // * {{{user}}} is the username
     // * {{{pass}}} is the password
     // * {{{onSuccess}}} fires when the user is logged in
     // * {{{onFailure}}} fires when the user failed to login
     login: function(user, pass, onSuccess, onFailure) {
         var url = "/register/login/" + user;
-        this.request('POST', url, "password=" + escape(pass), { 
+        this.request('POST', url, "password=" + escape(pass), {
             onSuccess: onSuccess,
             on401: onFailure,
             log: 'Login complete.'
@@ -201,7 +202,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ signup(user, pass, email, onSuccess, notloggedin, userconflict) }}}
     //
     // Signup / Register the user to the backend system
-    // 
+    //
     // * {{{user}}} is the username
     // * {{{pass}}} is the password
     // * {{{email}}} is the email
@@ -210,17 +211,17 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{userconflict}}} fires when the username exists
 	signup: function(user, pass, email, onSuccess, notloggedin, userconflict) {
         var url = "/register/new/" + user;
-        this.request('POST', url, 
-			"password=" + escape(pass) + "&email=" + escape(email), { 
+        this.request('POST', url,
+			"password=" + escape(pass) + "&email=" + escape(email), {
 			onSuccess: onSuccess, on401: notloggedin, on409: userconflict,
-			log: 'Login complete.' 
+			log: 'Login complete.'
 		});
 	},
 
     // ** {{{ logout(onSuccess) }}}
     //
     // Logout from the backend
-    // 
+    //
     // * {{{onSuccess}}} fires after the logout attempt
     logout: function(onSuccess) {
         var url = "/register/logout/";
@@ -230,12 +231,12 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ currentuser(onSuccess, notloggedin) }}}
     //
     // Return info on the current logged in user
-    // 
+    //
     // * {{{onSuccess}}} fires after the user attempt
     // * {{{notloggedin}}} fires if the user isn't logged in
     currentuser: function(whenLoggedIn, whenNotloggedin) {
         var url = "/register/userinfo/";
-        return this.request('GET', url, null, 
+        return this.request('GET', url, null,
                 { onSuccess: whenLoggedIn, on401: whenNotloggedin, evalJSON: true });
     },
 
@@ -244,7 +245,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ list(project, path, onSuccess, onFailure) }}}
     //
     // List the path in the given project
-    // 
+    //
     // * {{{project}}} is the project to list
     // * {{{path}}} is the path to list out
     // * {{{onSuccess}}} fires if the list returns something
@@ -261,23 +262,23 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ listAllFiles(project, onSuccess, onFailure) }}}
     //
     // List *all* files in the given project. Be *aware*: this will be a huge json-result!
-    // 
+    //
     // * {{{project}}} is the project to list all files from
     // * {{{onSuccess}}} fires if the list returns something
-    // * {{{onFailure}}} fires if there is an error getting a list from the server 
+    // * {{{onFailure}}} fires if there is an error getting a list from the server
     listAllFiles: function(project, onSuccess, onFailure) {
         var project = project || '';
         var url = bespin.util.path.combine('/file/list_all/', project, '/');
         var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing all files in: " + url };
         if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
-        
+
         this.request('GET', url, null, opts);
     },
 
     // ** {{{ projects(onSuccess) }}}
     //
     // Return the list of projects that you have access too
-    // 
+    //
     // * {{{onSuccess}}} gets fired with the project list
     projects: function(onSuccess) {
         this.request('GET', '/file/list/', null, { onSuccess: onSuccess, evalJSON: true });
@@ -286,7 +287,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ saveFile(project, path, contents, lastOp) }}}
     //
     // Save the given file
-    // 
+    //
     // * {{{project}}} is the project to save
     // * {{{path}}} is the path to save to
     // * {{{contents}}} fires after the save returns
@@ -303,7 +304,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ loadFile(project, path, contents) }}}
     //
     // Load the given file
-    // 
+    //
     // * {{{project}}} is the project to load from
     // * {{{path}}} is the path to load
     // * {{{onSuccess}}} fires after the file is loaded
@@ -320,7 +321,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ removeFile(project, path, onSuccess, onFailure) }}}
     //
     // Remove the given file
-    // 
+    //
     // * {{{project}}} is the project to remove from
     // * {{{path}}} is the path to remove
     // * {{{onSuccess}}} fires if the deletion works
@@ -331,14 +332,14 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/at', project, path);
         var opts = { onSuccess: onSuccess };
         if (dojo.isFunction(onFailure)) opts.onFailure = onFailure;
-        
+
         this.request('DELETE', url, null, opts);
     },
 
     // ** {{{ makeDirectory(project, path, onSuccess, onFailure) }}}
     //
     // Create a new directory
-    // 
+    //
     // * {{{project}}} is the project to save
     // * {{{path}}} is the path to save to
     // * {{{onSuccess}}} fires if the deletion works
@@ -357,11 +358,11 @@ dojo.declare("bespin.client.Server", null, {
 
         this.request('PUT', url, null, opts);
     },
-    
+
     // ** {{{ removeDirectory(project, path, onSuccess, onFailure) }}}
     //
     // Removed a directory
-    // 
+    //
     // * {{{project}}} is the project to save
     // * {{{path}}} is the path to save to
     // * {{{onSuccess}}} fires if the deletion works
@@ -369,7 +370,7 @@ dojo.declare("bespin.client.Server", null, {
     removeDirectory: function(project, path, onSuccess, onFailure) {
         if (!project) return;
         if (!path) path = '';
-        
+
         var url = bespin.util.path.combineAsDirectory('/file/at', project, path);
         var opts = {};
         if (dojo.isFunction(onSuccess)) {
@@ -386,18 +387,18 @@ dojo.declare("bespin.client.Server", null, {
      //
      // Returns JSON with the key of filename, and the value of an array of usernames:
      // { "foo.txt": ["ben"], "SomeAjaxApp/foo.txt": ["dion"] }
-     // 
+     //
      // * {{{onSuccess}}} fires after listing the open files
     listOpen: function(onSuccess) {
         this.request('GET', '/file/listopen/', null, {
-            onSuccess: onSuccess, evalJSON: true, log: 'List open files.' 
+            onSuccess: onSuccess, evalJSON: true, log: 'List open files.'
         });
     },
 
     // ** {{{ closeFile(project, path, onSuccess) }}}
     //
     // Close the given file (remove from open sessions)
-    // 
+    //
     // * {{{project}}} is the project to close from
     // * {{{path}}} is the path to close
     // * {{{onSuccess}}} fires after the file is closed
@@ -406,11 +407,11 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/close', project, path);
         this.request('POST', url, null, { onSuccess: onSuccess });
     },
-    
+
     // ** {{{ searchFiles(project, searchstring, onSuccess) }}}
     //
     // Search for files within the given project
-    // 
+    //
     // * {{{project}}} is the project to look from
     // * {{{searchstring}}} to compare files with
     // * {{{onSuccess}}} fires after the file is closed
@@ -425,7 +426,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ editActions(project, path, onSuccess) }}}
     //
     // Get the list of edit actions
-    // 
+    //
     // * {{{project}}} is the project to edit from
     // * {{{path}}} is the path to edit
     // * {{{onSuccess}}} fires after the edit is done
@@ -438,7 +439,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ editAfterActions(project, path, onSuccess) }}}
     //
     // Get the list of edit after actions
-    // 
+    //
     // * {{{project}}} is the project to edit from
     // * {{{path}}} is the path to edit
     // * {{{onSuccess}}} fires after the edit is done
@@ -451,7 +452,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ doAction(project, path, actions) }}}
     //
     // Store actions to the edit queue
-    // 
+    //
     // * {{{project}}} is the project
     // * {{{path}}} is the path
     // * {{{actions}}} contain the actions to store
@@ -467,11 +468,11 @@ dojo.declare("bespin.client.Server", null, {
     // == PROJECTS ==
     //
     // still needed: owners, authorize, deauthorize
-    
+
     // ** {{{ exportProject(project, archivetype) }}}
     //
     // Export the project as either a zip file or tar + gz
-    // 
+    //
     // * {{{project}}} is the project to export
     // * {{{archivetype}}} is either zip | tgz
     exportProject: function(project, archivetype) {
@@ -487,7 +488,7 @@ dojo.declare("bespin.client.Server", null, {
     // ** {{{ importProject(project, url, opts) }}}
     //
     // Import the given file into the given project
-    // 
+    //
     // * {{{project}}} is the project to export
     // * {{{url}}} is the URL to the file to import
     // * {{{archivetype}}} is either zip | tgz
@@ -502,14 +503,14 @@ dojo.declare("bespin.client.Server", null, {
                 });
             };
         }
-        
+
         this.request('POST', '/project/fromurl/' + project, url, opts || {});
     },
-    
+
     // ** {{{ renameProject(currentProject, newProject) }}}
     //
     // Import the given file into the given project
-    // 
+    //
     // * {{{currentProject}}} is the current name of the project
     // * {{{newProject}}} is the new name
     renameProject: function(currentProject, newProject, opts) {
@@ -538,21 +539,21 @@ dojo.declare("bespin.client.Server", null, {
             this.request('GET', '/settings/' + name, null, { onSuccess: onSuccess });
         }
     },
-    
+
     setSetting: function(name, value, onSuccess) {
         var settings = {};
         settings[name] = value;
         this.setSettings(settings, (onSuccess || function(){}));
     },
-    
+
     setSettings: function(settings, onSuccess) {
         this.request('POST', '/settings/', dojo.objectToQuery(settings), { onSuccess: (onSuccess || function(){}) });
     },
-    
+
     unsetSetting: function(name, onSuccess) {
         this.request('DELETE', '/settings/' + name, null, { onSuccess: (onSuccess || function(){}) });
     },
-    
+
     // ** {{{ vcs() }}}
     // Run a Version Control System (VCS) command
     // The command object should have a command attribute
@@ -567,7 +568,7 @@ dojo.declare("bespin.client.Server", null, {
                      dojo.toJson(command),
                      opts);
     },
-    
+
     // ** {{{ clone() }}}
     // Clone a remote repository
     clone: function(data, opts) {
@@ -576,14 +577,14 @@ dojo.declare("bespin.client.Server", null, {
         this.request('POST', '/vcs/clone/',
                     data, opts);
     },
-    
+
     // ** {{{ setauth() }}}
     // Sets authentication for a project
     setauth: function(project, form, opts) {
         this.request('POST', '/vcs/setauth/' + project + '/',
                     dojo.formToQuery(form), opts || {});
     },
-    
+
     // ** {{{ getkey() }}}
     // Retrieves the user's SSH public key that can be used for VCS functions
     getkey: function(kcpass, opts) {
@@ -593,7 +594,7 @@ dojo.declare("bespin.client.Server", null, {
             this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
         }
     },
-    
+
     // ** {{{ remoteauth() }}}
     // Finds out if the given project requires remote authentication
     // the values returned are "", "both" (for read and write), "write"
@@ -615,7 +616,7 @@ dojo.declare("bespin.client.Server", null, {
             }
         );
     },
-    
+
     // ** {{{ processMessages() }}}
     // Starts up message retrieve for this user. Call this only once.
     processMessages: function() {
@@ -652,7 +653,7 @@ dojo.declare("bespin.client.Server", null, {
         }
         doProcessMessages();
     },
-    
+
     // ** {{{ processMessages() }}}
     // Starts up message retrieve for this user. Call this only once.
     fileTemplate: function(project, path, templateOptions, opts) {
