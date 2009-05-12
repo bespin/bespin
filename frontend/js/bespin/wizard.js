@@ -29,31 +29,19 @@ dojo.provide("bespin.wizard");
 // are run by parts of the resource. A special onLoad function (note the exact
 // case) will be called when the wizard is first displayed.
 bespin.wizard._wizards = {
-    newuser:{
+    newuser: {
         url: "/overlays/newuser.html",
-        onClose: function() {
-            bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
-        },
         onDie: function() {
-            var settings = bespin.get("settings");
             // Maybe this should have a _ prefix: but then it does not persist??
-            settings.set("shownewuseronload", "true");
-
-            bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
-        },
-        onLoad: function() {
-            var settings = bespin.get("settings");
-            var lastUsed = settings.getObject("lastused");
-            if (!lastUsed) {
-                dojo.create('li', { innerHTML:"No recent files" }, "wizardQuickLinks", 'last');
-            }
-            else {
-                dojo.forEach(lastUsed, function(item) {
-                    console.log(item);
-                    dojo.create('li', { innerHTML:item.project + "/" + item.filename }, "wizardQuickLinks", 'last');
-                });
-            }
+            bespin.get("settings").set("shownewuseronload", "true");
+            bespin.wizard.onClose();
         }
+    },
+    overview: {
+        url: "/overlays/overview.html"
+    },
+    palmstart: {
+        url: "/overlays/palmstart.html"
     }
 };
 
@@ -79,20 +67,25 @@ bespin.cmd.commands.add({
     }
 });
 
-// When the HTML fetch succeeds, display it in the centerpopup div
-bespin.wizard._onSuccess = function(data, wizard) {
-    bespin.wizard.el = dojo.byId('centerpopup');
-    bespin.wizard.el.innerHTML = data;
-    bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
-    if (typeof wizard.onLoad == "function") {
-        wizard.onLoad();
-    }
-};
+// Designed to be called by a button in a wizard:
+// Close the wizard
+bespin.wizard.onClose = function() {
+    bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
+}
 
-// Warn when the HTML fetch fails
-bespin.wizard._onFailure = function(xhr) {
-    bespin.publish("message", { msg: "Failed to display wizard: " + xhr.responseText });
-};
+// Designed to be called by a button in a wizard:
+// Open a web page as we close the wizard
+bespin.wizard.onJump = function(url) {
+    window.open(url);
+    bespin.wizard.onClose();
+}
+
+// Designed to be called by a button in a wizard:
+// Open another wizard page as we close this one
+bespin.wizard.onWizard = function(type) {
+    bespin.publish("wizard:show", { type:type });
+    bespin.wizard.onClose();
+}
 
 // ** {{{ Event: wizard:show }}} **
 //
@@ -115,3 +108,18 @@ bespin.subscribe("wizard:show", function(event) {
 
     bespin.get('server').fetchResource(wizard.url, localOnSuccess, localOnFailure);
 });
+
+// When the HTML fetch succeeds, display it in the centerpopup div
+bespin.wizard._onSuccess = function(data, wizard) {
+    bespin.wizard.el = dojo.byId('centerpopup');
+    bespin.wizard.el.innerHTML = data;
+    bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
+    if (typeof wizard.onLoad == "function") {
+        wizard.onLoad();
+    }
+};
+
+// Warn when the HTML fetch fails
+bespin.wizard._onFailure = function(xhr) {
+    bespin.publish("message", { msg: "Failed to display wizard: " + xhr.responseText });
+};
