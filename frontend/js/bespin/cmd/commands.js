@@ -1117,4 +1117,14 @@ bespin.cmd.commands.add({
     }
 });
 
+//** {{{Command: outline}}} **                                                  
+bespin.cmd.commands.add({
+    name: 'outline',
+    preview: 'show outline of source code',
+    withKey: "ALT SHIFT O",
+    execute: function(self) {
+        bespin.publish("parser:showoutline");
+    }
+})
+
 
