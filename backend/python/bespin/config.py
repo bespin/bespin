@@ -130,6 +130,20 @@ c.stats_users = set()
 # a list of keys to display other than the base set
 c.stats_display = set()
 
+# Locations that should be added to Dojo's module path for loading
+# client side code.
+# See http://www.dojotoolkit.org/book/dojo-book-0-9/part-3-programmatic-dijit-and-dojo/modules-and-namespaces/creating-your-own-modul
+c.dojo_module_path = {}
+
+# Client side plugin modules that should be loaded automatically by the client.
+# Should be a list of dotted names
+c.javascript_plugins = []
+
+# List of capabilities provided by the server. This is just a list of strings
+# to be interpreted by the client. This will adjust the user interface to
+# focus the user on the capabilities provided by this server.
+c.capabilities = set(["vcs"])
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
