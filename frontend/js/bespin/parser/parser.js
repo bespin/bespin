@@ -155,6 +155,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var rerun = function() {
                 // only to a fetch at max every N millis
                 // so we dont run during active typing
+
                 if (self.run_timeout) {
                     clearTimeout(self.run_timeout);
                 }
@@ -162,7 +163,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if(self._running) {
                         self.run_timeout = setTimeout(arguments.callee, delay)
                     } else {
-                        //console.log("Syntax-Check");
                         self.fetch();
                     }
                 }, delay)
@@ -197,6 +197,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self.lineMarkers = [];
                 
                 self._running = true;
+                //console.log("Syntax-Check");
                 bespin.publish("parser:engine:parse", {
                     type: type,
                     source: source 
@@ -283,15 +284,18 @@ dojo.declare("bespin.parser.JavaScript", null, {
         var funcs = [];
         var info = [];
         var codePatterns = this.getCodePatterns();
-
         // preprocess for speed
         for(var type in codePatterns) {
             if(codePatterns.hasOwnProperty(type)) {
-                //console.log(type)
-                var ns = codePatterns[type].declaration.split(".");
-                var indicator = ns.pop();
-                codePatterns[type]._indicator = indicator;
-                codePatterns[type]._ns        = ns;
+                //console.log(JSON.stringify(codePatterns[type]))
+                try {
+                    var ns = codePatterns[type].declaration.split(".");
+                    var indicator = ns.pop();
+                    codePatterns[type]._indicator = indicator;
+                    codePatterns[type]._ns        = ns;
+                } catch(e) {
+                    console.log("Weird FF3b3 error "+e)
+                }
             }
         }
 
@@ -578,8 +582,8 @@ bespin.parser.EngineResolver = function() {
   };
 }();
 
-bespin.parser.EngineResolver.register(new bespin.parser.JSLint(), ['js', 'javascript', 'ecmascript']);
-bespin.parser.EngineResolver.register(new bespin.parser.JavaScript(), ['js', 'javascript', 'ecmascript']);
+bespin.parser.EngineResolver.register(new bespin.parser.JSLint(), ['js']);
+bespin.parser.EngineResolver.register(new bespin.parser.JavaScript(), ['js']);
 
 
 // Turn us into a worker-thread

@@ -179,7 +179,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 var message = event.data
                 if(typeof message == "string") {
                     if(message.indexOf("log=") == 0) {
-                        console.log("From Worker: "+message.substr(4))
+                        //console.log("From Worker: "+message.substr(4))
                         return
                     }
                     else
