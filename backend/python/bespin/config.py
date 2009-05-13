@@ -31,6 +31,7 @@ import logging
 import logging.handlers
 import ConfigParser
 
+import pkg_resources
 from path import path
 
 from sqlalchemy import create_engine
@@ -166,6 +167,9 @@ def load_config(configfile):
     c.update(cp.items("config"))
 
 def activate_profile():
+    for ep in pkg_resources.iter_entry_points("bespin_extensions"):
+        ep.load()
+    
     if isinstance(c.static_map, basestring):
         static_map = {}
         mappings = c.static_map.split(";")
