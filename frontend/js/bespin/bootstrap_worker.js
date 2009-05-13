@@ -81,7 +81,7 @@ if (typeof importScripts == "undefined") {
     __GLOBAL__.importScripts = function () {
         for(var i = 0; i < arguments.length; ++i) {
             var script = arguments[i];
-            console.log("Loading")
+            //console.log("Loading")
             postMessage(internalMessageIdentifier + "["+(SCRIPT_COUNT++) + ", '" + script + "']");
             ++loadCounter;
         }
@@ -96,11 +96,11 @@ if (typeof importScripts == "undefined") {
         for(var i = nextLoad; i < loaded.length; ++i) {
             if (loaded[i]) {
                 nextLoad = i+1;
-                console.log("Evalling "+i)
+                //console.log("Evalling "+i)
                 __GLOBAL__.eval(loaded[i]);
-                console.log("evaled "+i)
+                //console.log("evaled "+i)
                 if(loadCounter == i) {
-                    console.log("Done")
+                    //console.log("Done")
                     loadDone()
                 }
             } else {

@@ -133,21 +133,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     // will start listening for doc change events and run the parser every time
     start: function() {
         var self = this;
-
-        // if we are not supposed to run, don't run
-        var settings = bespin.get("settings");
-        if (settings.isOff(settings.get("syntaxcheck"))) {
-            return;
-        }
-
         var editor = bespin.get("editor");
-        if (!editor.language) {
-            // we should not start until the language was set once
-            bespin.subscribe("settings:language", function() {
-                self.start()
-            })
-            return;
-        }
 
         if (!bespin.util.include(['js'], editor.language)) {
             // don't run the syntax parser for files that we can't grok yet!
@@ -160,7 +146,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
         if (!self._started) {
             self._started = true;
-
             self.fetch();
 
             self.run_timeout;
@@ -177,7 +162,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     if(self._running) {
                         self.run_timeout = setTimeout(arguments.callee, delay)
                     } else {
-                        console.log("Syntax-Check");
+                        //console.log("Syntax-Check");
                         self.fetch();
                     }
                 }, delay)
@@ -212,7 +197,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self.lineMarkers = [];
                 
                 self._running = true;
-                
                 bespin.publish("parser:engine:parse", {
                     type: type,
                     source: source 
@@ -303,7 +287,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         // preprocess for speed
         for(var type in codePatterns) {
             if(codePatterns.hasOwnProperty(type)) {
-                console.log(type)
+                //console.log(type)
                 var ns = codePatterns[type].declaration.split(".");
                 var indicator = ns.pop();
                 codePatterns[type]._indicator = indicator;
@@ -453,12 +437,12 @@ dojo.declare("bespin.parser.JavaScript", null, {
     
     initialize: function () {
         var self = this;
-        console.log("SubInit")
+        //console.log("SubInit")
         bespin.subscribe("parser:js:codePatterns", function (patterns) {
             for(pattern in patterns) {
-                console.log(pattern)
                 self.codePatterns[pattern] = patterns[pattern]
             }
+            bespin.publish("parser:engine:updatedCodePatterns")
         })
     },
 
@@ -605,18 +589,25 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
     // we need these libs. Should probably move to a property of the JS engine
     ["/js/jsparse/jsdefs.js", "/js/jsparse/jsparse.js", "/js/jsparse/fulljslint.js"]);
 
-// As soon as a doc is opened we are a go
-bespin.subscribe("settings:language", function() {
-
-    bespin.register("parser", new bespin.parser.CodeInfo());
-    bespin.publish("parser:start")
-
-    // ** {{{ Event: parser:start }}} **
-    //
-    // Start parsing the document
-    bespin.subscribe("parser:start", function () {
-        bespin.get("parser").start();
-    })
+//** {{{ Event: parser:start }}} **
+//
+// Start parsing the document
+bespin.subscribe("parser:start", function () {
+    bespin.get("parser").start();
 })
 
+bespin.register("parser", new bespin.parser.CodeInfo());
 
+bespin.fireAfter(["settings:language", "settings:set:syntaxcheck", "parser:engine:initialized"], function () {
+    var settings = bespin.get("settings");
+    if (settings.isOn(settings.get("syntaxcheck"))) {
+        var editor = bespin.get("editor");
+        if (!editor.language) { // wait some more, editor needs to catch this first
+            bespin.subscribe("settings:language", function () {
+                bespin.publish("parser:start")
+            })
+        } else {
+            bespin.publish("parser:start")
+        }
+    }
+})

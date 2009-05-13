@@ -69,11 +69,11 @@ dojo.mixin(bespin, {
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
     
-    // ** {{{ assertEvents }}} **
+    // ** {{{ fireAfter }}} **
     //
     // Given an array of topics, fires given callback as soon as all of the topics have 
     // fired at least once
-    assertEvents: function (topics, callback) {
+    fireAfter: function (topics, callback) {
         var count = topics.length;
         var done  = function () {
             if(count == 0) {

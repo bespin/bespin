@@ -195,16 +195,22 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 }
                 
                 if(message.type == "subscribe") {
+                    (function () {
                     var index = message.index
-                    bespin.subscribe(message.name, function (event) {
+                    var name  = message.name
+                    //console.log("Worker-Sub to " + name)
+                    bespin.subscribe(name, function (event) {
                         var ret = {
                             index: index,
                             event: event
                         }
+                        //console.log("To-Worker-Event: " + name + index)
                         worker.postMessage(USE_GEARS ? ret : dojo.toJson(ret))
                     })
+                    })()
                 }
                 else if(message.type == "publish") {
+                    //console.log("From-Worker-Event: "+message.name)
                     bespin.publish(message.name, message.event)
                 }
                 else {
