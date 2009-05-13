@@ -55,6 +55,8 @@ dojo.mixin(bespin, {
 
     defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
+    
+    eventLog: {},
 
     // == Methods for tying to the event bus
 
@@ -62,7 +64,34 @@ dojo.mixin(bespin, {
     //
     // Given a topic and a set of parameters, publish onto the bus
     publish: function(topic, args) {
+        this.eventLog[topic] = true;
+        
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
+    },
+    
+    // ** {{{ assertEvents }}} **
+    //
+    // Given an array of topics, fires given callback as soon as all of the topics have 
+    // fired at least once
+    assertEvents: function (topics, callback) {
+        var count = topics.length;
+        var done  = function () {
+            if(count == 0) {
+                callback();
+            }
+        };
+        for(var i = 0; i < topics.length; ++i) {
+            var topic = topics[i];
+            if (this.eventLog[topic]) {
+                --count;
+            } else {
+                bespin.subscribe(topic, function () {
+                    --count;
+                    done()
+                })
+            }
+            done();
+        }
     },
 
     // ** {{{ subscribe }}} **
