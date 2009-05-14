@@ -24,6 +24,9 @@
 
 dojo.provide("bespin.editor.piemenu");
 
+dojo.require("dojo._base.fx");
+dojo.require("dojo.fx.easing");
+
 // = Pie Menu =
 //
 // Pie pie pie
@@ -32,30 +35,105 @@ dojo.declare("bespin.editor.PieMenu", null, {
     constructor: function() {
         this.pie = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position: absolute; z-index: 400; width: 100px; height: 100px; border: 1px solid red;"
-        }, dojo.body());        
+            style: "position: absolute; z-index: 400; top: 62px; border: 1px solid red;"
+        }, dojo.body());
+        this.pie.height = bespin.get('editor').canvas.height;
+        this.pie.width = bespin.get('editor').canvas.width;
+        
+        dojo.create("img", {
+            id: "puck_off",
+            src: "/images/pie/puck_off.png",
+            alt: "pie menu",
+            style: "position: absolute; display: none;"
+        }, dojo.body());
     },
-    
+
     show: function() {
-        var ctx = this.pie.getContext("2d");
-        ctx.fillStyle = "rgba(255, 100, 100, 0.3)";
-        ctx.fillRect(0, 0, this.pie.width, this.pie.height);
+        var self = this;
+        
+        var anim = dojo.fadeIn({
+            node: {
+                style: {}
+            },
+
+            duration: 500,
+
+            easing: dojo.fx.easing.backOut,
+            onAnimate: function(values) {
+                var progress = values.opacity;
+                self.renderPie(progress);
+            }
+        });
+        anim.play();
     },
 
     hide: function() {
+        var self = this;
+        
+        var anim = dojo.fadeIn({
+            node: {
+                style: {}
+            },
+
+            duration: 400,
+
+            easing: dojo.fx.easing.backIn,
+
+            onAnimate: function(values) {
+                var progress = Math.max(1 - values.opacity, 0);
+                self.renderPie(progress);
+            }
+        });
+        anim.play();
+    },
+
+    renderPie: function(progress) {
         var ctx = this.pie.getContext("2d");
+        var puck_off = dojo.byId("puck_off");
+
+        ctx.save();
+
         ctx.clearRect(0, 0, this.pie.width, this.pie.height);
+
+        var height = parseInt(puck_off.height * progress);
+        var width = parseInt(puck_off.width * progress);
+
+        var x = parseInt((this.pie.width / 2) - (width / 2));
+        var y = parseInt((puck_off.height - height) / 2) + this.pie.height - puck_off.height;
+
+        var xm = x + (width / 2);
+        var ym = y + (height / 2);
+
+        ctx.translate(xm, ym);
+        ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
+        ctx.translate(-xm, -ym);
+
+        ctx.globalAlpha = progress;
+        ctx.drawImage(puck_off, x, y, width, height);
+
+        ctx.restore();
     }
+        
+    // show: function() {
+    //     var ctx = this.pie.getContext("2d");
+    //     ctx.fillStyle = "rgba(255, 100, 100, 0.3)";
+    //     ctx.fillRect(0, 0, this.pie.width, this.pie.height);
+    // },
+    // 
+    // hide: function() {
+    //     var ctx = this.pie.getContext("2d");
+    //     ctx.clearRect(0, 0, this.pie.width, this.pie.height);
+    // }
 });
 
 // change this to watch for the key strokes
 bespin.subscribe("settings:init", function() {
-    var piemenu = new bespin.editor.PieMenu();
-    piemenu.show();
-    setTimeout(function() {
-        piemenu.hide()
-    }, 1000);
-    setTimeout(function() {
-        piemenu.show()
-    }, 2000);
-})
+    //var piemenu = new bespin.editor.PieMenu();
+    //piemenu.show();
+    // setTimeout(function() {
+    //     piemenu.hide()
+    // }, 1000);
+    // setTimeout(function() {
+    //     piemenu.show()
+    // }, 2000);
+});
