@@ -48,15 +48,22 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // ** {{{ Event: parser:error }}} **
         //
         // Parser found an error in the source code
-        bespin.subscribe("parser:error", function(error) {
-            var settings = bespin.get("settings");
-            if (!error.jslint || settings.isOn(settings.get("jslint"))) {
+        bespin.subscribe("parser:syntaxcheck", function(message) {
+            var syntaxcheck = bespin.get("settings") && bespin.get("settings").get("syntaxcheck");
+            if ((syntaxcheck === "all" || syntaxcheck === "error") && message.type === "error") {
                 bespin.publish("message", {
-                    msg: 'Syntax error: ' + error.message + ' on line ' + error.row,
+                    msg: 'Syntax error: ' + message.message + ' on line ' + message.row,
                     tag: 'autohide'
                 });
-                self.lineMarkers.push(error);
+                self.lineMarkers.push(message);
             }
+            if ((syntaxcheck === "all" || syntaxcheck === "warning") && message.type === "warning") {
+                bespin.publish("message", {
+                    msg: 'Syntax warning: ' + message.message + ' on line ' + message.row,
+                    tag: 'autohide'
+                });
+                self.lineMarkers.push(message);
+            } 
         });
 
         // ** {{{ Event: parser:showoutline }}} **
@@ -111,16 +118,15 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         bespin.subscribe("parser:engine:parseDone", function(event) {
             var data = event.info;
             //console.log("Worker Response "+dojo.toJson(data))
-            if (data.errors && data.errors.length > 0) {
-                for (var i = 0; i < data.errors.length; i++) {
-                    bespin.publish("parser:error", {
-                        message: data.errors[i].message,
-                        row: data.errors[i].line,
-                        jslint: data.errors[i].jslint
-                    });
-                }
+            if (data.messages) for (var i = 0; i < data.messages.length; i++) {
+                bespin.publish("parser:syntaxcheck", {
+                    message: data.messages[i].message,
+                    row: data.messages[i].line,
+                    type: data.messages[i].type
+                });
             }
-            if(data.metaInfo) {
+
+            if (data.metaInfo) {
                 self.currentMetaInfo = data.metaInfo;
             }
             self._running = false;
@@ -160,7 +166,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     clearTimeout(self.run_timeout);
                 }
                 self.run_timeout = setTimeout(function() {
-                    if(self._running) {
+                    if (self._running) {
                         self.run_timeout = setTimeout(arguments.callee, delay)
                     } else {
                         self.fetch();
@@ -168,7 +174,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 }, delay)
             }
             var onChange = bespin.subscribe("editor:document:changed", rerun);
-            bespin.subscribe("settings:set:jslint", rerun);
+            bespin.subscribe("settings:set:syntaxcheck", rerun);
 
             // ** {{{ Event: parser:stop }}} **
             //
@@ -212,7 +218,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     },
     
     getFunctions: function () {
-        if(this.currentMetaInfo) {
+        if (this.currentMetaInfo) {
             return this.currentMetaInfo.functions
         }
         return []
@@ -235,7 +241,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         var parentStack = [];
         var indexStack  = [];
         var top = function () {
-            if(this.length == 0) return null
+            if (this.length == 0) return null
             return this[this.length-1]
         };
         parentStack.top = top;
@@ -247,25 +253,25 @@ dojo.declare("bespin.parser.JavaScript", null, {
         callback.call(this, node, parentStack, indexStack)
 
         // we are actually an array of nodes
-        if(node.length) {
+        if (node.length) {
             this._walk(callback, node, parentStack, indexStack)
         }
 
         // all these properties can be sub trees
-        if(node.expression) {
+        if (node.expression) {
             this._walk(callback, node.expression, parentStack, indexStack)
         }
-        if(node.body) {
+        if (node.body) {
             this._walk(callback, node.body, parentStack, indexStack)
         }
-        if(node.value) {
+        if (node.value) {
             this._walk(callback, node.value, parentStack, indexStack)
         }
     },
 
     _walk: function(callback, tree, parentStack, indexStack) {
-        if(typeof tree == "string") return
-        if(tree.length) {
+        if (typeof tree == "string") return
+        if (tree.length) {
             parentStack.push(tree)
             for(var i = 0; i < tree.length; ++i) {
                 var node = tree[i];
@@ -286,7 +292,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         var codePatterns = this.getCodePatterns();
         // preprocess for speed
         for(var type in codePatterns) {
-            if(codePatterns.hasOwnProperty(type)) {
+            if (codePatterns.hasOwnProperty(type)) {
                 //console.log(JSON.stringify(codePatterns[type]))
                 try {
                     var ns = codePatterns[type].declaration.split(".");
@@ -309,13 +315,13 @@ dojo.declare("bespin.parser.JavaScript", null, {
             var row   = node.lineno - 1;
 
             // find function
-            if(node.type == FUNCTION) {
+            if (node.type == FUNCTION) {
                 var name = node.name;
-                if(name == null && tree && index > 0) {
+                if (name == null && tree && index > 0) {
                     // if we have no name. Look up the tree and check for the value
                     // this catches this case: { name: function() {} }
                     var pred = tree[index-1]
-                    if(pred.type == OBJECT_LITERAL_KEY) {
+                    if (pred.type == OBJECT_LITERAL_KEY) {
                         name = pred.value;
                     }
                 }
@@ -337,15 +343,15 @@ dojo.declare("bespin.parser.JavaScript", null, {
                 var parentIndex = indexStack[indexStack.length-1];
 
                 var analyze = function (type, ns, indicator) {
-                    if(parentIndex >= 0) {
-                        if(node.value == indicator) { // identifiy a candidate (aka, we found "declare")
+                    if (parentIndex >= 0) {
+                        if (node.value == indicator) { // identifiy a candidate (aka, we found "declare")
                             // console.log("Found "+indicator)
 
                             // if the indicator is namespaced, check the ancestors
                             for(var i = 0; i < ns.length; ++i) {
                                 var ele = ns[i];
                                 // up one level
-                                if(parent[parentIndex-1] && parent[parentIndex-1].value == ns) {
+                                if (parent[parentIndex-1] && parent[parentIndex-1].value == ns) {
                                     parent = parentStack[parentStack.length-(1 + i + 1)];
                                     parentIndex = indexStack[indexStack.length-(1 + i + 1) ];
                                     // console.log("NS "+ns)
@@ -355,7 +361,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                             }
 
                             // candidate is valid
-                            if(parent[parentIndex+1] && parent[parentIndex+1][0]) {
+                            if (parent[parentIndex+1] && parent[parentIndex+1][0]) {
                                 var name = parent[parentIndex+1][0].value;
                                 // console.log(type+": "+name + " - "+depth);
 
@@ -374,7 +380,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                 // walk through code patterns and check them against the current tree
                 for(var type in codePatterns) {
                     var pattern = codePatterns[type];
-                    if(analyze(type, pattern._ns, pattern._indicator)) {
+                    if (analyze(type, pattern._ns, pattern._indicator)) {
                         break // if we find something, it cannot be anything else
                     }
                 }
@@ -388,9 +394,9 @@ dojo.declare("bespin.parser.JavaScript", null, {
             var kind = type;
             var name = info[i].name;
             var pattern = codePatterns[type];
-            if(pattern) {
-                if("declaration" in pattern) kind = pattern.declaration;
-                if("description" in pattern) kind = pattern.description;
+            if (pattern) {
+                if ("declaration" in pattern) kind = pattern.declaration;
+                if ("description" in pattern) kind = pattern.description;
             }
             if (typeof name == "undefined") {
                 continue
@@ -452,21 +458,16 @@ dojo.declare("bespin.parser.JavaScript", null, {
 
     parse: function(source) {
         var tree;
-        var errors = [];
+        var messages = [];
         try {
             // parse is global function from narcissus
             tree = parse(source)
         } catch(e) {
-            // catch syntax error and return it
-            // TODO: Check whether this is really a syntax error
-            errors.push({
-                line: e.lineNumber || e.line,
-                message: e.message
-            });
+            ;// error handling is now done by JSLint
         };
 
         return {
-            errors: errors,
+            messages: messages,
             metaInfo: tree ? this.getMetaInfo(tree) : undefined
         }
 
@@ -484,19 +485,20 @@ dojo.declare("bespin.parser.JSLint", null, {
     name: "JSLint",
     parse: function(source) {
         var result = JSLINT(source, {});
-        var errors = [];
+        var messages = [];
+        var fatal = JSLINT.errors.length > 0 && JSLINT.errors[JSLINT.errors.length - 1] === null;
         for (var i = 0; i < JSLINT.errors.length; i++) {
-            if(JSLINT.errors[i]) {
-                errors.push({
+            if (JSLINT.errors[i]) {
+                messages.push({
                     message: JSLINT.errors[i].reason,
                     line: JSLINT.errors[i].line + 1,
-                    jslint: true
+                    type: (i === JSLINT.errors.length - 2 && fatal) ? "error" : "warning"
                 });
             }
         }
         return {
             result: result,
-            errors: errors
+            messages: messages
         };
     }
 });
@@ -515,17 +517,17 @@ bespin.parser.EngineResolver = function() {
       //
       // A high level parse function that uses the {{{type}}} to get the engines
       // it returns the combined results of parsing each one
-      // parsers overwrite each other if they pass members with the same name, except for errors which are concatenated
+      // parsers overwrite each other if they pass members with the same name, except for messages which are concatenated
       parse: function(type, source) {
           var result = {};
           var engineResult;
           var selectedEngines = this.resolve(type);
           for (var i = 0; i < selectedEngines.length; i++) {
               engineResult = selectedEngines[i].parse(source);
-              engineResult.errors = engineResult.errors.concat(result.errors || []);
+              engineResult.messages = engineResult.messages.concat(result.messages || []);
               for (var member in engineResult) {
                   if (engineResult.hasOwnProperty(member)) {
-                      if(engineResult[member]) {
+                      if (engineResult[member]) {
                           result[member] = engineResult[member];
                           result.isSet = true;
                       }
@@ -541,7 +543,7 @@ bespin.parser.EngineResolver = function() {
       // e.g. {{{bespin.parser.EngineResolver.register(new bespin.parser.CSSParserEngine(), ['css']);}}}
       register: function(parserEngine, types) {
           for (var i = 0; i < types.length; i++) {
-              if(this.engines[types[i]] == null) this.engines[types[i]] = [];
+              if (this.engines[types[i]] == null) this.engines[types[i]] = [];
               this.engines[types[i]].push(parserEngine);
           }
       },
@@ -568,8 +570,8 @@ bespin.parser.EngineResolver = function() {
               var list = this.engines[type];
               for(var i = 0; i < list.length; i++) {
                   var eng = list[i];
-                  if(!eng._init) { // make sure we only init once (engine can occur multiple times)
-                      if(eng.initialize) {
+                  if (!eng._init) { // make sure we only init once (engine can occur multiple times)
+                      if (eng.initialize) {
                           eng.initialize()
                       }
                       eng._init = true;

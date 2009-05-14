@@ -558,9 +558,10 @@ dojo.declare("bespin.editor.UI", null, {
             var lineMarkers = bespin.get("parser").getLineMarkers();
             for (var i = 0; i < lineMarkers.length; i++) {
                 if (lineMarkers[i].row === down.row + 1) {
+                    var messagetype = lineMarkers[i].type === "error" ? "Syntax error: " : "Syntax warning: ";
                     bespin.publish("message", {
-                        msg: 'Syntax error: ' + lineMarkers[i].message + ' on line ' + lineMarkers[i].row,
-                        tag: 'autohide'
+                        msg: messagetype + lineMarkers[i].message + ' on line ' + lineMarkers[i].row,
+                        tag: 'autohide',
                     });
                 }
             }
@@ -977,7 +978,11 @@ dojo.declare("bespin.editor.UI", null, {
                     if (lineMarkers[i].row >= this.firstVisibleRow && lineMarkers[i].row <= lastLineToRender + 1) {
                         y = this.lineHeight * (lineMarkers[i].row - 1);
                         cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
-                        ctx.fillStyle = this.editor.theme.lineMarkerGutterColor;
+                        if (lineMarkers[i].type === "error") {
+                            ctx.fillStyle = this.editor.theme.lineMarkerErrorColor;
+                        } else {
+                            ctx.fillStyle = this.editor.theme.lineMarkerWarningColor;
+                        }                            
                         ctx.fillRect(0, y, this.gutterWidth, this.lineHeight);
                     }
                  }
