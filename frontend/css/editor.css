@@ -14,7 +14,7 @@ body {
     left: 0;
     right: 0;
     background-image: url("../images/toolbar_sub_bg.png");
-    z-index: 100;
+    z-index: 40;
     overflow: hidden;
 }
 
