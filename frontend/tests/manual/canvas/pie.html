@@ -32,7 +32,7 @@
                     style: {}
                 },
 
-                duration: 400   ,
+                duration: 400,
 
                 easing: dojo.fx.easing.backIn,
 
@@ -51,6 +51,9 @@
             ctx.save();
 
             ctx.clearRect(0, 0, 500, 500);
+            var alpha = Math.max(progress - 0.5, 0);
+            ctx.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctx.fillRect(0, 0, 500, 500);
 
             var height = parseInt(puck_off.height * progress);
             var width = parseInt(puck_off.width * progress);
@@ -83,9 +86,11 @@
         <button onclick="showPie()">Show</button>
         <button onclick="hidePie()">Hide</button>
     </p>
-    <p>
+    <div style="position: absolute; top: 50px; background-color: red; width: 500px; height: 500px">
+    </div>
+    <div style="position: absolute; top: 50px">
         <canvas id="canvas" width="500" height="500">
         </canvas>
-    </p>
+    </div>
 </body>
 </html>
