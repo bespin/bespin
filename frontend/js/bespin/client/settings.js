@@ -288,7 +288,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
         var settings = "";
         for (var key in this.settings) {
-            if (this.settings.hasOwnProperty(key) && (key[0] != '_')) {
+            if (this.settings.hasOwnProperty(key)) {
                 settings += key + " " + this.settings[key] + "\n";
             }
         }
@@ -301,7 +301,6 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     },
 
     _load: function() {
-
         var self = this;
 
         var checkLoaded = function() {
@@ -329,8 +328,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
         if (bespin.authenticated) {
             loadSettings();
-        }
-        else {
+        } else {
             bespin.subscribe("authenticated", function() {
                 loadSettings();
             });
