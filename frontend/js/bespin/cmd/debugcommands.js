@@ -66,6 +66,26 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
+    // ** {{{Command: readonly}}} **
+    commandStore.addCommand({
+        name: 'readonly',
+        takes: ['flag'],
+        preview: 'Turn on and off readonly mode',
+        hidden: true,
+        execute: function(self, flag) {
+            var msg;
+            if (flag === "false") {
+                flag = false;
+                msg = "No more read-only!";
+            } else {
+                flag = true;
+                msg = "Read only mode turned on.";
+            }
+            self.editor.setReadOnly(flag);
+            self.showInfo(msg);
+        }
+    });
+
     // ** {{{Command: showevents}}} **
     commandStore.addCommand({
         name: 'showevents',

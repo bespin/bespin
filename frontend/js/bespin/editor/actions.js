@@ -154,6 +154,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertTab: function(args) {
+        if (this.editor.readonly) return;
+
         var settings = bespin.get("settings");
 
         if (this.editor.getSelection() && !args.undoInsertTab) {
@@ -342,6 +344,8 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     cutSelection: function(args) {
+        if (this.editor.readonly) return;
+
         this.copySelection(args);
         this.deleteSelection(args);
     },
@@ -358,6 +362,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteSelectionAndInsertChunk: function(args) {
+        if (this.editor.readonly) return;
+
         var oldqueued = args.queued;
 
         args.queued = true;
@@ -384,6 +390,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteChunkAndInsertChunkAndSelect: function(args) {
+        if (this.editor.readonly) return;
+
         var oldqueued = args.queued;
 
         args.queued = true;
@@ -407,6 +415,8 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // NOTE: Actually, clipboard.js is taking care of this unless EditorOnly mode is set
     pasteFromClipboard: function(args) {
+        if (this.editor.readonly) return;
+
         var clipboard = (args.clipboard) ? args.clipboard : bespin.editor.clipboard.Manual.data();
         if (clipboard === undefined) return; // darn it clipboard!
         args.chunk = clipboard;
@@ -414,6 +424,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertChunk: function(args) {
+        if (this.editor.readonly) return;
+
         if (this.editor.selection) {
             this.deleteSelectionAndInsertChunk(args);
         } else {
@@ -435,6 +447,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteChunk: function(args) {
+        if (this.editor.readonly) return;
+
         var selection = this.editor.getSelection({ startPos: args.pos, endPos: args.endPos });
         var chunk = this.model.deleteChunk(selection);
         this.cursorManager.moveCursor(selection.startPos);
@@ -449,12 +463,15 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     //deleteLine: function(args) {
+    //    if (this.editor.readonly) return;
     //    this.editor.lines.splice(args.pos.row);
     //    if (args.pos.row >= this.editor.lines.length) this.cursorManager.moveCursor({ row: args.pos.row - 1, col: args.pos.col });
     //    this.repaint();
     //},
 
     joinLine: function(args) {
+        if (this.editor.readonly) return;
+
         if (args.joinDirection == "up") {
             if (args.pos.row == 0) return;
 
@@ -478,13 +495,16 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     killLine: function(args) {
+        if (this.editor.readonly) return;
+
         // select the current row
         this.editor.setSelection({ startPos: { row: args.pos.row, col: 0 }, endPos: { row: args.pos.row + 1, col: 0 } });
         this.cutSelection(args); // cut (will save and redo will work)
     },
 
     deleteSelection: function(args) {
-        if (!this.editor.selection) return;
+        if (this.editor.readonly || !this.editor.selection) return;
+
         var selection = this.editor.getSelection();
         var chunk = this.model.getChunk(selection);
         this.model.deleteChunk(selection);
@@ -505,6 +525,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertChunkAndSelect: function(args) {
+        if (this.editor.readonly) return;
+
         var endPos = this.cursorManager.getCursorPosition(this.model.insertChunk(this.cursorManager.getModelPosition(args.pos), args.chunk));
 
         args.action = "insertChunkAndSelect";
@@ -520,6 +542,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     backspace: function(args) {
+        if (this.editor.readonly) return;
+
         if (this.editor.selection) {
             this.deleteSelection(args);
         } else {
@@ -546,6 +570,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteKey: function(args) {
+        if (this.editor.readonly) return;
+
         if (this.editor.selection) {
             this.deleteSelection(args);
         } else {
@@ -570,6 +596,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteCharacter: function(args) {
+        if (this.editor.readonly) return;
+
         if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
             var modelPos = this.cursorManager.getModelPosition(args.pos);
             var deleted = this.model.deleteCharacters(modelPos, 1);
@@ -585,6 +613,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     newline: function(args) {
+        if (this.editor.readonly) return;
+
         var settings = bespin.get("settings");
         var autoindentAmount = (settings && settings.get('autoindent')) ? bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row)) : 0;
         this.model.splitRow(this.cursorManager.getModelPosition(args.pos), autoindentAmount);
@@ -604,6 +634,8 @@ dojo.declare("bespin.editor.Actions", null, {
     // this is because it's really two operations: deleting the selected region and then inserting a character. Each of these two
     // actions adds an operation to the undo queue. So I have two choices for
     deleteSelectionAndInsertCharacter: function(args) {
+        if (this.editor.readonly) return;
+
         var oldqueued = args.queued;
 
         args.queued = true;
@@ -627,6 +659,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteCharacterAndInsertChunkAndSelect: function(args) {
+        if (this.editor.readonly) return;
+
         var oldqueued = args.queued;
 
         args.queued = true;
@@ -644,6 +678,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     insertCharacter: function(args) {
+        if (this.editor.readonly) return;
+
         if (this.editor.selection) {
             this.deleteSelectionAndInsertCharacter(args);
         } else {
@@ -687,7 +723,9 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     selectionChangeCase: function(args) {
-        console.log('selectionChangeCase Fired!');
+        if (this.editor.readonly) return;
+
+        //console.log('selectionChangeCase Fired!');
         if (this.editor.selection) {
             if (!args.selectionObject) {
                 args.selectionObject = this.editor.getSelection();
@@ -721,6 +759,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     undoSelectionChangeCase: function(args) {
+        if (this.editor.readonly) return;
+
         this.model.deleteChunk(args.selectionObject);
         var selection = this.model.insertChunk(args.selectionObject.startModelPos, args.text);
         this.select(args.selectionObject);
@@ -768,7 +808,7 @@ dojo.declare("bespin.editor.Actions", null, {
         }
         
         // display the count of matches in different ways
-        switch(displayType) {
+        switch (displayType) {
             case 'commandLine':
                 var msg = "Found " + count + " match";
                 if (count > 1) { msg += 'es'; }
