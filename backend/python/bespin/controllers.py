@@ -263,9 +263,15 @@ def listfiles(request, response):
 def install_template(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
-    template_name = request.body
+    data = simplejson.loads(request.body)
+    try:
+        template_name = data['templateName']
+    except KeyError:
+        raise BadRequest("templateName not provided in request")
+        
     project = get_project(user, user, project_name, create=True)
-    project.install_template(template_name)
+    project.install_template(template_name, data)
+    
     response.content_type = "text/plain"
     response.body = ""
     return response()
