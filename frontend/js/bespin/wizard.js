@@ -94,7 +94,6 @@ bespin.subscribe("wizard:show", function(event) {
     }
     
     if (event.showonce) {
-        console.log('here');
         bespin.get('settings').set('hidewelcomescreen', 'true');
     }
 
