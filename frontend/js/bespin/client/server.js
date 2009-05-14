@@ -660,5 +660,16 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/file/template', project, path);
         this.request('PUT', url,
                     dojo.toJson(templateOptions), opts || {});
+    },
+    
+    // ** {{{ projectTemplate() }}}
+    // Create a new project based on a template. templateOptions
+    // must include templateName to specify which template to use.
+    // templateOptions can include other values that will be plugged
+    // in to the template.
+    projectTemplate: function(project, templateOptions, opts) {
+        var url = bespin.util.path.combine('/project/template/', project, "");
+        this.request('POST', url,
+                    dojo.toJson(templateOptions), opts || {});
     }
 });

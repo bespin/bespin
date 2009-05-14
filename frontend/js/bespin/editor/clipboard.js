@@ -26,7 +26,7 @@ dojo.provide("bespin.editor.clipboard");
 
 // = Clipboard =
 //
-// Handle clipboard operations. 
+// Handle clipboard operations.
 // If using WebKit (I know, feature detection would be nicer, but e.clipboardData is deep) use DOMEvents
 // Else try the bad tricks.
 
@@ -65,7 +65,7 @@ dojo.mixin(bespin.editor.clipboard, {
 
 dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
     install: function(editor) {
-        
+
         // * Configure the hidden copynpaster element
         var copynpaster = dojo.create("input", {
             type: 'text',
@@ -89,12 +89,12 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             if (stopAction(e)) return;
 
             var selectionText = editor.getSelectionAsText();
-            
+
             if (selectionText && selectionText != '') {
                 e.preventDefault();
                 e.clipboardData.setData('text/plain', selectionText);
             }
-            
+
             dojo.byId('canvas').focus();
         });
 
@@ -136,7 +136,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             if (stopAction(e)) return;
 
             e.preventDefault();
-            var args = bespin.editor.utils.buildArgs();    
+            var args = bespin.editor.utils.buildArgs();
             args.chunk = e.clipboardData.getData('text/plain');
             if (args.chunk) editor.ui.actions.insertChunk(args);
 
@@ -152,9 +152,9 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             this.keypressHandle = dojo.connect(copynpaster, "keypress", function(e) {
                 e.stopPropagation();
             });
-        }));        
+        }));
     },
-    
+
     uninstall: function() {
         dojo.disconnect(this.keypressHandle);
         dojo.disconnect(this.keydownHandle);
@@ -181,12 +181,12 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
-        
+
         var grabAndGo = function(text) {
             copynpaster.value = text;
             focusSelectAndGo();
         };
-        
+
         var focusSelectAndGo = function() {
             copynpaster.focus();
             copynpaster.select();
@@ -194,8 +194,8 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
                 dojo.byId('canvas').focus();
             }, 0);
         };
-        
-        this.keyDown = dojo.connect(document, "keydown", function(e) {
+
+        this.keyDown = dojo.connect(editor.opts.actsAsComponent ? editor.canvas : document, "keydown", function(e) {
             if ((bespin.util.isMac() && e.metaKey) || e.ctrlKey) {
                 // Copy
                 if (e.keyCode == 67 /*c*/) {
@@ -227,7 +227,7 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
                     focusSelectAndGo();
 
                     setTimeout(function() { // wait just a TOUCH to make sure that it is selected
-                        var args = bespin.editor.utils.buildArgs();    
+                        var args = bespin.editor.utils.buildArgs();
                         args.chunk = copynpaster.value;
                         if (args.chunk) editor.ui.actions.insertChunk(args);
                     }, 1);
@@ -235,7 +235,7 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
             }
         });
     },
-    
+
     uninstall: function() {
         dojo.disconnect(this.keyDown);
     }
@@ -264,10 +264,10 @@ dojo.declare("bespin.editor.clipboard.EditorOnly", null, {
 
 // ** {{{ Bespin.Clipboard.Manual }}} **
 //
-// The ugly hack that tries to use XUL to get work done, but will probably fall through to in-app copy/paste only        
+// The ugly hack that tries to use XUL to get work done, but will probably fall through to in-app copy/paste only
 bespin.editor.clipboard.Manual = function() {
     var clipdata;
-    
+
     return {
         copy: function(copytext) {
             try {

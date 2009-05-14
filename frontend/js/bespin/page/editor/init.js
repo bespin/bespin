@@ -114,7 +114,24 @@ dojo.provide("bespin.page.editor.init");
 
             bespin.register('settings', new bespin.client.settings.Core());
             bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
-
+            
+            if (userinfo.serverCapabilities) {
+                var sc = userinfo.serverCapabilities;
+                bespin.register("serverCapabilities", sc.capabilities);
+                
+                for (var packagename in sc.dojoModulePath) {
+                    dojo.registerModulePath(packagename, 
+                            sc.dojoModulePath[packagename])
+                }
+                
+                // this is done to trick the build system which would
+                // try to find a module called "plugin" below.
+                var re = dojo.require;
+                sc.javaScriptPlugins.forEach(function(plugin) {
+                    re.call(dojo, plugin);
+                });
+            }
+            
             // Set up message retrieval
             server.processMessages();
 

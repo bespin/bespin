@@ -63,6 +63,20 @@ def new_user(request, response):
     request.environ['paste.auth_tkt.set_user'](username)
     return response()
 
+def _get_capabilities():
+    return dict(
+        capabilities = list(c.capabilities),
+        javaScriptPlugins = list(c.javascript_plugins),
+        dojoModulePath = c.dojo_module_path
+    )
+
+@expose('^/capabilities/$', 'GET')
+def capabilities(request, response):
+    response.content_type = "application/json"
+    result = _get_capabilities()
+    response.body = simplejson.dumps(result)
+    return response()
+    
 @expose(r'^/register/userinfo/$', 'GET')
 def get_registered(request, response):
     response.content_type = "application/json"
@@ -73,7 +87,8 @@ def get_registered(request, response):
         amount_used = None
     response.body=simplejson.dumps(
         dict(username=request.username,
-        quota=quota, amountUsed=amount_used)
+        quota=quota, amountUsed=amount_used,
+        serverCapabilities=_get_capabilities())
     )
     return response()
 
@@ -248,9 +263,15 @@ def listfiles(request, response):
 def install_template(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
-    template_name = request.body
+    data = simplejson.loads(request.body)
+    try:
+        template_name = data['templateName']
+    except KeyError:
+        raise BadRequest("templateName not provided in request")
+        
     project = get_project(user, user, project_name, create=True)
-    project.install_template(template_name)
+    project.install_template(template_name, data)
+    
     response.content_type = "text/plain"
     response.body = ""
     return response()

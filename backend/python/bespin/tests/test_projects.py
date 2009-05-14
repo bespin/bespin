@@ -310,9 +310,9 @@ def test_rename_project():
     
 def test_install_template_from_the_web():
     _init_data()
-    app.post("/project/template/bigmac/", "/etc/passwd", status=400)
-    app.post("/project/template/bigmac/", "../foo", status=400)
-    app.post("/project/template/bigmac/", "ttemplate")
+    app.post("/project/template/bigmac/", '{"templateName" : "/etc/passwd"}', status=400)
+    app.post("/project/template/bigmac/", '{"templateName" : "../foo"}', status=400)
+    app.post("/project/template/bigmac/", '{"templateName" : "ttemplate"}')
     resp = app.get("/file/list/bigmac/")
     files = simplejson.loads(resp.body)
     assert files[0]['name'] == "newfile-bigmac.js"
