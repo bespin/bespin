@@ -274,11 +274,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     showCommand: function(coords) {
+        this.ctx.fillStyle = "#efefef";
+        this.ctx.font = "9pt Monaco, Lucida Console, monospace";
+        this.ctx.fillText("Command Line", coords.l + 5, coords.t - 10);
+
         dojo.byId("footer").style.display = "block";
+        // add 32px to bottom to cater for command line (until it is gone from bottom)
         dojo.byId("editor").style.bottom = "32px";
         dojo.byId("info").style.bottom = "32px";
-        // add 32px to bottom
-        console.log("command line goes here");
     },
 
     showFiles: function(coords) {
