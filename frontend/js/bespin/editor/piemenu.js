@@ -85,7 +85,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         });
         */
 
-        dojo.connect(window, "keydown", function(ev) {
+        dojo.connect(this.canvas, "keydown", function(ev) {
             if (!self.isVisible) return;
             var key = bespin.util.keys.Key;
 
