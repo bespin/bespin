@@ -46,6 +46,7 @@ dojo.mixin(bespin.debug, {
         }
         this.breakpoints.push(newBreakpoint);
         this.saveBreakpoints();
+        bespin.publish("debugger:breakpoints:add", newBreakpoint);
         return true;
     },
 
@@ -60,6 +61,7 @@ dojo.mixin(bespin.debug, {
             if (this.breakpointsEqual(this.breakpoints[i], breakpointToRemove)) {
                 this.breakpoints.splice(i, 1);
                 this.saveBreakpoints();
+                bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
                 return;
             }
         }
