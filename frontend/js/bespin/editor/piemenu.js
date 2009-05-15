@@ -71,22 +71,22 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         var self = this;
 
         /*
-        dojo.connect(window, "mousedown", function(ev) {
+        dojo.connect(window, "mousedown", function(e) {
             if (!self.isVisible) return;
 
             var pos = dojo.coords(self.canvas);
-            if (ev.clientX < pos.l
-                    || ev.clientX > (pos.l + pos.w)
-                    || ev.clientY < pos.t
-                    || ev.clientY > (pos.t + pos.h)) {
+            if (e.clientX < pos.l
+                    || e.clientX > (pos.l + pos.w)
+                    || e.clientY < pos.t
+                    || e.clientY > (pos.t + pos.h)) {
                 self.toggle();
             }
-            dojo.stopEvent(ev);
+            dojo.stopEvent(e);
         });
         */
 
-        bespin.subscribe("ui:escape", function(event) {
-            if (self.isVisible) self.toggle();
+        bespin.subscribe("ui:escape", function(e) {
+            if (self.isVisible) self.hide();
         });
 
         dojo.connect(window, 'resize', dojo.hitch(this, function() {
@@ -95,31 +95,31 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             if (this.isVisible) this.show(true /* don't animate though */);
         }));
 
-        dojo.connect(this.canvas, "keydown", function(ev) {
+        dojo.connect(this.canvas, "keydown", function(e) {
             if (!self.isVisible) return;
             var key = bespin.util.keys.Key;
 
             console.log("pie keydown", key);
 
-            if (self.keyRunsMe(ev) || ev.keyCode == bespin.util.keys.Key.ESCAPE) {
-                self.toggle();
-                dojo.stopEvent(ev);
+            if (self.keyRunsMe(e) || e.keyCode == bespin.util.keys.Key.ESCAPE) {
+                self.hide();
+                dojo.stopEvent(e);
             }
-            else if (ev.keyCode == key.UP_ARROW) {
+            else if (e.keyCode == key.UP_ARROW) {
                 self.renderPopout(self.slices.top);
-                dojo.stopEvent(ev);
+                dojo.stopEvent(e);
             }
-            else if (ev.keyCode == key.DOWN_ARROW) {
+            else if (e.keyCode == key.DOWN_ARROW) {
                 self.renderPopout(self.slices.btm);
-                dojo.stopEvent(ev);
+                dojo.stopEvent(e);
             }
-            else if (ev.keyCode == key.RIGHT_ARROW) {
+            else if (e.keyCode == key.RIGHT_ARROW) {
                 self.renderPopout(self.slices.rt);
-                dojo.stopEvent(ev);
+                dojo.stopEvent(e);
             }
-            else if (ev.keyCode == key.LEFT_ARROW) {
+            else if (e.keyCode == key.LEFT_ARROW) {
                 self.renderPopout(self.slices.lft);
-                dojo.stopEvent(ev);
+                dojo.stopEvent(e);
             }
         });
     },
@@ -316,7 +316,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
     },
 
-    keyRunsMe: function(ev) {
-        return (ev.keyCode == 'K'.charCodeAt() && ev.altKey && !ev.shiftKey);
+    keyRunsMe: function(e) {
+        return (e.keyCode == 'K'.charCodeAt() && e.altKey && !e.shiftKey);
     }
 });
