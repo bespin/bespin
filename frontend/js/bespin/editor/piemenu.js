@@ -40,16 +40,15 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
 
         this.images = {};
         var ids = [
-            "puck_active-btm", "puck_active-lft", "puck_active-rt",
-            "puck_active-top", "puck_menu_btm-lft", "puck_menu_btm-lftb",
-            "puck_menu_btm-rt", "puck_menu_btm-rtb", "puck_menu_lft",
-            "puck_menu_mid", "puck_menu_rt", "puck_off", "puck_menu_top-lft",
-            "puck_menu_top-mid", "puck_menu_top-rt"
+            "active_btm", "active_lft", "active_rt", "active_top", "off",
+            "menu_btm_lft", "menu_btm_lftb", "menu_btm_rt", "menu_btm_rtb",
+            "menu_lft", "menu_mid", "menu_rt", "menu_top_lft",
+            "menu_top_mid", "menu_top_rt"
         ];
         dojo.forEach(ids, function(id) {
             this.images[id] = dojo.create("img", {
-                id: id,
-                src: "/images/pie/" + id + ".png",
+                id: "puck_" + id,
+                src: "/images/pie/puck_" + id + ".png",
                 alt: "pie menu",
                 style: "position:absolute; display:none;"
             }, dojo.body());
@@ -109,6 +108,9 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
             onAnimate: function(values) {
                 var progress = values.opacity;
                 self.renderPie(progress);
+            },
+            onEnd: function() {
+                self.renderPopout();
             }
         });
 
@@ -136,8 +138,8 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
     },
 
     renderPie: function(progress) {
-        var ctx = this.menu.getContext("2d");
-        var puck_off = this.images.puck_off;
+        var ctx = this.ctx;
+        var off = this.images.off;
 
         ctx.save();
 
@@ -147,11 +149,11 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
         ctx.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
         ctx.fillRect(0, 0, this.menu.width, this.menu.height);
 
-        var height = parseInt(puck_off.height * progress);
-        var width = parseInt(puck_off.width * progress);
+        var height = parseInt(off.height * progress);
+        var width = parseInt(off.width * progress);
 
         var x = parseInt((this.menu.width / 2) - (width / 2));
-        var y = parseInt((puck_off.height - height) / 2) + this.menu.height - puck_off.height;
+        var y = parseInt((off.height - height) / 2) + this.menu.height - off.height;
 
         var xm = x + (width / 2);
         var ym = y + (height / 2);
@@ -161,9 +163,73 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
         ctx.translate(-xm, -ym);
 
         ctx.globalAlpha = progress;
-        ctx.drawImage(puck_off, x, y, width, height);
+        ctx.drawImage(off, x, y, width, height);
 
         ctx.restore();
+    },
+
+    /*
+     * TODO:
+     * All keyboard handling is done by editor. we need to take control
+     * Many of the images are dups. we should save load time
+     * - Also consider rotational and translational sym??
+     * Hookup a resize event
+     * Shrink border images
+     */
+    renderPopout: function() {
+        var margin = 10;
+        var active = this.images.active_btm;
+
+        // Left hand edge of pie. Determined by height of pie
+        var offLeft = parseInt((this.menu.width / 2) - (active.width / 2));
+        // Top of bottom row. Determined by height of pie
+        var btmTop = this.menu.height - active.height;
+        // Left hand edge of rightmost column. Assumes all RHS graphics are the same width
+        var rightLeft = this.menu.width - margin - this.images.menu_top_rt.width;
+        // Top of all middle rows. Assumes all top graphics are same height
+        var midTop = margin + this.images.menu_top_mid.height;
+        // Left hand edge of center column. Assumes all LHS graphics are same width
+        var cenLeft = margin + this.images.menu_top_lft.width;
+        // Height of the middle row. Assumes all top graphics are same height
+        var midHeight = btmTop - margin - this.images.menu_top_mid.height;
+        // Width of the center column. Assumes left and right columns graphics are same width
+        var cenWidth = this.menu.width - (margin + this.images.menu_top_lft.width) - (margin + this.images.menu_top_rt.width);
+
+        // top left
+        this.ctx.drawImage(this.images.menu_top_lft, margin, margin);
+
+        // top center
+        this.ctx.drawImage(this.images.menu_top_mid, cenLeft, margin, cenWidth, this.images.menu_top_mid.height);
+
+        // top right
+        this.ctx.drawImage(this.images.menu_top_rt, rightLeft, margin);
+
+        // middle left
+        this.ctx.drawImage(this.images.menu_lft, margin, midTop, this.images.menu_lft.width, midHeight);
+
+        // middle center display area
+        this.ctx.drawImage(this.images.menu_mid, cenLeft, midTop, cenWidth, midHeight);
+
+        // middle right
+        this.ctx.drawImage(this.images.menu_rt, rightLeft, midTop, this.images.menu_rt.width, midHeight);
+
+        // bottom left
+        this.ctx.drawImage(this.images.menu_btm_lft, margin, btmTop);
+
+        // bottom (left of pie)
+        var lftbWidth = offLeft - (margin + this.images.menu_btm_lft.width);
+        this.ctx.drawImage(this.images.menu_btm_lftb, cenLeft, btmTop, lftbWidth, this.images.menu_btm_lftb.height);
+
+        // pie
+        this.ctx.drawImage(active, offLeft, btmTop);
+
+        // bottom (right of pie)
+        var rtbLeft = offLeft + this.images.off.width;
+        var rtbWidth = rightLeft - (rtbLeft);
+        this.ctx.drawImage(this.images.menu_btm_rtb, rtbLeft, btmTop, rtbWidth, this.images.menu_btm_rtb.height);
+
+        // bottom right
+        this.ctx.drawImage(this.images.menu_btm_rt, rightLeft, btmTop);
     },
 
     toggle: function() {
