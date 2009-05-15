@@ -92,6 +92,10 @@ bespin.subscribe("wizard:show", function(event) {
         bespin.publish("message", { msg: "Unknown wizard: " + event.type });
         return;
     }
+    
+    if (event.showonce) {
+        bespin.get('settings').set('hidewelcomescreen', 'true');
+    }
 
     var localOnFailure = event.warnOnFail ? bespin.wizard._onFailure : null;
     var localOnSuccess = function(data) {

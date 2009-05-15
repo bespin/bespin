@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Animate, little pie, animate!</title>
+    <script type="text/javascript" src="/js/dojo/dojo.js"></script>
+    <script type="text/javascript">
+        dojo.require("dojo._base.fx");
+        dojo.require("dojo.fx.easing");
+
+        function showPie() {
+            var anim = dojo.fadeIn({
+                node: {
+                    style: {}
+                },
+
+                duration: 500,
+
+                easing: dojo.fx.easing.backOut,
+
+                onAnimate: function(values) {
+                    var progress = values.opacity;
+                    renderPie(progress);
+                }
+            });
+            anim.play();
+        }
+
+        function hidePie() {
+            var anim = dojo.fadeIn({
+                node: {
+                    style: {}
+                },
+
+                duration: 400,
+
+                easing: dojo.fx.easing.backIn,
+
+                onAnimate: function(values) {
+                    var progress = Math.max(1 - values.opacity, 0);
+                    renderPie(progress);
+                }
+            });
+            anim.play();
+        }
+
+        function renderPie(progress) {
+            var ctx = dojo.byId("canvas").getContext("2d");
+            var puck_off = dojo.byId("puck_off");
+
+            ctx.save();
+
+            ctx.clearRect(0, 0, 500, 500);
+            var alpha = Math.max(progress - 0.5, 0);
+            ctx.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctx.fillRect(0, 0, 500, 500);
+
+            var height = parseInt(puck_off.height * progress);
+            var width = parseInt(puck_off.width * progress);
+
+            var x = parseInt((puck_off.width - width) / 2) + (500 / 2);
+            var y = parseInt((puck_off.height - height) / 2) + (500 / 2);
+
+            var xm = x + (width / 2);
+            var ym = y + (height / 2);
+
+            ctx.translate(xm, ym);
+            ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
+            ctx.translate(-xm, -ym);
+
+            ctx.globalAlpha = progress;
+            ctx.drawImage(puck_off, x, y, width, height);
+
+            ctx.restore();
+        }
+    </script>
+    <style type="text/css">
+        img {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <img src="/images/pie/puck_off.png" alt="" id="puck_off"/>
+    <p>
+        <button onclick="showPie()">Show</button>
+        <button onclick="hidePie()">Hide</button>
+    </p>
+    <div style="position: absolute; top: 50px; background-color: red; width: 500px; height: 500px">
+    </div>
+    <div style="position: absolute; top: 50px">
+        <canvas id="canvas" width="500" height="500">
+        </canvas>
+    </div>
+</body>
+</html>

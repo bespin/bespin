@@ -52,8 +52,9 @@ dojo.declare("bespin.client.settings.Core", null, {
     },
 
     loadSession: function() {
-        var path    = this.fromURL.get('path') || this.get('_path');
-        var project = this.fromURL.get('project') || this.get('_project');
+        var editSession = bespin.get('editSession');
+        var path    = this.fromURL.get('path') || editSession.path;
+        var project = this.fromURL.get('project') || editSession.project;
 
         bespin.publish("settings:init", { // -- time to init my friends
             path: path,
@@ -192,8 +193,7 @@ dojo.declare("bespin.client.settings.Cookie", null, {
                 'tabsize': '2',
                 'fontsize': '10',
                 'autocomplete': 'off',
-                'collaborate': 'off',
-                '_username': 'dion' // Really?
+                'collaborate': 'off'
             };
             dojo.cookie("settings", dojo.toJson(this.settings), this.cookieSettings);
         }
@@ -288,7 +288,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
         var settings = "";
         for (var key in this.settings) {
-            if (this.settings.hasOwnProperty(key) && (key[0] != '_')) {
+            if (this.settings.hasOwnProperty(key)) {
                 settings += key + " " + this.settings[key] + "\n";
             }
         }
@@ -301,7 +301,6 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     },
 
     _load: function() {
-
         var self = this;
 
         var checkLoaded = function() {
@@ -329,8 +328,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
         if (bespin.authenticated) {
             loadSettings();
-        }
-        else {
+        } else {
             bespin.subscribe("authenticated", function() {
                 loadSettings();
             });
@@ -454,10 +452,6 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Change the session settings when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             editSession.path = event.file.name;
-
-            settings.set('_project',  editSession.project);
-            settings.set('_path',     editSession.path);
-            settings.set('_username', editSession.username);
 
             if (editSession.syncHelper) editSession.syncHelper.syncWithServer();
         });
@@ -678,9 +672,8 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
-            var oldHand = settings.isSettingOn("shownewuseronload");
-            if (!oldHand) {
-                bespin.publish("wizard:show", { type:"newuser", warnOnFail:false });
+            if (!settings.isSettingOn("hidewelcomescreen")) {
+                bespin.publish("wizard:show", { type: "newuser", warnOnFail: false, showonce: true });
             }
 
             // if this is a new file, deal with it and setup the state
