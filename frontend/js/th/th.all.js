@@ -847,7 +847,27 @@ th.remove = function(array, toRemove) {
 
 th.observe = function(source, eventName, listener, context) {
     var toInvoke = (context) ? function(e) { listener.apply(context, [e]) } : listener;
-    source["on" + eventName] = toInvoke;
+    var oldEventFunction = source["on" + eventName];
+
+    if (typeof oldEventFunction == "function") {
+        source["on" + eventName] = function(e) {
+            if (oldEventFunction) {
+                oldEventFunction(e);
+            }
+            toInvoke(e);
+        }
+    } else {
+        source["on" + eventName] = toInvoke;
+    }
+}
+
+th.hitch = function(source, func) {
+    return function() { func.apply(source) };
+}
+
+th.delay = function(func, delay, source) {
+    if (source) func = th.hitch(source, func);
+    setTimeout(func, delay);
 }
 
 th.trim = String.prototype.trim ?
@@ -957,6 +977,20 @@ th.getSpaceDelimitedItems = function(input) {
 
 th.getCommaDelimitedItems = function(input) {
     return th.parenAwareSplit(",", input);
+}
+
+th.lastArrayItem = function(arr) {
+    return arr[arr.length - 1];
+}
+
+th.stopEvent = function(e) {
+    e.preventDefault();
+}
+
+th.getSceneById = function(id) {
+    for (var x = 0; x < th.global_scene_array.length; x++) {
+        if (th.global_scene_array[x].id == id) return th.global_scene_array[x];
+    }
 }
 
 th.parenAwareSplit = function(delim, input) {
@@ -1143,6 +1177,33 @@ th.delay = function(func, delay, source) {
     setTimeout(func, delay);
 }
 
+th.clone = function (o) {
+    var oo;
+    var c;
+    if (typeof o == "number" || typeof o == "string") {
+        return o;
+    }
+
+    if (o instanceof Object) {
+        oo = {};
+        for (var key in o) {
+            c = this.clone(o[key]);
+            if (c !== undefined) oo[key] = c;
+        }
+        return oo;
+    }
+
+    if (o instanceof Array) {
+        oo = [];
+        for (var i; i < o.length; i) {
+            c = this.clone(o[i]);
+            if (c !== undefined) oo[i] = c;
+        }
+
+        return oo;
+    }
+};
+
 if (typeof th == "undefined") th = {};
 
 th.CssParser = Class.define({
@@ -1249,8 +1310,8 @@ if (typeof th == "undefined") th = {};
 th.EventHelpers = new Trait({
     methods: {
         wrapEvent: function(e, root) {
-            var x = e.clientX - th.cumulativeOffset(this.canvas).left;
-            var y = e.clientY - th.cumulativeOffset(this.canvas).top;
+            var x = e.pageX - th.cumulativeOffset(this.canvas).left;
+            var y = e.pageY - th.cumulativeOffset(this.canvas).top;
 
             var component = root.getComponentForPosition(x, y, true);
             e.thComponent = component;
@@ -1266,8 +1327,8 @@ th.EventHelpers = new Trait({
                 return;
             }
 
-            var x = e.clientX - th.cumulativeOffset(this.canvas).left;
-            var y = e.clientY - th.cumulativeOffset(this.canvas).top;
+            var x = e.pageX - th.cumulativeOffset(this.canvas).left;
+            var y = e.pageY - th.cumulativeOffset(this.canvas).top;
 
             var nxy = { x: x, y: y };
 
@@ -1499,10 +1560,11 @@ th.ComponentHelpers = new Trait({
         },
 
         paintBackground: function(ctx, x, y, w, h) {
+            var d = this.d();
             if (x === undefined) x = 0;
             if (y === undefined) y = 0;
-            if (w === undefined) w = this.bounds.width;
-            if (h === undefined) h = this.bounds.height;
+            if (w === undefined) w = d.b.w;
+            if (h === undefined) h = d.b.h;
 
             if (this.cssValue("background-color")) {
                 ctx.fillStyle = this.cssValue("background-color");
@@ -1855,6 +1917,15 @@ th.ComponentHelpers = new Trait({
             if (prop.indexOf("border") != -1 || prop.indexOf("margin") != -1 || prop.indexOf("padding") != -1) {
                 delete this.insetCache;
             }
+        },
+
+        isInsideOf: function(ancestor) {
+            var parent = this.parent;
+            while (parent) {
+                if (parent === ancestor) return true;
+                parent = parent.parent;
+            }
+            return false;
         }
     }
 });
@@ -1864,6 +1935,10 @@ th.ContainerHelpers = new Trait({
         getChildById: function(id) {
             for (var i = 0; i < this.children.length; i++) {
                 if (this.children[i].id == id) return this.children[i];
+                if (th.isFunction(this.children[i].getChildById)) {
+                    var result = this.children[i].getChildById(id);
+                    if (result !== undefined) return result;
+                }
             }
         },
 
@@ -1903,6 +1978,182 @@ th.ContainerHelpers = new Trait({
         }
     }
 });
+
+th.BorderHelpers = new Trait({
+    methods: {
+        inset: function (r, d) {
+            if (typeof d == "number") {
+                r.x += d;
+                r.y += d;
+                r.w -= 2*d;
+                r.h -= 2*d;
+            } else if (th.isArray(d) && d.length == 4) {
+                r.x += d[0];
+                r.y += d[1];
+                r.w -= d[1] + d[3];
+                r.h -= d[0] + d[2];
+            }
+        },
+
+        cornerX: function (r, c) {
+            switch (c) {
+                case 0:
+                case 3:
+                    return r.x;
+                case 1:
+                case 2:
+                    return r.x + r.w;
+            }
+        },
+
+        cornerY: function (r, c) {
+            switch (c) {
+                case 0:
+                case 1:
+                    return r.y;
+                case 2:
+                case 3:
+                    return r.y + r.h;
+            }
+        },
+
+        round: function (r) {
+            r.x = Math.round(r.x);
+            r.y = Math.round(r.y);
+            r.w = Math.round(r.w);
+            r.h = Math.round(r.h);
+        },
+
+        emptyRect: function (r) {
+            return (r.w <= 0) || (r.h <= 0);
+        },
+
+        isZeroSize: function (s) {
+            return (s.w <= 0) && (s.h <= 0);
+        },
+
+
+        next: function (s) {
+            var i = (s + 1) % 4;
+            if (i < 0) return i + 4;
+            return i;
+        },
+
+        prev: function (s) {
+            var i = (s - 1) % 4;
+            if (i < 0) return i + 4;
+            return i;
+        },
+
+        allCornersZeroSize: function (arr) {
+            var isZero = this.isZeroSize;
+            return isZero(arr[0]) && isZero(arr[1]) && isZero(arr[2]) && isZero(arr[3]);
+        },
+
+        checkFourFloatsEqual: function (arr, f) { // this works for more than just floats :)
+            return (arr[0] == f && arr[1] == f && arr[2] == f && arr[3] == f);
+        },
+
+        getSpecial3DColors: function (aBackgroundColor, aColor, type) {
+            var aResult;
+            var f0, f1;
+            var c = parseInt(aColor.slice(1), 16);
+            var bgc = parseInt(aBackgroundColor.slice(1), 16);
+            var rb = c % 256;
+            var gb = (c >> 8) % 256;
+            var bb = (c >> 16) % 256;
+            var red = bgc % 256;
+            var green = (bgc >> 8) % 256;
+            var blue = (bgc >> 16) % 256;
+            var elementBrightness = (3691*rb + 6283*gb + 2026*bb) / 12000;
+            var backgroundBrightness = (3691*red + 6283*green + 2026*blue) / 12000;
+            if (backgroundBrightness < 51) {
+                f0 = 30;
+                f1 = 50;
+                if (elementBrightness == 0) {
+                    rb = gb = bb = 96;
+                }
+            } else if (backgroundBrightness > 204) {
+                f0 = 45;
+                f1 = 70;
+                if(elementBrightness == 254) {
+                    rb = gb = bb = 192;
+                }
+            } else {
+                f0 = 30 + (backgroundBrightness / 17);
+                f1 = 50 + (backgroundBrightness * 20 / 255);
+            }
+
+            if (type === "dark") {
+                r = rb - (f0 * rb / 100);
+                g = gb - (f0 * gb / 100);
+                b = bb - (f0 * bb / 100);
+                aResult = "rgb(" + parseInt(r) + "," + parseInt(g) + "," + parseInt(b) + ")"; // I suspect these string operations are damaging performance
+            } else if (type === "light") {
+                r = rb + (f1 * (255 - rb) / 100);
+                g = gb + (f1 * (255 - gb) / 100);
+                b = bb + (f1 * (255 - bb) / 100);
+                aResult = "rgb(" + parseInt(r) + "," + parseInt(g) + "," + parseInt(b) + ")";
+            }
+            return aResult;
+        },
+
+        computeInnerRadii: function (aRadii, borderSizes) {
+            var radii = [];
+            var rtl = aRadii[this.TOP_LEFT];
+            var rtr = aRadii[this.TOP_RIGHT];
+            var rbr = aRadii[this.BOTTOM_RIGHT];
+            var rbl = aRadii[this.BOTTOM_LEFT];
+
+            var t = borderSizes[0];
+            var r = borderSizes[1];
+            var b = borderSizes[2];
+            var l = borderSizes[3];
+            radii[this.TOP_LEFT] = {
+                w: Math.max(0, rtl.w - l),
+                h: Math.max(0, rtl.h - t)
+            };
+            radii[this.TOP_RIGHT] = {
+                w: Math.max(0, rtr.w - r),
+                h: Math.max(0, rtr.h - t)
+            };
+            radii[this.BOTTOM_RIGHT] = {
+                w: Math.max(0, rbr.w - r),
+                h: Math.max(0, rbr.h - b)
+            };
+            radii[this.BOTTOM_LEFT] = {
+                w: Math.max(0, rbl.w - l),
+                h: Math.max(0, rbl.h - b)
+            }
+            return radii;
+        },
+
+        traceRoundRect: function (ctx, rect, radii, clockwise) {
+            if (clockwise) {
+                ctx.moveTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
+                ctx.quadraticCurveTo(rect.x, rect.y, rect.x + radii[this.TOP_LEFT].w, rect.y);
+                ctx.lineTo(rect.x + rect.w - radii[this.TOP_RIGHT].w, rect.y);
+                ctx.quadraticCurveTo(rect.x + rect.w, rect.y, rect.x + rect.w, rect.y + radii[this.TOP_RIGHT].h);
+                ctx.lineTo(rect.x + rect.w, rect.y + rect.h - radii[this.BOTTOM_RIGHT].h);
+                ctx.quadraticCurveTo(rect.x + rect.w, rect.y + rect.h, rect.x + rect.w - radii[this.BOTTOM_RIGHT].w, rect.y + rect.h);
+                ctx.lineTo(rect.x + radii[this.BOTTOM_LEFT].w, rect.y + rect.h);
+                ctx.quadraticCurveTo(rect.x, rect.y + rect.h, rect.x, rect.y + rect.h - radii[this.BOTTOM_LEFT].h);
+                ctx.lineTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
+            } else {
+                ctx.moveTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
+                ctx.lineTo(rect.x, rect.y + rect.h - radii[this.BOTTOM_LEFT].h)
+                ctx.quadraticCurveTo(rect.x, rect.y + rect.h, rect.x + radii[this.BOTTOM_LEFT].w, rect.y + rect.h);
+                ctx.lineTo(rect.x + rect.w - radii[this.BOTTOM_RIGHT].w, rect.y + rect.h);
+                ctx.quadraticCurveTo(rect.x + rect.w, rect.y + rect.h, rect.x + rect.w, rect.y + rect.h - radii[this.BOTTOM_RIGHT].h);
+                ctx.lineTo(rect.x + rect.w, rect.y + radii[this.TOP_RIGHT].h);
+                ctx.quadraticCurveTo(rect.x + rect.w, rect.y, rect.x + rect.w - radii[this.TOP_RIGHT].w, rect.y);
+                ctx.lineTo(rect.x + radii[this.TOP_LEFT].w, rect.y);
+                ctx.quadraticCurveTo(rect.x, rect.y, rect.x, rect.y + radii[this.TOP_LEFT].h);
+            }
+        }
+    }
+});
+
 
 if (typeof th == "undefined") th = {};
 
@@ -2066,6 +2317,7 @@ th.Resources = Class.define({
                             }
                         }
 
+                        if (this.baseUrl) url = this.baseUrl + url;
                         image.src = url;
                         this.images[value] = image;
 
@@ -2203,39 +2455,111 @@ th.Bus = Class.define({
 });
 
 /*
-    FocusManager; handles focusing stuff, so that only one component (DOM or TH) can have the focus at once
+    FocusManager; handles focusing stuff
  */
+
 th.FocusManager = Class.define({
     members: {
         bus: null,
 
         KEY_TAB: 9,
 
-        init: function (eventBus) {
+        init: function (eventBus, domInputFirst, domInputLast) {
             this.bus = eventBus;
             this.subscribers = [];
-            this.focused = -1; // the current focused candicate as an index of this.subscribers
-            th.observe(window, "keydown", this.onKeyDown, this);
+            this.focused = undefined; // the current focused candicate
+            this.focusedIndex = -1; // index of this.focused in this.subscribers
+            this.domInputFirst = domInputFirst;
+            this.domInputLast = domInputLast;
+            this.domHasFocus = undefined;   // can be undfined if no input is focused or domInputFirst | domInputLast
+            this.ignoreDomEvent = false;
+
+            th.observe(this.domInputFirst, "focus", this.enterFirst, this);
+            th.observe(this.domInputFirst, "blur", this.domFocusLost, this);
+            th.observe(this.domInputFirst, "keydown", this.handleKeyDown, this);
+
+            th.observe(this.domInputLast, "focus", this.enterLast, this);
+            th.observe(this.domInputLast, "blur", this.domFocusLost, this)
+            th.observe(this.domInputLast, "keydown", this.handleKeyDown, this);
         },
 
-        onKeyDown: function (e) {
-            if (e.keyCode == this.KEY_TAB && this.subscribers.length != 0) {
-                e.preventDefault();
-                if (this.focused == -1) {
-                    return;
+        enterFirst: function (e) {
+            this.domHasFocus = this.domInputFirst;
+
+            if (this.ignoreDomEvent) return;
+            if (this.subscribers.length == -1) return;
+
+            this.focus(this.subscribers[0]);
+            this.ignoreDomScroll = true;
+        },
+
+        enterLast: function (e) {
+            this.domHasFocus = this.domInputLast;
+
+            if (this.ignoreDomEvent) return;
+            if (this.subscribers.length == -1) return;
+
+            this.focus(th.lastArrayItem(this.subscribers));
+
+            this.ignoreDomScroll = true;
+        },
+
+        domFocusLost: function (e) {
+            if (this.ignoreDomEvent) return;
+
+            if (this.focused !== undefined) {
+                if (th.isFunction(this.focused.allowLoseFocus)) {
+                    if (!this.focused.allowLoseFocus(e)) {
+                        this.focus(this.focused);
+                        return;
+                    }
                 }
-                var newFocus;
-                var focusedComponent = this.subscribers[this.focused];
-                if (e.shiftKey == false)
-                {
-                    newFocus = (focusedComponent.focusNext !== undefined ? this.subscribers.indexOf(focusedComponent.focusNext) : this.focused + 1);
-                } else {
-                    newFocus = (focusedComponent.focusPrev !== undefined ? this.subscribers.indexOf(focusedComponent.focusPrev) : this.focused - 1);
-                }
-                newFocus %= this.subscribers.length;
-                if (newFocus < 0) newFocus +=  this.subscribers.length;
-                this.focus(this.subscribers[newFocus]);
             }
+
+            this.bus.fire("focus:lost", e, this.focused);
+            delete this.focused;
+            delete this.domHasFocus;
+            this.focusedIndex = -1;
+        },
+
+        handleKeyDown: function (e) {
+            if (this.focused === undefined) return;
+
+            if (e.keyCode == this.KEY_TAB && this.subscribers.length != 0) {
+                var focusOutOfScene = false;
+                if (e.shiftKey == false) {
+                    if (this.focused.focusNext === undefined) {
+                        this.focusedIndex++;
+                        if (this.focusedIndex >= this.subscribers.length) {
+                            focusOutOfScene = true;
+                        } else {
+                            this.focus(this.subscribers[this.focusedIndex]);
+                        }
+                    } else {
+                        this.focus(this.focused.focusNext);
+                    }
+                } else {
+                    if (this.focused.focusPrev === undefined) {
+                        this.focusedIndex--;
+                        if (this.focusedIndex <= -1) {
+                            focusOutOfScene = true;
+                        } else {
+                            this.focus(this.subscribers[this.focusedIndex]);
+                        }
+                    } else {
+                        this.focus(this.focused.focusPrev);
+                    }
+                }
+                if (!focusOutOfScene) {
+                    th.stopEvent(e);
+                } else {
+                    delete this.domHasFocus;
+                }
+                return;
+            }
+
+            e.focusManager = this;
+            this.bus.fire("keydown", e, this.focused);
         },
 
         focus: function (component) {
@@ -2244,46 +2568,39 @@ th.FocusManager = Class.define({
                 console.error('FocusManager:focus: no such subscribed component!');
                 return;
             }
-            if (index == this.focused) {
-                console.debug('FocusManager:focus: refocus the component???')
-            }
 
             e = {};
-            e.getsFocus = component;
-            if (this.focused != -1) {
-                var focused = this.subscribers[this.focused];
-                if (focused.allowLoseFocus !== undefined) {
-                    if (!focused.allowLoseFocus(e)) {
-                        if (focused.dom || component.dom) {
-                            th.delay(function() {
-                                this.bus.fire("focus:received", e, focused);
-                                this.bus.fire("focus:canceled", e, component);
-                            }, 0, this);
-                        }
+            e.newFocused = component;
+            e.focusManager = this;
+            if (this.focused !== undefined && component !== this.focused) {
+                if (th.isFunction(this.focused.allowLoseFocus)) {
+                    if (!this.focused.allowLoseFocus(e)) {
 
-                        return;
+                        this.focusedIndex = this.subscribers.indexOf(this.focused);
+                        return false;
                     }
                 }
             }
 
-            if (this.focused != -1) {
-                 this.bus.fire("focus:lost", e, this.subscribers[this.focused]);
-             }
-             this.focused = index;
-             this.bus.fire("focus:received", e, this.subscribers[this.focused]);
-        },
+            if (this.focused !== undefined) {
+                this.bus.fire("focus:lost", e, this.focused);
+            }
 
-        forceFocus: function (component) {
-            var index = this.subscribers.indexOf(component);
-            if (index == -1) {
-                console.error('FocusManager:focus: no such subscribed component!');
-                return;
+            this.focusedIndex = index;
+            this.focused = component;
+            this.bus.fire("focus:received", e, this.focused);
+
+            if (this.focusedIndex == this.subscribers.length - 1) {
+                this.ignoreDomEvent = true;
+                this.domInputLast.focus();
+                this.ignoreDomEvent = false;
+            } else if (this.focusedIndex == 0 || this.domHasFocus === undefined) {
+                this.ignoreDomEvent = true;
+                this.domInputFirst.focus();
+                this.ignoreDomEvent = false;
             }
-            if (this.focused != -1) {
-                this.bus.fire("focus:lost", {}, this.subscribed[this.focused]);
-            }
-            this.focused = index;
-            this.bus.fire("focus:received", {}, this.subscribers[this.focused]);
+
+            return true;
         },
 
         subscribe: function (component) {
@@ -2321,7 +2638,7 @@ th.global_event_bus = new th.Bus();
 
 th.global_resources = new th.Resources();
 
-th.global_focus_manager = new th.FocusManager(th.global_event_bus);
+th.global_scene_array = new Array();
 
 th.Scene = Class.define({
     uses: [
@@ -2336,6 +2653,7 @@ th.Scene = Class.define({
                 canvasOrId = document.getElementById("canvasOrId");
             }
             this.canvas = canvasOrId;
+            this.id = this.canvas.id;
 
             var baseUrl = baseUrlOrParams;
             var stringStyles = "";
@@ -2404,6 +2722,18 @@ th.Scene = Class.define({
 
                 delete this.mouseDownComponent;
             }, this);
+
+            th.global_scene_array.push(this);
+        },
+
+        getChildById: function(id) {
+            for (var i = 0; i < this.root.children.length; i++) {
+                if (this.root.children[i].id == id) return this.root.children[i];
+                if (th.isFunction(this.root.children[i].getChildById)) {
+                    var result = this.root.children[i].getChildById(id);
+                    if (result !== undefined) return result;
+                }
+            }
         },
 
         render: function(callback) {
@@ -2556,195 +2886,6 @@ th.Scene = Class.define({
     }
 });
 
-/*th.Rectangle = Class.define({
-    members: {
-        TOP: 0,     TOP_LEFT: 0,
-        RIGHT: 1,   TOP_RIGHT: 1,
-        BOTTOM: 2,  BOTTOM_RIGHT:2,
-        LEFT: 3,    BOTTOM_LEFT: 3,
-
-        init: function () {
-            if (arguments.length == 1) {
-                this.x = arguments[0].x;
-                this.y = arguments[0].y;
-                this.w = arguments[0].w;
-                this.h = arguments[0].h;
-            } else if (arguments.length == 4) {
-                this.x = arguments[0];
-                this.y = arguments[1];
-                this.w = arguments[2];
-                this.h = arguments[3];
-            } else {
-                this.x = this.y = this.w = this.h = 0;
-            }
-        },
-
-        round: function () {
-            this.x = Math.round(this.x);
-            this.y = Math.round(this.y);
-            this.w = Math.round(this.w);
-            this.h = Math.round(this.h);
-        },
-
-        inset: function () {
-            if (arguments.length == 1) {
-                var d = arguments[0];
-                if (typeof d == "number") {
-                    this.x +=d;
-                    this.y +=d;
-                    this.w -= 2*d;
-                    this.h -= 2*d;
-                } else if ((d instanceof Array) && d.length == 4) {
-                    this.x += d[this.LEFT];
-                    this.y += d[this.TOP];
-                    this.w -= d[this.RIGHT] + d[this.LEFT];
-                    this.h -= d[this.TOP] + d[this.BOTTOM];
-                }
-            } else if (arguments.length == 4) {
-                var top = arguments[0];
-                var right = arguments[1];
-                var bottom = arguments[2];
-                var left = arguments[3];
-
-                this.x += left;
-                this.y += top;
-                this.w -= left + right;
-                this.h -= top + bottom;
-            }
-        },
-
-        corner: function (corner) {
-            switch (corner) {
-                case this.TOP_LEFT:
-                    return {x: this.x, y: this.y};
-                case this.TOP_RIGHT:
-                    return {x: this.x + this.w, y: this.y};
-                case this.BOTTOM_RIGHT:
-                    return {x: this.x + this.w, y: this.y + this.h};
-                case this.BOTTOM_LEFT:
-                    return {x: this.x, y: this.y + this.h};
-            }
-        },
-
-        isEmpty: function () {
-            return (this.w <= 0 || this.h <= 0);
-        }
-    }
-});*/
-
-th.Rectangle = function () {
-    if (arguments.length == 1) {
-        this.x = arguments[0].x;
-        this.y = arguments[0].y;
-        this.w = arguments[0].w;
-        this.h = arguments[0].h;
-    } else if (arguments.length == 4) {
-        this.x = arguments[0];
-        this.y = arguments[1];
-        this.w = arguments[2];
-        this.h = arguments[3];
-    } else {
-        this.x = this.y = this.w = this.h = 0;
-    }
-};
-
-th.Rectangle.prototype.TOP = 0;
-th.Rectangle.prototype.RIGHT = 1;
-th.Rectangle.prototype.BOTTOM = 2;
-th.Rectangle.prototype.LEFT = 3;
-th.Rectangle.prototype.TOP_LEFT = 0;
-th.Rectangle.prototype.TOP_RIGHT = 1;
-th.Rectangle.prototype.BOTTOM_RIGHT = 2;
-th.Rectangle.prototype.BOTTOM_LEFT = 3;
-
-th.Rectangle.prototype.round = function () {
-    this.x = Math.round(this.x);
-    this.y = Math.round(this.y);
-    this.w = Math.round(this.w);
-    this.h = Math.round(this.h);
-};
-
-th.Rectangle.prototype.inset = function () {
-    if (arguments.length == 1) {
-        var d = arguments[0];
-        if (typeof d == "number") {
-            this.x +=d;
-            this.y +=d;
-            this.w -= 2*d;
-            this.h -= 2*d;
-        } else if ((d instanceof Array) && d.length == 4) {
-            this.x += d[this.LEFT];
-            this.y += d[this.TOP];
-            this.w -= d[this.RIGHT] + d[this.LEFT];
-            this.h -= d[this.TOP] + d[this.BOTTOM];
-        }
-    } else if (arguments.length == 4) {
-        var top = arguments[0];
-        var right = arguments[1];
-        var bottom = arguments[2];
-        var left = arguments[3];
-
-        this.x += left;
-        this.y += top;
-        this.w -= left + right;
-        this.h -= top + bottom;
-    }
-};
-
-th.Rectangle.prototype.corner = function (corner) {
-    switch (corner) {
-        case this.TOP_LEFT:
-            return {x: this.x, y: this.y};
-        case this.TOP_RIGHT:
-            return {x: this.x + this.w, y: this.y};
-        case this.BOTTOM_RIGHT:
-            return {x: this.x + this.w, y: this.y + this.h};
-        case this.BOTTOM_LEFT:
-            return {x: this.x, y: this.y + this.h};
-    }
-};
-
-th.Rectangle.prototype.isEmpty = function () {
-    return (this.w <= 0 || this.h <= 0);
-};
-
-/*th.Size2D = Class.define({
-    type: "Size2D",
-    members: {
-        init: function () {
-            if (arguments.length == 1) {
-                this.w = arguments[0].w;
-                this.h = arguments[0].h;
-            } else if (arguments.length == 2) {
-                this.w = arguments[0];
-                this.h = arguments[1];
-            } else {
-                this.w = this.h = 0;
-            }
-        },
-
-        isZero: function () {
-            return (this.w == 0) && (this.h == 0);
-        }
-    }
-});*/
-
-th.Size2D = function () {
-    if (arguments.length == 1) {
-        this.w = arguments[0].w;
-        this.h = arguments[0].h;
-    } else if (arguments.length == 2) {
-        this.w = arguments[0];
-        this.h = arguments[1];
-    } else {
-        this.w = this.h = 0;
-    }
-};
-
-th.Size2D.prototype.isZero = function () {
-    return (this.w == 0) && (this.h == 0);
-};
-
 th.SimpleBorder = Class.define({
     type: "Border",
 
@@ -2821,7 +2962,8 @@ th.Border = Class.define({
     type: "Border",
 
     uses: [
-        th.ComponentHelpers
+        th.ComponentHelpers,
+        th.BorderHelpers
     ],
 
     members: {
@@ -2841,8 +2983,8 @@ th.Border = Class.define({
         init: function (component) {
             this.component = component;
 
-            this.outerRect = new th.Rectangle();
-            this.innerRect = new th.Rectangle();
+            this.outerRect = {x: 0, y: 0, w: 0, h: 0};
+            this.innerRect = {x: 0, y: 0, w: 0, h: 0};
 
             this.borderStyles = [];
             this.borderWidths = [];
@@ -2851,15 +2993,17 @@ th.Border = Class.define({
             this.skipSides = 0;
             this.oneUnitBorder = false;
             this.noBorderRadius = false;
-            this.cornerDimensions = {};
+            this.cornerDimensions = [];
 
             for (var i = 0; i < 4; i++) {
                 this.borderStyles[i] = "none";
                 this.borderWidths[i] = 0;
                 this.borderColors[i] = "rgba(0, 0, 0, 0)";
-                this.borderRadii[i] = new th.Size2D();
-                this.cornerDimensions[i] = new th.Size2D();
+                this.borderRadii[i] = {w: 0, h: 0};
+                this.cornerDimensions[i] = {w: 0, h: 0};
             }
+
+            this.borderDataCalculated = false;
         },
 
         getInsets: function() {
@@ -2884,9 +3028,9 @@ th.Border = Class.define({
                 this.borderStyles[i] = (x3 === undefined) ? "none" : x3;
             }
 
-            this.outerRect = new th.Rectangle(0, 0, d.b.w, d.b.h);
-            this.innerRect = new th.Rectangle(this.outerRect);
-            this.innerRect.inset(this.borderWidths[0], this.borderWidths[1], this.borderWidths[2], this.borderWidths[3]);
+            this.outerRect = {x: 0, y: 0, w: d.b.w, h: d.b.h};
+            this.innerRect = {x: 0, y: 0, w: d.b.w, h: d.b.h};
+            this.inset(this.innerRect, this.borderWidths);
 
             this.cornerDimensions[0].w = this.borderWidths[3];
             this.cornerDimensions[0].h = this.borderWidths[0];
@@ -2904,26 +3048,8 @@ th.Border = Class.define({
                 tmpctx.fillStyle = borderSideColor;
             }
             this.backgroundColor = tmpctx.fillStyle;
-        },
 
-        next: function (s) {
-            var i = (s + 1) % 4;
-            if (i < 0) return i + 4;
-            return i;
-        },
-
-        prev: function (s) {
-            var i = (s - 1) % 4;
-            if (i < 0) return i + 4;
-            return i;
-        },
-
-        allCornersZeroSize: function (arr) {
-            return (arr[0].isZero() && arr[1].isZero() && arr[2].isZero() && arr[3].isZero());
-        },
-
-        checkFourFloatsEqual: function (arr, f) { // this works for more than just floats :)
-            return (arr[0] == f && arr[1] == f && arr[2] == f && arr[3] == f);
+            this.borderDataCalculated = true;
         },
 
         areBorderSideFinalStylesSame: function (aSides) {
@@ -3023,12 +3149,12 @@ th.Border = Class.define({
                 offset.y = this.cornerDimensions[this.TOP_LEFT].h;
             }
 
-            var sideCornerSum = new th.Size2D();
+            var sideCornerSum = {w: 0, h: 0};
             sideCornerSum.w = this.cornerDimensions[aSide].w + this.cornerDimensions[nextSide].w;
             sideCornerSum.h = this.cornerDimensions[aSide].h + this.cornerDimensions[nextSide].h;
 
-            var rect = new th.Rectangle(this.outerRect.x + offset.x, this.outerRect.y + offset.y,
-                    this.outerRect.w - sideCornerSum.w, this.outerRect.h - sideCornerSum.h);
+            var rect = {x: this.outerRect.x + offset.x, y: this.outerRect.y + offset.y,
+                        w: this.outerRect.w - sideCornerSum.w, h: this.outerRect.h - sideCornerSum.h};
 
             if (aSide == this.TOP || aSide == this.BOTTOM)
                 rect.h = this.borderWidths[aSide];
@@ -3045,13 +3171,14 @@ th.Border = Class.define({
                 k = Math.min((aMidPoint.x - aP0.x) / ps.x,
                         (aMidPoint.y - aP1.y) / ps.y);
                 aP1.x = aP0.x + ps.x * k;
-                aP1.y = aP0.y + px.y * k;
+                aP1.y = aP0.y + ps.y * k;
             }
         },
 
         doSideClipSubPath: function (ctx, aSide) {
-            var start = [{x:0, y:0}, {x:0, y:0}];
-            var end = [{x:0, y:0}, {x:0, y:0}];
+            var corner = this.corner; // function caching
+            var start = [{x: 0, y: 0}, {x: 0, y: 0}];
+            var end = [{x: 0, y: 0}, {x: 0, y: 0}];
             var prevSide = this.prev(aSide);
             var nextSide = this.next(aSide);
 
@@ -3062,12 +3189,12 @@ th.Border = Class.define({
             var startType = 0; // Trapezoid
             var endType = 0; // Trapezoid
 
-            if (!this.borderRadii[aSide].isZero())
+            if (!this.isZeroSize(this.borderRadii[aSide]))
                 startType = 1; // Trapezoid Full
             else if (startIsDashed && isDashed)
                 startType = 2; // Rectangle
 
-            if (!this.borderRadii[nextSide].isZero())
+            if (!this.isZeroSize(this.borderRadii[nextSide]))
                 endType = 1; // Trapezoid Full
             else if (startIsDashed && isDashed)
                 endType = 2; // Rectangle
@@ -3076,32 +3203,39 @@ th.Border = Class.define({
             midPoint.x = this.innerRect.x + this.innerRect.w / 2.0;
             midPoint.y = this.innerRect.y + this.innerRect.h / 2.0;
 
-            start[0] = this.outerRect.corner(aSide);
-            start[1] = this.innerRect.corner(aSide);
+            var cornerX = this.cornerX, cornerY = this.cornerY;
+            start[0].x = cornerX(this.outerRect, aSide);
+            start[0].y = cornerY(this.outerRect, aSide);
+            start[1].x = cornerX(this.innerRect, aSide);
+            start[1].y = cornerY(this.innerRect, aSide);
 
-            end[0] = this.outerRect.corner(nextSide);
-            end[1] = this.innerRect.corner(nextSide);
+            end[0].x = cornerX(this.outerRect, nextSide);
+            end[0].y = cornerY(this.outerRect, nextSide);
+            end[1].x = cornerX(this.innerRect, nextSide);
+            end[1].y = cornerY(this.innerRect, nextSide);
 
             if (startType == 1) { // Trapezoid Full
                 this.maybeMoveToMidPoint(start[0], start[1], midPoint);
             } else if (startType == 2) { // Rectangle
-                if (side == "top" || side == "bottom")
-                    start[1] = {x: this.outerRect.corner(aSide).x,
-                        y: this.innerRect.corner(aSide).y};
-                else
-                    start[1] = {x: this.innerRect.corner(aSide).x,
-                        y: this.outerRect.corner(aSide).y};
+                if (side == "top" || side == "bottom") {
+                    start[1].x = cornerX(this.outerRect, aSide);
+                    start[1].y = cornerY(this.innerRect, aSide);
+                } else {
+                    start[1].x = cornerX(this.innerRect, aSide);
+                    start[1].y = cornerY(this.outerRect, aSide);
+                }
             }
 
             if (endType == 1) { // Trapezoid Full
                 this.maybeMoveToMidPoint(end[0], end[1], midPoint);
             } else if (endType == 2) { // Rectangle
-                if (side == "top" || side == "bottom")
-                    end[0] = {x: this.innerRect.corner(nextSide).x,
-                        y: this.outerRect.corner(nextSide).y};
-                else
-                    end[0] = {x: this.outerRect.corner(nextSide).x,
-                        y: this.innerRect.corner(nextSide).y};
+                if (side == "top" || side == "bottom") {
+                    end[0].x = cornerX(this.innerRect, nextSide);
+                    end[0].y = cornerY(this.outerRect, nextSide);
+                } else {
+                    end[0].x = cornerX(this.outerRect, nextSide);
+                    end[0].y = cornerY(this.innerRect, nextSide);
+                }
             }
 
             ctx.moveTo(start[0].x, start[0].y);
@@ -3113,7 +3247,7 @@ th.Border = Class.define({
 
         fillSolidBorder: function (ctx, outerRect, innerRect, borderRadii, borderSizes, aSides, color) {
             ctx.fillStyle = color;
-            if (!this.allCornersZeroSize(borderRadii)) {
+            if (borderRadii !== undefined && !this.allCornersZeroSize(borderRadii)) {
                 var innerRadii = this.computeInnerRadii(borderRadii, borderSizes);
                 ctx.beginPath();
                 this.traceRoundRect(ctx, outerRect, borderRadii, true);
@@ -3123,8 +3257,9 @@ th.Border = Class.define({
             }
 
             if (aSides == 15 && this.checkFourFloatsEqual(borderSizes, borderSizes[0])) {
-                var r = new th.Rectangle(outerRect);
-                r.inset(borderSizes[0] / 2.0);
+                var or = outerRect;
+                var r = {x: or.x, y: or.y, w: or.w, h: or.h};
+                this.inset(r, borderSizes[0] / 2.0);
                 ctx.strokeStyle = color;
                 ctx.lineWidth = borderSizes[0];
                 ctx.beginPath();
@@ -3133,113 +3268,63 @@ th.Border = Class.define({
                 return;
             }
 
-            var r = [
-                {x:0, y:0, w:0, h:0},
-                {x:0, y:0, w:0, h:0},
-                {x:0, y:0, w:0, h:0},
-                {x:0, y:0, w:0, h:0}
-            ];
+            var rtx, rty, rtw, rth;
+            var rrx, rry, rrw, rrh;
+            var rbx, rby, rbw, rbh;
+            var rlx, rly, rlw, rlh;
 
-            if (aSides & this.BIT_TOP) {
-                r[this.TOP].x = outerRect.x;
-                r[this.TOP].y = outerRect.y;
-                r[this.TOP].w = outerRect.w;
-                r[this.TOP].h = borderSizes[this.TOP];
+            if (aSides & 1) { // top
+                rtx = outerRect.x;
+                rty = outerRect.y;
+                rtw = outerRect.w;
+                rth = borderSizes[0];
             }
-            if (aSides & this.BIT_BOTTOM) {
-                r[this.BOTTOM].x = outerRect.x;
-                r[this.BOTTOM].y = outerRect.y + outerRect.h;
-                r[this.BOTTOM].y -= borderSizes[this.BOTTOM];
-                r[this.BOTTOM].w = outerRect.w;
-                r[this.BOTTOM].h = borderSizes[this.BOTTOM];
+            if (aSides & 4) { // bottom
+                rbx = outerRect.x;
+                rby = outerRect.y + outerRect.h - borderSizes[2];
+                rbw = outerRect.w;
+                rbh = borderSizes[2];
             }
-            if (aSides & this.BIT_LEFT) {
-                r[this.LEFT].x = outerRect.x;
-                r[this.LEFT].y = outerRect.y;
-                r[this.LEFT].w = borderSizes[this.LEFT];
-                r[this.LEFT].h = outerRect.h;
+            if (aSides & 8) { // left
+                rlx = outerRect.x;
+                rly = outerRect.y;
+                rlw = borderSizes[3];
+                rlh = outerRect.h;
             }
-            if (aSides & this.BIT_RIGHT) {
-                r[this.RIGHT].x = outerRect.x + outerRect.w;
-                r[this.RIGHT].y = outerRect.y;
-                r[this.RIGHT].x -= borderSizes[this.RIGHT];
-                r[this.RIGHT].w = borderSizes[this.RIGHT];
-                r[this.RIGHT].h = outerRect.h;
+            if (aSides & 2) { // right
+                rrx = outerRect.x + outerRect.w - borderSizes[1];
+                rry = outerRect.y;
+                rrw = borderSizes[1];
+                rrh = outerRect.h;
             }
 
-            if ((aSides & (this.BIT_TOP | this.BIT_LEFT)) == (this.BIT_TOP | this.BIT_LEFT)) {
-                r[this.LEFT].y += borderSizes[this.TOP];
-                r[this.LEFT].h -= borderSizes[this.TOP];
+            if ((aSides & 9) == 9) {
+                rly += borderSizes[0];
+                rlh -= borderSizes[0];
             }
-            if ((aSides & (this.BIT_TOP | this.BIT_RIGHT)) == (this.BIT_TOP | this.BIT_RIGHT)) {
-                r[this.TOP].w -= borderSizes[this.RIGHT];
+            if ((aSides & 3) == 3) {
+                rtw -= borderSizes[1];
             }
-            if ((aSides & (this.BIT_BOTTOM | this.BIT_RIGHT)) == (this.BIT_BOTTOM | this.BIT_RIGHT)) {
-                r[this.RIGHT].h -= borderSizes[this.BOTTOM];
+            if ((aSides & 6) == 6) {
+                rrh -= borderSizes[2];
             }
-            if ((aSides & (this.BIT_BOTTOM | this.BIT_LEFT)) == (this.BIT_BOTTOM | this.BIT_LEFT)) {
-                r[this.BOTTOM].x += borderSizes[this.LEFT];
-                r[this.BOTTOM].w -= borderSizes[this.LEFT];
-            }
-
-            for (var i = 0; i < 4; i++) {
-                if (aSides & (1 << i)) {
-                    ctx.beginPath();
-                    ctx.rect(r[i].x, r[i].y, r[i].w, r[i].h);
-                    ctx.fill();
-                }
-            }
-        },
-
-        getLuminosity: function (r, g, b) {
-            return r * 299 + g * 587 + b * 114;
-        },
-
-        getBrightness: function (r, g, b) {
-            var intensity = (r + g + b) / 3;
-            var luminosity = this.getLuminosity(r, g, b) / 1000;
-            return (intensity * 25 + luminosity * 75) / 100;
-        },
-
-        getSpecial3DColors: function (aBackgroundColor, aColor) {
-            var aResult = [];
-            var f0, f1;
-            var rb = parseInt(aColor.substring(1, 2), 16);
-            var gb = parseInt(aColor.substring(3, 2), 16);
-            var bb = parseInt(aColor.substring(5, 2), 16);
-            var red = parseInt(aBackgroundColor.substring(1, 2), 16);
-            var green = parseInt(aBackgroundColor.substring(3, 2), 16);
-            var blue = parseInt(aBackgroundColor.substring(5, 2), 16);
-            var elementBrightness = this.getBrightness(rb, gb, bb);
-            var backgroundBrightness = this.getBrightness(red, green, blue);
-            if (backgroundBrightness < 51) {
-                f0 = 30;
-                f1 = 50;
-                if (elementBrightness == 0) {
-                    rb = gb = bb = 96;
-                }
-            } else if (backgroundBrightness > 204) {
-                f0 = 45;
-                f1 = 70;
-                if(elementBrightness == 254) {
-                    rb = gb = bb = 192;
-                }
-            }else {
-                f0 = 30 + (backgroundBrightness / 17);
-                f1 = 50 + (backgroundBrightness * 20 / 255);
+            if ((aSides & 12) == 12) {
+                rbx += borderSizes[3];
+                rbw -= borderSizes[3];
             }
 
-            r = rb - (f0 * rb / 100);
-            g = gb - (f0 * gb / 100);
-            b = bb - (f0 * bb / 100);
-            aResult[0] = "rgb(" + parseInt(r) + "," + parseInt(g) + "," + parseInt(b) + ")";
-
-            r = rb + (f1 * (255 - rb) / 100);
-            g = gb + (f1 * (255 - gb) / 100);
-            b = bb + (f1 * (255 - bb) / 100);
-            aResult[1] = "rgb(" + parseInt(r) + "," + parseInt(g) + "," + parseInt(b) + ")";
-
-            return aResult;
+            if (aSides & 1) {
+                ctx.fillRect(rtx, rty, rtw, rth);
+            }
+            if (aSides & 2) {
+                ctx.fillRect(rrx, rry, rrw, rrh);
+            }
+            if (aSides & 4) {
+                ctx.fillRect(rbx, rby, rbw, rbh);
+            }
+            if (aSides & 8) {
+                ctx.fillRect(rlx, rly, rlw, rlh);
+            }
         },
 
         makeBorderColor: function (aColor, aBackgroundColor, aBorderColorStyle) {
@@ -3247,12 +3332,10 @@ th.Border = Class.define({
             var k = 0;
             switch (aBorderColorStyle) {
                 case "none":
-                    return "rgba(0, 0, 0, 0)";
+                    return "rgb(0, 0, 0)";
                 case "light":
-                    k = 1;
                 case "dark":
-                    colors = this.getSpecial3DColors(aBackgroundColor, aColor);
-                    return colors[k];
+                    return this.getSpecial3DColors(aBackgroundColor, aColor, aBorderColorStyle);
                 case "solid":
                 default:
                     return aColor;
@@ -3349,8 +3432,8 @@ th.Border = Class.define({
             } else if (borderColorStyleCount == 2) {
                 for (var i = 0; i < 4; i++) {
                     var w = this.borderWidths[i];
-                    borderWidths[0][i] = Math.floor(w / 2) + w % 2;
-                    borderWidths[1][i] = Math.floor(w / 2);
+                    borderWidths[0][i] = parseInt(w / 2) + w % 2;
+                    borderWidths[1][i] = parseInt(w / 2);
                 }
             } else if (borderColorStyleCount == 3) {
                 for (var i = 0; i < 4; i++) {
@@ -3360,7 +3443,7 @@ th.Border = Class.define({
                         borderWidths[1][i] = borderWidths[2][i] = 0.0;
                     } else {
                         var rest = w % 3;
-                        borderWidths[0][i] = borderWidths[2][i] = borderWidths[1][i] = Math.floor((w - rest) / 3);
+                        borderWidths[0][i] = borderWidths[2][i] = borderWidths[1][i] = parseInt((w - rest) / 3);
                         if (rest == 1) {
                             borderWidths[1][i]++;
                         } else if (rest == 2) {
@@ -3371,22 +3454,22 @@ th.Border = Class.define({
                 }
             }
 
-            var oRect = new th.Rectangle(this.outerRect);
-            var iRect = new th.Rectangle(this.outerRect);
-
-            var radii = this.copyRadii(this.borderRadii);
-
+            var or = this.outerRect;
+            var oRect = {x: or.x, y: or.y, w: or.w, h: or.h};
+            var iRect = {x: or.x, y: or.y, w: or.w, h: or.h};
+            var radii;
+            if (!this.noBorderRadius) radii = th.clone(this.borderRadii);
+            var bw;
             for (var i = 0; i < borderColorStyleCount; i++) {
-                iRect.inset(borderWidths[i]);
+                bw = borderWidths[i];
+                this.inset(iRect, bw);
 
                 if (borderColorStyle[i] != "none") {
-                    var color = this.computeColorForLine(i, borderColorStyle,
-                            borderColorStyleCount, borderRenderColor,
-                            this.backgroundColor);
-                    this.fillSolidBorder(ctx, oRect, iRect, radii, borderWidths[i], aSides, color);
+                    var color = this.computeColorForLine(i, borderColorStyle, borderColorStyleCount, borderRenderColor, this.backgroundColor);
+                    this.fillSolidBorder(ctx, oRect, iRect, radii, bw, aSides, color);
                 }
 
-                radii = this.computeInnerRadii(radii, borderWidths[i]);
+                if (!this.noBorderRadius) radii = this.computeInnerRadii(radii, bw);
 
                 oRect.x = iRect.x;
                 oRect.y = iRect.y;
@@ -3398,7 +3481,9 @@ th.Border = Class.define({
         paint: function (ctx) {
             var b = this.component.d();
 
-            this.recalculateBorderData();
+            var isZero = this.isZeroSize; // caching the function for optimization
+
+            if (!this.borderDataCalculated) this.recalculateBorderData();
 
             var tlBordersSame = this.areBorderSideFinalStylesSame(1|8); // top+left
             var brBordersSame = this.areBorderSideFinalStylesSame(2|4); // bottom+right
@@ -3408,10 +3493,10 @@ th.Border = Class.define({
                         this.borderStyles[0] == "hidden"))
                 return;
 
-            this.outerRect.round();
-            this.innerRect.round();
+            this.round(this.outerRect);
+            this.round(this.innerRect);
 
-            if (this.outerRect.isEmpty())
+            if (this.emptyRect(this.outerRect))
                 return;
 
             if (allBordersSame) {
@@ -3419,7 +3504,7 @@ th.Border = Class.define({
             } else {
                 for (var corner = 0; corner < 4; corner++) {
                     var sides = [corner, this.prev(corner)];
-                    if (!this.borderRadii[corner].isZero())
+                    if (!isZero(this.borderRadii[corner]))
                         continue;
 
                     if (this.borderWidths[sides[0]] == 1 && this.borderWidths[sides[1]] == 1) {
@@ -3431,14 +3516,14 @@ th.Border = Class.define({
                 }
 
                 for (var corner = 0; corner < 4; corner++) {
-                    if (this.cornerDimensions[corner].isZero())
+                    if (isZero(this.cornerDimensions[corner]))
                         continue;
 
                     var sides = [corner, this.prev(corner)];
                     var sideBits = (1 << sides[0]) | (1 << sides[1]);
 
                     var simpleCornerStyle = this.areBorderSideFinalStylesSame(sideBits);
-                    if (simpleCornerStyle && this.borderRadii[corner].isZero() && this.isSolidCornerStyle(this.borderStyles[sides[0]], corner)) {
+                    if (simpleCornerStyle && isZero(this.borderRadii[corner]) && this.isSolidCornerStyle(this.borderStyles[sides[0]], corner)) {
                         ctx.beginPath();
                         this.doCornerSubPath(ctx, corner);
                         ctx.fillStyle = this.makeBorderColor(
@@ -3504,59 +3589,6 @@ th.Border = Class.define({
                     this.drawBorderSides(ctx, 1 << side);
                     ctx.restore();
                 }
-            }
-        },
-
-        computeInnerRadii: function (aRadii, borderSizes) {
-            var radii = {};
-            radii[this.TOP_LEFT] = new th.Size2D(
-                Math.max(0.0, aRadii[this.TOP_LEFT].w - borderSizes[3]),
-                Math.max(0.0, aRadii[this.TOP_LEFT].h - borderSizes[0])
-            );
-            radii[this.TOP_RIGHT] = new th.Size2D(
-                Math.max(0.0, aRadii[this.TOP_RIGHT].w - borderSizes[1]),
-                Math.max(0.0, aRadii[this.TOP_RIGHT].h - borderSizes[0])
-            );
-            radii[this.BOTTOM_RIGHT] = new th.Size2D(
-                Math.max(0.0, aRadii[this.BOTTOM_RIGHT].w - borderSizes[1]),
-                Math.max(0.0, aRadii[this.BOTTOM_RIGHT].h - borderSizes[2])
-            );
-            radii[this.BOTTOM_LEFT] = new th.Size2D(
-                Math.max(0.0, aRadii[this.BOTTOM_LEFT].w - borderSizes[3]),
-                Math.max(0.0, aRadii[this.BOTTOM_LEFT].h - borderSizes[2])
-            );
-            return radii;
-        },
-
-        copyRadii: function (radii) {
-            var r = {};
-            for (c in radii) {
-                r[c] = new th.Size2D(radii[c]);
-            }
-            return r;
-        },
-
-        traceRoundRect: function (ctx, rect, radii, clockwise) {
-            if (clockwise) {
-                ctx.moveTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
-                ctx.quadraticCurveTo(rect.x, rect.y, rect.x + radii[this.TOP_LEFT].w, rect.y);
-                ctx.lineTo(rect.x + rect.w - radii[this.TOP_RIGHT].w, rect.y);
-                ctx.quadraticCurveTo(rect.x + rect.w, rect.y, rect.x + rect.w, rect.y + radii[this.TOP_RIGHT].h);
-                ctx.lineTo(rect.x + rect.w, rect.y + rect.h - radii[this.BOTTOM_RIGHT].h);
-                ctx.quadraticCurveTo(rect.x + rect.w, rect.y + rect.h, rect.x + rect.w - radii[this.BOTTOM_RIGHT].w, rect.y + rect.h);
-                ctx.lineTo(rect.x + radii[this.BOTTOM_LEFT].w, rect.y + rect.h);
-                ctx.quadraticCurveTo(rect.x, rect.y + rect.h, rect.x, rect.y + rect.h - radii[this.BOTTOM_LEFT].h);
-                ctx.lineTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
-            } else {
-                ctx.moveTo(rect.x, rect.y + radii[this.TOP_LEFT].h);
-                ctx.lineTo(rect.x, rect.y + rect.h - radii[this.BOTTOM_LEFT].h)
-                ctx.quadraticCurveTo(rect.x, rect.y + rect.h, rect.x + radii[this.BOTTOM_LEFT].w, rect.y + rect.h);
-                ctx.lineTo(rect.x + rect.w - radii[this.BOTTOM_RIGHT].w, rect.y + rect.h);
-                ctx.quadraticCurveTo(rect.x + rect.w, rect.y + rect.h, rect.x + rect.w, rect.y + rect.h - radii[this.BOTTOM_RIGHT].h);
-                ctx.lineTo(rect.x + rect.w, rect.y + radii[this.TOP_RIGHT].h);
-                ctx.quadraticCurveTo(rect.x + rect.w, rect.y, rect.x + rect.w - radii[this.TOP_RIGHT].w, rect.y);
-                ctx.lineTo(rect.x + radii[this.TOP_LEFT].w, rect.y);
-                ctx.quadraticCurveTo(rect.x, rect.y, rect.x, rect.y + radii[this.TOP_LEFT].h);
             }
         }
     }
@@ -4015,49 +4047,6 @@ th.Panel = Class.define({
     }
 });
 
-th.DomWrapper = Class.define({
-    type: 'DomWrapper',
-
-    members: {
-		bus: null,	// th.bus to use
-		dom: null,	// ref to the underlaying dom component
-		focusManager: null, // set, when the component is added to the foucsManager by the focusManger itself
-		eventTravels: false,
-
-        init: function (domComponent, bus) {
-			if (!bus) bus = th.global_event_bus;
-			this.bus = bus;
-			this.dom = domComponent;
-			th.observe(this.dom, "focus", this.onDOMFocus, this);
-			this.bus.bind("focus:received", this, this.onFocusReceived, this);
-			this.bus.bind("focus:canceled", this, this.onCanceledFocus, this);
-		},
-
-		onDOMFocus: function(e) {
-			if (this.eventTravels) 	return;
-			this.eventTravels = true;
-			this.focusManager.focus(this);
-		},
-
-		onCanceledFocus: function(e) {
-			this.eventTravels = false;
-		},
-
-        onFocusReceived: function(e) {
-			this.eventTravels = true;
-			this.dom.focus();
-			this.eventTravels = false;
-		},
-
-		setFocusOrder: function(compNext, compPrev) {
-			if (!this.focusManager.hasSubscriber(compNext) || !this.focusManager.hasSubscriber(compPrev)) {
-				console.error('setFocusOrder: component not subscribed!');
-			}
-			this.focusNext = compNext;
-			this.focusPrev = compPrev;
-		}
-	}
-});
 
 th.Button = Class.define({
     type: "Button",
@@ -4183,7 +4172,7 @@ th.Scrollbar = Class.define({
             if (this.value > this.max) this.value = this.max;
             if (this.scrollable) this.scrollable.scrollTop = this.value;
             this.render();
-            if (this.scrollable) this.scrollable.repaint();
+            this.repaintScrollable();
         },
 
         onmouseup: function(e) {
@@ -4196,7 +4185,7 @@ th.Scrollbar = Class.define({
                 this.value = Math.max(this.min, this.value - this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
                 this.render();
-                if (this.scrollable) this.scrollable.repaint();
+                this.repaintScrollable();
             }
         },
 
@@ -4205,8 +4194,16 @@ th.Scrollbar = Class.define({
                 this.value = Math.min(this.max, this.value + this.increment);
                 if (this.scrollable) this.scrollable.scrollTop = this.value;
                 this.render();
-                if (this.scrollable) this.scrollable.repaint();
+                this.repaintScrollable();
             }
+        },
+
+        repaintScrollable: function() {
+            if (!this.scrollable) return;
+
+            if ((this.isInsideOf(this.scrollable)) && (!this.opaque)) return;
+
+            this.scrollable.repaint();
         },
 
         tmb: function() {
@@ -4816,6 +4813,7 @@ th.List = Class.define({
             this.allowDeselection = parms.allowDeselection || false;
 
             this.bus.bind("mousedown", this, this.onmousedown, this);
+            this.bus.bind("keydown", this, this.onkeydown, this);
 
             this.renderer = new th.Label();
             this.renderer.addCss("visibility", "hidden");    // prevent Th from rendering the label; we'll do it ourselves
@@ -4831,6 +4829,13 @@ th.List = Class.define({
         },
 
         onmousedown: function(e) {
+            if (this.focusManager !== undefined) {
+                if (!this.focusManager.focus(this)) {
+                    th.stopEvent(e);
+                    return;
+                }
+            }
+
             var item = this.getItemForPosition({ x: e.componentX, y: e.componentY });
             if (item != this.selected) {
                 if (item) {
@@ -4840,6 +4845,17 @@ th.List = Class.define({
                 } else if (this.allowDeselection)  {
                     delete this.selected;
                 }
+            }
+            th.stopEvent(e);
+        },
+
+        onkeydown: function(e) {
+            if (e.keyCode == 38/*key.UP_ARROW*/) {
+                this.moveSelectionUp();
+                th.stopEvent(e);
+            } else if (e.keyCode == 40/*key.DOWN_ARROW*/) {
+                this.moveSelectionDown();
+                th.stopEvent(e);
             }
         },
 
@@ -4883,11 +4899,14 @@ th.List = Class.define({
         },
 
         moveSelectionDown: function() {
-            if (!this.selected || this.items.length == 0) return;
-
-            var x = 0;
-            while (this.items[x] != this.selected) {
-                x ++;
+            if (!this.selected && this.items.length == 0) return;
+            if (!this.selected && this.items.length != 0) {
+                var x = -1;
+            } else {
+                var x = 0;
+                while (this.items[x] != this.selected) {
+                    x ++;
+                }
             }
 
             if (x != this.items.length - 1) {
@@ -5278,6 +5297,251 @@ th.HorizontalTree = Class.define({
     }
 });
 th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;";
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ * See the License for the specific language governing rights and
+ * limitations under the License.
+ *
+ * The Original Code is Bespin.
+ *
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bespin Team (bespin@mozilla.com)
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+
+if (typeof th == "undefined") th = {};
+
+th.EditorContainer = Class.define({
+    type: "EditorContainer",
+
+    superclass: th.Panel,
+
+    members: {
+        init: function (params) {
+            this._super(params);
+            this.model = new th.TextModel();
+            this.cursor = new th.EditorCursor();
+
+            this.scrollbar = new th.Scrollbar();
+            this.scrollbar.scrollable = this;
+            this.scrollbar.opaque = false;
+            this.add(this.scrollbar);
+
+            this.leftPadding = 0;
+            this.rightPadding = 0;
+            this.scrollTop = 0;
+        },
+
+        getScrollInfo: function () {
+            return {scrollTop: this.scrollTop, scrollHeight: this.getRowCount() * this.charSize.height};
+        },
+
+        layout: function () {
+            if (this.font === undefined) {
+                this.font = this.cssValue("font");
+                var tmpctx = this.getScratchContext();
+                tmpctx.font = this.font;
+                this.charSize = tmpctx.measureText("M");
+                this.charSize.height = Math.floor(this.charSize.ascent * 2.8);
+            }
+            if (this.color === undefined) {
+                this.color = this.cssValue("color");
+            }
+            var d = this.d();
+            this.scrollbar.bounds = { x: d.b.w - 14, y: 0, height: d.b.h, width: 14};
+            this.scrollbar.increment = this.charSize.height;
+            this.effw = d.b.iw - this.leftPadding - this.rightPadding;
+            this.vll = Math.floor(this.effw / this.charSize.width);
+            this.vlc = Math.ceil((d.b.ih - 0.75 * this.charSize.height) / this.charSize.height);
+        },
+
+        paintText: function (ctx) {
+            var d = this.d();
+            var fvl = this.getFirstVisibleLine(this.scrollTop);
+            var lineNo = fvl.row;
+            var accum = 0; // Accumulates the number of actual lines (a model line broken in two by wrapping is counted as two lines) being painted.
+            ctx.font = this.font;
+            ctx.fillStyle = this.color;
+            ctx.translate(this.leftPadding, this.charSize.height * 0.75 - fvl.offset * this.charSize.height);
+            while (accum <= this.vlc && lineNo < this.model.getRowCount()) {
+                accum += this.paintLine(ctx, lineNo);
+                lineNo++;
+            }
+        },
+
+        paintSelf: function (ctx) {
+            if (this.model.isEmpty()) return;
+            ctx.save();
+            this.paintUnderText(ctx);
+            ctx.restore();
+            ctx.save();
+            this.paintText(ctx);
+            ctx.restore();
+            ctx.save();
+            this.paintOverText(ctx);
+            ctx.restore();
+        },
+
+        /*
+         * "Virtual" Functions
+         */
+
+        getRowCount: function () {
+        },
+
+        paintLine: function (ctx, index) {
+            return 0;
+        },
+
+        paintUnderText: function (ctx) {
+        },
+
+        paintOverText: function (ctx) {
+        },
+
+        getFirstVisibleLine: function (offset) {
+        }
+    }
+});
+
+th.SimpleEditor = Class.define({
+    type: "SimpleEditor",
+
+    superclass: th.EditorContainer,
+
+    members: {
+        init: function (params) {
+            this._super(params);
+            this.rightPadding = 20;
+            this.leftPadding = 30;
+            this.options = {};
+            this.options.wrap = (params.wrap === undefined) ? false : (params.wrap == "true");
+        },
+
+        getRowCount: function () {
+            if (!this.options.wrap) return this.model.getRowCount();
+            if (this.rowCountCache === undefined) {
+                var c = 0;
+                var l;
+                for (var i = 0; i < this.model.getRowCount(); i++) {
+                    l = this.model.getRowLength(i);
+                    c += (l == 0) ? 1 : Math.ceil(l / this.vll);
+                }
+                this.rowCountCache = c;
+            }
+            return this.rowCountCache;
+        },
+
+        getFirstVisibleLine: function (offset) {
+            if (!this.options.wrap) return {row: Math.floor(offset / this.charSize.height), offset: 0};
+            var row_offset = Math.floor(offset / this.charSize.height);
+            var c = 0;
+            var d;
+            var l;
+            for (var i = 0; i < this.model.getRowCount(); i++) {
+                l = this.model.getRowLength(i);
+                d = (l == 0) ? 1 : Math.ceil(l / this.vll);
+                if (c + d >= row_offset) return {row: i, offset: row_offset - c};
+                c += d;
+            }
+            return {row: i, offset: 0};
+        },
+
+        paintUnderText: function (ctx) {
+            ctx.fillStyle = "#A9F4CF";
+            ctx.fillRect(0, 0, this.leftPadding - 5, this.d().b.ih);
+        },
+
+        paintLine: function (ctx, index) {
+            var wrapAt = this.vll;
+            var l = this.model.getRowLength(index);
+            if (!this.options.wrap)
+                wrapAt = l;
+            var nowl = (l == 0) ? 1 : Math.ceil(l / wrapAt);
+            if (this.model.isRowDirty(index)) {
+                ctx.fillText(index + 1, -this.leftPadding, 0);
+                var text = this.model.getRow(index);
+                for (var k = 0; k < nowl; k++) {
+                    ctx.fillText(text.substr(k * wrapAt, wrapAt), 0, 0);
+                    ctx.translate(0, this.charSize.height);
+                }
+            } else {
+                ctx.translate(0, nowl * this.charSize.height);
+            }
+            return nowl;
+        },
+
+        paintOverText: function (ctx) {
+        }
+    }
+});
+
+th.TextModel = Class.define({
+    type: "TextModel",
+
+    members: {
+        init: function () {
+            this.rows = [];
+            this.dirty = [];
+        },
+
+        appendRows: function (text) {
+            var more = text.split('\n');
+            for (var i = 0; i < more.length; i++) {
+                this.rows.push(more[i]);
+                this.dirty.push(true);
+            }
+        },
+
+        getRow: function (index) {
+            if (index < 0 || index >= this.rows.length)
+                return "";
+            return this.rows[index];
+        },
+
+        isRowDirty: function (index) {
+            return this.dirty[index];
+        },
+
+        getRowLength: function (index) {
+            if (index < 0 || index >= this.rows.length)
+                return 0;
+            return this.rows[index].length;
+        },
+
+        isEmpty: function () {
+            return (this.rows.length == 0);
+        },
+
+        getRowCount: function () {
+            return this.rows.length;
+        }
+    }
+});
+
+th.EditorCursor = Class.define({
+    type: "EditorCursor",
+    members: {
+        init: function () {
+            this.row = 0;
+            this.col = 0;
+        }
+    }
+});
+
 /**
  * Copyright 2009 Tim Down.
  *
