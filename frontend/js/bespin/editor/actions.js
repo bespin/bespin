@@ -889,6 +889,13 @@ dojo.declare("bespin.editor.Actions", null, {
         }
     },
     
+    togglePieMenu: function() {
+        var piemenu = bespin.get('piemenu');
+        if (piemenu) {
+            piemenu.toggle();
+        }
+    },
+    
     toggleFilesearch: function() {
         var settings = bespin.get("settings");
         

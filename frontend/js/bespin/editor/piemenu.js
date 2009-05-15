@@ -23,87 +23,135 @@
  * ***** END LICENSE BLOCK ***** */
 
 dojo.provide("bespin.editor.piemenu");
-
-dojo.require("dojo._base.fx");
 dojo.require("dojo.fx.easing");
 
-// = Pie Menu =
-//
-// Pie pie pie
-
-dojo.declare("bespin.editor.PieMenu", null, {
+dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
     constructor: function() {
-        this.pie = dojo.create("canvas", {
+        this.isVisible = false;
+        this.editor = bespin.get("editor");
+
+        this.menu = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position: absolute; z-index: 400; top: 64px; border: 0px solid red;"
+            style: "position:absolute; z-index:100; top:64px; border:0px solid red; display:none;"
         }, dojo.body());
-        this.pie.height = bespin.get('editor').canvas.height;
-        this.pie.width = bespin.get('editor').canvas.width;
-        
-        dojo.create("img", {
-            id: "puck_off",
-            src: "/images/pie/puck_off.png",
-            alt: "pie menu",
-            style: "position: absolute; display: none;"
+        this.menu.height = this.editor.canvas.height;
+        this.menu.width = this.editor.canvas.width;
+        this.ctx = this.menu.getContext('2d');
+
+        this.images = {};
+        var ids = [
+            "puck_active-btm", "puck_active-lft", "puck_active-rt",
+            "puck_active-top", "puck_menu_btm-lft", "puck_menu_btm-lftb",
+            "puck_menu_btm-rt", "puck_menu_btm-rtb", "puck_menu_lft",
+            "puck_menu_mid", "puck_menu_rt", "puck_off", "puck_menu_top-lft",
+            "puck_menu_top-mid", "puck_menu_top-rt"
+        ];
+        dojo.forEach(ids, function(id) {
+            this.images[id] = dojo.create("img", {
+                id: id,
+                src: "/images/pie/" + id + ".png",
+                alt: "pie menu",
+                style: "position:absolute; display:none;"
+            }, dojo.body());
+        }, this);
+
+        /*
+        this.input = dojo.create("input", {
+            type: "text",
+            id: "piemenu_text"
         }, dojo.body());
+        */
+
+        var self = this;
+
+        /*
+        dojo.connect(this, "mousedown", function(ev) {
+            if (!self.isVisible) {
+                return;
+            }
+
+            var pos = dojo.coords(self.container);
+            if (ev.clientX < pos.l
+                    || ev.clientX > (pos.l + pos.w)
+                    || ev.clientY < pos.t
+                    || ev.clientY > (pos.t + pos.h)) {
+                self.toggle();
+            } else {
+                dojo.stopEvent(ev);
+            }
+        });
+        */
+
+        dojo.connect(this, "keydown", function(ev) {
+            var key = bespin.util.keys.Key;
+
+            if (!self.isVisible) {
+                return;
+            }
+
+            console.log("pie keydown", key);
+
+            if (self.keyRunsMe(ev) || ev.keyCode == bespin.util.keys.Key.ESCAPE) {
+                self.toggle();
+                dojo.stopEvent(ev);
+            }
+        });
     },
 
     show: function() {
-        var self = this;
-        
+        var self = this;        
         var anim = dojo.fadeIn({
             node: {
-                style: {}
+                style:{}
             },
-
             duration: 500,
-
             easing: dojo.fx.easing.backOut,
             onAnimate: function(values) {
                 var progress = values.opacity;
                 self.renderPie(progress);
             }
         });
+
+        this.menu.style.display = 'block';
         anim.play();
     },
 
     hide: function() {
         var self = this;
-        
         var anim = dojo.fadeIn({
             node: {
                 style: {}
             },
-
             duration: 400,
-
             easing: dojo.fx.easing.backIn,
-
             onAnimate: function(values) {
                 var progress = Math.max(1 - values.opacity, 0);
                 self.renderPie(progress);
-            }
+            },
+            onEnd: function() {
+                self.menu.style.display = 'none';
+            },
         });
         anim.play();
     },
 
     renderPie: function(progress) {
-        var ctx = this.pie.getContext("2d");
-        var puck_off = dojo.byId("puck_off");
+        var ctx = this.menu.getContext("2d");
+        var puck_off = this.images.puck_off;
 
         ctx.save();
 
-        ctx.clearRect(0, 0, this.pie.width, this.pie.height);
+        ctx.clearRect(0, 0, this.menu.width, this.menu.height);
 
         var alpha = Math.max(progress - 0.4, 0);
         ctx.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
-        ctx.fillRect(0, 0, this.pie.width, this.pie.height);
+        ctx.fillRect(0, 0, this.menu.width, this.menu.height);
 
         var height = parseInt(puck_off.height * progress);
         var width = parseInt(puck_off.width * progress);
 
-        var x = parseInt((this.pie.width / 2) - (width / 2));
-        var y = parseInt((puck_off.height - height) / 2) + this.pie.height - puck_off.height;
+        var x = parseInt((this.menu.width / 2) - (width / 2));
+        var y = parseInt((puck_off.height - height) / 2) + this.menu.height - puck_off.height;
 
         var xm = x + (width / 2);
         var ym = y + (height / 2);
@@ -116,28 +164,18 @@ dojo.declare("bespin.editor.PieMenu", null, {
         ctx.drawImage(puck_off, x, y, width, height);
 
         ctx.restore();
-    }
-        
-    // show: function() {
-    //     var ctx = this.pie.getContext("2d");
-    //     ctx.fillStyle = "rgba(255, 100, 100, 0.3)";
-    //     ctx.fillRect(0, 0, this.pie.width, this.pie.height);
-    // },
-    // 
-    // hide: function() {
-    //     var ctx = this.pie.getContext("2d");
-    //     ctx.clearRect(0, 0, this.pie.width, this.pie.height);
-    // }
-});
+    },
 
-// change this to watch for the key strokes
-bespin.subscribe("settings:init", function() {
-    //var piemenu = new bespin.editor.PieMenu();
-    //piemenu.show();
-    // setTimeout(function() {
-    //     piemenu.hide()
-    // }, 1000);
-    // setTimeout(function() {
-    //     piemenu.show()
-    // }, 2000);
+    toggle: function() {
+        this.isVisible = !this.isVisible;
+        if (this.isVisible) {
+            this.show();
+        } else {
+            this.hide();
+        }
+    },
+
+    keyRunsMe: function(ev) {
+        return (ev.keyCode == 'K'.charCodeAt() && ev.altKey && !ev.shiftKey);
+    }
 });
