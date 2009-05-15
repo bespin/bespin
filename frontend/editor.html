@@ -43,50 +43,28 @@
 </head>
 <body>
     <div id="header">
-        <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
-        <div id="collab_line"></div>
-        <div id="version"></div>
-        <a href="index.html" title="Go Home"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
-        <a href="javascript:bespin.util.navigate.dashboard()" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
+        <div style="float: left;">
+            <a href="index.html" title="Go Home" style="float: left;"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
+            <!-- <a href="javascript:bespin.util.navigate.dashboard()" style="float: left;" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a> -->
 
-        <!-- coming soon -->
-        <!--<img id="toolbar_target_browsers" src="images/icn_target_off.png" alt="Target Browsers" title="Show Target Browsers">-->
-
-        <span id="selected_browsers"></span>
-    </div>
-    <div id="subheader">
-        <div id="search">
-            <div style="float: left; width: 132px"><input id="searchquery" type="text" spellcheck="false"></div>
-            <div style="float: right"><img id="searchbutton" src="images/icn_findincode.png" alt="Search"></div>
-            <div id="searchresult" style="display:none">
-                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: -3px">
-                    <tr>
-                        <td>
-                            <span id="searchfeedback">36 Matches</span>
-                        </td>
-                        <td width="82px">
-                            <img src='images/button_left.png' style="margin-top:2px" id="searchprev" alt='<'>
-                            <img src='images/button_right.png' style="margin-top:2px" id="searchnext" alt='>'>
-                            <img src='images/button_done.png' style="margin-top:2px" id="searchdone" alt='done'>
-                        </td>
-                    </tr>
-                </table>
+            <div id="status"><canvas id="projectLabel"></canvas></div>
+            <div id="toolbar">
+                <img id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save">
+                <img id="toolbar_close" src="images/icn_close.png" alt="Close" title="Close" style="padding-right: 20px">
+                <img id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
+                <img id="toolbar_redo" src="images/icn_redo.png" alt="Redo" title="Redo" style="padding-right: 20px">
+                <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser" style="padding-right: 20px">
+                <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">            
             </div>
         </div>
-
-        <div id="status"><canvas id="projectLabel"></canvas></div>
-        <div id="bar"></div>
-        <img id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save">
-        <img id="toolbar_close" src="images/icn_close.png" alt="Close" title="Close" style="padding-right: 20px">
-        <img id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
-        <img id="toolbar_redo" src="images/icn_redo.png" alt="Redo" title="Redo" style="padding-right: 20px">
-        <!-- <img id="toolbar_cut" src="images/icn_cut.png" alt="Cut" title="Cut">
-        <img id="toolbar_copy" src="images/icn_copy.png" alt="Copy" title="Copy">
-        <img id="toolbar_paste" src="images/icn_paste.png" alt="Paste" title="Paste" style="padding-right: 20px">
-        <img id="toolbar_history" src="images/icn_history.png" alt="History" title="History" -->
-        <img id="toolbar_preview" src="images/icn_preview.png" alt="View in Browser" title="View in Browser" style="padding-right: 20px">
-        <img id="toolbar_fontsize" src="images/icn_fontsize.png" alt="Font Size" title="Font Size">
+        
+        <div style="float: right;">
+            <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
+            <div id="collab_line"></div>
+            <div id="version"></div>            
+        </div>
     </div>
+
     <div id="editor"></div>
     <div id="preview" style="display:none"></div>
     <div id="footer">

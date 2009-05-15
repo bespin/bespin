@@ -226,7 +226,7 @@ bespin.subscribe("settings:set:jetpack", function(event) {
             jptb.style.display = 'inline';
         } else {
             // <img id="toolbar_jetpack" src="images/icn_jetpack.png" alt="Jetpack" style="padding-left: 10px;" title="Jetpack (show or hide menu)">
-            dojo.byId('subheader').appendChild(dojo.create("img", {
+            dojo.byId('toolbar').appendChild(dojo.create("img", {
                id: "toolbar_jetpack",
                src: "images/icn_jetpack.png",
                alt: "Jetpack",

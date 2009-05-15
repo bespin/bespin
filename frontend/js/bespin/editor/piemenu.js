@@ -32,7 +32,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         this.canvas = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position:absolute; z-index:100; top:64px; display:none;"
+            style: "position: absolute; z-index: 100; top: 31px; display: none;"
         }, dojo.body());
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
@@ -42,7 +42,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             btm: { id: "active_btm", showContents: this.showCommand },
             top: { id: "active_top", showContents: this.showFiles },
             lft: { id: "active_lft", showContents: this.showReference },
-            rt: { id: "active_rt", showContents: this.showContext },
+            rt:  { id: "active_rt", showContents: this.showContext },
             off: { id: "off", showContents: this.hideDetail }
         };
 
