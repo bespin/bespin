@@ -85,6 +85,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         });
         */
 
+        bespin.subscribe("ui:escape", function(event) {
+            if (self.isVisible) self.toggle();
+        });
+
+        dojo.connect(window, 'resize', dojo.hitch(this, function() {
+            this.canvas.height = this.editor.canvas.height + 10;
+            this.canvas.width = this.editor.canvas.width + 10;
+            if (this.isVisible) this.show(true /* don't animate though */);
+        }));
+
         dojo.connect(this.canvas, "keydown", function(ev) {
             if (!self.isVisible) return;
             var key = bespin.util.keys.Key;
@@ -95,7 +105,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 self.toggle();
                 dojo.stopEvent(ev);
             }
-            else if (ev.keyCode == key.UP_ARROW) {                
+            else if (ev.keyCode == key.UP_ARROW) {
                 self.renderPopout(self.slices.top);
                 dojo.stopEvent(ev);
             }
@@ -114,32 +124,37 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         });
     },
 
-    show: function() {
+    show: function(dontAnimate) {
         var self = this;
-        var anim = dojo.fadeIn({
-            node: {
-                style:{}
-            },
-            duration: 500,
-            easing: dojo.fx.easing.backOut,
-            onAnimate: function(values) {
-                var progress = values.opacity;
-                self.renderPie(progress);
-            },
-            onEnd: function() {
-                console.log("where do you want to go today?");
-                self.canvas.focus();
-            }
-        });
 
         this.canvas.style.display = 'block';
         this.canvas.focus();
-        anim.play();
+
+        if (dontAnimate) {
+            this.renderPie(1.0);
+        } else {
+            if (!this.showAnimation) this.showAnimation = dojo.fadeIn({
+                node: {
+                    style:{}
+                },
+                duration: 500,
+                easing: dojo.fx.easing.backOut,
+                onAnimate: function(values) {
+                    var progress = values.opacity;
+                    self.renderPie(progress);
+                },
+                onEnd: function() {
+                    console.log("where do you want to go today?");
+                    self.canvas.focus();
+                }
+            });
+            this.showAnimation.play();
+        }
     },
 
     hide: function() {
         var self = this;
-        var anim = dojo.fadeIn({
+        if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
             node: {
                 style: {}
             },
@@ -153,7 +168,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 self.canvas.style.display = 'none';
             },
         });
-        anim.play();
+        this.hideAnimation.play();
     },
 
     renderPie: function(progress) {
@@ -189,11 +204,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     /*
      * TODO:
-     * All keyboard handling is done by editor. we need to take control
      * Render the correct slice
      * Put stuff in the content area
      * Animate opening content area?
-     * Hookup a resize event
      * Shrink border images
      * Many of the images are dups. we should save load time
      * - Also consider rotational and translational sym??
@@ -261,6 +274,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     showCommand: function(coords) {
+        dojo.byId("footer").style.display = "block";
+        dojo.byId("editor").style.bottom = "32px";
+        dojo.byId("info").style.bottom = "32px";
+        // add 32px to bottom
         console.log("command line goes here");
     },
 
