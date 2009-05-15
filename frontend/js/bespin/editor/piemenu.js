@@ -171,10 +171,13 @@ dojo.declare("bespin.editor.piemenu.Window", th.components.Panel, {
     /*
      * TODO:
      * All keyboard handling is done by editor. we need to take control
-     * Many of the images are dups. we should save load time
-     * - Also consider rotational and translational sym??
+     * Render the correct slice
+     * Put stuff in the content area
+     * Animate opening content area?
      * Hookup a resize event
      * Shrink border images
+     * Many of the images are dups. we should save load time
+     * - Also consider rotational and translational sym??
      */
     renderPopout: function() {
         var margin = 10;
