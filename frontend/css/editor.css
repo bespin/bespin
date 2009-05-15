@@ -7,22 +7,6 @@ body {
     -moz-user-select: none;
 }
 
-#subheader {
-    height: 38px;
-    position: absolute;
-    top: 32px;
-    left: 0;
-    right: 0;
-    background-image: url("../images/toolbar_sub_bg.png");
-    z-index: 40;
-    overflow: hidden;
-}
-
-#subheader img {
-    margin-top: 6px;
-    margin-right: 8px;
-}
-
 #history {
     margin-right: 40px !important;
 }
@@ -33,13 +17,13 @@ body {
 
 #editor {
     position: absolute;
+    top: 32px;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: -1;
     margin: 0;
     padding: 0;
-    top: 63px;
-    bottom: 33px;
-    right: 0px;
-    left: 0px;
-    z-index: -1;
     cursor: text !important;
 }
 
@@ -180,14 +164,14 @@ body {
 }
 
 #footer {
-    height: 28px;
-    background-image: url("../images/footer_bg.png");
-    background-repeat: repeat-x;
-    padding: 5px;
     position: absolute;
     bottom: -1px;
     right: 0;
     left: 0;
+    height: 28px;
+    background-image: url("../images/footer_bg.png");
+    background-repeat: repeat-x;
+    padding: 5px;
 }
 
 #files {
@@ -331,16 +315,22 @@ body {
     border-left: 1px solid #312F2A;
     border-right: 1px solid #626262;
     margin: 4px 30px 0 0;
-    float: left;
+/*    float: left;*/
     width: 0;
     height: 23px;
 }
 
+#toolbar {
+    float: right;
+    padding-top: 7px;
+}
+
 #status {
-    width: 30%;
-    height: 31px;
+    width: 300px;
+    height: 24px;
     float: left;
-    margin: 5px 0 0 10px;
+    padding-top: 5px;
+    margin: 0;
     color: #DDDDDD;
     font-family: Calibri, Arial, sans-serif;
     font-size: 12pt;

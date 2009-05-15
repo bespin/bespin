@@ -5,8 +5,9 @@ img {
 *:focus { outline: 0; }
 
 #header {
-    height: 32px;
-    background-image: url("../images/toolbar_main_bg.gif");
+    height: 38px;
+/*    background-image: url("../images/toolbar_main_bg.gif");*/
+    background-image: url("../images/toolbar_sub_bg2.png");
 }
 
 #logo {
@@ -101,7 +102,7 @@ img {
 
 #info {
     position: absolute;
-    bottom: 32px;
+    bottom: 0;
     left: 51px;
     padding: 20px 40px 10px 30px;
     width: 431px;

@@ -49,15 +49,20 @@ dojo.provide("bespin.page.editor.init");
         // When a change to the UI is needed due to opening or closing a feature
         // (e.g. file view, session view) move the items around
         recalcLayout: function() {
-            var subheader = dojo.byId("subheader");
+            //var subheader = dojo.byId("subheader");
             var footer = dojo.byId("footer");
             var editor = dojo.byId("editor");
             var files = dojo.byId("files");
             var collab = dojo.byId("collab");
             var target = dojo.byId("target_browsers");
 
-            var move = [ subheader, footer, editor ];
+            var move = [ editor ];
 
+            // if the footer is displayed, then move it too.
+            if (footer.style.display == "block") {
+                move.push(footer);
+            }
+            
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";
                 dojo.forEach(move, function(item) { item.style.right = "201px"; });
@@ -121,8 +126,7 @@ dojo.provide("bespin.page.editor.init");
                 bespin.register("serverCapabilities", sc.capabilities);
                 
                 for (var packagename in sc.dojoModulePath) {
-                    dojo.registerModulePath(packagename, 
-                            sc.dojoModulePath[packagename])
+                    dojo.registerModulePath(packagename, sc.dojoModulePath[packagename]);
                 }
                 
                 // this is done to trick the build system which would
@@ -152,9 +156,8 @@ dojo.provide("bespin.page.editor.init");
         // START SEARCH BINDINGS
         // bind in things for search :)
         // some of the key-bindings go to the window object direct, to make them happen all over the window
+
         dojo.connect(window, 'keydown', function(e) {
-           console.debug(e);
-           
            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.altKey)) {
                bespin.get('actions').toggleFilesearch();
                dojo.stopEvent(e);
@@ -170,10 +173,8 @@ dojo.provide("bespin.page.editor.init");
                
         // // Handle Enter & Escape
         dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
-            console.debug(e);
-            
             var key = bespin.util.keys.Key;
-    
+           
             if (e.keyCode == key.ESCAPE) {
                 dojo.byId('searchresult').style.display = 'none';
                 dojo.byId('searchquery').blur();
@@ -187,8 +188,6 @@ dojo.provide("bespin.page.editor.init");
         
         // preform a new search after a character has been added to the searchquery-input-field
         dojo.connect(dojo.byId('searchquery'), 'keypress', function(e) {
-            console.debug(e);
-            
             var key = bespin.util.keys.Key;    
             var isOkay = false;
                 

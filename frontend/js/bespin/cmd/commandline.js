@@ -267,7 +267,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     infoResizer: function() {
     	if (dojo.style('info', 'display') != 'none') {
     		dojo.style('info', 'height', '');
-    		var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height') - dojo.style('subheader', 'height');
+    		var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height');
     		var infoY = dojo.style('info', 'height');
     		if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
     		    dojo.style('info', 'height', (editorY - 30) + 'px');
