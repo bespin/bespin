@@ -32,7 +32,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         this.canvas = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position: absolute; z-index: 100; top: 31px; display: none;"
+            style: "position: absolute; z-index: 100; top: 31px; display: none;",
+            tabIndex: -1
         }, dojo.body());
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
