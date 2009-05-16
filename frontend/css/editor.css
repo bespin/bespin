@@ -422,6 +422,10 @@ body {
     font-style: italic;
 }
 
+.icon {
+    cursor: pointer;
+}
+
 /* Jetpack Style */
 #jetpack_dropdown {
     font-family: Calibri, Arial, sans-serif;
