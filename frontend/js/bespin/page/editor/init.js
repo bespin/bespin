@@ -156,8 +156,7 @@ dojo.provide("bespin.page.editor.init");
         // START SEARCH BINDINGS
         // bind in things for search :)
         // some of the key-bindings go to the window object direct, to make them happen all over the window
-
-        dojo.connect(window, 'keydown', function(e) {
+        dojo.connect(window, 'keydown', function(e) {           
            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.altKey)) {
                bespin.get('actions').toggleFilesearch();
                dojo.stopEvent(e);
@@ -172,7 +171,7 @@ dojo.provide("bespin.page.editor.init");
        });
                
         // // Handle Enter & Escape
-        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
+        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {            
             var key = bespin.util.keys.Key;
            
             if (e.keyCode == key.ESCAPE) {
