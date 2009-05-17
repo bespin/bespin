@@ -2404,6 +2404,7 @@ JSLINT = (function () {
             noreach = false;
         }
         funct['(verb)'] = null;
+        funct['(lastline)'] = nexttoken.line;
         scope = s;
         inblock = b;
         return a;
@@ -4994,6 +4995,21 @@ JSLINT = (function () {
             o.push('</div>');
         }
         return o.join('');
+    };
+
+    itself.getFunctions = function() {
+        var funcs = [];
+        for (var i = 0; i < functions.length; i++) {
+            funcs.push({
+                name: functions[i]['(name)'],
+                line: functions[i]['(line)'],
+                lastline: functions[i]['(lastline)'],
+                linelength: (functions[i]['(line)'] && functions[i]['(lastline)']) 
+                  ? functions[i]['(lastline)'] - functions[i]['(line)'] : undefined,
+                foldtext: "..."
+            });
+        }
+        return funcs;
     };
 
     return itself;

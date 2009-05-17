@@ -72,10 +72,11 @@ dojo.declare("bespin.client.settings.Core", null, {
             'collaborate': 'off',
             'language': 'auto',
             'strictlines': 'on',
+            'syntaxcheck': 'off',
             'syntaxengine': 'simple',
             'preview': 'window',
             'smartmove': 'on',
-            'jslint': 'off'
+            'jslint': {}
         };
     },
 

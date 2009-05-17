@@ -556,12 +556,19 @@ dojo.declare("bespin.editor.UI", null, {
             down.col = 0;
             // clicked in gutter; show appropriate lineMarker message
             var lineMarkers = bespin.get("parser").getLineMarkers();
+            var message;
             for (var i = 0; i < lineMarkers.length; i++) {
-                if (lineMarkers[i].row === down.row + 1) {
-                    var messagetype = lineMarkers[i].type === "error" ? "Syntax error: " : "Syntax warning: ";
+                if (lineMarkers[i].line === down.row + 1) {
+                    message = lineMarkers[i];
                     bespin.publish("message", {
-                        msg: messagetype + lineMarkers[i].message + ' on line ' + lineMarkers[i].row,
-                        tag: 'autohide',
+                        msg: 'Syntax ' + message.type + 
+                             (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
+                             ': ' + message.reason + '<p>' + 
+                             (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
+                                 replace(/&/g, '&amp;').
+                                 replace(/</g, '&lt;').
+                                 replace(/>/g, '&gt;')),
+                        tag: 'autohide'
                     });
                 }
             }
@@ -984,8 +991,8 @@ dojo.declare("bespin.editor.UI", null, {
             if (bespin.get("parser")) {
                 var lineMarkers = bespin.get("parser").getLineMarkers();
                 for (var i = 0; i < lineMarkers.length; i++) {
-                    if (lineMarkers[i].row >= this.firstVisibleRow && lineMarkers[i].row <= lastLineToRender + 1) {
-                        y = this.lineHeight * (lineMarkers[i].row - 1);
+                    if (lineMarkers[i].line >= this.firstVisibleRow && lineMarkers[i].line <= lastLineToRender + 1) {
+                        y = this.lineHeight * (lineMarkers[i].line - 1);
                         cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
                         if (lineMarkers[i].type === "error") {
                             ctx.fillStyle = this.editor.theme.lineMarkerErrorColor;
