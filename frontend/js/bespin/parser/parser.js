@@ -141,15 +141,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         var self = this;
         var editor = bespin.get("editor");
 
-        if (!bespin.util.include(['js'], editor.language)) {
-            // don't run the syntax parser for files that we can't grok yet!
-            // for now just js, and when the jslint plugin groks HTML and CSS we need to add
-            // that info here 
-            // TODO: put this elsewhere and allow plugins to add to the list
-
-            return;
-        }
-
         if (!self._started) {
             self._started = true;
             self.fetch();
@@ -483,7 +474,11 @@ dojo.declare("bespin.parser.JSLint", null, {
     constructor: function(source) {
     },
     name: "JSLint",
-    parse: function(source) {
+    parse: function(source, type) {
+        if (type === "css") {
+            //JSLint spots css files using this prefix
+            source = '@charset "UTF-8";\n' + source;
+        }
         var result = JSLINT(source, {});
         var messages = [];
         var fatal = JSLINT.errors.length > 0 && JSLINT.errors[JSLINT.errors.length - 1] === null;
@@ -491,7 +486,7 @@ dojo.declare("bespin.parser.JSLint", null, {
             if (JSLINT.errors[i]) {
                 messages.push({
                     message: JSLINT.errors[i].reason,
-                    line: JSLINT.errors[i].line + 1,
+                    line: JSLINT.errors[i].line + (type === "css" ? 0 : 1),
                     type: (i === JSLINT.errors.length - 2 && fatal) ? "error" : "warning"
                 });
             }
@@ -523,7 +518,7 @@ bespin.parser.EngineResolver = function() {
           var engineResult;
           var selectedEngines = this.resolve(type);
           for (var i = 0; i < selectedEngines.length; i++) {
-              engineResult = selectedEngines[i].parse(source);
+              engineResult = selectedEngines[i].parse(source, type);
               engineResult.messages = engineResult.messages.concat(result.messages || []);
               for (var member in engineResult) {
                   if (engineResult.hasOwnProperty(member)) {
@@ -584,7 +579,7 @@ bespin.parser.EngineResolver = function() {
   };
 }();
 
-bespin.parser.EngineResolver.register(new bespin.parser.JSLint(), ['js']);
+bespin.parser.EngineResolver.register(new bespin.parser.JSLint(), ['js', 'css']);
 bespin.parser.EngineResolver.register(new bespin.parser.JavaScript(), ['js']);
 
 
