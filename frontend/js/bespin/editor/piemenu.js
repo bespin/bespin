@@ -274,8 +274,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     showCommand: function(coords) {
-        this.ctx.fillStyle = "#efefef";
-        this.ctx.font = "9pt Monaco, Lucida Console, monospace";
+        this.ctx.fillStyle = "#bcb9ae";
+        this.ctx.font = "10pt Calibri, Arial, sans-serif";
         this.ctx.fillText("Command Line", coords.l + 5, coords.t - 10);
 
         dojo.byId("footer").style.display = "block";
