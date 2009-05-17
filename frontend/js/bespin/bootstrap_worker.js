@@ -170,7 +170,6 @@ onmessage = function(event) {
         callIndex: body.callIndex // the original callIndex to find callback
     }
 
-    //console.log("Sending "+data)
     postMessage(data)
 };
 
@@ -181,6 +180,7 @@ var eventCallbacks  = [];
 
 bespin = {
     subscribe: function (name, callback) {
+        console.log("Subscribe: "+name)
         postMessage({
             type: "subscribe",
             name: name,
@@ -196,6 +196,7 @@ bespin = {
     },
     
     publish: function (name, event) {
+        console.log("Publish: "+name)
         postMessage({
             type: "publish",
             name: name,
@@ -205,6 +206,7 @@ bespin = {
     
     // receives external event
     receive: function (info) {
+        console.log("Receive: "+info.name)
         eventCallbacks[info.index](info.event)
     }
 };

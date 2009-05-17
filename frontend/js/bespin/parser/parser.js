@@ -477,6 +477,7 @@ dojo.declare("bespin.parser.JSLint", null, {
     },
     name: "JSLint",
     parse: function(source, parseOptions) {
+        var type = parseOptions.type;
         if (type === "css") {
             //JSLint spots css files using this prefix
             source = '@charset "UTF-8";\n' + source;
