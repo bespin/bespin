@@ -63,17 +63,17 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     tag: 'autohide'
                 });
                 self.lineMarkers.push(message);
-            } 
+            }
         });
 
         // ** {{{ Event: parser:showoutline }}} **
         //
         // Show a window with a code structure outline of the current document
         bespin.subscribe("parser:showoutline", function() {
-            var html = self.currentMetaInfo ? 
+            var html = self.currentMetaInfo ?
                 self.currentMetaInfo.html   :
                 "Outline not yet available";
-            bespin.publish("message", { 
+            bespin.publish("message", {
                 msg: html
             });
         });
@@ -111,7 +111,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             }
             bespin.publish("message", { msg: html });
         });
-        
+
         // ** {{{ Event: parser:engine:parseDone }}} **
         //
         // Fires when the parser engine finished a parsing run
@@ -166,6 +166,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             }
             var onChange = bespin.subscribe("editor:document:changed", rerun);
             bespin.subscribe("settings:set:syntaxcheck", rerun);
+            bespin.subscribe("settings:set:jslint", rerun);
 
             // ** {{{ Event: parser:stop }}} **
             //
@@ -185,21 +186,22 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
         // parsing is too slow to run in the UI thread
         if (bespin.parser.AsyncEngineResolver.__hasWorkers__) {
-
             var editor = bespin.get("editor");
             var type   = editor.language;
-            var settings = bespin.get("settings");
+            var parseOptions = bespin.get("settings") && bespin.get("settings").getObject("jslint");
+
             if (type) {
                 var source = editor.model.getDocument();
                 self.lineMarkers = [];
-                
+
                 self._running = true;
                 //console.log("Syntax-Check");
                 bespin.publish("parser:engine:parse", {
                     type: type,
-                    source: source 
+                    source: source,
+                    parseOptions: parseOptions
                 })
-                
+
             }
         }
     },
@@ -207,7 +209,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     getLineMarkers: function() {
         return this.lineMarkers;
     },
-    
+
     getFunctions: function () {
         if (this.currentMetaInfo) {
             return this.currentMetaInfo.functions
@@ -404,7 +406,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
             html: html
         }
     },
-    
+
     codePatterns: {
         dojoClass: {
             declaration: "dojo.declare",
@@ -435,7 +437,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
     getCodePatterns: function () {
         return this.codePatterns
     },
-    
+
     initialize: function () {
         var self = this;
         //console.log("SubInit")
@@ -474,12 +476,12 @@ dojo.declare("bespin.parser.JSLint", null, {
     constructor: function(source) {
     },
     name: "JSLint",
-    parse: function(source, type) {
+    parse: function(source, parseOptions) {
         if (type === "css") {
             //JSLint spots css files using this prefix
             source = '@charset "UTF-8";\n' + source;
         }
-        var result = JSLINT(source, {});
+        var result = JSLINT(source, parseOptions);
         var messages = [];
         var fatal = JSLINT.errors.length > 0 && JSLINT.errors[JSLINT.errors.length - 1] === null;
         for (var i = 0; i < JSLINT.errors.length; i++) {
@@ -513,12 +515,12 @@ bespin.parser.EngineResolver = function() {
       // A high level parse function that uses the {{{type}}} to get the engines
       // it returns the combined results of parsing each one
       // parsers overwrite each other if they pass members with the same name, except for messages which are concatenated
-      parse: function(type, source) {
+      parse: function(type, source, parseOptions) {
           var result = {};
           var engineResult;
           var selectedEngines = this.resolve(type);
           for (var i = 0; i < selectedEngines.length; i++) {
-              engineResult = selectedEngines[i].parse(source, type);
+              engineResult = selectedEngines[i].parse(source, parseOptions);
               engineResult.messages = engineResult.messages.concat(result.messages || []);
               for (var member in engineResult) {
                   if (engineResult.hasOwnProperty(member)) {
@@ -549,17 +551,17 @@ bespin.parser.EngineResolver = function() {
       resolve: function(type) {
           return this.engines[type] || [];
       },
-      
+
       initialize: function () {
           var engine = this;
           bespin.subscribe("parser:engine:parse", function (event) {
-              var ret = engine.parse(event.type, event.source);
+              var ret = engine.parse(event.type, event.source, event.parseOptions);
               bespin.publish("parser:engine:parseDone", {
                   type: event.type,
                   info: ret
               })
           })
-          
+
           // forward initialize to engines
           for(var type in this.engines) {
               var list = this.engines[type];
@@ -573,7 +575,7 @@ bespin.parser.EngineResolver = function() {
                   }
               }
           }
-          
+
           bespin.publish("parser:engine:initialized", {})
       }
   };
