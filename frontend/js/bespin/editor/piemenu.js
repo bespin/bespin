@@ -171,7 +171,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
             showContents: function(coords) {
-                this.piemenu.refNode.src = "https://developer.mozilla.org/En/Canvas_tutorial/Using_images";
+                this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
                 dojo.style(this.piemenu.refNode, {
                     left:coords.l + "px", top:coords.t + "px",
                     width:coords.w + "px", height:coords.h + "px",
