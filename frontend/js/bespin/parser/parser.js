@@ -268,7 +268,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
 
     getMetaInfo: function(tree) {
         var funcs  = [];
-        var idents = [];
+        var idents = {};
         var info   = [];
         var codePatterns = this.getCodePatterns();
         // preprocess for speed
@@ -296,20 +296,18 @@ dojo.declare("bespin.parser.JavaScript", null, {
             var index = indexStack.top();
             var row   = node.lineno - 1;
             
-            var idents = [];
-            if(node.type == IDENTIFIER) {
-                idents.push(node.value);
-                var i = parentStack.length - 1;
-                while(true) {
-                    var n = parentStack[i];
-                    if(!n) break;
-                    if(n.type == IDENTIFIER) {
-                        idents.push(node.value)
+            var identifiers = [];
+            if(node.type == IDENTIFIER && index > 0) {
+                identifiers.push(node.value);
+                
+                for(var i = index-1; i >= 0; --i) {
+                    var n = tree[i];
+                    if(n && n.type == IDENTIFIER) {
+                        identifiers.unshift(n.value)
                     }
-                    --i
                 }
-                console.log("Idents "+idents.join(","))
             }
+            idents[identifiers.join(".")] = true
 
             // find function
             if (node.type == FUNCTION) {
@@ -404,8 +402,11 @@ dojo.declare("bespin.parser.JavaScript", null, {
         }
         html += '</div>';
 
+        //console.log(tree)
+        
         return {
             functions: funcs,
+            idents: idents,
             outline:   info,
             html: html
         }

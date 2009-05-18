@@ -5001,7 +5001,7 @@ JSLINT = (function () {
         var funcs = [];
         for (var i = 0; i < functions.length; i++) {
             funcs.push({
-                name: functions[i]['(name)'],
+                name: functions[i]['(name)'].replace(/"/g, ""), // remove quotes
                 line: functions[i]['(line)'],
                 lastline: functions[i]['(lastline)'],
                 linelength: (functions[i]['(line)'] && functions[i]['(lastline)']) 

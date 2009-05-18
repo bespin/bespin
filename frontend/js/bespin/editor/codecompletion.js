@@ -46,19 +46,43 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             }
         }
     },
-
-    findCompletion: function (substr) {
-        var parser = bespin.get("parser");
-        var functions = parser.getFunctions();
-        var candidates = [];
-        for (var i = 0, len = functions.length; i < len; ++i) {
-            var name = functions[i].name;
+    
+    findInArray: function (candidates, substr, array) {
+        for (var i = 0, len = array.length; i < len; ++i) {
+            var name = array[i].name;
             if (name) {
                 if (name.indexOf(substr) == 0 && name != "constructor") {
                     candidates.push(name);
                 }
             }
         }
+    },
+
+    findCompletion: function (substr) {
+        var parser = bespin.get("parser");
+        var candidates = [];
+        
+        if(parser.currentMetaInfo) {
+            if(parser.currentMetaInfo.outline) {
+                this.findInArray(candidates, substr, parser.currentMetaInfo.outline);
+            }
+            if(parser.currentMetaInfo.idents) { // complex idents
+                var idents = [];
+                for(var i in parser.currentMetaInfo.idents) {
+                    idents.push({
+                        name: i
+                    })
+                }
+                this.findInArray(candidates, substr, idents);
+            }
+        } else {
+            // simple function names
+            var functions = parser.getFunctions();
+            var candidates = [];
+            this.findInArray(candidates, substr, functions);
+        }
+        
+        
         if (candidates.length > 0) {
             bespin.publish("message", {
                 msg: "Code Completions<br><br>" + candidates.join("<br>"),
@@ -68,7 +92,7 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     },
 
     charMarksStartOfIdentifier: function (char) {
-        return char === "." || char === " " || char === "\t"; // rough estimation
+        return char === " " || char === "\t" || char == "\"" || char == "'"; // rough estimation
     },
 
     subscribe: function () {
