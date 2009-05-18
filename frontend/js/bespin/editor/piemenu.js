@@ -38,25 +38,20 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
         this.ctx = this.canvas.getContext('2d');
+        th.fixCanvas(this.ctx);
 
-        this.slices = {
-            btm: { id: "active_btm", showContents: this.showCommand },
-            top: { id: "active_top", showContents: this.showFiles },
-            lft: { id: "active_lft", showContents: this.showReference },
-            rt:  { id: "active_rt", showContents: this.showContext },
-            off: { id: "off", showContents: this.hideDetail }
-        };
-
+        // Load the slice images
         for (var dir in this.slices) {
             var slice = this.slices[dir];
             slice.img = dojo.create("img", {
-                id: "puck_" + slice.id,
-                src: "/images/pie/puck_" + slice.id + ".png",
+                id: slice.id,
+                src: "/images/pie/" + slice.id + ".png",
                 alt: "pie menu",
                 style: "position:absolute; display:none;"
             }, dojo.body());
         }
 
+        // Load the menu border images
         this.border = [];
         var borderIds = [ "lft", "mid", "rt", "top_lft", "top_mid", "top_rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
         dojo.forEach(borderIds, function(id) {
@@ -97,31 +92,80 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         dojo.connect(this.canvas, "keydown", function(e) {
             if (!self.isVisible) return;
-            var key = bespin.util.keys.Key;
-
-            console.log("pie keydown", key);
 
             if (self.keyRunsMe(e) || e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 self.hide();
                 dojo.stopEvent(e);
+                return;
             }
-            else if (e.keyCode == key.UP_ARROW) {
-                self.renderPopout(self.slices.top);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.DOWN_ARROW) {
-                self.renderPopout(self.slices.btm);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.RIGHT_ARROW) {
-                self.renderPopout(self.slices.rt);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.LEFT_ARROW) {
-                self.renderPopout(self.slices.lft);
-                dojo.stopEvent(e);
+
+            for (var dir in self.slices) {
+                var slice = self.slices[dir];
+                if (e.keyCode == slice.key) {
+                    self.renderPopout(slice);
+                    dojo.stopEvent(e);
+                }
             }
         });
+    },
+
+    slices: {
+        commandLine: {
+            id: "puck_active_btm",
+            title: "Command Line",
+            key: bespin.util.keys.Key.DOWN_ARROW,
+            showContents: function(coords) {
+                dojo.byId("footer").style.display = "block";
+                // add 32px to bottom to cater for command line (until it is gone from bottom)
+                dojo.byId("editor").style.bottom = "32px";
+                dojo.byId("info").style.bottom = "32px";
+            }
+        },
+
+        fileBrowser: {
+            id: "puck_active_top",
+            title: "File Browser",
+            key: bespin.util.keys.Key.UP_ARROW,
+            showContents: function(coords) {
+            }
+        },
+
+        reference: {
+            id: "puck_active_lft",
+            title: "Reference",
+            key: bespin.util.keys.Key.LEFT_ARROW,
+            showContents: function(coords) {
+                if (!this.refNode) {
+                    this.refNode = dojo.create("iframe", {
+                        id: "pie_ref",
+                        src: "https://developer.mozilla.org/En/Canvas_tutorial/Using_images",
+                        style: "z-index: 200"
+                    }, dojo.body());
+                }
+                dojo.style(this.refNode, {
+                    left:coords.l + "px", top:coords.t + "px",
+                    width:coords.w + "px", height:coords.h + "px"
+                });
+            }
+        },
+
+        context: {
+            id: "puck_active_rt",
+            title: "Context",
+            key: bespin.util.keys.Key.RIGHT_ARROW,
+            showContents: function(coords) {
+                console.log("context goes here");
+            }
+        },
+
+        off: {
+            id: "puck_off",
+            title: "",
+            key: bespin.util.keys.Key.ESCAPE,
+            showContents: function() {
+                console.log("hideDetail");
+            }
+        }
     },
 
     show: function(dontAnimate) {
@@ -263,45 +307,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
         this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
 
-        // Fill in the center section
-        active.showContents.apply(this, [{ l:cenLeft, t:midTop, w:cenWidth, h:midHeight}]);
-    },
-
-    showCommand: function(coords) {
+        // Title
         this.ctx.fillStyle = "#bcb9ae";
         this.ctx.font = "10pt Calibri, Arial, sans-serif";
-        this.ctx.fillText("Command Line", coords.l + 5, coords.t - 10);
+        this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
 
-        dojo.byId("footer").style.display = "block";
-        // add 32px to bottom to cater for command line (until it is gone from bottom)
-        dojo.byId("editor").style.bottom = "32px";
-        dojo.byId("info").style.bottom = "32px";
-    },
-
-    showFiles: function(coords) {
-        this.ctx.fillText("File System", coords.l, coords.t);
-    },
-
-    showReference: function(coords) {
-        if (!this.refNode) {
-            this.refNode = dojo.create("iframe", {
-                id: "pie_ref",
-                src: "https://developer.mozilla.org/En/Canvas_tutorial/Using_images",
-                style: "z-index: 200"
-            }, dojo.body());
-        }
-        this.refNode.left = coords.l;
-        this.refNode.top = coords.t;
-        this.refNode.width = coords.w;
-        this.refNode.height = coords.h;
-    },
-
-    showContext: function(coords) {
-        console.log("context goes here");
-    },
-
-    hideDetail: function() {
-        console.log("hideDetail");
+        // Fill in the center section
+        active.showContents.apply(this, [{ l:cenLeft, t:midTop, w:cenWidth, h:midHeight}]);
     },
 
     toggle: function() {
