@@ -280,8 +280,9 @@ dojo.declare("bespin.parser.JavaScript", null, {
     },
 
     getMetaInfo: function(tree) {
-        var funcs = [];
-        var info = [];
+        var funcs  = [];
+        var idents = [];
+        var info   = [];
         var codePatterns = this.getCodePatterns();
         // preprocess for speed
         for(var type in codePatterns) {
@@ -300,12 +301,28 @@ dojo.declare("bespin.parser.JavaScript", null, {
 
         var FUNCTION = 74; // from narcissus
         var OBJECT_LITERAL_KEY = 56;
+        var IDENTIFIER = 56;
 
         this.walk(tree, function(node, parentStack, indexStack) {
             var depth = parentStack.length;
             var tree  = parentStack.top();
             var index = indexStack.top();
             var row   = node.lineno - 1;
+            
+            var idents = [];
+            if(node.type == IDENTIFIER) {
+                idents.push(node.value);
+                var i = parentStack.length - 1;
+                while(true) {
+                    var n = parentStack[i];
+                    if(!n) break;
+                    if(n.type == IDENTIFIER) {
+                        idents.push(node.value)
+                    }
+                    --i
+                }
+                console.log("Idents "+idents.join(","))
+            }
 
             // find function
             if (node.type == FUNCTION) {
