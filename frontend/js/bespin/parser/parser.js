@@ -44,24 +44,28 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
         this.currentMetaInfo;
         this.lineMarkers = [];
+        this.foldPoints = [];
 
         // ** {{{ Event: parser:error }}} **
         //
         // Parser found an error in the source code
         bespin.subscribe("parser:syntaxcheck", function(message) {
             var syntaxcheck = bespin.get("settings") && bespin.get("settings").get("syntaxcheck");
-            if ((syntaxcheck === "all" || syntaxcheck === "error") && message.type === "error") {
-                bespin.publish("message", {
-                    msg: 'Syntax error: ' + message.message + ' on line ' + message.row,
-                    tag: 'autohide'
-                });
-                self.lineMarkers.push(message);
-            }
-            if ((syntaxcheck === "all" || syntaxcheck === "warning") && message.type === "warning") {
-                bespin.publish("message", {
-                    msg: 'Syntax warning: ' + message.message + ' on line ' + message.row,
-                    tag: 'autohide'
-                });
+            var cursorRow = bespin.get("editor") && bespin.get("editor").getModelPos().row || -1;
+            if (syntaxcheck === "all" || syntaxcheck === message.type) {
+                //don't trigger message if it's the line we're still typing on, because that's annoying
+                if (cursorRow + 1 != message.line) {
+                    bespin.publish("message", {
+                        msg: 'Syntax ' + message.type + 
+                             (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
+                             ': ' + message.reason + '<p>' + 
+                             (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
+                                 replace(/&/g, '&amp;').
+                                 replace(/</g, '&lt;').
+                                 replace(/>/g, '&gt;')),
+                        tag: 'autohide'
+                    });
+                }
                 self.lineMarkers.push(message);
             }
         });
@@ -89,25 +93,15 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 bespin.publish("message", { msg: "Please pass me a valid function name." });
                 return;
             }
-
-            var info = self.currentMetaInfo;
-            if (info) {
-                if (info.noEngine) {
-                    html = "Unable to find a function in this file type.";
-                } else {
-                    var matches = dojo.filter(info.functions, function(func) {
-                        return func.name == functionName
-                    });
-                    if (matches.length > 0) {
-                        var match = matches[0];
-
-                        bespin.publish("editor:moveandcenter", {
-                            row: match.row
-                        });
-                    } else {
-                        html = "Unable to find the function " + functionName + " in this file.";
-                    }
-                }
+            var matches = dojo.filter(self.foldPoints, function(func) {
+                return func['(name)'] == functionName;
+            });
+            if (matches.length === 0) {
+               html = "Unable to find the function " + functionName + " in this file.";
+            } else {
+               bespin.publish("editor:moveandcenter", {
+                    row: matches[0].row
+                });
             }
             bespin.publish("message", { msg: html });
         });
@@ -119,13 +113,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var data = event.info;
             //console.log("Worker Response "+dojo.toJson(data))
             if (data.messages) for (var i = 0; i < data.messages.length; i++) {
-                bespin.publish("parser:syntaxcheck", {
-                    message: data.messages[i].message,
-                    row: data.messages[i].line,
-                    type: data.messages[i].type
-                });
+                bespin.publish("parser:syntaxcheck", data.messages[i]);
             }
-
+            self.foldPoints = data.foldPoints;
             if (data.metaInfo) {
                 self.currentMetaInfo = data.metaInfo;
             }
@@ -211,10 +201,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     },
 
     getFunctions: function () {
-        if (this.currentMetaInfo) {
-            return this.currentMetaInfo.functions
-        }
-        return []
+        return this.foldPoints || [];
     }
 
 })
@@ -493,27 +480,30 @@ dojo.declare("bespin.parser.JSLint", null, {
     constructor: function(source) {
     },
     name: "JSLint",
-    parse: function(source, parseOptions) {
-        var type = parseOptions.type;
+    parse: function(source, type, parseOptions) {
         if (type === "css") {
             //JSLint spots css files using this prefix
             source = '@charset "UTF-8";\n' + source;
         }
         var result = JSLINT(source, parseOptions);
         var messages = [];
+        var funcs = JSLINT.getFunctions();
         var fatal = JSLINT.errors.length > 0 && JSLINT.errors[JSLINT.errors.length - 1] === null;
         for (var i = 0; i < JSLINT.errors.length; i++) {
             if (JSLINT.errors[i]) {
                 messages.push({
-                    message: JSLINT.errors[i].reason,
+                    reason: JSLINT.errors[i].reason,
                     line: JSLINT.errors[i].line + (type === "css" ? 0 : 1),
-                    type: (i === JSLINT.errors.length - 2 && fatal) ? "error" : "warning"
+                    type: (i === JSLINT.errors.length - 2 && fatal) ? "error" : "warning",
+                    character: JSLINT.errors[i].character,
+                    evidence: JSLINT.errors[i].evidence
                 });
             }
         }
         return {
             result: result,
-            messages: messages
+            messages: messages,
+            foldPoints: (type === 'css' ? [] : funcs)
         };
     }
 });
@@ -533,12 +523,12 @@ bespin.parser.EngineResolver = function() {
       // A high level parse function that uses the {{{type}}} to get the engines
       // it returns the combined results of parsing each one
       // parsers overwrite each other if they pass members with the same name, except for messages which are concatenated
-      parse: function(type, source, parseOptions) {
+      parse: function(source, type, parseOptions) {
           var result = {};
           var engineResult;
           var selectedEngines = this.resolve(type);
           for (var i = 0; i < selectedEngines.length; i++) {
-              engineResult = selectedEngines[i].parse(source, parseOptions);
+              engineResult = selectedEngines[i].parse(source, type, parseOptions);
               engineResult.messages = engineResult.messages.concat(result.messages || []);
               for (var member in engineResult) {
                   if (engineResult.hasOwnProperty(member)) {
@@ -573,7 +563,7 @@ bespin.parser.EngineResolver = function() {
       initialize: function () {
           var engine = this;
           bespin.subscribe("parser:engine:parse", function (event) {
-              var ret = engine.parse(event.type, event.source, event.parseOptions);
+              var ret = engine.parse(event.source, event.type, event.parseOptions);
               bespin.publish("parser:engine:parseDone", {
                   type: event.type,
                   info: ret

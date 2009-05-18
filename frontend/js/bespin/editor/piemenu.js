@@ -30,33 +30,36 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.isVisible = false;
         this.editor = bespin.get("editor");
 
+        // This takes an *age* to load so we create it here
+        this.refNode = dojo.create("iframe", {
+            id: "pie_ref",
+            style: "display:none"
+        }, dojo.body());
+
         this.canvas = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position: absolute; z-index: 100; top: 31px; display: none;",
+            style: "position: absolute; z-index: 100; top: " + this.settings.canvasTop + "px; display: none;",
             tabIndex: -1
         }, dojo.body());
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
         this.ctx = this.canvas.getContext('2d');
+        th.fixCanvas(this.ctx);
 
-        this.slices = {
-            btm: { id: "active_btm", showContents: this.showCommand },
-            top: { id: "active_top", showContents: this.showFiles },
-            lft: { id: "active_lft", showContents: this.showReference },
-            rt:  { id: "active_rt", showContents: this.showContext },
-            off: { id: "off", showContents: this.hideDetail }
-        };
-
+        // Load the slice images
         for (var dir in this.slices) {
             var slice = this.slices[dir];
             slice.img = dojo.create("img", {
-                id: "puck_" + slice.id,
-                src: "/images/pie/puck_" + slice.id + ".png",
+                id: slice.id,
+                src: "/images/pie/" + slice.id + ".png",
                 alt: "pie menu",
                 style: "position:absolute; display:none;"
             }, dojo.body());
+            slice.piemenu = this;
         }
+        this.currentSlice = this.slices.off;
 
+        // Load the menu border images
         this.border = [];
         var borderIds = [ "lft", "mid", "rt", "top_lft", "top_mid", "top_rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
         dojo.forEach(borderIds, function(id) {
@@ -97,31 +100,110 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         dojo.connect(this.canvas, "keydown", function(e) {
             if (!self.isVisible) return;
-            var key = bespin.util.keys.Key;
-
-            console.log("pie keydown", key);
 
             if (self.keyRunsMe(e) || e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 self.hide();
                 dojo.stopEvent(e);
+                return;
             }
-            else if (e.keyCode == key.UP_ARROW) {
-                self.renderPopout(self.slices.top);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.DOWN_ARROW) {
-                self.renderPopout(self.slices.btm);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.RIGHT_ARROW) {
-                self.renderPopout(self.slices.rt);
-                dojo.stopEvent(e);
-            }
-            else if (e.keyCode == key.LEFT_ARROW) {
-                self.renderPopout(self.slices.lft);
-                dojo.stopEvent(e);
+
+            for (var dir in self.slices) {
+                var slice = self.slices[dir];
+                if (e.keyCode == slice.key) {
+                    if (dojo.isFunction(self.currentSlice.hideContents)) {
+                        self.currentSlice.hideContents();
+                    }
+                    self.renderPopout(slice);
+                    self.currentSlice = slice;
+                    dojo.stopEvent(e);
+                }
             }
         });
+    },
+
+    settings: {
+        canvasTop: 31,
+        contentsMargin: 10
+    },
+
+    slices: {
+        commandLine: {
+            id: "puck_active_btm",
+            title: "Command Line",
+            key: bespin.util.keys.Key.DOWN_ARROW,
+            showContents: function(coords) {
+                dojo.style("footer", {
+                    left:coords.l + "px", width:coords.w + "px",
+                    bottom:this.piemenu.slices.off.img.height + "px",
+                    zIndex:"200", display: "block"
+                });
+
+                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
+                dojo.style("info", {
+                    left:coords.l + "px", bottom:bottom + "px",
+                    width:coords.w + "px",
+                    zIndex:"200"
+                });
+            },
+            hideContents: function() {
+                dojo.style("footer", "display", "none");
+                dojo.style("info", {
+                    left:"32px", bottom:"0px",
+                    zIndex:"200"
+                });
+            }
+        },
+
+        fileBrowser: {
+            id: "puck_active_top",
+            title: "File Browser",
+            key: bespin.util.keys.Key.UP_ARROW,
+            showContents: function(coords) {
+            }
+        },
+
+        reference: {
+            id: "puck_active_lft",
+            title: "Reference",
+            key: bespin.util.keys.Key.LEFT_ARROW,
+            showContents: function(coords) {
+                this.piemenu.refNode.src = "https://developer.mozilla.org/En/Canvas_tutorial/Using_images";
+                dojo.style(this.piemenu.refNode, {
+                    left:coords.l + "px", top:coords.t + "px",
+                    width:coords.w + "px", height:coords.h + "px",
+                    position:"absolute", borderWidth:"0", zIndex:"200",
+                    display: "block"
+                });
+            },
+            hideContents: function() {
+                dojo.style(this.piemenu.refNode, "display", "none");
+            }
+        },
+
+        context: {
+            id: "puck_active_rt",
+            title: "Context",
+            key: bespin.util.keys.Key.RIGHT_ARROW,
+            showContents: function(coords) {
+            }
+        },
+
+        off: {
+            id: "puck_off",
+            title: "",
+            key: bespin.util.keys.Key.ESCAPE,
+            showContents: function() {
+            }
+        }
+    },
+
+    toggle: function() {
+        this.isVisible = !this.isVisible;
+        if (this.isVisible) {
+            this.show();
+        } else {
+            this.hide();
+        }
     },
 
     show: function(dontAnimate) {
@@ -144,7 +226,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     self.renderPie(progress);
                 },
                 onEnd: function() {
-                    console.log("where do you want to go today?");
                     self.canvas.focus();
                 }
             });
@@ -154,6 +235,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     hide: function() {
         var self = this;
+        if (dojo.isFunction(self.currentSlice.hideContents)) {
+            self.currentSlice.hideContents();
+        }
+
         if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
             node: {
                 style: {}
@@ -204,17 +289,26 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     /*
      * TODO:
-     * Render the correct slice
      * Put stuff in the content area
      * Animate opening content area?
      * Shrink border images
      * Many of the images are dups. we should save load time
      * - Also consider rotational and translational sym??
-     * Make the canvas cover the screen and not the editor area
      */
     renderPopout: function(active) {
-        var margin = 10;
+        // We can customize how much is visible round the edges
+        var margin = this.settings.contentsMargin;
 
+        // How the graphics are laid out
+        // [top_lft] [-------- top_mid --------] [top_rt]
+        //  ---                                      ---
+        //   |                                        |
+        //  lft                   mid                rt
+        //   |                                        |
+        //  ---                                      ---
+        // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
+
+        // Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -232,91 +326,36 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // Height of the middle row. Assumes all top graphics are same height
         var midHeight = btmTop - margin - this.border.top_mid.height;
         // Width of the center column. Assumes left and right columns graphics are same width
-        var cenWidth = this.canvas.width - (margin + this.border.top_lft.width) - (margin + this.border.top_rt.width);
+        var cenWidth = this.canvas.width - cenLeft - (margin + this.border.top_rt.width);
 
-        // top left
+        // Draw top row
         this.ctx.drawImage(this.border.top_lft, margin, margin);
-
-        // top center
         this.ctx.drawImage(this.border.top_mid, cenLeft, margin, cenWidth, this.border.top_mid.height);
-
-        // top right
         this.ctx.drawImage(this.border.top_rt, rightLeft, margin);
 
-        // middle left
+        // Middle row
         this.ctx.drawImage(this.border.lft, margin, midTop, this.border.lft.width, midHeight);
-
-        // middle center display area
         this.ctx.drawImage(this.border.mid, cenLeft, midTop, cenWidth, midHeight);
-
-        // middle right
         this.ctx.drawImage(this.border.rt, rightLeft, midTop, this.border.rt.width, midHeight);
 
-        // bottom left
+        // Bottom row
         this.ctx.drawImage(this.border.btm_lft, margin, btmTop);
-
-        // bottom (left of pie)
         var lftbWidth = offLeft - (margin + this.border.btm_lft.width);
         this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
-
-        // pie
         this.ctx.drawImage(active.img, offLeft, btmTop);
-
-        // bottom (right of pie)
         var rtbLeft = offLeft + this.slices.off.img.width;
         var rtbWidth = rightLeft - (rtbLeft);
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
-
-        // bottom right
         this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
 
-        active.showContents.apply(this, [{ l:cenLeft, t:midTop, w:cenWidth, h:midHeight}]);
-    },
-
-    showCommand: function(coords) {
+        // Title
         this.ctx.fillStyle = "#bcb9ae";
         this.ctx.font = "10pt Calibri, Arial, sans-serif";
-        this.ctx.fillText("Command Line", coords.l + 5, coords.t - 10);
+        this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
 
-        dojo.byId("footer").style.display = "block";
-        // add 32px to bottom to cater for command line (until it is gone from bottom)
-        dojo.byId("editor").style.bottom = "32px";
-        dojo.byId("info").style.bottom = "32px";
-    },
-
-    showFiles: function(coords) {
-        this.ctx.fillText("File System", coords.l, coords.t);
-    },
-
-    showReference: function(coords) {
-        if (!this.refNode) {
-            this.refNode = dojo.create("iframe", {
-                id: "pie_ref",
-                src: "https://developer.mozilla.org/En/Canvas_tutorial/Using_images",
-                style: "z-index: 200"
-            }, dojo.body());
-        }
-        this.refNode.left = coords.l;
-        this.refNode.top = coords.t;
-        this.refNode.width = coords.w;
-        this.refNode.height = coords.h;
-    },
-
-    showContext: function(coords) {
-        console.log("context goes here");
-    },
-
-    hideDetail: function() {
-        console.log("hideDetail");
-    },
-
-    toggle: function() {
-        this.isVisible = !this.isVisible;
-        if (this.isVisible) {
-            this.show();
-        } else {
-            this.hide();
-        }
+        // Fill in the center section
+        // TODO: Why do we need to push it down 3 extra px?
+        active.showContents({ l:cenLeft, t:(midTop + this.settings.canvasTop + 3), w:cenWidth, h:midHeight});
     },
 
     keyRunsMe: function(e) {
