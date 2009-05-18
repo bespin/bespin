@@ -30,9 +30,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.isVisible = false;
         this.editor = bespin.get("editor");
 
+        // This takes an *age* to load so we create it here
+        this.refNode = dojo.create("iframe", {
+            id: "pie_ref",
+            style: "display:none"
+        }, dojo.body());
+
         this.canvas = dojo.create("canvas", {
             id: 'piemenu',
-            style: "position: absolute; z-index: 100; top: 31px; display: none;",
+            style: "position: absolute; z-index: 100; top: " + this.settings.canvasTop + "px; display: none;",
             tabIndex: -1
         }, dojo.body());
         this.canvas.height = this.editor.canvas.height;
@@ -49,7 +55,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 alt: "pie menu",
                 style: "position:absolute; display:none;"
             }, dojo.body());
+            slice.piemenu = this;
         }
+        this.currentSlice = this.slices.off;
 
         // Load the menu border images
         this.border = [];
@@ -102,11 +110,20 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
+                    if (dojo.isFunction(self.currentSlice.hideContents)) {
+                        self.currentSlice.hideContents();
+                    }
                     self.renderPopout(slice);
+                    self.currentSlice = slice;
                     dojo.stopEvent(e);
                 }
             }
         });
+    },
+
+    settings: {
+        canvasTop: 31,
+        contentsMargin: 10
     },
 
     slices: {
@@ -115,10 +132,25 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
-                dojo.byId("footer").style.display = "block";
-                // add 32px to bottom to cater for command line (until it is gone from bottom)
-                dojo.byId("editor").style.bottom = "32px";
-                dojo.byId("info").style.bottom = "32px";
+                dojo.style("footer", {
+                    left:coords.l + "px", width:coords.w + "px",
+                    bottom:this.piemenu.slices.off.img.height + "px",
+                    zIndex:"200", display: "block"
+                });
+
+                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
+                dojo.style("info", {
+                    left:coords.l + "px", bottom:bottom + "px",
+                    width:coords.w + "px",
+                    zIndex:"200"
+                });
+            },
+            hideContents: function() {
+                dojo.style("footer", "display", "none");
+                dojo.style("info", {
+                    left:"32px", bottom:"0px",
+                    zIndex:"200"
+                });
             }
         },
 
@@ -135,17 +167,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
             showContents: function(coords) {
-                if (!this.refNode) {
-                    this.refNode = dojo.create("iframe", {
-                        id: "pie_ref",
-                        src: "https://developer.mozilla.org/En/Canvas_tutorial/Using_images",
-                        style: "z-index: 200"
-                    }, dojo.body());
-                }
-                dojo.style(this.refNode, {
+                this.piemenu.refNode.src = "https://developer.mozilla.org/En/Canvas_tutorial/Using_images";
+                dojo.style(this.piemenu.refNode, {
                     left:coords.l + "px", top:coords.t + "px",
-                    width:coords.w + "px", height:coords.h + "px"
+                    width:coords.w + "px", height:coords.h + "px",
+                    position:"absolute", borderWidth:"0", zIndex:"200",
+                    display: "block"
                 });
+            },
+            hideContents: function() {
+                dojo.style(this.piemenu.refNode, "display", "none");
             }
         },
 
@@ -154,7 +185,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
             showContents: function(coords) {
-                console.log("context goes here");
             }
         },
 
@@ -163,8 +193,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "",
             key: bespin.util.keys.Key.ESCAPE,
             showContents: function() {
-                console.log("hideDetail");
             }
+        }
+    },
+
+    toggle: function() {
+        this.isVisible = !this.isVisible;
+        if (this.isVisible) {
+            this.show();
+        } else {
+            this.hide();
         }
     },
 
@@ -188,7 +226,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     self.renderPie(progress);
                 },
                 onEnd: function() {
-                    console.log("where do you want to go today?");
                     self.canvas.focus();
                 }
             });
@@ -198,6 +235,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     hide: function() {
         var self = this;
+        if (dojo.isFunction(self.currentSlice.hideContents)) {
+            self.currentSlice.hideContents();
+        }
+
         if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
             node: {
                 style: {}
@@ -256,7 +297,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
      */
     renderPopout: function(active) {
         // We can customize how much is visible round the edges
-        var margin = 10;
+        var margin = this.settings.contentsMargin;
 
         // How the graphics are laid out
         // [top_lft] [-------- top_mid --------] [top_rt]
@@ -313,16 +354,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
 
         // Fill in the center section
-        active.showContents.apply(this, [{ l:cenLeft, t:midTop, w:cenWidth, h:midHeight}]);
-    },
-
-    toggle: function() {
-        this.isVisible = !this.isVisible;
-        if (this.isVisible) {
-            this.show();
-        } else {
-            this.hide();
-        }
+        // TODO: Why do we need to push it down 3 extra px?
+        active.showContents({ l:cenLeft, t:(midTop + this.settings.canvasTop + 3), w:cenWidth, h:midHeight});
     },
 
     keyRunsMe: function(e) {
