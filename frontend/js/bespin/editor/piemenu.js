@@ -101,7 +101,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         dojo.connect(this.canvas, "keydown", function(e) {
             if (!self.isVisible) return;
 
-            if (self.keyRunsMe(e) || e.keyCode == bespin.util.keys.Key.ESCAPE) {
+            if (self.keyRunsMe(e)) {
+                self.show();
+                dojo.stopEvent(e);
+                return;
+            } else if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 self.hide();
                 dojo.stopEvent(e);
                 return;
@@ -133,14 +137,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
                 dojo.style("footer", {
-                    left:coords.l + "px", width:coords.w + "px",
+                    left:coords.l + "px", width:(coords.w - 10) + "px", // -10 makes it fit in, clean that up
                     bottom:this.piemenu.slices.off.img.height + "px",
                     zIndex:"200", display: "block"
                 });
+                dojo.byId("command").focus();
 
                 var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
                 dojo.style("info", {
-                    left:coords.l + "px", bottom:bottom + "px",
+                    left:coords.l + "px", bottom:(bottom + 5) + "px", // +5 make it appear on top of the command line, clean that up
                     width:coords.w + "px",
                     zIndex:"200"
                 });
@@ -167,7 +172,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
             showContents: function(coords) {
-                this.piemenu.refNode.src = "https://developer.mozilla.org/En/Canvas_tutorial/Using_images";
+                this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
                 dojo.style(this.piemenu.refNode, {
                     left:coords.l + "px", top:coords.t + "px",
                     width:coords.w + "px", height:coords.h + "px",
