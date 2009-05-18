@@ -267,10 +267,21 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     infoResizer: function() {
     	if (dojo.style('info', 'display') != 'none') {
     		dojo.style('info', 'height', '');
-    		var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height');
-    		var infoY = dojo.style('info', 'height');
-    		if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
-    		    dojo.style('info', 'height', (editorY - 30) + 'px');
+    		var editorY = window.innerHeight - dojo.style('header', 'height');
+    		// future: if the command line is docked, take that into account:
+    		// dojo.style('commandline', 'height')
+    		var piemenu = dojo.byId('piemenu');
+    		if (piemenu) { // we are in piemenu mode, so change size accordingly
+    		    var infoY = parseInt(dojo.style('info', 'height'));
+        		var placement = parseInt(dojo.style('footer', 'bottom'));
+        		if (infoY > placement) {
+        		    dojo.style('info', 'height', (placement - 5) + 'px');
+    		    }
+    		} else { // no pie menu, command line on the bottom
+        		var infoY = parseInt(dojo.style('info', 'height'));
+        		if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
+        		    dojo.style('info', 'height', (editorY - 30) + 'px');
+        		}
     		}
     	}
     },

@@ -127,24 +127,7 @@ bespin.jetpack.commands.addCommand({
         if (!feature) {
             bespin.publish("message", { msg: "Please pass in the name of the Jetpack feature you would like to install" });
         } else {
-            // Use the custom event to install
-            var event = document.createEvent("Events");
-            var element = dojo.byId("jetpackInstallEvent");
-
-            // create a jetpack event element if it doesn't exist.
-            if (!element) {
-                element = dojo.create("div", {
-                   id: "jetpackEvent",
-                }, dojo.body());
-                element.setAttribute("hidden", true);
-            }
-
-            // set the code string to the "mozjpcode" attribute.
-            element.setAttribute("mozjpcode", bespin.get("editor").model.getDocument());
-
-            // init and dispatch the event.
-            event.initEvent("mozjpinstall", true, false);
-            element.dispatchEvent(event);
+            bespin.jetpack.install(feature);
         }
     }
 });
@@ -318,6 +301,35 @@ bespin.subscribe("toolbar:init", function(event) {
         });
     });
 });
+
+bespin.jetpack.install = function(feature) {
+    // add the link tag to the body
+    // <link rel="jetpack" href="path/feature.js">
+    var link = dojo.create("link", {
+        rel: 'jetpack',
+        href: bespin.util.path.combine("preview/at", bespin.jetpack.projectName, feature + ".js"),
+        name: feature
+    }, dojo.body());
+
+    // Use the custom event to install
+    // var event = document.createEvent("Events");
+    // var element = dojo.byId("jetpackInstallEvent");
+    //
+    // // create a jetpack event element if it doesn't exist.
+    // if (!element) {
+    //     element = dojo.create("div", {
+    //        id: "jetpackEvent",
+    //     }, dojo.body());
+    //     element.setAttribute("hidden", true);
+    // }
+    //
+    // // set the code string to the "mozjpcode" attribute.
+    // element.setAttribute("mozjpcode", bespin.get("editor").model.getDocument());
+    //
+    // // init and dispatch the event.
+    // event.initEvent("mozjpinstall", true, false);
+    // element.dispatchEvent(event);
+}
 
 bespin.jetpack.sizeDropDownBorder = function(dd) {
     var keephidden = false;
