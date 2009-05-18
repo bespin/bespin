@@ -141,6 +141,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     bottom:this.piemenu.slices.off.img.height + "px",
                     zIndex:"200", display: "block"
                 });
+                dojo.byId("command").focus();
 
                 var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
                 dojo.style("info", {
