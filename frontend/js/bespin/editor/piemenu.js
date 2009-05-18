@@ -204,17 +204,26 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     /*
      * TODO:
-     * Render the correct slice
      * Put stuff in the content area
      * Animate opening content area?
      * Shrink border images
      * Many of the images are dups. we should save load time
      * - Also consider rotational and translational sym??
-     * Make the canvas cover the screen and not the editor area
      */
     renderPopout: function(active) {
+        // We can customize how much is visible round the edges
         var margin = 10;
 
+        // How the graphics are laid out
+        // [top_lft] [-------- top_mid --------] [top_rt]
+        //  ---                                      ---
+        //   |                                        |
+        //  lft                   mid                rt
+        //   |                                        |
+        //  ---                                      ---
+        // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
+
+        // Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -232,44 +241,29 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // Height of the middle row. Assumes all top graphics are same height
         var midHeight = btmTop - margin - this.border.top_mid.height;
         // Width of the center column. Assumes left and right columns graphics are same width
-        var cenWidth = this.canvas.width - (margin + this.border.top_lft.width) - (margin + this.border.top_rt.width);
+        var cenWidth = this.canvas.width - cenLeft - (margin + this.border.top_rt.width);
 
-        // top left
+        // Draw top row
         this.ctx.drawImage(this.border.top_lft, margin, margin);
-
-        // top center
         this.ctx.drawImage(this.border.top_mid, cenLeft, margin, cenWidth, this.border.top_mid.height);
-
-        // top right
         this.ctx.drawImage(this.border.top_rt, rightLeft, margin);
 
-        // middle left
+        // Middle row
         this.ctx.drawImage(this.border.lft, margin, midTop, this.border.lft.width, midHeight);
-
-        // middle center display area
         this.ctx.drawImage(this.border.mid, cenLeft, midTop, cenWidth, midHeight);
-
-        // middle right
         this.ctx.drawImage(this.border.rt, rightLeft, midTop, this.border.rt.width, midHeight);
 
-        // bottom left
+        // Bottom row
         this.ctx.drawImage(this.border.btm_lft, margin, btmTop);
-
-        // bottom (left of pie)
         var lftbWidth = offLeft - (margin + this.border.btm_lft.width);
         this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
-
-        // pie
         this.ctx.drawImage(active.img, offLeft, btmTop);
-
-        // bottom (right of pie)
         var rtbLeft = offLeft + this.slices.off.img.width;
         var rtbWidth = rightLeft - (rtbLeft);
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
-
-        // bottom right
         this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
 
+        // Fill in the center section
         active.showContents.apply(this, [{ l:cenLeft, t:midTop, w:cenWidth, h:midHeight}]);
     },
 
