@@ -37,6 +37,9 @@ dojo.mixin(bespin.debug, {
 
     // any state that is sent from the target VM
     state: {},
+    
+    // internal ID numbers for these breakpoints.
+    _sequence: 1,
 
     // helper to check for duplicate breakpoints before adding this one
     addBreakpoint: function(newBreakpoint) {
@@ -44,6 +47,7 @@ dojo.mixin(bespin.debug, {
             var breakpoint = this.breakpoints[i];
             if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;
         }
+        newBreakpoint.id = this.sequence++;
         this.breakpoints.push(newBreakpoint);
         this.saveBreakpoints();
         bespin.publish("debugger:breakpoints:add", newBreakpoint);
@@ -59,6 +63,7 @@ dojo.mixin(bespin.debug, {
     removeBreakpoint: function(breakpointToRemove) {
         for (var i = 0; i < this.breakpoints.length; i++) {
             if (this.breakpointsEqual(this.breakpoints[i], breakpointToRemove)) {
+                breakpointToRemove.id = this.breakpoints[i].id;
                 this.breakpoints.splice(i, 1);
                 this.saveBreakpoints();
                 bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
@@ -85,6 +90,14 @@ dojo.mixin(bespin.debug, {
     loadBreakpoints: function(callback) {
         bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", dojo.hitch(this, function(file) {
             this.breakpoints = dojo.fromJson(file.content);
+            
+            // reset IDs, because they are not consistent between
+            // loads of Bespin.
+            this.sequence = 1;
+            for (var i = 0; i < this.breakpoints.length; i++) {
+                this.breakpoints[i].id = this.sequence++;
+            }
+            
             if (dojo.isFunction(callback)) callback();
         }));
     },
