@@ -133,7 +133,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
         if (!self._started) {
             self._started = true;
-            self.fetch();
 
             self.run_timeout;
             var delay = 400;
@@ -165,6 +164,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 bespin.unsubscribe(onChange);
                 self._started = false;
             })
+            
+            // initial fetch
+            rerun()
         }
     },
 
