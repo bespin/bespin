@@ -137,25 +137,24 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
                 dojo.style("footer", {
-                    left:coords.l + "px", width:(coords.w - 10) + "px", // -10 makes it fit in, clean that up
-                    bottom:this.piemenu.slices.off.img.height + "px",
-                    zIndex:"200", display: "block"
+                    left: coords.l + "px",
+                    width: (coords.w - 10) + "px", // -10 makes it fit in, clean that up
+                    bottom: this.piemenu.slices.off.img.height + "px",
+                    zIndex: "200",
+                    display: "block"
                 });
                 dojo.byId("command").focus();
 
-                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
-                dojo.style("info", {
-                    left:coords.l + "px", bottom:(bottom + 5) + "px", // +5 make it appear on top of the command line, clean that up
-                    width:coords.w + "px",
-                    zIndex:"200"
-                });
+                var left = coords.l;
+                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height") + 5; // +5 make it appear on top of the command line, clean that up
+                var width = coords.w - 50; // -50 makes it fit in, clean that up
+                var height = coords.h - 30; // -30 makes it fit in, clean that up
+
+                bespin.get("commandLine").setInfoInSlice(left, bottom, width, height);
             },
             hideContents: function() {
                 dojo.style("footer", "display", "none");
-                dojo.style("info", {
-                    left:"32px", bottom:"0px",
-                    zIndex:"200"
-                });
+                bespin.get("commandLine").setInfoAtBottom();
             }
         },
 
@@ -174,9 +173,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             showContents: function(coords) {
                 this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
                 dojo.style(this.piemenu.refNode, {
-                    left:coords.l + "px", top:coords.t + "px",
-                    width:coords.w + "px", height:coords.h + "px",
-                    position:"absolute", borderWidth:"0", zIndex:"200",
+                    left: coords.l + "px",
+                    top: coords.t + "px",
+                    width: coords.w + "px",
+                    height: coords.h + "px",
+                    position: "absolute",
+                    borderWidth: "0",
+                    zIndex:"200",
                     display: "block"
                 });
             },
