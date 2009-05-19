@@ -93,6 +93,7 @@ bespin.subscribe("wizard:show", function(event) {
         return;
     }
     
+    // TODO: Get rid of this when we've got the basic devt done
     if (event.showonce) {
         bespin.get('settings').set('hidewelcomescreen', 'true');
     }
