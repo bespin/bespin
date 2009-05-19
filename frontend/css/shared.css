@@ -102,16 +102,19 @@ img {
 
 #info {
     position: absolute;
-    bottom: 0;
-    left: 51px;
     padding: 20px 40px 10px 30px;
-    width: 431px;
     color: #999;
+    /*
+    left: 51px;
+    bottom: 0;
+    width: 431px;
     background-image: url("../images/info_popup.png");
+    */
     background-repeat: no-repeat;
     font-family: Calibri, Arial, sans-serif;
     -webkit-user-select: text;
     -moz-user-select: text;
+    z-index: 200;
 }
 
 #info u {
@@ -120,11 +123,11 @@ img {
 }
 
 #info b {
-	color: #ddd;
+    color: #ddd;
 }
 
 #info a {
-	color: #999;
+    color: #999;
 }
 
 /*
