@@ -67,8 +67,8 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         }
     },
 
-    charMarksStartOfIdentifier: function (char) {
-        return char === "." || char === " " || char === "\t"; // rough estimation
+    charMarksStartOfIdentifier: function (ch) {
+        return ch === "." || ch === " " || ch === "\t"; // rough estimation
     },
 
     subscribe: function () {
