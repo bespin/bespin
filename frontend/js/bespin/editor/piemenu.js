@@ -229,6 +229,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.canvas.width = this.editor.canvas.width + 10;
         this.canvas.style.display = 'block';
         this.canvas.focus();
+        this.renderPopout(this.currentSlice);
     },
 
     show: function() {
@@ -383,7 +384,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // Title
         this.ctx.fillStyle = "#bcb9ae";
-        this.ctx.font = "10pt Calibri, Arial, sans-serif";
+        this.ctx.font = "bold 10pt Calibri, Arial, sans-serif";
         this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
 
         // Fill in the center section
