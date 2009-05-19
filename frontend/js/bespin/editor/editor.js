@@ -1691,6 +1691,7 @@ dojo.declare("bespin.editor.API", null, {
     // this does not set focus to the editor; it indicates that focus has been set to the underlying canvas
     setFocus: function(focus) {
         this.focus = focus;
+        if (focus) this.canvas.focus(); // force it if you have too
     },
 
     setReadOnly: function(readonly) {
