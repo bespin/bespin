@@ -26,13 +26,7 @@ dojo.provide("bespin.editor.piemenu");
 dojo.require("dojo.fx.easing");
 
 dojo.declare("bespin.editor.piemenu.Window", null, {
-    settings: {
-        canvasTop: 31,
-        contentsMargin: 10
-    },
-
     constructor: function() {
-        this.isVisible = false;
         this.editor = bespin.get("editor");
 
         // This takes an *age* to load so we create it here
@@ -62,7 +56,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }, dojo.body());
             slice.piemenu = this;
         }
-        this.currentSlice = this.slices.off;
+        this.currentSlice = null;
 
         // Load the menu border images
         this.border = [];
@@ -80,7 +74,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         /*
         dojo.connect(window, "mousedown", function(e) {
-            if (!self.isVisible) return;
+            if (self.currentSlice == null) return;
 
             var pos = dojo.coords(self.canvas);
             if (e.clientX < pos.l
@@ -94,17 +88,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         */
 
         bespin.subscribe("ui:escape", function(e) {
-            if (self.isVisible) self.hide();
+            if (self.currentSlice != null) self.hide();
         });
 
-        dojo.connect(window, 'resize', dojo.hitch(this, function() {
-            this.canvas.height = this.editor.canvas.height + 10;
-            this.canvas.width = this.editor.canvas.width + 10;
-            if (this.isVisible) this.show(true /* don't animate though */);
-        }));
+        dojo.connect(window, 'resize', this, this.resize);
 
         dojo.connect(this.canvas, "keydown", function(e) {
-            if (!self.isVisible) return;
+            if (self.currentSlice == null) return;
 
             if (self.keyRunsMe(e)) {
                 self.show();
@@ -119,15 +109,21 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
-                    if (dojo.isFunction(self.currentSlice.hideContents)) {
-                        self.currentSlice.hideContents();
-                    }
-                    self.renderPopout(slice);
-                    self.currentSlice = slice;
+                    self.showSlice(slice);
                     dojo.stopEvent(e);
+                    return;
                 }
             }
         });
+    },
+
+    settings: {
+        canvasTop: 31,
+        contentsMargin: 10
+    },
+
+    keyRunsMe: function(e) {
+        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
     slices: {
@@ -137,25 +133,24 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
                 dojo.style("footer", {
-                    left:coords.l + "px", width:(coords.w - 10) + "px", // -10 makes it fit in, clean that up
-                    bottom:this.piemenu.slices.off.img.height + "px",
-                    zIndex:"200", display: "block"
+                    left: coords.l + "px",
+                    width: (coords.w - 10) + "px", // -10 makes it fit in, clean that up
+                    bottom: this.piemenu.slices.off.img.height + "px",
+                    zIndex: "200",
+                    display: "block"
                 });
                 dojo.byId("command").focus();
 
-                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height");
-                dojo.style("info", {
-                    left:coords.l + "px", bottom:(bottom + 5) + "px", // +5 make it appear on top of the command line, clean that up
-                    width:coords.w + "px",
-                    zIndex:"200"
-                });
+                var left = coords.l;
+                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height") + 5; // +5 make it appear on top of the command line, clean that up
+                var width = coords.w - 50; // -50 makes it fit in, clean that up
+                var height = coords.h - 30; // -30 makes it fit in, clean that up
+
+                bespin.get("commandLine").setInfoInSlice(left, bottom, width, height);
             },
             hideContents: function() {
                 dojo.style("footer", "display", "none");
-                dojo.style("info", {
-                    left:"32px", bottom:"0px",
-                    zIndex:"200"
-                });
+                bespin.get("commandLine").setInfoAtBottom();
             }
         },
 
@@ -174,9 +169,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             showContents: function(coords) {
                 this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
                 dojo.style(this.piemenu.refNode, {
-                    left:coords.l + "px", top:coords.t + "px",
-                    width:coords.w + "px", height:coords.h + "px",
-                    position:"absolute", borderWidth:"0", zIndex:"200",
+                    left: coords.l + "px",
+                    top: coords.t + "px",
+                    width: coords.w + "px",
+                    height: coords.h + "px",
+                    position: "absolute",
+                    borderWidth: "0",
+                    zIndex:"200",
                     display: "block"
                 });
             },
@@ -197,45 +196,65 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "puck_off",
             title: "",
             key: bespin.util.keys.Key.ESCAPE,
-            showContents: function() {
-            }
+            showContents: function() { }
         }
     },
 
+    showSlice: function(slice) {
+                   console.log(slice.id);
+        if (dojo.isFunction(this.currentSlice.hideContents)) {
+            this.currentSlice.hideContents();
+        }
+        // If something else causes us to show a slice directly we need to
+        // have focus to do the arrow thing, but ...
+        this.canvas.focus();
+        // Individual slices (e.g. command line) might want to do special
+        // things with the keyboard so this must come after the canvas.focus
+        this.renderPopout(slice);
+        this.currentSlice = slice;
+    },
+
     toggle: function() {
-        this.isVisible = !this.isVisible;
-        if (this.isVisible) {
+        if (this.currentSlice == null) {
             this.show();
         } else {
             this.hide();
         }
     },
 
-    show: function(dontAnimate) {
+    resize: function() {
+        if (this.currentSlice == null) return;
+
+        this.canvas.height = this.editor.canvas.height + 10;
+        this.canvas.width = this.editor.canvas.width + 10;
+        this.canvas.style.display = 'block';
+        this.canvas.focus();
+        this.renderPopout(this.currentSlice);
+    },
+
+    show: function() {
         var self = this;
 
         this.canvas.style.display = 'block';
         this.canvas.focus();
 
-        if (dontAnimate) {
-            this.renderPie(1.0);
-        } else {
-            if (!this.showAnimation) this.showAnimation = dojo.fadeIn({
-                node: {
-                    style:{}
-                },
-                duration: 500,
-                easing: dojo.fx.easing.backOut,
-                onAnimate: function(values) {
-                    var progress = values.opacity;
-                    self.renderPie(progress);
-                },
-                onEnd: function() {
-                    self.canvas.focus();
-                }
-            });
-            this.showAnimation.play();
-        }
+        if (!this.showAnimation) this.showAnimation = dojo.fadeIn({
+            node: {
+                style:{}
+            },
+            duration: 500,
+            easing: dojo.fx.easing.backOut,
+            onAnimate: function(values) {
+                var progress = values.opacity;
+                self.renderPie(progress);
+            },
+            onEnd: function() {
+                self.canvas.focus();
+                self.currentSlice = self.slices.off;
+            }
+        });
+
+        this.showAnimation.play();
     },
 
     hide: function() {
@@ -258,6 +277,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             },
             onEnd: function() {
                 self.canvas.style.display = 'none';
+                self.currentSlice = null;
+                bespin.get("editor").setFocus(true);
             },
         });
         this.hideAnimation.play();
@@ -335,6 +356,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // Width of the center column. Assumes left and right columns graphics are same width
         var cenWidth = this.canvas.width - cenLeft - (margin + this.border.top_rt.width);
 
+        // The pie
+        this.ctx.drawImage(active.img, offLeft, btmTop);
+
+        // Don't draw the menu area for the 'off' slice
+        if (active == this.slices.off) {
+            return;
+        }
+
         // Draw top row
         this.ctx.drawImage(this.border.top_lft, margin, margin);
         this.ctx.drawImage(this.border.top_mid, cenLeft, margin, cenWidth, this.border.top_mid.height);
@@ -349,7 +378,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.drawImage(this.border.btm_lft, margin, btmTop);
         var lftbWidth = offLeft - (margin + this.border.btm_lft.width);
         this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
-        this.ctx.drawImage(active.img, offLeft, btmTop);
+
         var rtbLeft = offLeft + this.slices.off.img.width;
         var rtbWidth = rightLeft - (rtbLeft);
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
@@ -357,15 +386,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // Title
         this.ctx.fillStyle = "#bcb9ae";
-        this.ctx.font = "10pt Calibri, Arial, sans-serif";
+        this.ctx.font = "bold 10pt Calibri, Arial, sans-serif";
         this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
 
         // Fill in the center section
         // TODO: Why do we need to push it down 3 extra px?
         active.showContents({ l:cenLeft, t:(midTop + this.settings.canvasTop + 3), w:cenWidth, h:midHeight});
-    },
-
-    keyRunsMe: function(e) {
-        return (e.keyCode == 'K'.charCodeAt() && e.altKey && !e.shiftKey);
     }
 });
+
