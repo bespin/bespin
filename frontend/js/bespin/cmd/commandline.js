@@ -453,12 +453,21 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 this.complete(dojo.byId('command').value);
                 return false;
+            } else if (bespin.get("piemenu").keyRunsMe(e)) {
+                dojo.stopEvent(e);
+
+                this.hideInfo();
+                var piemenu = bespin.get("piemenu");
+                piemenu.showSlice(piemenu.slices.off);
+
+                return false;
             }
         });
 
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideInfo();
+                bespin.get("piemenu").hide();
             }
         });
     }
