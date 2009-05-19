@@ -74,10 +74,10 @@ bespin.jetpack.commands.addCommand({
         var feature = opts.feature || 'newjetpack';
         var type = opts.type || 'sidebar';
         var project = bespin.jetpack.projectName;
-        var filename = feature + ".html";
+        var filename = feature + ".js";
 
         var templateOptions = {
-            stdtemplate: "jetpacks/" + type + ".html",
+            stdtemplate: "jetpacks/" + type + ".js",
             values: {
                 templateName: feature
             }
@@ -147,9 +147,9 @@ bespin.jetpack.commands.addCommand({
                 output = "<u>Your Jetpack Features</u><br/><br/>";
 
                 output += dojo.map(dojo.filter(jetpacks, function(file) {
-                    return bespin.util.endsWith(file.name, '\\.html');
+                    return bespin.util.endsWith(file.name, '\\.js');
                 }), function(c) {
-                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open " + c.name + " " + bespin.jetpack.projectName + "');\">" + c.name.replace(/\.html$/, '') + "</a>";
+                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open " + c.name + " " + bespin.jetpack.projectName + "');\">" + c.name.replace(/\.js$/, '') + "</a>";
                 }).join("<br>");
             }
 
@@ -171,7 +171,7 @@ bespin.jetpack.commands.addCommand({
             return;
         }
 
-        var path = feature + '.html';
+        var path = feature + '.js';
 
         bespin.get('files').whenFileExists(bespin.jetpack.projectName, path, {
             execute: function() {
@@ -267,7 +267,7 @@ bespin.subscribe("toolbar:init", function(event) {
                         zIndex: '150'
                     })
 
-                    dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" id="jetpack_dropdown_input_create" value="myjetpack"></td><td><input id="jetpack_dropdown_now_create" type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select id="jetpack_dropdown_input_install"><option></option></select></td><td><input id="jetpack_dropdown_now_install" type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
+                    dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" id="jetpack_dropdown_input_create" value="myjetpack" onfocus="bespin.get(\'editor\').setFocus(false);"></td><td><input id="jetpack_dropdown_now_create" type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select id="jetpack_dropdown_input_install"><option></option></select></td><td><input id="jetpack_dropdown_now_install" type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
 
                     document.body.appendChild(dd);
 
@@ -361,11 +361,11 @@ bespin.jetpack.loadInstallScripts = function() {
     bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
         var output;
 
-        if (jetpacks && jetpacks.length > 1) {
+        if (jetpacks && jetpacks.length > 0) {
             output += dojo.map(dojo.filter(jetpacks, function(file) {
-                return bespin.util.endsWith(file.name, '\\.html');
+                return bespin.util.endsWith(file.name, '\\.js');
             }), function(c) {
-                return "<option>" + c.name.replace(/\.html$/, '') + "</option>";
+                return "<option>" + c.name.replace(/\.js$/, '') + "</option>";
             }).join("");
         }
 

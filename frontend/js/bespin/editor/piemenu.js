@@ -26,6 +26,11 @@ dojo.provide("bespin.editor.piemenu");
 dojo.require("dojo.fx.easing");
 
 dojo.declare("bespin.editor.piemenu.Window", null, {
+    settings: {
+        canvasTop: 31,
+        contentsMargin: 10
+    },
+
     constructor: function() {
         this.isVisible = false;
         this.editor = bespin.get("editor");
@@ -123,11 +128,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 }
             }
         });
-    },
-
-    settings: {
-        canvasTop: 31,
-        contentsMargin: 10
     },
 
     slices: {
@@ -239,11 +239,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     hide: function() {
-        var self = this;
-        if (dojo.isFunction(self.currentSlice.hideContents)) {
-            self.currentSlice.hideContents();
+        this.isVisible = false;
+
+        if (dojo.isFunction(this.currentSlice.hideContents)) {
+            this.currentSlice.hideContents();
         }
 
+        var self = this;
         if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
             node: {
                 style: {}

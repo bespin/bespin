@@ -838,9 +838,9 @@ dojo.declare("bespin.editor.UI", null, {
         // DECLARE VARIABLES
 
         // these are convenience references so we don't have to type so much
-        var c = dojo.byId(this.editor.canvas);
-        var theme = this.editor.theme;
         var ed = this.editor;
+        var c = dojo.byId(ed.canvas);
+        var theme = ed.theme;
 
         // these are commonly used throughout the rendering process so are defined up here to make it clear they are shared
         var x, y;

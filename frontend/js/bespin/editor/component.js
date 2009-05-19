@@ -112,7 +112,7 @@ dojo.declare("bespin.editor.Component", null, {
             }, dojo.byId(container));
             
             jetpacktoolbar.innerHTML = '<div class="button"><button id="install" onclick="_editorComponent.executeCommand(\'jetpack install yourfirstjetpack\')">&uarr; Install This JetPack Feature</button></div>\
-            <div>Hey, <a href="http://labs.mozilla.com/jetpack">install JetPack first</a>.</div>\
+            <div>Hey, <a href="https://jetpack.mozillalabs.com/">install JetPack first</a>.</div>\
             <style type="text/css">\
                 #jetpacktoolbar {\
                     position: relative;\
