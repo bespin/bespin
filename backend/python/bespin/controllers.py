@@ -921,6 +921,9 @@ def make_app():
     from webob import Response
     import static
     static_app = static.Cling(c.static_dir)
+    if c.static_override:
+        from paste.cascade import Cascade
+        static_app = Cascade([static.Cling(c.static_override), static_app])
 
     docs_app = pathpopper_middleware(static.Cling(c.docs_dir))
     code_app = pathpopper_middleware(static.Cling(c.static_dir + "/js"), 2)
