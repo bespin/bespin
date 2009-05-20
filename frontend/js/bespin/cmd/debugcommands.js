@@ -74,7 +74,11 @@ dojo.provide("bespin.cmd.debugcommands");
         hidden: true,
         execute: function(commandline, flag) {
             var msg;
-            if (flag === "false") {
+
+            if (flag === undefined || flag == '') {
+                flag = !commandline.editor.readonly;
+                msg = "Toggling read only to " + flag;
+            } else if (flag == 'off' || flag == 'false') {
                 flag = false;
                 msg = "No more read-only!";
             } else {
