@@ -175,7 +175,7 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
     install: function(editor) {
 
         // * Configure the hidden copynpaster element
-        var copynpaster = dojo.create("input", {
+        var copynpaster = dojo.create("textarea", {
             id: 'copynpaster',
             tabIndex: '-1',
             autocomplete: 'off',
@@ -184,9 +184,10 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
 
         var copyToClipboard = function(text) {
             copynpaster.value = text;
+
             copynpaster.select();
             setTimeout(function() {
-                copynpaster.value = "";
+                //copynpaster.value = "";
                 editor.setFocus(true);
             }, 0);
         };
