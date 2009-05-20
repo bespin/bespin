@@ -58,8 +58,8 @@ bespin.jetpack.commands.addCommand({
     preview: 'show commands for jetpack subcommand',
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
-    execute: function(self, extra) {
-        bespin.cmd.displayHelp(bespin.jetpack.commands, self, extra, "<br><br>For more info and help on the available API, <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check out the Reference</a>");
+    execute: function(commandline, extra) {
+        bespin.cmd.displayHelp(bespin.jetpack.commands, commandline, extra, "<br><br>For more info and help on the available API, <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check out the Reference</a>");
     }
 });
 
@@ -70,7 +70,7 @@ bespin.jetpack.commands.addCommand({
     preview: 'create a new jetpack feature of the given type (defaults to sidebar)',
     description: 'Create a new jetpack feature that you can install into Firefox with the new Jetpack goodness.',
     completeText: 'name of your feature, type of JetPack template (sidebar, content, toolbar)',
-    execute: function(self, opts) {
+    execute: function(commandline, opts) {
         var feature = opts.feature || 'newjetpack';
         var type = opts.type || 'sidebar';
         var project = bespin.jetpack.projectName;
@@ -94,7 +94,7 @@ bespin.jetpack.commands.addCommand({
                     });
                 },
                 onFailure: function(xhr) {
-                    self.showInfo("Unable to create " + filename + ": " + xhr.responseText);
+                    commandline.showInfo("Unable to create " + filename + ": " + xhr.responseText);
                 }
             }
         );
@@ -109,7 +109,7 @@ bespin.jetpack.commands.addCommand({
     preview: 'install a jetpack feature',
     description: 'Install a Jetpack feature, either the current file, or the named feature',
     completeText: 'optionally, the name of the feature to install',
-    execute: function(self, feature) {
+    execute: function(commandline, feature) {
         // For when Aza exposes the Jetpack object :)
         // if (!window['Jetpack']) {
         //     bespin.publish("message", { msg: "To install a Jetpack, you need to have installed the extension.<br><br>For now this lives in Firefox only, and you can <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check it out, and download the add-on here</a>." });
@@ -137,7 +137,7 @@ bespin.jetpack.commands.addCommand({
     name: 'list',
     preview: 'list out the Jetpacks that you have written',
     description: 'Which Jetpacks have you written and have available in BespinSettings/jetpacks. NOTE: This is not the same as which Jetpacks you have installed in Firefox!',
-    execute: function(self, extra) {
+    execute: function(commandline, extra) {
         bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
             var output;
 
@@ -165,9 +165,9 @@ bespin.jetpack.commands.addCommand({
     preview: 'edit the given Jetpack feature',
     completeText: 'feature name to edit (required)',
     usage: '[feature]: feature name required.',
-    execute: function(self, feature) {
+    execute: function(commandline, feature) {
         if (!feature) {
-            self.showUsage(this);
+            commandline.showUsage(this);
             return;
         }
 

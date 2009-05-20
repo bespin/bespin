@@ -44,7 +44,7 @@ bespin.cmd.commands.add({
     completeText: 'username(s) of person(s) to follow',
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
     // ** {{{execute}}}
-    execute: function(self, args) {
+    execute: function(commandline, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
             bespin.publish("network:followers");
@@ -112,10 +112,10 @@ bespin.cmd.commands.add({
     completeText: 'username(s) of person(s) to stop following',
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
     // ** {{{execute}}}
-    execute: function(self, args) {
+    execute: function(commandline, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
-            self.showInfo('Please specify the users to cease following');
+            commandline.showInfo('Please specify the users to cease following');
         }
         else {
             bespin.publish("network:unfollow", [ usernames ]);
@@ -159,7 +159,7 @@ bespin.cmd.commands.add({
     takes: ['[{name}|--add|--remove] ...'],
     preview: 'Collect the people you follow into groups, and display the existing groups',
     // ** {{{execute}}}
-    execute: function(self, args) {
+    execute: function(commandline, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
         if (args.length == 0) {
@@ -173,7 +173,7 @@ bespin.cmd.commands.add({
                 bespin.publish("groups:remove:all", [ args[0] ]);
             }
             else {
-                self.showInfo('Syntax error - You must specify what you want to do with your group.');
+                commandline.showInfo('Syntax error - You must specify what you want to do with your group.');
             }
         }
         else if (args.length > 2) {
@@ -187,7 +187,7 @@ bespin.cmd.commands.add({
                 bespin.publish("groups:remove", [ group, args ]);
             }
             else {
-                self.showInfo('Syntax error - To manipulate a group you must use add/remove');
+                commandline.showInfo('Syntax error - To manipulate a group you must use add/remove');
             }
         }
     }
@@ -320,7 +320,7 @@ bespin.cmd.commands.add({
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
     // ** {{{execute}}}
-    execute: function(self, args) {
+    execute: function(commandline, args) {
         args = args.pieces;
 
         if (args.length == 0) {
@@ -371,7 +371,7 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        self.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+        commandline.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
     }
 });
 
@@ -529,7 +529,7 @@ bespin.cmd.commands.add({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
     // ** {{{execute}}}
-    execute: function(self, args) {
+    execute: function(commandline, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
         if (args.length == 0) {
@@ -553,7 +553,7 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        self.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
+        commandline.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
 

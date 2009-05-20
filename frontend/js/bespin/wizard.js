@@ -45,7 +45,7 @@ bespin.cmd.commands.add({
     completeText: 'The name of the wizard to run. Leave blank to list known wizards',
     usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
     // ** {{{execute}}}
-    execute: function(self, type) {
+    execute: function(commandline, type) {
         if (!type) {
             var list = "";
             for (name in bespin.wizard._wizards) {
