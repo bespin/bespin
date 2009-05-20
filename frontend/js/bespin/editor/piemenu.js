@@ -189,6 +189,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
             showContents: function(coords) {
+                /*
+                var piemenu = this.piemenu;
+                var cenLeft = piemenu.settings.margin + piemenu.border.top_lft.width;
+                var midTop = piemenu.settings.margin + piemenu.border.top_mid.height;
+
+                piemenu.ctx.fillStyle = "#bcb9ae";
+                piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
+                piemenu.ctx.fillText("Work in progress", parseInt(cenLeft + 10), parseInt(midTop + 10));
+                */
             }
         },
 
@@ -384,8 +393,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // Title
         this.ctx.fillStyle = "#bcb9ae";
-        this.ctx.font = "bold 10pt Calibri, Arial, sans-serif";
-        this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
+        this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
+        this.ctx.fillText(active.title, cenLeft + 5, midTop - 9);
 
         // Fill in the center section
         // TODO: Why do we need to push it down 3 extra px?
