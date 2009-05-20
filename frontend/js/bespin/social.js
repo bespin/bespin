@@ -29,7 +29,7 @@ dojo.require("bespin.cmd.dashboardcommands");
 // ** {{{ Utility: displayFollowers }}} **
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
-bespin.cmd.displayFollowers = function(followers) {
+bespin.social.displayFollowers = function(followers) {
     var message = "Following: " + followers.join(", ");
     bespin.publish("message", { msg:message });
 }
@@ -67,7 +67,7 @@ if (bespin.cmd.dashboardcommands) {
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
         onSuccess: function(data) {
-            bespin.cmd.displayFollowers(dojo.fromJson(data));
+            bespin.social.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to retrieve followers: " + xhr.responseText });
@@ -80,7 +80,7 @@ bespin.subscribe("network:followers", function() {
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
         onSuccess: function(data) {
-            bespin.cmd.displayFollowers(dojo.fromJson(data));
+            bespin.social.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to add follower: " + xhr.responseText });
@@ -135,7 +135,7 @@ if (bespin.cmd.dashboardcommands) {
 bespin.subscribe("network:unfollow", function(usernames) {
     bespin.get('server').unfollow(usernames, {
         onSuccess: function(data) {
-            bespin.cmd.displayFollowers(dojo.fromJson(data));
+            bespin.social.displayFollowers(dojo.fromJson(data));
         },
         onFailure: function(xhr) {
             bespin.publish("message", { msg: "Failed to remove follower: " + xhr.responseText });
