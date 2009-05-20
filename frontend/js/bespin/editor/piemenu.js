@@ -25,11 +25,21 @@
 dojo.provide("bespin.editor.piemenu");
 dojo.require("dojo.fx.easing");
 
+// = Pie Menu Handling =
+//
+// Display a pie and allow users to select a slice for display
+//
+// Additional work that we should consider at some stage:
+// * Animate opening content area?
+// * Shrink border images
+// * Many of the images are duplicates. We should save load time
+//   (Also consider rotational and translational symmetry?)
 dojo.declare("bespin.editor.piemenu.Window", null, {
+    // == Constructor ==
     constructor: function() {
         this.editor = bespin.get("editor");
 
-        // This takes an *age* to load so we create it here
+        // * The reference pane takes a while to load so we create it here
         this.refNode = dojo.create("iframe", {
             id: "pie_ref",
             style: "display:none"
@@ -45,7 +55,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
 
-        // Load the slice images
+        // * Load the slice images
         for (var dir in this.slices) {
             var slice = this.slices[dir];
             slice.img = dojo.create("img", {
@@ -58,7 +68,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
         this.currentSlice = null;
 
-        // Load the menu border images
+        // * Load the menu border images
         this.border = [];
         var borderIds = [ "lft", "mid", "rt", "top_lft", "top_mid", "top_rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
         dojo.forEach(borderIds, function(id) {
@@ -87,12 +97,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         });
         */
 
+        // * Hide on Escape
         bespin.subscribe("ui:escape", function(e) {
             if (self.currentSlice != null) self.hide();
         });
 
         dojo.connect(window, 'resize', this, this.resize);
 
+        // * Show slices properly
         dojo.connect(this.canvas, "keydown", function(e) {
             if (self.currentSlice == null) return;
 
@@ -117,8 +129,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         });
     },
 
+    // == Various customizations
     settings: {
+        // * How far from the top of the window does the pie go
         canvasTop: 31,
+        // * How much space do we leave around the opened slices?
         contentsMargin: 10
     },
 
@@ -126,7 +141,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
+    // == Objects the control each of the slices ==
     slices: {
+        // === The Command Line Slice ===
         commandLine: {
             id: "puck_active_btm",
             title: "Command Line",
@@ -142,7 +159,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 dojo.byId("command").focus();
 
                 var left = coords.l;
-                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height") + 5; // +5 make it appear on top of the command line, clean that up
+                // +5 make it appear on top of the command line, clean that up
+                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height") + 5;
                 var width = coords.w - 50; // -50 makes it fit in, clean that up
                 var height = coords.h - 30; // -30 makes it fit in, clean that up
 
@@ -154,6 +172,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }
         },
 
+        // === The File Browser Slice ===
         fileBrowser: {
             id: "puck_active_top",
             title: "File Browser",
@@ -162,6 +181,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }
         },
 
+        // === The Reference Slice ===
         reference: {
             id: "puck_active_lft",
             title: "Reference",
@@ -184,14 +204,25 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }
         },
 
+        // === The Context Menu Slice ===
         context: {
             id: "puck_active_rt",
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
             showContents: function(coords) {
+                /*
+                var piemenu = this.piemenu;
+                var cenLeft = piemenu.settings.margin + piemenu.border.top_lft.width;
+                var midTop = piemenu.settings.margin + piemenu.border.top_mid.height;
+
+                piemenu.ctx.fillStyle = "#bcb9ae";
+                piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
+                piemenu.ctx.fillText("Work in progress", parseInt(cenLeft + 10), parseInt(midTop + 10));
+                */
             }
         },
 
+        // === All Slices closed ===
         off: {
             id: "puck_off",
             title: "",
@@ -200,6 +231,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
     },
 
+    // == Show a specific slice
     showSlice: function(slice) {
         if (this.currentSlice == slice) return;
 
@@ -215,6 +247,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.currentSlice = slice;
     },
 
+    // == Toggle whether the pie menu is visible
     toggle: function() {
         if (this.currentSlice == null) {
             this.show();
@@ -223,6 +256,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
     },
 
+    // == Resize the pie menu ==
+    // To be called from a window.onresize event
     resize: function() {
         if (this.currentSlice == null) return;
 
@@ -233,6 +268,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.renderPopout(this.currentSlice);
     },
 
+    // == Begin a show animation ==
     show: function(withSlice) {
         var self = this;
 
@@ -259,6 +295,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.showAnimation.play();
     },
 
+    // == Begin a hide animation ==
     hide: function() {
         if (this.currentSlice && dojo.isFunction(this.currentSlice.hideContents)) {
             this.currentSlice.hideContents();
@@ -284,6 +321,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    // == Render the pie in some opening/closing state ==
     renderPie: function(progress) {
         var ctx = this.ctx;
         var off = this.slices.off.img;
@@ -315,28 +353,22 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         ctx.restore();
     },
 
-    /*
-     * TODO:
-     * Put stuff in the content area
-     * Animate opening content area?
-     * Shrink border images
-     * Many of the images are dups. we should save load time
-     * - Also consider rotational and translational sym??
-     */
+    // == Render an open slice ==
+    // How the graphics are laid out
+    // {{{
+    // [top_lft] [-------- top_mid --------] [top_rt]
+    // --                                          --
+    // |                                            |
+    // lft                   mid                   rt
+    // |                                            |
+    // --                                          --
+    // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
+    // }}}
     renderPopout: function(active) {
         // We can customize how much is visible round the edges
         var margin = this.settings.contentsMargin;
 
-        // How the graphics are laid out
-        // [top_lft] [-------- top_mid --------] [top_rt]
-        //  ---                                      ---
-        //   |                                        |
-        //  lft                   mid                rt
-        //   |                                        |
-        //  ---                                      ---
-        // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
-
-        // Start again with greying everything out
+        // * Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -356,25 +388,25 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // Width of the center column. Assumes left and right columns graphics are same width
         var cenWidth = this.canvas.width - cenLeft - (margin + this.border.top_rt.width);
 
-        // The pie
+        // * The pie
         this.ctx.drawImage(active.img, offLeft, btmTop);
 
-        // Don't draw the menu area for the 'off' slice
+        // * Don't draw the menu area for the 'off' slice
         if (active == this.slices.off) {
             return;
         }
 
-        // Draw top row
+        // * Draw top row
         this.ctx.drawImage(this.border.top_lft, margin, margin);
         this.ctx.drawImage(this.border.top_mid, cenLeft, margin, cenWidth, this.border.top_mid.height);
         this.ctx.drawImage(this.border.top_rt, rightLeft, margin);
 
-        // Middle row
+        // * Middle row
         this.ctx.drawImage(this.border.lft, margin, midTop, this.border.lft.width, midHeight);
         this.ctx.drawImage(this.border.mid, cenLeft, midTop, cenWidth, midHeight);
         this.ctx.drawImage(this.border.rt, rightLeft, midTop, this.border.rt.width, midHeight);
 
-        // Bottom row
+        // * Bottom row
         this.ctx.drawImage(this.border.btm_lft, margin, btmTop);
         var lftbWidth = offLeft - (margin + this.border.btm_lft.width);
         this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
@@ -384,13 +416,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
         this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
 
-        // Title
+        // * Title
         this.ctx.fillStyle = "#bcb9ae";
-        this.ctx.font = "bold 10pt Calibri, Arial, sans-serif";
-        this.ctx.fillText(active.title, cenLeft + 5, midTop - 10);
+        this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
+        this.ctx.fillText(active.title, cenLeft + 5, midTop - 9);
 
-        // Fill in the center section
-        // TODO: Why do we need to push it down 3 extra px?
+        // * Fill in the center section
+        // * TODO: Why do we need to push it down 3 extra px?
         active.showContents({ l:cenLeft, t:(midTop + this.settings.canvasTop + 3), w:cenWidth, h:midHeight});
     }
 });
