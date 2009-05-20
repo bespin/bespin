@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Testing globalAlpha on Text</title>
+    <script>
+        function renderCanvasText() {
+            var ctx = document.getElementById("myCanvas").getContext("2d");
+
+            if (!ctx.fillText) {
+                document.getElementById("error").innerHTML = "This browser supports canvas, but doesn't support canvas text rendering";
+            } else {
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = "black";
+                ctx.fillText("This browser supports canvas text rendering", 0, 12);
+                ctx.globalAlpha = 1.0;                
+            }
+        }
+    </script>
+</head>
+<body onload="renderCanvasText()">
+    <p id="error"></p>
+    <canvas id="myCanvas" height="100" width="1000">This browser doesn't support canvas</canvas>
+</body>
+</html>
