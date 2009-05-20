@@ -306,23 +306,25 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (matches.length == 1) {
             var commandLineValue = matches[0];
 
-            var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
-
-            if (command) {
-                if (this.commandStore.commandTakesArgs(command)) {
-                    commandLineValue += ' ';
-                }
-
-                if (command['completeText']) {
-                    this.showInfo(command['completeText']);
-                }
-
-                if (command['complete']) {
-                    this.showInfo(command.complete(this, value));
-                }
-            } else { // an alias
+            if (this.commandStore.aliases[commandLineValue]) {
                 this.showInfo(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
                 commandLineValue += ' ';
+            } else {
+                var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
+
+                if (command) {
+                    if (this.commandStore.commandTakesArgs(command)) {
+                        commandLineValue += ' ';
+                    }
+
+                    if (command['completeText']) {
+                        this.showInfo(command['completeText']);
+                    }
+
+                    if (command['complete']) {
+                        this.showInfo(command.complete(this, value));
+                    }
+                }
             }
 
             this.commandLine.value = (completions.root ? (completions.root + ' ') : '') + commandLineValue;
