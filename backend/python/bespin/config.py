@@ -64,6 +64,7 @@ c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.default_quota = 15
 c.secure_cookie = True
+c.http_only_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
 
 # additional mappings from top-level of URL to directory
