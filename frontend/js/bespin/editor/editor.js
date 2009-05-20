@@ -27,7 +27,7 @@ dojo.provide("bespin.editor.editor");
 dojo.require("bespin.editor.clipboard");
 
 // = Editor =
-// 
+//
 // This is the guts. The metal. The core editor has most of its classes living in here:
 //
 // * {{{bespin.editor.API}}} : The editor API itself
@@ -561,9 +561,9 @@ dojo.declare("bespin.editor.UI", null, {
                 if (lineMarkers[i].line === down.row + 1) {
                     message = lineMarkers[i];
                     bespin.publish("message", {
-                        msg: 'Syntax ' + message.type + 
+                        msg: 'Syntax ' + message.type +
                              (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
-                             ': ' + message.reason + '<p>' + 
+                             ': ' + message.reason + '<p>' +
                              (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
                                  replace(/&/g, '&amp;').
                                  replace(/</g, '&lt;').
@@ -998,7 +998,7 @@ dojo.declare("bespin.editor.UI", null, {
                             ctx.fillStyle = this.editor.theme.lineMarkerErrorColor;
                         } else {
                             ctx.fillStyle = this.editor.theme.lineMarkerWarningColor;
-                        }                            
+                        }
                         ctx.fillRect(0, y, this.gutterWidth, this.lineHeight);
                     }
                  }
@@ -1130,6 +1130,15 @@ dojo.declare("bespin.editor.UI", null, {
             // syntax highlighting
             var lineInfo = this.syntaxModel.getSyntaxStylesPerLine(lineText, currentLine, this.editor.language);
 
+            // Define a fill that is aware of the readonly attribute and fades out if applied
+            var readOnlyAwareFille = ed.readonly ? function(text, x, y) {
+                ctx.globalAlpha = 0.3;
+                ctx.fillText(text, x, y);
+                ctx.globalAlpha = 1.0;
+            } : function(text, x, y) {
+                ctx.fillText(text, x, y);
+            };
+
             for (ri = 0; ri < lineInfo.regions.length; ri++) {
                 var styleInfo = lineInfo.regions[ri];
 
@@ -1150,7 +1159,7 @@ dojo.declare("bespin.editor.UI", null, {
 
                     ctx.fillStyle = this.editor.theme[style] || "white";
                     ctx.font = this.editor.theme.editorTextFont;
-                    ctx.fillText(thisLine, x, cy);
+                    readOnlyAwareFille(thisLine, x, cy);
                 }
             }
 
