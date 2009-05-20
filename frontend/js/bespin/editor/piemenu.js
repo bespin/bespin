@@ -210,8 +210,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     showSlice: function(slice) {
-                   console.log(slice.id);
-        if (dojo.isFunction(this.currentSlice.hideContents)) {
+        if (this.currentSlice == slice) return;
+
+        if (this.currentSlice && dojo.isFunction(this.currentSlice.hideContents)) {
             this.currentSlice.hideContents();
         }
         // If something else causes us to show a slice directly we need to
@@ -241,7 +242,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.renderPopout(this.currentSlice);
     },
 
-    show: function() {
+    show: function(withSlice) {
         var self = this;
 
         this.canvas.style.display = 'block';
@@ -260,6 +261,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             onEnd: function() {
                 self.canvas.focus();
                 self.currentSlice = self.slices.off;
+                if (withSlice) self.showSlice(withSlice);
             }
         });
 
@@ -267,11 +269,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     hide: function() {
-        var self = this;
-        if (dojo.isFunction(self.currentSlice.hideContents)) {
-            self.currentSlice.hideContents();
+        if (this.currentSlice && dojo.isFunction(this.currentSlice.hideContents)) {
+            this.currentSlice.hideContents();
         }
 
+        var self = this;
         if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
             node: {
                 style: {}
@@ -387,7 +389,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
 
         var rtbLeft = offLeft + this.slices.off.img.width;
-        var rtbWidth = rightLeft - (rtbLeft);
+        var rtbWidth = rightLeft - rtbLeft;
         this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
         this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
 

@@ -169,29 +169,25 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
 // ** {{{ bespin.editor.clipboard.HiddenWorld }}} **
 //
-// Exclusively grab the C, X, and V key combos and use a hidden textarea to move data around
+// Exclusively grab the C, X, and V key combos and use a hidden input to move data around
 
 dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
     install: function(editor) {
 
         // * Configure the hidden copynpaster element
-        var copynpaster = dojo.create("textarea", {
+        var copynpaster = dojo.create("input", {
+            id: 'copynpaster',
             tabIndex: '-1',
             autocomplete: 'off',
-            id: 'copynpaster',
-            style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
+            style: "position:absolute; z-index:999; top:-10000px; width:0; height:0; border:none;"
         }, dojo.body());
 
-        var grabAndGo = function(text) {
+        var copyToClipboard = function(text) {
             copynpaster.value = text;
-            focusSelectAndGo();
-        };
-
-        var focusSelectAndGo = function() {
-            copynpaster.focus();
             copynpaster.select();
             setTimeout(function() {
-                dojo.byId('canvas').focus();
+                copynpaster.value = "";
+                editor.setFocus(true);
             }, 0);
         };
 
@@ -199,23 +195,23 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
             if ((bespin.util.isMac() && e.metaKey) || e.ctrlKey) {
                 // Copy
                 if (e.keyCode == 67 /*c*/) {
-                    // place the selection into the textarea
+                    // place the selection into the input
                     var selectionText = editor.getSelectionAsText();
 
                     if (selectionText && selectionText != '') {
-                        grabAndGo(selectionText);
+                        copyToClipboard(selectionText);
                     }
 
                 // Cut
                 } else if (e.keyCode == 88 /*x*/) {
-                    // place the selection into the textarea
+                    // place the selection into the input
                     var selectionObject = editor.getSelection();
 
                     if (selectionObject) {
                         var selectionText = editor.model.getChunk(selectionObject);
 
                         if (selectionText && selectionText != '') {
-                            grabAndGo(selectionText);
+                            copyToClipboard(selectionText);
                             editor.ui.actions.deleteSelection(selectionObject);
                         }
                     }
@@ -224,13 +220,14 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
                 } else if (e.keyCode == 86 /*v*/) {
                     if (e.target == dojo.byId("command")) return; // let the paste happen in the command
 
-                    focusSelectAndGo();
+                    copynpaster.select(); // select and hope that the paste goes in here
 
-                    setTimeout(function() { // wait just a TOUCH to make sure that it is selected
+                    setTimeout(function() {
                         var args = bespin.editor.utils.buildArgs();
                         args.chunk = copynpaster.value;
                         if (args.chunk) editor.ui.actions.insertChunk(args);
-                    }, 1);
+                        editor.setFocus(true);
+                    }, 0);
                 }
             }
         });

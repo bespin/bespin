@@ -28,7 +28,7 @@ dojo.require("bespin.editor.undo");
 
 dojo.require("bespin.themes.default");
 
-dojo.require("bespin.syntax.base"); 
+dojo.require("bespin.syntax.base");
 dojo.require("bespin.syntax.simple._base");
 dojo.require("bespin.syntax.simple.javascript");
 dojo.require("bespin.syntax.simple.css");
@@ -63,19 +63,19 @@ dojo.declare("bespin.editor.Component", null, {
     // Takes a container element, and the set of options for the component which include those noted above.
     constructor: function(container, opts) {
         opts.actsAsComponent = true;
-        
+
         var initialcontent;
         if (opts.loadfromdiv) {
             if (dojo.byId('BESPIN_EDITOR_CODE')) {
                 var code = dojo.byId('BESPIN_EDITOR_CODE');
                 initialcontent = code.value;
             } else {
-                initialcontent = dojo.byId(container).innerHTML;                
+                initialcontent = dojo.byId(container).innerHTML;
             }
         } else if (opts.content) {
             initialcontent = opts.content;
         }
-        
+
         this.editor = bespin.register('editor', opts.editor || new bespin.editor.API(container, opts));
         this.editSession = bespin.register('editSession', opts.editSession || new bespin.client.session.EditSession(this.editor));
         this.server = bespin.register('server', opts.server || new bespin.client.Server());
@@ -86,9 +86,9 @@ dojo.declare("bespin.editor.Component", null, {
             dojo.require("bespin.cmd.commandline");
             dojo.require("bespin.cmd.commands");
             dojo.require("bespin.cmd.editorcommands");
-            
+
             var commandlineElement;
-            
+
             if (typeof opts.commandline == "boolean") { // literally, true
                 commandlineElement = dojo.create("div", {
                    id: "commandlinewrapper",
@@ -101,7 +101,7 @@ dojo.declare("bespin.editor.Component", null, {
 
             this.commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface(commandlineElement, bespin.cmd.editorcommands.Commands));
         }
-        
+
         // Use in memory settings here instead of saving to the server which is default. Potentially use Cookie settings
         bespin.register('settings', opts.settings || new bespin.client.settings.Core(bespin.client.settings.InMemory));
 
@@ -110,9 +110,9 @@ dojo.declare("bespin.editor.Component", null, {
             var jetpacktoolbar = dojo.create("div", {
                 id: "jetpacktoolbar"
             }, dojo.byId(container));
-            
+
             jetpacktoolbar.innerHTML = '<div class="button"><button id="install" onclick="_editorComponent.executeCommand(\'jetpack install yourfirstjetpack\')">&uarr; Install This JetPack Feature</button></div>\
-            <div>Hey, <a href="http://labs.mozilla.com/jetpack">install JetPack first</a>.</div>\
+            <div>Hey, <a href="https://jetpack.mozillalabs.com/">install JetPack first</a>.</div>\
             <style type="text/css">\
                 #jetpacktoolbar {\
                     position: relative;\
@@ -203,7 +203,7 @@ dojo.declare("bespin.editor.Component", null, {
     set: function(key, value) {
         bespin.publish("settings:set", {
            key: key,
-           value: value 
+           value: value
         });
     },
 
@@ -220,7 +220,7 @@ dojo.declare("bespin.editor.Component", null, {
     //
     // For example,
     //
-    // { 
+    // {
     //   modifiers: "ctrl",
     //   key: "b",
     //   action: "moveCursorLeft"

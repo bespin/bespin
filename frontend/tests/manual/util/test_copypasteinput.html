@@ -1,0 +1,64 @@
+<html>
+<head>
+<title>Testing Copy and Paste through a hidden input</title>
+</head>
+
+<body>	
+	<style>
+	#copynpaster {
+      position: absolute;
+      top: -10000px;
+      z-index: 99;
+    }
+	</style>
+	
+	<script>
+	var commandKey;
+	window.onload = function() {
+	    commandKey = isMac() ? 'metaKey' : 'ctrlKey';
+	}
+
+	function isMac() {
+        return navigator.appVersion.indexOf("Macintosh") >= 0;        
+	}
+
+	function $(id) {
+	    return document.getElementById(id);
+	}
+	
+	function onPaste(value) {
+	    $('result').innerHTML = "Pasted: " + value;
+	}
+	
+    window.onkeydown = function(e) {
+        var copynpaster = $('copynpaster');
+        var ch = String.fromCharCode(e.keyCode).toLowerCase();
+        if (ch == "v" && e[commandKey]) { // PASTE
+            copynpaster.select();
+            window.setTimeout(function() {
+                onPaste(copynpaster.value);
+            }, 0);
+            $('result').innerHTML = "Paste";
+        } else if (ch == "c" && e[commandKey]) { // COPY
+            copynpaster.value = $('tocopy').value;
+            copynpaster.select();
+            window.setTimeout(function() {
+                copynpaster.value = "";
+                copynpaster.blur();
+            })
+        }
+    };
+	</script>
+
+    <input type="text" id="tocopy" value="this should get copied in"><br>
+    
+    <input type="text" id="another"><br>
+    
+    even when you select this and try to copy it.
+
+	<input id="copynpaster"><br>
+
+	<div id="result" style="padding: 8px;"></div>
+
+</body>
+</html>

@@ -773,7 +773,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         // handle key to jump between editor and other windows / commandline
         listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
-        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Focus Commandline");
+        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Commandline");
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
@@ -838,9 +838,9 @@ dojo.declare("bespin.editor.UI", null, {
         // DECLARE VARIABLES
 
         // these are convenience references so we don't have to type so much
-        var c = dojo.byId(this.editor.canvas);
-        var theme = this.editor.theme;
         var ed = this.editor;
+        var c = dojo.byId(ed.canvas);
+        var theme = ed.theme;
 
         // these are commonly used throughout the rendering process so are defined up here to make it clear they are shared
         var x, y;
@@ -1691,6 +1691,7 @@ dojo.declare("bespin.editor.API", null, {
     // this does not set focus to the editor; it indicates that focus has been set to the underlying canvas
     setFocus: function(focus) {
         this.focus = focus;
+        if (focus) this.canvas.focus(); // force it if you have too
     },
 
     setReadOnly: function(readonly) {

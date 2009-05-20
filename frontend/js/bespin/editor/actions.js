@@ -778,20 +778,20 @@ dojo.declare("bespin.editor.Actions", null, {
             // nothing to search for? Reset the searchString
             this.editor.ui.setSearchString(false);
             this.editor.paint(true);
-            dojo.byId('searchresult').style.display = 'none';    
+            dojo.byId('searchresult').style.display = 'none';
             return false;
         }
-        
+
         if (str == this.editor.ui.searchString && displayType == 'toolbar') {
             if (!shiftKey) {
-                this.findNext();    
+                this.findNext();
             } else {
-                this.findPrev();    
+                this.findPrev();
             }
             dojo.byId('searchresult').style.display = 'block';
             return;
         }
-        
+
         // go and search for the searchString
         this.editor.ui.setSearchString(str);
         var count = this.editor.model.getCountOfString(str);
@@ -806,7 +806,7 @@ dojo.declare("bespin.editor.Actions", null, {
                 this.editor.ui.actions.findNext();
             }
         }
-        
+
         // display the count of matches in different ways
         switch (displayType) {
             case 'commandLine':
@@ -816,14 +816,14 @@ dojo.declare("bespin.editor.Actions", null, {
 
                 bespin.get('commandLine').showInfo(msg, true);
             break;
-            
+
             case 'searchwindow':
                 var filesearch = bespin.get('filesearch');
                 if (filesearch) {
                     filesearch.setMatchesCount(count);
                 }
             break;
-            
+
             case 'toolbar':
                 var msg = + count + " Match";
                 if (count > 1) { msg += 'es'; }
@@ -831,11 +831,11 @@ dojo.declare("bespin.editor.Actions", null, {
                 dojo.byId('searchresult').style.display = 'block';
             break;
         }
-        
+
         // repaint the editor
         this.editor.paint(true);
     },
-    
+
     // find the next match in the file
     findNext: function(canBeSamePosition) {
         if (!this.editor.ui.searchString) return;
@@ -866,8 +866,8 @@ dojo.declare("bespin.editor.Actions", null, {
         var found = this.model.findPrev(pos.row, pos.col, this.editor.ui.searchString);
         if (!found) {
             var lastRow = this.model.getRowCount() - 1;
-            found = this.model.findPrev(lastRow, this.model.getRowArray(lastRow).length - 1, this.editor.ui.searchString);  
-        } 
+            found = this.model.findPrev(lastRow, this.model.getRowArray(lastRow).length - 1, this.editor.ui.searchString);
+        }
         if (found) {
             this.editor.setSelection({startPos: this.cursorManager.getCursorPosition(found.startPos), endPos: this.cursorManager.getCursorPosition(found.endPos)});
             this.cursorManager.moveCursor(this.cursorManager.getCursorPosition(found.endPos));
@@ -888,17 +888,17 @@ dojo.declare("bespin.editor.Actions", null, {
             quickopen.window.toggle();
         }
     },
-    
+
     togglePieMenu: function() {
         var piemenu = bespin.get('piemenu');
         if (piemenu) {
             piemenu.toggle();
         }
     },
-    
+
     toggleFilesearch: function() {
         var settings = bespin.get("settings");
-        
+
         if (settings && !settings.isSettingOn('searchwindow')) {
             dojo.byId('searchquery').focus();
             dojo.byId('searchquery').select();
@@ -906,14 +906,19 @@ dojo.declare("bespin.editor.Actions", null, {
             var filesearch = bespin.get('filesearch');
             if (filesearch) {
                 filesearch.window.toggle();
-            }            
+            }
         }
     },
-    
+
     focusCommandline: function() {
-        var commandLine = bespin.get('commandLine');
-        if (commandLine) {
-            commandLine.commandLine.focus();
+        var piemenu = bespin.get('piemenu');
+        if (piemenu) {
+            piemenu.show(piemenu.slices.commandLine);
+        } else {
+            var commandLine = bespin.get('commandLine');
+            if (commandLine) {
+                commandLine.commandLine.focus();
+            }
         }
     },
 
