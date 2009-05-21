@@ -162,7 +162,7 @@ bespin.util.keys.passThroughToBrowser = function(e) {
 
     if (!e.ctrlKey) { // let normal characters through
         return true;
-    } else if (e.metaKey || e.altKey) { // Apple or Alt key
+    } else if (e.metaKey || e.altKey || e.ctrlKey) { // Apple or Alt key
         if (e.type == "keypress") {
             if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;
         } else {
