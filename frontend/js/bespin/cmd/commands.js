@@ -119,8 +119,8 @@ bespin.cmd.commands.add({
     preview: 'show commands',
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
-    execute: function(self, extra) {
-        bespin.cmd.displayHelp(self.commandStore, self, extra);
+    execute: function(commandLine, extra) {
+        bespin.cmd.displayHelp(commandLine.commandStore, commandLine, extra);
     }
 });
 
@@ -130,7 +130,7 @@ bespin.cmd.commands.add({
     takes: ['js-code'],
     preview: 'evals given js code and show the result',
     completeText: 'evals given js code and show the result',
-    execute: function(self, jscode) {
+    execute: function(commandLine, jscode) {
         try {
             var result = eval(jscode);
         } catch (err) {
@@ -179,7 +179,7 @@ bespin.cmd.commands.add({
             type = typeof result;
         }
 
-        self.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");
+        commandLine.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");
     }
 });
 
@@ -189,16 +189,16 @@ bespin.cmd.commands.add({
         takes: ['key', 'value'],
         preview: 'define and show settings',
         completeText: 'optionally, add a key and/or a value, else you will see all settings',
-        // complete: function(self, value) {
-        //     console.log(self);
+        // complete: function(commandLine, value) {
+        //     console.log(commandLine);
         //     console.log(value);
         //     return value;
         // },
-        execute: function(self, setting) {
+        execute: function(commandLine, setting) {
             var output;
 
             if (!setting.key) { // -- show all
-                var settings = self.settings.list();
+                var settings = commandLine.settings.list();
                 output = "<u>Your Settings</u><br/><br/>";
                 dojo.forEach(settings.sort(function (a, b) { // first sort the settings based on the key
                     if (a.key < b.key) {
@@ -216,7 +216,7 @@ bespin.cmd.commands.add({
             } else {
                 var key = setting.key;
                 if (setting.value === undefined) { // show it
-                    var value = self.settings.get(key);
+                    var value = commandLine.settings.get(key);
                     if (value) {
                         output = "<u>Your setting</u><br/><br/>";
                         output += key + ": " + value;
@@ -226,10 +226,10 @@ bespin.cmd.commands.add({
                 } else {
                     output = "<u>Saving setting</u><br/><br/>";
                     output += key + ": " + setting.value;
-                    self.settings.set(key, setting.value);
+                    commandLine.settings.set(key, setting.value);
                 }
             }
-            self.showInfo(output);
+            commandLine.showInfo(output);
         }
 });
 
@@ -239,9 +239,9 @@ bespin.cmd.commands.add({
         takes: ['key'],
         preview: 'unset a setting entirely',
         completeText: 'add a key for the setting to delete entirely',
-        execute: function(self, key) {
-            self.settings.unset(key);
-            self.showInfo("Unset the setting for " + key + ".");
+        execute: function(commandLine, key) {
+            commandLine.settings.unset(key);
+            commandLine.showInfo("Unset the setting for " + key + ".");
         }
 });
 
@@ -251,7 +251,7 @@ bespin.cmd.commands.add({
         takes: ['searchString'],
         preview: 'searches the current file for the given searchString',
         completeText: 'type in a string to search',
-        execute: function(self, str) {
+        execute: function(commandLine, str) {
             bespin.get('actions').startSearch(str, 'commandLine');
         }
 });
@@ -263,7 +263,7 @@ bespin.cmd.commands.add({
     takes: ['project'],
     preview: 'show files',
     completeText: 'optionally, add the project name of your choice',
-    execute: function(self, project) {
+    execute: function(commandLine, project) {
         if (!project) {
             bespin.withComponent('editSession', function(editSession) {
                 project = editSession.project;
@@ -271,16 +271,16 @@ bespin.cmd.commands.add({
         }
 
         if (!project) {
-            self.showInfo("You need to pass in a project");
+            commandLine.showInfo("You need to pass in a project");
             return;
         }
 
-        self.files.fileNames(project, function(fileNames) {
+        commandLine.files.fileNames(project, function(fileNames) {
             var files = "<u>Files in project: " + project + "</u><br/><br/>";
             for (var x = 0; x < fileNames.length; x++) {
                 files += fileNames[x].name + "<br/>";
             }
-            self.showInfo(files);
+            commandLine.showInfo(files);
         });
     }
 });
@@ -289,7 +289,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.publish("session:status");
     }
 });
@@ -300,11 +300,11 @@ bespin.cmd.commands.add({
     takes: ['projectname'],
     preview: 'show the current project, or set to a new one',
     completeText: 'optionally, add the project name to change to that project',
-    execute: function(self, projectname) {
+    execute: function(commandLine, projectname) {
         if (projectname) {
             bespin.publish("project:set", { project: projectname });
         } else {
-            self.executeCommand('status');
+            commandLine.executeCommand('status');
         }
     }
 });
@@ -313,14 +313,14 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'projects',
     preview: 'show projects',
-    execute: function(self, extra) {
-      self.files.projects(function(projectNames) {
-          var projects = "<u>Your projects</u><br/><br/>";
-          for (var x = 0; x < projectNames.length; x++) {
-            projects += projectNames[x].name + "<br/>";
-          }
-          self.showInfo(projects);
-      });
+    execute: function(commandLine, extra) {
+        commandLine.files.projects(function(projectNames) {
+            var projects = "<u>Your projects</u><br/><br/>";
+            for (var x = 0; x < projectNames.length; x++) {
+                projects += projectNames[x].name + "<br/>";
+            }
+            commandLine.showInfo(projects);
+        });
     }
 });
 
@@ -330,9 +330,9 @@ bespin.cmd.commands.add({
     takes: ['projectname'],
     preview: 'create a new project',
     usage: '[newprojectname]',
-    execute: function(self, projectname) {
+    execute: function(commandLine, projectname) {
         if (!projectname) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
         bespin.publish("project:create", { project: projectname });
@@ -345,9 +345,9 @@ bespin.cmd.commands.add({
     takes: ['projectname'],
     preview: 'delete a project',
     usage: '[projectname]',
-    execute: function(self, projectname) {
+    execute: function(commandLine, projectname) {
         if (!projectname) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
         bespin.publish("project:delete", { project: projectname });
@@ -360,9 +360,9 @@ bespin.cmd.commands.add({
     takes: ['currentProject', 'newProject'],
     preview: 'rename a project',
     usage: '[currentProject], [newProject]',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         if (!args.currentProject || !args.newProject) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
         bespin.publish("project:rename", { currentProject: args.currentProject, newProject: args.newProject });
@@ -375,9 +375,9 @@ bespin.cmd.commands.add({
     takes: ['path', 'projectname'],
     preview: 'create a new directory in the given project',
     usage: '[path] [projectname]',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         if (!args.path) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
 
@@ -395,7 +395,7 @@ bespin.cmd.commands.add({
     preview: 'save the current contents',
     completeText: 'add the filename to save as, or use the current file',
     withKey: "CMD S",
-    execute: function(self, filename) {
+    execute: function(commandLine, filename) {
         bespin.publish("editor:savefile", {
             filename: filename
         });
@@ -409,7 +409,7 @@ bespin.cmd.commands.add({
     takes: ['filename', 'project'],
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
-    execute: function(self, opts) {
+    execute: function(commandLine, opts) {
         bespin.publish("editor:openfile", opts);
     }
 });
@@ -420,7 +420,7 @@ bespin.cmd.commands.add({
     takes: ['filename'],
     preview: 'view the file in a new browser window',
     completeText: 'add the filename to view or use the current file',
-    execute: function(self, filename) {
+    execute: function(commandLine, filename) {
         bespin.publish("editor:preview", {
             filename: filename
         });
@@ -432,7 +432,7 @@ bespin.cmd.commands.add({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.publish("editor:config:edit");
     }
 });
@@ -441,7 +441,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'runconfig',
     preview: 'run your config file',
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.publish("editor:config:run");
     }
 });
@@ -453,9 +453,9 @@ bespin.cmd.commands.add({
     preview: 'load up a new command',
     completeText: 'command name to load (required)',
     usage: '[commandname]: Command name required.',
-    execute: function(self, commandname) {
+    execute: function(commandLine, commandname) {
         if (!commandname) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
         bespin.publish("command:load", { commandname: commandname });
@@ -470,9 +470,9 @@ bespin.cmd.commands.add({
     preview: 'edit the given command (force if doesn\'t exist',
     completeText: 'command name to edit (required)',
     usage: '[commandname]: Command name required.',
-    execute: function(self, commandname) {
+    execute: function(commandLine, commandname) {
         if (!commandname) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
 
@@ -484,7 +484,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.publish("command:list");
     }
 });
@@ -496,9 +496,9 @@ bespin.cmd.commands.add({
     preview: 'delete a custom command',
     completeText: 'command name to delete (required)',
     usage: '[commandname]: Command name required.',
-    execute: function(self, commandname) {
+    execute: function(commandLine, commandname) {
         if (!commandname) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         }
 
@@ -514,7 +514,7 @@ bespin.cmd.commands.add({
     preview: 'create a new buffer for file',
     completeText: 'optionally, name the new filename first, and then the name of the project second',
     withKey: "CTRL SHIFT N",
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         if (args.filename) {
             args.newfilename = args.filename;
             delete args.filename;
@@ -530,26 +530,26 @@ bespin.cmd.commands.add({
     takes: ['filename', 'project'],
     preview: 'remove the file',
     completeText: 'add the filename to remove, and optionally a specific project at the end',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         var project = args.project || bespin.get('editSession').project;
         var filename = args.filename;
 
         if (!project) {
-            self.showInfo("rm only works with the project is set.");
+            commandLine.showInfo("rm only works with the project is set.");
             return;
         }
 
         if (!filename) {
-            self.showInfo("give me a filename or directory to delete");
+            commandLine.showInfo("give me a filename or directory to delete");
             return;
         }
 
-        self.files.removeFile(project, filename, function() {
-            if (bespin.get('editSession').checkSameFile(project, filename)) self.editor.model.clear(); // only clear if deleting the same file
+        commandLine.files.removeFile(project, filename, function() {
+            if (bespin.get('editSession').checkSameFile(project, filename)) commandLine.editor.model.clear(); // only clear if deleting the same file
 
-            self.showInfo('Removed file: ' + filename, true);
+            commandLine.showInfo('Removed file: ' + filename, true);
         }, function(xhr) {
-            self.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
+            commandLine.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
         });
     }
 });
@@ -560,7 +560,7 @@ bespin.cmd.commands.add({
     takes: ['filename', 'project'],
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         bespin.publish("editor:closefile", args);
     }
 });
@@ -569,7 +569,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'dashboard',
     preview: 'navigate to the file',
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.util.navigate.dashboard();
     }
 });
@@ -580,11 +580,11 @@ bespin.cmd.commands.add({
     takes: ['command'],
     preview: 'show the version for Bespin or a command',
     completeText: 'optionally, a command name',
-    execute: function(self, command) {
+    execute: function(commandLine, command) {
         var bespinVersion = 'Your Bespin is at version ' + bespin.versionNumber + ', Code name: "' + bespin.versionCodename + '"';
         var version;
         if (command) {
-            var theCommand = self.commandStore.commands[command];
+            var theCommand = commandLine.commandStore.commands[command];
             if (!theCommand) {
                 version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
             } else {
@@ -596,7 +596,7 @@ bespin.cmd.commands.add({
         else {
             version = bespinVersion;
         }
-        self.showInfo(version);
+        commandLine.showInfo(version);
     }
 });
 
@@ -605,8 +605,8 @@ bespin.cmd.commands.add({
     name: 'clear',
     aliases: ['cls'],
     preview: 'clear the file',
-    execute: function(self) {
-        self.editor.model.clear();
+    execute: function(commandLine) {
+        commandLine.editor.model.clear();
     }
 });
 
@@ -621,7 +621,7 @@ var gotoCmd = {
     takes: ['value'],
     preview: previewFull,
     completeText: completeTextFull,
-    execute: function(self, value) {
+    execute: function(commandLine, value) {
         var settings = bespin.get("settings")
         if (value) {
             var linenum = parseInt(value, 10); // parse the line number as a decimal
@@ -661,8 +661,8 @@ bespin.cmd.commands.add({
     takes: ['search', 'replace'],
     preview: 's/foo/bar/g',
     completeText: 'add the search regex, and then the replacement text',
-    execute: function(self, args) {
-        self.editor.model.replace(args.search, args.replace);
+    execute: function(commandLine, args) {
+        commandLine.editor.model.replace(args.search, args.replace);
     }
 });
 
@@ -684,9 +684,9 @@ bespin.cmd.commands.add({
     },
     preview: 'login to the service',
     completeText: 'pass in your username and password',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         if (!args) { // short circuit if no username
-            self.executeCommand("status");
+            commandLine.executeCommand("status");
             return;
         }
         bespin.get('editSession').username = args.user; // TODO: normalize syncing
@@ -698,11 +698,11 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'logout',
     preview: 'log out',
-    execute: function(self) {
+    execute: function(commandLine) {
         delete bespin.get('editSession').username;
         bespin.get('server').logout(function() {
-			window.location.href="/";
-		});
+            window.location.href="/";
+        });
     }
 });
 
@@ -717,8 +717,8 @@ bespin.cmd.commands.add({
         "would love to be like Emacs on the Web.",
         "is written on the Web platform, so you can tweak it."
     ],
-    execute: function(self) {
-        self.showInfo("Bespin " + this.messages[Math.floor(Math.random() * this.messages.length)]);
+    execute: function(commandLine) {
+        commandLine.showInfo("Bespin " + this.messages[Math.floor(Math.random() * this.messages.length)]);
     }
 });
 
@@ -728,11 +728,11 @@ bespin.cmd.commands.add({
     takes: ['direction'],
     preview: 'sort the current buffer',
     completeText: 'optionally, sort descending',
-    execute: function(self, direction) {
-        var buffer = self.editor.model.getDocument().split(/\n/);
+    execute: function(commandLine, direction) {
+        var buffer = commandLine.editor.model.getDocument().split(/\n/);
         buffer.sort();
         if (direction && /^desc/.test(direction.toLowerCase())) buffer.reverse();
-        self.editor.model.insertDocument(buffer.join("\n"));
+        commandLine.editor.model.insertDocument(buffer.join("\n"));
     }
 });
 
@@ -743,9 +743,9 @@ bespin.cmd.commands.add({
     megabytes: function(bytes) {
         return (bytes / 1024 / 1024).toFixed(2);
     },
-    execute: function(self) {
+    execute: function(commandLine) {
         var editSession = bespin.get('editSession');
-        self.showInfo("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
+        commandLine.showInfo("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
     }
 });
 
@@ -755,7 +755,7 @@ bespin.cmd.commands.add({
     takes: ['project', 'archivetype'],
     preview: 'export the given project with an archivetype of zip or tgz',
     completeText: 'project name, archivetype (zip | tgz, defaults to zip)',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         var project = args.project || bespin.get('editSession').project;
 
         var type = args.archivetype;
@@ -851,12 +851,12 @@ bespin.cmd.commands.add({
     // * import http://foo.com/path/to/archive.zip
     // * import http://foo.com/path/to/archive.zip projectName
     // * import projectName http://foo.com/path/to/archive.zip
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         var project, url;
 
         // Fail fast. Nothing given?
         if (!args.url) {
-            self.showUsage(this);
+            commandLine.showUsage(this);
             return;
         // * checking - import http://foo.com/path/to/archive.zip
         } else if (!args.project && this.isURL(args.url)) {
@@ -876,7 +876,7 @@ bespin.cmd.commands.add({
             project = args.project;
             url = args.url;
 
-            self.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
+            commandLine.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
             bespin.publish("project:import", { project: project, url: url });
         }
@@ -889,8 +889,8 @@ bespin.cmd.commands.add({
     takes: ['side'], // left, right, both
     preview: 'trim trailing or leading whitespace',
     completeText: 'optionally, give a side of left, right, or both (defaults to right)',
-    execute: function(self, side) {
-        self.editor.model.changeEachRow(function(row) {
+    execute: function(commandLine, side) {
+        commandLine.editor.model.changeEachRow(function(row) {
             if (!side) side = "right";
 
             if (bespin.util.include(["left", "both"], side)) {
@@ -918,7 +918,7 @@ bespin.cmd.commands.add({
     takes: ['modifiers', 'key', 'action'],
     preview: 'Bind a key to an action, or show bindings',
     completeText: 'With no arguments show bindings, else give modifier(s), key, and action name to set',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         if (args.key && args.action) { // bind a new key binding
             if (args.modifiers == "none") args.modifiers = '';
 
@@ -942,7 +942,7 @@ bespin.cmd.commands.add({
                 output += "<tr style='font-size: x-small'><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
             }
             output += "</table>";
-            self.showInfo(output);
+            commandLine.showInfo(output);
         }
     }
 });
@@ -965,9 +965,9 @@ bespin.cmd.commands.add({
     takes: ['alias', 'command'],
     preview: 'define and show aliases for commands',
     completeText: 'optionally, add your alias name, and then the command name',
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
       var output;
-      var aliases = self.commandStore.aliases;
+      var aliases = commandLine.commandStore.aliases;
 
       if (!args.alias) { // -- show all
         output = "<u>Your Aliases</u><br/><br/>";
@@ -989,9 +989,9 @@ bespin.cmd.commands.add({
           var aliascmd = value.split(' ')[0];
 
           output = "<u>Saving setting</u><br/><br/>";
-          if (self.commandStore.commands[key]) {
+          if (commandLine.commandStore.commands[key]) {
               output += "Sorry, there is already a command with the name: " + key;
-          } else if (self.commandStore.commands[aliascmd]) {
+          } else if (commandLine.commandStore.commands[aliascmd]) {
               output += key + ": " + value;
               aliases[key] = value;
           } else if (aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
@@ -1002,7 +1002,7 @@ bespin.cmd.commands.add({
           }
         }
       }
-      self.showInfo(output);
+      commandLine.showInfo(output);
     }
 });
 
@@ -1010,8 +1010,41 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'history',
     preview: 'show history of the commands',
-    execute: function(self) {
-        self.showInfo('<u>Command History</u><br/><br/>' + self.commandLineHistory.history.join('<br/>'));
+    execute: function(commandLine) {
+        commandLine.showInfo('<u>Command History</u><br/><br/>' + commandLine.history.getCommands().join('<br/>'));
+    }
+});
+
+// ** {{{Command: trace}}} **
+bespin.cmd.commands.add({
+    name: 'trace',
+    preview: 'show history of the command line session',
+    execute: function(commandLine) {
+        var output = "<strong>History</strong>";
+        output += "<table>";
+        output += "<tr><td>Start</td> <td>End</td> <td>Command</td> <td>Output</td></tr>";
+        dojo.forEach(commandLine.history.instructions, function(instruction) {
+            output += "<tr>";
+            if (instruction.start) {
+                output += "<td>" + instruction.start.toTimeString() + "</td>";
+            } else {
+                output += "<td></td>";
+            }
+            if (instruction.end) {
+                output += "<td>" + instruction.end.toTimeString() + "</td>";
+            } else {
+                output += "<td></td>";
+            }
+            output += "<td>" + instruction.typed + "</td>";
+            if (instruction.output) {
+                output += "<td>" + instruction.output + "</td>";
+            } else {
+                output += "<td>Working ...</td>";
+            }
+            output += "</tr>";
+        });
+        output += "</table>";
+        commandLine.showInfo(output);
     }
 });
 
@@ -1024,38 +1057,38 @@ bespin.cmd.commands.add({
     libnames: {
         'jquery': 'jquery.min.js'
     },
-    execute: function(self, type) {
+    execute: function(commandLine, type) {
         if (type == 'sound') {
-            self.editor.model.insertChunk({ row: 3, col: 0 },
+            commandLine.editor.model.insertChunk({ row: 3, col: 0 },
                 '  <script type="text/javascript" src="soundmanager2.js"></script>\n');
-            self.editor.model.insertChunk({ row: 4, col: 0 },
+            commandLine.editor.model.insertChunk({ row: 4, col: 0 },
                 "  <script>\n  var sound; \n  soundManager.onload = function() {\n    sound =  soundManager.createSound('mySound','/path/to/mysoundfile.mp3');\n  }\n  </script>\n");
         } else if (type == 'js') {
             var jslib = 'http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js';
             var script = '<script type="text/javascript" src="' + jslib + '"></script>\n';
-            self.editor.model.insertChunk({ row: 3, col: 0 }, script);
+            commandLine.editor.model.insertChunk({ row: 3, col: 0 }, script);
         }
     }
 });
 
 bespin.cmd.commands.add({
-	name: 'uc',
-	preview: 'Change all selected text to uppercase',
-	withKey: "CMD SHIFT U",
-	execute: function(self) {
-		var args = { stringCase: 'u' };
-		self.editor.ui.actions.selectionChangeCase(args);
-	}
+    name: 'uc',
+    preview: 'Change all selected text to uppercase',
+    withKey: "CMD SHIFT U",
+    execute: function(commandLine) {
+        var args = { stringCase: 'u' };
+        commandLine.editor.ui.actions.selectionChangeCase(args);
+    }
 });
 
 bespin.cmd.commands.add({
-	name: 'lc',
-	preview: 'Change all selected text to lowercase',
-	withKey: "CMD SHIFT L",
-	execute: function(self) {
-		var args = { stringCase: 'l' };
-		self.editor.ui.actions.selectionChangeCase(args);
-	}
+    name: 'lc',
+    preview: 'Change all selected text to lowercase',
+    withKey: "CMD SHIFT L",
+    execute: function(commandLine) {
+        var args = { stringCase: 'l' };
+        commandLine.editor.ui.actions.selectionChangeCase(args);
+    }
 });
 
 //** {{{Command: codecomplete}}} **
@@ -1066,19 +1099,17 @@ bespin.cmd.commands.add({
     preview: 'auto complete a piece of code',
     completeText: 'enter the start of the string',
     withKey: "CTRL SPACE",
-    execute: function(self, args) {
+    execute: function(commandLine, args) {
         console.log("Complete")
     }
 });
 
-//** {{{Command: outline}}} **                                                  
+//** {{{Command: outline}}} **
 bespin.cmd.commands.add({
     name: 'outline',
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
-    execute: function(self) {
+    execute: function(commandLine) {
         bespin.publish("parser:showoutline");
     }
 })
-
-
