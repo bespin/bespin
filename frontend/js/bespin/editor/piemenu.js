@@ -141,7 +141,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
-    // == Objects the control each of the slices ==
+    // == Objects that control each of the slices ==
     slices: {
         // === The Command Line Slice ===
         commandLine: {
