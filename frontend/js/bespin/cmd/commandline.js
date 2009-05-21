@@ -233,7 +233,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
-        this.commandLineHistory = new bespin.cmd.commandline.History(this);
+        this.history = new bespin.cmd.commandline.History(this);
         this.customEvents = new bespin.cmd.commandline.Events(this);
         this.setInfoAtBottom();
     },
@@ -244,6 +244,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     showInfo: function(html, autohide) {
+        if (this.executing) {
+            this.executing.setOutput(html);
+        } else {
+            console.debug("orphan output:", html);
+        }
+
         if (this.suppressInfo) return; // bypass
 
         this.hideInfo();
@@ -332,20 +338,49 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     executeCommand: function(value) {
-        var ca = this.commandStore.splitCommandAndArgs(value);
+        var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
-        if (typeof ca === "undefined") return; // error out if no commands were found
+        // error out if no commands were found
+        if (typeof instruction.command === "undefined") {
+            return;
+        }
 
-        var command = ca[0];
-        var args = ca[1];
+        // This was done via the 'command:executed' broadcast, even though the
+        // command had not been executed, and we are already inside a broadcast
+        // So Joe took it out (20 May 2009). Please remove this comment in a few
+        // weeks if the world has not stopped turning. If it stopped turning
+        // then please put this back in an event quickly and don't tell anyone.
 
-        bespin.publish("command:executed", { command: command, args: args, commandString: value });
+        // Also the history.add was wrapped in a weird:
+        // try { ... } catch (c) { /* catch dojo.cookie weird error */ }
+        // Really?
 
-        var result = command.execute(this, args, command);
-        this.commandLine.value = ''; // clear after the command
+        this.history.add(instruction);
+
+        this.executing = instruction;
+        var result = instruction.command.execute(this, instruction.args, instruction.command);
+        this.executing = null;
+
+        // clear after the command
+        this.commandLine.value = '';
+
         return result;
     },
 
+    link: function(action, context) {
+        if (this.executing == null) {
+            console.error("CommandLine is not executing anything");
+        }
+
+        var closureExecuting = this.executing;
+        var self = this;
+
+        return function() {
+            self.executing = closureExecuting;
+            action.apply(context, arguments);
+            self.executing = null;
+        };
+    },
 
     handleCommandLineFocus: function(e) {
         if (this.inCommandLine) return true; // in the command line!
@@ -357,13 +392,37 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return true;
         }
     }
+});
 
+// ** {{{ bespin.cmd.commandline.Instruction }}} **
+//
+// Wrapper for something that the user typed
+dojo.declare("bespin.cmd.commandline.Instruction", null, {
+    constructor: function(commandLine, typed) {
+        this.typed = dojo.trim(typed);
+
+        // It is valid to not know the commandLine when we are filling the
+        // history from disk, but in that case we don't need to parse it
+        if (commandLine != null) {
+            this.start = new Date();
+
+            var ca = commandLine.commandStore.splitCommandAndArgs(typed);
+            if (ca) {
+                this.command = ca[0];
+                this.args = ca[1];
+            }
+        }
+    },
+
+    setOutput: function(output) {
+        this.output = output;
+        this.end = new Date();
+    }
 });
 
 // ** {{{ bespin.cmd.commandline.KeyBindings }}} **
 //
 // Handle key bindings for the command line
-
 dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {
         var settings = bespin.get("settings");
@@ -431,13 +490,19 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == Key.DOWN_ARROW) {
                 dojo.stopEvent(e);
 
-                this.commandLineHistory.setNext();
+                var next = this.history.next();
+                if (next) {
+                    cl.commandLine.value = next.typed;
+                }
 
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == Key.UP_ARROW) {
                 dojo.stopEvent(e);
 
-                this.commandLineHistory.setPrevious();
+                var prev = this.history.previous();
+                if (prev) {
+                    cl.commandLine.value = prev.typed;
+                }
 
                 return false;
             } else if (e.keyChar == 'u' && e.ctrlKey) {
@@ -480,78 +545,66 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 // Store command line history so you can go back and forth
 
 dojo.declare("bespin.cmd.commandline.History", null, {
-    constructor: function(cl) {
-        this.commandLine = cl;
-        this.history = [];
-        this.historySize = 50;
+    constructor: function() {
+        this.instructions = [];
         this.pointer = 0;
         this.store = new bespin.cmd.commandline.ServerHistoryStore(this);
     },
 
+    settings: {
+        maxEntries: 50
+    },
+
     // TODO: get from the database
-    seed: function(commands) {
-        this.history = commands;
+    seed: function(instructions) {
+        dojo.forEach(instructions, function(instruction) {
+            var instruction = new bespin.cmd.commandline.Instruction(null, instruction);
+            this.instructions.push(instruction);
+        }, this);
         this.trim();
-        this.pointer = this.history.length; // make it one past the end so you can go back and hit the last one not the one before last
+        this.pointer = this.instructions.length; // make it one past the end so you can go back and hit the last one not the one before last
     },
 
-    // Keep the history to the historySize
+    // Keep the history to settings.maxEntries
     trim: function() {
-        if (this.history.length > this.historySize) {
-            this.history.splice(0, this.history.length - this.historySize);
+        if (this.instructions.length > this.settings.maxEntries) {
+            this.instructions.splice(0, this.instructions.length - this.settings.maxEntries);
         }
     },
 
-    add: function(command) {
-        command = dojo.trim(command);
-        if (this.last() != command) {
-            this.history.push(command);
-            this.trim();
-            this.pointer = this.history.length; // also make it one past the end so you can go back to it
-            this.store.save(this.history);
-        }
+    add: function(instruction) {
+        // We previously de-duped here, by comparing what was typed, but that
+        // should really be done as a UI sugar on up/down.
+        this.instructions.push(instruction);
+        this.trim();
+        this.pointer = this.instructions.length; // also make it one past the end so you can go back to it
+        this.store.save(this.instructions);
     },
 
     next: function() {
-        if (this.pointer < this.history.length - 1) {
+        if (this.pointer < this.instructions.length - 1) {
             this.pointer++;
-            return this.history[this.pointer];
+            return this.instructions[this.pointer];
         }
     },
 
     previous: function() {
         if (this.pointer > 0) {
             this.pointer--;
-            return this.history[this.pointer];
+            return this.instructions[this.pointer];
         }
     },
 
     last: function() {
-        return this.history[this.history.length - 1];
+        return this.instructions[this.instructions.length - 1];
     },
 
     first: function() {
-        return this.history[0];
+        return this.instructions[0];
     },
 
-    set: function(commandString) {
-        var cmdline = this.commandLine.commandLine;
-
-        cmdline.value = commandString;
-    },
-
-    setNext: function() {
-        var next = this.next();
-        if (next) {
-            this.set(next);
-        }
-    },
-
-    setPrevious: function() {
-        var prev = this.previous();
-        if (prev) {
-            this.set(prev);
-        }
+    getCommands: function() {
+        return dojo.map(this.instructions, function(instruction) { return instruction.typed; });
     }
 });
 
@@ -563,7 +616,7 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
         history.seed(['ls', 'clear', 'status']);
     },
 
-    save: function(commands) {}
+    save: function(instructions) {}
 });
 
 // ** {{{ bespin.cmd.commandline.ServerHistoryStore }}} **
@@ -584,17 +637,21 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     },
 
     seed: function() {
-        // load last 50 commands from history
+        // load last 50 instructions from history
         bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             this.history.seed(file.content.split(/\n/));
         }));
     },
 
-    save: function(commands) {
-        // save commands back to server asynchronously
+    save: function(instructions) {
+        var content = "";
+        dojo.forEach(instructions, function(instruction) {
+            content += instruction.typed + "\n";
+        });
+        // save instructions back to server asynchronously
         bespin.get('files').saveFile(bespin.userSettingsProject, {
             name: "command.history",
-            content: commands.join("\n") || "help",
+            content: content,
             timestamp: new Date().getTime()
         });
     }
@@ -629,20 +686,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             commandline.suppressInfo = false;
         });
 
-        // ** {{{ Event: command:executed }}} **
-        //
-        // Once the command has been executed, do something.
-        // In this case, save it for the history
-        bespin.subscribe("command:executed", function(event) {
-            var command = event.commandString || (event.command.name + " " + event.args.join(' ')); // try to get the raw input
-            try {
-                commandline.commandLineHistory.add(command); // only add to the history when a valid command
-            } catch (c) {
-                // catch dojo.cookie weird error
-            }
-        });
-
-        // ** {{{ Event: command:executed }}} **
+        // ** {{{ Event: command:execute }}} **
         //
         // Once the command has been executed, do something.
         bespin.subscribe("command:execute", function(event) {
@@ -680,6 +724,5 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             bespin.get('editSession').project = project;
             if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
         });
-
     }
 });

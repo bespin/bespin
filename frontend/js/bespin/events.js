@@ -181,16 +181,6 @@ bespin.subscribe("editor:config:edit", function(event) {
     });
 });
 
-// ** {{{ Event: command:executed }}} **
-//
-// Set the last command in the status window
-bespin.subscribe("command:executed", function(event) {
-    var commandname = event.command.name;
-    var args        = event.args;
-
-    dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
-});
-
 // ** {{{ Event: command:load }}} **
 //
 // Create a new command in your special command directory
