@@ -64,12 +64,20 @@ c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
 c.default_quota = 15
 c.secure_cookie = True
+c.http_only_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
 
 # additional mappings from top-level of URL to directory
 # in the config file, this can be provided as
 # static_map=foo=/path/to/files;bar=/path/to/other/files
 c.static_map = {}
+
+# additionally, a directory can be specified as the tree of
+# "first resort". This directory will be checked for static
+# files first, and then the default Bespin static files will
+# be used. This is a simple way to override Bespin's static
+# resources without altering Bespin's sources.
+c.static_override = None
 
 # turns on asynchronous running of long jobs (like vcs)
 c.async_jobs = True

@@ -722,19 +722,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: action}}} **
-bespin.cmd.commands.add({
-    name: 'action',
-    takes: ['actionname'],
-    preview: 'execute any editor action',
-    hidden: true,
-    execute: function(self, actionname) {
-        bespin.publish("editor:doaction", {
-            action: actionname
-        });
-    }
-});
-
 // ** {{{Command: sort}}} **
 bespin.cmd.commands.add({
     name: 'sort',
@@ -957,39 +944,6 @@ bespin.cmd.commands.add({
             output += "</table>";
             self.showInfo(output);
         }
-    }
-});
-
-// ** {{{Command: insert}}} **
-bespin.cmd.commands.add({
-    name: 'insert',
-    takes: ['text'],
-    preview: 'insert the given text at this point.',
-    hidden: true,
-    execute: function(self, text) {
-        self.editor.model.insertChunk(self.editor.cursorPosition, text);
-    }
-});
-
-// ** {{{Command: typingtest}}} **
-bespin.cmd.commands.add({
-    name: 'typingtest',
-    preview: 'type in the alphabet a few times',
-    hidden: true,
-    execute: function(self) {
-        var start = Date.now();
-
-        for (var i = 0; i < 3; i++) {
-            dojo.forEach(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], function(c) {
-                var args = { pos: bespin.editor.utils.copyPos(self.editor.cursorPosition) };
-                args.newchar = c;
-                self.editor.ui.actions.insertCharacter(args);
-            });
-        }
-
-        var stop = Date.now();
-
-        self.showInfo("It took " + (stop - start) + " milliseconds to do this");
     }
 });
 

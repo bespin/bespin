@@ -235,6 +235,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.commandLineHistory = new bespin.cmd.commandline.History(this);
         this.customEvents = new bespin.cmd.commandline.Events(this);
+        this.setInfoAtBottom();
     },
 
     showUsage: function(command, autohide) {
@@ -265,14 +266,37 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     infoResizer: function() {
-    	if (dojo.style('info', 'display') != 'none') {
-    		dojo.style('info', 'height', '');
-    		var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height');
-    		var infoY = dojo.style('info', 'height');
-    		if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
-    		    dojo.style('info', 'height', (editorY - 30) + 'px');
-    		}
-    	}
+        if (dojo.style('info', 'display') != 'none') {
+            dojo.style('info', 'height', '');
+            var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height');
+            var infoY = dojo.style('info', 'height');
+            if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
+                dojo.style('info', 'height', (editorY - 30) + 'px');
+            }
+            if (this.maxInfoHeight && infoY > this.maxInfoHeight) {
+                dojo.style('info', 'height', (this.maxInfoHeight - 30) + 'px');
+            }
+        }
+    },
+
+    setInfoInSlice: function(left, bottom, width, height) {
+        dojo.style("info", {
+            left:left+ "px",
+            bottom:bottom + "px",
+            width:width + "px",
+            backgroundImage:""
+        });
+        this.maxInfoHeight = height;
+    },
+
+    setInfoAtBottom: function() {
+        dojo.style("info", {
+            left:"51px",
+            bottom:"0px",
+            width:"431px",
+            backgroundImage:"url(http://localhost:8080/images/info_popup.png)"
+        });
+        this.maxInfoHeight = null;
     },
 
     complete: function(value) {
@@ -282,23 +306,25 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (matches.length == 1) {
             var commandLineValue = matches[0];
 
-            var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
-
-            if (command) {
-                if (this.commandStore.commandTakesArgs(command)) {
-                    commandLineValue += ' ';
-                }
-
-                if (command['completeText']) {
-                    this.showInfo(command['completeText']);
-                }
-
-                if (command['complete']) {
-                    this.showInfo(command.complete(this, value));
-                }
-            } else { // an alias
+            if (this.commandStore.aliases[commandLineValue]) {
                 this.showInfo(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
                 commandLineValue += ' ';
+            } else {
+                var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
+
+                if (command) {
+                    if (this.commandStore.commandTakesArgs(command)) {
+                        commandLineValue += ' ';
+                    }
+
+                    if (command['completeText']) {
+                        this.showInfo(command['completeText']);
+                    }
+
+                    if (command['complete']) {
+                        this.showInfo(command.complete(this, value));
+                    }
+                }
             }
 
             this.commandLine.value = (completions.root ? (completions.root + ' ') : '') + commandLineValue;
@@ -429,12 +455,21 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 this.complete(dojo.byId('command').value);
                 return false;
+            } else if (bespin.get("piemenu").keyRunsMe(e)) {
+                dojo.stopEvent(e);
+
+                this.hideInfo();
+                var piemenu = bespin.get("piemenu");
+                piemenu.showSlice(piemenu.slices.off);
+
+                return false;
             }
         });
 
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideInfo();
+                bespin.get("piemenu").hide();
             }
         });
     }

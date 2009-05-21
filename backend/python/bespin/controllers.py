@@ -921,6 +921,9 @@ def make_app():
     from webob import Response
     import static
     static_app = static.Cling(c.static_dir)
+    if c.static_override:
+        from paste.cascade import Cascade
+        static_app = Cascade([static.Cling(c.static_override), static_app])
 
     docs_app = pathpopper_middleware(static.Cling(c.docs_dir))
     code_app = pathpopper_middleware(static.Cling(c.static_dir + "/js"), 2)
@@ -934,7 +937,7 @@ def make_app():
 
     app = URLRelay(default=static_app)
     app = auth_tkt.AuthTKTMiddleware(app, c.secret, secure=c.secure_cookie, 
-                include_ip=False, httponly=True,
+                include_ip=False, httponly=c.http_only_cookie,
                 current_domain_cookie=True, wildcard_cookie=True)
     app = db_middleware(app)
     
