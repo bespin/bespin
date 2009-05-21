@@ -22,15 +22,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+//** {{{ bespin.editor.codecompletion }}} **
+//
+// Utilizes the bespin.parser infrastructure to suggest possible source 
+// completions for user input.
+// Activate completions by setting codecompletion to on.
 dojo.provide("bespin.editor.codecompletion");
 
 dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     constructor: function() {},
-
+    
+    // Look back from the cursor col in the current row
+    // to find something that can be completed.
     complete: function (cursorPos, row) {
         var startIndex  = cursorPos.col - 1;
         var substr = "";
-        for (var i = startIndex; i >= 0; --i) {
+        for (var i = startIndex; i >= 0; --i) { // looking back
             var ch = row[i];
             if (this.charMarksStartOfIdentifier(ch) && substr.length >= 1) {
                 this.findCompletion(substr);
@@ -57,9 +64,11 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         var candidates = [];
         
         if(self.currentMetaInfo) {
+            // use elements from outline like functions, class names and event names
             if(self.currentMetaInfo.outline) {
                 this.findInArray(candidates, substr, self.currentMetaInfo.outline);
             }
+            // try complex identifier chains like bespin.foo.bar
             if(self.currentMetaInfo.idents) { // complex idents
                 var idents = [];
                 for(var i in self.currentMetaInfo.idents) {
@@ -71,6 +80,9 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             }
         }
         
+        // If there are any candidates, display a message
+        // We should probably just send a custom event with the candiates here.
+        // Can do that once we have fancy UI
         if (candidates.length > 0) {
             bespin.publish("message", {
                 msg: "Code Completions<br><br>" + candidates.join("<br>"),
@@ -78,25 +90,14 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             });
         }
     },
-
+        
+    // find something that we might be able to complete
+    // Works for JS. Need to extend this to support for languages
     charMarksStartOfIdentifier: function (char) {
         return char === " " || char === "\t" || char == "\"" || char == "'"; // rough estimation
     },
-
-    subscribe: function () {
-        var self = this;
-        this.subscription = bespin.subscribe("editor:document:changed", function () {
-            self.complete();
-        }, 400);
-    },
-
-    unsubscribe: function () {
-        if (this.subscription) {
-            bespin.unsubscribe(this.subscription);
-            this.subscription = null;
-        }
-    },
     
+    // This is called after we are loaded into a worker.
     initialize: function () {
         var self = this;
         
@@ -104,6 +105,9 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             self.currentMetaInfo = evt.info
         })
         
+        // ** {{{ Event: codecomplete:suggest }}} **
+        //
+        // Fire to make the code completion engine provide suggestions
         bespin.subscribe("codecomplete:suggest", function (evt) {
             self.complete(evt.cursorPos, evt.row)
         })
@@ -112,11 +116,15 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
 });
 
 (function () {
+// put facade into a worker
 var facade = new bespin.worker.WorkerFacade(new bespin.editor.codecompletion.Suggester());
 if(!facade.__hasWorkers__) {
     facade.initialize()
 }
 var subscription
+
+// for now we do suggestions upon every doc change
+// could change this to be more unobstrusive
 bespin.subscribe("settings:set:codecomplete", function (data) {
     if (bespin.get("settings").isOn(data.value)) {
         subscription = bespin.subscribe("editor:document:changed", function () {
