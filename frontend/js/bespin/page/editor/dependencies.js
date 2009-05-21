@@ -53,6 +53,8 @@ dojo.require("th.models");
 dojo.require("th.borders");
 dojo.require("th.components");
 
+dojo.require("bespin.worker.worker");
+
 dojo.require("bespin.editor.actions");
 dojo.require("bespin.editor.clipboard");
 dojo.require("bespin.editor.cursor");
@@ -75,8 +77,6 @@ dojo.require("bespin.syntax.simple.javascript");
 dojo.require("bespin.syntax.simple.css");
 dojo.require("bespin.syntax.simple.html");
 dojo.require("bespin.syntax.simple.php");
-
-dojo.require("bespin.worker.worker");
 
 dojo.require("bespin.parser.parser");
 

@@ -25,16 +25,10 @@
 dojo.provide("bespin.editor.codecompletion");
 
 dojo.declare("bespin.editor.codecompletion.Suggester", null, {
-    constructor: function(parms) {},
+    constructor: function() {},
 
-    complete: function () {
-        var self = this;
-        var editor = bespin.get("editor");
-
-        var pos    = editor.getCursorPos();
-
-        var row    = editor.model.getRowArray(pos.row);
-        var startIndex  = pos.col - 1;
+    complete: function (cursorPos, row) {
+        var startIndex  = cursorPos.col - 1;
         var substr = "";
         for (var i = startIndex; i >= 0; --i) {
             var ch = row[i];
@@ -59,29 +53,23 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     },
 
     findCompletion: function (substr) {
-        var parser = bespin.get("parser");
+        var self = this;
         var candidates = [];
         
-        if(parser.currentMetaInfo) {
-            if(parser.currentMetaInfo.outline) {
-                this.findInArray(candidates, substr, parser.currentMetaInfo.outline);
+        if(self.currentMetaInfo) {
+            if(self.currentMetaInfo.outline) {
+                this.findInArray(candidates, substr, self.currentMetaInfo.outline);
             }
-            if(parser.currentMetaInfo.idents) { // complex idents
+            if(self.currentMetaInfo.idents) { // complex idents
                 var idents = [];
-                for(var i in parser.currentMetaInfo.idents) {
+                for(var i in self.currentMetaInfo.idents) {
                     idents.push({
                         name: i
                     })
                 }
                 this.findInArray(candidates, substr, idents);
             }
-        } else {
-            // simple function names
-            var functions = parser.getFunctions();
-            var candidates = [];
-            this.findInArray(candidates, substr, functions);
         }
-        
         
         if (candidates.length > 0) {
             bespin.publish("message", {
@@ -107,20 +95,42 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             bespin.unsubscribe(this.subscription);
             this.subscription = null;
         }
+    },
+    
+    initialize: function () {
+        var self = this;
+        
+        bespin.subscribe("parser:metainfo", function (evt) {
+            self.currentMetaInfo = evt.info
+        })
+        
+        bespin.subscribe("codecomplete:suggest", function (evt) {
+            self.complete(evt.cursorPos, evt.row)
+        })
     }
 
 });
 
 (function () {
-var suggester = new bespin.editor.codecompletion.Suggester();
-
+var facade = new bespin.worker.WorkerFacade(new bespin.editor.codecompletion.Suggester());
+if(!facade.__hasWorkers__) {
+    facade.initialize()
+}
+var subscription
 bespin.subscribe("settings:set:codecomplete", function (data) {
-    var settings = bespin.get("settings");
-    if (settings.isOn(data.value)) {
-        suggester.subscribe();
+    if (bespin.get("settings").isOn(data.value)) {
+        subscription = bespin.subscribe("editor:document:changed", function () {
+            var editor = bespin.get("editor");
+            var pos    = editor.getCursorPos();
+            var row    = editor.model.getRowArray(pos.row);
+            
+            bespin.publish("codecomplete:suggest", {
+                cursorPos: pos,
+                row: row
+            })
+        }, 400);
     } else {
-        suggester.unsubscribe();
+        bespin.unsubscribe(subscription)
     }
 });
-
 })()

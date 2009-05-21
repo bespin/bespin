@@ -118,6 +118,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             self.foldPoints = data.foldPoints;
             if (data.metaInfo) {
                 self.currentMetaInfo = data.metaInfo;
+                bespin.publish("parser:metainfo", {
+                    info: data.metaInfo
+                })
             }
             self._running = false;
         })
