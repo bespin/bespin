@@ -108,7 +108,7 @@ img {
     font-family: Calibri, Arial, sans-serif;
 }
 
-#command_output table {
+#command_output table.command_table {
     width: 100%;
 }
 

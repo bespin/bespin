@@ -397,7 +397,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         };
 
         var size = parseInt(bespin.get("settings").get("consolefontsize"));
-        var output = "<table style='font-size:" + size + "pt'>";
+        var output = "<table class='command_table' style='font-size:" + size + "pt'>";
         dojo.forEach(this.history.instructions, function(instruction) {
             if (!instruction.historical) {
                 output += "<tr>";
@@ -444,9 +444,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var size = parseInt(settings.get("consolefontsize"));
         switch (size) {
-            case 10: set(12); break;
-            case 12: set(14); break;
-            case 14: set(10); break;
+            case 8: set(10); break;
+            case 10: set(14); break;
+            case 14: set(8); break;
             default: set(10); break;
         }
     },

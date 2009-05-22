@@ -109,7 +109,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
             commands.push('<b>' + name + args + '</b>: ' + command.preview);
         }
     }
-    commandLine.addOutput("<div style='font-size: 0.80em'>" + commands.join("<br/>") + (morehelpoutput || "") + "</div>");
+    commandLine.addOutput(commands.join("<br/>") + (morehelpoutput || ""));
 }
 
 // ** {{{Command: help}}} **
@@ -179,7 +179,7 @@ bespin.cmd.commands.add({
             type = typeof result;
         }
 
-        commandLine.addOutput("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");
+        commandLine.addOutput("<u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg);
     }
 });
 
@@ -939,7 +939,7 @@ bespin.cmd.commands.add({
 
                 var modifierInfo = modifiers.length > 0 ? modifiers.join(', ') + " " : "";
                 var keyInfo = modifierInfo + bespin.util.keys.KeyCodeToName[keyCode] || keyCode;
-                output += "<tr style='font-size: x-small'><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
+                output += "<tr><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
             }
             output += "</table>";
             commandLine.addOutput(output);
