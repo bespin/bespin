@@ -162,7 +162,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         var newRow;
         if (autoindentAmount > 0) {
-            newRow = bespin.util.makeArray(autoindentAmount);
+            newRow = bespin.util.makeArray(autoindentAmount, (bespin.get("settings").get("tabmode") ? "\t" : " "));
         } else {
             newRow = [];
         }

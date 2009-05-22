@@ -616,9 +616,20 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.readonly) return;
 
         var settings = bespin.get("settings");
-        var autoindentAmount = (settings && settings.get('autoindent')) ? bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row)) : 0;
+        var autoindentAmount = 0;
+        var autoindentSize = 0; //size is the number of spaces (tabs * spaces per tab with tabmode on).
+        if (settings && settings.get('autoindent')) {
+	        if (settings.get("tabmode")) {
+                autoindentAmount = bespin.util.leadingTabs(this.model.getRowArray(args.pos.row));
+                autoindentSize = autoindentAmount * settings.get("tabsize");
+            } else {
+                autoindentAmount = bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row));
+                autoindentSize = autoindentAmount;
+            }
+        }
+
         this.model.splitRow(this.cursorManager.getModelPosition(args.pos), autoindentAmount);
-        this.cursorManager.moveCursor({ row: this.cursorManager.getCursorPosition().row + 1, col: autoindentAmount });
+        this.cursorManager.moveCursor({ row: this.cursorManager.getCursorPosition().row + 1, col: autoindentSize });
 
         // undo/redo
         args.action = "newline";
