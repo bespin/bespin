@@ -185,7 +185,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         } 
     },
 
-    // joins the passed row with the row beneath it
+    // joins the passed row with the row beneath it; optionally removes leading whitespace as well.
     joinRow: function(rowIndex, autounindentSize) {
         this.editor.ui.syntaxModel.invalidateCache(rowIndex); 
         this.setRowDirty(rowIndex);

@@ -148,10 +148,11 @@ bespin.util.leadingTabs = function(row)
     return numtabs;
 };
 
-// = leadingWhitespaceArray =
+// = leadingWhitespace =
 //
 // Given a row, extract a copy of the leading spaces or tabs.
-// E.g. an array with the string "\t\taposjd" would return 2
+// E.g. an array with the string "\t    \taposjd" would return an array with the
+// string "\t    \t".
 //
 // {{row}} - The row to hunt through
 bespin.util.leadingWhitespace = function(row)
