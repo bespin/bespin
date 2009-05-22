@@ -745,7 +745,7 @@ bespin.cmd.commands.add({
     },
     execute: function(commandLine) {
         var editSession = bespin.get('editSession');
-        commandLine.addOutput("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
+        commandLine.addOutput("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
     }
 });
 
