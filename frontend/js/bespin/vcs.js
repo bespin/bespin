@@ -176,10 +176,10 @@ bespin.vcs.setProjectPassword = function(project) {
         bespin.get("server").setauth(project, "vcsauth",
             {
                 onSuccess: function() {
-                    bespin.publish("message", {msg: "Password saved for " + project});
+                    bespin.publish("message:output", {msg: "Password saved for " + project});
                 },
                 onFailure: function(xhr) {
-                    bespin.publish("message", {msg: "Password save failed: " + xhr.responseText});
+                    bespin.publish("message:error", {msg: "Password save failed: " + xhr.responseText});
                 }
             });
     });

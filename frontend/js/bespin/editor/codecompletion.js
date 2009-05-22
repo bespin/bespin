@@ -60,10 +60,7 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
             }
         }
         if (candidates.length > 0) {
-            bespin.publish("message", {
-                msg: "Code Completions<br><br>" + candidates.join("<br>"),
-                tag: "autohide"
-            });
+            bespin.publish("message:hint", { msg: "Code Completions<br><br>" + candidates.join("<br>") });
         }
     },
 

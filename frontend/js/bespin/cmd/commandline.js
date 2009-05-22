@@ -354,22 +354,35 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             console.debug("orphan output:", html);
         }
 
+        this.hideHint();
+        this.updateOutput();
+        this.scrollConsole();
+    },
+
+    // == Add Error Output ==
+    addErrorOutput: function(html) {
+        if (this.executing) {
+            // TODO: Should we append ???
+            this.executing.setOutput(html);
+            this.executing.error = true;
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
+
+        this.hideHint();
+        this.updateOutput();
+        this.scrollConsole();
+    },
+
+    scrollConsole: function() {
         // certain browsers have a bug such that scrollHeight is too small
         // when content does not fill the client area of the element
         //var scrollHeight = Math.max(this.output.scrollHeight, this.output.clientHeight);
         //this.output.scrollTop = scrollHeight - this.output.clientHeight;
         //console.log("scroll", this.output.scrollTop, this.output.scrollHeight, this.output.clientHeight);
 
-        this.hideHint();
-        this.updateOutput();
-
         //dojo.byId("command_scroller").scrollIntoView();
-    },
-
-    // == Add Error Output ==
-    addErrorOutput: function(html) {
-        // for now
-        this.addOutput(html);
     },
 
     // == Update Output ==
@@ -405,7 +418,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
                 output += "<tr>";
                 output += "<td></td>";
-                output += "<td colspan=2>";
+                output += "<td colspan=2" + ( instruction.error ? " class='command_error'" : "" ) + ">";
                 if (instruction.output) {
                     output += instruction.output;
                 } else {
@@ -821,13 +834,25 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
-        // ** {{{ Event: message }}} **
+        // ** {{{ Event: message:output }}} **
         //
-        // Observe when others want to show the info bar for the command line
-        bespin.subscribe("message", function(event) {
-            var msg = event.msg;
-            var autohide = (event.tag == 'autohide');
-            if (msg) commandline.addOutput(msg, autohide);
+        // message:output is good output for the console
+        bespin.subscribe("message:output", function(event) {
+            if (event.msg) commandline.addOutput(event.msg);
+        });
+
+        // ** {{{ Event: message:output }}} **
+        //
+        // message:output is good output for the console
+        bespin.subscribe("message:error", function(event) {
+            if (event.msg) commandline.addErrorOutput(event.msg);
+        });
+
+        // ** {{{ Event: message:output }}} **
+        //
+        // message:output is good output for the console
+        bespin.subscribe("message:hint", function(event) {
+            if (event.msg) commandline.showHint(event.msg);
         });
 
         // We needed to suppress the info dialog before we had a proper

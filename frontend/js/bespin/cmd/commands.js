@@ -632,7 +632,7 @@ var gotoCmd = {
                         functionName: value
                     });
                 } else {
-                    bespin.publish("message", { msg: "Please enter a valid line number." })
+                    bespin.publish("message:error", { msg: "Please enter a valid line number." })
                 }
             } else {
                 bespin.publish("editor:moveandcenter", {

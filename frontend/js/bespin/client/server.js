@@ -83,9 +83,8 @@ dojo.declare("bespin.client.Server", null, {
                             }
 
                             if (options.serverAsync && response.taskname) {
-                                bespin.publish("message",
-                                    {msg: "Server is running : " + response.taskname,
-                                    tag: "autohide"});
+                                bespin.publish("message:hint",
+                                    { msg: "Server is running : " + response.taskname });
                             }
                         }
 

@@ -112,7 +112,7 @@ bespin.jetpack.commands.addCommand({
     execute: function(commandline, feature) {
         // For when Aza exposes the Jetpack object :)
         // if (!window['Jetpack']) {
-        //     bespin.publish("message", { msg: "To install a Jetpack, you need to have installed the extension.<br><br>For now this lives in Firefox only, and you can <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check it out, and download the add-on here</a>." });
+        //     bespin.publish("message:error", { msg: "To install a Jetpack, you need to have installed the extension.<br><br>For now this lives in Firefox only, and you can <a href='https://wiki.mozilla.org/Labs/Jetpack/API'>check it out, and download the add-on here</a>." });
         //     return;
         // }
 
@@ -125,7 +125,7 @@ bespin.jetpack.commands.addCommand({
         })();
 
         if (!feature) {
-            bespin.publish("message", { msg: "Please pass in the name of the Jetpack feature you would like to install" });
+            bespin.publish("message:error", { msg: "Please pass in the name of the Jetpack feature you would like to install" });
         } else {
             bespin.jetpack.install(feature);
         }
@@ -153,7 +153,7 @@ bespin.jetpack.commands.addCommand({
                 }).join("<br>");
             }
 
-            bespin.publish("message", { msg: output });
+            bespin.publish("message:output", { msg: output });
         });
     }
 });
@@ -181,7 +181,7 @@ bespin.jetpack.commands.addCommand({
                 });
             },
             elseFailed: function() {
-                bespin.publish("message", {
+                bespin.publish("message:error", {
                     msg: "No feature called " + feature + ".<br><br><em>Run 'jetpack list' to see what is available.</em>"
                 });
             }
