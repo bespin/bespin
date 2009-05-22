@@ -62,9 +62,12 @@ bespin.subscribe("editor:evalfile", function(event) {
     bespin.get('files').loadContents(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
-                bespin.publish("cmdline:suppressinfo");
+                // We needed to suppress the info dialog before we had a proper
+                // command line. Now Joe thinks we can do away with this.
+                // TODO: Delete this message and the publish() commands.
+                // bespin.publish("cmdline:suppressinfo");
                 eval(file.content);
-                bespin.publish("cmdline:unsuppressinfo");
+                // bespin.publish("cmdline:unsuppressinfo");
             } catch (e) {
                 bespin.get('commandLine').showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
             }

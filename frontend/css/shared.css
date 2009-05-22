@@ -100,6 +100,56 @@ img {
     color: #777;
 }
 
+#command_output {
+    position: absolute;
+    overflow: auto;
+    color: #999;
+    z-index: 210;
+    font-family: Calibri, Arial, sans-serif;
+}
+
+#command_output table {
+    width: 100%;
+}
+
+#command_output td {
+	vertical-align: top;
+}
+
+#command_output .command_start {
+    padding-top: 4px;
+	font-size: 80%;
+    width: 50px;
+}
+
+#command_output .command_typed {
+    font-weight: bold;
+    color: #fff;
+    font-family: "Courier New", Courier, monospace;
+}
+
+#command_output .command_taken {
+    padding-top: 4px;
+    font-size: 80%;
+    width: 50px;
+}
+
+#command_output .command_prompt {
+	color: #ffa300;
+}
+
+#command_hint {
+    position: absolute;
+    padding: 20px 40px 10px 30px;
+    color: #999;
+    background-repeat: no-repeat;
+    background-image: url("../images/info_popup.png");
+    font-family: Calibri, Arial, sans-serif;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    z-index: 220;
+}
+
 #info {
     position: absolute;
     padding: 20px 40px 10px 30px;
