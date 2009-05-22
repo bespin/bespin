@@ -26,7 +26,7 @@ dojo.provide("bespin.social");
 
 dojo.require("bespin.cmd.dashboardcommands");
 
-// ** {{{ Utility: displayFollowers }}} **
+// * Utility {{{ displayFollowers }}} **
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
 bespin.social.displayFollowers = function(followers) {
@@ -34,16 +34,17 @@ bespin.social.displayFollowers = function(followers) {
     bespin.publish("message", { msg:message });
 }
 
-// ====================================================================== FOLLOW
+// =============================================================================
+// = Follow =
+// Get a list of our followers
 
-// ** {{{ Command: follow }}} **
+// == Command {{{ follow }}} ==
 bespin.cmd.commands.add({
     name: 'follow',
     takes: ['username ...'],
     preview: 'add to the list of users we are following, or (with no args) list the current set',
     completeText: 'username(s) of person(s) to follow',
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
-    // ** {{{execute}}}
     execute: function(commandline, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
@@ -62,8 +63,7 @@ if (bespin.cmd.dashboardcommands) {
 //    bespin.cmd.editorcommands.Commands.push('follow');
 //}
 
-// ** {{{ Event: network:followers }}} **
-// Get a list of our followers
+// == Event {{{ network:followers }}} ==
 bespin.subscribe("network:followers", function() {
     bespin.get('server').followers({
         onSuccess: function(data) {
@@ -75,7 +75,7 @@ bespin.subscribe("network:followers", function() {
     });
 });
 
-// ** {{{ Event: network:follow }}} **
+// == Event {{{ network:follow }}} ==
 // Add to the list of users that we follow
 bespin.subscribe("network:follow", function(usernames) {
     bespin.get('server').follow(usernames, {
@@ -88,23 +88,25 @@ bespin.subscribe("network:follow", function(usernames) {
     });
 });
 
+// == Extension to {{{ bespin.client.Server }}} ==
 dojo.extend(bespin.client.Server, {
-    // ** {{{ follows(opts) }}}
-    // Get a list of the users the current user is following
+    // * {{{ follows(opts) }}}
+    // Add to the list of the users the current user is following
     follow: function(users, opts) {
         this.request('POST', '/network/follow/', dojo.toJson(users), opts || {});
     },
 
-    // ** {{{ follows(opts) }}}
+    // * {{{ follows(opts) }}}
     // Get a list of the users the current user is following
     followers: function(opts) {
         this.request('GET', '/network/followers/', null, opts || {});
     }
 });
 
-// ==================================================================== UNFOLLOW
+// =============================================================================
+// = Unfollow =
 
-// ** {{{Command: unfollow}}} **
+// == Command {{{ unfollow}}} ==
 bespin.cmd.commands.add({
     name: 'unfollow',
     takes: ['username ...'],
@@ -115,7 +117,7 @@ bespin.cmd.commands.add({
     execute: function(commandline, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
-            commandline.showInfo('Please specify the users to cease following');
+            commandline.addErrorOutput('Please specify the users to cease following');
         }
         else {
             bespin.publish("network:unfollow", [ usernames ]);
@@ -151,9 +153,10 @@ dojo.extend(bespin.client.Server, {
     }
 });
 
-// ======================================================================= GROUP
+// =============================================================================
+// = Group =
 
-// ** {{{Command: group}}} **
+// == Command {{{ group }}} ==
 bespin.cmd.commands.add({
     name: 'group',
     takes: ['[{name}|--add|--remove] ...'],
@@ -173,7 +176,7 @@ bespin.cmd.commands.add({
                 bespin.publish("groups:remove:all", [ args[0] ]);
             }
             else {
-                commandline.showInfo('Syntax error - You must specify what you want to do with your group.');
+                commandline.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
             }
         }
         else if (args.length > 2) {
@@ -187,7 +190,7 @@ bespin.cmd.commands.add({
                 bespin.publish("groups:remove", [ group, args ]);
             }
             else {
-                commandline.showInfo('Syntax error - To manipulate a group you must use add/remove');
+                commandline.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
             }
         }
     }
@@ -200,7 +203,7 @@ if (bespin.cmd.dashboardcommands) {
 //    bespin.cmd.editorcommands.Commands.push('group');
 //}
 
-// ** {{{ Event: groups:list:all }}} **
+// == Event {{{ groups:list:all }}} ==
 // Get a list of our groups
 bespin.subscribe("groups:list:all", function() {
     bespin.get('server').groupListAll({
@@ -220,7 +223,7 @@ bespin.subscribe("groups:list:all", function() {
     });
 });
 
-// ** {{{ Event: groups:list }}} **
+// == Event {{{ groups:list }}} ==
 // Get a list of group members
 bespin.subscribe("groups:list", function(group) {
     bespin.get('server').groupList(group, {
@@ -241,7 +244,7 @@ bespin.subscribe("groups:list", function(group) {
     });
 });
 
-// ** {{{ Event: groups:remove:all }}} **
+// == Event {{{ groups:remove:all }}} ==
 // Remove a group and all its members
 bespin.subscribe("groups:remove:all", function(group) {
     bespin.get('server').groupRemoveAll(group, {
@@ -254,7 +257,7 @@ bespin.subscribe("groups:remove:all", function(group) {
     });
 });
 
-// ** {{{ Event: groups:add }}} **
+// == Event {{{ groups:add }}} ==
 // Add to members of a group
 bespin.subscribe("groups:add", function(group, users) {
     bespin.get('server').groupAdd(group, users, {
@@ -267,7 +270,7 @@ bespin.subscribe("groups:add", function(group, users) {
     });
 });
 
-// ** {{{ Event: groups:remove }}} **
+// == Event {{{ groups:remove }}} ==
 // Add to members of a group
 bespin.subscribe("groups:remove", function(group, users) {
     bespin.get('server').groupRemove(group, users, {
@@ -281,45 +284,46 @@ bespin.subscribe("groups:remove", function(group, users) {
 });
 
 dojo.extend(bespin.client.Server, {
-    // ** {{{ groupListAll() }}}
+    // * {{{ groupListAll() }}}
     // Get a list of the users the current user is following
     groupListAll: function(opts) {
         this.request('GET', '/group/list/all/', null, opts || {});
     },
 
-    // ** {{{ groupList() }}}
+    // * {{{ groupList() }}}
     // Get a list of the users the current user is following
     groupList: function(group, opts) {
         this.request('GET', '/group/list/' + group + '/', null, opts || {});
     },
 
-    // ** {{{ groupRemove() }}}
+    // * {{{ groupRemove() }}}
     // Get a list of the users the current user is following
     groupRemove: function(group, users, opts) {
         this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts || {});
     },
 
-    // ** {{{ groupRemoveAll() }}}
+    // * {{{ groupRemoveAll() }}}
     // Get a list of the users the current user is following
     groupRemoveAll: function(group, opts) {
         this.request('POST', '/group/remove/all/' + group + '/', null, opts || {});
     },
 
-    // ** {{{ groupAdd() }}}
+    // * {{{ groupAdd() }}}
     // Get a list of the users the current user is following
     groupAdd: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts || {});
     }
 });
 
-// ======================================================================= SHARE
+// =============================================================================
+// = Share =
 
-// ** {{{Command: share}}} **
+// == Command {{{ share}}} ==
 bespin.cmd.commands.add({
     name: 'share',
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
-    // ** {{{execute}}}
+    // * {{{ execute }}}
     execute: function(commandline, args) {
         args = args.pieces;
 
@@ -371,7 +375,7 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        commandline.showInfo('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+        commandline.addErrorOutput('Syntax error - share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
     }
 });
 
@@ -382,7 +386,7 @@ if (bespin.cmd.dashboardcommands) {
 //    bespin.cmd.editorcommands.Commands.push('share');
 //}
 
-// ** {{{ Event: share:list:all }}} **
+// == Event {{{ share:list:all }}} ==
 // List all project shares
 bespin.subscribe("share:list:all", function() {
     bespin.get('server').shareListAll({
@@ -418,7 +422,7 @@ bespin.subscribe("share:list:all", function() {
     });
 });
 
-// ** {{{ Event: share:list:project }}} **
+// == Event {{{ share:list:project }}} ==
 // List sharing for a given project
 bespin.subscribe("share:list:project", function(project) {
     bespin.get('server').shareListProject(project, {
@@ -431,7 +435,7 @@ bespin.subscribe("share:list:project", function(project) {
     });
 });
 
-// ** {{{ Event: share:list:project:member }}} **
+// == Event {{{ share:list:project:member }}} ==
 // List sharing for a given project and member
 bespin.subscribe("share:list:project:member", function(project, member) {
     bespin.get('server').shareListProjectMember(project, member, {
@@ -444,7 +448,7 @@ bespin.subscribe("share:list:project:member", function(project, member) {
     });
 });
 
-// ** {{{ Event: share:remove:all }}} **
+// == Event {{{ share:remove:all }}} ==
 // Remove all sharing from a project
 bespin.subscribe("share:remove:all", function(project) {
     bespin.get('server').shareRemoveAll(project, {
@@ -457,7 +461,7 @@ bespin.subscribe("share:remove:all", function(project) {
     });
 });
 
-// ** {{{ Event: share:remove }}} **
+// == Event {{{ share:remove }}} ==
 // Remove project sharing from a given member
 bespin.subscribe("share:remove", function(project, member) {
     bespin.get('server').shareRemove(project, member, {
@@ -470,7 +474,7 @@ bespin.subscribe("share:remove", function(project, member) {
     });
 });
 
-// ** {{{ Event: share:add }}} **
+// == Event {{{ share:add }}} ==
 // Add a member to the sharing list for a project
 bespin.subscribe("share:add", function(project, member, options) {
     bespin.get('server').shareAdd(project, member, options, {
@@ -484,47 +488,48 @@ bespin.subscribe("share:add", function(project, member, options) {
 });
 
 dojo.extend(bespin.client.Server, {
-    // ** {{{ shareListAll() }}}
+    // * {{{ shareListAll() }}}
     // List all project shares
     shareListAll: function(opts) {
         this.request('GET', '/share/list/all/', null, opts || {});
     },
 
-    // ** {{{ shareListProject() }}}
+    // * {{{ shareListProject() }}}
     // List sharing for a given project
     shareListProject: function(project, opts) {
         this.request('GET', '/share/list/' + project + '/', null, opts || {});
     },
 
-    // ** {{{ shareListProjectMember() }}}
+    // * {{{ shareListProjectMember() }}}
     // List sharing for a given project and member
     shareListProjectMember: function(project, member, opts) {
         this.request('GET', '/share/list/' + project + '/' + member + '/', null, opts || {});
     },
 
-    // ** {{{ shareRemoveAll() }}}
+    // * {{{ shareRemoveAll() }}}
     // Remove all sharing from a project
     shareRemoveAll: function(project, opts) {
         this.request('POST', '/share/remove/' + project + '/all/', null, opts || {});
     },
 
-    // ** {{{ shareRemove() }}}
+    // * {{{ shareRemove() }}}
     // Remove project sharing from a given member
     shareRemove: function(project, member, opts) {
         this.request('POST', '/share/remove/' + project + '/' + member + '/', null, opts || {});
     },
 
-    // ** {{{ shareAdd() }}}
+    // * {{{ shareAdd() }}}
     // Add a member to the sharing list for a project
     shareAdd: function(project, member, options, opts) {
         this.request('POST', '/share/add/' + project + '/' + member + '/', dojo.toJson(options), opts || {});
     }
 });
 
-// ====================================================================== VIEWME
+// =============================================================================
+// = Viewme =
 
 /*
-// ** {{{Command: viewme}}} **
+// == Command {{{ viewme}}} ==
 bespin.cmd.commands.add({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
@@ -553,7 +558,7 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        commandline.showInfo('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
+        commandline.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
 
@@ -564,7 +569,7 @@ if (bespin.cmd.dashboardcommands) {
 //    bespin.cmd.editorcommands.Commands.push('viewme');
 //}
 
-// ** {{{ Event: viewme:list:all }}} **
+// == Event {{{ viewme:list:all }}} ==
 // List all the members with view settings on me
 bespin.subscribe("viewme:list:all", function() {
     bespin.get('server').viewmeListAll({
@@ -577,7 +582,7 @@ bespin.subscribe("viewme:list:all", function() {
     });
 });
 
-// ** {{{ Event: viewme:list }}} **
+// == Event {{{ viewme:list }}} ==
 // List the view settings for a given member
 bespin.subscribe("viewme:list", function(member) {
     bespin.get('server').viewmeList(member, {
@@ -590,7 +595,7 @@ bespin.subscribe("viewme:list", function(member) {
     });
 });
 
-// ** {{{ Event: viewme:set }}} **
+// == Event {{{ viewme:set }}} ==
 // Alter the view setting for a given member
 bespin.subscribe("viewme:set", function(member, value) {
     bespin.get('server').viewmeSet(member, value, {
@@ -604,19 +609,19 @@ bespin.subscribe("viewme:set", function(member, value) {
 });
 
 dojo.extend(bespin.client.Server, {
-    // ** {{{ viewmeListAll() }}}
+    // * {{{ viewmeListAll() }}}
     // List all the members with view settings on me
     viewmeListAll: function(opts) {
         this.request('GET', '/viewme/list/all/', null, opts || {});
     },
 
-    // ** {{{ viewmeList() }}}
+    // * {{{ viewmeList() }}}
     // List the view settings for a given member
     viewmeList: function(member, opts) {
         this.request('GET', '/viewme/list/' + member + '/', null, opts || {});
     },
 
-    // ** {{{ viewmeSet() }}}
+    // * {{{ viewmeSet() }}}
     // Alter the view setting for a given member
     viewmeSet: function(member, value, opts) {
         this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts || {});
