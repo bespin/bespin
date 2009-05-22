@@ -70,7 +70,7 @@ dojo.declare("bespin.client.Server", null, {
         }
 
         if (options) { // do it async (best)
-            xhr.onreadystatechange = function() {
+            var onreadystatechange = function() {
                 if (xhr.readyState == 4) {
                     if (xhr.status && xhr.status != 0 && (xhr.status >= 200 && xhr.status < 300)) {
                         var response = xhr.responseText;
@@ -104,6 +104,9 @@ dojo.declare("bespin.client.Server", null, {
                     }
                 }
             };
+            var cl = bespin.get("commandLine");
+            if (cl) onreadystatechange = cl.link(onreadystatechange);
+            xhr.onreadystatechange = onreadystatechange;
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
             var token = dojo.cookie("Domain-Token");
             if (!token) {
