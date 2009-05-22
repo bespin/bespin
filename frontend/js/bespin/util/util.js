@@ -148,6 +148,26 @@ bespin.util.leadingTabs = function(row)
     return numtabs;
 };
 
+// = leadingWhitespaceArray =
+//
+// Given a row, extract a copy of the leading spaces or tabs.
+// E.g. an array with the string "\t\taposjd" would return 2
+//
+// {{row}} - The row to hunt through
+bespin.util.leadingWhitespace = function(row)
+{
+    var leading = [];
+    for (var i = 0; i < row.length; i++) {
+        if (row[i] == ' ' || row[i] == '\t' || row[i] == '' || row[i] === undefined) {
+            leading.push(row[i]);
+        } else {
+            return leading;
+        }
+    }
+    return leading;
+};
+
+
 // = englishFromCamel =
 //
 // Given a camelCaseWord convert to "Camel Case Word"

@@ -476,7 +476,7 @@ dojo.declare("bespin.editor.Actions", null, {
             if (args.pos.row == 0) return;
 
             var newcol = this.editor.ui.getRowScreenLength(args.pos.row - 1);
-            this.model.joinRow(args.pos.row - 1);
+            this.model.joinRow(args.pos.row - 1, args.autounindentSize);
             this.cursorManager.moveCursor({ row: args.pos.row - 1, col: newcol });
         } else {
             if (args.pos.row >= this.model.getRowCount() - 1) return;
@@ -616,25 +616,28 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.readonly) return;
 
         var settings = bespin.get("settings");
-        var autoindentAmount = 0;
-        var autoindentSize = 0; //size is the number of spaces (tabs * spaces per tab with tabmode on).
-        if (settings && settings.get('autoindent')) {
-	        if (settings.get("tabmode")) {
-                autoindentAmount = bespin.util.leadingTabs(this.model.getRowArray(args.pos.row));
-                autoindentSize = autoindentAmount * settings.get("tabsize");
-            } else {
-                autoindentAmount = bespin.util.leadingSpaces(this.model.getRowArray(args.pos.row));
-                autoindentSize = autoindentAmount;
-            }
+        var autoindent = bespin.util.leadingWhitespace(this.model.getRowArray(args.pos.row));
+        var autoindentSize = 0, tabsize = this.editor.getTabSize();;
+        //calculate equivalent number of spaces in autoindent
+        for (var i = 0; i < autoindent.length; i++) {
+            if (autoindent[i] == ' ' || autoindent[i] == '' || autoindent[i] === undefined) autoindentSize++;
+            else if (autoindent[i] == '\t') autoindentSize += tabsize;
+            else break;
         }
 
-        this.model.splitRow(this.cursorManager.getModelPosition(args.pos), autoindentAmount);
+        this.model.splitRow(this.cursorManager.getModelPosition(args.pos), autoindent);
         this.cursorManager.moveCursor({ row: this.cursorManager.getCursorPosition().row + 1, col: autoindentSize });
 
         // undo/redo
         args.action = "newline";
         var redoOperation = args;
-        var undoArgs = { action: "joinLine", joinDirection: "up", pos: bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition()), queued: args.queued };
+        var undoArgs = { 
+            action: "joinLine",
+            joinDirection: "up", 
+            pos: bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition()),
+            queued: args.queued,
+            autounindentSize: autoindent.length
+        };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
