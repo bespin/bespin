@@ -61,10 +61,21 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             slice.img = dojo.create("img", {
                 id: slice.id,
                 src: "/images/pie/" + slice.id + ".png",
-                alt: "pie menu",
+                alt: "pie menu border",
                 style: "position:absolute; display:none;"
             }, dojo.body());
             slice.piemenu = this;
+
+            // * Load the toolbar images
+            dojo.forEach(slice.toolbar, function(button) {
+                button.img = dojo.create("img", {
+                    src: button.icon,
+                    alt: button.alt,
+                    title: button.alt,
+                    style: "position:absolute; display:none; z-index:210; vertical-align:top;",
+                    onclick: dojo.hitch(slice, button.onclick)
+                }, dojo.body());
+            });
         }
         this.currentSlice = null;
 
@@ -149,27 +160,26 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
-                dojo.style("footer", {
-                    left: coords.l + "px",
-                    width: (coords.w - 10) + "px", // -10 makes it fit in, clean that up
-                    bottom: this.piemenu.slices.off.img.height + "px",
-                    zIndex: "200",
-                    display: "block"
-                });
-                dojo.byId("command").focus();
 
                 var left = coords.l;
-                // +5 make it appear on top of the command line, clean that up
-                var bottom = this.piemenu.slices.off.img.height + dojo.style("footer", "height") + 5;
-                var width = coords.w - 50; // -50 makes it fit in, clean that up
-                var height = coords.h - 30; // -30 makes it fit in, clean that up
+                var bottom = this.piemenu.slices.off.img.height;
+                var width = coords.w - 50; // TODO: why -50
+                var height = coords.h - 30; // TODO: why -30
 
-                bespin.get("commandLine").setInfoInSlice(left, bottom, width, height);
+                bespin.get("commandLine").showOutput(left, bottom, width, height);
             },
             hideContents: function() {
-                dojo.style("footer", "display", "none");
-                bespin.get("commandLine").setInfoAtBottom();
-            }
+                bespin.get("commandLine").hideOutput();
+            },
+            toolbar: [
+                {
+                    icon: "images/icn_fontsize.png",
+                    alt: "Font Size",
+                    onclick: function() {
+                        bespin.get("commandLine").toggleFontSize();
+                    }
+                }
+            ]
         },
 
         // === The File Browser Slice ===
@@ -212,12 +222,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             showContents: function(coords) {
                 /*
                 var piemenu = this.piemenu;
-                var cenLeft = piemenu.settings.margin + piemenu.border.top_lft.width;
-                var midTop = piemenu.settings.margin + piemenu.border.top_mid.height;
 
                 piemenu.ctx.fillStyle = "#bcb9ae";
                 piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
-                piemenu.ctx.fillText("Work in progress", parseInt(cenLeft + 10), parseInt(midTop + 10));
+                piemenu.ctx.fillText("Work in progress", parseInt(this.cenLeft + 10), parseInt(this.midTop + 10));
                 */
             }
         },
@@ -231,23 +239,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
     },
 
-    // == Show a specific slice
+    // == Show a specific slice ==
     showSlice: function(slice) {
         if (this.currentSlice == slice) return;
-
-        if (this.currentSlice && dojo.isFunction(this.currentSlice.hideContents)) {
-            this.currentSlice.hideContents();
-        }
-        // If something else causes us to show a slice directly we need to
-        // have focus to do the arrow thing, but ...
-        this.canvas.focus();
-        // Individual slices (e.g. command line) might want to do special
-        // things with the keyboard so this must come after the canvas.focus
-        this.renderPopout(slice);
+        if (this.currentSlice) this.unrenderCurrentSlice();
         this.currentSlice = slice;
+        this.renderCurrentSlice();
     },
 
-    // == Toggle whether the pie menu is visible
+    // == Toggle whether the pie menu is visible ==
     toggle: function() {
         if (this.currentSlice == null) {
             this.show();
@@ -261,11 +261,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     resize: function() {
         if (this.currentSlice == null) return;
 
-        this.canvas.height = this.editor.canvas.height + 10;
-        this.canvas.width = this.editor.canvas.width + 10;
+        // TODO: we did have +10 on both of these. Why?
+        this.canvas.height = this.editor.canvas.height;
+        this.canvas.width = this.editor.canvas.width;
         this.canvas.style.display = 'block';
-        this.canvas.focus();
-        this.renderPopout(this.currentSlice);
+
+        this.renderCurrentSlice();
     },
 
     // == Begin a show animation ==
@@ -297,9 +298,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     // == Begin a hide animation ==
     hide: function() {
-        if (this.currentSlice && dojo.isFunction(this.currentSlice.hideContents)) {
-            this.currentSlice.hideContents();
-        }
+        this.unrenderCurrentSlice();
 
         var self = this;
         if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
@@ -353,6 +352,56 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         ctx.restore();
     },
 
+    // == Render {{{ this.currentSlice }}} ==
+    renderCurrentSlice: function() {
+        // If something else causes us to show a slice directly we need to
+        // have focus to do the arrow thing, but we need to do this at the top
+        // because slices might have other focus ideas
+        this.canvas.focus();
+
+        this.calculateSlicePositions();
+        this.renderPopout();
+        this.renderToolbar();
+
+        // * Fill in the center section
+        var dimensions = {
+            l: this.cenLeft,
+            // TODO: Why do we need to push it down 3 extra px?
+            t: (this.midTop + this.settings.canvasTop + 3),
+            w: this.cenWidth,
+            h: this.midHeight
+        };
+        this.currentSlice.showContents(dimensions);
+    },
+
+    // == Unrender {{{ this.currentSlice }}} ==
+    unrenderCurrentSlice: function() {
+        if (dojo.isFunction(this.currentSlice.hideContents)) {
+            this.currentSlice.hideContents();
+        }
+        this.unrenderToolbar();
+    },
+
+    // == Calculate slice border positions ==
+    calculateSlicePositions: function() {
+        // Left hand edge of center column. Assumes all LHS graphics are same width
+        this.cenLeft = this.settings.contentsMargin + this.border.lft.width;
+        // Right hand edge of center column. Assumes all RHS graphics are same width
+        this.cenRight = this.settings.contentsMargin + this.border.rt.width;
+        // Width of the center column. Assumes left and right columns graphics are same width
+        this.cenWidth = this.canvas.width - this.cenLeft - this.cenRight;
+        // Top of bottom row. Determined by height of pie
+        this.btmTop = this.canvas.height - this.currentSlice.img.height;
+        // Left hand edge of rightmost column. Assumes all RHS graphics are the same width
+        this.rightLeft = this.canvas.width - this.cenRight;
+        // Top of all middle rows. Assumes all top graphics are same height
+        this.midTop = this.settings.contentsMargin + this.border.top_mid.height;
+        // Height of the middle row. Assumes all top graphics are same height
+        this.midHeight = this.btmTop - this.settings.contentsMargin - this.border.top_mid.height;
+        // Left hand edge of pie. Determined by width of pie
+        this.offLeft = parseInt((this.canvas.width / 2) - (this.currentSlice.img.width / 2));
+    },
+
     // == Render an open slice ==
     // How the graphics are laid out
     // {{{
@@ -364,8 +413,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     // --                                          --
     // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
     // }}}
-    renderPopout: function(active) {
-        // We can customize how much is visible round the edges
+    renderPopout: function() {
+        // Cache to shorten the commands below
         var margin = this.settings.contentsMargin;
 
         // * Start again with greying everything out
@@ -373,57 +422,66 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Left hand edge of pie. Determined by height of pie
-        var offLeft = parseInt((this.canvas.width / 2) - (active.img.width / 2));
-        // Top of bottom row. Determined by height of pie
-        var btmTop = this.canvas.height - active.img.height;
-        // Left hand edge of rightmost column. Assumes all RHS graphics are the same width
-        var rightLeft = this.canvas.width - margin - this.border.top_rt.width;
-        // Top of all middle rows. Assumes all top graphics are same height
-        var midTop = margin + this.border.top_mid.height;
-        // Left hand edge of center column. Assumes all LHS graphics are same width
-        var cenLeft = margin + this.border.top_lft.width;
-        // Height of the middle row. Assumes all top graphics are same height
-        var midHeight = btmTop - margin - this.border.top_mid.height;
-        // Width of the center column. Assumes left and right columns graphics are same width
-        var cenWidth = this.canvas.width - cenLeft - (margin + this.border.top_rt.width);
-
         // * The pie
-        this.ctx.drawImage(active.img, offLeft, btmTop);
+        this.ctx.drawImage(this.currentSlice.img, this.offLeft, this.btmTop);
 
         // * Don't draw the menu area for the 'off' slice
-        if (active == this.slices.off) {
-            return;
-        }
+        if (this.currentSlice == this.slices.off) return;
 
         // * Draw top row
         this.ctx.drawImage(this.border.top_lft, margin, margin);
-        this.ctx.drawImage(this.border.top_mid, cenLeft, margin, cenWidth, this.border.top_mid.height);
-        this.ctx.drawImage(this.border.top_rt, rightLeft, margin);
+        this.ctx.drawImage(this.border.top_mid, this.cenLeft, margin, this.cenWidth, this.border.top_mid.height);
+        this.ctx.drawImage(this.border.top_rt, this.rightLeft, margin);
 
         // * Middle row
-        this.ctx.drawImage(this.border.lft, margin, midTop, this.border.lft.width, midHeight);
-        this.ctx.drawImage(this.border.mid, cenLeft, midTop, cenWidth, midHeight);
-        this.ctx.drawImage(this.border.rt, rightLeft, midTop, this.border.rt.width, midHeight);
+        this.ctx.drawImage(this.border.lft, margin, this.midTop, this.border.lft.width, this.midHeight);
+        this.ctx.drawImage(this.border.mid, this.cenLeft, this.midTop, this.cenWidth, this.midHeight);
+        this.ctx.drawImage(this.border.rt, this.rightLeft, this.midTop, this.border.rt.width, this.midHeight);
 
         // * Bottom row
-        this.ctx.drawImage(this.border.btm_lft, margin, btmTop);
-        var lftbWidth = offLeft - (margin + this.border.btm_lft.width);
-        this.ctx.drawImage(this.border.btm_lftb, cenLeft, btmTop, lftbWidth, this.border.btm_lftb.height);
+        this.ctx.drawImage(this.border.btm_lft, margin, this.btmTop);
+        var lftbWidth = this.offLeft - (margin + this.border.btm_lft.width);
+        this.ctx.drawImage(this.border.btm_lftb, this.cenLeft, this.btmTop, lftbWidth, this.border.btm_lftb.height);
 
-        var rtbLeft = offLeft + this.slices.off.img.width;
-        var rtbWidth = rightLeft - rtbLeft;
-        this.ctx.drawImage(this.border.btm_rtb, rtbLeft, btmTop, rtbWidth, this.border.btm_rtb.height);
-        this.ctx.drawImage(this.border.btm_rt, rightLeft, btmTop);
+        var rtbLeft = this.offLeft + this.slices.off.img.width;
+        var rtbWidth = this.rightLeft - rtbLeft;
+        this.ctx.drawImage(this.border.btm_rtb, rtbLeft, this.btmTop, rtbWidth, this.border.btm_rtb.height);
+        this.ctx.drawImage(this.border.btm_rt, this.rightLeft, this.btmTop);
+    },
 
-        // * Title
-        this.ctx.fillStyle = "#bcb9ae";
-        this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
-        this.ctx.fillText(active.title, cenLeft + 5, midTop - 9);
+    // == Render the toolbar for this slice ==
+    renderToolbar: function() {
+        if (this.currentSlice.toolbar) {
+            // * Title
+            this.ctx.fillStyle = "#bcb9ae";
+            this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
 
-        // * Fill in the center section
-        // * TODO: Why do we need to push it down 3 extra px?
-        active.showContents({ l:cenLeft, t:(midTop + this.settings.canvasTop + 3), w:cenWidth, h:midHeight});
+            var left = this.cenLeft + 5;
+            var top = this.midTop - 9;
+            this.ctx.fillText(this.currentSlice.title, left, top);
+            // 50 - Give some extra space after the title
+            left = left + this.ctx.measureText(this.currentSlice.title).width + 50;
+
+            dojo.forEach(this.currentSlice.toolbar, function(button) {
+                dojo.style(button.img, {
+                    display: "block",
+                    // This is DOM so top is relative to top of window not canvas
+                    // TODO: But why 18 and not this.settings.canvasTop?
+                    top: (18 + top) + "px",
+                    left: left + "px"
+                });
+
+                left += button.width;
+            }, this);
+        }
+    },
+
+    // == Unrender the toolbar for this slice ==
+    unrenderToolbar: function() {
+        if (this.currentSlice.toolbar) {
+            dojo.forEach(this.currentSlice.toolbar, function(button) {
+                dojo.style(button.img, "display", "none");
+            });
+        }
     }
 });
-
