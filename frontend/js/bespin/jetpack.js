@@ -94,7 +94,7 @@ bespin.jetpack.commands.addCommand({
                     });
                 },
                 onFailure: function(xhr) {
-                    commandline.showInfo("Unable to create " + filename + ": " + xhr.responseText);
+                    commandline.addErrorOutput("Unable to create " + filename + ": " + xhr.responseText);
                 }
             }
         );

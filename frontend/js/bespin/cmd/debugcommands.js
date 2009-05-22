@@ -23,7 +23,7 @@ dojo.provide("bespin.cmd.debugcommands");
         preview: 'A test echo command',
         // ** {{{execute}}}
         execute: function(commandline, args) {
-            commandline.showInfo(args);
+            commandline.addOutput(args);
         }
     });
 
@@ -86,7 +86,7 @@ dojo.provide("bespin.cmd.debugcommands");
                 msg = "Read only mode turned on.";
             }
             commandline.editor.setReadOnly(flag);
-            commandline.showInfo(msg);
+            commandline.addOutput(msg);
         }
     });
 
@@ -104,7 +104,7 @@ dojo.provide("bespin.cmd.debugcommands");
                     html += topic + "<br>";
                 }
             }
-            commandline.showInfo(html);
+            commandline.addOutput(html);
         }
     });
 
@@ -126,7 +126,7 @@ dojo.provide("bespin.cmd.debugcommands");
 
             var stop = Date.now();
 
-            commandline.showInfo("It took " + (stop - start) + " milliseconds to do this");
+            commandline.addOutput("It took " + (stop - start) + " milliseconds to do this");
         }
     });
 
@@ -153,13 +153,13 @@ dojo.provide("bespin.cmd.debugcommands");
         // ** {{{_cleanup}}}
         _cleanup: function(commandline, reason) {
             commandline.showInfo = this.originalShowInfo;
-            commandline.showInfo(reason);
+            commandline.addOutput(reason);
             bespin.get('server').request('POST', '/test/cleanup/', null, {
                 onSuccess: function() {
                     console.log("Server cleanup completed");
                 },
                 onFailure: function(xhr) {
-                    commandline.showInfo("_setup() failed. Maybe due to: " + xhr.responseText);
+                    commandline.addErrorOutput("_setup() failed. Maybe due to: " + xhr.responseText);
                 }
             });
         },

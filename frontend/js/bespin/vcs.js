@@ -252,7 +252,7 @@ bespin.vcs.commands.addCommand({
         });
 
         if (!project) {
-            commandline.showInfo("You need to pass in a project");
+            commandline.addErrorOutput("You need to pass in a project");
             return;
         }
 
@@ -305,7 +305,7 @@ bespin.vcs.commands.addCommand({
         });
 
         if (!project) {
-            commandline.showInfo("You need to pass in a project");
+            commandline.addErrorOutput("You need to pass in a project");
             return;
         }
 
@@ -342,7 +342,7 @@ bespin.vcs.commands.addCommand({
         });
 
         if (!project) {
-            commandline.showInfo("You need to pass in a project");
+            commandline.addErrorOutput("You need to pass in a project");
             return;
         }
 
@@ -386,7 +386,7 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, commandline, args,
     });
 
     if (!project) {
-        commandline.showInfo("You need to pass in a project");
+        commandline.addErrorOutput("You need to pass in a project");
         return;
     }
 
@@ -396,7 +396,7 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, commandline, args,
             if (options.acceptAll) {
                 dasha = ", or use -a for all files.";
             }
-            commandline.showInfo("You must select a file to " + vcsCommand + dasha);
+            commandline.addErrorOutput("You must select a file to " + vcsCommand + dasha);
             return;
         }
         var command = [vcsCommand, path];
@@ -432,7 +432,7 @@ bespin.vcs.commands.addCommand({
     // ** {{{execute}}} **
     execute: function(commandline, message) {
         if (!message) {
-            commandline.showInfo("You must enter a log message");
+            commandline.addErrorOutput("You must enter a log message");
             return;
         }
         var project;
@@ -442,7 +442,7 @@ bespin.vcs.commands.addCommand({
         });
 
         if (!project) {
-            commandline.showInfo("You need to pass in a project");
+            commandline.addErrorOutput("You need to pass in a project");
             return;
         }
         bespin.get('server').vcs(project,
@@ -466,10 +466,10 @@ bespin.vcs._getSSHKeyAuthenticated = function(commandline) {
         bespin.get('server').getkey(kcpass, {
             onSuccess: bespin.vcs._displaySSHKey,
             on401: function(response) {
-                commandline.showInfo("Bad keychain password.");
+                commandline.addErrorOutput("Bad keychain password.");
             },
             onFailure: function(response) {
-                commandline.showInfo("getkey failed: " + response);
+                commandline.addErrorOutput("getkey failed: " + response);
             }
         });
     });
@@ -483,7 +483,7 @@ bespin.vcs.commands.addCommand({
             onSuccess: bespin.vcs._displaySSHKey,
             on401: bespin.vcs._getSSHKeyAuthenticated(commandline),
             onFailure: function(response) {
-                commandline.showInfo("getkey failed: " + response);
+                commandline.addErrorOutput("getkey failed: " + response);
             }
         });
     }
@@ -534,7 +534,7 @@ bespin.vcs.hgCommands.addCommand({
         });
 
         if (!project) {
-            commandline.showInfo("You need to pass in a project");
+            commandline.addErrorOutput("You need to pass in a project");
             return;
         }
         bespin.get('server').vcs(project,

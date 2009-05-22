@@ -109,7 +109,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
             commands.push('<b>' + name + args + '</b>: ' + command.preview);
         }
     }
-    commandLine.showInfo("<div style='font-size: 0.80em'>" + commands.join("<br/>") + (morehelpoutput || "") + "</div>");
+    commandLine.addOutput("<div style='font-size: 0.80em'>" + commands.join("<br/>") + (morehelpoutput || "") + "</div>");
 }
 
 // ** {{{Command: help}}} **
@@ -179,7 +179,7 @@ bespin.cmd.commands.add({
             type = typeof result;
         }
 
-        commandLine.showInfo("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");
+        commandLine.addOutput("<div style='font-size: 0.80em'><u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg + "</div>");
     }
 });
 
@@ -229,7 +229,7 @@ bespin.cmd.commands.add({
                     commandLine.settings.set(key, setting.value);
                 }
             }
-            commandLine.showInfo(output);
+            commandLine.addOutput(output);
         }
 });
 
@@ -241,7 +241,7 @@ bespin.cmd.commands.add({
         completeText: 'add a key for the setting to delete entirely',
         execute: function(commandLine, key) {
             commandLine.settings.unset(key);
-            commandLine.showInfo("Unset the setting for " + key + ".");
+            commandLine.addOutput("Unset the setting for " + key + ".");
         }
 });
 
@@ -271,7 +271,7 @@ bespin.cmd.commands.add({
         }
 
         if (!project) {
-            commandLine.showInfo("You need to pass in a project");
+            commandLine.addErrorOutput("You need to pass in a project");
             return;
         }
 
@@ -280,7 +280,7 @@ bespin.cmd.commands.add({
             for (var x = 0; x < fileNames.length; x++) {
                 files += fileNames[x].name + "<br/>";
             }
-            commandLine.showInfo(files);
+            commandLine.addOutput(files);
         });
     }
 });
@@ -319,7 +319,7 @@ bespin.cmd.commands.add({
             for (var x = 0; x < projectNames.length; x++) {
                 projects += projectNames[x].name + "<br/>";
             }
-            commandLine.showInfo(projects);
+            commandLine.addOutput(projects);
         });
     }
 });
@@ -535,21 +535,21 @@ bespin.cmd.commands.add({
         var filename = args.filename;
 
         if (!project) {
-            commandLine.showInfo("rm only works with the project is set.");
+            commandLine.addErrorOutput("'rm' only works with the project is set.");
             return;
         }
 
         if (!filename) {
-            commandLine.showInfo("give me a filename or directory to delete");
+            commandLine.addErrorOutput("give me a filename or directory to delete");
             return;
         }
 
         commandLine.files.removeFile(project, filename, function() {
             if (bespin.get('editSession').checkSameFile(project, filename)) commandLine.editor.model.clear(); // only clear if deleting the same file
 
-            commandLine.showInfo('Removed file: ' + filename, true);
+            commandLine.addOutput('Removed file: ' + filename, true);
         }, function(xhr) {
-            commandLine.showInfo("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
+            commandLine.addErrorOutput("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
         });
     }
 });
@@ -596,7 +596,7 @@ bespin.cmd.commands.add({
         else {
             version = bespinVersion;
         }
-        commandLine.showInfo(version);
+        commandLine.addOutput(version);
     }
 });
 
@@ -718,7 +718,7 @@ bespin.cmd.commands.add({
         "is written on the Web platform, so you can tweak it."
     ],
     execute: function(commandLine) {
-        commandLine.showInfo("Bespin " + this.messages[Math.floor(Math.random() * this.messages.length)]);
+        commandLine.addOutput("Bespin " + this.messages[Math.floor(Math.random() * this.messages.length)]);
     }
 });
 
@@ -745,7 +745,7 @@ bespin.cmd.commands.add({
     },
     execute: function(commandLine) {
         var editSession = bespin.get('editSession');
-        commandLine.showInfo("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
+        commandLine.addOutput("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em style='font-size: smaller'>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
     }
 });
 
@@ -876,7 +876,7 @@ bespin.cmd.commands.add({
             project = args.project;
             url = args.url;
 
-            commandLine.showInfo("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
+            commandLine.addOutput("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
             bespin.publish("project:import", { project: project, url: url });
         }
@@ -942,7 +942,7 @@ bespin.cmd.commands.add({
                 output += "<tr style='font-size: x-small'><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
             }
             output += "</table>";
-            commandLine.showInfo(output);
+            commandLine.addOutput(output);
         }
     }
 });
@@ -1002,7 +1002,7 @@ bespin.cmd.commands.add({
           }
         }
       }
-      commandLine.showInfo(output);
+      commandLine.addOutput(output);
     }
 });
 
@@ -1011,40 +1011,7 @@ bespin.cmd.commands.add({
     name: 'history',
     preview: 'show history of the commands',
     execute: function(commandLine) {
-        commandLine.showInfo('<u>Command History</u><br/><br/>' + commandLine.history.getCommands().join('<br/>'));
-    }
-});
-
-// ** {{{Command: trace}}} **
-bespin.cmd.commands.add({
-    name: 'trace',
-    preview: 'show history of the command line session',
-    execute: function(commandLine) {
-        var output = "<strong>History</strong>";
-        output += "<table>";
-        output += "<tr><td>Start</td> <td>End</td> <td>Command</td> <td>Output</td></tr>";
-        dojo.forEach(commandLine.history.instructions, function(instruction) {
-            output += "<tr>";
-            if (instruction.start) {
-                output += "<td>" + instruction.start.toTimeString() + "</td>";
-            } else {
-                output += "<td></td>";
-            }
-            if (instruction.end) {
-                output += "<td>" + instruction.end.toTimeString() + "</td>";
-            } else {
-                output += "<td></td>";
-            }
-            output += "<td>" + instruction.typed + "</td>";
-            if (instruction.output) {
-                output += "<td>" + instruction.output + "</td>";
-            } else {
-                output += "<td>Working ...</td>";
-            }
-            output += "</tr>";
-        });
-        output += "</table>";
-        commandLine.showInfo(output);
+        commandLine.addOutput('<u>Command History</u><br/><br/>' + commandLine.history.getCommands().join('<br/>'));
     }
 });
 
