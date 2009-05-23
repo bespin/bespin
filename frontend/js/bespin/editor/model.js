@@ -142,6 +142,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     clear: function() {
         this.rows = [];
+        this.cacheRowMetadata = [];
     },
 
     deleteRows: function(row, count) {
