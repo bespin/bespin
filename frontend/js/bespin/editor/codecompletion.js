@@ -35,24 +35,32 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     // Look back from the cursor col in the current row
     // to find something that can be completed.
     complete: function (cursorPos, row) {
+        var self = this;
         var startIndex  = cursorPos.col - 1;
         var substr = "";
+        var find = function () {
+            if(substr.length >= 1) {
+                self.findCompletion(substr);
+            }
+        }
         for (var i = startIndex; i >= 0; --i) { // looking back
             var ch = row[i];
-            if (this.charMarksStartOfIdentifier(ch) && substr.length >= 1) {
-                this.findCompletion(substr);
-                break;
+            if (this.charMarksStartOfIdentifier(ch)) {
+                find()
+                return
             } else {
                 substr = ch + substr;
             }
         }
+        // start of line reached
+        find()
     },
     
     findInArray: function (candidates, substr, array) {
         for (var i = 0, len = array.length; i < len; ++i) {
             var name = array[i].name;
             if (name) {
-                if (name.indexOf(substr) == 0 && name != "constructor") {
+                if (name.indexOf(substr) === 0 && substr !== name && name !== "constructor") {
                     candidates.push(name);
                 }
             }
@@ -88,6 +96,7 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         }
     },
         
+    
     // find something that we might be able to complete
     // Works for JS. Need to extend this to support for languages
     charMarksStartOfIdentifier: function (char) {
@@ -99,6 +108,7 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         var self = this;
         
         bespin.subscribe("parser:metainfo", function (evt) {
+            console.log("Meta")
             self.currentMetaInfo = evt.info
         })
         
