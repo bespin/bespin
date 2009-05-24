@@ -172,6 +172,7 @@ body {
     background-image: url("../images/footer_bg.png");
     background-repeat: repeat-x;
     padding: 5px;
+    z-index: 200;
 }
 
 #files {

@@ -68,6 +68,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'tabmode': 'off',
             'tabarrow': 'on',
             'fontsize': '10',
+            'consolefontsize': '10',
             'autocomplete': 'off',
             'collaborate': 'off',
             'language': 'auto',
@@ -554,12 +555,12 @@ dojo.declare("bespin.client.settings.Events", null, {
                     }
 
                     if (!checkSetAndExit()) {
-                        bespin.publish("message", {
+                        bespin.publish("message:error", {
                             msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
                         });
                     }
                 }), function() {
-                    bespin.publish("message", {
+                    bespin.publish("message:error", {
                         msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
                     });
                 });

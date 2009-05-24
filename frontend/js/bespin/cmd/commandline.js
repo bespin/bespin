@@ -52,36 +52,6 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         if (opts.initCommands) this.addCommands(opts.initCommands); // initialize the commands for the cli
     },
 
-    splitCommandAndArgs: function(value) {
-        var data = value.split(/\s+/);
-        var commandname = data.shift();
-
-        var command;
-        var argstr = data.join(' ');
-
-        if (this.commands[commandname]) {
-            command = this.commands[commandname];
-        } else if (this.aliases[commandname]) {
-            var alias = this.aliases[commandname].split(' ');
-            var aliascmd = alias.shift();
-            if (alias.length > 0) {
-                argstr = alias.join(' ') + ' ' + argstr;
-            }
-            command = this.commands[aliascmd];
-        } else {
-            bespin.get('commandLine').showInfo("Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help", true);
-            return;
-        }
-
-        if (command.subcommands) {
-            if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
-            return command.subcommands.splitCommandAndArgs(data.join(" "));
-        }
-
-        return [command, this.getArgs(argstr.split(' '), command)];
-
-    },
-
     addCommand: function(command) {
         if (!command) {
             return;
@@ -223,19 +193,36 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands) {
         this.commandLine = dojo.byId(commandLine);
 
+        // * Create the div for hints
+        this.commandHint = dojo.create("div", {
+            id: "command_hint",
+            style: "display:none; bottom:0px; left:31px; width:500px;"
+        }, dojo.body());
+        dojo.connect(this.commandHint, "onclick", this, this.hideHint);
+
+        // * Create the div for real command output
+        this.output = dojo.create("div", {
+            id: "command_output",
+            style: "display:none;"
+        }, dojo.body());
+
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
         if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
-        this.suppressInfo = false; // When true, info bar popups will not be shown
+
+        // We needed to suppress the info dialog before we had a proper
+        // command line. Now Joe thinks we can do away with this.
+        // TODO: Delete this message and the line below
+        //this.suppressInfo = false; // When true, info bar popups will not be shown
 
         this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
-        this.commandLineHistory = new bespin.cmd.commandline.History(this);
+        this.history = new bespin.cmd.commandline.History(this);
         this.customEvents = new bespin.cmd.commandline.Events(this);
-        this.setInfoAtBottom();
+        this.hideOutput();
     },
 
     showUsage: function(command, autohide) {
@@ -244,15 +231,25 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     showInfo: function(html, autohide) {
-        if (this.suppressInfo) return; // bypass
+        if (this.executing) {
+            this.executing.setOutput(html);
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
 
-        this.hideInfo();
+        // We needed to suppress the info dialog before we had a proper
+        // command line. Now Joe thinks we can do away with this.
+        // TODO: Delete this message and the line below
+        //if (this.suppressInfo) return; // bypass
+
         dojo.byId('info_text').innerHTML = html;
         dojo.style('info', 'display', 'block');
 
         this.infoResizer();
         dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
 
+        if (this.infoTimeout) clearTimeout(this.infoTimeout);
         if (autohide) {
             this.infoTimeout = setTimeout(dojo.hitch(this, function() {
                 this.hideInfo();
@@ -279,17 +276,64 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         }
     },
 
-    setInfoInSlice: function(left, bottom, width, height) {
+    // == Show Hint ==
+    // Hints are displayed while typing. They are transient and ignorable
+    showHint: function(html) {
+        dojo.attr(this.commandHint, { innerHTML: html })
+        dojo.style(this.commandHint, "display", "block");
+
+        if (this.hintTimeout) clearTimeout(this.hintTimeout);
+        this.hintTimeout = setTimeout(dojo.hitch(this, function() {
+            this.hideHint();
+        }), 4600);
+    },
+
+    // == Hide Hint ==
+    hideHint: function() {
+        dojo.style(this.commandHint, 'display', 'none');
+        if (this.hintTimeout) clearTimeout(this.hintTimeout);
+    },
+
+    // == Show Output ==
+    // Show the output area in the given display rectangle
+    showOutput: function(left, bottom, width, height) {
+        // TODO: There are lots of magic numbers here. Sort them out
+        dojo.style("footer", {
+            left: left + "px",
+            width: (width + 40) + "px",
+            bottom: bottom + "px",
+            display: "block"
+        });
+        dojo.byId("command").focus();
+
+        dojo.style(this.commandHint, {
+            left: left + "px",
+            bottom: (bottom + dojo.style("footer", "height") + 5) + "px",
+            width: width + "px",
+        });
+
+        dojo.style(this.output, {
+            left: left + "px",
+            bottom: (bottom + dojo.style("footer", "height") + 5) + "px",
+            width: (width + 40) + "px",
+            height: (height - 5) + "px",
+            display: "block",
+        });
+
         dojo.style("info", {
-            left:left+ "px",
-            bottom:bottom + "px",
-            width:width + "px",
-            backgroundImage:""
+            left: left + "px",
+            bottom: (bottom + dojo.style("footer", "height")) + "px",
+            width: width + "px",
+            backgroundImage: ""
         });
         this.maxInfoHeight = height;
     },
 
-    setInfoAtBottom: function() {
+    // == Hide Output ==
+    hideOutput: function() {
+        this.hideHint();
+        dojo.style(this.output, "display", "none");
+        dojo.style("footer", "display", "none");
         dojo.style("info", {
             left:"51px",
             bottom:"0px",
@@ -297,6 +341,114 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             backgroundImage:"url(http://localhost:8080/images/info_popup.png)"
         });
         this.maxInfoHeight = null;
+    },
+
+    // == Add Output ==
+    // Add some html to the currently executing command
+    addOutput: function(html) {
+        if (this.executing) {
+            // TODO: Should we append ???
+            this.executing.setOutput(html);
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
+
+        this.hideHint();
+        this.updateOutput();
+        this.scrollConsole();
+    },
+
+    // == Add Error Output ==
+    addErrorOutput: function(html) {
+        if (this.executing) {
+            // TODO: Should we append ???
+            this.executing.setOutput(html);
+            this.executing.error = true;
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
+
+        this.hideHint();
+        this.updateOutput();
+        this.scrollConsole();
+    },
+
+    scrollConsole: function() {
+        // certain browsers have a bug such that scrollHeight is too small
+        // when content does not fill the client area of the element
+        //var scrollHeight = Math.max(this.output.scrollHeight, this.output.clientHeight);
+        //this.output.scrollTop = scrollHeight - this.output.clientHeight;
+        //console.log("scroll", this.output.scrollTop, this.output.scrollHeight, this.output.clientHeight);
+
+        //dojo.byId("command_scroller").scrollIntoView();
+    },
+
+    // == Update Output ==
+    // Redraw the table of executed commands
+    updateOutput: function() {
+        var formatTime = function(date) {
+            var mins = "0" + date.getMinutes();
+            if (mins.length > 2) mins = mins.slice(mins.length - 2);
+            var secs = "0" + date.getSeconds();
+            if (secs.length > 2) secs = secs.slice(secs.length - 2);
+            return date.getHours() + ":" + mins + ":" + secs;
+        };
+
+        var size = parseInt(bespin.get("settings").get("consolefontsize"));
+        var output = "<table class='command_table' style='font-size:" + size + "pt'>";
+        dojo.forEach(this.history.instructions, function(instruction) {
+            if (!instruction.historical) {
+                output += "<tr>";
+                if (instruction.start) {
+                    output += "<td class='command_start'>" + formatTime(instruction.start) + "</td>";
+                } else {
+                    output += "<td></td>";
+                }
+                output += "<td class='command_typed'><span class=command_prompt>&gt;</span> " + instruction.typed + "</td>";
+
+                if (instruction.start && instruction.end) {
+                    var taken = (instruction.end.getTime() - instruction.start.getTime()) / 1000;
+                    output += "<td class='command_taken'>" + taken + " sec</td>";
+                } else {
+                    output += "<td></td>";
+                }
+                output += "</tr>";
+
+                output += "<tr>";
+                output += "<td></td>";
+                output += "<td colspan=2" + ( instruction.error ? " class='command_error'" : "" ) + ">";
+                if (instruction.output) {
+                    output += instruction.output;
+                } else {
+                    output += "Working ...";
+                }
+                output += "</td></tr>";
+            }
+        });
+        output += "</table><div id='command_scroller'></div>";
+
+        dojo.attr(this.output, "innerHTML", output);
+    },
+
+    // == Toggle Font Size ==
+    toggleFontSize: function() {
+        var settings = bespin.get("settings");
+
+        var self = this;
+        var set = function(size) {
+            settings.set("consolefontsize", size);
+            self.updateOutput();
+        };
+
+        var size = parseInt(settings.get("consolefontsize"));
+        switch (size) {
+            case 8: set(10); break;
+            case 10: set(14); break;
+            case 14: set(8); break;
+            default: set(10); break;
+        }
     },
 
     complete: function(value) {
@@ -307,7 +459,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             var commandLineValue = matches[0];
 
             if (this.commandStore.aliases[commandLineValue]) {
-                this.showInfo(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
+                this.showHint(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
                 commandLineValue += ' ';
             } else {
                 var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
@@ -318,11 +470,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     }
 
                     if (command['completeText']) {
-                        this.showInfo(command['completeText']);
+                        this.showHint(command['completeText']);
                     }
 
                     if (command['complete']) {
-                        this.showInfo(command.complete(this, value));
+                        this.showHint(command.complete(this, value));
                     }
                 }
             }
@@ -332,20 +484,38 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     executeCommand: function(value) {
-        var ca = this.commandStore.splitCommandAndArgs(value);
 
-        if (typeof ca === "undefined") return; // error out if no commands were found
+        var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
-        var command = ca[0];
-        var args = ca[1];
+        // clear after the command
+        this.commandLine.value = '';
 
-        bespin.publish("command:executed", { command: command, args: args, commandString: value });
+        this.history.add(instruction);
+        this.executing = instruction;
 
-        var result = command.execute(this, args, command);
-        this.commandLine.value = ''; // clear after the command
-        return result;
+        try {
+            if (instruction.error) {
+                bespin.get('commandLine').addErrorOutput(instruction.error);
+            } else {
+                instruction.command.execute(this, instruction.args, instruction.command);
+            }
+        }
+        finally {
+            this.executing = null;
+        }
+
+        this.updateOutput();
     },
 
+    link: function(action, context) {
+        var closureExecuting = this.executing;
+        var self = this;
+        return function() {
+            self.executing = closureExecuting;
+            action.apply(context || dojo.global, arguments);
+            self.executing = null;
+        };
+    },
 
     handleCommandLineFocus: function(e) {
         if (this.inCommandLine) return true; // in the command line!
@@ -357,13 +527,73 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return true;
         }
     }
+});
 
+// ** {{{ bespin.cmd.commandline.Instruction }}} **
+//
+// Wrapper for something that the user typed
+dojo.declare("bespin.cmd.commandline.Instruction", null, {
+    constructor: function(commandLine, typed) {
+        this.typed = dojo.trim(typed);
+
+        // It is valid to not know the commandLine when we are filling the
+        // history from disk, but in that case we don't need to parse it
+        if (commandLine != null) {
+            this.start = new Date();
+
+            var ca = this._splitCommandAndArgs(commandLine, typed);
+            if (ca) {
+                this.command = ca[0];
+                this.args = ca[1];
+            }
+        } else {
+            this.historical = true;
+        }
+    },
+
+    // == Set Output ==
+    // On completion we finish a command by settings it's output
+    setOutput: function(output) {
+        this.output = output;
+        this.end = new Date();
+    },
+
+    // == Split Command and Args
+    // Private method to chop up the typed command
+    _splitCommandAndArgs: function(commandLine, typed) {
+        var data = typed.split(/\s+/);
+        var commandname = data.shift();
+
+        var command;
+        var argstr = data.join(' ');
+
+        if (commandLine.commandStore.commands[commandname]) {
+            command = commandLine.commandStore.commands[commandname];
+        } else if (commandLine.commandStore.aliases[commandname]) {
+            var alias = commandLine.commandStore.aliases[commandname].split(' ');
+            var aliascmd = alias.shift();
+            if (alias.length > 0) {
+                argstr = alias.join(' ') + ' ' + argstr;
+            }
+            command = commandLine.commandStore.commands[aliascmd];
+        } else {
+            // TODO: This is a bit nasty - find a better way
+            this.error = "Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help";
+            return;
+        }
+
+        if (command.subcommands) {
+            if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
+            return this._splitCommandAndArgs(data.join(" "));
+        }
+
+        return [command, commandLine.commandStore.getArgs(argstr.split(' '), command)];
+    }
 });
 
 // ** {{{ bespin.cmd.commandline.KeyBindings }}} **
 //
 // Handle key bindings for the command line
-
 dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
     constructor: function(cl) {
         var settings = bespin.get("settings");
@@ -394,13 +624,13 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                         dojo.byId('command').value = commandString + spacing;
 
                         if (command['completeText']) {
-                            this.showInfo(command['completeText']);
+                            this.showHint(command['completeText']);
                         } else {
                             this.hideInfo();
                         }
                     } else if (completions.length == 1) {
                         if (completions[0] != dojo.byId('command').value) {
-                            this.showInfo(completions.join(', '));
+                            this.showHint(completions.join(', '));
                         } else {
                             command = this.commandStore.commands[completions[0]] || this.commandStore.commands[this.commandStore.aliases[completions[0]]];
 
@@ -411,7 +641,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                             }
                         }
                     } else {
-                        this.showInfo(completions.join(', '));
+                        this.showHint(completions.join(', '));
                     }
                 }
             }
@@ -431,13 +661,19 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == Key.DOWN_ARROW) {
                 dojo.stopEvent(e);
 
-                this.commandLineHistory.setNext();
+                var next = this.history.next();
+                if (next) {
+                    cl.commandLine.value = next.typed;
+                }
 
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == Key.UP_ARROW) {
                 dojo.stopEvent(e);
 
-                this.commandLineHistory.setPrevious();
+                var prev = this.history.previous();
+                if (prev) {
+                    cl.commandLine.value = prev.typed;
+                }
 
                 return false;
             } else if (e.keyChar == 'u' && e.ctrlKey) {
@@ -480,78 +716,66 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 // Store command line history so you can go back and forth
 
 dojo.declare("bespin.cmd.commandline.History", null, {
-    constructor: function(cl) {
-        this.commandLine = cl;
-        this.history = [];
-        this.historySize = 50;
+    constructor: function() {
+        this.instructions = [];
         this.pointer = 0;
         this.store = new bespin.cmd.commandline.ServerHistoryStore(this);
     },
 
+    settings: {
+        maxEntries: 50
+    },
+
     // TODO: get from the database
-    seed: function(commands) {
-        this.history = commands;
+    seed: function(instructions) {
+        dojo.forEach(instructions, function(instruction) {
+            var instruction = new bespin.cmd.commandline.Instruction(null, instruction);
+            this.instructions.push(instruction);
+        }, this);
         this.trim();
-        this.pointer = this.history.length; // make it one past the end so you can go back and hit the last one not the one before last
+        this.pointer = this.instructions.length; // make it one past the end so you can go back and hit the last one not the one before last
     },
 
-    // Keep the history to the historySize
+    // Keep the history to settings.maxEntries
     trim: function() {
-        if (this.history.length > this.historySize) {
-            this.history.splice(0, this.history.length - this.historySize);
+        if (this.instructions.length > this.settings.maxEntries) {
+            this.instructions.splice(0, this.instructions.length - this.settings.maxEntries);
         }
     },
 
-    add: function(command) {
-        command = dojo.trim(command);
-        if (this.last() != command) {
-            this.history.push(command);
-            this.trim();
-            this.pointer = this.history.length; // also make it one past the end so you can go back to it
-            this.store.save(this.history);
-        }
+    add: function(instruction) {
+        // We previously de-duped here, by comparing what was typed, but that
+        // should really be done as a UI sugar on up/down.
+        this.instructions.push(instruction);
+        this.trim();
+        this.pointer = this.instructions.length; // also make it one past the end so you can go back to it
+        this.store.save(this.instructions);
     },
 
     next: function() {
-        if (this.pointer < this.history.length - 1) {
+        if (this.pointer < this.instructions.length - 1) {
             this.pointer++;
-            return this.history[this.pointer];
+            return this.instructions[this.pointer];
         }
     },
 
     previous: function() {
         if (this.pointer > 0) {
             this.pointer--;
-            return this.history[this.pointer];
+            return this.instructions[this.pointer];
         }
     },
 
     last: function() {
-        return this.history[this.history.length - 1];
+        return this.instructions[this.instructions.length - 1];
     },
 
     first: function() {
-        return this.history[0];
+        return this.instructions[0];
     },
 
-    set: function(commandString) {
-        var cmdline = this.commandLine.commandLine;
-
-        cmdline.value = commandString;
-    },
-
-    setNext: function() {
-        var next = this.next();
-        if (next) {
-            this.set(next);
-        }
-    },
-
-    setPrevious: function() {
-        var prev = this.previous();
-        if (prev) {
-            this.set(prev);
-        }
+    getCommands: function() {
+        return dojo.map(this.instructions, function(instruction) { return instruction.typed; });
     }
 });
 
@@ -563,7 +787,7 @@ dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
         history.seed(['ls', 'clear', 'status']);
     },
 
-    save: function(commands) {}
+    save: function(instructions) {}
 });
 
 // ** {{{ bespin.cmd.commandline.ServerHistoryStore }}} **
@@ -584,17 +808,21 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     },
 
     seed: function() {
-        // load last 50 commands from history
+        // load last 50 instructions from history
         bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             this.history.seed(file.content.split(/\n/));
         }));
     },
 
-    save: function(commands) {
-        // save commands back to server asynchronously
+    save: function(instructions) {
+        var content = "";
+        dojo.forEach(instructions, function(instruction) {
+            content += instruction.typed + "\n";
+        });
+        // save instructions back to server asynchronously
         bespin.get('files').saveFile(bespin.userSettingsProject, {
             name: "command.history",
-            content: commands.join("\n") || "help",
+            content: content,
             timestamp: new Date().getTime()
         });
     }
@@ -606,43 +834,50 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
-        // ** {{{ Event: message }}} **
+        // ** {{{ Event: message:output }}} **
         //
-        // Observe when others want to show the info bar for the command line
-        bespin.subscribe("message", function(event) {
-            var msg = event.msg;
-            var autohide = (event.tag == 'autohide');
-            if (msg) commandline.showInfo(msg, autohide);
+        // message:output is good output for the console
+        bespin.subscribe("message:output", function(event) {
+            if (event.msg) commandline.addOutput(event.msg);
         });
+
+        // ** {{{ Event: message:output }}} **
+        //
+        // message:output is good output for the console
+        bespin.subscribe("message:error", function(event) {
+            if (event.msg) commandline.addErrorOutput(event.msg);
+        });
+
+        // ** {{{ Event: message:output }}} **
+        //
+        // message:output is good output for the console
+        bespin.subscribe("message:hint", function(event) {
+            if (event.msg) commandline.showHint(event.msg);
+        });
+
+        // We needed to suppress the info dialog before we had a proper
+        // command line. Now Joe thinks we can do away with this.
+        // TODO: Delete this message and the subscribe() commands.
 
         // ** {{{ Event: cmdline:suppressinfo }}} **
         //
         // Turn on info bar suppression
+        /*
         bespin.subscribe("cmdline:suppressinfo", function(event) {
             commandline.suppressInfo = true;
         });
+        */
 
         // ** {{{ Event: cmdline:unsuppressinfo }}} **
         //
         // Turn off info bar suppression
+        /*
         bespin.subscribe("cmdline:unsuppressinfo", function(event) {
             commandline.suppressInfo = false;
         });
+        */
 
-        // ** {{{ Event: command:executed }}} **
-        //
-        // Once the command has been executed, do something.
-        // In this case, save it for the history
-        bespin.subscribe("command:executed", function(event) {
-            var command = event.commandString || (event.command.name + " " + event.args.join(' ')); // try to get the raw input
-            try {
-                commandline.commandLineHistory.add(command); // only add to the history when a valid command
-            } catch (c) {
-                // catch dojo.cookie weird error
-            }
-        });
-
-        // ** {{{ Event: command:executed }}} **
+        // ** {{{ Event: command:execute }}} **
         //
         // Once the command has been executed, do something.
         bespin.subscribe("command:execute", function(event) {
@@ -667,7 +902,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         //
         // The open file action worked, so tell the user
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
-            commandline.showInfo('Loaded file: ' + event.file.name, true);
+            commandline.showHint('Loaded file: ' + event.file.name);
         });
 
         // -- Projects
@@ -678,8 +913,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             var project = event.project;
 
             bespin.get('editSession').project = project;
-            if (!event.suppressPopup) commandline.showInfo('Changed project to ' + project, true);
+            if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
         });
-
     }
 });

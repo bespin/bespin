@@ -210,7 +210,7 @@ dojo.declare("bespin.editor.Events", null, {
 
             bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("message", { msg: 'Saved file: ' + file.name, tag: 'autohide' });
+            bespin.publish("message:hint", { msg: 'Saved file: ' + file.name });
             
             bespin.publish("editor:clean");
         });
@@ -289,7 +289,7 @@ dojo.declare("bespin.editor.Events", null, {
             var editSession = bespin.get('editSession');
             var file = editSession.path || 'a new scratch file';
             
-            bespin.publish("message", {
+            bespin.publish("message:output", {
                 msg: 'Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project
             });
         });

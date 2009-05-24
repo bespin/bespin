@@ -62,9 +62,12 @@ bespin.subscribe("editor:evalfile", function(event) {
     bespin.get('files').loadContents(project, filename, function(file) {
         with (scope) { // wow, using with. crazy.
             try {
-                bespin.publish("cmdline:suppressinfo");
+                // We needed to suppress the info dialog before we had a proper
+                // command line. Now Joe thinks we can do away with this.
+                // TODO: Delete this message and the publish() commands.
+                // bespin.publish("cmdline:suppressinfo");
                 eval(file.content);
-                bespin.publish("cmdline:unsuppressinfo");
+                // bespin.publish("cmdline:unsuppressinfo");
             } catch (e) {
                 bespin.get('commandLine').showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
             }
@@ -152,7 +155,7 @@ bespin.subscribe("editor:closefile", function(event) {
         // if the current file, move on to a new one
         if (filename == editSession.path) bespin.publish("editor:newfile");
 
-        bespin.publish("message", { msg: 'Closed file: ' + filename });
+        bespin.publish("message:output", { msg: 'Closed file: ' + filename });
     });
 });
 
@@ -171,7 +174,7 @@ bespin.subscribe("editor:config:run", function(event) {
 // Open the users special config file
 bespin.subscribe("editor:config:edit", function(event) {
     if (!bespin.userSettingsProject) {
-        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message:error", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
@@ -181,16 +184,6 @@ bespin.subscribe("editor:config:edit", function(event) {
     });
 });
 
-// ** {{{ Event: command:executed }}} **
-//
-// Set the last command in the status window
-bespin.subscribe("command:executed", function(event) {
-    var commandname = event.command.name;
-    var args        = event.args;
-
-    dojo.byId('message').innerHTML = "last cmd: <span title='" + commandname + " " + args + "'>" + commandname + "</span>"; // set the status message area
-});
-
 // ** {{{ Event: command:load }}} **
 //
 // Create a new command in your special command directory
@@ -198,7 +191,7 @@ bespin.subscribe("command:load", function(event) {
     var commandname = event.commandname;
 
     if (!commandname) {
-        bespin.publish("message", { msg: "Please pass me a command name to load." });
+        bespin.publish("message:error", { msg: "Please pass me a command name to load." });
         return;
     }
 
@@ -206,7 +199,7 @@ bespin.subscribe("command:load", function(event) {
         try {
             eval('bespin.get("commandLine").commandStore.addCommands([' + file.content + '])');
         } catch (e) {
-            bespin.publish("message", { msg: "Something is wrong about the command:<br><br>" + e });
+            bespin.publish("message:error", { msg: "Something is wrong about the command:<br><br>" + e });
         }
     }, true);
 });
@@ -218,12 +211,12 @@ bespin.subscribe("command:edit", function(event) {
     var commandname = event.commandname;
 
     if (!bespin.userSettingsProject) {
-        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message:error", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
     if (!commandname) {
-        bespin.publish("message", { msg: "Please pass me a command name to edit." });
+        bespin.publish("message:error", { msg: "Please pass me a command name to edit." });
         return;
     }
 
@@ -239,7 +232,7 @@ bespin.subscribe("command:edit", function(event) {
 // List the custom commands that a user has
 bespin.subscribe("command:list", function(event) {
     if (!bespin.userSettingsProject) {
-        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message:error", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
@@ -256,7 +249,7 @@ bespin.subscribe("command:list", function(event) {
             }), function(c) { return c.name.replace(/\.js$/, ''); }).join("<br>");
         }
 
-        bespin.publish("message", { msg: output });
+        bespin.publish("message:output", { msg: output });
     });
 });
 
@@ -270,12 +263,12 @@ bespin.subscribe("command:delete", function(event) {
     var files = bespin.get('files');
 
     if (!bespin.userSettingsProject) {
-        bespin.publish("message", { msg: "You don't seem to have a user project. Sorry." });
+        bespin.publish("message:error", { msg: "You don't seem to have a user project. Sorry." });
         return;
     }
 
     if (!commandname) {
-        bespin.publish("message", { msg: "Please pass me a command name to delete." });
+        bespin.publish("message:error", { msg: "Please pass me a command name to delete." });
         return;
     }
 
@@ -283,11 +276,10 @@ bespin.subscribe("command:delete", function(event) {
 
     files.removeFile(bespin.userSettingsProject, commandpath, function() {
         if (editSession.checkSameFile(bespin.userSettingsProject, commandpath)) bespin.get('editor').model.clear(); // only clear if deleting the same file
-        bespin.publish("message", { msg: 'Removed command: ' + commandname, tag: 'autohide' });
+        bespin.publish("message:output", { msg: 'Removed command: ' + commandname });
     }, function(xhr) {
-        bespin.publish("message", {
-            msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText,
-            tag: 'autohide'
+        bespin.publish("message:error", {
+            msg: "Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText
         });
     });
 });
@@ -304,10 +296,10 @@ bespin.subscribe("directory:create", function(event) {
 
     files.makeDirectory(project, path, function() {
         if (path == '') bespin.publish("project:set", { project: project });
-        bespin.publish("message", {
+        bespin.publish("message:output", {
             msg: 'Successfully created directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
-        bespin.publish("message", {
+        bespin.publish("message:error", {
             msg: 'Unable to create directory: [project=' + project + ', path=' + path + '] ' + project, tag: 'autohide' });
     });
 });
@@ -326,10 +318,10 @@ bespin.subscribe("directory:delete", function(event) {
 
     files.removeDirectory(project, path, function() {
         if (path == '/') bespin.publish("project:set", { project: '' }); // reset
-        bespin.publish("message", {
+        bespin.publish("message:output", {
             msg: 'Successfully deleted directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     }, function() {
-        bespin.publish("message", {
+        bespin.publish("message:error", {
             msg: 'Unable to delete directory: [project=' + project + ', path=' + path + ']', tag: 'autohide' });
     });
 });
@@ -366,7 +358,7 @@ bespin.subscribe("project:rename", function(event) {
             bespin.publish("project:set", { project: newProject });
         },
         onFailure: function(xhr) {
-            bespin.publish("message", { msg: 'Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>", tag: 'autohide' });
+            bespin.publish("message:error", { msg: 'Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>", tag: 'autohide' });
         }
     });
 });
@@ -380,9 +372,9 @@ bespin.subscribe("project:import", function(event) {
     var url = event.url;
 
     bespin.get('server').importProject(project, url, { onSuccess: function() {
-        bespin.publish("message", { msg: "Project " + project + " imported from:<br><br>" + url, tag: 'autohide' });
+        bespin.publish("message:output", { msg: "Project " + project + " imported from:<br><br>" + url, tag: 'autohide' });
     }, onFailure: function(xhr) {
-        bespin.publish("message", { msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText });
+        bespin.publish("message:error", { msg: "Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText });
     }});
 });
 

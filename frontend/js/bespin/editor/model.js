@@ -154,15 +154,15 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the pased row
-    splitRow: function(modelPos, autoindentAmount) {
+    splitRow: function(modelPos, autoindent) {
         this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
         this.setRowDirty(modelPos.row);
 
         var row = this.getRowArray(modelPos.row); 
 
         var newRow;
-        if (autoindentAmount > 0) {
-            newRow = bespin.util.makeArray(autoindentAmount);
+        if (autoindent.length > 0) {
+            newRow = autoindent;
         } else {
             newRow = [];
         }
@@ -185,14 +185,22 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         } 
     },
 
-    // joins the passed row with the row beneath it
-    joinRow: function(rowIndex) {
+    // joins the passed row with the row beneath it; optionally removes leading whitespace as well.
+    joinRow: function(rowIndex, autounindentSize) {
         this.editor.ui.syntaxModel.invalidateCache(rowIndex); 
         this.setRowDirty(rowIndex);
 
-        if (rowIndex >= this.rows.length - 1) return;        
+        if (rowIndex >= this.rows.length - 1) return;
         var row = this.getRowArray(rowIndex);
-        this.rows[rowIndex] = row.concat(this.rows[rowIndex + 1]);
+        var nextrow = this.rows[rowIndex + 1];
+
+        //first, remove any autoindent
+        if (typeof autounindentSize != "undefined") {
+            nextrow.splice(0, autounindentSize)
+        }
+       
+        //now, remove the row
+        this.rows[rowIndex] = row.concat(nextrow);
         this.rows.splice(rowIndex + 1, 1);
         
         this.cacheRowMetadata.splice(rowIndex + 1, 1);
