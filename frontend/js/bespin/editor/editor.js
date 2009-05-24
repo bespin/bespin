@@ -87,6 +87,11 @@ dojo.declare("bespin.editor.Scrollbar", null, {
     },
 
     onmousewheel: function(e) {
+        // We need to move the editor unless something else needs to scroll.
+        // We need a clean way to define that behaviour, but for now we hack and put in other elements that can scroll
+        var command_output = dojo.byId("command_output");
+        if (command_output && (e.srcElement.id == "command_output" || bespin.util.contains(command_output, e.srcElement))) return;
+
         var wheel = bespin.util.mousewheelevent.wheel(e);
         var axis = bespin.util.mousewheelevent.axis(e);
 

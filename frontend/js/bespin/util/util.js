@@ -186,3 +186,12 @@ bespin.util.englishFromCamel = function(camel) {
 bespin.util.isMac = function() {
     return navigator.appVersion.indexOf("Macintosh") >= 0;
 };
+
+// = contains =
+//
+// Return true if with contains(a, b) the element b exists within the element a
+bespin.util.contains = document.compareDocumentPosition ? function(a, b) {
+	return a.compareDocumentPosition(b) & 16;
+} : function(a, b) {
+	return a !== b && (a.contains ? a.contains(b) : true);
+};
