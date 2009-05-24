@@ -108,7 +108,6 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         var self = this;
         
         bespin.subscribe("parser:metainfo", function (evt) {
-            console.log("Meta")
             self.currentMetaInfo = evt.info
         })
         
