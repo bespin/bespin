@@ -449,7 +449,10 @@ dojo.declare("bespin.editor.Actions", null, {
     deleteChunk: function(args) {
         if (this.editor.readonly) return;
 
-        var selection = this.editor.getSelection({ startPos: args.pos, endPos: args.endPos });
+        // Sometimes we're passed a selection, and sometimes we're not.
+        var startPos = (args.startPos != undefined) ? args.startPos : bespin.editor.utils.copyPos(args.pos);
+
+        var selection = this.editor.getSelection({ startPos: startPos, endPos: args.endPos });
         var chunk = this.model.deleteChunk(selection);
         this.cursorManager.moveCursor(selection.startPos);
         this.repaint();
@@ -535,7 +538,6 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
-        // setting the selection to undefined has to happen *after* we enqueue the undoOp otherwise replay breaks
         this.editor.setSelection({ startPos: args.pos, endPos: endPos });
         this.cursorManager.moveCursor(endPos);
         this.repaint();
@@ -653,6 +655,8 @@ dojo.declare("bespin.editor.Actions", null, {
         var oldqueued = args.queued;
 
         args.queued = true;
+
+        var selection = this.editor.getSelection();
         var chunk = this.deleteSelection(args);
         args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
         this.insertCharacter(args);
@@ -660,12 +664,22 @@ dojo.declare("bespin.editor.Actions", null, {
         args.queued = oldqueued;
 
         // undo/redo
-        args.action = "deleteSelectionAndInsertCharacter";
-        var redoOperation = args;
+        // Redo is done with a separate function
+        var redoArgs = {
+            action: "deleteChunkAndInsertCharacter",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            queued: args.queued,
+            selection: selection,
+            newchar: args.newchar,
+            chunk: chunk
+        };
+        var redoOperation = redoArgs;
         var undoArgs = {
             action: "deleteCharacterAndInsertChunkAndSelect",
             pos: bespin.editor.utils.copyPos(args.pos),
             queued: args.queued,
+            selection: selection,
+            newchar: args.newchar,
             chunk: chunk
         };
         var undoOperation = undoArgs;
@@ -678,6 +692,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var oldqueued = args.queued;
 
         args.queued = true;
+
         this.deleteCharacter(args);
         this.insertChunkAndSelect(args);
 
@@ -686,7 +701,47 @@ dojo.declare("bespin.editor.Actions", null, {
         // undo/redo
         args.action = "deleteCharacterAndInsertChunkAndSelect";
         var redoOperation = args;
-        var undoArgs = { action: "deleteSelectionAndInsertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued };
+        var undoArgs = {
+            action: "deleteChunkAndInsertCharacter",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            queued: args.queued,
+            selection: args.selection,
+            newchar: args.newchar,
+            chunk: args.chunk
+        };
+        var undoOperation = undoArgs;
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+
+    // Do not assume that the text to be deleted is currently selected
+    deleteChunkAndInsertCharacter: function(args) {
+        if (this.editor.readonly) return;
+
+        // Ignore whatever is currently selected; we've got our selection already
+        this.editor.setSelection(undefined);
+        this.repaint();
+
+        var oldqueued = args.queued;
+
+        args.queued = true;
+
+        this.deleteChunk(args.selection);
+        args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
+        this.insertCharacter(args);
+
+        args.queued = oldqueued;
+
+        // undo/redo
+        args.action = "deleteChunkAndInsertCharacter";
+        var redoOperation = args;
+        var undoArgs = {
+            action: "deleteCharacterAndInsertChunkAndSelectChunk",
+            pos: bespin.editor.utils.copyPos(args.pos),
+            queued: args.queued,
+            selection: args.selection,
+            newchar: args.newchar,
+            chunk: args.chunk
+        };
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
