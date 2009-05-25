@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calculate which segment is clicked</title>
+    <script>
+    var canvas, ctx, result, RADIUS;
+    window.onload = function() {
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext("2d");
+        result = document.getElementById("result");
+        RADIUS = canvas.width / 2;
+        
+        drawPie();
+        
+        canvas.onclick = function(e) {
+            var x = e.offsetX;
+            var y = e.offsetY;            
+            
+            var p = centerPoint(x, y); // change coord scheme to center based
+
+            var degrees = angle(p.x, p.y);
+            result.innerHTML = "<div style='font-size: larger'><b>" + Math.round(degrees) + " degrees</b>, which is in the <b>" + slice(degrees) + "</b> slice.</b></div>";
+            result.innerHTML += "<div style='font-size: smaller;padding-top: 6px;'><h4>Debug</h4>Click X: " + x + ", Click Y: " + y + "<br>Center X: " + p.x + ", Center Y: " + p.y + '</div>';
+        }
+    }
+    
+    function angle(x, y) {
+        return Math.atan2(y, x) * 180 / Math.PI;
+    }
+
+    function slice(degrees) {
+        if (degrees >= -45 && degrees < 45) { // right
+            return "right";
+        } else if (degrees >= 45 && degrees < 135) { // top
+            return "top";
+        } else if (degrees >= 135 || degrees < -135) { // left
+            return "left";
+        } else { // bottom
+            return "bottom";
+        }
+    }
+    
+    function drawPie() {
+        ctx.beginPath();
+        ctx.moveTo(RADIUS, RADIUS);
+        ctx.arc(RADIUS,RADIUS,RADIUS, radians(-45), radians(45), false);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(RADIUS, RADIUS);
+        ctx.arc(RADIUS,RADIUS,RADIUS, radians(45), radians(135), false);
+        ctx.fillStyle = "blue";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(RADIUS, RADIUS);
+        ctx.arc(RADIUS,RADIUS,RADIUS, radians(135), radians(225), false);
+        ctx.fillStyle = "yellow";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(RADIUS, RADIUS);
+        ctx.arc(RADIUS,RADIUS,RADIUS, radians(225), radians(315), false);
+        ctx.fillStyle = "brown";
+        ctx.fill();
+
+    }
+
+    function radians(degrees) {
+        return (Math.PI / 180) * degrees;
+    }
+
+    function degrees(radians) {
+        return (180 / Math.PI) * radians;
+    }
+    
+    function centerPoint(x, y) { // convert a x, y that is based on top left, to be based on the center
+        return { x: x - RADIUS, y: (y - RADIUS) * -1 };
+    }
+
+    </script>
+</head>
+<body>    
+    <canvas id="myCanvas" height="500" width="500" style="background-color: transparent">This browser doesn't support canvas</canvas>
+    
+    <div id="result"></div>
+    
+    <div>
+        <h3>Convertor</h3>
+        Degrees: <input type="text" id="degrees" onblur="document.getElementById('radians').value = radians(this.value)"><br>
+        Radians: <input type="text" id="radians" onblur="document.getElementById('degrees').value = Math.round(degrees(this.value))">
+    </div>
+</body>
+</html>
