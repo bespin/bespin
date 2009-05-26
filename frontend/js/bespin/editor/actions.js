@@ -828,7 +828,7 @@ dojo.declare("bespin.editor.Actions", null, {
                 if (count > 1) { msg += 'es'; }
                 msg += " for your search for <em>" + str + "</em>";
 
-                bespin.get('commandLine').showInfo(msg, true);
+                bespin.get('commandLine').showHint(msg);
             break;
 
             case 'searchwindow':

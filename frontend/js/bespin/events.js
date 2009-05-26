@@ -55,21 +55,18 @@ bespin.subscribe("editor:evalfile", function(event) {
     var scope    = event.scope || bespin.events.defaultScope();
 
     if (!project || !filename) {
-        bespin.get('commandLine').showInfo("Please, I need a project and filename to evaulate");
+        bespin.get('commandLine').addErrorOutput("Please, I need a project and filename to evaulate");
         return;
     }
 
     bespin.get('files').loadContents(project, filename, function(file) {
-        with (scope) { // wow, using with. crazy.
+        // wow, using with. crazy.
+        with (scope) {
             try {
-                // We needed to suppress the info dialog before we had a proper
-                // command line. Now Joe thinks we can do away with this.
-                // TODO: Delete this message and the publish() commands.
-                // bespin.publish("cmdline:suppressinfo");
                 eval(file.content);
-                // bespin.publish("cmdline:unsuppressinfo");
             } catch (e) {
-                bespin.get('commandLine').showInfo("There is a error trying to run " + filename + " in project " + project + ":<br><br>" + e);
+                var html = "There is a error trying to run " + filename + " in project " + project + ":<br>" + e;
+                bespin.get('commandLine').addErrorOutput(html);
             }
         }
     }, true);

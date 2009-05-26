@@ -141,7 +141,7 @@ dojo.provide("bespin.cmd.debugcommands");
         ],
         // ** {{{_setup}}}
         _setup: function(commandline, onSuccess) {
-            this.originalShowInfo = commandline.showInfo;
+            this.originalShowHint = commandline.showHint;
             var self = this;
             bespin.get('server').request('POST', '/test/setup/', null, {
                 onSuccess: onSuccess,
@@ -152,7 +152,7 @@ dojo.provide("bespin.cmd.debugcommands");
         },
         // ** {{{_cleanup}}}
         _cleanup: function(commandline, reason) {
-            commandline.showInfo = this.originalShowInfo;
+            commandline.showHint = this.originalShowHint;
             commandline.addOutput(reason);
             bespin.get('server').request('POST', '/test/cleanup/', null, {
                 onSuccess: function() {
@@ -172,7 +172,9 @@ dojo.provide("bespin.cmd.debugcommands");
             }
             var element = script[index];
             var self = this;
-            commandline.showInfo = function(html, autohide) {
+            // TODO: This needs to be re-written to take Instructions into
+            // account.
+            commandline.showHint = function(html, autohide) {
                 var info = dojo.byId('info');
                 info.innerHTML = html;
                 var text = info.textContent;
