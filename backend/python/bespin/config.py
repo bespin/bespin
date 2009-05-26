@@ -58,7 +58,7 @@ c.secret = "This is the phrase that is used for secret stuff."
 c.pw_secret = "This phrase encrypts passwords."
 c.static_dir = path(os.path.abspath("%s/../../../frontend" % os.path.dirname(__file__)))
 
-c.template_file_dir = c.static_dir / "templates"
+c.template_file_dir = None
 
 c.docs_dir = os.path.abspath("%s/../../../docs" % os.path.dirname(__file__))
 c.log_file = os.path.abspath("%s/../devserver.log" % os.path.dirname(__file__))
@@ -202,6 +202,14 @@ def activate_profile():
     c.dbengine = create_engine(c.dburl)
     c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
     c.fsroot = path(c.fsroot)
+    
+    c.static_dir = path(c.static_dir)
+    
+    if not c.template_file_dir:
+        c.template_file_dir = c.static_dir / "templates"
+        
+    c.template_file_dir = path(c.template_file_dir)
+    
     if not c.fsroot.exists:
         c.fsroot.makedirs()
 
