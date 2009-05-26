@@ -73,7 +73,6 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
     var command, name;
 
     if (commandStore.commands[extra]) { // caught a real command
-        commands.push("<u>Help for the command: <em>" + extra + "</em></u><br/>");
         command = commandStore.commands[extra];
         commands.push(command['description'] ? command.description : command.preview);
     } else {
@@ -81,7 +80,6 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
 
         var subcmdextra = "";
         if (commandStore.subcommandFor) subcmdextra = " for " + commandStore.subcommandFor;
-        commands.push("<u>Commands Available" + subcmdextra + "</u><br/>");
 
         if (extra) {
             if (extra == "hidden") { // sneaky, sneaky.
@@ -276,7 +274,7 @@ bespin.cmd.commands.add({
         }
 
         commandLine.files.fileNames(project, function(fileNames) {
-            var files = "<u>Files in project: " + project + "</u><br/><br/>";
+            var files = "";
             for (var x = 0; x < fileNames.length; x++) {
                 files += fileNames[x].name + "<br/>";
             }
@@ -315,7 +313,7 @@ bespin.cmd.commands.add({
     preview: 'show projects',
     execute: function(commandLine, extra) {
         commandLine.files.projects(function(projectNames) {
-            var projects = "<u>Your projects</u><br/><br/>";
+            var projects = "";
             for (var x = 0; x < projectNames.length; x++) {
                 projects += projectNames[x].name + "<br/>";
             }
@@ -744,8 +742,12 @@ bespin.cmd.commands.add({
         return (bytes / 1024 / 1024).toFixed(2);
     },
     execute: function(commandLine) {
-        var editSession = bespin.get('editSession');
-        commandLine.addOutput("You have " + this.megabytes(editSession.quota - editSession.amountUsed) + " MB free space to put some great code!<br><br> <em>Used " + this.megabytes(editSession.amountUsed) + " MB out of your " + this.megabytes(editSession.quota) + " MB quota</em>");
+        var es = bespin.get('editSession');
+        var output = "You have " + this.megabytes(es.quota - es.amountUsed) +
+                     " MB free space to put some great code!<br>" +
+                     "Used " + this.megabytes(es.amountUsed) + " MB " +
+                     "out of your " + this.megabytes(es.quota) + " MB quota.";
+        commandLine.addOutput(output);
     }
 });
 
@@ -1011,7 +1013,7 @@ bespin.cmd.commands.add({
     name: 'history',
     preview: 'show history of the commands',
     execute: function(commandLine) {
-        commandLine.addOutput('<u>Command History</u><br/><br/>' + commandLine.history.getCommands().join('<br/>'));
+        commandLine.addOutput(commandLine.history.getCommands().join('<br/>'));
     }
 });
 
