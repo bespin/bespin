@@ -362,7 +362,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteSelectionAndInsertChunk: function(args) {
-        if (this.editor.readonly) return;console.log('Do', args);
+        if (this.editor.readonly) return;
 
         var oldqueued = args.queued;
 
@@ -400,7 +400,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteChunkAndInsertChunkAndSelect: function(args) {
-        if (this.editor.readonly) return;console.log('Undo', args);
+        if (this.editor.readonly) return;
 
         var oldqueued = args.queued;
 
@@ -429,7 +429,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
     // Do not assume that the text to be deleted is currently selected
     deleteChunkAndInsertChunk: function(args) {
-        if (this.editor.readonly) return;console.log('Redo', args);
+        if (this.editor.readonly) return;
 
         // Ignore whatever is currently selected; we've got our selection already
         this.editor.setSelection(undefined);
