@@ -48,9 +48,9 @@ dojo.declare("bespin.syntax.simple.C", null, {
 'true function enum extern inline' +
 'printf cout auto char const double float int long'+
 'register short signed sizeof static string struct'+
-'typedef union unsigned void volatile wchar_t'.split(" "),
+'typedef union unsigned void volatile wchar_t #include'.split(" "),
 
-    punctuation: '{ } ?> # > < / + - % * . , ; ( ) ? : = " \''.split(" "),
+    punctuation: '{ } / + - % * , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
         if (!meta) meta = {};
