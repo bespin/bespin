@@ -22,78 +22,129 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+//** {{{ bespin.editor.codecompletion }}} **
+//
+// Utilizes the bespin.parser infrastructure to suggest possible source 
+// completions for user input.
+// Activate completions by setting codecompletion to on.
 dojo.provide("bespin.editor.codecompletion");
 
 dojo.declare("bespin.editor.codecompletion.Suggester", null, {
-    constructor: function(parms) {},
-
-    complete: function () {
+    constructor: function() {},
+    
+    // Look back from the cursor col in the current row
+    // to find something that can be completed.
+    complete: function (cursorPos, row) {
         var self = this;
-        var editor = bespin.get("editor");
-
-        var pos    = editor.getCursorPos();
-
-        var row    = editor.model.getRowArray(pos.row);
-        var startIndex  = pos.col - 1;
+        var startIndex  = cursorPos.col - 1;
         var substr = "";
-        for (var i = startIndex; i >= 0; --i) {
+        var find = function () {
+            if(substr.length >= 1) {
+                self.findCompletion(substr);
+            }
+        }
+        for (var i = startIndex; i >= 0; --i) { // looking back
             var ch = row[i];
-            if (this.charMarksStartOfIdentifier(ch) && substr.length >= 1) {
-                this.findCompletion(substr);
-                break;
+            if (this.charMarksStartOfIdentifier(ch)) {
+                find()
+                return
             } else {
                 substr = ch + substr;
+            }
+        }
+        // start of line reached
+        find()
+    },
+    
+    findInArray: function (candidates, substr, array) {
+        for (var i = 0, len = array.length; i < len; ++i) {
+            var name = array[i].name;
+            if (name) {
+                if (name.indexOf(substr) === 0 && substr !== name && name !== "constructor") {
+                    candidates.push(name);
+                }
             }
         }
     },
 
     findCompletion: function (substr) {
-        var parser = bespin.get("parser");
-        var functions = parser.getFunctions();
+        var self = this;
         var candidates = [];
-        for (var i = 0, len = functions.length; i < len; ++i) {
-            var name = functions[i].name;
-            if (name) {
-                if (name.indexOf(substr) == 0 && name != "constructor") {
-                    candidates.push(name);
+        
+        if(self.currentMetaInfo) {
+            // use elements from outline like functions, class names and event names
+            if(self.currentMetaInfo.outline) {
+                this.findInArray(candidates, substr, self.currentMetaInfo.outline);
+            }
+            // try complex identifier chains like bespin.foo.bar
+            if(self.currentMetaInfo.idents) { // complex idents
+                var idents = [];
+                for(var i in self.currentMetaInfo.idents) {
+                    idents.push({
+                        name: i
+                    })
                 }
+                this.findInArray(candidates, substr, idents);
             }
         }
+        
+        // If there are any candidates, display a message
+        // We should probably just send a custom event with the candiates here.
+        // Can do that once we have fancy UI
         if (candidates.length > 0) {
             bespin.publish("message:hint", { msg: "Code Completions<br><br>" + candidates.join("<br>") });
         }
     },
-
-    charMarksStartOfIdentifier: function (ch) {
-        return ch === "." || ch === " " || ch === "\t"; // rough estimation
+        
+    
+    // find something that we might be able to complete
+    // Works for JS. Need to extend this to support for languages
+    charMarksStartOfIdentifier: function (char) {
+        return char === " " || char === "\t" || char == "\"" || char == "'"; // rough estimation
     },
-
-    subscribe: function () {
+    
+    // This is called after we are loaded into a worker.
+    initialize: function () {
         var self = this;
-        this.subscription = bespin.subscribe("editor:document:changed", function () {
-            self.complete();
-        }, 400);
-    },
-
-    unsubscribe: function () {
-        if (this.subscription) {
-            bespin.unsubscribe(this.subscription);
-            this.subscription = null;
-        }
+        
+        bespin.subscribe("parser:metainfo", function (evt) {
+            self.currentMetaInfo = evt.info
+        })
+        
+        // ** {{{ Event: codecomplete:suggest }}} **
+        //
+        // Fire to make the code completion engine provide suggestions
+        bespin.subscribe("codecomplete:suggest", function (evt) {
+            self.complete(evt.cursorPos, evt.row)
+        })
     }
 
 });
 
 (function () {
-var suggester = new bespin.editor.codecompletion.Suggester();
+// put facade into a worker
+var facade = new bespin.worker.WorkerFacade(new bespin.editor.codecompletion.Suggester());
+if(!facade.__hasWorkers__) {
+    facade.initialize()
+}
+var subscription
 
+// for now we do suggestions upon every doc change
+// could change this to be more unobstrusive
 bespin.subscribe("settings:set:codecomplete", function (data) {
-    var settings = bespin.get("settings");
-    if (settings.isOn(data.value)) {
-        suggester.subscribe();
+    if (bespin.get("settings").isOn(data.value)) {
+        subscription = bespin.subscribe("editor:document:changed", function () {
+            var editor = bespin.get("editor");
+            var pos    = editor.getCursorPos();
+            var row    = editor.model.getRowArray(pos.row);
+            
+            bespin.publish("codecomplete:suggest", {
+                cursorPos: pos,
+                row: row
+            })
+        }, 400);
     } else {
-        suggester.unsubscribe();
+        bespin.unsubscribe(subscription)
     }
 });
-
 })()
