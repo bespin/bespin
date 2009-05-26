@@ -91,6 +91,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }, dojo.body());
         }, this);
 
+        // * Load the close button image
+        this.closer = dojo.create("img", {
+            id: "closer",
+            src: "/images/closer.png",
+            alt: "Close the dialog",
+            style: "position:absolute; display:none; z-index:210;",
+            onclick: dojo.hitch(this, this.hide)
+        }, dojo.body());
+
         var self = this;
 
         /*
@@ -177,6 +186,27 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     alt: "Font Size",
                     onclick: function() {
                         bespin.get("commandLine").toggleFontSize();
+                    }
+                },
+                {
+                    icon: "images/clock_hash.png",
+                    alt: "Toggle History/Time Mode",
+                    onclick: function() {
+                        bespin.get("commandLine").toggleHistoryTimeMode();
+                    }
+                },
+                {
+                    icon: "images/plus.png",
+                    alt: "Expand all the output areas",
+                    onclick: function() {
+                        bespin.get("commandLine").expandAllInstructions();
+                    }
+                },
+                {
+                    icon: "images/minus.png",
+                    alt: "Contract all the output areas",
+                    onclick: function() {
+                        bespin.get("commandLine").contractAllInstructions();
                     }
                 }
             ]
@@ -471,9 +501,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     left: left + "px"
                 });
 
-                left += button.width;
+                left += button.img.width + 10;
             }, this);
         }
+
+        // * Close Button
+        dojo.style(this.closer, {
+            display: 'block',
+            top: (this.settings.contentsMargin + this.settings.canvasTop + 27) + "px",
+            left: (this.rightLeft - 16) + "px"
+        });
     },
 
     // == Unrender the toolbar for this slice ==
@@ -483,5 +520,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 dojo.style(button.img, "display", "none");
             });
         }
+
+        dojo.style(this.closer, 'display', 'none');
     }
 });

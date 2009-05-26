@@ -211,12 +211,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
-
-        // We needed to suppress the info dialog before we had a proper
-        // command line. Now Joe thinks we can do away with this.
-        // TODO: Delete this message and the line below
-        //this.suppressInfo = false; // When true, info bar popups will not be shown
-
         this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
@@ -225,55 +219,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.hideOutput();
     },
 
-    showUsage: function(command, autohide) {
+    showUsage: function(command) {
         var usage = command.usage || "no usage information found for " + command.name;
-        this.showInfo("Usage: " + command.name + " " + usage, autohide);
-    },
-
-    showInfo: function(html, autohide) {
-        if (this.executing) {
-            this.executing.setOutput(html);
-        } else {
-            console.trace();
-            console.debug("orphan output:", html);
-        }
-
-        // We needed to suppress the info dialog before we had a proper
-        // command line. Now Joe thinks we can do away with this.
-        // TODO: Delete this message and the line below
-        //if (this.suppressInfo) return; // bypass
-
-        dojo.byId('info_text').innerHTML = html;
-        dojo.style('info', 'display', 'block');
-
-        this.infoResizer();
-        dojo.connect(dojo.byId('info'), "onclick", this, "hideInfo");
-
-        if (this.infoTimeout) clearTimeout(this.infoTimeout);
-        if (autohide) {
-            this.infoTimeout = setTimeout(dojo.hitch(this, function() {
-                this.hideInfo();
-            }), 4600);
-        }
-    },
-
-    hideInfo: function() {
-        dojo.style('info', 'display', 'none');
-        if (this.infoTimeout) clearTimeout(this.infoTimeout);
-    },
-
-    infoResizer: function() {
-        if (dojo.style('info', 'display') != 'none') {
-            dojo.style('info', 'height', '');
-            var editorY = window.innerHeight - dojo.style('commandline', 'height') - dojo.style('header', 'height');
-            var infoY = dojo.style('info', 'height');
-            if (infoY > editorY) { // if the editor space is less than the info area, shrink-y
-                dojo.style('info', 'height', (editorY - 30) + 'px');
-            }
-            if (this.maxInfoHeight && infoY > this.maxInfoHeight) {
-                dojo.style('info', 'height', (this.maxInfoHeight - 30) + 'px');
-            }
-        }
+        this.showHint("Usage: " + command.name + " " + usage);
     },
 
     // == Show Hint ==
@@ -320,12 +268,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             display: "block",
         });
 
-        dojo.style("info", {
-            left: left + "px",
-            bottom: (bottom + dojo.style("footer", "height")) + "px",
-            width: width + "px",
-            backgroundImage: ""
-        });
         this.maxInfoHeight = height;
     },
 
@@ -334,12 +276,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.hideHint();
         dojo.style(this.output, "display", "none");
         dojo.style("footer", "display", "none");
-        dojo.style("info", {
-            left:"51px",
-            bottom:"0px",
-            width:"431px",
-            backgroundImage:"url(http://localhost:8080/images/info_popup.png)"
-        });
         this.maxInfoHeight = null;
     },
 
@@ -375,14 +311,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.scrollConsole();
     },
 
+    // == Make the console scroll to the bottom ==
     scrollConsole: function() {
         // certain browsers have a bug such that scrollHeight is too small
         // when content does not fill the client area of the element
-        //var scrollHeight = Math.max(this.output.scrollHeight, this.output.clientHeight);
-        //this.output.scrollTop = scrollHeight - this.output.clientHeight;
-        //console.log("scroll", this.output.scrollTop, this.output.scrollHeight, this.output.clientHeight);
-
-        //dojo.byId("command_scroller").scrollIntoView();
+        var scrollHeight = Math.max(this.output.scrollHeight, this.output.clientHeight);
+        this.output.scrollTop = scrollHeight - this.output.clientHeight;
     },
 
     // == Update Output ==
@@ -396,40 +330,98 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return date.getHours() + ":" + mins + ":" + secs;
         };
 
-        var size = parseInt(bespin.get("settings").get("consolefontsize"));
-        var output = "<table class='command_table' style='font-size:" + size + "pt'>";
+        var settings = bespin.get("settings");
+        var size = parseInt(settings.get("consolefontsize"));
+        var mode = settings.get("historytimemode");
+
+        dojo.attr(this.output, "innerHTML", "");
+
+        var table = dojo.create("table", {
+            className: 'command_table',
+            style: 'font-size:' + size + 'pt'
+        }, this.output);
+
+        var self = this;
+
+        var count = 1;
         dojo.forEach(this.history.instructions, function(instruction) {
             if (!instruction.historical) {
-                output += "<tr>";
-                if (instruction.start) {
-                    output += "<td class='command_start'>" + formatTime(instruction.start) + "</td>";
-                } else {
-                    output += "<td></td>";
-                }
-                output += "<td class='command_typed'><span class=command_prompt>&gt;</span> " + instruction.typed + "</td>";
+                // The row for the input (i.e. what was typed)
+                var rowin = dojo.create("tr", {
+                    className: 'command_rowin',
+                    onclick: function(ev) {
+                        self.historyClick(instruction.typed, ev);
+                    },
+                    ondblclick: function(ev) {
+                        self.historyDblClick(instruction.typed, ev);
+                    }
+                }, table);
 
+                // The opening column with time or history number or nothing
+                var rowid = dojo.create("td", { className: 'command_open' }, rowin);
+                if (mode == "history") {
+                    rowid.innerHTML = count;
+                    dojo.addClass(rowid, 'command_open_history');
+                }
+                else if (mode == "time" && instruction.start) {
+                    rowid.innerHTML = formatTime(instruction.start);
+                    dojo.addClass(rowid, 'command_open_time');
+                }
+                else {
+                    dojo.addClass(rowid, 'command_open_blank');
+                }
+
+                // Cell for the typed command and the hover
+                var typed = dojo.create("td", { className: 'command_typed' }, rowin);
+
+                // The execution time
+                var hover = dojo.create("div", { className: 'command_hover' }, typed);
+
+                // The execution time
                 if (instruction.start && instruction.end) {
-                    var taken = (instruction.end.getTime() - instruction.start.getTime()) / 1000;
-                    output += "<td class='command_taken'>" + taken + " sec</td>";
-                } else {
-                    output += "<td></td>";
+                    dojo.create("span", {
+                        innerHTML: ((instruction.end.getTime() - instruction.start.getTime()) / 1000) + " sec "
+                    }, hover);
                 }
-                output += "</tr>";
 
-                output += "<tr>";
-                output += "<td></td>";
-                output += "<td colspan=2" + ( instruction.error ? " class='command_error'" : "" ) + ">";
-                if (instruction.output) {
-                    output += instruction.output;
-                } else {
-                    output += "Working ...";
+                // Toggle output display
+                dojo.create("img", {
+                    src: instruction.hideOutput ? "/images/plus.png" : "/images/minus.png",
+                    style: "vertical-align:middle; padding:2px;",
+                    onclick: function() {
+                        instruction.hideOutput = !instruction.hideOutput;
+                        self.updateOutput();
+                    }
+                }, hover);
+
+                // Open/close output
+                dojo.create("img", {
+                    src: "/images/closer.png",
+                    style: "vertical-align:middle; padding:2px;",
+                    onclick: function() {
+                        self.history.remove(instruction);
+                        self.updateOutput();
+                    }
+                }, hover);
+
+                // What the user actually typed
+                var ts = dojo.create("span", { className: 'command_prompt' }, typed);
+                ts.innerHTML = ' &gt; ';
+                dojo.create("span", { innerHTML: instruction.typed }, typed);
+
+                // The row for the output (if required)
+                if (!instruction.hideOutput) {
+                    var rowout = dojo.create("tr", { className: 'command_rowout' }, table);
+                    dojo.create("td", { }, rowout);
+                    dojo.create("td", {
+                        colSpan: 2,
+                        className: (instruction.error ? "command_error" : ""),
+                        innerHTML: (instruction.output ? instruction.output : "<img src='/images/throbber.gif'/> Working ...")
+                    }, rowout);
                 }
-                output += "</td></tr>";
             }
+            count ++;
         });
-        output += "</table><div id='command_scroller'></div>";
-
-        dojo.attr(this.output, "innerHTML", output);
     },
 
     // == Toggle Font Size ==
@@ -449,6 +441,38 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             case 14: set(8); break;
             default: set(10); break;
         }
+    },
+
+    // == Toggle History / Time Mode ==
+    toggleHistoryTimeMode: function() {
+        var settings = bespin.get("settings");
+
+        var self = this;
+        var set = function(mode) {
+            settings.set("historytimemode", mode);
+            self.updateOutput();
+        };
+
+        var size = settings.get("historytimemode");
+        switch (size) {
+            case "history": set("time"); break;
+            case "time": set("blank"); break;
+            case "blank": set("history"); break;
+            default: set("history"); break;
+        }
+    },
+
+    // == History Click ==
+    // A single click on an instruction line in the console copies the command
+    // to the command line
+    historyClick: function(command) {
+        this.commandLine.value = command;
+    },
+
+    // == History Double Click ==
+    // A double click on an instruction line in the console executes the command
+    historyDblClick: function(command) {
+        this.executeCommand(command);
     },
 
     complete: function(value) {
@@ -484,7 +508,6 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     executeCommand: function(value) {
-
         var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
         // clear after the command
@@ -626,7 +649,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                         if (command['completeText']) {
                             this.showHint(command['completeText']);
                         } else {
-                            this.hideInfo();
+                            this.hideHint();
                         }
                     } else if (completions.length == 1) {
                         if (completions[0] != dojo.byId('command').value) {
@@ -637,7 +660,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                             if (this.commandStore.commandTakesArgs(command)) {
                                 this.complete(dojo.byId('command').value); // make it complete
                             } else {
-                                this.hideInfo();
+                                this.hideHint();
                             }
                         }
                     } else {
@@ -648,7 +671,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
         });
 
         dojo.connect(cl.commandLine, "onkeypress", cl, function(e) {
-            var Key = bespin.util.keys.Key;
+            var key = bespin.util.keys.Key;
 
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
                 dojo.stopEvent(e);
@@ -658,7 +681,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 bespin.publish("cmdline:blur");
 
                 return false;
-            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == Key.DOWN_ARROW) {
+            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
                 dojo.stopEvent(e);
 
                 var next = this.history.next();
@@ -667,7 +690,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 }
 
                 return false;
-            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == Key.UP_ARROW) {
+            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
                 dojo.stopEvent(e);
 
                 var prev = this.history.previous();
@@ -682,30 +705,28 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 cl.commandLine.value = '';
 
                 return false;
-            } else if (e.keyCode == Key.ENTER) {
+            } else if (e.keyCode == key.ENTER) {
                 this.executeCommand(dojo.byId('command').value);
 
                 return false;
-            } else if (e.keyCode == Key.TAB) {
+            } else if (e.keyCode == key.TAB) {
                 dojo.stopEvent(e);
 
                 this.complete(dojo.byId('command').value);
                 return false;
+            } else if (e.keyCode == key.ESCAPE) {
+                this.hideHint();
+                bespin.get("piemenu").hide();
+                dojo.stopEvent(e);
+                return false;
             } else if (bespin.get("piemenu").keyRunsMe(e)) {
                 dojo.stopEvent(e);
 
-                this.hideInfo();
+                this.hideHint();
                 var piemenu = bespin.get("piemenu");
                 piemenu.showSlice(piemenu.slices.off);
 
                 return false;
-            }
-        });
-
-        dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
-            if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
-                this.hideInfo();
-                bespin.get("piemenu").hide();
             }
         });
     }
@@ -727,10 +748,12 @@ dojo.declare("bespin.cmd.commandline.History", null, {
     },
 
     // TODO: get from the database
-    seed: function(instructions) {
-        dojo.forEach(instructions, function(instruction) {
-            var instruction = new bespin.cmd.commandline.Instruction(null, instruction);
-            this.instructions.push(instruction);
+    seed: function(typings) {
+        dojo.forEach(typings, function(typing) {
+            if (typing && typing != "") {
+                var instruction = new bespin.cmd.commandline.Instruction(null, typing);
+                this.instructions.push(instruction);
+            }
         }, this);
         this.trim();
         this.pointer = this.instructions.length; // make it one past the end so you can go back and hit the last one not the one before last
@@ -750,6 +773,13 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         this.trim();
         this.pointer = this.instructions.length; // also make it one past the end so you can go back to it
         this.store.save(this.instructions);
+    },
+
+    remove: function(instruction) {
+        var index = this.instructions.indexOf(instruction);
+        if (index != -1) {
+            this.instructions.splice(index, 1);
+        }
     },
 
     next: function() {
@@ -817,7 +847,9 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
     save: function(instructions) {
         var content = "";
         dojo.forEach(instructions, function(instruction) {
-            content += instruction.typed + "\n";
+            if (instruction.typed && instruction.typed != "") {
+                content += instruction.typed + "\n";
+            }
         });
         // save instructions back to server asynchronously
         bespin.get('files').saveFile(bespin.userSettingsProject, {
@@ -855,28 +887,6 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             if (event.msg) commandline.showHint(event.msg);
         });
 
-        // We needed to suppress the info dialog before we had a proper
-        // command line. Now Joe thinks we can do away with this.
-        // TODO: Delete this message and the subscribe() commands.
-
-        // ** {{{ Event: cmdline:suppressinfo }}} **
-        //
-        // Turn on info bar suppression
-        /*
-        bespin.subscribe("cmdline:suppressinfo", function(event) {
-            commandline.suppressInfo = true;
-        });
-        */
-
-        // ** {{{ Event: cmdline:unsuppressinfo }}} **
-        //
-        // Turn off info bar suppression
-        /*
-        bespin.subscribe("cmdline:unsuppressinfo", function(event) {
-            commandline.suppressInfo = false;
-        });
-        */
-
         // ** {{{ Event: command:execute }}} **
         //
         // Once the command has been executed, do something.
@@ -895,7 +905,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         //
         // If an open file action failed, tell the user.
         bespin.subscribe("editor:openfile:openfail", function(event) {
-            commandline.showInfo('Could not open file: ' + event.filename + "<br/><br/><em>(maybe try &raquo; list)</em>");
+            commandline.showHint('Could not open file: ' + event.filename + " (maybe try &raquo; list)");
         });
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **

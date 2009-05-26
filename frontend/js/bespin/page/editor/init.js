@@ -90,7 +90,6 @@ dojo.provide("bespin.page.editor.init");
             // Repaint the various canvas'
             scene.paint();
             bespin.get('editor').paint();
-            bespin.get('commandLine').infoResizer();
         }
     });
 
