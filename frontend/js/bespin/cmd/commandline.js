@@ -715,6 +715,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 this.complete(dojo.byId('command').value);
                 return false;
             } else if (e.keyCode == key.ESCAPE) {
+                // ESCAPE onkeydown fails on Moz, so we need this. Why?
                 this.hideHint();
                 bespin.get("piemenu").hide();
                 dojo.stopEvent(e);
@@ -727,6 +728,14 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 piemenu.showSlice(piemenu.slices.off);
 
                 return false;
+            }
+        });
+
+        // ESCAPE onkeypress fails on Safari, so we need this. Why?
+        dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
+            if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
+                this.hideHint();
+                bespin.get("piemenu").hide();
             }
         });
     }
