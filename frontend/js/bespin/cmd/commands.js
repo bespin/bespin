@@ -67,7 +67,6 @@ bespin.cmd.commands.toArgArray = function(args) {
 
 // == Start adding commands to the store ==
 //
-
 bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutput) {
     var commands = [];
     var command, name;
@@ -86,7 +85,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
                 extra = "";
                 showHidden = true;
             }
-            commands.push("<em>(starting with</em> " + extra + " <em>)</em><br/>");
+            commands.push("Commands starting with '" + extra + "'.<br/>");
         }
 
         var tobesorted = [];
@@ -96,6 +95,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
 
         var sorted = tobesorted.sort();
 
+        commands.push("<table>");
         for (var i = 0; i < sorted.length; i++) {
             name = sorted[i];
             command = commandStore.commands[name];
@@ -104,10 +104,16 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
             if (extra && name.indexOf(extra) != 0) continue;
 
             var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-            commands.push('<b>' + name + args + '</b>: ' + command.preview);
+
+            commands.push("<tr>");
+            commands.push('<th>' + name + '</th>');
+            commands.push('<td>' + command.preview + "</td>");
+            commands.push('<td>' + args + '</td>');
+            commands.push("</tr>");
         }
+        commands.push("</table>");
     }
-    commandLine.addOutput(commands.join("<br/>") + (morehelpoutput || ""));
+    commandLine.addOutput(commands.join("") + (morehelpoutput || ""));
 }
 
 // ** {{{Command: help}}} **
@@ -197,7 +203,7 @@ bespin.cmd.commands.add({
 
             if (!setting.key) { // -- show all
                 var settings = commandLine.settings.list();
-                output = "<u>Your Settings</u><br/><br/>";
+                output = "";
                 dojo.forEach(settings.sort(function (a, b) { // first sort the settings based on the key
                     if (a.key < b.key) {
                         return -1;
@@ -216,14 +222,12 @@ bespin.cmd.commands.add({
                 if (setting.value === undefined) { // show it
                     var value = commandLine.settings.get(key);
                     if (value) {
-                        output = "<u>Your setting</u><br/><br/>";
-                        output += key + ": " + value;
+                        output = key + "=" + value;
                     } else {
-                        output = "You do not have a setting for <em>" + key + "</em>";
+                        output = "You do not have a setting for '" + key + "'";
                     }
                 } else {
-                    output = "<u>Saving setting</u><br/><br/>";
-                    output += key + ": " + setting.value;
+                    output = "Saving setting: " + key + "=" + setting.value;
                     commandLine.settings.set(key, setting.value);
                 }
             }
@@ -798,6 +802,7 @@ bespin.cmd.commands.add({
         // use the center popup and inject a form in that points to the right place.
         var el = dojo.byId('centerpopup');
 
+
         el.innerHTML = "<div id='upload-container'><form method='POST' name='upload' id='upload' enctype='multipart/form-data'><div id='upload-header'>Import project via upload <img id='upload-close' src='images/icn_close_x.png' align='right'></div><div id='upload-content'><div id='upload-status'></div><p>Browse to find the project archive that you wish to archive<br>and then click on the <code>Upload</code> button.</p><center><input type='file' id='filedata' name='filedata' accept='application/zip,application/x-gzip'> <input type='submit' value='Upload'></center></div></form></div>";
 
         dojo.require("dijit._base.place");
@@ -927,7 +932,7 @@ bespin.cmd.commands.add({
             bespin.publish("editor:bindkey", args);
         } else { // show me the key bindings
             var descriptions = bespin.get('editor').editorKeyListener.keyMapDescriptions;
-            var output = "<u>Your Key Bindings</u><br><br><table>";
+            var output = "<table>";
 
             for (var keys in descriptions) {
                 var keyData = keys.split(','); // metaKey, ctrlKey, altKey, shiftKey
@@ -941,7 +946,7 @@ bespin.cmd.commands.add({
 
                 var modifierInfo = modifiers.length > 0 ? modifiers.join(', ') + " " : "";
                 var keyInfo = modifierInfo + bespin.util.keys.KeyCodeToName[keyCode] || keyCode;
-                output += "<tr><td style='color: #eee; padding-right: 20px;'>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
+                output += "<tr><td>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
             }
             output += "</table>";
             commandLine.addOutput(output);
@@ -1011,9 +1016,37 @@ bespin.cmd.commands.add({
 // ** {{{Command: history}}} **
 bespin.cmd.commands.add({
     name: 'history',
-    preview: 'show history of the commands',
+    preview: 'Show history of the commands',
     execute: function(commandLine) {
-        commandLine.addOutput(commandLine.history.getCommands().join('<br/>'));
+        var instructions = commandLine.history.getInstructions();
+        var output = [];
+        output.push("<table>");
+        var count = 1;
+        dojo.forEach(instructions, function(instruction) {
+            output.push("<tr>");
+            output.push('<th>' + count + '</th>');
+            output.push('<td>' + instruction.typed + "</td>");
+            output.push("</tr>");
+            count++;
+        });
+        output.push("</table>");
+
+        commandLine.addOutput(output.join(''));
+    }
+});
+
+//** {{{Command: history}}} **
+bespin.cmd.commands.add({
+    name: '!',
+    takes: ['number'],
+    preview: 'Execute a command from the history',
+    execute: function(commandLine, number) {
+        number = parseInt(number);
+        if (!number) {
+            commandLine.addErrorOutput("You're gonna need to give me a history number to execute.");
+            return;
+        }
+        commandLine.addOutput(commandLine.history.getInstructions()[number - 1].typed);
     }
 });
 
@@ -1060,7 +1093,7 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{Command: codecomplete}}} **
+// ** {{{Command: codecomplete}}} **
 bespin.cmd.commands.add({
     name: 'complete',
     //aliases: ['new'],
@@ -1073,7 +1106,7 @@ bespin.cmd.commands.add({
     }
 });
 
-//** {{{Command: outline}}} **
+// ** {{{Command: outline}}} **
 bespin.cmd.commands.add({
     name: 'outline',
     preview: 'show outline of source code',
@@ -1081,4 +1114,18 @@ bespin.cmd.commands.add({
     execute: function(commandLine) {
         bespin.publish("parser:showoutline");
     }
-})
+});
+
+//** {{{Command: slow}}} **
+bespin.cmd.commands.add({
+    name: 'slow',
+    takes: ['seconds'],
+    preview: 'create some output, slowly, after a given time (default 5s)',
+    execute: function(commandLine, seconds) {
+        seconds = seconds || 5;
+
+        setTimeout(commandLine.link(function() {
+            bespin.publish("session:status");
+        }), seconds * 1000);
+    }
+});
