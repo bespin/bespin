@@ -36,7 +36,7 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: true };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
     <script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
 
@@ -52,7 +52,7 @@
             <a href="javascript:bespin.util.navigate.dashboard()" style="float: left;" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
             <div id="status"><canvas id="projectLabel"></canvas></div>
-            <div id="toolbar" style="display:none;">
+            <div id="toolbar">
                 <img class="icon" id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save">
                 <img class="icon" id="toolbar_close" src="images/icn_close.png" alt="Close" title="Close" style="padding-right: 20px">
                 <img class="icon" id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
@@ -62,7 +62,7 @@
             </div>
         </div>
         
-        <div style="float: right; display:none;">
+        <div style="float: right;">
             <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
             <div id="collab_line"></div>
             <div id="version"></div>            
