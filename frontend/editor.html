@@ -36,7 +36,7 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: true };
     </script>
     <script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
 
@@ -52,7 +52,7 @@
             <a href="javascript:bespin.util.navigate.dashboard()" style="float: left;" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
 
             <div id="status"><canvas id="projectLabel"></canvas></div>
-            <div id="toolbar">
+            <div id="toolbar" style="display:none;">
                 <img class="icon" id="toolbar_save" src="images/icn_save.png" alt="Save" title="Save">
                 <img class="icon" id="toolbar_close" src="images/icn_close.png" alt="Close" title="Close" style="padding-right: 20px">
                 <img class="icon" id="toolbar_undo" src="images/icn_undo.png" alt="Undo" title="Undo">
@@ -62,7 +62,7 @@
             </div>
         </div>
         
-        <div style="float: right;">
+        <div style="float: right; display:none;">
             <img id="toolbar_collaboration" src="images/icn_collab_dim.png" alt="Collaboration">
             <div id="collab_line"></div>
             <div id="version"></div>            
@@ -91,7 +91,6 @@
         </div>
         <div class="collab_text" style="margin-top: 10px">Collaboration is a new feature.</div>
     </div>
-    <div id="info" style="display: none;"><div id="info_text" style="overflow: auto; height: 100%"></div></div>
     <div id="target_browsers">
         <table id="target_browsers_table">
             <tr>
