@@ -166,7 +166,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
-
                 var left = coords.l;
                 var bottom = this.piemenu.slices.off.img.height - 10;
                 var width = coords.w - 40; // TODO: why -50
@@ -234,7 +233,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     height: coords.h + "px",
                     position: "absolute",
                     borderWidth: "0",
-                    zIndex:"200",
+                    zIndex: "200",
                     display: "block"
                 });
             },
@@ -500,33 +499,31 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     // == Render the toolbar for this slice ==
     renderToolbar: function(d) {
-        if (this.currentSlice.toolbar) {
-            // * Title
-            this.ctx.fillStyle = "#bcb9ae";
-            this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
+        // * Title
+        this.ctx.fillStyle = "#bcb9ae";
+        this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
 
-            var left = d.cenLeft + 5;
-            var top = d.midTop - 9;
-            this.ctx.fillText(this.currentSlice.title, left, top);
-            // 50 - Give some extra space after the title
-            left = left + this.ctx.measureText(this.currentSlice.title).width + 50;
+        var left = d.cenLeft + 5;
+        var top = d.midTop - 9;
+        this.ctx.fillText(this.currentSlice.title, left, top);
+        // 50 - Give some extra space after the title
+        left = left + this.ctx.measureText(this.currentSlice.title).width + 50;
 
-            // HACK ALERT we should correctly layout from the right rather than
-            // this evil fix which only works because only 1 slice has a toolbar
-            left = d.rightLeft - 150;
+        // HACK ALERT we should correctly layout from the right rather than
+        // this evil fix which only works because only 1 slice has a toolbar
+        left = d.rightLeft - 150;
 
-            dojo.forEach(this.currentSlice.toolbar, function(button) {
-                dojo.style(button.img, {
-                    display: "block",
-                    // This is DOM so top is relative to top of window not canvas
-                    // TODO: But why 18 and not this.settings.canvasTop?
-                    top: (18 + top) + "px",
-                    left: left + "px"
-                });
+        dojo.forEach(this.currentSlice.toolbar, function(button) {
+            dojo.style(button.img, {
+                display: "block",
+                // This is DOM so top is relative to top of window not canvas
+                // TODO: But why 18 and not this.settings.canvasTop?
+                top: (18 + top) + "px",
+                left: left + "px"
+            });
 
-                left += button.img.width + 5;
-            }, this);
-        }
+            left += button.img.width + 5;
+        }, this);
 
         // * Close Button
         dojo.style(this.closer, {
