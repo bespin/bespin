@@ -111,12 +111,11 @@ img {
 #command_output table.command_table { width: 100%; border-collapse: collapse; }
 
 #command_output tr.command_rowin {
-	/*
-	background-image: url(/image/instruction.png);
-	background-repeat: repeat-x;
-	*/
-	background-color: #1e1916;
-	border-bottom: 2px solid #000;
+    background-repeat: repeat-x;
+    /*
+    background-color: #1e1916;
+    */
+   	border-bottom: 2px solid #000;
 	height: 22px;
 	font-size: 110%;
 }

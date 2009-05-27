@@ -352,6 +352,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 // The row for the input (i.e. what was typed)
                 var rowin = dojo.create("tr", {
                     className: 'command_rowin',
+                    style: "background-image: url(/images/instruction" + size + ".png)",
                     onclick: function(ev) {
                         self.historyClick(instruction.typed, ev);
                     },
@@ -454,7 +455,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             case 9: set(11); break;
             case 11: set(14); break;
             case 14: set(9); break;
-            default: set(12); break;
+            default: set(11); break;
         }
     },
 
