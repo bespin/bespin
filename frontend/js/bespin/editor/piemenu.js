@@ -132,8 +132,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
             var fullWidth = self.canvas.width;
             var centerWidth = Math.round(fullWidth / 2);
-            var x = e.offsetX;
-            var y = e.offsetY;
+            var x = e.layerX || e.offsetX;
+            var y = e.layerY || e.offsetY;
             var zoneLeft = centerWidth - pieRadius;
             var zoneRight = centerWidth + pieRadius;
 
