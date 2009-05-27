@@ -564,7 +564,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         if (commandLine != null) {
             this.start = new Date();
 
-            var ca = this._splitCommandAndArgs(commandLine, typed);
+            var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
                 this.command = ca[0];
                 this.args = ca[1];
@@ -583,22 +583,22 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
     // == Split Command and Args
     // Private method to chop up the typed command
-    _splitCommandAndArgs: function(commandLine, typed) {
+    _splitCommandAndArgs: function(commandStore, typed) {
         var data = typed.split(/\s+/);
         var commandname = data.shift();
 
         var command;
         var argstr = data.join(' ');
 
-        if (commandLine.commandStore.commands[commandname]) {
-            command = commandLine.commandStore.commands[commandname];
-        } else if (commandLine.commandStore.aliases[commandname]) {
-            var alias = commandLine.commandStore.aliases[commandname].split(' ');
+        if (commandStore.commands[commandname]) {
+            command = commandStore.commands[commandname];
+        } else if (commandStore.aliases[commandname]) {
+            var alias = commandStore.aliases[commandname].split(' ');
             var aliascmd = alias.shift();
             if (alias.length > 0) {
                 argstr = alias.join(' ') + ' ' + argstr;
             }
-            command = commandLine.commandStore.commands[aliascmd];
+            command = commandStore.commands[aliascmd];
         } else {
             // TODO: This is a bit nasty - find a better way
             this.error = "Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help";
@@ -607,10 +607,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
         if (command.subcommands) {
             if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
-            return this._splitCommandAndArgs(data.join(" "));
+            return this._splitCommandAndArgs(command.subcommands, argstr);
         }
 
-        return [command, commandLine.commandStore.getArgs(argstr.split(' '), command)];
+        return [command, commandStore.getArgs(argstr.split(' '), command)];
     }
 });
 
