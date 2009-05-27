@@ -406,7 +406,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     onclick: function() {
                         self.history.remove(instruction);
                         self.updateOutput();
-                        return true;
+                        dojo.stopEvent(ev);
                     }
                 }, hover);
 
