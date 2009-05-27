@@ -104,7 +104,7 @@ dojo.declare("bespin.editor.Events", null, {
                     var settings = bespin.get("settings");
 
                     // Get the array of lastused files
-                    var lastUsed = settings.getObject("lastused");
+                    var lastUsed = settings.getObject("_lastused");
                     if (!lastUsed) {
                         lastUsed = [];
                     }
@@ -131,7 +131,7 @@ dojo.declare("bespin.editor.Events", null, {
                     }
 
                     // Maybe this should have a _ prefix: but then it does not persist??
-                    settings.setObject("lastused", lastUsed);
+                    settings.setObject("_lastused", lastUsed);
                 }
             });
         });

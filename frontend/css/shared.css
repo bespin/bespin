@@ -110,9 +110,21 @@ img {
 
 #command_output table.command_table { width: 100%; border-collapse: collapse; }
 
-#command_output tr.command_rowin { background-color: #424038; border-bottom: 1px solid #18130f; }
+#command_output tr.command_rowin {
+    background-repeat: repeat-x;
+    /*
+    background-color: #1e1916;
+    */
+   	border-bottom: 2px solid #000;
+	height: 22px;
+	font-size: 110%;
+}
 #command_output tr.command_rowout { }
-#command_output tr.command_rowin:hover .command_typed { color: #ffa300; }
+#command_output tr.command_rowin:hover .command_main { color: #83bfe1; }
+#command_output tr.command_rowin img.hover { display:none; }
+#command_output tr.command_rowin img.nohover { display:inline; }
+#command_output tr.command_rowin:hover img.hover { display:inline; }
+#command_output tr.command_rowin:hover img.nohover { display:none; }
 
 #command_output td { vertical-align: top; }
 
@@ -120,21 +132,26 @@ img {
 #command_output .command_open_time { width: 40px; }
 #command_output .command_open_blank { width: 0px; }
 
-#command_output .command_open { padding: 3px 3px 2px 5px; font-size: 80%; }
-#command_output .command_typed { font-weight: bold; color: #fff; }
-#command_output .command_prompt { color: #ffa300; }
+#command_output .command_open { padding: 3px 3px 2px 5px; font-size:80%; color:#666; }
+#command_output .command_main { font-weight: bold; color: #fff; }
+#command_output .command_typed { padding-left: 5px; }
 
 #command_output .command_hover {
 	float: right;
     font-size: 80%;
-    width: 100px;
+    font-weight: normal;
+    width: 120px;
     text-align: right;
     display: none;
+    color: #666;
+    padding-top: 2px;
 }
 
 #command_output tr.command_rowin:hover .command_hover { display: block; }
 
 #command_output .command_error { color: #f99; }
+
+#command_output tr.command_rowout th { text-align: left; }
 
 #command_hint {
     position: absolute;
