@@ -102,21 +102,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         var self = this;
 
-        /*
-        dojo.connect(window, "mousedown", function(e) {
-            if (self.currentSlice == null) return;
-
-            var pos = dojo.coords(self.canvas);
-            if (e.clientX < pos.l
-                    || e.clientX > (pos.l + pos.w)
-                    || e.clientY < pos.t
-                    || e.clientY > (pos.t + pos.h)) {
-                self.toggle();
-            }
-            dojo.stopEvent(e);
-        });
-        */
-
         // * Hide on Escape
         bespin.subscribe("ui:escape", function(e) {
             if (self.currentSlice != null) self.hide();
@@ -125,7 +110,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         dojo.connect(window, 'resize', this, this.resize);
 
         // * Show slices properly
-        dojo.connect(this.canvas, "keydown", function(e) {
+        dojo.connect(this.canvas, 'keydown', function(e) {
             if (self.currentSlice == null) return;
 
             if (self.keyRunsMe(e)) {
@@ -147,6 +132,25 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 }
             }
         });
+
+        dojo.connect(this.canvas, 'click', function(e) {
+            var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
+            var fullWidth = self.canvas.width;
+            var centerWidth = Math.round(fullWidth / 2);
+            var x = e.offsetX;
+            var y = e.offsetY;
+            var zoneLeft = centerWidth - pieRadius;
+            var zoneRight = centerWidth + pieRadius;
+
+            // only do the calculation if you are clicking on the hot zone
+            if (x > zoneLeft && x < zoneRight) {
+                var p = self.centerPoint(x, y); // change coord scheme to center based
+
+                var degrees = self.angle(p.x, p.y);
+
+                self.showSlice(self.slice(degrees));
+            }
+        });
     },
 
     // == Various customizations
@@ -155,10 +159,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         canvasTop: 31,
         // * How much space do we leave around the opened slices?
         contentsMargin: 10
-    },
-
-    keyRunsMe: function(e) {
-        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
     // == Objects that control each of the slices ==
@@ -350,6 +350,21 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    // == Calculate the top left X and Y coordinates of the pie ==
+    getTopLeftXY: function(width, height) {
+        return { x: parseInt((this.canvas.width / 2) - (width / 2)),
+                 y: parseInt((this.slices.off.img.height - height) / 2) + this.canvas.height - this.slices.off.img.height };
+    },
+
+    // == Calculate the center X Y at the middle of the pie ==
+    getCenterXY: function() {
+        var off = this.slices.off.img;
+        var topLeft = this.getTopLeftXY(off.width, off.height);
+
+        return { x: topLeft.x + (off.width / 2),
+                 y: topLeft.y + (off.width / 2) };
+    },
+
     // == Render the pie in some opening/closing state ==
     renderPie: function(progress) {
         var ctx = this.ctx;
@@ -366,18 +381,17 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         var height = parseInt(off.height * progress);
         var width = parseInt(off.width * progress);
 
-        var x = parseInt((this.canvas.width / 2) - (width / 2));
-        var y = parseInt((off.height - height) / 2) + this.canvas.height - off.height;
+        var p = this.getTopLeftXY(width, height);
 
-        var xm = x + (width / 2);
-        var ym = y + (height / 2);
+        var xm = p.x + (width / 2);
+        var ym = p.y + (height / 2);
 
         ctx.translate(xm, ym);
         ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
         ctx.translate(-xm, -ym);
 
         ctx.globalAlpha = progress;
-        ctx.drawImage(off, x, y, width, height);
+        ctx.drawImage(off, p.x, p.y, width, height);
 
         ctx.restore();
     },
@@ -522,5 +536,38 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         dojo.style(this.closer, 'display', 'none');
+    },
+
+    keyRunsMe: function(e) {
+        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
+    },
+
+    // == Take the center pie point and migrate the clicked point to be relative to the center ==
+    centerPoint: function(x, y) {
+        var off = this.slices.off.img;
+        var center = this.getCenterXY(off.width, off.height);
+
+        return {
+            x: x - center.x,
+            y: center.y - y
+        };
+    },
+
+    // == Calculate the angle of the dangle ==
+    angle: function(x, y) {
+        return Math.atan2(y, x) * 180 / Math.PI;
+    },
+
+    // == Return the slice to activate ==
+    slice: function(degrees) {
+        if (degrees >= -45 && degrees < 45) { // right
+            return this.slices.context;
+        } else if (degrees >= 45 && degrees < 135) { // top
+            return this.slices.fileBrowser;
+        } else if (degrees >= 135 || degrees < -135) { // left
+            return this.slices.reference;
+        } else { // bottom
+            return this.slices.commandLine;
+        }
     }
 });
