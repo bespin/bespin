@@ -554,12 +554,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     link: function(action, context) {
-        var closureExecuting = this.executing;
+        if (!this.executing) {
+            console.log("No execution context, returning action directly");
+            return action;
+        }
+        var originalExecuting = this.executing;
         var self = this;
         return function() {
-            self.executing = closureExecuting;
+            var confusedExecuting = null;
+            if (self.executing) {
+                confusedExecuting = self.executing;
+            }
+            self.executing = originalExecuting;
+
             action.apply(context || dojo.global, arguments);
-            self.executing = null;
+
+            self.executing = confusedExecuting;
         };
     },
 
