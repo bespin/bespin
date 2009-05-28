@@ -467,34 +467,42 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // was 0.6
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // * The pie
-        this.ctx.drawImage(this.currentSlice.img, d.offLeft, d.btmTop);
-
         // * Don't draw the menu area for the 'off' slice
-        if (this.currentSlice == this.slices.off) return;
+        if (this.currentSlice != this.slices.off) {
+            // * Draw top row
+            this.ctx.drawImage(this.border.top_lft, this.settings.leftMargin, this.settings.topMargin);
+            this.ctx.drawImage(this.border.top_mid, d.cenLeft, this.settings.topMargin, d.cenWidth, this.border.top_mid.height);
+            // TODO +4 eh?
+            this.ctx.drawImage(this.border.top_rt, d.rightLeft, this.settings.topMargin + 4);
 
-        // * Draw top row
-        this.ctx.drawImage(this.border.top_lft, this.settings.leftMargin, this.settings.topMargin);
-        this.ctx.drawImage(this.border.top_mid, d.cenLeft, this.settings.topMargin, d.cenWidth, this.border.top_mid.height);
-        // TODO +4 eh?
-        this.ctx.drawImage(this.border.top_rt, d.rightLeft, this.settings.topMargin + 4);
+            // * Middle row
+            this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
+            this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // Was 0.4
+            this.ctx.fillRect(d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
+            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
+            this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
 
-        // * Middle row
-        this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // Was 0.4
-        this.ctx.fillRect(d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
-        //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
-        this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
+            // * Bottom row
+            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
+            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, d.cenWidth, this.border.btm_lftb.height);
+            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
 
-        // * Bottom row
-        this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
-        var lftbWidth = d.offLeft - (this.settings.leftMargin + this.border.btm_lft.width);
-        this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, lftbWidth, this.border.btm_lftb.height);
+            // * Bottom row (old version)
+            /*
+            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
+            var lftbWidth = d.offLeft - (this.settings.leftMargin + this.border.btm_lft.width);
+            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, lftbWidth, this.border.btm_lftb.height);
 
-        var rtbLeft = d.offLeft + this.slices.off.img.width;
-        var rtbWidth = d.rightLeft - rtbLeft;
-        this.ctx.drawImage(this.border.btm_rtb, rtbLeft, d.btmTop, rtbWidth, this.border.btm_rtb.height);
-        this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
+            var rtbLeft = d.offLeft + this.slices.off.img.width;
+            var rtbWidth = d.rightLeft - rtbLeft;
+            this.ctx.drawImage(this.border.btm_rtb, rtbLeft, d.btmTop, rtbWidth, this.border.btm_rtb.height);
+            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
+            */
+        }
+
+        // * The pie
+        var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;
+        this.ctx.drawImage(this.currentSlice.img, d.offLeft, sliceTop);
     },
 
     // == Render the toolbar for this slice ==
