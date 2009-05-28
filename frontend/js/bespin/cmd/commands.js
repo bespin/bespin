@@ -973,43 +973,45 @@ bespin.cmd.commands.add({
     preview: 'define and show aliases for commands',
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(commandLine, args) {
-      var output;
-      var aliases = commandLine.commandStore.aliases;
+        var aliases = commandLine.commandStore.aliases;
 
-      if (!args.alias) { // -- show all
-        output = "<u>Your Aliases</u><br/><br/>";
-        for (var x in aliases) {
-          output += x + ": " + aliases[x] + "<br/>";
-        }
-      } else {
-        if (args.command === undefined) { // show it
-          output = "<u>Your alias</u><br/><br/>";
-          var alias = aliases[args.alias];
-          if (alias) {
-              output += args.alias + ": " + aliases[args.alias];
-          } else {
-              output += "No alias set for " + args.alias;
-          }
-        } else { // save a new alias
-          var key = args.alias;
-          var value = args.command;
-          var aliascmd = value.split(' ')[0];
+        if (!args.alias) {
+            // * show all
+            var output = "<table>";
+            for (var x in aliases) {
+                output += "<tr><td style='text-align:right;'>" + x + "</td><td>&#x2192;</td><td>" + aliases[x] + "</td></tr>";
+            }
+            output += "</table>";
+            commandLine.addOutput(output);
+        } else {
+            // * show just one
+            if (args.command === undefined) {
+              var alias = aliases[args.alias];
+              if (alias) {
+                  commandLine.addOutput(args.alias + " &#x2192; " + aliases[args.alias]);
+              } else {
+                  commandLine.addErrorOutput("No alias set for '" + args.alias + "'");
+              }
+            } else {
+                // * save a new alias
+                var key = args.alias;
+                var value = args.command;
+                var aliascmd = value.split(' ')[0];
 
-          output = "<u>Saving setting</u><br/><br/>";
-          if (commandLine.commandStore.commands[key]) {
-              output += "Sorry, there is already a command with the name: " + key;
-          } else if (commandLine.commandStore.commands[aliascmd]) {
-              output += key + ": " + value;
-              aliases[key] = value;
-          } else if (aliases[aliascmd]) { // TODO: have the symlink to the alias not the end point
-              output += key + ": " + aliases[value] + " (" + value + " was an alias itself)";
-              aliases[key] = value;
-          } else {
-              output += "Sorry, no command or alias with that name.";
-          }
+                if (commandLine.commandStore.commands[key]) {
+                    commandLine.addErrorOutput("Sorry, there is already a command with the name: " + key);
+                } else if (commandLine.commandStore.commands[aliascmd]) {
+                    aliases[key] = value;
+                    commandLine.addOutput("Saving alias: " + key + " &#x2192; " + value);
+                } else if (aliases[aliascmd]) {
+                    // TODO: have the symlink to the alias not the end point
+                    aliases[key] = value;
+                    commandLine.addOutput("Saving alias: " + key + " &#x2192; " + aliases[value] + " (" + value + " was an alias itself)");
+                } else {
+                    commandLine.addErrorOutput("Sorry, no command or alias with that name.");
+                }
+            }
         }
-      }
-      commandLine.addOutput(output);
     }
 });
 
