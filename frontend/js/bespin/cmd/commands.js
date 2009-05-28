@@ -946,7 +946,7 @@ bespin.cmd.commands.add({
 
                 var modifierInfo = modifiers.length > 0 ? modifiers.join(', ') + " " : "";
                 var keyInfo = modifierInfo + bespin.util.keys.KeyCodeToName[keyCode] || keyCode;
-                output += "<tr><td>" + keyInfo + "</td><td>" + descriptions[keys] + "</td></tr>";
+                output += "<tr><td style='text-align:right;'>" + keyInfo + "</td><td>&#x2192;</td><td>" + descriptions[keys] + "</td></tr>";
             }
             output += "</table>";
             commandLine.addOutput(output);
