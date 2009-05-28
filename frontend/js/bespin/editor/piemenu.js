@@ -427,7 +427,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     // == Calculate slice border positions ==
     calculateSlicePositions: function() {
         var d = {};
-        var pieHeight = this.currentSlice.img.height;
+        // HACK: we use the command line because it's bigger
+        // var pieHeight = this.currentSlice.img.height;
+        var pieHeight = this.slices.commandLine.img.height;
         var pieWidth = this.currentSlice.img.width;
 
         // Left hand edge of center column. Assumes all LHS graphics are same width
