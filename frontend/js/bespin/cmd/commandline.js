@@ -606,7 +606,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         if (commandLine != null) {
             this.start = new Date();
 
-            var ca = this._splitCommandAndArgs(commandLine.commandStore, false, typed);
+            var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
                 this.command = ca[0];
                 this.args = ca[1];
@@ -625,7 +625,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
     // == Split Command and Args
     // Private method to chop up the typed command
-    _splitCommandAndArgs: function(commandStore, isSub, typed) {
+    _splitCommandAndArgs: function(commandStore, typed, parent) {
         var data = typed.split(/\s+/);
         var commandname = data.shift();
 
@@ -643,9 +643,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             command = commandStore.commands[aliascmd];
         } else {
             if (commandname == "") {
-                this.error = "Missing " + (isSub ? "sub" : "") + "command.<br/>";
+                this.error = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
             } else {
-                this.error = "Sorry, no command '" + commandname + "'.<br/>";
+                this.error = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
             }
 
             // Sometime I hate JavaScript ...
@@ -654,17 +654,26 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 length++;
             }
 
+            var linkup = function(exec) {
+                var script = "bespin.get(\"commandLine\").executeCommand(\"" + exec + "\");";
+                return "<a href='javascript:" + script + "'>" + exec + "</a>";
+            };
+
             if (length <= 30) {
                 this.error += "Try one of: ";
                 for (command in commandStore.commands) {
                     this.error += commandStore.commands[command].name + ", ";
                 }
-                this.error += "<br/>Or use 'help'.";
-            } else {
-                if (isSub) {
-                    this.error += "Use 'help' to enumerate commands.";
+                if (parent != null) {
+                    this.error += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
                 } else {
-                    this.error += "Use '<a href=\'javascript:bespin.get(\"commandLine\").executeCommand(\"help\");\'>help</a>' to enumerate commands.";
+                    this.error += "<br/>Or use '" + linkup("help") + "'.";
+                }
+            } else {
+                if (parent != null) {
+                    this.error += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
+                } else {
+                    this.error += "Use '" + linkup("help") + "' to enumerate commands.";
                 }
             }
 
@@ -673,7 +682,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
         if (command.subcommands) {
             if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
-            return this._splitCommandAndArgs(command.subcommands, true, argstr);
+            return this._splitCommandAndArgs(command.subcommands, argstr, command);
         }
 
         return [command, commandStore.getArgs(argstr.split(' '), command)];
