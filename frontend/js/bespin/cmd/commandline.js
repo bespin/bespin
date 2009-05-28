@@ -432,7 +432,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     dojo.create("td", {
                         colSpan: 2,
                         className: (instruction.error ? "command_error" : ""),
-                        innerHTML: (instruction.output ? instruction.output : "<img src='/images/throbber.gif'/> Working ...")
+                        innerHTML: (instruction.output ? instruction.output : "") // FIXME: For the demo, throbber wasn't going away: "<img src='/images/throbber.gif'/> Working ...")
                     }, rowout);
                 }
             }
