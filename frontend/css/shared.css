@@ -125,7 +125,7 @@ img {
 
 #command_output .command_open_history { width: 20px; }
 #command_output .command_open_time { width: 40px; }
-#command_output .command_open_blank { width: 0px; }
+#command_output .command_open_blank { width: 1px; }
 
 #command_output .command_open { padding: 3px 3px 2px 5px; font-size:80%; color:#666; }
 #command_output .command_main { font-weight: bold; color: #fff; }
