@@ -7,6 +7,12 @@ body {
     -moz-user-select: none;
 }
 
+#header {
+    height: 38px;
+/*    background-image: url("../images/toolbar_main_bg.gif");*/
+    background-image: url("../images/toolbar_sub_bg2.png");
+}
+
 #history {
     margin-right: 40px !important;
 }
