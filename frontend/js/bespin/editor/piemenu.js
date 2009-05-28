@@ -45,11 +45,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }, dojo.body());
 
         this.canvas = dojo.create("canvas", {
-            style: "position: absolute; z-index: 100; top: " + this.settings.canvasTop + "px; display: none;",
-            tabIndex: -1
+            tabIndex: -1,
+            height: this.editor.canvas.height,
+            width: this.editor.canvas.width,
+            style: {
+                position: "absolute",
+                zIndex: 100,
+                top: this.settings.canvasTop + "px",
+                display: "none"
+            }
         }, dojo.body());
-        this.canvas.height = this.editor.canvas.height;
-        this.canvas.width = this.editor.canvas.width;
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
 
@@ -69,8 +74,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     src: button.icon,
                     alt: button.alt,
                     title: button.alt,
-                    style: "position:absolute; display:none; z-index:210; vertical-align:top;",
-                    onclick: dojo.hitch(slice, button.onclick)
+                    onclick: dojo.hitch(slice, button.onclick),
+                    style: {
+                        position: "absolute",
+                        display: "none",
+                        zIndex: 210,
+                        verticalAlign: "top",
+                        cursor: "pointer"
+                    }
                 }, dojo.body());
             });
         }
@@ -91,7 +102,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.closer = dojo.create("img", {
             src: "/images/closer.png",
             alt: "Close the dialog",
-            style: "position:absolute; display:none; z-index:210;",
+            title: "Close the dialog",
+            style: {
+                position: "absolute",
+                display: "none",
+                zIndex: 210,
+                cursor: "pointer"
+            },
             onclick: dojo.hitch(this, this.hide)
         }, dojo.body());
 
