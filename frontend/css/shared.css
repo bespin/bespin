@@ -31,7 +31,7 @@ img {
 }
 
 #centerpopup {
-    z-index: 120;
+    z-index: 300;
     background: url("../images/background_white_50.png");
     position: absolute;
     padding: 10px;
@@ -40,7 +40,7 @@ img {
 }
 
 #overlay {
-    z-index: 110;
+    z-index: 290;
     position: absolute;
     width: 100%;
     height: 100%;

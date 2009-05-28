@@ -481,3 +481,7 @@ tr#jetpack_dropdown_or td {
     font-size: x-small;
     color: #666;
 }
+
+#vcsauth {
+    font-family: Calibri, Arial, sans-serif;
+}

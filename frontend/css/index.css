@@ -262,7 +262,7 @@ body {
 }
 
 #centerpopup {
-    z-index: 20;
+    z-index: 300;
     background: url("../images/background_white_50.png");
     position: absolute;
     padding: 10px;
