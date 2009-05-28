@@ -32,52 +32,52 @@ dojo.provide("bespin.client.pubsub");
 
 dojo.declare("bespin.client.pubsub.Proxy", null, {
     constructor: function() {
-		this.server = bespin.get("server");
+        this.server = bespin.get("server");
     },
 
     listen: function () {
-		var self = this;
-		var onSuccess = function (pub) {
-			bespin.publish(pub.topic, pub.event);
-			
-			self.listen(); // recurse immediately
-		};
-	    var url = "/event/listen/?"+"queue="+self.queue;
-	    this.server.request('GET', url, null, { 
-			log: 'Message arrived', 
-			onSuccess: onSuccess,
-			evalJSON: true
-		});
-	},
-	
-	forward: function (topic, event) {
-		var self = this;
-		var url = "/event/forward/?"+"queue="+self.queue+"&topic="+encodeURIComponent(topic)+"&event="+encodeURIComponent(dojo.toJson(event));
-		this.server.request('GET', url, null, { 
-			log: 'Event '+topic+" forwarded."
-		});
-	},
-	
-	bind: function () {
-		var self = this;
-		var url = "/event/bind/";
-		this.server.request('GET', url, null, {
-			evalJSON: true,
-			onSuccess: function (info) {
-				self.queue = info.queue; 
-				var topics = info.topics;
-				dojo.forEach(topics, function (topic) {
-					bespin.subscribe(topic, function (event) {
-						self.forward(topic, event)
-					})
-				})
-				self.listen();
-			}
-		});
-	}
+        var self = this;
+        var onSuccess = function (pub) {
+            bespin.publish(pub.topic, pub.event);
+            
+            self.listen(); // recurse immediately
+        };
+        var url = "/event/listen/?"+"queue="+self.queue;
+        this.server.request('GET', url, null, { 
+            log: 'Message arrived', 
+            onSuccess: onSuccess,
+            evalJSON: true
+        });
+    },
+    
+    forward: function (topic, event) {
+        var self = this;
+        var url = "/event/forward/?"+"queue="+self.queue+"&topic="+encodeURIComponent(topic)+"&event="+encodeURIComponent(dojo.toJson(event));
+        this.server.request('GET', url, null, { 
+            log: 'Event '+topic+" forwarded."
+        });
+    },
+    
+    bind: function () {
+        var self = this;
+        var url = "/event/bind/";
+        this.server.request('GET', url, null, {
+            evalJSON: true,
+            onSuccess: function (info) {
+                self.queue = info.queue; 
+                var topics = info.topics;
+                dojo.forEach(topics, function (topic) {
+                    bespin.subscribe(topic, function (event) {
+                        self.forward(topic, event)
+                    })
+                })
+                self.listen();
+            }
+        });
+    }
 });
 
 bespin.subscribe("bind", function () {
-	var proxy = new bespin.client.pubsub.Proxy();
-	proxy.bind();
+    var proxy = new bespin.client.pubsub.Proxy();
+    proxy.bind();
 })
