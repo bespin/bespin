@@ -214,7 +214,7 @@ bespin.cmd.commands.add({
                     }
                 }), function(setting) { // now add to output unless hidden settings (start with a _)
                     if (setting.key[0] != '_') {
-                        output += setting.key + ": " + setting.value + "<br/>";
+                        output += "<strong>" + setting.key + "</strong> = " + setting.value + "<br/>";
                     }
                 });
             } else {
@@ -222,12 +222,12 @@ bespin.cmd.commands.add({
                 if (setting.value === undefined) { // show it
                     var value = commandLine.settings.get(key);
                     if (value) {
-                        output = key + "=" + value;
+                        output = "<strong>" + key + "</strong> = " + value;
                     } else {
                         output = "You do not have a setting for '" + key + "'";
                     }
                 } else {
-                    output = "Saving setting: " + key + "=" + setting.value;
+                    output = "Saving setting: <strong>" + key + "</strong> = " + setting.value;
                     commandLine.settings.set(key, setting.value);
                 }
             }
