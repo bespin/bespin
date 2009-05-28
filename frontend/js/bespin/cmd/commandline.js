@@ -555,11 +555,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     link: function(action, context) {
         if (!this.executing) {
-            console.log("No execution context, returning action directly");
             return action;
         }
+
         var originalExecuting = this.executing;
         var self = this;
+
         return function() {
             var confusedExecuting = null;
             if (self.executing) {
