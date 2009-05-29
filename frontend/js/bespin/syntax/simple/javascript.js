@@ -191,6 +191,3 @@ dojo.declare("bespin.syntax.simple.JavaScript", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.JavaScript(), ['js', 'javascript', 'ecmascript', 'jsm', 'java']);

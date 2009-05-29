@@ -22,69 +22,58 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = HTML Syntax Highlighting Implementation =
+// = C Syntax Highlighting Implementation =
 //
-// Module for syntax highlighting HTML.
+// Module for syntax highlighting C based off of the Geshi Sytax Highlighter.
 
-dojo.provide("bespin.syntax.simple.html");
+dojo.provide("bespin.syntax.simple.c");
 
-// ** {{{ bespin.syntax.simple.HTML }}} **
+// ** {{{ bespin.syntax.simple.C }}} **
 //
 // Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports keywords and the like, but doesn't actually understand HTML as it should.
+// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
+// lumped into one last bucket.
 
-bespin.syntax.HTMLConstants = {
-    HTML_STYLE_COMMENT: "comment",
+bespin.syntax.CConstants = {
+    C_STYLE_COMMENT: "c-comment",
+    LINE_COMMENT: "comment",
     STRING: "string",
     KEYWORD: "keyword",
     PUNCTUATION: "punctuation",
-    OTHER: "plain",
-    ATTR_NAME: "attname"
+    OTHER: "plain"
 };
 
+dojo.declare("bespin.syntax.simple.C", null, {
+    keywords: 'if return while case continue default do else for switch goto null false break' + 
+'true function enum extern inline' +
+'printf cout auto char const double float int long'+
+'register short signed sizeof static string struct'+
+'typedef union unsigned void volatile wchar_t #include'.split(" "),
 
-dojo.declare("bespin.syntax.simple.HTML", null, {
-    punctuation: '< > = " \'',
+    punctuation: '{ } / + - % * , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
         if (!meta) meta = {};
 
-        var K = bespin.syntax.HTMLConstants;    // aliasing the constants for shorter reference ;-)
+        var K = bespin.syntax.CConstants;    // aliasing the constants for shorter reference ;-)
 
-        var regions = {};                       // contains the individual style types as keys, with array of start/stop positions as value
+        var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
 
         // current state, maintained as we parse through each character in the line; values at any time should be consistent
-        var currentStyle = (meta.inMultilineComment) ? K.HTML_STYLE_COMMENT : undefined;
+        var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
         var currentRegion = {}; // should always have a start property for a non-blank buffer
         var buffer = "";
 
         // these properties are related to the parser state above but are special cases
         var stringChar = "";    // the character used to start the current string
-        var multiline = meta.inMultilineComment;  // this line contains an unterminated multi-line comment
-
-        if (meta.inJavaScript) {
-            if (line.indexOf('</script>') > 0) {
-                meta.inJavaScript = false;
-            } else {
-                return bespin.syntax.simple.Resolver.resolve("js").highlight(line, meta);
-            }
-        } else {
-            meta.inJavaScript = false;
-        }
-
-        if (line.indexOf('<script') > 0) {
-            meta.inJavaScript = true;
-        }
+        var multiline = meta.inMultilineComment;
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
 
             // check if we're in a comment and whether this character ends the comment
-            if (currentStyle == K.HTML_STYLE_COMMENT) {
-                if (c == ">" && bespin.util.endsWith(buffer, "--") &&
-                        ! (/<!--/.test(buffer)  && !meta.inMultiLineComment && currentRegion.start == i - 4) &&
-                        ! (/<!---/.test(buffer) && !meta.inMultiLineComment && currentRegion.start == i - 5)   // I'm really tired
-                        ) { // has the multiline comment just ended?
+            if (currentStyle == K.C_STYLE_COMMENT) {
+                if (c == "/" && /\*$/.test(buffer)) { // has the c-style comment just ended?
                     currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
@@ -115,10 +104,9 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
                     currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (line.charAt(currentRegion.start - 1) == '<') {
+                        if (this.keywords.indexOf(buffer) != -1) {
+                            // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
-                        } else if (line.charAt(currentRegion.stop) == '=') { // an attribute (TODO allow for spaces)
-                            currentStyle = K.ATTR_NAME;
                         } else {
                             currentStyle = K.OTHER;
                         }
@@ -131,14 +119,27 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
                 }
 
                 if (this.isPunctuation(c)) {
-                    if (c == "<" && (line.length > i + 3) && (line.substring(i, i + 4) == "<!--")) {
-                        // we are in a multiline comment
+                    if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
+                        // remove the previous region in the punctuation bucket, which is a forward slash
+                        regions[K.PUNCTUATION].pop();
+
+                        // we are in a c-style comment
                         multiline = true;
-                        currentStyle = K.HTML_STYLE_COMMENT;
-                        currentRegion = { start: i };
-                        buffer = "<!--";
-                        i += 3;
+                        currentStyle = K.C_STYLE_COMMENT;
+                        currentRegion = { start: i - 1 };
+                        buffer = "/*";
                         continue;
+                    }
+
+                    // check for a line comment; this ends the parsing for the rest of the line
+                    if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
+                        currentRegion = { start: i - 1, stop: line.length };
+                        currentStyle = K.LINE_COMMENT;
+                        this.addRegion(regions, currentStyle, currentRegion);
+                        buffer = "";
+                        currentStyle = undefined;
+                        currentRegion = {};
+                        break;      // once we get a line comment, we're done!
                     }
 
                     // add an ad-hoc region for just this one punctuation character
@@ -167,7 +168,7 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
             this.addRegion(regions, currentStyle, currentRegion);
         }
 
-        return { regions: regions, meta: { inMultilineComment: multiline, inJavaScript: meta.inJavaScript } };
+        return { regions: regions, meta: { inMultilineComment: multiline } };
     },
 
     addRegion: function(regions, type, data) {

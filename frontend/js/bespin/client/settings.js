@@ -693,7 +693,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                     bespin.publish("editor:openfile", { filename: path });
                 }
                 else {
-                    var lastUsed = settings.getObject("lastused");
+                    var lastUsed = settings.getObject("_lastused");
                     if (!lastUsed) {
                         bespin.publish("project:set", { project: "SampleProject" });
                         bespin.publish("editor:openfile", { filename: "readme.txt" });

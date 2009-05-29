@@ -175,6 +175,3 @@ want to prematurely detect end
        return ch == " " || ch == "\t";
    }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.Python(), ['py', 'python', 'text/python', 'application/python']);

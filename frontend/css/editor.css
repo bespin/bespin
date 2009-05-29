@@ -7,6 +7,12 @@ body {
     -moz-user-select: none;
 }
 
+#header {
+    height: 38px;
+/*    background-image: url("../images/toolbar_main_bg.gif");*/
+    background-image: url("../images/toolbar_sub_bg2.png");
+}
+
 #history {
     margin-right: 40px !important;
 }
@@ -169,8 +175,10 @@ body {
     right: 0;
     left: 0;
     height: 28px;
+    /*
     background-image: url("../images/footer_bg.png");
     background-repeat: repeat-x;
+    */
     padding: 5px;
     z-index: 200;
 }
@@ -472,4 +480,8 @@ body {
 tr#jetpack_dropdown_or td {
     font-size: x-small;
     color: #666;
+}
+
+#vcsauth {
+    font-family: Calibri, Arial, sans-serif;
 }

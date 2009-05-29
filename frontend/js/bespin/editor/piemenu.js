@@ -41,17 +41,20 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // * The reference pane takes a while to load so we create it here
         this.refNode = dojo.create("iframe", {
-            id: "pie_ref",
             style: "display:none"
         }, dojo.body());
 
         this.canvas = dojo.create("canvas", {
-            id: 'piemenu',
-            style: "position: absolute; z-index: 100; top: " + this.settings.canvasTop + "px; display: none;",
-            tabIndex: -1
+            tabIndex: -1,
+            height: this.editor.canvas.height,
+            width: this.editor.canvas.width,
+            style: {
+                position: "absolute",
+                zIndex: 100,
+                top: this.settings.canvasTop + "px",
+                display: "none"
+            }
         }, dojo.body());
-        this.canvas.height = this.editor.canvas.height;
-        this.canvas.width = this.editor.canvas.width;
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
 
@@ -59,7 +62,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         for (var dir in this.slices) {
             var slice = this.slices[dir];
             slice.img = dojo.create("img", {
-                id: slice.id,
                 src: "/images/pie/" + slice.id + ".png",
                 alt: "pie menu border",
                 style: "position:absolute; display:none;"
@@ -72,8 +74,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     src: button.icon,
                     alt: button.alt,
                     title: button.alt,
-                    style: "position:absolute; display:none; z-index:210; vertical-align:top;",
-                    onclick: dojo.hitch(slice, button.onclick)
+                    onclick: dojo.hitch(slice, button.onclick),
+                    style: {
+                        position: "absolute",
+                        display: "none",
+                        zIndex: 210,
+                        verticalAlign: "top",
+                        cursor: "pointer"
+                    }
                 }, dojo.body());
             });
         }
@@ -81,11 +89,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // * Load the menu border images
         this.border = [];
-        var borderIds = [ "lft", "mid", "rt", "top_lft", "top_mid", "top_rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
+        var borderIds = [ "top_lft", "top_mid", "top_rt", "lft", "mid", "rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
         dojo.forEach(borderIds, function(id) {
             this.border[id] = dojo.create("img", {
-                id: "puck_menu" + id,
-                src: "/images/pie/puck_menu_" + id + ".png",
+                src: "/images/menu/" + id + ".png",
                 alt: "pie menu",
                 style: "position:absolute; display:none;"
             }, dojo.body());
@@ -93,29 +100,19 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // * Load the close button image
         this.closer = dojo.create("img", {
-            id: "closer",
             src: "/images/closer.png",
             alt: "Close the dialog",
-            style: "position:absolute; display:none; z-index:210;",
+            title: "Close the dialog",
+            style: {
+                position: "absolute",
+                display: "none",
+                zIndex: 210,
+                cursor: "pointer"
+            },
             onclick: dojo.hitch(this, this.hide)
         }, dojo.body());
 
         var self = this;
-
-        /*
-        dojo.connect(window, "mousedown", function(e) {
-            if (self.currentSlice == null) return;
-
-            var pos = dojo.coords(self.canvas);
-            if (e.clientX < pos.l
-                    || e.clientX > (pos.l + pos.w)
-                    || e.clientY < pos.t
-                    || e.clientY > (pos.t + pos.h)) {
-                self.toggle();
-            }
-            dojo.stopEvent(e);
-        });
-        */
 
         // * Hide on Escape
         bespin.subscribe("ui:escape", function(e) {
@@ -125,7 +122,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         dojo.connect(window, 'resize', this, this.resize);
 
         // * Show slices properly
-        dojo.connect(this.canvas, "keydown", function(e) {
+        dojo.connect(this.canvas, 'keydown', function(e) {
             if (self.currentSlice == null) return;
 
             if (self.keyRunsMe(e)) {
@@ -147,6 +144,25 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 }
             }
         });
+
+        dojo.connect(this.canvas, 'click', function(e) {
+            var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
+            var fullWidth = self.canvas.width;
+            var centerWidth = Math.round(fullWidth / 2);
+            var x = e.layerX || e.offsetX;
+            var y = e.layerY || e.offsetY;
+            var zoneLeft = centerWidth - pieRadius;
+            var zoneRight = centerWidth + pieRadius;
+
+            // only do the calculation if you are clicking on the hot zone
+            if (x > zoneLeft && x < zoneRight) {
+                var p = self.centerPoint(x, y); // change coord scheme to center based
+
+                var degrees = self.angle(p.x, p.y);
+
+                self.showSlice(self.slice(degrees));
+            }
+        });
     },
 
     // == Various customizations
@@ -154,25 +170,22 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // * How far from the top of the window does the pie go
         canvasTop: 31,
         // * How much space do we leave around the opened slices?
-        contentsMargin: 10
-    },
-
-    keyRunsMe: function(e) {
-        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
+        topMargin: 10,
+        leftMargin: 60,
+        rightMargin: 60,
     },
 
     // == Objects that control each of the slices ==
     slices: {
         // === The Command Line Slice ===
         commandLine: {
-            id: "puck_active_btm",
+            id: "active_btm",
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
             showContents: function(coords) {
-
                 var left = coords.l;
-                var bottom = this.piemenu.slices.off.img.height;
-                var width = coords.w - 50; // TODO: why -50
+                var bottom = this.piemenu.slices.off.img.height - 10;
+                var width = coords.w - 40; // TODO: why -50
                 var height = coords.h - 30; // TODO: why -30
 
                 bespin.get("commandLine").showOutput(left, bottom, width, height);
@@ -182,7 +195,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             },
             toolbar: [
                 {
-                    icon: "images/icn_fontsize.png",
+                    icon: "images/slice_aaa.png",
                     alt: "Font Size",
                     onclick: function() {
                         bespin.get("commandLine").toggleFontSize();
@@ -195,6 +208,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                         bespin.get("commandLine").toggleHistoryTimeMode();
                     }
                 },
+                /*
                 {
                     icon: "images/plus.png",
                     alt: "Expand all the output areas",
@@ -209,12 +223,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                         bespin.get("commandLine").contractAllInstructions();
                     }
                 }
+                */
             ]
         },
 
         // === The File Browser Slice ===
         fileBrowser: {
-            id: "puck_active_top",
+            id: "active_top",
             title: "File Browser",
             key: bespin.util.keys.Key.UP_ARROW,
             showContents: function(coords) {
@@ -223,7 +238,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // === The Reference Slice ===
         reference: {
-            id: "puck_active_lft",
+            id: "active_lft",
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
             showContents: function(coords) {
@@ -235,7 +250,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     height: coords.h + "px",
                     position: "absolute",
                     borderWidth: "0",
-                    zIndex:"200",
+                    zIndex: "200",
                     display: "block"
                 });
             },
@@ -246,7 +261,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // === The Context Menu Slice ===
         context: {
-            id: "puck_active_rt",
+            id: "active_rt",
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
             showContents: function(coords) {
@@ -255,14 +270,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
                 piemenu.ctx.fillStyle = "#bcb9ae";
                 piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
-                piemenu.ctx.fillText("Work in progress", parseInt(this.cenLeft + 10), parseInt(this.midTop + 10));
+                piemenu.ctx.fillText("Work in progress", parseInt(d.cenLeft + 10), parseInt(d.midTop + 10));
                 */
             }
         },
 
         // === All Slices closed ===
         off: {
-            id: "puck_off",
+            id: "off",
             title: "",
             key: bespin.util.keys.Key.ESCAPE,
             showContents: function() { }
@@ -350,6 +365,21 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    // == Calculate the top left X and Y coordinates of the pie ==
+    getTopLeftXY: function(width, height) {
+        return { x: parseInt((this.canvas.width / 2) - (width / 2)),
+                 y: parseInt((this.slices.off.img.height - height) / 2) + this.canvas.height - this.slices.off.img.height };
+    },
+
+    // == Calculate the center X Y at the middle of the pie ==
+    getCenterXY: function() {
+        var off = this.slices.off.img;
+        var topLeft = this.getTopLeftXY(off.width, off.height);
+
+        return { x: topLeft.x + (off.width / 2),
+                 y: topLeft.y + (off.width / 2) };
+    },
+
     // == Render the pie in some opening/closing state ==
     renderPie: function(progress) {
         var ctx = this.ctx;
@@ -359,25 +389,24 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        var alpha = Math.max(progress - 0.4, 0);
+        var alpha = Math.max(progress - 0.9, 0); // Was 0.4
         ctx.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         var height = parseInt(off.height * progress);
         var width = parseInt(off.width * progress);
 
-        var x = parseInt((this.canvas.width / 2) - (width / 2));
-        var y = parseInt((off.height - height) / 2) + this.canvas.height - off.height;
+        var p = this.getTopLeftXY(width, height);
 
-        var xm = x + (width / 2);
-        var ym = y + (height / 2);
+        var xm = p.x + (width / 2);
+        var ym = p.y + (height / 2);
 
         ctx.translate(xm, ym);
         ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
         ctx.translate(-xm, -ym);
 
         ctx.globalAlpha = progress;
-        ctx.drawImage(off, x, y, width, height);
+        ctx.drawImage(off, p.x, p.y, width, height);
 
         ctx.restore();
     },
@@ -389,17 +418,17 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // because slices might have other focus ideas
         this.canvas.focus();
 
-        this.calculateSlicePositions();
-        this.renderPopout();
-        this.renderToolbar();
+        var d = this.calculateSlicePositions();
+        this.renderPopout(d);
+        this.renderToolbar(d);
 
         // * Fill in the center section
         var dimensions = {
-            l: this.cenLeft,
+            l: d.cenLeft,
             // TODO: Why do we need to push it down 3 extra px?
-            t: (this.midTop + this.settings.canvasTop + 3),
-            w: this.cenWidth,
-            h: this.midHeight
+            t: (d.midTop + this.settings.canvasTop + 3),
+            w: d.cenWidth,
+            h: d.midHeight
         };
         this.currentSlice.showContents(dimensions);
     },
@@ -414,22 +443,30 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
     // == Calculate slice border positions ==
     calculateSlicePositions: function() {
+        var d = {};
+        // HACK: we use the command line because it's bigger
+        // var pieHeight = this.currentSlice.img.height;
+        var pieHeight = this.slices.commandLine.img.height;
+        var pieWidth = this.currentSlice.img.width;
+
         // Left hand edge of center column. Assumes all LHS graphics are same width
-        this.cenLeft = this.settings.contentsMargin + this.border.lft.width;
+        d.cenLeft = this.settings.leftMargin + this.border.lft.width;
         // Right hand edge of center column. Assumes all RHS graphics are same width
-        this.cenRight = this.settings.contentsMargin + this.border.rt.width;
+        d.cenRight = this.settings.rightMargin + this.border.rt.width;
         // Width of the center column. Assumes left and right columns graphics are same width
-        this.cenWidth = this.canvas.width - this.cenLeft - this.cenRight;
+        d.cenWidth = this.canvas.width - d.cenLeft - d.cenRight;
         // Top of bottom row. Determined by height of pie
-        this.btmTop = this.canvas.height - this.currentSlice.img.height;
+        d.btmTop = this.canvas.height - pieHeight;
         // Left hand edge of rightmost column. Assumes all RHS graphics are the same width
-        this.rightLeft = this.canvas.width - this.cenRight;
+        d.rightLeft = this.canvas.width - d.cenRight;
         // Top of all middle rows. Assumes all top graphics are same height
-        this.midTop = this.settings.contentsMargin + this.border.top_mid.height;
+        d.midTop = this.settings.topMargin + this.border.top_mid.height;
         // Height of the middle row. Assumes all top graphics are same height
-        this.midHeight = this.btmTop - this.settings.contentsMargin - this.border.top_mid.height;
+        d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
-        this.offLeft = parseInt((this.canvas.width / 2) - (this.currentSlice.img.width / 2));
+        d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
+
+        return d;
     },
 
     // == Render an open slice ==
@@ -443,73 +480,83 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     // --                                          --
     // [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
     // }}}
-    renderPopout: function() {
-        // Cache to shorten the commands below
-        var margin = this.settings.contentsMargin;
-
+    renderPopout: function(d) {
         // * Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // was 0.6
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // * The pie
-        this.ctx.drawImage(this.currentSlice.img, this.offLeft, this.btmTop);
-
         // * Don't draw the menu area for the 'off' slice
-        if (this.currentSlice == this.slices.off) return;
+        if (this.currentSlice != this.slices.off) {
+            // * Draw top row
+            this.ctx.drawImage(this.border.top_lft, this.settings.leftMargin, this.settings.topMargin);
+            this.ctx.drawImage(this.border.top_mid, d.cenLeft, this.settings.topMargin, d.cenWidth, this.border.top_mid.height);
+            // TODO +4 eh?
+            this.ctx.drawImage(this.border.top_rt, d.rightLeft, this.settings.topMargin + 4);
 
-        // * Draw top row
-        this.ctx.drawImage(this.border.top_lft, margin, margin);
-        this.ctx.drawImage(this.border.top_mid, this.cenLeft, margin, this.cenWidth, this.border.top_mid.height);
-        this.ctx.drawImage(this.border.top_rt, this.rightLeft, margin);
+            // * Middle row
+            this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
+            this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // Was 0.4
+            this.ctx.fillRect(d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
+            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
+            this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
 
-        // * Middle row
-        this.ctx.drawImage(this.border.lft, margin, this.midTop, this.border.lft.width, this.midHeight);
-        this.ctx.drawImage(this.border.mid, this.cenLeft, this.midTop, this.cenWidth, this.midHeight);
-        this.ctx.drawImage(this.border.rt, this.rightLeft, this.midTop, this.border.rt.width, this.midHeight);
+            // * Bottom row
+            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
+            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, d.cenWidth, this.border.btm_lftb.height);
+            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
 
-        // * Bottom row
-        this.ctx.drawImage(this.border.btm_lft, margin, this.btmTop);
-        var lftbWidth = this.offLeft - (margin + this.border.btm_lft.width);
-        this.ctx.drawImage(this.border.btm_lftb, this.cenLeft, this.btmTop, lftbWidth, this.border.btm_lftb.height);
+            // * Bottom row (old version)
+            /*
+            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
+            var lftbWidth = d.offLeft - (this.settings.leftMargin + this.border.btm_lft.width);
+            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, lftbWidth, this.border.btm_lftb.height);
 
-        var rtbLeft = this.offLeft + this.slices.off.img.width;
-        var rtbWidth = this.rightLeft - rtbLeft;
-        this.ctx.drawImage(this.border.btm_rtb, rtbLeft, this.btmTop, rtbWidth, this.border.btm_rtb.height);
-        this.ctx.drawImage(this.border.btm_rt, this.rightLeft, this.btmTop);
+            var rtbLeft = d.offLeft + this.slices.off.img.width;
+            var rtbWidth = d.rightLeft - rtbLeft;
+            this.ctx.drawImage(this.border.btm_rtb, rtbLeft, d.btmTop, rtbWidth, this.border.btm_rtb.height);
+            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
+            */
+        }
+
+        // * The pie
+        var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;
+        this.ctx.drawImage(this.currentSlice.img, d.offLeft, sliceTop);
     },
 
     // == Render the toolbar for this slice ==
-    renderToolbar: function() {
-        if (this.currentSlice.toolbar) {
-            // * Title
-            this.ctx.fillStyle = "#bcb9ae";
-            this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
+    renderToolbar: function(d) {
+        // * Title
+        this.ctx.fillStyle = "#bcb9ae";
+        this.ctx.font = "bold 12pt Calibri, Arial, sans-serif";
 
-            var left = this.cenLeft + 5;
-            var top = this.midTop - 9;
-            this.ctx.fillText(this.currentSlice.title, left, top);
-            // 50 - Give some extra space after the title
-            left = left + this.ctx.measureText(this.currentSlice.title).width + 50;
+        var left = d.cenLeft + 5;
+        var top = d.midTop - 9;
+        this.ctx.fillText(this.currentSlice.title, left, top);
+        // 50 - Give some extra space after the title
+        left = left + this.ctx.measureText(this.currentSlice.title).width + 50;
 
-            dojo.forEach(this.currentSlice.toolbar, function(button) {
-                dojo.style(button.img, {
-                    display: "block",
-                    // This is DOM so top is relative to top of window not canvas
-                    // TODO: But why 18 and not this.settings.canvasTop?
-                    top: (18 + top) + "px",
-                    left: left + "px"
-                });
+        // HACK ALERT we should correctly layout from the right rather than
+        // this evil fix which only works because only 1 slice has a toolbar
+        left = d.rightLeft - 150;
 
-                left += button.img.width + 10;
-            }, this);
-        }
+        dojo.forEach(this.currentSlice.toolbar, function(button) {
+            dojo.style(button.img, {
+                display: "block",
+                // This is DOM so top is relative to top of window not canvas
+                // TODO: But why 18 and not this.settings.canvasTop?
+                top: (18 + top) + "px",
+                left: left + "px"
+            });
+
+            left += button.img.width + 5;
+        }, this);
 
         // * Close Button
         dojo.style(this.closer, {
             display: 'block',
-            top: (this.settings.contentsMargin + this.settings.canvasTop + 27) + "px",
-            left: (this.rightLeft - 16) + "px"
+            top: (this.settings.topMargin + this.settings.canvasTop + 27) + "px",
+            left: (d.rightLeft - 16) + "px"
         });
     },
 
@@ -522,5 +569,38 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         dojo.style(this.closer, 'display', 'none');
+    },
+
+    keyRunsMe: function(e) {
+        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
+    },
+
+    // == Take the center pie point and migrate the clicked point to be relative to the center ==
+    centerPoint: function(x, y) {
+        var off = this.slices.off.img;
+        var center = this.getCenterXY(off.width, off.height);
+
+        return {
+            x: x - center.x,
+            y: center.y - y
+        };
+    },
+
+    // == Calculate the angle of the dangle ==
+    angle: function(x, y) {
+        return Math.atan2(y, x) * 180 / Math.PI;
+    },
+
+    // == Return the slice to activate ==
+    slice: function(degrees) {
+        if (degrees >= -45 && degrees < 45) { // right
+            return this.slices.context;
+        } else if (degrees >= 45 && degrees < 135) { // top
+            return this.slices.fileBrowser;
+        } else if (degrees >= 135 || degrees < -135) { // left
+            return this.slices.reference;
+        } else { // bottom
+            return this.slices.commandLine;
+        }
     }
 });

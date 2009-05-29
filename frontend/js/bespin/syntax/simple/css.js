@@ -262,6 +262,3 @@ dojo.declare("bespin.syntax.simple.CSS", null, {
         return ch == " ";
     }
 });
-
-// Register this puppy
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.CSS(), ['css']);

@@ -64,7 +64,7 @@ dojo.mixin(bespin, {
     //
     // Given a topic and a set of parameters, publish onto the bus
     publish: function(topic, args) {
-        this.eventLog[topic] = true;
+        bespin.eventLog[topic] = true;
         
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
@@ -82,7 +82,7 @@ dojo.mixin(bespin, {
         };
         for(var i = 0; i < topics.length; ++i) {
             var topic = topics[i];
-            if (this.eventLog[topic]) {
+            if (bespin.eventLog[topic]) {
                 --count;
             } else {
                 bespin.subscribe(topic, function () {

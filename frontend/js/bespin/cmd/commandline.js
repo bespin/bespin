@@ -254,17 +254,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         });
         dojo.byId("command").focus();
 
+        var footerHeight = dojo.style("footer", "height");
+
         dojo.style(this.commandHint, {
             left: left + "px",
-            bottom: (bottom + dojo.style("footer", "height") + 5) + "px",
+            bottom: (bottom + footerHeight + 2) + "px",
             width: width + "px",
         });
 
         dojo.style(this.output, {
             left: left + "px",
-            bottom: (bottom + dojo.style("footer", "height") + 5) + "px",
+            bottom: (bottom + footerHeight + 5) + "px",
             width: (width + 40) + "px",
-            height: (height - 5) + "px",
+            height: (height + 25) + "px",
             display: "block",
         });
 
@@ -285,6 +287,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (this.executing) {
             // TODO: Should we append ???
             this.executing.setOutput(html);
+            this.executing.hideOutput = false;
         } else {
             console.trace();
             console.debug("orphan output:", html);
@@ -349,6 +352,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 // The row for the input (i.e. what was typed)
                 var rowin = dojo.create("tr", {
                     className: 'command_rowin',
+                    style: "background-image: url(/images/instruction" + size + ".png)",
                     onclick: function(ev) {
                         self.historyClick(instruction.typed, ev);
                     },
@@ -372,7 +376,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 }
 
                 // Cell for the typed command and the hover
-                var typed = dojo.create("td", { className: 'command_typed' }, rowin);
+                var typed = dojo.create("td", { className: 'command_main' }, rowin);
 
                 // The execution time
                 var hover = dojo.create("div", { className: 'command_hover' }, typed);
@@ -388,9 +392,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 dojo.create("img", {
                     src: instruction.hideOutput ? "/images/plus.png" : "/images/minus.png",
                     style: "vertical-align:middle; padding:2px;",
-                    onclick: function() {
+                    alt: "Toggle display of the output",
+                    title: "Toggle display of the output",
+                    onclick: function(ev) {
                         instruction.hideOutput = !instruction.hideOutput;
                         self.updateOutput();
+                        dojo.stopEvent(ev);
                     }
                 }, hover);
 
@@ -398,16 +405,29 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 dojo.create("img", {
                     src: "/images/closer.png",
                     style: "vertical-align:middle; padding:2px;",
+                    alt: "Remove this command from the history",
+                    title: "Remove this command from the history",
                     onclick: function() {
                         self.history.remove(instruction);
                         self.updateOutput();
+                        dojo.stopEvent(ev);
                     }
                 }, hover);
 
                 // What the user actually typed
-                var ts = dojo.create("span", { className: 'command_prompt' }, typed);
-                ts.innerHTML = ' &gt; ';
-                dojo.create("span", { innerHTML: instruction.typed }, typed);
+                dojo.create("img", {
+                    className: "nohover",
+                    src: "/images/prompt1.png"
+                }, typed);
+                dojo.create("img", {
+                    className: "hover",
+                    src: "/images/prompt2.png"
+                }, typed);
+
+                dojo.create("span", {
+                    innerHTML: instruction.typed,
+                    className: "command_typed"
+                }, typed);
 
                 // The row for the output (if required)
                 if (!instruction.hideOutput) {
@@ -416,7 +436,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     dojo.create("td", {
                         colSpan: 2,
                         className: (instruction.error ? "command_error" : ""),
-                        innerHTML: (instruction.output ? instruction.output : "<img src='/images/throbber.gif'/> Working ...")
+                        innerHTML: (instruction.output ? instruction.output : "<img src='/images/throbber.gif'/> Working ...") // FIXME: For the demo, throbber wasn't going away: "<img src='/images/throbber.gif'/> Working ...")
                     }, rowout);
                 }
             }
@@ -436,10 +456,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var size = parseInt(settings.get("consolefontsize"));
         switch (size) {
-            case 8: set(10); break;
-            case 10: set(14); break;
-            case 14: set(8); break;
-            default: set(10); break;
+            case 9: set(11); break;
+            case 11: set(14); break;
+            case 14: set(9); break;
+            default: set(11); break;
         }
     },
 
@@ -508,6 +528,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     executeCommand: function(value) {
+        if (!value || value == "") {
+            return;
+        }
+
         var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
         // clear after the command
@@ -523,20 +547,38 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 instruction.command.execute(this, instruction.args, instruction.command);
             }
         }
+        catch (ex) {
+            console.error(ex);
+            console.trace();
+            bespin.get('commandLine').addErrorOutput(ex);
+        }
         finally {
             this.executing = null;
         }
 
+        this.hideHint();
         this.updateOutput();
+        this.scrollConsole();
     },
 
     link: function(action, context) {
-        var closureExecuting = this.executing;
+        if (!this.executing) {
+            return action;
+        }
+
+        var originalExecuting = this.executing;
         var self = this;
+
         return function() {
-            self.executing = closureExecuting;
+            var confusedExecuting = null;
+            if (self.executing) {
+                confusedExecuting = self.executing;
+            }
+            self.executing = originalExecuting;
+
             action.apply(context || dojo.global, arguments);
-            self.executing = null;
+
+            self.executing = confusedExecuting;
         };
     },
 
@@ -564,7 +606,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         if (commandLine != null) {
             this.start = new Date();
 
-            var ca = this._splitCommandAndArgs(commandLine, typed);
+            var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
                 this.command = ca[0];
                 this.args = ca[1];
@@ -583,34 +625,67 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
     // == Split Command and Args
     // Private method to chop up the typed command
-    _splitCommandAndArgs: function(commandLine, typed) {
+    _splitCommandAndArgs: function(commandStore, typed, parent) {
         var data = typed.split(/\s+/);
         var commandname = data.shift();
 
         var command;
         var argstr = data.join(' ');
 
-        if (commandLine.commandStore.commands[commandname]) {
-            command = commandLine.commandStore.commands[commandname];
-        } else if (commandLine.commandStore.aliases[commandname]) {
-            var alias = commandLine.commandStore.aliases[commandname].split(' ');
+        if (commandStore.commands[commandname]) {
+            command = commandStore.commands[commandname];
+        } else if (commandStore.aliases[commandname]) {
+            var alias = commandStore.aliases[commandname].split(' ');
             var aliascmd = alias.shift();
             if (alias.length > 0) {
                 argstr = alias.join(' ') + ' ' + argstr;
             }
-            command = commandLine.commandStore.commands[aliascmd];
+            command = commandStore.commands[aliascmd];
         } else {
-            // TODO: This is a bit nasty - find a better way
-            this.error = "Sorry, no command '" + commandname + "'. Maybe try to run &raquo; help";
+            if (commandname == "") {
+                this.error = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
+            } else {
+                this.error = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
+            }
+
+            // Sometime I hate JavaScript ...
+            var length = 0;
+            for (command in commandStore.commands) {
+                length++;
+            }
+
+            var linkup = function(exec) {
+                var script = "bespin.get(\"commandLine\").executeCommand(\"" + exec + "\");";
+                return "<a href='javascript:" + script + "'>" + exec + "</a>";
+            };
+
+            if (length <= 30) {
+                this.error += "Try one of: ";
+                for (command in commandStore.commands) {
+                    this.error += commandStore.commands[command].name + ", ";
+                }
+                if (parent != null) {
+                    this.error += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
+                } else {
+                    this.error += "<br/>Or use '" + linkup("help") + "'.";
+                }
+            } else {
+                if (parent != null) {
+                    this.error += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
+                } else {
+                    this.error += "Use '" + linkup("help") + "' to enumerate commands.";
+                }
+            }
+
             return;
         }
 
         if (command.subcommands) {
             if (data.length < 1 || data[0] == '') data[0] = command.subcommanddefault || 'help';
-            return this._splitCommandAndArgs(data.join(" "));
+            return this._splitCommandAndArgs(command.subcommands, argstr, command);
         }
 
-        return [command, commandLine.commandStore.getArgs(argstr.split(' '), command)];
+        return [command, commandStore.getArgs(argstr.split(' '), command)];
     }
 });
 
@@ -813,8 +888,8 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         return this.instructions[0];
     },
 
-    getCommands: function() {
-        return dojo.map(this.instructions, function(instruction) { return instruction.typed; });
+    getInstructions: function() {
+        return this.instructions;
     }
 });
 

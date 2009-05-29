@@ -13,8 +13,8 @@
         drawPie();
         
         canvas.onclick = function(e) {
-            var x = e.offsetX;
-            var y = e.offsetY;            
+            var x = e.layerX || e.offsetX;
+            var y = e.layerY || e.offsetY;
             
             var p = centerPoint(x, y); // change coord scheme to center based
 
