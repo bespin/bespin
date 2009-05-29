@@ -188,6 +188,3 @@ dojo.declare("bespin.syntax.simple.C", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.C(), ['c', 'h']);

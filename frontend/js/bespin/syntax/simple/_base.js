@@ -106,7 +106,6 @@ bespin.syntax.simple.Resolver = new function() {
               }]
           } };
       }
-      //innersyntax: function() {},
   };
 
   return {
@@ -120,8 +119,12 @@ bespin.syntax.simple.Resolver = new function() {
       // ** {{{ register }}} **
       //
       // Engines register themselves,
-      // e.g. {{{bespin.syntax.EngineResolver.register(new bespin.syntax.CSSSyntaxEngine(), ['css']);}}}
+      // e.g. {{{bespin.syntax.EngineResolver.register(new bespin.syntax.simple.CSS() || "CSS", ['css']);}}}
       register: function(syntaxEngine, types) {
+          if (bespin.syntax.simple[syntaxEngine]) {
+              syntaxEngine = new bespin.syntax.simple[engine]();
+          }
+
           for (var i = 0; i < types.length; i++) {
               engines[types[i]] = syntaxEngine;
           }
@@ -131,8 +134,23 @@ bespin.syntax.simple.Resolver = new function() {
       //
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(type) {
-          return engines[type] || NoopSyntaxEngine;
+          if (!engines[type]) return NoopSyntaxEngine;
+
+          if (dojo.isString(engines[type])) { // lazy load time
+              dojo.require("bespin.syntax.simple." + engines[type].toLowerCase());
+              engines[type] = new bespin.syntax.simple[engines[type]]();
+          }
+          return engines[type];
       }
   };
 }();
 
+// Register
+bespin.syntax.simple.Resolver.register("JavaScript", ['js', 'javascript', 'ecmascript', 'jsm', 'java']);
+bespin.syntax.simple.Resolver.register("Arduino",    ['pde']);
+bespin.syntax.simple.Resolver.register("C",          ['c', 'h']);
+bespin.syntax.simple.Resolver.register("CSharp",     ['cs']);
+bespin.syntax.simple.Resolver.register("CSS",        ['css']);
+bespin.syntax.simple.Resolver.register("HTML",       ['html', 'htm', 'xml', 'xhtml', 'shtml']);
+bespin.syntax.simple.Resolver.register("PHP",        ['php', 'php3', 'php4', 'php5']);
+bespin.syntax.simple.Resolver.register("Python",     ['py', 'python']);

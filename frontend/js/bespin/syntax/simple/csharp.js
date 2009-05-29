@@ -224,6 +224,3 @@ dojo.declare("bespin.syntax.simple.CSharp", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.CSharp(), ['cs']);

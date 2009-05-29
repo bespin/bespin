@@ -574,6 +574,3 @@ dojo.declare("bespin.syntax.simple.PHP", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.PHP(), ['php', 'php3', 'php4', 'php5']);

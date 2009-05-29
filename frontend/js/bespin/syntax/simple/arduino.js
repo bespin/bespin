@@ -192,6 +192,3 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simpleeResolver.register(new bespin.syntax.simple.Arduino(), ['pde']);

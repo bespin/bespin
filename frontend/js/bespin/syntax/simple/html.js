@@ -187,6 +187,3 @@ dojo.declare("bespin.syntax.simple.HTML", null, {
         return ch == " ";
     }
 });
-
-// Register
-bespin.syntax.simple.Resolver.register(new bespin.syntax.simple.HTML(), ['html', 'htm', 'xml', 'xhtml', 'shtml']);
