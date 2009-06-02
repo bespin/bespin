@@ -37,10 +37,10 @@ var USE_GEARS    = false;
 // Sounds like a security hole, but maybe it is not.
 var JS_WORKER_SOURCE = "js/bespin/bootstrap_worker.js";
 var uriEncodeSource = function(source) {
-    return JS_WORKER_SOURCE+"#"+escape(source)
+    return JS_WORKER_SOURCE+"#"+escape(source);
 };
 var uriDecodeSource = function(uri) {
-    return unescape(uri.substr( (JS_WORKER_SOURCE+"#").length ))
+    return unescape(uri.substr( (JS_WORKER_SOURCE+"#").length ));
 };
 
 // If there is no Worker API (http://www.whatwg.org/specs/web-workers/current-work/) yet,
@@ -60,7 +60,7 @@ if (typeof Worker == "undefined") {
 
         Worker.prototype = { // we can post messages to the worker
             postMessage: function(data) {
-                wp.sendMessage(data, this.id)
+                wp.sendMessage(data, this.id);
             }
         };
 
@@ -167,7 +167,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     worker.postMessage("__IMPORT_SCRIPT__//"+index+"\n"+src);
                 }
             });
-        }
+        };
 
 
         for(var i = 0; i < this.__workerCount__;i++) {
@@ -176,58 +176,58 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             //console.log("Worker created")
             
             var onmessage = function(event) {
-                var message = event.data
+                var message = event.data;
                 if(typeof message == "string") {
                     if(message.indexOf("log=") == 0) {
                         //console.log("From Worker: "+message.substr(4))
-                        return
+                        return;
                     }
                     else
                     if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
-                        var json = message.substr("__IMPORT_SCRIPT__".length)
-                        var paras = dojo.fromJson(json)
-                        loadScript.apply(this, paras)
-                        return
+                        var json = message.substr("__IMPORT_SCRIPT__".length);
+                        var paras = dojo.fromJson(json);
+                        loadScript.apply(this, paras);
+                        return;
                     }
                     else {
-                        message = dojo.fromJson(message)
+                        message = dojo.fromJson(message);
                     }
                 }
                 
                 if(message.type == "subscribe") {
                     (function () {
-                    var index = message.index
-                    var name  = message.name
-                    //console.log("Worker-Sub to " + name)
+                    var index = message.index;
+                    var name  = message.name;
+                    //console.log("Worker-Sub to " + name);
                     bespin.subscribe(name, function (event) {
                         var ret = {
                             index: index,
                             event: event
-                        }
+                        };
                         //console.log("To-Worker-Event: " + name + index)
-                        worker.postMessage(USE_GEARS ? ret : dojo.toJson(ret))
-                    })
-                    })()
+                        worker.postMessage(USE_GEARS ? ret : dojo.toJson(ret));
+                    });
+                    })();
                 }
                 else if(message.type == "publish") {
                     //console.log("From-Worker-Event: "+message.name)
-                    bespin.publish(message.name, message.event)
+                    bespin.publish(message.name, message.event);
                 }
                 else {
-                    throw message
-                    cb.call(this, event)
+                    throw message;
+                    cb.call(this, event);
                 }
 
-            }
+            };
             
             worker.onmessage = onmessage;
-            source = "// YOUcannotGuessMe\n" + source
+            source = "// YOUcannotGuessMe\n" + source;
             window.setTimeout(function() {
-                worker.postMessage(source)
-            },0)
-            workers.push(worker)
+                worker.postMessage(source);
+            },0);
+            workers.push(worker);
         }
-        return workers
+        return workers;
     },
 
     // create a shallow facade for object
@@ -239,22 +239,25 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
             if(prop.charAt(0) != "_") { // supposedly we dont need "private" methods. Delete if assumption is wrong
                 (function() { // make a lexical scope
                     var val    = obj[prop];
-                    var method = prop
+                    var method = prop;
                     if(typeof val == "function") { // functions are replaced with code to call the worker
                         facade[prop] = function() {
                              var self  = this;
-                             var index = CALL_INDEX++ // each call gets a globally unique index
+                             var index = CALL_INDEX++; // each call gets a globally unique index
                              var paras = Array.prototype.slice.call(arguments);
                              if(this.__hasWorkers__) {
                                  var data = {
                                      callIndex: index,
                                      method: method,
                                      paras:  paras
+                                 };
+                                 if(!USE_GEARS) {
+                                      // here we should really test whether our postMessage supports structured data. Safari 4 does not
+                                     data = dojo.toJson(data);
                                  }
-                                 if(!USE_GEARS) data = dojo.toJson(data) // here we should really test whether our postMessage supports structured data. Safari 4 does not
                                  // send the method to a worker
                                  // console.log("Contacting worker "+data)
-                                 this.__getWorker__().postMessage(data)
+                                 this.__getWorker__().postMessage(data);
                              } else {
                                  // No worker implementation available. Use an async call using
                                  // setTimeout instead
@@ -262,11 +265,11 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                                  window.setTimeout(function() {
                                      var retVal = self.__obj__[method].apply(self.__obj__, paras);
                                      var callback = self.__callbacks__[index];
-                                     delete self.__callbacks__[index]
+                                     delete self.__callbacks__[index];
                                      if(callback) {
-                                         callback(retVal)
+                                         callback(retVal);
                                      }
-                                 }, 0)
+                                 }, 0);
                              }
                              // Return an object to create a "fluid-interface" style callback generator
                              // callback will be applied against context
@@ -274,27 +277,27 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                              // paras is an array of extra paras for the callback
                              return {
                                  and: function(context, mutex, paras, callback) {
-                                     var func = arguments[arguments.length - 1] // always the last para
+                                     var func = arguments[arguments.length - 1]; // always the last para
                                      if(mutex instanceof bespin.worker.Mutex) {
-                                         mutex.start()
+                                         mutex.start();
                                          func = function() {
-                                             callback.apply(this, arguments)
-                                             mutex.stop()
-                                         }
+                                             callback.apply(this, arguments);
+                                             mutex.stop();
+                                         };
                                      }
 
                                      self.__callbacks__[index] = function() {
-                                         paras = Array.prototype.slice.call(arguments).concat(paras)
-                                         func.apply(context, paras)
-                                     }
+                                         paras = Array.prototype.slice.call(arguments).concat(paras);
+                                         func.apply(context, paras);
+                                     };
                                  }
-                             }
-                        }
+                             };
+                        };
                     }
                     else {
                         // put instance vars here, too?
                     }
-                })()
+                })();
             }
         }
     },
@@ -304,15 +307,15 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         for(var i in obj) {
             var val = obj[i];
             if(typeof val == "function") {
-                return true
+                return true;
             }
             if(val && typeof val == "object") {
                 if(this.hasFunctions(val)) {
-                    return true
+                    return true;
                 }
             }
         }
-        return false
+        return false;
     },
 
     // Recursively turn a JS object into its source including functions
@@ -321,27 +324,27 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         
         var isArray = dojo.isArray(obj);
         
-        var source = isArray ? "[\n" : "{\n"
+        var source = isArray ? "[\n" : "{\n";
 
         for(var prop in obj) {
             // console.log("Serializing "+prop);
             (function() { // lexical scope
                 if(prop == "_constructor") { // workaround for unserializable method in dojo
-                    return                   // maybe replace with test for [native code] in string
+                    return;                  // maybe replace with test for [native code] in string
                 }
                 var val    = obj[prop];
-                var method = prop
-                var src = ""
+                var method = prop;
+                var src = "";
                 if(typeof val == "function") { // serialize function to their string representation
                     src = val.toString();      // toSource() might be better but toString insert nice line breaks
                 }
                 // if val is an object that included functions we need to call ourselves recursively
                 else if(val && typeof val == "object" && self.hasFunctions(val)) {
-                    src = self.serializeToPortableSource(val)
+                    src = self.serializeToPortableSource(val);
                 }
                 // everything else is turned into JSON
                 else {
-                    src = dojo.toJson(val)
+                    src = dojo.toJson(val);
                 }
 
                 // Make sure to encode the property so nobody can insert arbitrary string into our JS
@@ -349,8 +352,8 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 
                 source += isArray ? "" : prop+": ";        
                 
-                source += src+",\n"
-            })()
+                source += src+",\n";
+            })();
         }
 
         source += isArray ? "]\n" : "}\n";
@@ -360,23 +363,23 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
 
     createWorkerSource: function(obj, libs) {
         var con = function(msg) {
-            postMessage("log="+msg)
-        }
-        var source = ""
+            postMessage("log="+msg);
+        };
+        var source = "";
 
         if(libs) {
             var quoted = [];
             dojo.forEach(libs, function(lib) {
-                quoted.push("'"+lib+"'")
-            })
-            source += "importScripts("+quoted.join(", ")+");\n"
+                quoted.push("'"+lib+"'");
+            });
+            source += "importScripts("+quoted.join(", ")+");\n";
         }
 
         source += "var theObject = "+this.serializeToPortableSource(obj);
 
-        //console.log(source)
+        //console.log(source);
 
-        return source
+        return source;
     }
 
 });
@@ -393,34 +396,34 @@ dojo.declare("bespin.worker.Mutex", null, {
         this.name  = name;
         this.count = 0;
         this.afterJobs = [];
-        this.options   = options || {}
+        this.options   = options || {};
     },
     start: function() {
-        this.count = this.count + 1
+        this.count = this.count + 1;
     },
     stop: function() {
-        this.count = this.count - 1
+        this.count = this.count - 1;
         if(this.count == 0) {
             if(this.options.onlyLast) {
                 var last = this.afterJobs[this.afterJobs.length-1];
                 if(last) {
-                    last()
+                    last();
                 }
             } else {
                 for(var i = 0; i < this.afterJobs.length; ++i) {
                     var job = this.afterJobs[i];
-                    job()
+                    job();
                 }
             }
-            this.afterJobs = []
+            this.afterJobs = [];
         }
     },
     after: function(context, func) {
         this.afterJobs.push(function() {
-            func.call(context)
-        })
+            func.call(context);
+        });
     }
-})
+});
 
 // Copyright 2007, Google Inc.
 //
@@ -509,5 +512,5 @@ function BespinGearsInitializeGears() {
   }
 }
 
-})()
+})();
 
