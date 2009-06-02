@@ -1098,12 +1098,10 @@ bespin.cmd.commands.add({
 // ** {{{Command: codecomplete}}} **
 bespin.cmd.commands.add({
     name: 'complete',
-    //aliases: ['new'],
-    takes: ['startsWith'],
     preview: 'auto complete a piece of code',
     completeText: 'enter the start of the string',
-    withKey: "CTRL SPACE",
-    execute: function(commandLine, args) {
+    withKey: "SHIFT SPACE",
+    execute: function(self, args) {
         console.log("Complete")
     }
 });

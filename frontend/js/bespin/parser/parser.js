@@ -111,6 +111,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             self.foldPoints = data.foldPoints;
             if (data.metaInfo) {
                 self.currentMetaInfo = data.metaInfo;
+                bespin.publish("parser:metainfo", {
+                    info: data.metaInfo
+                })
             }
             self._running = false;
         })
@@ -126,7 +129,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
         if (!self._started) {
             self._started = true;
-            self.fetch();
 
             self.run_timeout;
             var delay = 400;
@@ -158,6 +160,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 bespin.unsubscribe(onChange);
                 self._started = false;
             })
+            
+            // initial fetch
+            rerun()
         }
     },
 
@@ -260,8 +265,9 @@ dojo.declare("bespin.parser.JavaScript", null, {
     },
 
     getMetaInfo: function(tree) {
-        var funcs = [];
-        var info = [];
+        var funcs  = [];
+        var idents = {};
+        var info   = [];
         var codePatterns = this.getCodePatterns();
         // preprocess for speed
         for(var type in codePatterns) {
@@ -280,12 +286,26 @@ dojo.declare("bespin.parser.JavaScript", null, {
 
         var FUNCTION = 74; // from narcissus
         var OBJECT_LITERAL_KEY = 56;
+        var IDENTIFIER = 56;
 
         this.walk(tree, function(node, parentStack, indexStack) {
             var depth = parentStack.length;
             var tree  = parentStack.top();
             var index = indexStack.top();
             var row   = node.lineno - 1;
+            
+            var identifiers = [];
+            if(node.type == IDENTIFIER && index > 0) {
+                identifiers.push(node.value);
+                
+                for(var i = index-1; i >= 0; --i) {
+                    var n = tree[i];
+                    if(n && n.type == IDENTIFIER) {
+                        identifiers.unshift(n.value)
+                    }
+                }
+            }
+            idents[identifiers.join(".")] = true
 
             // find function
             if (node.type == FUNCTION) {
@@ -380,8 +400,11 @@ dojo.declare("bespin.parser.JavaScript", null, {
         }
         html += '</div>';
 
+        //console.log(tree)
+        
         return {
             functions: funcs,
+            idents: idents,
             outline:   info,
             html: html
         }
