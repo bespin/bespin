@@ -85,6 +85,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 }, dojo.body());
             });
         }
+        // * When currentSlice is null, we are not visible, there are slices
+        // for all the other states
         this.currentSlice = null;
 
         // * Load the menu border images
@@ -123,7 +125,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // * Show slices properly
         dojo.connect(this.canvas, 'keydown', function(e) {
-            if (self.currentSlice == null) return;
+            if (self.currentSlice == null) {
+                // The popup keyboard handling is done in commandline.js. Ug
+                return;
+            }
 
             if (self.keyRunsMe(e)) {
                 self.show();
@@ -138,7 +143,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
-                    self.showSlice(slice);
+                    self.show(slice);
                     dojo.stopEvent(e);
                     return;
                 }
@@ -160,7 +165,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
                 var degrees = self.angle(p.x, p.y);
 
-                self.showSlice(self.slice(degrees));
+                self.show(self.slice(degrees));
             }
         });
     },
@@ -173,6 +178,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         topMargin: 10,
         leftMargin: 60,
         rightMargin: 60,
+    },
+
+    // == Is this event a 'show pie' event?
+    keyRunsMe: function(e) {
+        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
     // == Objects that control each of the slices ==
@@ -285,11 +295,65 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     },
 
     // == Show a specific slice ==
-    showSlice: function(slice) {
+    // Animate the opening if needed
+    show: function(slice) {
+        // The default slice is the unselected slice
+        if (slice == null) slice = this.slices.off;
+
+        // No change needed
         if (this.currentSlice == slice) return;
-        if (this.currentSlice) this.unrenderCurrentSlice();
-        this.currentSlice = slice;
-        this.renderCurrentSlice();
+
+        // If there is already a slice showing, just show that, and don't
+        // bother with any animation
+        if (this.currentSlice) {
+            this.unrenderCurrentSlice();
+            this.currentSlice = slice;
+            this.renderCurrentSlice();
+            return;
+        }
+
+        this.canvas.style.display = 'block';
+        this.canvas.focus();
+
+        var self = this;
+        dojo.fadeIn({
+            node: { style:{} },
+            duration: 500,
+            easing: dojo.fx.easing.backOut,
+            onAnimate: function(values) {
+                var progress = values.opacity;
+                self.renderPie(progress);
+            },
+            onEnd: function() {
+                self.canvas.focus();
+                self.currentSlice = slice;
+                self.renderCurrentSlice();
+            }
+        }).play();
+    },
+
+    // == Begin a hide animation ==
+    hide: function() {
+        this.unrenderCurrentSlice();
+
+        if (!this.hideAnimation) {
+            var self = this;
+            this.hideAnimation = dojo.fadeIn({
+                node: { style: {} },
+                duration: 400,
+                easing: dojo.fx.easing.backIn,
+                onAnimate: function(values) {
+                    var progress = Math.max(1 - values.opacity, 0);
+                    self.renderPie(progress);
+                },
+                onEnd: function() {
+                    self.canvas.style.display = 'none';
+                    self.currentSlice = null;
+                    bespin.get("editor").setFocus(true);
+                },
+            });
+        }
+        this.hideAnimation.play();
     },
 
     // == Toggle whether the pie menu is visible ==
@@ -312,57 +376,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.canvas.style.display = 'block';
 
         this.renderCurrentSlice();
-    },
-
-    // == Begin a show animation ==
-    show: function(withSlice) {
-        var self = this;
-
-        this.canvas.style.display = 'block';
-        this.canvas.focus();
-
-        if (!this.showAnimation) this.showAnimation = dojo.fadeIn({
-            node: {
-                style:{}
-            },
-            duration: 500,
-            easing: dojo.fx.easing.backOut,
-            onAnimate: function(values) {
-                var progress = values.opacity;
-                self.renderPie(progress);
-            },
-            onEnd: function() {
-                self.canvas.focus();
-                self.currentSlice = self.slices.off;
-                if (withSlice) self.showSlice(withSlice);
-            }
-        });
-
-        this.showAnimation.play();
-    },
-
-    // == Begin a hide animation ==
-    hide: function() {
-        this.unrenderCurrentSlice();
-
-        var self = this;
-        if (!this.hideAnimation) this.hideAnimation = dojo.fadeIn({
-            node: {
-                style: {}
-            },
-            duration: 400,
-            easing: dojo.fx.easing.backIn,
-            onAnimate: function(values) {
-                var progress = Math.max(1 - values.opacity, 0);
-                self.renderPie(progress);
-            },
-            onEnd: function() {
-                self.canvas.style.display = 'none';
-                self.currentSlice = null;
-                bespin.get("editor").setFocus(true);
-            },
-        });
-        this.hideAnimation.play();
     },
 
     // == Calculate the top left X and Y coordinates of the pie ==
@@ -552,12 +565,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             left += button.img.width + 5;
         }, this);
 
-        // * Close Button
-        dojo.style(this.closer, {
-            display: 'block',
-            top: (this.settings.topMargin + this.settings.canvasTop + 27) + "px",
-            left: (d.rightLeft - 16) + "px"
-        });
+        if (this.currentSlice != this.slices.off) {
+            // * Close Button
+            dojo.style(this.closer, {
+                display: 'block',
+                top: (this.settings.topMargin + this.settings.canvasTop + 27) + "px",
+                left: (d.rightLeft - 16) + "px"
+            });
+        }
     },
 
     // == Unrender the toolbar for this slice ==
@@ -569,10 +584,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         dojo.style(this.closer, 'display', 'none');
-    },
-
-    keyRunsMe: function(e) {
-        return (e.charCode == 'm'.charCodeAt() && e.ctrlKey && !e.altKey && !e.shiftKey);
     },
 
     // == Take the center pie point and migrate the clicked point to be relative to the center ==
@@ -604,3 +615,4 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
     }
 });
+

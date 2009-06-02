@@ -800,7 +800,7 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 this.hideHint();
                 var piemenu = bespin.get("piemenu");
-                piemenu.showSlice(piemenu.slices.off);
+                piemenu.show(piemenu.slices.off);
 
                 return false;
             }
