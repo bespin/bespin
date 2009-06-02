@@ -25,11 +25,11 @@ class QueueItem(object):
         self.job = job
         self.use_db = use_db
         self.session = None
-        
+
     def run(self):
         execute = self.execute
         execute = _resolve_function(execute)
-        
+
         use_db = self.use_db
         if use_db:
             session = config.c.session_factory()
@@ -42,11 +42,11 @@ class QueueItem(object):
             if use_db:
                 session.rollback()
                 session.close()
-            
+
                 # get a fresh session for the error handler to use
                 session = config.c.session_factory()
                 self.session = session
-                
+
             try:
                 self.error(e)
                 if use_db:
@@ -58,32 +58,32 @@ class QueueItem(object):
         finally:
             if use_db:
                 session.close()
-        
+
     def error(self, e):
         error_handler = self.error_handler
         error_handler = _resolve_function(error_handler)
         error_handler(self, e)
-    
+
     def done(self):
         if self.job:
             self.job.delete()
 
 class BeanstalkQueue(object):
     """Manages Bespin jobs within a beanstalkd server.
-    
+
     http://xph.us/software/beanstalkd/
-    
+
     The client library used is beanstalkc:
-    
+
     http://github.com/earl/beanstalkc/tree/master
     """
-    
+
     def __init__(self, host, port):
         if host is None or port is None:
             self.conn = beanstalkc.Connection()
         else:
             self.conn = beanstalkc.Connection(host=host, port=port)
-                                        
+
     def enqueue(self, name, message, execute, error_handler, use_db):
         message['__execute'] = execute
         message['__error_handler'] = error_handler
@@ -92,12 +92,12 @@ class BeanstalkQueue(object):
         c.use(name)
         id = c.put(simplejson.dumps(message))
         return id
-    
+
     def read_queue(self, name):
         c = self.conn
         log.debug("Starting to read %s on %s", name, c)
         c.watch(name)
-        
+
         while True:
             log.debug("Reserving next job")
             item = c.reserve()
@@ -107,14 +107,14 @@ class BeanstalkQueue(object):
                 execute = message.pop('__execute')
                 error_handler = message.pop('__error_handler')
                 use_db = message.pop('__use_db')
-                qi = QueueItem(item.jid, name, message, 
+                qi = QueueItem(item.jid, name, message,
                                 execute, error_handler=error_handler,
                                 job=item, use_db=use_db)
                 yield qi
-            
+
     def close(self):
         self.conn.close()
-        
+
 def _resolve_function(namestring):
     modulename, funcname = namestring.split(":")
     module = __import__(modulename, fromlist=[funcname])
@@ -122,30 +122,30 @@ def _resolve_function(namestring):
 
 def enqueue(queue_name, message, execute, error_handler=None, use_db=True):
     if config.c.queue:
-        id = config.c.queue.enqueue(queue_name, message, execute, 
+        id = config.c.queue.enqueue(queue_name, message, execute,
                                     error_handler, use_db)
         return id
     else:
-        qi = QueueItem(None, queue_name, message, execute, 
+        qi = QueueItem(None, queue_name, message, execute,
                         error_handler=error_handler, use_db=use_db)
-        qi.run()
-    
+        return qi.run()
+
 def process_queue(args=None):
     log.info("Bespin queue worker")
     if args is None:
         args = sys.argv[1:]
-        
+
     if args:
         config.set_profile(args.pop(0))
     else:
         config.set_profile("dev")
         config.c.async_jobs=True
-    
+
     if args:
         config.load_config(args.pop(0))
-    
+
     config.activate_profile()
-    
+
     bq = config.c.queue
     log.debug("Queue: %s", bq)
     for qi in bq.read_queue("vcs"):
@@ -153,4 +153,4 @@ def process_queue(args=None):
         log.debug("Message: %s", qi.message)
         qi.run()
         qi.done()
-        
+
