@@ -109,5 +109,19 @@ dojo.mixin(bespin.debug, {
             content: dojo.toJson(this.breakpoints),
             timestamp: new Date().getTime()
         });
+    },
+    
+    showDebugBar: function() {
+        var el = dojo.byId('centerpopup');
+        
+        el.innerHTML = '<div style="background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto"><a onclick="bespin.publish(\'debugger:break\', {});">Break</a> <a onclick="bespin.publish(\'debugger:continue\', {});">Continue</a><a onclick="bespin.util.webpieces.hideCenterPopup(dojo.byId(\'centerpopup\'))">Close</a></div>';
+        oldwidth = el.style.width;
+        oldheight = el.style.height;
+        el.style.width = "80%";
+        el.style.height = "80%";
+        dojo.require("dijit._base.place");
+        dojo.require("bespin.util.webpieces");
+
+        bespin.util.webpieces.showCenterPopup(el);
     }
 });
