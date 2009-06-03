@@ -133,7 +133,12 @@ dojo.declare("bespin.client.settings.Core", null, {
     },
 
     getObject: function(key) {
-        return dojo.fromJson(this.get(key));
+        try {
+            return dojo.fromJson(this.get(key));
+        } catch(e) {
+            console.log("Error in getObject: " + e)
+            return {}
+        }
     },
 
     unset: function(key) {
