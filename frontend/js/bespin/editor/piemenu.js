@@ -177,7 +177,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // * How much space do we leave around the opened slices?
         topMargin: 10,
         leftMargin: 60,
-        rightMargin: 60,
+        rightMargin: 60
     },
 
     // == Is this event a 'show pie' event?
@@ -217,7 +217,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     onclick: function() {
                         bespin.get("commandLine").toggleHistoryTimeMode();
                     }
-                },
+                }
                 /*
                 {
                     icon: "images/plus.png",
@@ -350,7 +350,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     self.canvas.style.display = 'none';
                     self.currentSlice = null;
                     bespin.get("editor").setFocus(true);
-                },
+                }
             });
         }
         this.hideAnimation.play();
