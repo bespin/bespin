@@ -32,7 +32,7 @@ dojo.require("bespin.cmd.dashboardcommands");
 bespin.social.displayFollowers = function(followers) {
     var message = "Following: " + followers.join(", ");
     bespin.publish("message:output", { msg:message });
-}
+};
 
 // =============================================================================
 // = Follow =
@@ -230,7 +230,7 @@ bespin.subscribe("groups:list", function(group) {
         onSuccess: function(data) {
             var members = dojo.fromJson(data);
             if (members.length == 0) {
-                console.warn("Group " + group + " has no members - it should have been auto-deleted!")
+                console.warn("Group " + group + " has no members - it should have been auto-deleted!");
                 bespin.publish("message:output", { msg: "" + group + " has no members." });
             }
             else {
