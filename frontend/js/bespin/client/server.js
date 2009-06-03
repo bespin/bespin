@@ -37,7 +37,10 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{base}}} is the base server URL to access
     constructor: function(base) {
         this.SERVER_BASE_URL = base || '.';
-        this._asyncCount = 0;
+
+        // Stores the outstanding asynchronous tasks that we've submitted
+        this._jobs = {};
+        this._jobsCount = 0;
     },
 
     // == Helpers ==
@@ -81,11 +84,6 @@ dojo.declare("bespin.client.Server", null, {
                             } catch (syntaxException) {
                                 console.log("Couldn't eval the JSON: " + response + " (SyntaxError: " + syntaxException + ")");
                             }
-
-                            if (options.serverAsync && response.taskname) {
-                                bespin.publish("message:hint",
-                                    { msg: "Server is running : " + response.taskname });
-                            }
                         }
 
                         if (dojo.isFunction(options['onSuccess'])) {
@@ -121,9 +119,6 @@ dojo.declare("bespin.client.Server", null, {
                     }
                 }
             }
-            if (options.serverAsync) {
-                server.asyncStarted();
-            }
             xhr.send(payload);
         } else {
             var fullUrl = this.SERVER_BASE_URL + url;
@@ -144,6 +139,126 @@ dojo.declare("bespin.client.Server", null, {
         return pass;
     },
 
+    // ** {{{ requestDisconnected() }}}
+    // As request() except that the response is fetched without a connection,
+    // instead using the /messages URL
+    requestDisconnected: function(method, url, payload, options) {
+        var self = this;
+        if (!options.evalJSON) {
+            console.error("Disconnected calls must use JSON");
+        }
+        options.evalJSON = true;
+
+        // The response that we get from the server isn't a 'done it' response
+        // any more - it's just a 'working on it' response.
+        options.originalOnSuccess = options.onSuccess;
+        options.onSuccess = function(response, xhr) {
+            if (response.jobid == null) {
+                console.error("Missing jobid", response);
+                options.onFailure(xhr);
+                return;
+            }
+
+            if (response.taskname) {
+                bespin.publish("message:output", { incomplete:true, msg: "Server is running : " + response.taskname });
+            }
+
+            self._jobs[response.jobid] = {
+                jobid: response.jobid,
+                options: options
+            };
+            self._jobsCount++;
+            self._checkPolling();
+        };
+
+        this.request(method, url, payload, options);
+    },
+
+    // ** {{{ _checkPolling() }}}
+    // Do we need to set off another poll?
+    _checkPolling: function() {
+        if (this._jobsCount == 0) return;
+        if (this._timeout != null) return;
+
+        this._poll();
+    },
+
+    _processResponse: function(message) {
+        var eventName = message.eventName;
+        if (eventName) {
+            bespin.publish(eventName, message);
+        }
+
+        var jobid = message.jobid;
+        if (jobid) {
+            var job = this._jobs[jobid];
+            if (!job) {
+                throw new Error("Unknown jobid: " + jobid);
+            }
+
+            delete this._jobs[jobid];
+
+            if (message.asyncDone) {
+                if (dojo.isArray(job.partials)) {
+                    // We're done, and we've got outstanding messages
+                    // that we need to pass on. We aggregate the
+                    // messages and call onSuccess
+                    //
+                    // TODO: I'm not sure that this is how we combine
+                    // the messages
+                    job.partials.push(message.message);
+                    job.options.onSuccess(job.partials);
+                } else {
+                    // We're done, and all we have is what we've just
+                    // been sent, so just call onSuccess
+                    job.options.onSuccess(message.message);
+                }
+            }
+            else {
+                if (dojo.isFunction(job.options.onPartial)) {
+                    // In progress, and we have somewhere to send the
+                    // messages that we've just been sent
+                    job.options.onPartial(message.message);
+                } else {
+                    // In progress, and no-where to send the messages,
+                    // so we store them for onSuccess when we're done
+                    job.partials.push(message.message);
+                }
+            }
+        }
+
+        if (message.asyncDone) {
+            if (this._jobsCount > 0) {
+                this._jobsCount--;
+            }
+        }
+    },
+
+    // ** {{{ _poll() }}}
+    // Starts up message retrieve for this user. Call this only once.
+    _poll: function() {
+        var self = this;
+        this.request('POST', '/messages/', null, {
+            evalJSON: true,
+            onSuccess: function(messages) {
+                for (var i=0; i < messages.length; i++) {
+                    self._processResponse(messages[i]);
+                }
+
+                setTimeout(function() {
+                    self._checkPolling();
+                }, 1000);
+            },
+            onFailure: function(message) {
+                self._processResponse(message);
+
+                setTimeout(function() {
+                    self._checkPolling();
+                }, 1000);
+            }
+        });
+    },
+
     // ** {{{ fetchResource() }}}
     //
     // Generic system to read resources from a URL and return the read data to
@@ -153,33 +268,6 @@ dojo.declare("bespin.client.Server", null, {
             onSuccess: onSuccess,
             onFailure: onFailure
         });
-    },
-
-    // ** {{{ asyncStarted() }}}
-    //
-    // Keeps track of jobs that are asynchronous on the server, so
-    // that we know when we need to check for messages from the
-    // server.
-    asyncStarted: function() {
-        console.log("Starting new server-side async job.");
-        if (this._asyncCount == 0) {
-            this.processMessages();
-        }
-        this._asyncCount++;
-        console.log("Count is now " + this._asyncCount);
-    },
-
-    // ** {{{ asyncEnded() }}}
-    //
-    // Keeps track of the end of jobs that are asynchronous on the server, so
-    // that we know when we can stop checking for messages from the
-    // server.
-    asyncEnded: function() {
-        console.log("Server-side async job done.");
-        if (this._asyncCount > 0) {
-            this._asyncCount--;
-        }
-        console.log("Count is now " + this._asyncCount);
     },
 
     // == USER ==
@@ -211,14 +299,16 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{onSuccess}}} fires when the user is logged in
     // * {{{notloggedin}}} fires when not logged in
     // * {{{userconflict}}} fires when the username exists
-	signup: function(user, pass, email, onSuccess, notloggedin, userconflict) {
+    signup: function(user, pass, email, onSuccess, notloggedin, userconflict) {
         var url = "/register/new/" + user;
-        this.request('POST', url,
-			"password=" + escape(pass) + "&email=" + escape(email), {
-			onSuccess: onSuccess, on401: notloggedin, on409: userconflict,
-			log: 'Login complete.'
-		});
-	},
+        var data = "password=" + escape(pass) + "&email=" + escape(email);
+        this.request('POST', url, data, {
+            onSuccess: onSuccess,
+            on401: notloggedin,
+            on409: userconflict,
+            log: 'Login complete.'
+        });
+    },
 
     // ** {{{ logout(onSuccess) }}}
     //
@@ -556,114 +646,14 @@ dojo.declare("bespin.client.Server", null, {
         this.request('DELETE', '/settings/' + name, null, { onSuccess: (onSuccess || function(){}) });
     },
 
-    // ** {{{ vcs() }}}
-    // Run a Version Control System (VCS) command
-    // The command object should have a command attribute
-    // on it that is a list of the arguments.
-    // Commands that require authentication should also
-    // have kcpass, which is a string containing the user's
-    // keychain password.
-    vcs: function(project, command, opts) {
-        opts = opts || {};
-        opts.serverAsync = true;
-        this.request('POST', '/vcs/command/' + project + '/',
-                     dojo.toJson(command),
-                     opts);
-    },
-
-    // ** {{{ clone() }}}
-    // Clone a remote repository
-    clone: function(data, opts) {
-        opts = opts || {};
-        opts.serverAsync = true;
-        this.request('POST', '/vcs/clone/',
-                    data, opts);
-    },
-
-    // ** {{{ setauth() }}}
-    // Sets authentication for a project
-    setauth: function(project, form, opts) {
-        this.request('POST', '/vcs/setauth/' + project + '/',
-                    dojo.formToQuery(form), opts || {});
-    },
-
-    // ** {{{ getkey() }}}
-    // Retrieves the user's SSH public key that can be used for VCS functions
-    getkey: function(kcpass, opts) {
-        if (kcpass == null) {
-            this.request('POST', '/vcs/getkey/', null, opts || {});
-        } else {
-            this.request('POST', '/vcs/getkey/', "kcpass=" + escape(kcpass), opts || {});
-        }
-    },
-
-    // ** {{{ remoteauth() }}}
-    // Finds out if the given project requires remote authentication
-    // the values returned are "", "both" (for read and write), "write"
-    // when only writes require authentication
-    // the result is published as an object with project, remoteauth
-    // values to vcs:remoteauthUpdate and sent to the callback.
-    remoteauth: function(project, callback) {
-        this.request('GET', '/vcs/remoteauth/' + escape(project) + '/',
-            null,
-            {
-                onSuccess: function(result) {
-                    var event = {
-                        project: project,
-                        remoteauth: result
-                    };
-                    bespin.publish("vcs:remoteauthUpdate", event);
-                    callback(result);
-                }
-            }
-        );
-    },
-
-    // ** {{{ processMessages() }}}
-    // Starts up message retrieve for this user. Call this only once.
-    processMessages: function() {
-        console.log("Message processing starting");
-        var server = this;
-        function doProcessMessages() {
-            server.request('POST', '/messages/', null,
-                {
-                    evalJSON: true,
-                    onSuccess: function(messages) {
-                        for (var i=0; i < messages.length; i++) {
-                            var message = messages[i];
-                            var eventName = message.eventName;
-                            if (eventName) {
-                                bespin.publish(eventName, message);
-                            }
-                            if (message.asyncDone) {
-                                server.asyncEnded();
-                            }
-                        }
-                        if (server._asyncCount > 0) {
-                            setTimeout(doProcessMessages, 1000);
-                        }
-                    },
-                    onFailure: function(message) {
-                        if (message.asyncDone) {
-                            server.asyncEnded();
-                        }
-                        if (server._asyncCount > 0) {
-                            setTimeout(doProcessMessages, 1000);
-                        }
-                    }
-                });
-        }
-        doProcessMessages();
-    },
-
-    // ** {{{ processMessages() }}}
+    // ** {{{ fileTemplate() }}}
     // Starts up message retrieve for this user. Call this only once.
     fileTemplate: function(project, path, templateOptions, opts) {
         var url = bespin.util.path.combine('/file/template', project, path);
         this.request('PUT', url,
                     dojo.toJson(templateOptions), opts || {});
     },
-    
+
     // ** {{{ projectTemplate() }}}
     // Create a new project based on a template. templateOptions
     // must include templateName to specify which template to use.

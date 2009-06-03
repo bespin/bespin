@@ -227,7 +227,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Hint ==
     // Hints are displayed while typing. They are transient and ignorable
     showHint: function(html) {
-        dojo.attr(this.commandHint, { innerHTML: html })
+        dojo.attr(this.commandHint, { innerHTML: html });
         dojo.style(this.commandHint, "display", "block");
 
         if (this.hintTimeout) clearTimeout(this.hintTimeout);
@@ -259,7 +259,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         dojo.style(this.commandHint, {
             left: left + "px",
             bottom: (bottom + footerHeight + 2) + "px",
-            width: width + "px",
+            width: width + "px"
         });
 
         dojo.style(this.output, {
@@ -267,7 +267,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             bottom: (bottom + footerHeight + 5) + "px",
             width: (width + 40) + "px",
             height: (height + 25) + "px",
-            display: "block",
+            display: "block"
         });
 
         this.maxInfoHeight = height;
@@ -282,28 +282,31 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     // == Add Output ==
-    // Add some html to the currently executing command
+    // Complete the currently executing command with successful output
     addOutput: function(html) {
-        if (this.executing) {
-            // TODO: Should we append ???
-            this.executing.setOutput(html);
-            this.executing.hideOutput = false;
-        } else {
-            console.trace();
-            console.debug("orphan output:", html);
-        }
-
-        this.hideHint();
-        this.updateOutput();
-        this.scrollConsole();
+        this._addOutput(html, false, true);
     },
 
     // == Add Error Output ==
+    // Complete the currently executing command with error output
     addErrorOutput: function(html) {
+        this._addOutput(html, true, true);
+    },
+
+    // == Add Incomplete Output ==
+    // Add output to the currently executing command with successful output
+    addIncompleteOutput: function(html) {
+        this._addOutput(html, false, false);
+    },
+
+    // == Add Incomplete Output ==
+    // Complete the currently executing command with successful output
+    _addOutput: function(html, error, complete) {
         if (this.executing) {
-            // TODO: Should we append ???
-            this.executing.setOutput(html);
-            this.executing.error = true;
+            this.executing.addOutput(html, complete);
+            this.executing.hideOutput = false;
+            this.executing.error = error;
+            this.executing.complete = complete;
         } else {
             console.trace();
             console.debug("orphan output:", html);
@@ -431,12 +434,16 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
                 // The row for the output (if required)
                 if (!instruction.hideOutput) {
+                    var contents = instruction.output || "";
+                    if (!instruction.complete) {
+                        contents += "<img src='/images/throbber.gif'/> Working ...";
+                    }
                     var rowout = dojo.create("tr", { className: 'command_rowout' }, table);
                     dojo.create("td", { }, rowout);
                     dojo.create("td", {
                         colSpan: 2,
                         className: (instruction.error ? "command_error" : ""),
-                        innerHTML: (instruction.output ? instruction.output : "<img src='/images/throbber.gif'/> Working ...") // FIXME: For the demo, throbber wasn't going away: "<img src='/images/throbber.gif'/> Working ...")
+                        innerHTML: contents
                     }, rowout);
                 }
             }
@@ -542,14 +549,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         try {
             if (instruction.error) {
-                bespin.get('commandLine').addErrorOutput(instruction.error);
+                bespin.get('commandLine').addOutput(instruction.error);
             } else {
                 instruction.command.execute(this, instruction.args, instruction.command);
             }
         }
         catch (ex) {
-            console.error(ex);
-            console.trace();
             bespin.get('commandLine').addErrorOutput(ex);
         }
         finally {
@@ -600,11 +605,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 dojo.declare("bespin.cmd.commandline.Instruction", null, {
     constructor: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
+        this.output = "";
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
         if (commandLine != null) {
             this.start = new Date();
+            this.complete = false;
 
             var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
@@ -612,15 +619,20 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 this.args = ca[1];
             }
         } else {
+            this.complete = true;
             this.historical = true;
         }
     },
 
     // == Set Output ==
     // On completion we finish a command by settings it's output
-    setOutput: function(output) {
-        this.output = output;
-        this.end = new Date();
+    addOutput: function(output, complete) {
+        this.output += output;
+        if (complete) {
+            this.end = new Date();
+        } else {
+            this.output += "<br/>";
+        }
     },
 
     // == Split Command and Args
@@ -654,6 +666,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 length++;
             }
 
+            // TODO: consider promoting this somewhere
             var linkup = function(exec) {
                 var script = "bespin.get(\"commandLine\").executeCommand(\"" + exec + "\");";
                 return "<a href='javascript:" + script + "'>" + exec + "</a>";
@@ -954,20 +967,42 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         //
         // message:output is good output for the console
         bespin.subscribe("message:output", function(event) {
-            if (event.msg) commandline.addOutput(event.msg);
+            if (!event.msg) {
+                console.warning("Empty msg in publish to message:output");
+                console.trace();
+                return;
+            }
+
+            if (event.incomplete) {
+                commandline.addIncompleteOutput(event.msg);
+            } else {
+                commandline.addOutput(event.msg);
+            }
         });
 
         // ** {{{ Event: message:output }}} **
         //
         // message:output is good output for the console
         bespin.subscribe("message:error", function(event) {
-            if (event.msg) commandline.addErrorOutput(event.msg);
+            if (!event.msg) {
+                console.warning("Empty msg in publish to message:error");
+                console.trace();
+                return;
+            }
+
+            commandline.addErrorOutput(event.msg);
         });
 
         // ** {{{ Event: message:output }}} **
         //
         // message:output is good output for the console
         bespin.subscribe("message:hint", function(event) {
+            if (!event.msg) {
+                console.warning("Empty msg in publish to message:hint");
+                console.trace();
+                return;
+            }
+
             if (event.msg) commandline.showHint(event.msg);
         });
 
@@ -1011,3 +1046,4 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         });
     }
 });
+
