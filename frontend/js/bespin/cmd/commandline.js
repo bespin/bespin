@@ -245,28 +245,27 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Output ==
     // Show the output area in the given display rectangle
     showOutput: function(left, bottom, width, height) {
-        // TODO: There are lots of magic numbers here. Sort them out
         dojo.style("footer", {
             left: left + "px",
-            width: (width + 40) + "px",
+            width: (width - 10) + "px",
             bottom: bottom + "px",
             display: "block"
         });
         dojo.byId("command").focus();
 
-        var footerHeight = dojo.style("footer", "height");
+        var footerHeight = dojo.style("footer", "height") + 2;
 
         dojo.style(this.commandHint, {
             left: left + "px",
-            bottom: (bottom + footerHeight + 2) + "px",
+            bottom: (bottom + footerHeight) + "px",
             width: width + "px"
         });
 
         dojo.style(this.output, {
             left: left + "px",
-            bottom: (bottom + footerHeight + 5) + "px",
-            width: (width + 40) + "px",
-            height: (height + 25) + "px",
+            bottom: (bottom + footerHeight) + "px",
+            width: width + "px",
+            height: height + "px",
             display: "block"
         });
 

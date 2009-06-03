@@ -195,8 +195,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             showContents: function(coords) {
                 var left = coords.l;
                 var bottom = this.piemenu.slices.off.img.height - 10;
-                var width = coords.w - 40; // TODO: why -50
-                var height = coords.h - 30; // TODO: why -30
+                var width = coords.w;
+                var height = coords.h;
 
                 bespin.get("commandLine").showOutput(left, bottom, width, height);
             },
@@ -437,10 +437,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // * Fill in the center section
         var dimensions = {
-            l: d.cenLeft,
-            // TODO: Why do we need to push it down 3 extra px?
-            t: (d.midTop + this.settings.canvasTop + 3),
-            w: d.cenWidth,
+            l: d.cenLeft - 5, // The LHS image has 5px of transparent
+            t: d.midTop + this.settings.canvasTop,
+            w: d.cenWidth + 10, // So does the RHS image have 5px
             h: d.midHeight
         };
         this.currentSlice.showContents(dimensions);
@@ -510,9 +509,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             // * Middle row
             this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // Was 0.4
-            this.ctx.fillRect(d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
-            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
             this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
+
+            // Draw the middle bit after so it doesn't get overridden
+            // The LHS and RHS both have 5px of inner transparent
+            this.ctx.fillRect(d.cenLeft - 5, d.midTop, d.cenWidth + 10, d.midHeight);
+            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
 
             // * Bottom row
             this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
