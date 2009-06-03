@@ -114,7 +114,7 @@ bespin.cmd.displayHelp = function(commandStore, commandLine, extra, morehelpoutp
         commands.push("</table>");
     }
     commandLine.addOutput(commands.join("") + (morehelpoutput || ""));
-}
+};
 
 // ** {{{Command: help}}} **
 bespin.cmd.commands.add({
@@ -150,7 +150,7 @@ bespin.cmd.commands.add({
             type = 'function';
         } else if (dojo.isObject(result)) {
             if (dojo.isArray(result)) {
-                type = 'array'
+                type = 'array';
             } else {
                 type = 'object';
             }
@@ -171,7 +171,7 @@ bespin.cmd.commands.add({
             }
 
             items.sort(function(a,b) {
-                return (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 1
+                return (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 1;
             });
 
             for (var x = 0; x < items.length; x++) {
@@ -614,48 +614,48 @@ bespin.cmd.commands.add({
 
 // ** {{{Command: goto}}} **
 (function () {
-var previewFull      = 'move it! make the editor head to a line number or a function name.';
-var preview          = 'move it! make the editor head to a line number.';
-var completeTextFull = 'add the line number to move to, or the name of a function in the file';
-var completeText     = 'add the line number to move to in the file';
-var gotoCmd = {
-    name: 'goto',
-    takes: ['value'],
-    preview: previewFull,
-    completeText: completeTextFull,
-    execute: function(commandLine, value) {
-        var settings = bespin.get("settings")
-        if (value) {
-            var linenum = parseInt(value, 10); // parse the line number as a decimal
-
-            if (isNaN(linenum)) { // it's not a number, so for now it is a function name
-                if(settings.isOn(settings.get("syntaxcheck"))) {
-                    bespin.publish("parser:gotofunction", {
-                        functionName: value
-                    });
+    var previewFull      = 'move it! make the editor head to a line number or a function name.';
+    var preview          = 'move it! make the editor head to a line number.';
+    var completeTextFull = 'add the line number to move to, or the name of a function in the file';
+    var completeText     = 'add the line number to move to in the file';
+    var gotoCmd = {
+        name: 'goto',
+        takes: ['value'],
+        preview: previewFull,
+        completeText: completeTextFull,
+        execute: function(commandLine, value) {
+            var settings = bespin.get("settings");
+            if (value) {
+                var linenum = parseInt(value, 10); // parse the line number as a decimal
+    
+                if (isNaN(linenum)) { // it's not a number, so for now it is a function name
+                    if(settings.isOn(settings.get("syntaxcheck"))) {
+                        bespin.publish("parser:gotofunction", {
+                            functionName: value
+                        });
+                    } else {
+                        bespin.publish("message:error", { msg: "Please enter a valid line number." });
+                    }
                 } else {
-                    bespin.publish("message:error", { msg: "Please enter a valid line number." })
+                    bespin.publish("editor:moveandcenter", {
+                        row: linenum
+                    });
                 }
-            } else {
-                bespin.publish("editor:moveandcenter", {
-                    row: linenum
-                });
             }
         }
-    }
-}
-bespin.cmd.commands.add(gotoCmd);
-bespin.subscribe("settings:set:syntaxcheck", function () {
-    var settings = bespin.get("settings")
-    if(settings.isOn(settings.get("syntaxcheck"))) {
-        gotoCmd.preview = previewFull;
-        gotoCmd.completeText = completeTextFull;
-    } else {
-        gotoCmd.preview = preview;
-        gotoCmd.completeText = completeText;
-    }
-})
-})()
+    };
+    bespin.cmd.commands.add(gotoCmd);
+    bespin.subscribe("settings:set:syntaxcheck", function () {
+        var settings = bespin.get("settings");
+        if(settings.isOn(settings.get("syntaxcheck"))) {
+            gotoCmd.preview = previewFull;
+            gotoCmd.completeText = completeTextFull;
+        } else {
+            gotoCmd.preview = preview;
+            gotoCmd.completeText = completeText;
+        }
+    });
+})();
 
 // ** {{{Command: replace}}} **
 bespin.cmd.commands.add({
@@ -1104,7 +1104,7 @@ bespin.cmd.commands.add({
     completeText: 'enter the start of the string',
     withKey: "CTRL SPACE",
     execute: function(commandLine, args) {
-        console.log("Complete")
+        console.log("Complete");
     }
 });
 

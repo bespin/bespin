@@ -62,7 +62,7 @@ dojo.provide("bespin.page.editor.init");
             if (footer.style.display == "block") {
                 move.push(footer);
             }
-            
+
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";
                 dojo.forEach(move, function(item) { item.style.right = "201px"; });
@@ -77,7 +77,7 @@ dojo.provide("bespin.page.editor.init");
                 target.style.display = "none";
             }
 
-            this.doResize();            
+            this.doResize();
         },
 
         // ** {{{ doResize() }}} **
@@ -113,21 +113,21 @@ dojo.provide("bespin.page.editor.init");
             bespin.get('settings').loadSession();  // load the last file or what is passed in
             bespin.page.editor.doResize();
         });
-        
+
         var whenLoggedIn = function(userinfo) {
             bespin.get('editSession').setUserinfo(userinfo);
 
             bespin.register('settings', new bespin.client.settings.Core());
             bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
-            
+
             if (userinfo.serverCapabilities) {
                 var sc = userinfo.serverCapabilities;
                 bespin.register("serverCapabilities", sc.capabilities);
-                
+
                 for (var packagename in sc.dojoModulePath) {
                     dojo.registerModulePath(packagename, sc.dojoModulePath[packagename]);
                 }
-                
+
                 // this is done to trick the build system which would
                 // try to find a module called "plugin" below.
                 var re = dojo.require;
@@ -135,9 +135,6 @@ dojo.provide("bespin.page.editor.init");
                     re.call(dojo, plugin);
                 });
             }
-            
-            // Set up message retrieval
-            server.processMessages();
 
             bespin.publish("authenticated");
         };
@@ -155,7 +152,7 @@ dojo.provide("bespin.page.editor.init");
         // START SEARCH BINDINGS
         // bind in things for search :)
         // some of the key-bindings go to the window object direct, to make them happen all over the window
-        dojo.connect(window, 'keydown', function(e) {           
+        dojo.connect(window, 'keydown', function(e) {
            if (e.keyCode == bespin.util.keys.Key.F && (e.metaKey || e.altKey)) {
                bespin.get('actions').toggleFilesearch();
                dojo.stopEvent(e);
@@ -168,11 +165,11 @@ dojo.provide("bespin.page.editor.init");
                dojo.stopEvent(e);
            }
        });
-               
+
         // // Handle Enter & Escape
-        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {            
+        dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
             var key = bespin.util.keys.Key;
-           
+
             if (e.keyCode == key.ESCAPE) {
                 dojo.byId('searchresult').style.display = 'none';
                 dojo.byId('searchquery').blur();
@@ -183,24 +180,24 @@ dojo.provide("bespin.page.editor.init");
                 dojo.stopEvent(e);
             }
         });
-        
+
         // preform a new search after a character has been added to the searchquery-input-field
         dojo.connect(dojo.byId('searchquery'), 'keypress', function(e) {
-            var key = bespin.util.keys.Key;    
+            var key = bespin.util.keys.Key;
             var isOkay = false;
-                
+
             // check to let only some keys perform a new search!
             if (key.ENTER == e.keyCode) return;
             if ((e.charCode == 103 /* where does 103 come from???*/ || e.charCode == key.G) && (e.metaKey || e.altKey)) return;
             if ([key.BACKSPACE, key.DELETE].indexOf(e.keyCode) != -1) isOkay = true;
             if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1)  isOkay = true;
             if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) isOkay = true;
-        
+
             if (!isOkay) {
                 // the key was not a character!
                 return;
             }
-                
+
             // perform a search only each 300ms
             var ui = bespin.get('editor').ui;
             if (ui.serachTimeout) {
@@ -208,43 +205,43 @@ dojo.provide("bespin.page.editor.init");
             }
             ui.serachTimeout = setTimeout(dojo.hitch(ui, function () {
                 this.actions.startSearch(dojo.byId('searchquery').value, 'toolbar');
-            }), 300);   
+            }), 300);
         });
-        
+
         // handle things when search field get focused
         dojo.connect(dojo.byId('searchquery'), 'focus', function(e) {
             bespin.get('editor').setFocus(false);
             dojo.byId('searchquery').select();
         });
-        
+
         // little helper function ;)
         function addButtonEvents(elm, filename, clickFunc) {
             dojo.connect(elm, 'mouseover', function() {
                 elm.src = "images/" + filename + "_on.png";
             });
-        
+
             dojo.connect(elm, 'mouseout', function() {
                 elm.src = "images/" + filename + ".png";
             });
-            
+
             dojo.connect(elm, 'click', clickFunc);
         }
-        
+
         // stuff for the buttons
         addButtonEvents(dojo.byId('searchprev'), 'button_left', function() {
             bespin.get('actions').findPrev();
         });
-        
+
         addButtonEvents(dojo.byId('searchnext'), 'button_right', function() {
-            bespin.get('actions').findNext();    
+            bespin.get('actions').findNext();
         });
-        
+
         addButtonEvents(dojo.byId('searchdone'), 'button_done', function() {
             dojo.byId('searchresult').style.display = 'none';
             bespin.get('editor').setFocus(true);
             dojo.byId('searchquery').blur();
         });
-        
+
         // END SEARCH BINDINGS
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
@@ -292,20 +289,20 @@ dojo.provide("bespin.page.editor.init");
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **
-    // 
+    //
     // When a file is opened successfully change the project and file status area.
     // Then change the window title, and change the URL hash area
     bespin.subscribe("editor:openfile:opensuccess", function(event) {
-        var project = event.project || bespin.get('editSession').project; 
+        var project = event.project || bespin.get('editSession').project;
         var filename = event.file.name;
 
         projectLabel.attributes.text = project;
         fileLabel.attributes.text = filename;
         scene.render();
     });
-    
+
     // ** {{{ Event: editor:dirty }}} **
-    // 
+    //
     // Add a notifier to show that the file is dirty and needs to be saved
     bespin.subscribe("editor:dirty", function(event) {
         dirtyLabel.attributes.text = "●";
@@ -313,14 +310,14 @@ dojo.provide("bespin.page.editor.init");
     });
 
     // ** {{{ Event: editor:dirty }}} **
-    // 
+    //
     // Change the HTML title to change - to ● as a subtle indicator
     bespin.subscribe("editor:dirty", function() {
         document.title = document.title.replace('- editing with Bespin', '● editing with Bespin');
     });
 
     // ** {{{ Event: editor:clean }}} **
-    // 
+    //
     // Take away the notifier. Just saved
     bespin.subscribe("editor:clean", function(event) {
         dirtyLabel.attributes.text = "";
@@ -328,10 +325,11 @@ dojo.provide("bespin.page.editor.init");
     });
 
     // ** {{{ Event: editor:clean }}} **
-    // 
+    //
     // Take away the notifier from the HTML title.
     bespin.subscribe("editor:clean", function(event) {
         document.title = document.title.replace('● editing with Bespin', '- editing with Bespin');
     });
 
 })();
+
