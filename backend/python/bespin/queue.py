@@ -43,8 +43,8 @@ class QueueItem(object):
     def __init__(self, id, queue, message, execute, error_handler=None,
                 job=None, use_db=True):
         if id == None:
-            self.id = self.next_jobid
-            self.next_jobid = self.next_jobid + 1
+            self.id = QueueItem.next_jobid
+            QueueItem.next_jobid = QueueItem.next_jobid + 1
         else:
             self.id = id
         self.queue = queue
