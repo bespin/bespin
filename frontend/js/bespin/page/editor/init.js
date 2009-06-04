@@ -62,6 +62,14 @@ dojo.provide("bespin.page.editor.init");
             if (footer.style.display == "block") {
                 move.push(footer);
             }
+            
+            // This should really move into a debugger plugin!
+            // note also that this interferes with collab below.
+            var debugbar = dojo.byId("debugbar");
+            if (debugbar.style.display == "block") {
+                dojo.forEach(move, function(item) { item.style.right = "201px"; });
+            }
+            
 
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";

@@ -28,6 +28,25 @@
 
 dojo.provide("bespin.debug");
 
+dojo.require("bespin.cmd.commandline");
+
+dojo.declare("bespin.debug.EvalCommandLineInterface",
+    bespin.cmd.commandline.Interface, {
+    
+    // complete does nothing for eval
+    complete: function() {
+        
+    },
+    
+    executeCommand: function(value) {
+        console.log("Evaling: " + value);
+        var instruction = new bespin.cmd.commandline.Instruction(null, value);
+        this.history.add(instruction);
+        this.updateOutput();
+        this.scrollConsole();
+    }
+});
+
 dojo.mixin(bespin.debug, {
     /*
      * Array of objects that look like this:
@@ -40,6 +59,9 @@ dojo.mixin(bespin.debug, {
     
     // internal ID numbers for these breakpoints.
     _sequence: 1,
+    
+    // has the debugbar been initialized?
+    _initialized: false,
 
     // helper to check for duplicate breakpoints before adding this one
     addBreakpoint: function(newBreakpoint) {
@@ -111,17 +133,49 @@ dojo.mixin(bespin.debug, {
         });
     },
     
-    showDebugBar: function() {
-        var el = dojo.byId('centerpopup');
+    _initialize: function() {
+        if (bespin.debug._initialized) {
+            return;
+        }
+        dojo.connect(dojo.byId("debugbar_break"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:break", {});
+                    });
+                    
+        dojo.connect(dojo.byId("debugbar_continue"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:continue", {});
+                    });
+                
+        var evalLine = new bespin.debug.EvalCommandLineInterface(
+                'debugbar_command', {}, {
+                    idPrefix: "debugbar_",
+                    parentElement: dojo.byId("debugbar")
+                });
         
-        el.innerHTML = '<div style="background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto"><a onclick="bespin.publish(\'debugger:break\', {});">Break</a> <a onclick="bespin.publish(\'debugger:continue\', {});">Continue</a><a onclick="bespin.util.webpieces.hideCenterPopup(dojo.byId(\'centerpopup\'))">Close</a></div>';
-        oldwidth = el.style.width;
-        oldheight = el.style.height;
-        el.style.width = "80%";
-        el.style.height = "80%";
-        dojo.require("dijit._base.place");
-        dojo.require("bespin.util.webpieces");
-
-        bespin.util.webpieces.showCenterPopup(el);
+        bespin.debug._initialized = true;
+    },
+    
+    showDebugBar: function() {
+        bespin.debug._initialize();
+        dojo.style("debugbar", "display", "block");
+        bespin.page.editor.recalcLayout();
+    },
+    
+    hideDebugBar: function() {
+        dojo.style("debugbar", "display", "none");
+        bespin.page.editor.recalcLayout();
     }
+});
+
+bespin.subscribe("debugger:running", function() {
+    var el = dojo.byId("debugbar_status");
+    el.innerHTML = "Running";
+    dojo.addClass(el, "running");
+});
+
+bespin.subscribe("debugger:stopped", function() {
+   var el = dojo.byId("debugbar_status");
+   el.innerHTML = "Stopped";
+   dojo.removeClass(el, "running");
 });

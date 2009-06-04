@@ -485,3 +485,58 @@ tr#jetpack_dropdown_or td {
 #vcsauth {
     font-family: Calibri, Arial, sans-serif;
 }
+
+
+/* Debugger bar - this should move to a plugin */
+#debugbar {
+    position: absolute;
+    top: 32px;
+    bottom: 0;
+    right: 0;
+    width: 210px;
+    display: none;
+    background-image: url("../images/collab_pane_bg.png");
+    background-repeat: repeat-y;
+}
+
+#debugbar h1 {
+    background-image: url("../images/collab_hdr_bg.gif");
+    height: 32px;
+    margin-left: 10px;
+}
+
+#debugbar h1 div {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 12pt;
+    color: #DDDDDD;
+    padding: 5px 0 0 9px;
+}
+
+#debugbar h2 {
+    background-image: url("../images/collab_categorybar_bg.gif");
+    margin-left: 10px;
+    height: 23px;
+}
+
+#debugbar h2 div {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 10pt;
+    color: #dad4ba;
+    padding: 3px 0 0 9px;
+}
+
+.debugbar_text {
+    margin-left: 10px;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 10pt;
+    color: #dad4ba;
+    padding: 3px 0 0 9px;
+}
+
+#debugbar_status {
+    color: red;
+}
+
+#debugbar_status.running {
+    color: green;
+}
