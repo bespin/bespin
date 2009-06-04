@@ -301,11 +301,6 @@ class User(Base):
         statusinfo = simplejson.loads(statusinfo)
         return statusinfo.get("open", {})
 
-    def publish(self, message_obj):
-        data = simplejson.dumps(message_obj)
-        message = Message(user=self, message=data)
-        self.messages.append(message)
-
     def get_settings(self):
         """Load a user's settings from BespinSettings/settings.
         Returns a dictionary."""
@@ -575,6 +570,12 @@ class User(Base):
 
     def set_viewme(self, member, value):
         return [ "Not implemented", member, value ]
+
+    def publish(self, message_obj):
+        data = simplejson.dumps(message_obj)
+        message = Message(user=self, message=data)
+        self.messages.append(message)
+        print(message)
 
     def pop_messages(self):
         messages = []

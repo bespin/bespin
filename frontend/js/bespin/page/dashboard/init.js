@@ -391,8 +391,5 @@ if (!bespin.page.dashboard) bespin.page.dashboard = {};
                     break;
             }
         }));
-        
-        // Set up message retrieval
-        server.processMessages();
     });
 })();
