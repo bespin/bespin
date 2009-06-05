@@ -134,11 +134,12 @@ bespin.syntax.simple.Resolver = new function() {
       //
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(type) {
-          if (typeof engines[type] === "string") { // lazy load time
-              dojo.require("bespin.syntax.simple." + engines[type].toLowerCase());
+          var engineType = engines[type];
+          if (typeof engineType === "string") { // lazy load time
+              dojo.require("bespin.syntax.simple." + engineType.toLowerCase());
 
-              if (bespin.syntax.simple[engines[type]])
-                engines[type] = new bespin.syntax.simple[engines[type]]();
+              if (bespin.syntax.simple[engineType])
+                engines[type] = new bespin.syntax.simple[engineType]();
           }
           return engines[type] || NoopSyntaxEngine;
       }
