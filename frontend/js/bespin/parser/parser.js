@@ -56,9 +56,9 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 //don't trigger message if it's the line we're still typing on, because that's annoying
                 if (cursorRow + 1 != message.line) {
                     bespin.publish("message:hint", {
-                        msg: 'Syntax ' + message.type + 
+                        msg: 'Syntax ' + message.type +
                              (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
-                             ': ' + message.reason + '<p>' + 
+                             ': ' + message.reason + '<p>' +
                              (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
                                  replace(/&/g, '&amp;').
                                  replace(/</g, '&lt;').
@@ -113,7 +113,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 self.currentMetaInfo = data.metaInfo;
                 bespin.publish("parser:metainfo", {
                     info: data.metaInfo
-                })
+                });
             }
             self._running = false;
         });
@@ -159,10 +159,10 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             bespin.subscribe("parser:stop", function () {
                 bespin.unsubscribe(onChange);
                 self._started = false;
-            })
-            
+            });
+
             // initial fetch
-            rerun()
+            rerun();
         }
     },
 
@@ -189,7 +189,6 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     source: source,
                     parseOptions: parseOptions
                 });
-
             }
         }
     },
@@ -292,19 +291,19 @@ dojo.declare("bespin.parser.JavaScript", null, {
             var tree  = parentStack.top();
             var index = indexStack.top();
             var row   = node.lineno - 1;
-            
+
             var identifiers = [];
             if(node.type == IDENTIFIER && index > 0) {
                 identifiers.push(node.value);
-                
+
                 for(var i = index-1; i >= 0; --i) {
                     var n = tree[i];
                     if(n && n.type == IDENTIFIER) {
-                        identifiers.unshift(n.value)
+                        identifiers.unshift(n.value);
                     }
                 }
             }
-            idents[identifiers.join(".")] = true
+            idents[identifiers.join(".")] = true;
 
             // find function
             if (node.type == FUNCTION) {
@@ -400,7 +399,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         html += '</div>';
 
         //console.log(tree)
-        
+
         return {
             functions: funcs,
             idents: idents,
