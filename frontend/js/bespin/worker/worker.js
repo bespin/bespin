@@ -179,8 +179,8 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                 var message = event.data;
                 if(typeof message == "string") {
                     if(message.indexOf("log=") == 0) {
-                        //console.log("From Worker: "+message.substr(4))
-                        return;
+                        console.log("From Worker: "+message.substr(4)) // dont comment this out :)
+                        return
                     }
                     else
                     if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
@@ -202,6 +202,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     bespin.subscribe(name, function (event) {
                         var ret = {
                             index: index,
+                            name:  name,
                             event: event
                         };
                         //console.log("To-Worker-Event: " + name + index)

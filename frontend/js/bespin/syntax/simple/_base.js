@@ -122,7 +122,7 @@ bespin.syntax.simple.Resolver = new function() {
       // e.g. {{{bespin.syntax.EngineResolver.register(new bespin.syntax.simple.CSS() || "CSS", ['css']);}}}
       register: function(syntaxEngine, types) {
           if (bespin.syntax.simple[syntaxEngine]) {
-              syntaxEngine = new bespin.syntax.simple[engine]();
+              syntaxEngine = new bespin.syntax.simple[syntaxEngine]();
           }
 
           for (var i = 0; i < types.length; i++) {
@@ -134,14 +134,16 @@ bespin.syntax.simple.Resolver = new function() {
       //
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(type) {
-          if (!engines[type]) return NoopSyntaxEngine;
+          var engineType = engines[type];
+          if (typeof engineType === "string") { // lazy load time
+              dojo.require("bespin.syntax.simple." + engineType.toLowerCase());
 
           if (dojo.isString(engines[type])) { // lazy load time
               var enginename = engines[type];
               dojo.require("bespin.syntax.simple." + enginename.toLowerCase());
               engines[type] = new bespin.syntax.simple[enginename]();
           }
-          return engines[type];
+          return engines[type] || NoopSyntaxEngine;
       }
   };
 }();

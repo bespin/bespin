@@ -53,6 +53,8 @@ dojo.require("th.models");
 dojo.require("th.borders");
 dojo.require("th.components");
 
+dojo.require("bespin.worker.worker");
+
 dojo.require("bespin.editor.actions");
 dojo.require("bespin.editor.clipboard");
 dojo.require("bespin.editor.cursor");
@@ -72,8 +74,6 @@ dojo.require("bespin.themes.default");
 dojo.require("bespin.syntax.base");
 dojo.require("bespin.syntax.simple._base");
 
-dojo.require("bespin.worker.worker");
-
 dojo.require("bespin.parser.parser");
 
 dojo.require("bespin.cmd.commandline");
@@ -84,11 +84,13 @@ dojo.require("bespin.wizard");
 
 dojo.require("bespin.cmd.editorcommands");
 
-/*
+
 dojo.require("bespin.mobwrite.core");
 dojo.require("bespin.mobwrite.diff");
 dojo.require("bespin.mobwrite.form");
 dojo.require("bespin.mobwrite.integrate");
-*/
+
+dojo.require("bespin.client.pubsub");
+
 
 dojo.require("bespin.page.editor.init");
