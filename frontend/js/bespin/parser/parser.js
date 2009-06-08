@@ -116,7 +116,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 })
             }
             self._running = false;
-        })
+        });
     },
 
     // ** {{{ start }}} **
@@ -143,12 +143,12 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 }
                 self.run_timeout = setTimeout(function() {
                     if (self._running) {
-                        self.run_timeout = setTimeout(arguments.callee, delay)
+                        self.run_timeout = setTimeout(arguments.callee, delay);
                     } else {
                         self.fetch();
                     }
-                }, delay)
-            }
+                }, delay);
+            };
             var onChange = bespin.subscribe("editor:document:changed", rerun);
             bespin.subscribe("settings:set:syntaxcheck", rerun);
             bespin.subscribe("settings:set:jslint", rerun);
@@ -188,7 +188,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     type: type,
                     source: source,
                     parseOptions: parseOptions
-                })
+                });
 
             }
         }
@@ -201,8 +201,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     getFunctions: function () {
         return this.foldPoints || [];
     }
-
-})
+});
 
 // ** {{{ bespin.parser.JavaScript }}} **
 //
@@ -219,48 +218,48 @@ dojo.declare("bespin.parser.JavaScript", null, {
         var parentStack = [];
         var indexStack  = [];
         var top = function () {
-            if (this.length == 0) return null
-            return this[this.length-1]
+            if (this.length == 0) return null;
+            return this[this.length-1];
         };
         parentStack.top = top;
         indexStack.top  = top;
-        this._walk(callback, tree, parentStack, indexStack)
+        this._walk(callback, tree, parentStack, indexStack);
     },
 
     _visitNode: function(callback, node, parentStack, indexStack) {
-        callback.call(this, node, parentStack, indexStack)
+        callback.call(this, node, parentStack, indexStack);
 
         // we are actually an array of nodes
         if (node.length) {
-            this._walk(callback, node, parentStack, indexStack)
+            this._walk(callback, node, parentStack, indexStack);
         }
 
         // all these properties can be sub trees
         if (node.expression) {
-            this._walk(callback, node.expression, parentStack, indexStack)
+            this._walk(callback, node.expression, parentStack, indexStack);
         }
         if (node.body) {
-            this._walk(callback, node.body, parentStack, indexStack)
+            this._walk(callback, node.body, parentStack, indexStack);
         }
         if (node.value) {
-            this._walk(callback, node.value, parentStack, indexStack)
+            this._walk(callback, node.value, parentStack, indexStack);
         }
     },
 
     _walk: function(callback, tree, parentStack, indexStack) {
-        if (typeof tree == "string") return
+        if (typeof tree == "string") return;
         if (tree.length) {
-            parentStack.push(tree)
+            parentStack.push(tree);
             for(var i = 0; i < tree.length; ++i) {
                 var node = tree[i];
-                indexStack.push(i)
-                this._visitNode(callback, node, parentStack, indexStack)
-                indexStack.pop()
+                indexStack.push(i);
+                this._visitNode(callback, node, parentStack, indexStack);
+                indexStack.pop();
             }
-            parentStack.pop()
+            parentStack.pop();
         } else {
             // we are not an array of nodes, so we are a node
-            this._visitNode(callback, tree, parentStack, indexStack)
+            this._visitNode(callback, tree, parentStack, indexStack);
         }
     },
 
@@ -279,7 +278,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                     codePatterns[type]._indicator = indicator;
                     codePatterns[type]._ns        = ns;
                 } catch(e) {
-                    console.log("Weird FF3b3 error "+e)
+                    console.log("Weird FF3b3 error "+e);
                 }
             }
         }
@@ -313,7 +312,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                 if (name == null && tree && index > 0) {
                     // if we have no name. Look up the tree and check for the value
                     // this catches this case: { name: function() {} }
-                    var pred = tree[index-1]
+                    var pred = tree[index-1];
                     if (pred.type == OBJECT_LITERAL_KEY) {
                         name = pred.value;
                     }
@@ -323,9 +322,9 @@ dojo.declare("bespin.parser.JavaScript", null, {
                     name:  name,
                     row:   row,
                     depth: depth
-                }
-                funcs.push(fn)
-                info.push(fn)
+                };
+                funcs.push(fn);
+                info.push(fn);
             } else {
 
                 // now it gets complicated
@@ -335,13 +334,13 @@ dojo.declare("bespin.parser.JavaScript", null, {
                 var parent = parentStack[parentStack.length-1];
                 var parentIndex = indexStack[indexStack.length-1];
 
-                var analyze = function (type, ns, indicator) {
+                var analyze = function(type, ns, indicator) {
                     if (parentIndex >= 0) {
                         if (node.value == indicator) { // identifiy a candidate (aka, we found "declare")
                             // console.log("Found "+indicator)
 
                             // if the indicator is namespaced, check the ancestors
-                            for(var i = 0; i < ns.length; ++i) {
+                            for (var i = 0; i < ns.length; ++i) {
                                 var ele = ns[i];
                                 // up one level
                                 if (parent[parentIndex-1] && parent[parentIndex-1].value == ns) {
@@ -349,7 +348,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                                     parentIndex = indexStack[indexStack.length-(1 + i + 1) ];
                                     // console.log("NS "+ns)
                                 } else {
-                                    return // FAIL
+                                    return; // FAIL
                                 }
                             }
 
@@ -368,17 +367,17 @@ dojo.declare("bespin.parser.JavaScript", null, {
                             }
                         }
                     }
-                }
+                };
 
                 // walk through code patterns and check them against the current tree
-                for(var type in codePatterns) {
+                for (var type in codePatterns) {
                     var pattern = codePatterns[type];
                     if (analyze(type, pattern._ns, pattern._indicator)) {
-                        break // if we find something, it cannot be anything else
+                        break; // if we find something, it cannot be anything else
                     }
                 }
             }
-        })
+        });
 
         var html = '<u>Outline</u><br/><br/>';
         html +='<div id="outlineInfo">';
@@ -392,7 +391,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
                 if ("description" in pattern) kind = pattern.description;
             }
             if (typeof name == "undefined") {
-                continue
+                continue;
             }
             var indent = "";
             for(var j = 0; j < info[i].depth; j++) indent += "&nbsp;";
@@ -407,7 +406,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
             idents: idents,
             outline:   info,
             html: html
-        }
+        };
     },
 
     codePatterns: {
@@ -438,18 +437,18 @@ dojo.declare("bespin.parser.JavaScript", null, {
     },
 
     getCodePatterns: function () {
-        return this.codePatterns
+        return this.codePatterns;
     },
 
     initialize: function () {
         var self = this;
-        //console.log("SubInit")
+        //console.log("SubInit");
         bespin.subscribe("parser:js:codePatterns", function (patterns) {
-            for(pattern in patterns) {
-                self.codePatterns[pattern] = patterns[pattern]
+            for (pattern in patterns) {
+                self.codePatterns[pattern] = patterns[pattern];
             }
-            bespin.publish("parser:engine:updatedCodePatterns")
-        })
+            bespin.publish("parser:engine:updatedCodePatterns");
+        });
     },
 
     parse: function(source) {
@@ -457,7 +456,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         var messages = [];
         try {
             // parse is global function from narcissus
-            tree = parse(source)
+            tree = parse(source);
         } catch(e) {
             ;// error handling is now done by JSLint
         };
@@ -465,8 +464,7 @@ dojo.declare("bespin.parser.JavaScript", null, {
         return {
             messages: messages,
             metaInfo: tree ? this.getMetaInfo(tree) : undefined
-        }
-
+        };
     }
 });
 
@@ -561,13 +559,13 @@ bespin.parser.EngineResolver = function() {
 
       initialize: function () {
           var engine = this;
-          bespin.subscribe("parser:engine:parse", function (event) {
+          bespin.subscribe("parser:engine:parse", function(event) {
               var ret = engine.parse(event.source, event.type, event.parseOptions);
               bespin.publish("parser:engine:parseDone", {
                   type: event.type,
                   info: ret
-              })
-          })
+              });
+          });
 
           // forward initialize to engines
           for(var type in this.engines) {
@@ -576,14 +574,14 @@ bespin.parser.EngineResolver = function() {
                   var eng = list[i];
                   if (!eng._init) { // make sure we only init once (engine can occur multiple times)
                       if (eng.initialize) {
-                          eng.initialize()
+                          eng.initialize();
                       }
                       eng._init = true;
                   }
               }
           }
 
-          bespin.publish("parser:engine:initialized", {})
+          bespin.publish("parser:engine:initialized", {});
       }
   };
 }();
@@ -604,7 +602,7 @@ bespin.parser.AsyncEngineResolver = new bespin.worker.WorkerFacade(
 // Start parsing the document
 bespin.subscribe("parser:start", function () {
     bespin.get("parser").start();
-})
+});
 
 bespin.register("parser", new bespin.parser.CodeInfo());
 
@@ -614,10 +612,10 @@ bespin.fireAfter(["settings:language", "settings:set:syntaxcheck", "parser:engin
         var editor = bespin.get("editor");
         if (!editor.language) { // wait some more, editor needs to catch this first
             bespin.subscribe("settings:language", function () {
-                bespin.publish("parser:start")
-            })
+                bespin.publish("parser:start");
+            });
         } else {
-            bespin.publish("parser:start")
+            bespin.publish("parser:start");
         }
     }
-})
+});

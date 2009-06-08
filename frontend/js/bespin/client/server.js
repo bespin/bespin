@@ -107,7 +107,7 @@ dojo.declare("bespin.client.Server", null, {
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
             var token = dojo.cookie("Domain-Token");
             if (!token) {
-                token = server._randomPassword();
+                token = bespin.util._randomPassword();
                 dojo.cookie("Domain-Token", token);
             }
             xhr.setRequestHeader("X-Domain-Token", token);
@@ -127,16 +127,6 @@ dojo.declare("bespin.client.Server", null, {
             xhr.send(payload);
             return xhr.responseText;
         }
-    },
-
-    _randomPassword: function() {
-        chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-        pass = "";
-        for (var x = 0; x < 16; x++) {
-            var charIndex = Math.floor(Math.random() * chars.length);
-            pass += chars.charAt(charIndex);
-        }
-        return pass;
     },
 
     // ** {{{ requestDisconnected() }}}

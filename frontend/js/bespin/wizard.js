@@ -63,28 +63,28 @@ bespin.cmd.commands.add({
 // Close the wizard
 bespin.wizard.onClose = function() {
     bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
-}
+};
 
 // Designed to be called by a button in a wizard:
 // Open a web page as we close the wizard
 bespin.wizard.onJump = function(url) {
     window.open(url);
     bespin.wizard.onClose();
-}
+};
 
 // Designed to be called by a button in a wizard:
 // Open another wizard page as we close this one
 bespin.wizard.onWizard = function(type) {
     bespin.publish("wizard:show", { type:type });
     bespin.wizard.onClose();
-}
+};
 
 // ** {{{ Event: wizard:show }}} **
 //
 // Change the session settings when a new file is opened
 bespin.subscribe("wizard:show", function(event) {
     if (!event.type) {
-        throw new Error("wizard:show event must have a type member");
+        throw new Error("wizard:show event must have a type");
     }
 
     var wizard = bespin.wizard._wizards[event.type];

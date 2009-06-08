@@ -183,7 +183,7 @@ bespin.cmd.commands.add({
             type = typeof result;
         }
 
-        commandLine.addOutput("<u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg);
+        commandLine.addOutput("Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): <br><br>"+ msg);
     }
 });
 
@@ -1034,21 +1034,6 @@ bespin.cmd.commands.add({
         output.push("</table>");
 
         commandLine.addOutput(output.join(''));
-    }
-});
-
-//** {{{Command: history}}} **
-bespin.cmd.commands.add({
-    name: '!',
-    takes: ['number'],
-    preview: 'Execute a command from the history',
-    execute: function(commandLine, number) {
-        number = parseInt(number);
-        if (!number) {
-            commandLine.addErrorOutput("You're gonna need to give me a history number to execute.");
-            return;
-        }
-        commandLine.addOutput(commandLine.history.getInstructions()[number - 1].typed);
     }
 });
 

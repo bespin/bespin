@@ -79,8 +79,10 @@ dojo.require("bespin.parser.parser");
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 
+// To register commands just using bespin.cmd.commands.add place them here
 dojo.require("bespin.wizard");
 //dojo.require("bespin.social");
+dojo.require("bespin.test");
 
 dojo.require("bespin.cmd.editorcommands");
 
