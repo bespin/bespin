@@ -24,6 +24,8 @@
 
 dojo.provide("bespin.client.server");
 
+dojo.require("bespin.util.util");
+
 // = Server =
 //
 // The Server object implements the [[https://wiki.mozilla.org/BespinServerAPI|Bespin Server API]]
@@ -107,7 +109,7 @@ dojo.declare("bespin.client.Server", null, {
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
             var token = dojo.cookie("Domain-Token");
             if (!token) {
-                token = bespin.util._randomPassword();
+                token = bespin.util.randomPassword();
                 dojo.cookie("Domain-Token", token);
             }
             xhr.setRequestHeader("X-Domain-Token", token);
