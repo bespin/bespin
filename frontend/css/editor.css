@@ -540,3 +540,64 @@ tr#jetpack_dropdown_or td {
 #debugbar_status.running {
     color: green;
 }
+
+#debugbar_commandline {
+    position: absolute;
+    bottom: 0px;
+    left: 10px;
+}
+
+#debugbar_output {
+    position: absolute;
+    overflow: auto;
+    color: #999;
+    z-index: 210;
+    font-family: Calibri, Arial, sans-serif;
+}
+
+#debugbar_output  { width: 100%; height: 100px; overflow: auto;}
+
+#debugbar_output tr.debugbar_rowin {
+    background-repeat: repeat-x;
+    /*
+    background-color: #1e1916;
+    */
+   	border-bottom: 2px solid #000;
+	height: 22px;
+	font-size: 110%;
+}
+#debugbar_output tr.debugbar_rowout { }
+#debugbar_output tr.debugbar_rowin:hover .debugbar_main { color: #83bfe1; }
+#debugbar_output tr.debugbar_rowin img { cursor:pointer; }
+#debugbar_output tr.debugbar_rowin img.hover { display:none; }
+#debugbar_output tr.debugbar_rowin img.nohover { display:inline; }
+#debugbar_output tr.debugbar_rowin:hover img.hover { display:inline; }
+#debugbar_output tr.debugbar_rowin:hover img.nohover { display:none; }
+
+#debugbar_output td { vertical-align: top; }
+
+#debugbar_output .debugbar_open_history { width: 20px; }
+#debugbar_output .debugbar_open_time { width: 40px; }
+#debugbar_output .debugbar_open_blank { width: 1px; }
+
+#debugbar_output .debugbar_open { padding: 3px 3px 2px 5px; font-size:80%; color:#666; }
+#debugbar_output .debugbar_main { font-weight: bold; color: #fff; }
+#debugbar_output .debugbar_typed { padding-left: 5px; }
+
+#debugbar_output .debugbar_hover {
+	float: right;
+    font-size: 80%;
+    font-weight: normal;
+    width: 120px;
+    text-align: right;
+    display: none;
+    color: #666;
+    padding-top: 2px;
+}
+
+#debugbar_output tr.debugbar_rowin:hover .debugbar_hover { display: block; }
+
+#debugbar_output .debugbar_error { color: #f99; }
+
+#debugbar_output tr.debugbar_rowout th { text-align: left; }
+#debugbar_output tr.debugbar_rowout a { font-weight: bold; color: inherit; }
