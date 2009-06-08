@@ -96,4 +96,4 @@ bespin.subscribe("settings:set:codecomplete", function (data) {
     }
 });
 
-})()
+})();
