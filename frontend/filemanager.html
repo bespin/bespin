@@ -83,7 +83,6 @@
             },
 
             ondragstart: function(e) {
-                console.log("drag");
                 this.startWidth = this.bounds.width;
             },
 
@@ -174,7 +173,7 @@
 
         notLoggedIn: function(xhr) {
             //go.home();
-            console.log("implement go.home, dummy");
+            console.log("implement go.home");
         },
 
         prepareFilesForTree: function(files) {
@@ -365,12 +364,10 @@
             var path = tree.getSelectedPath();
             if (path.length == 0 || path[path.length - 1].contents) return; // don't allow directories either
             //go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
-            console.log("implement go.editor, dummy");
+            console.log("implement go.editor");
         });
 
         scene.bus.bind("itemselected", tree, function(e) {
-            console.log("item selected on tree");
-
             var pathSelected = tree.getSelectedPath(true);
             //var db = bespin.page.dashboard;
             var db = this;
@@ -395,12 +392,6 @@
         editSession = bespin.register('editSession', new bespin.client.session.EditSession());
         files = bespin.register('files', new bespin.client.FileSystem());
 
-        // Handle jumping to the command line
-        dojo.connect(document, "onkeypress", function(e) {
-            var handled = commandLine.handleCommandLineFocus(e);
-            if (handled) return false;
-        });
-
         // get logged in name; if not logged in, display an error of some kind
         server.currentuser(bd.loggedIn, bd.notLoggedIn);
 
@@ -413,9 +404,6 @@
         // TODO: commenting this out as it is throwing errors at the moment
         // provide arrow navigation to dashboard
         dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
-            // catch focus on commandline
-            if(commandLine.handleCommandLineFocus(e)) return false;
-
             var key = bespin.util.keys.Key;
             var path = this.getSelectedPath();
             if (path === undefined) return;
