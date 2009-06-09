@@ -22,41 +22,57 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.piemenu");
+dojo.provide("bespin.editor.filepopup");
 
 dojo.declare("bespin.editor.filepopup.MainPanel", null, {
-    constructor: function(canvas, insets) {
-        var scene = new th.Scene(canvas);
+    setup: function() {
+        // if we've already setup the scene, bail
+        if (this.scene) return;
 
-        // make the root transparent
-        scene.root.paintSelf = function() {}
+        this.canvas = document.getElementById("piefilepopupcanvas");
 
-        var panel = new th.Panel();
-        panel.addCss("background-color", "blue");
-
-        scene.root.add(panel);
-        scene.root.layout = function() {
-            var d = this.d();
-
-            panel.bounds = {
-                x: d.b.x + insets.left,
-                y: d.b.y + insets.top,
-                width: d.b.w - insets.left - insets.right,
-                height: d.b.h - insets.top - insets.bottom
-            }
+        if (!this.canvas) {
+            this.canvas = dojo.create("canvas", {
+                id: "piefilepopupcanvas",
+                tabIndex: -1,
+                style: {
+                    position: "absolute",
+                    zIndex: 101,
+                    display: "none"
+                }
+            }, dojo.body());
         }
 
+        var scene = new th.Scene(this.canvas);
+
+        scene.root.addCss("background-color", "blue");
+
+        // make the root transparent
+        //scene.root.paintSelf = function() {}
+
+        
+
         this.scene = scene;
-        this.panel = panel;
     },
 
-    show: function() {
-        this.panel.addCss("display", "block");
+    show: function(coords) {
+        this.setup();
+
+        console.log(coords);
+
+        this.canvas.width = coords.w;
+        this.canvas.height = coords.h;
+
+        dojo.style(this.canvas, {
+            display: "block",
+            top: coords.t + "px",
+            left: coords.l + "px"
+        });
+        
         this.scene.render();
     },
 
     hide: function() {
-        this.panel.addCss("display", "none");
-        this.scene.render();
+        this.canvas.style.display = "none";
     }
 });

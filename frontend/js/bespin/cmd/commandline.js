@@ -190,28 +190,31 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 // The core command line driver. It executes commands, stores them, and handles completion
 
 dojo.declare("bespin.cmd.commandline.Interface", null, {
-    constructor: function(commandLine, initCommands) {
+    constructor: function(commandLine, initCommands, options) {
+        options = options || {};
+        var idPrefix = options.idPrefix || "command_";
+        var parentElement = options.parentElement || dojo.body();
         this.commandLine = dojo.byId(commandLine);
 
         // * Create the div for hints
         this.commandHint = dojo.create("div", {
-            id: "command_hint",
+            id: idPrefix + "hint",
             style: "display:none; bottom:0px; left:31px; width:500px;"
-        }, dojo.body());
+        }, parentElement);
         dojo.connect(this.commandHint, "onclick", this, this.hideHint);
 
         // * Create the div for real command output
         this.output = dojo.create("div", {
-            id: "command_output",
+            id: idPrefix + "output",
             style: "display:none;"
-        }, dojo.body());
+        }, parentElement);
 
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
         if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
-        this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
+        this.commandStore = bespin.register('commandStore', new bespin.cmd.commandline.CommandStore({ initCommands: initCommands }));
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.history = new bespin.cmd.commandline.History(this);
@@ -251,7 +254,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             bottom: bottom + "px",
             display: "block"
         });
-        dojo.byId("command").focus();
+        this.commandLine.focus();
 
         var footerHeight = dojo.style("footer", "height") + 2;
 
@@ -793,13 +796,13 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 return false;
             } else if (e.keyCode == key.ENTER) {
-                this.executeCommand(dojo.byId('command').value);
+                this.executeCommand(cl.commandLine.value);
 
                 return false;
             } else if (e.keyCode == key.TAB) {
                 dojo.stopEvent(e);
 
-                this.complete(dojo.byId('command').value);
+                this.complete(cl.commandLine.value);
                 return false;
             } else if (e.keyCode == key.ESCAPE) {
                 // ESCAPE onkeydown fails on Moz, so we need this. Why?

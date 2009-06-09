@@ -688,9 +688,9 @@ dojo.declare("bespin.editor.Actions", null, {
         // undo/redo
         args.action = "newline";
         var redoOperation = args;
-        var undoArgs = { 
+        var undoArgs = {
             action: "joinLine",
-            joinDirection: "up", 
+            joinDirection: "up",
             pos: bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition()),
             queued: args.queued,
             autounindentSize: autoindent.length
