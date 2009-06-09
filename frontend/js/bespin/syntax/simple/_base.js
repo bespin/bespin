@@ -138,10 +138,9 @@ bespin.syntax.simple.Resolver = new function() {
           if (typeof engineType === "string") { // lazy load time
               dojo.require("bespin.syntax.simple." + engineType.toLowerCase());
 
-          if (dojo.isString(engines[type])) { // lazy load time
-              var enginename = engines[type];
-              dojo.require("bespin.syntax.simple." + enginename.toLowerCase());
-              engines[type] = new bespin.syntax.simple[enginename]();
+              if (bespin.syntax.simple[engineType]) {
+                  engines[type] = new bespin.syntax.simple[engineType]();
+              }
           }
           return engines[type] || NoopSyntaxEngine;
       }
