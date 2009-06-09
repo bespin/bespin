@@ -134,7 +134,7 @@ dojo.mixin(bespin, {
     register: function(id, object) {
         this.registeredComponents[id] = object;
 
-        bespin.publish("component:register", { id: id, object: object });
+        bespin.publish("component:register:" + id, { id: id, object: object });
 
         return object;
     },
