@@ -211,7 +211,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
-        this.commandStore = new bespin.cmd.commandline.CommandStore({ initCommands: initCommands });
+        this.commandStore = bespin.register('commandStore', new bespin.cmd.commandline.CommandStore({ initCommands: initCommands }));
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.history = new bespin.cmd.commandline.History(this);
