@@ -8,13 +8,19 @@ dojo.provide("bespin.util.doh.bespinRunner");
 (function() {
 
     // We need to grab any timeouts fired off in the runner. Changing the
-    // environment like this is deeply evil on many levels. 
+    // environment like this is deeply evil on many levels.
     var originalRun = doh.run;
     doh.run = function() {
         if (doh._id != null) {
             throw new Error("Only one test can be run at a time.");
         }
         doh._id = bespin.util.randomPassword(4);
+
+        console.log("doh.run", doh._id);
+        console.trace();
+
+        var commandLine = bespin.get("commandLine");
+        commandLine.addIncompleteOutput("<table id=\"" + doh._id + "\"></table>");
 
         var originalSetTimeout = window.setTimeout;
         window.setTimeout = function(code, delay) {
@@ -32,7 +38,7 @@ dojo.provide("bespin.util.doh.bespinRunner");
     // Send the output to the console
     var _loggedMsgLen = 0;
     doh.debug = function() {
-        var msg = "<table id=\"" + doh._id + "\"></table>";
+        var msg = "";
         for (var x = 0; x < arguments.length; x++) {
             msg += " " + arguments[x];
         }
@@ -47,6 +53,7 @@ dojo.provide("bespin.util.doh.bespinRunner");
 
         var commandLine = bespin.get("commandLine");
         commandLine.addIncompleteOutput(msg);
+        console.debug(msg);
 
         _loggedMsgLen++;
     };
