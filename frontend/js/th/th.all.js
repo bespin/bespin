@@ -1408,7 +1408,7 @@ th.EventHelpers = new Trait({
             var x = e.pageX - th.cumulativeOffset(this.canvas).left;
             var y = e.pageY - th.cumulativeOffset(this.canvas).top;
 
-            var component = root.getComponentForPosition(x, y, true, root);
+            var component = root.getComponentForPosition(x, y, true);
             e.thComponent = component;
 
             this.addComponentXY(e, root, component);
@@ -1434,8 +1434,8 @@ th.EventHelpers = new Trait({
                 c = c.parent;
 
                 if (c == source) {
-                    e.componentX = nxy.x - c.bounds.x;
-                    e.componentY = nxy.y - c.bounds.y;
+                    e.componentX = nxy.x;
+                    e.componentY = nxy.y;
                     return;
                 }
             }
@@ -2029,9 +2029,7 @@ th.ComponentHelpers = new Trait({
 
 th.ContainerHelpers = new Trait({
     methods: {
-        getComponentForPosition: function(x, y, recurse, parent) {
-            x -= parent.bounds.x;
-            y -= parent.bounds.y;
+        getComponentForPosition: function(x, y, recurse) {
             for (var i = 0; i < this.children.length; i++) {
                 if (!this.children[i].bounds) continue;
 
@@ -2043,7 +2041,7 @@ th.ContainerHelpers = new Trait({
                     if (!this.children[i].shouldPaint()) continue;
 
                     return (this.children[i].getComponentForPosition) ?
-                           this.children[i].getComponentForPosition(x - this.children[i].bounds.x, y - this.children[i].bounds.y, recurse, this.children[i]) :
+                           this.children[i].getComponentForPosition(x - this.children[i].bounds.x, y - this.children[i].bounds.y, recurse) :
                            this.children[i];
                 }
             }
@@ -2830,7 +2828,7 @@ th.Scene = Class.define({
 
             this.parseTags();
 
-            th.observe(this.canvas, "mousedown", function(e) {
+            th.observe(window, "mousedown", function(e) {
                 this.wrapEvent(e, this.root);
 
                 this.mouseDownComponent = e.thComponent;
@@ -2838,13 +2836,13 @@ th.Scene = Class.define({
                 th.global_event_bus.fire("mousedown", e, e.thComponent);
             }, this);
 
-            th.observe(this.canvas, "dblclick", function(e) {
+            th.observe(window, "dblclick", function(e) {
                 this.wrapEvent(e, this.root);
 
                 th.global_event_bus.fire("dblclick", e, e.thComponent);
             }, this);
 
-            th.observe(this.canvas, "click", function(e) {
+            th.observe(window, "click", function(e) {
                 this.wrapEvent(e, this.root);
 
                 th.global_event_bus.fire("click", e, e.thComponent);
@@ -2861,7 +2859,7 @@ th.Scene = Class.define({
                 }
             }, this);
 
-            th.observe(this.canvas, "mouseup", function(e) {
+            th.observe(window, "mouseup", function(e) {
                 if (!this.mouseDownComponent) return;
 
                 this.addComponentXY(e, this.root, this.mouseDownComponent);
@@ -3018,7 +3016,6 @@ th.Scene = Class.define({
                     child = parent;
                     parent = parent.parent;
                 }
-                ctx.translate(child.bounds.x, child.bounds.y);
 
                 if (!this.smartRedraw) {
                     ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
