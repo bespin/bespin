@@ -136,7 +136,9 @@ bespin.syntax.simple.Resolver = new function() {
       resolve: function(type) {
           var engineType = engines[type];
           if (typeof engineType === "string") { // lazy load time
-              dojo.require("bespin.syntax.simple." + engineType.toLowerCase());
+              // build system does not like require of dynamic names
+              var dr = dojo.require;
+              dr("bespin.syntax.simple." + engineType.toLowerCase());
 
               if (bespin.syntax.simple[engineType]) {
                   engines[type] = new bespin.syntax.simple[engineType]();

@@ -99,8 +99,8 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     
     // find something that we might be able to complete
     // Works for JS. Need to extend this to support for languages
-    charMarksStartOfIdentifier: function (char) {
-        return char === " " || char === "\t" || char == "\"" || char == "'"; // rough estimation
+    charMarksStartOfIdentifier: function (ch) {
+        return ch === " " || ch === "\t" || ch == "\"" || ch == "'"; // rough estimation
     },
     
     // This is called after we are loaded into a worker.
