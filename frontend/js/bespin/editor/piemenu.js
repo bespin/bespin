@@ -24,6 +24,7 @@
 
 dojo.provide("bespin.editor.piemenu");
 dojo.require("dojo.fx.easing");
+dojo.require("bespin.editor.filepopup");
 
 // = Pie Menu Handling =
 //
@@ -56,7 +57,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             }
         }, dojo.body());
         this.ctx = this.canvas.getContext('2d');
-        th.fixCanvas(this.ctx);
 
         // * Load the slice images
         for (var dir in this.slices) {
@@ -242,7 +242,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_top",
             title: "File Browser",
             key: bespin.util.keys.Key.UP_ARROW,
+            filePanel: new bespin.editor.filepopup.MainPanel(),
+
             showContents: function(coords) {
+                this.filePanel.show(coords);
+            },
+
+            hideContents: function() {
+                this.filePanel.hide();
             }
         },
 
@@ -442,6 +449,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             w: d.cenWidth + 10, // So does the RHS image have 5px
             h: d.midHeight
         };
+
         this.currentSlice.showContents(dimensions);
     },
 

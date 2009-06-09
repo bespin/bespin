@@ -88,7 +88,7 @@ dojo.provide("bespin.page.editor.init");
             dojo.attr('projectLabel', { width: d.w, height: d.h });
 
             // Repaint the various canvas'
-            scene.paint();
+            //scene.paint();
             bespin.get('editor').paint();
         }
     });
@@ -103,9 +103,9 @@ dojo.provide("bespin.page.editor.init");
         var files = bespin.register('files', new bespin.client.FileSystem());
 
         bespin.register('actions', editor.ui.actions);
-        bespin.register('filesearch', new bespin.editor.filesearch.API());
+//        bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
-        bespin.register('quickopen', new bespin.editor.quickopen.API());
+//        bespin.register('quickopen', new bespin.editor.quickopen.API());
         bespin.register('piemenu', new bespin.editor.piemenu.Window());
 
         // Get going when settings are loaded
@@ -246,46 +246,46 @@ dojo.provide("bespin.page.editor.init");
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 
-        scene = new th.Scene(dojo.byId("projectLabel"));
-
-        var panel = new th.components.Panel();
-        scene.root.add(panel);
-
-        projectLabel = new th.components.Label({ style: {
-            color: "white",
-            font: "12pt Calibri, Arial, sans-serif"
-        }});
-        var symbolThingie = new th.components.Label({ text: ":", style: {
-            color: "gray",
-            font: "12pt Calibri, Arial, sans-serif"
-        }});
-        fileLabel = new th.components.Label({ style: {
-            color: "white",
-            font: "12pt Calibri, Arial, sans-serif"
-        }});
-        dirtyLabel = new th.components.Label({ text: "", style: {
-            color: "white",
-            font: "12pt Calibri, Arial, sans-serif"
-        }});
-
-        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
-        panel.layout = function() {
-            var d = this.d();
-
-            var x = 0;
-            for (var i = 0; i < 2; i++) {
-                var width = this.children[i].getPreferredWidth(d.b.h);
-                this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
-                x += width;
-            }
-
-            var dirtyWidth = this.children[3].getPreferredWidth(d.b.h);
-            var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
-            this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
-            x += filenameWidth - 18; // 18 is an evil magic number that is caused by a DOM bug. The new Thunderhead will fix this :)
-            this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
-        };
-        scene.render();
+//        scene = new th.Scene(dojo.byId("projectLabel"));
+//
+//        var panel = new th.components.Panel();
+//        scene.root.add(panel);
+//
+//        projectLabel = new th.components.Label({ style: {
+//            color: "white",
+//            font: "12pt Calibri, Arial, sans-serif"
+//        }});
+//        var symbolThingie = new th.components.Label({ text: ":", style: {
+//            color: "gray",
+//            font: "12pt Calibri, Arial, sans-serif"
+//        }});
+//        fileLabel = new th.components.Label({ style: {
+//            color: "white",
+//            font: "12pt Calibri, Arial, sans-serif"
+//        }});
+//        dirtyLabel = new th.components.Label({ text: "", style: {
+//            color: "white",
+//            font: "12pt Calibri, Arial, sans-serif"
+//        }});
+//
+//        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
+//        panel.layout = function() {
+//            var d = this.d();
+//
+//            var x = 0;
+//            for (var i = 0; i < 2; i++) {
+//                var width = this.children[i].getPreferredWidth(d.b.h);
+//                this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
+//                x += width;
+//            }
+//
+//            var dirtyWidth = this.children[3].getPreferredWidth(d.b.h);
+//            var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
+//            this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
+//            x += filenameWidth - 18; // 18 is an evil magic number that is caused by a DOM bug. The new Thunderhead will fix this :)
+//            this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
+//        };
+//        scene.render();
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **
@@ -296,9 +296,9 @@ dojo.provide("bespin.page.editor.init");
         var project = event.project || bespin.get('editSession').project;
         var filename = event.file.name;
 
-        projectLabel.attributes.text = project;
-        fileLabel.attributes.text = filename;
-        scene.render();
+//        projectLabel.attributes.text = project;
+//        fileLabel.attributes.text = filename;
+//        scene.render();
     });
 
     // ** {{{ Event: editor:dirty }}} **
@@ -306,7 +306,7 @@ dojo.provide("bespin.page.editor.init");
     // Add a notifier to show that the file is dirty and needs to be saved
     bespin.subscribe("editor:dirty", function(event) {
         dirtyLabel.attributes.text = "●";
-        scene.render();
+        //scene.render();
     });
 
     // ** {{{ Event: editor:dirty }}} **
@@ -321,7 +321,7 @@ dojo.provide("bespin.page.editor.init");
     // Take away the notifier. Just saved
     bespin.subscribe("editor:clean", function(event) {
         dirtyLabel.attributes.text = "";
-        scene.render();
+        //scene.render();
     });
 
     // ** {{{ Event: editor:clean }}} **

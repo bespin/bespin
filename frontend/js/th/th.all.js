@@ -861,13 +861,13 @@ th.observe = function(source, eventName, listener, context) {
     }
 }
 
-th.hitch = function(source, func) {
-    return function() { func.apply(source) };
-}
-
-th.delay = function(func, delay, source) {
-    if (source) func = th.hitch(source, func);
-    setTimeout(func, delay);
+th.loadImg = function (url, onReady) {
+  var img = new Image();
+  if (th.isFunction(onReady)) {
+      img.onload = onReady;
+  }
+  img.src = url;
+  return img;
 }
 
 th.trim = String.prototype.trim ?
@@ -981,6 +981,10 @@ th.getCommaDelimitedItems = function(input) {
 
 th.lastArrayItem = function(arr) {
     return arr[arr.length - 1];
+}
+
+th.removeArrayItem = function(arr, item) {
+    return arr.splice(arr.indexOf(item), 1);
 }
 
 th.stopEvent = function(e) {
@@ -1280,6 +1284,97 @@ th.CssParser = Class.define({
         }
     }
 });
+
+th.CssExpander = Class.define({
+    members: {
+        init: function() {
+            this.expandRules = {
+                'border': this.expandBorder,
+                'border-top': this.expandBorderSide,
+                'border-left': this.expandBorderSide,
+                'border-right': this.expandBorderSide,
+                'border-bottom': this.expandBorderSide,
+                'border-width': this.expandBorderWidth,
+                'border-image': this.expandBorderImage,
+                'margin': this.expandMarginOrPadding,
+                'padding': this.expandMarginOrPadding
+            };
+        },
+
+        expand: function(property, value, proplist) {
+            if (!proplist) proplist = {};
+            if (this.expandRules[property]) {
+                this.expandRules[property].apply(this, [ property, value, proplist ]);
+            } else {
+                proplist[property] = value;
+            }
+            return proplist;
+        },
+
+        saveProperty: function(property, value, propertyList) {
+            if (th.getSpaceDelimitedItems(value).length != 1 && property != 'font' && property != '-th-grid-cols' && property != '-th-grid-rows') {
+                console.error("th.CssExpander: Can't expand '" + property + "' with value '" + value + "'!");
+            }
+            propertyList[property] = value;
+        },
+
+        expandBorderWidth: function(property, value, propertyList) {
+            this.expandSideNumbers("border-", "-width", value, propertyList);
+        },
+
+        expandMarginOrPadding: function(property, value, propertyList) {
+            this.expandSideNumbers(property + '-', '', value, propertyList);
+        },
+
+        expandSideNumbers: function(propertyPref, propertySuf, value, propertyList) {
+            var values = value.split(" ");
+            if (values.length == 3) values = [ values[0], values[1], values[2], values[1] ];
+            if (values.length == 2) values = [ values[0], values[1], values[0], values[1] ];
+            if (values.length == 1) values = [ values[0], values[0], values[0], values[0] ];
+
+            if (values.length >= 4) {  // top right bottom left
+                this.saveProperty(propertyPref + "top"    + propertySuf, values[0], propertyList);
+                this.saveProperty(propertyPref + "right"  + propertySuf, values[1], propertyList);
+                this.saveProperty(propertyPref + "bottom" + propertySuf, values[2], propertyList);
+                this.saveProperty(propertyPref + "left"   + propertySuf, values[3], propertyList);
+            }
+        },
+
+        expandBorder: function(property, value, propertyList) {
+            this.expandBorderSide("border-top", value, propertyList);
+            this.expandBorderSide("border-right", value, propertyList);
+            this.expandBorderSide("border-bottom", value, propertyList);
+            this.expandBorderSide("border-left", value, propertyList);
+        },
+
+        expandBorderSide: function(property, value, propertyList) {
+             var values = th.getSpaceDelimitedItems(value);
+             for (var i = 0; i < values.length; i++) {
+                 if (th.isCssLength(values[i])) {
+                     this.saveProperty(property + "-width", values[i], propertyList);
+                 } else if (th.isCssBorderStyle(values[i])) {
+                     this.saveProperty(property + "-style", values[i], propertyList);
+                 } else {
+                     this.saveProperty(property + "-color", values[i], propertyList);
+                 }
+             }
+        },
+
+        expandBorderImage: function(property, value, propertyList) {
+            var values = th.getSpaceDelimitedItems(value);
+            var propertyExpanded = ['url', 'top', 'right', 'bottom', 'left', 'repeat-x', 'repeat-y'];
+
+            for (var i = 0; i < propertyExpanded.length; i++) {
+                this.saveProperty('border-image-' + propertyExpanded[i], values[i], propertyList);
+            }
+        }
+    }
+});
+
+th._cssExpander = new th.CssExpander();
+th.expandCssProperty = function(cssProperty, cssValue, destination) {
+    return th._cssExpander.expand(cssProperty, cssValue, destination);
+}
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1
  *
@@ -1313,7 +1408,7 @@ th.EventHelpers = new Trait({
             var x = e.pageX - th.cumulativeOffset(this.canvas).left;
             var y = e.pageY - th.cumulativeOffset(this.canvas).top;
 
-            var component = root.getComponentForPosition(x, y, true);
+            var component = root.getComponentForPosition(x, y, true, root);
             e.thComponent = component;
 
             this.addComponentXY(e, root, component);
@@ -1339,8 +1434,8 @@ th.EventHelpers = new Trait({
                 c = c.parent;
 
                 if (c == source) {
-                    e.componentX = nxy.x;
-                    e.componentY = nxy.y;
+                    e.componentX = nxy.x - c.bounds.x;
+                    e.componentY = nxy.y - c.bounds.y;
                     return;
                 }
             }
@@ -1497,7 +1592,7 @@ th.ComponentHelpers = new Trait({
 
             if (s.indexOf("#") == 0) {
                 if (!this.id) return false;
-                return ("#" + this.id) == s;
+                return ("#" + this.id).toLowerCase() == s;
             }
 
             var type = this.type.toLowerCase();
@@ -1662,6 +1757,7 @@ th.ComponentHelpers = new Trait({
 
                     if (vals[1].indexOf(",") != -1) {
                         var posColor = vals[1].split(",");
+                        posColor[1] = th.trim(posColor[1].substring(0, posColor[1].length - 1));
                         gradient.addColorStop(posColor[0], posColor[1]);
                     } else {
                         vals[1] = vals[1].substring(0, vals[1].length - 1); // kill the trailing right paren; this is now a color value
@@ -1847,7 +1943,8 @@ th.ComponentHelpers = new Trait({
 
                 if (pseudoBit === undefined) pseudoBit = "(default)";
                 if (this.localStyles[pseudoBit] === undefined) this.localStyles[pseudoBit] = {};
-                this.localStyles[pseudoBit][prop] = value;
+
+                th.expandCssProperty(prop, value, this.localStyles[pseudoBit]);
             } else {
                 for (var property in propertyOrHashOfProperties) {
                     this.addCss(property, propertyOrHashOfProperties[property], pseudoBit);
@@ -1932,17 +2029,9 @@ th.ComponentHelpers = new Trait({
 
 th.ContainerHelpers = new Trait({
     methods: {
-        getChildById: function(id) {
-            for (var i = 0; i < this.children.length; i++) {
-                if (this.children[i].id == id) return this.children[i];
-                if (th.isFunction(this.children[i].getChildById)) {
-                    var result = this.children[i].getChildById(id);
-                    if (result !== undefined) return result;
-                }
-            }
-        },
-
-        getComponentForPosition: function(x, y, recurse) {
+        getComponentForPosition: function(x, y, recurse, parent) {
+            x -= parent.bounds.x;
+            y -= parent.bounds.y;
             for (var i = 0; i < this.children.length; i++) {
                 if (!this.children[i].bounds) continue;
 
@@ -1954,7 +2043,7 @@ th.ContainerHelpers = new Trait({
                     if (!this.children[i].shouldPaint()) continue;
 
                     return (this.children[i].getComponentForPosition) ?
-                           this.children[i].getComponentForPosition(x - this.children[i].bounds.x, y - this.children[i].bounds.y, recurse) :
+                           this.children[i].getComponentForPosition(x - this.children[i].bounds.x, y - this.children[i].bounds.y, recurse, this.children[i]) :
                            this.children[i];
                 }
             }
@@ -2208,6 +2297,53 @@ th.Resources = Class.define({
             }
         },
 
+        loadImages: function(properties, resourceBase) {
+            var urlFoundPos, endOfUrlPos, image;
+
+            for (var property in properties) {
+                var value = properties[property];
+
+                if ((urlFoundPos = value.indexOf("url(")) != -1) {
+                    endOfUrlPos = value.indexOf(")", urlFoundPos);
+                    if (endOfUrlPos == -1) {
+                        console.log("Warning: malformed url found ('" + value + "')");
+                        break;
+                    }
+
+                    var cacheUrl = value.substring(urlFoundPos, endOfUrlPos);
+                    var basicUrl = cacheUrl + ')';
+                    var url = cacheUrl.substring(4);
+
+                    if (url.charAt(0) == "'" || url.charAt(0) == "\"") {
+                        url = url.substring(1, url.length - 1);
+                    }
+
+
+                    if (this.images[basicUrl] !== undefined) {
+                        continue;
+                    }
+
+                    this.imageCount++;
+                    image = new Image();
+
+                    if (this.blockUntilImagesLoaded) {
+                        this.imagesLoaded = false;
+                        var self = this;
+                        image.onload = function() {
+                            self.processImage();
+                        }
+                        image.onerror = function() {
+                            self.processImage();
+                        }
+                    }
+
+                    if (resourceBase == undefined) resourceBase = "";
+                    image.src = resourceBase + url;
+                    this.images[basicUrl] = image;
+                }
+            }
+        },
+
         onLoaded: function() {
             if (this.cssLoaded && ((this.blockUntilImagesLoaded && this.imagesLoaded) || !this.blockUntilImagesLoaded)) {
                 this.loaded = true;
@@ -2234,9 +2370,9 @@ th.Resources = Class.define({
             var usedStringifiedDefault = false;
 
             if (typeof this.baseUrl !== "undefined") {
-                links.push({ url: this.baseUrl + "css/default.css", array: this.userAgentCss, index: 0 });
+                links.push({ url: this.baseUrl + "css/default.css", resourceBase: this.baseUrl, array: this.userAgentCss, index: 0 });
             } else if (th.DEFAULT_CSS) {
-                this.processCSS(th.DEFAULT_CSS, this.userAgentCss, 0);
+                this.processCSS(th.DEFAULT_CSS, undefined, this.userAgentCss, 0);
                 usedStringifiedDefault = true;
             }
 
@@ -2245,7 +2381,7 @@ th.Resources = Class.define({
             for (var i=0; i < l.length; i++){
                 s = l[i];
                 if (s.rel.toLowerCase().indexOf('thstylesheet') >= 0 && s.href) {
-                    links.push({ url: s.href, array: this.authorCss, index: counter++ });
+                    links.push({ url: s.href, resourceBase: undefined, array: this.authorCss, index: counter++ });
                 }
             }
 
@@ -2265,120 +2401,32 @@ th.Resources = Class.define({
             th.forEach(links, function(link) {
                 th.xhrGet({
                     url: link.url,
+
                     load: function(response) {
-                        this.processCSS(response, link.array, link.index);
+                        this.processCSS(response, link.resourceBase, link.array, link.index);
                     },
                     context: this
                 });
             }, this);
         },
 
-        processCSS: function(stylesheet, array, index) {
+        processCSS: function(stylesheet, resourceBase, array, index) {
             array[index] = new th.CssParser().parse(stylesheet);
 
             for (var rule in array[index]) {
-
-                var properties = [];
+                var expandedProperties = {};
                 for (var property in array[index][rule]) {
-                    properties.push(property);
+                    th.expandCssProperty(property, array[index][rule][property], expandedProperties);
                 }
 
-                for (var i = 0; i < properties.length; i++) {
-                    property = properties[i];
-                    var value = array[index][rule][property];
+                array[index][rule] = expandedProperties;
 
-                    var imageSearchPos = 0;
-                    var urlFoundPos = -1;
-                    while ((urlFoundPos = value.indexOf("url(", imageSearchPos)) != -1) {
-                        var endOfUrlPos = value.indexOf(")", urlFoundPos);
-                        if (endOfUrlPos == -1) {
-                            console.log("Warning: malformed url found ('" + value + "')");
-                            break;
-                        }
-
-                        var cacheUrl = value.substring(urlFoundPos, endOfUrlPos);
-                        var url = cacheUrl.substring(4);
-
-                        if (url.charAt(0) == "'" || url.charAt(0) == "\"") {
-                            url = url.substring(1, url.length - 1);
-                        }
-
-                        this.imageCount++;
-                        var image = new Image();
-
-                        if (this.blockUntilImagesLoaded) {
-                            this.imagesLoaded = false;
-                            var self = this;
-                            image.onload = function() {
-                                self.processImage();
-                            }
-                            image.onerror = function() {
-                                self.processImage();
-                            }
-                        }
-
-                        if (this.baseUrl) url = this.baseUrl + url;
-                        image.src = url;
-                        this.images[value] = image;
-
-                        imageSearchPos = endOfUrlPos + 1;
-                    }
-
-                    if (property == "margin" || property == "padding") {
-                        this.expandMarginOrPadding(property, value, array[index][rule], properties);
-                    }
-
-                    if (property == "border") {
-                        this.expandProperty("border-top", value, array[index][rule], properties);
-                        this.expandProperty("border-right", value, array[index][rule], properties);
-                        this.expandProperty("border-bottom", value, array[index][rule], properties);
-                        this.expandProperty("border-left", value, array[index][rule], properties);
-                    }
-
-                    if (property == "border-top" || property == "border-left" || property == "border-right" || property == "border-bottom") {
-                        this.expandBorder(property, value, array[index][rule], properties);
-                    }
-                }
+                this.loadImages(expandedProperties, resourceBase);
             }
 
             if (++this.currentSheet == this.sheetCount) {
                 this.cssLoaded = true;
                 this.onLoaded();
-            }
-        },
-
-        expandBorder: function(property, value, css, propertyList) {
-            var values = th.getSpaceDelimitedItems(value);
-            for (var i = 0; i < values.length; i++) {
-                if (th.isCssLength(values[i])) {
-                    this.expandProperty(property + "-width", values[i], css, propertyList);
-                } else if (th.isCssBorderStyle(values[i])) {
-                    this.expandProperty(property + "-style", values[i], css, propertyList);
-                } else {
-                    this.expandProperty(property + "-color", values[i], css, propertyList);
-                }
-            }
-            delete css[property];
-        },
-
-        expandProperty: function(newProperty, value, css, propertyList) {
-            css[newProperty] = value;
-            propertyList.push(newProperty);
-        },
-
-        expandMarginOrPadding: function(property, value, css, propertyList) {
-            var values = value.split(" ");
-            if (values.length == 3) values = [ values[0], values[1], values[2], values[1] ];
-            if (values.length == 2) values = [ values[0], values[1], values[0], values[1] ];
-            if (values.length == 1) values = [ values[0], values[0], values[0], values[0] ];
-
-            if (values.length >= 4) {  // top right bottom left
-                this.expandProperty(property + "-top", values[0], css, propertyList);
-                this.expandProperty(property + "-right", values[1], css, propertyList);
-                this.expandProperty(property + "-bottom", values[2], css, propertyList);
-                this.expandProperty(property + "-left", values[3], css, propertyList);
-
-                delete css[property];
             }
         }
     }
@@ -2474,6 +2522,9 @@ th.FocusManager = Class.define({
             this.domHasFocus = undefined;   // can be undfined if no input is focused or domInputFirst | domInputLast
             this.ignoreDomEvent = false;
 
+            this.domInputFirst.value = '<norealtext>';
+            this.domInputLast.value = '<norealtext>';
+
             th.observe(this.domInputFirst, "focus", this.enterFirst, this);
             th.observe(this.domInputFirst, "blur", this.domFocusLost, this);
             th.observe(this.domInputFirst, "keydown", this.handleKeyDown, this);
@@ -2481,10 +2532,97 @@ th.FocusManager = Class.define({
             th.observe(this.domInputLast, "focus", this.enterLast, this);
             th.observe(this.domInputLast, "blur", this.domFocusLost, this)
             th.observe(this.domInputLast, "keydown", this.handleKeyDown, this);
+
+            th.observe(document, "cut", this.handleCut, this);
+            th.observe(document, "copy", this.handleCopy, this);
+            th.observe(document, "paste", this.handlePaste, this);
+        },
+
+        relateTo: function(scene) {
+            this.relateTo = scene.canvas;
+            var x = th.cumulativeOffset(this.relateTo).left + 10;
+            var y = th.cumulativeOffset(this.relateTo).top + 10;
+            this.domInputFirst.style.position = 'absolute';
+            this.domInputLast.style.position = 'absolute';
+            this.domInputFirst.style['z-index'] = -100;
+            this.domInputLast.style['z-index'] = -100;
+            this.domInputFirst.style.width = '1px';
+            this.domInputLast.style.width = '1px';
+            if (this.relateTo.style.display == 'none') this.toggleInputs({ isVisible: false });
+            this.moveInputs({x: x, y: y});
+
+            this.bus.bind("move", scene, this.moveInputs, this);
+            this.bus.bind("toggle", scene, this.toggleInputs, this);
+        },
+
+        toggleInputs: function(e) {
+            var value = e.isVisible ? 'block' : 'none';
+            this.domInputFirst.style.display = value;
+            this.domInputLast.style.display = value;
+        },
+
+        moveInputs: function(newPos) {
+            this.domInputFirst.style.top = (newPos.y + 50) + 'px';
+            this.domInputLast.style.top = (newPos.y + 50) + 'px';
+            this.domInputFirst.style.left = (newPos.x + 50) + 'px';
+            this.domInputLast.style.left = (newPos.x + 65) + 'px';
+        },
+
+        performCopy: function (e, text) {
+            if (e.clipboardData !== undefined) {
+                e.clipboardData.setData('text/plain', text);
+                th.stopEvent(e);
+            } else {
+                this.domHasFocus.value = text;
+                this.domHasFocus.select();
+            }
+        },
+
+        handleCopy: function (e) {
+            if (this.focused === undefined) return;
+
+            if (th.isFunction(this.focused.performCopy)) {
+                var result = this.focused.performCopy();
+                if (!result) {
+                    th.stopEvent(e);
+                    return;
+                } else {
+                    this.performCopy(e, result);
+                }
+            }
+        },
+
+        handlePaste: function(e) {
+            if (this.focused === undefined) return;
+
+            if (th.isFunction(this.focused.performPaste)) {
+                if (e.clipboardData !== undefined) {
+                    this.focused.performPaste(e.clipboardData.getData('text/plain'));
+                    th.stopEvent(e);
+                } else {
+                    this.domHasFocus.value = '';
+                    th.delay(function() { this.focused.performPaste(this.domHasFocus.value); }, 0, this);
+                }
+            }
+        },
+
+        handleCut: function(e) {
+            if (this.focused === undefined) return;
+
+            if (th.isFunction(this.focused.performCut)) {
+                var result = this.focused.performCut();
+                if (!result) {
+                    th.stopEvent(e);
+                    return;
+                } else {
+                    this.performCopy(e, result);
+                }
+            }
         },
 
         enterFirst: function (e) {
             this.domHasFocus = this.domInputFirst;
+            this.domInputFirst.select();
 
             if (this.ignoreDomEvent) return;
             if (this.subscribers.length == -1) return;
@@ -2495,6 +2633,7 @@ th.FocusManager = Class.define({
 
         enterLast: function (e) {
             this.domHasFocus = this.domInputLast;
+            this.domInputLast.select();
 
             if (this.ignoreDomEvent) return;
             if (this.subscribers.length == -1) return;
@@ -2516,10 +2655,16 @@ th.FocusManager = Class.define({
                 }
             }
 
-            this.bus.fire("focus:lost", e, this.focused);
+            this.focusedLostFocus();
             delete this.focused;
             delete this.domHasFocus;
             this.focusedIndex = -1;
+        },
+
+        focusedLostFocus: function() {
+            this.bus.fire("focus:lost", e, this.focused);
+            delete this.focused.pseudoClass;
+            this.focused.repaint();
         },
 
         handleKeyDown: function (e) {
@@ -2575,7 +2720,6 @@ th.FocusManager = Class.define({
             if (this.focused !== undefined && component !== this.focused) {
                 if (th.isFunction(this.focused.allowLoseFocus)) {
                     if (!this.focused.allowLoseFocus(e)) {
-
                         this.focusedIndex = this.subscribers.indexOf(this.focused);
                         return false;
                     }
@@ -2583,12 +2727,15 @@ th.FocusManager = Class.define({
             }
 
             if (this.focused !== undefined) {
-                this.bus.fire("focus:lost", e, this.focused);
+                this.focusedLostFocus();
             }
 
             this.focusedIndex = index;
             this.focused = component;
+
             this.bus.fire("focus:received", e, this.focused);
+            this.focused.pseudoClass = 'active';
+            this.focused.repaint();
 
             if (this.focusedIndex == this.subscribers.length - 1) {
                 this.ignoreDomEvent = true;
@@ -2674,7 +2821,7 @@ th.Scene = Class.define({
                 this.render();
             }, this);
 
-            this.root = new th.Panel({ id: "root" });
+            this.root = new th.Panel({ id: this.id });
             this.root.scene = this;
 
             this.testCanvas = document.createElement("canvas");
@@ -2683,7 +2830,7 @@ th.Scene = Class.define({
 
             this.parseTags();
 
-            th.observe(window, "mousedown", function(e) {
+            th.observe(this.canvas, "mousedown", function(e) {
                 this.wrapEvent(e, this.root);
 
                 this.mouseDownComponent = e.thComponent;
@@ -2691,13 +2838,13 @@ th.Scene = Class.define({
                 th.global_event_bus.fire("mousedown", e, e.thComponent);
             }, this);
 
-            th.observe(window, "dblclick", function(e) {
+            th.observe(this.canvas, "dblclick", function(e) {
                 this.wrapEvent(e, this.root);
 
                 th.global_event_bus.fire("dblclick", e, e.thComponent);
             }, this);
 
-            th.observe(window, "click", function(e) {
+            th.observe(this.canvas, "click", function(e) {
                 this.wrapEvent(e, this.root);
 
                 th.global_event_bus.fire("click", e, e.thComponent);
@@ -2714,7 +2861,7 @@ th.Scene = Class.define({
                 }
             }, this);
 
-            th.observe(window, "mouseup", function(e) {
+            th.observe(this.canvas, "mouseup", function(e) {
                 if (!this.mouseDownComponent) return;
 
                 this.addComponentXY(e, this.root, this.mouseDownComponent);
@@ -2726,14 +2873,19 @@ th.Scene = Class.define({
             th.global_scene_array.push(this);
         },
 
-        getChildById: function(id) {
-            for (var i = 0; i < this.root.children.length; i++) {
-                if (this.root.children[i].id == id) return this.root.children[i];
-                if (th.isFunction(this.root.children[i].getChildById)) {
-                    var result = this.root.children[i].getChildById(id);
+        _byId: function(id, children) {
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].id == id) return children[i];
+
+                if (children[i].children) {
+                    var result = _byId(id, children[i].children);
                     if (result !== undefined) return result;
                 }
             }
+        },
+
+        byId: function(id) {
+            return this._byId(id, this.root.children);
         },
 
         render: function(callback) {
@@ -2866,6 +3018,7 @@ th.Scene = Class.define({
                     child = parent;
                     parent = parent.parent;
                 }
+                ctx.translate(child.bounds.x, child.bounds.y);
 
                 if (!this.smartRedraw) {
                     ctx.clearRect(0, 0, component.bounds.width, component.bounds.height);
@@ -2882,78 +3035,6 @@ th.Scene = Class.define({
 
                 ctx.restore();
             }
-        }
-    }
-});
-
-th.SimpleBorder = Class.define({
-    type: "Border",
-
-    uses: [
-        th.ComponentHelpers
-    ],
-
-    members: {
-        init: function (component) {
-            this.SIDES = ["top", "right", "bottom", "left"];
-
-            this.component = component;
-        },
-
-        getBorderWidth: function(side) {
-            var length = this.component.cssValue("border-" + side + "-width");
-            if (length === undefined) return 0; // TODO: should be "medium" by default
-            return th.convertLengthToPixels(length, this.component);
-        },
-
-        getInsets: function() {
-            return this.calculateInsets("border-", "-width");
-        },
-
-        paint: function(ctx) {
-            for (var i = 0; i < this.SIDES.length; i++) {
-                var s = this.SIDES[i];
-                var width = this.getBorderWidth(s);
-                if (width > 0) {
-                    var color = this.component.cssValue("border-" + s + "-color");
-
-                    var x, y, h, w;
-
-                    switch (s) {
-                        case "top":
-                            x = 0;
-                            y = 0;
-                            h = width;
-                            w = this.component.bounds.width;
-                            break;
-                        case "right":
-                            x = this.component.bounds.width - width;
-                            y = 0;
-                            h = this.component.bounds.height;
-                            w = width;
-                            break;
-                        case "bottom":
-                            x = 0;
-                            y = this.component.bounds.height - width;
-                            h = width;
-                            w = this.component.bounds.width;
-                            break;
-                        case "left":
-                            x = 0;
-                            y = 0;
-                            h = this.component.bounds.height;
-                            w = width;
-                            break;
-                    }
-
-                    this.paintBorder(ctx, color, x, y, w, h);
-                }
-            }
-        },
-
-        paintBorder: function(ctx, color, x, y, w, h) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, w, h);
         }
     }
 });
@@ -3479,11 +3560,105 @@ th.Border = Class.define({
         },
 
         paint: function (ctx) {
+            if (this.component.cssValue("border-image-url") === undefined) {
+                this.paintBorder(ctx)
+            } else {
+                this.paintImageBorder(ctx);
+            }
+        },
+
+        paintImageBorder: function(ctx) {
+            var img = th.global_resources.images[this.component.cssValue("border-image-url")];
+
+            if (img.width == 0) return;
+
+            var t, b, r, l, w, h, d;
+            t = parseInt(this.component.cssValue("border-image-top"));
+            b = parseInt(this.component.cssValue("border-image-bottom"));
+            r = parseInt(this.component.cssValue("border-image-right"));
+            l = parseInt(this.component.cssValue("border-image-left"));
+            w = img.width;
+            h = img.height;
+
+            d = this.component.d();
+
+            ctx.drawImage(img, 0, 0, l, t, 0, 0, d.i.l, d.i.t);     // top-left
+            ctx.drawImage(img, w - r, 0, r, t, d.b.w - d.i.r, 0, d.i.r, d.i.t); // top-right
+            ctx.drawImage(img, 0, h - b, l, b, 0, d.b.h - d.i.b, d.i.l, d.i.b); // bottom-left
+            ctx.drawImage(img, w - r, h - b, r, b, d.b.w - d.i.r, d.b.h - d.i.b, d.i.r, d.i.b); // bottom-right
+
+            switch (this.component.cssValue("border-image-repeat-x")) {
+                case 'stretch':
+                    ctx.drawImage(img, l, 0, w - l - r, t, d.i.l, 0, d.b.iw, d.i.t);
+                    ctx.drawImage(img, l, h - b, w - l - r, b, d.i.l, d.b.h - d.i.b, d.b.iw, d.i.t);
+                    break;
+                case 'repeat':
+                    var lsize;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(d.i.l, 0, d.b.iw, d.b.h);
+                    ctx.clip();
+
+                    lsize = l * (d.i.t / t);
+                    for (var x = d.i.l; x < d.b.w - d.i.r; x += lsize) {
+                        ctx.drawImage(img, l, 0, w - l - r, t, x, 0, lsize , d.i.t);
+                    }
+
+                    x = d.i.l;
+                    lsize = r * (d.i.b / b);
+                    while (x < d.b.w - d.i.r) {
+                        ctx.drawImage(img, l, h - b, w - l - r, b, x, d.b.h - d.i.b, lsize , d.i.b);
+                        x += lsize;
+                    }
+                    ctx.restore();
+                    break;
+                default:
+                    console.error('border-image-repeat-x "' + this.component.cssValue("border-image-repeat-x") + '" not supported!');
+                    break;
+            }
+
+            switch (this.component.cssValue("border-image-repeat-y")) {
+                case 'stretch':
+                    ctx.drawImage(img, 0, t, l, h - t - b, 0, d.i.t, d.i.l, d.b.ih);
+                    ctx.drawImage(img, w - l, t, r, h - t - b, d.b.w - d.i.r, d.i.t, d.i.r, d.b.ih);
+                    break;
+                case 'repeat':
+                    var lsize;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(0, d.i.t, d.b.w, d.b.ih);
+                    ctx.clip();
+
+                    lsize = t * (d.i.l / l);
+                    for (var y = d.i.t; y < d.b.h - d.i.b; y += lsize) {
+                        ctx.drawImage(img, 0, t, l, h - t - b, 0, y, lsize, d.i.l);
+                    }
+
+                    lsize = t * (d.i.r / r);
+                    for (var y = d.i.t; y < d.b.h - d.i.b; y += lsize) {
+                        ctx.drawImage(img, w - l, t, r, h - t - b, d.b.w - d.i.r, y, lsize, d.i.l);
+                    }
+
+/*                    offX = d.i.l;
+                    lsize = r * (d.i.b / b);
+                    while (offX < d.b.w - d.i.r) {
+                        ctx.drawImage(img, l, h - b, w - l - r, b, offX, d.b.h - d.i.b, lsize , d.i.b);
+                        offX += lsize;
+                    }*/
+                    ctx.restore();
+                    break;
+                default:
+                    console.error('border-image-repeat-y "' + this.component.cssValue("border-image-repeat-x") + '" not supported!');
+                    break;
+            }
+        },
+
+        paintBorder: function (ctx) {
             var b = this.component.d();
 
             var isZero = this.isZeroSize; // caching the function for optimization
 
-            if (!this.borderDataCalculated) this.recalculateBorderData();
+            this.recalculateBorderData();
 
             var tlBordersSame = this.areBorderSideFinalStylesSame(1|8); // top+left
             var brBordersSame = this.areBorderSideFinalStylesSame(2|4); // bottom+right
@@ -3605,13 +3780,13 @@ th.Component = Class.define({
     members: {
         init: function(parms) {
             if (!parms) parms = {};
-            for (parm in parms) {
+            for (var parm in parms) {
                 this[parm] = parms[parm];
             }
 
             if (!this.bounds) this.bounds = {};
 
-            this.border = new th.SimpleBorder(this);
+            this.border = new th.Border(this);
 
             if (this.opaque == undefined) this.opaque = true;
 
@@ -3689,8 +3864,8 @@ th.SimpleLayout = Class.define({
                     } : {
                         x:      constantAxisPosition,
                         y:      variableAxisPosition,
-                        width:  d.b.ih,
-                        height: d.b.iw
+                        width:  d.b.iw,
+                        height: length
                     }
 
                     currentPosition += length;
@@ -3749,7 +3924,7 @@ th.Container = Class.define({
 
         add: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = th.isArray(arguments[z]) ? arguments[z] : [ arguments[z] ];
+                var component = th.isArray(arguments[z]) ? arguments[z] : [ arguments[z] ];
                 this.children = this.children.concat(component);
                 for (var i = 0; i < component.length; i++) {
                     component[i].parent = this;
@@ -3760,7 +3935,7 @@ th.Container = Class.define({
 
         remove: function() {
             for (var z = 0; z < arguments.length; z++) {
-                component = th.isArray(arguments[z]) ? arguments[z] : [ arguments[z] ];
+                var component = th.isArray(arguments[z]) ? arguments[z] : [ arguments[z] ];
                 for (var i = 0; i < component.length; i++) {
                     var old_length = this.children.length;
                     this.children = th.remove(this.children, component[i]);
@@ -3911,120 +4086,99 @@ th.Container = Class.define({
     }
 });
 
-th.Window = Class.define({
+/**
+ * TODOs:
+ * o paint background-color
+ * o CSS3 Borders
+ */
+
+th.WindowScene = Class.define({
     type: "Window",
 
+    superclass: th.Scene,
+
     members: {
-        init: function(parms) {
-            parms = parms || {};
+        init: function(canvasOrId, baseUrlOrParams) {
+            this._super(canvasOrId, baseUrlOrParams);
 
-            this.containerId = parms.containerId || false;
-            this.width = parms.width || 200;
-            this.height = parms.height || 300;
-            this.title = parms.title || 'NO TITLE GIVEN!';
-            this.y = parms.top || 50;
-            this.x = parms.left || 50;
+            this.canvas.style.position = "absolute";
+            this.canvas.style.display = 'none';
             this.isVisible = false;
-            this.closeOnClickOutside = !!parms.closeOnClickOutside;
 
-            if(!parms.containerId) {
-                console.error('The "containerId" must be given!');
-                return;
+            this.move(100, 100);
+            this.label = new th.Label();
+            this.label.text = 'I am a Window, so drag me around!';
+            this.label.addCss('font', '9pt Tahoma');
+            this.label.addCss('color', 'white');
+
+            this.isDraggable = true;
+            if (this.isDraggable) {
+                th.observe(this.canvas, "mousedown", this.onmousedown, this);
+                th.observe(window, "mouseup", this.onmouseup, this);
+                th.observe(window, "mousemove", this.onmousemove, this);
             }
+        },
 
-            if (th.byId(this.containerId)) {
-                console.error('There is already a element with the id "'+this.containerId+'"!');
-                return;
-            }
+        move: function(x, y) {
+            this.canvas.style.top = y+'px';
+            this.canvas.style.left = x+'px';
 
-            if (!parms.userPanel) {
-                console.error('The "userPanel" must be given!');
-                return;
-            }
+            this.posX = x;
+            this.posY = y;
 
-            /*if (!th.byId('popup_insert_point')) {
-                for (var x = 0; x < document.childNodes.length; x++) {
-                    if (document.childNodes[x].nodeType == 1) {
-                        var popupParent = document.createElement("div");
-                        popupParent.id = 'popup_insert_point';
-                        document.childNodes[x].appendChild(popupParent);
-                        break;
-                    }
-                }
-            }*/
+            this.bus.fire("move", { x: x, y: y}, this);
+        },
 
-            th.byId('popup_insert_point').innerHTML += '<div id="'+this.containerId+'" class="popupWindow"></div>';
-            this.container = th.byId(this.containerId);
-            dojo.attr(this.container, { width: this.width, height: this.height, tabindex: '-1' });
+        centerUp: function() {
+            this.move(Math.round((window.innerWidth - this.canvas.width) * 0.5), Math.round((window.innerHeight - this.canvas.height) * 0.25));
+        },
 
-            this.container.innerHTML = "<canvas id='"+this.containerId+"_canvas'></canvas>";
-            this.canvas = th.byId(this.containerId + '_canvas');
-            dojo.attr(this.canvas, { width: this.width, height: this.height, tabindex: '-1' });
-
-            this.scene = new th.Scene(this.canvas);
-            this.windowPanel = new th.components.WindowPanel(parms.title, parms.userPanel);
-            this.windowPanel.windowBar.parentWindow = this;
-            this.scene.root.add(this.windowPanel);
-
-            this.move(this.x, this.y);
-
-
-            dojo.connect(window, "mousedown", dojo.hitch(this, function(e) {
-                if (!this.isVisible || !this.closeOnClickOutside) return;
-
-                var d = dojo.coords(this.container);
-                if (e.clientX < d.l || e.clientX > (d.l + d.w) || e.clientY < d.t || e.clientY > (d.t + d.h)) {
-                    this.toggle();
-                } else {
-                    dojo.stopEvent(e);
-                }
-            }));
-
-            dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-                if (!this.isVisible) return;
-
-                if(e.keyCode == bespin.util.keys.Key.ESCAPE) {
-                    this.toggle();
-                    dojo.stopEvent(e);
-                }
-            }));
+        center: function() {
+            this.move(Math.round((window.innerWidth - this.canvas.width) * 0.5), Math.round((window.innerHeight - this.canvas.height) * 0.5));
         },
 
         toggle: function() {
             this.isVisible = !this.isVisible;
 
             if (this.isVisible) {
-                this.container.style.display = 'block';
-                this.layoutAndRender();
+                this.canvas.style.display = 'block';
             } else {
-                this.container.style.display = 'none';
+                this.canvas.style.display = 'none';
             }
 
-            this.scene.bus.fire("toggle", {isVisible: this.isVisible}, this);
-        },
-
-        layoutAndRender: function() {
-            this.scene.layout();
-            this.scene.render();
-        },
-
-        centerUp: function() {
-            this.move(Math.round((window.innerWidth - this.width) * 0.5), Math.round((window.innerHeight - this.height) * 0.25));
-        },
-
-        center: function() {
-            this.move(Math.round((window.innerWidth - this.width) * 0.5), Math.round((window.innerHeight - this.height) * 0.5));
-        },
-
-        move: function(x, y) {
-            this.y = y;
-            this.x = x;
-            this.container.style.top = y + 'px';
-            this.container.style.left = x + 'px';
+            this.bus.fire("toggle", {isVisible: this.isVisible}, this);
         },
 
         getPosition: function() {
-            return { x: this.x, y: this.y };
+            return { x: this.posX, y: this.posY };
+        },
+
+        onmousedown: function(e) {
+            var d = this.root.d();
+
+            var left = th.cumulativeOffset(this.canvas).left + d.i.l;
+            var right = left + this.canvas.width - d.i.r;
+            var top = th.cumulativeOffset(this.canvas).top +  d.i.t;
+            var bottom = top + this.canvas.height - d.i.b;
+            if (e.clientX > left && e.clientX < right && e.clientY > top && e.clientY < bottom) return;
+
+            this.startValue = { mouse: { x: e.clientX, y: e.clientY }, window: this.getPosition() };
+            th.stopEvent(e);
+        },
+
+        onmousemove: function(e) {
+            if (this.startValue) {
+                var s = this.startValue;
+                var x = s.window.x - (s.mouse.x - e.clientX);
+                var y = s.window.y - (s.mouse.y - e.clientY);
+                this.move(x, y);
+
+                th.stopEvent(e);
+            }
+        },
+
+        onmouseup: function(e) {
+            delete this.startValue;
         }
     }
 });
@@ -4735,6 +4889,205 @@ th.Label = Class.define({
     }
 });
 
+th.HtmlLabel = Class.define({
+    type: "Label",
+
+    superclass: th.Panel,
+
+    members: {
+        init: function(parms) {
+            if (!parms) parms = {};
+
+            this._super(parms);
+
+            this.text = parms.text || "";
+            this.lastText = '';
+            this.parsedHtml = [];
+
+            this.regTag = /#\w+|\w+/g;
+            this.regTags = /<(\w+|\w+\s+|#[a-fA-F0-9]{3}|#[a-fA-F0-9]{6})>|<\/(\w+|\w+\s|#[a-fA-F0-9]{3}|#[a-fA-F0-9]{6})>/g;
+        },
+
+        styleContext: function(ctx, style) {
+            if (!ctx || !style) return;
+
+            ctx.font = [style['font-weight'], style['font-style'], style['font-size'], style['font-family']].join(' ');
+            ctx.fillStyle = style['color'];
+
+            return ctx;
+        },
+
+        parseHtml: function() {
+            if (this.lastText == this.text && this.parsedHtml.length != 0) return;
+
+            var obj = { 'font-family': 'Tahoma', 'font-size': '9pt', 'font-style': '', 'font-weight': '', 'text-decoration': '', 'color': 'black'};
+
+            var styleArray = [ obj ];
+
+            var values = th.getSpaceDelimitedItems(this.cssValue('font'));
+            var fontFamily = [];
+            for (var i = 0; i < values.length; i++) {
+                if (th.isCssLength(values[i])) {
+                    obj['font-size'] = values[i];
+                } else {
+                    switch (values[i]) {
+                        case 'bold':
+                            obj['font-weight'] = 'bold';
+                            break;
+                        case 'italic':
+                            obj['font-style'] = 'italic';
+                            break;
+                        default:
+                            fontFamily.push(values[i]);
+                            break;
+                    }
+                }
+            }
+            obj['font-family'] = fontFamily.join(', ');
+            obj['color'] = this.cssValue('color');
+
+            if (this.lastText == this.text && this.parsedHtml.length == 0) {
+                this.parsedHtml.push( { style: obj } );
+                return;
+            }
+
+            var newStyle, tag, text = this.text;
+
+            var tagArray = [ '' ];
+
+            var currentStylePos = 0;
+
+            this.parsedHtml = [];
+
+            var tags = this.text.match(this.regTags);
+
+            if (tags != null) {
+                for (var i = 0; i < tags.length; i++) {
+                    var end = text.indexOf(tags[i]);
+                    this.parsedHtml.push( { style: styleArray[currentStylePos], text: text.substring(0, end) } );
+                    text = text.substring(end + tags[i].length);
+
+                    tag = tags[i].match(this.regTag)[0];
+                    if (tags[i][1] != '/') {
+                        newStyle = th.clone(styleArray[currentStylePos]);
+
+                        switch (tag) {
+                            case 'b':
+                            case 'strong':
+                                newStyle['font-weight'] = 'bold';
+                                break;
+                            case 'i':
+                                newStyle['font-style'] = 'italic';
+                                break;
+                            case 'u':
+                                newStyle['text-decoration'] = 'underline';
+                                break;
+                            default:
+                                if (tag[0] == '#') {
+                                    newStyle['color'] = tag;
+                                } else {
+                                    console.error("parseHtml: Can't parse the tag '" + tag + "' => !skip! parsing!");
+                                    return;
+                                }
+                                break;
+                        }
+                        styleArray.push(newStyle);
+                        tagArray.push(tag);
+                        currentStylePos ++;
+                    } else {
+                        if (tagArray[currentStylePos] != tag) {
+                            console.error("parseHtml: Close tag '" + tag + "' but should close '" + tagArray[currentStylePos] + "' => !skip! parsing!");
+                            return;
+                        }
+                        styleArray.pop();
+                        tagArray.pop();
+                        currentStylePos --;
+                    }
+                }
+
+                if (currentStylePos != 0) {
+                    console.error("parseHtml: not all tag were closed again => !skip! parsing!");
+                    return;
+                }
+            }
+            this.parsedHtml.push( { style: styleArray[0], text: text } );
+            this.shouldParse = false;
+            this.lastText = this.text;
+        },
+
+        getPreferredSize: function() {
+            this.parseHtml();
+            var ctx = this.styleContext(this.parent.getScratchContext(), this.parsedHtml[0].style);
+            var i = this.getInsets();
+
+            var w = ctx.measureText(this.text).width + 2;
+            w += i.left + i.right;
+
+            var h = Math.floor(ctx.measureText(this.text).ascent * 1.5);   // multiplying by 2 to fake a descent and leading
+            h += i.top + i.bottom;
+
+            return { height: h, width: w };
+        },
+
+        paint: function(ctx) {
+            this._super(ctx);
+
+            var d = this.d();
+
+            if (this.text != this.lastText) this.parseHtml();
+            if (this.text != this.lastText) return;
+
+            this.styleContext(ctx, this.parsedHtml[0].style);
+            textMetrics = ctx.measureText('text');
+            var y = d.i.t + textMetrics.ascent;
+            if (th.browser.WebKit) y += 1;  // strings are one pixel too high in Safari 4 and Webkit nightly
+
+            var width = 0;
+            var maxWidth = (d.b.w - d.i.w);
+            var textMetrics, textToRender, lastLength;
+            var text, style;
+
+            ctx.save();
+
+            for (var i = 0; i < this.parsedHtml.length; i++) {
+                text = this.parsedHtml[i].text;
+                style = this.parsedHtml[i].style;
+
+                if (text == '') continue;
+
+                this.styleContext(ctx, style);
+                textMetrics = ctx.measureText(text);
+
+                if (width + textMetrics.width <= maxWidth) {
+                    ctx.fillText(text, d.i.l + width, y);
+                    if (style['text-decoration'] == 'underline') {
+                        ctx.lineWidth = '1px';
+                        ctx.strokeStyle = style.color;
+                        ctx.beginPath();
+                        ctx.moveTo(d.i.l + width, y + 2.5);
+                        ctx.lineTo(d.i.l + width + textMetrics.width, y + 2.5);
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                    width += textMetrics.width;
+                } else {
+                    lastLength = text.length - 2;
+                    textToRender = text;
+                    while ((width + textMetrics.width > maxWidth) && lastLength > 0) {
+                        textToRender = text.substring(0, --lastLength) + '...';
+                        textMetrics = ctx.measureText(textToRender);
+                    }
+                    ctx.fillText(textToRender, d.i.l + width, y);
+
+                    break;
+                }
+            }
+
+            ctx.restore();
+        }
+    }
+});
+
 th.ExpandingInfoPanel = Class.define({
     type: "ExpandingInfoPanel",
 
@@ -4822,6 +5175,25 @@ th.List = Class.define({
             if (parms.topLabel) this.addTopLabel(parms.topLabel);
         },
 
+        performCopy: function() {
+            if (!this.selected) return false;
+            return this.selected.text;
+        },
+
+        performCut: function() {
+            if (!this.selected) return;
+            var result = this.selected.text;
+            th.removeArrayItem(this.items, this.selected);
+            delete this.selected;
+            this.repaint();
+            return result;
+        },
+
+        performPaste: function(text) {
+            this.addItemWithString(text);
+            this.repaint();
+        },
+
         addTopLabel: function(label) {
             this.label = label;
             this.label.className = "header";
@@ -4864,7 +5236,7 @@ th.List = Class.define({
             var item = null;
             if (th.isObject(this.items[0])) {
                 for (var x = 0; x < this.items.length; x++) {
-                    if (this.items[x].name == text) {
+                    if (this.items[x].text == text) {
                         item = this.items[x];
                         break;
                     }
@@ -4927,8 +5299,14 @@ th.List = Class.define({
             }
         },
 
+        getItemText: function(item) {
+            if (item.text) return item.text;
+            if (th.isString(item)) return item;
+            return item.toString();
+        },
+
         getRenderer: function(rctx) {
-            this.renderer.text = rctx.item.toString();
+            this.renderer.text = this.getItemText(rctx.item);
             this.renderer.selected = rctx.selected;
             this.renderer.pseudoClass = (this.renderer.selected) ? "active" : undefined;
             this.renderer.item = rctx.item;
@@ -4942,7 +5320,7 @@ th.List = Class.define({
         },
 
         getRenderContext: function(item, row) {
-            return { item: item, even: row % 2 == 0, selected: this.selected == item };
+            return { item: item, even: row % 2 == 0, selected: this.selected === item };
         },
 
         getRowHeight: function() {
@@ -5000,7 +5378,7 @@ th.List = Class.define({
 
                 this.heights = [];
                 var itemCounter = 0;
-                while (y < paintHeight) {   // stop painting if current label is below the current viewing region
+                while (y < paintHeight && itemCounter < this.items.length) {   // stop painting if current label is below the current viewing region
                     var useRealItem = (itemCounter < this.items.length);
                     var item = useRealItem ? this.items[itemCounter] : "";
 
@@ -5296,7 +5674,7 @@ th.HorizontalTree = Class.define({
         }
     }
 });
-th.DEFAULT_CSS = "#root {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;";
+th.DEFAULT_CSS = "* {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;color: black;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;}Button {background-color: gray;";
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1
  *
