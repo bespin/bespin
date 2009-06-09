@@ -80,8 +80,12 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         
         var instruction = new bespin.cmd.commandline.Instruction(null, value);
         this.executing = instruction;
-
-        this.evalFunction(value, null, function(output) {
+        
+        var frame = null;
+        if (dojo.byId("debugbar_position").innerHTML != "") {
+            var frame = 0;
+        }
+        this.evalFunction(value, frame, function(output) {
             console.log("EvalCL got output: " + output);
             instruction.addOutput(output);
             self.updateOutput();
@@ -217,6 +221,8 @@ dojo.mixin(bespin.debug, {
         bespin.debug._initialized = true;
     },
     
+    // Note that evalFunction should be an
+    // extension point
     showDebugBar: function(evalFunction) {
         bespin.debug._initialize();
         bespin.debug.evalLine.evalFunction = evalFunction;
@@ -235,10 +241,28 @@ bespin.subscribe("debugger:running", function() {
     var el = dojo.byId("debugbar_status");
     el.innerHTML = "Running";
     dojo.addClass(el, "running");
+    dojo.byId("debugbar_position").innerHTML = "";
 });
 
 bespin.subscribe("debugger:stopped", function() {
-   var el = dojo.byId("debugbar_status");
-   el.innerHTML = "Stopped";
-   dojo.removeClass(el, "running");
+    var el = dojo.byId("debugbar_status");
+    el.innerHTML = "Stopped";
+    dojo.removeClass(el, "running");
+});
+
+bespin.subscribe("debugger:halted", function(location) {
+    var el = dojo.byId("debugbar_position");
+    var newtext = "";
+    
+    if (location.exception) {
+        newtext = "Exception " + location.exception + " at<br>";
+    }
+    
+    newtext += location.sourceLineText + "<br>" + 
+                location.scriptName + ":" + (location.sourceLine + 1);
+    if (location.invocationText) {
+        newtext += "<br>called by " + location.invocationText;
+    }
+    
+    el.innerHTML = newtext;
 });
