@@ -24,14 +24,18 @@
 
 dojo.provide("bespin.test");
 
-dojo.require("doh.runner");
-dojo.require("bespin.util.doh.bespinRunner");
+//dojo.require("doh.runner");
+//dojo.require("bespin.util.doh.bespinRunner");
+
+dojo.require("bespin.test.runner");
 
 //** {{{ Command: test }}} **
 bespin.cmd.commands.add({
     name: 'test',
     // ** {{{execute}}}
     execute: function(commandline, type) {
+        
+        /*
         doh.register("basicTest", [
             function() {
                 doh.t(true);
@@ -41,5 +45,6 @@ bespin.cmd.commands.add({
         ]);
 
         doh.run();
+        */
     }
 });

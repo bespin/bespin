@@ -83,6 +83,7 @@ dojo.require("bespin.cmd.commands");
 dojo.require("bespin.wizard");
 //dojo.require("bespin.social");
 dojo.require("bespin.test");
+dojo.provide("bespin.test.runner");
 
 dojo.require("bespin.cmd.editorcommands");
 
