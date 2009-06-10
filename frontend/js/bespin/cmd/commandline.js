@@ -409,7 +409,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     style: "vertical-align:middle; padding:2px;",
                     alt: "Remove this command from the history",
                     title: "Remove this command from the history",
-                    onclick: function() {
+                    onclick: function(ev) {
                         self.history.remove(instruction);
                         self.updateOutput();
                         dojo.stopEvent(ev);
