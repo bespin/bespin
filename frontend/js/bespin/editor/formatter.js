@@ -104,7 +104,7 @@ bespin.subscribe("component:register:actions", function(e) {
 bespin.subscribe("component:register:commandStore", function(event) {
     event.object.addCommand({
         name: 'format',
-        // takes: ['actionname'],
+        withKey: "CMD SHIFT F",
         preview: 'format source code or selection',
         description: 'Use this to indent the selected fragment of your code.  The entire source is indented if nothing is selected.',
         execute: function(self) {

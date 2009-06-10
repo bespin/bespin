@@ -28,6 +28,90 @@
 
 dojo.provide("bespin.debug");
 
+dojo.require("bespin.cmd.commandline");
+
+// ** {{{ bespin.cmd.commandline.SimpleHistoryStore }}} **
+//
+// A simple store that keeps the commands in memory.
+dojo.declare("bespin.debug.SimpleHistoryStore", null, {
+    constructor: function(history) {
+    },
+
+    save: function(instructions) {}
+});
+
+dojo.declare("bespin.debug.EvalCommandLineInterface",
+    bespin.cmd.commandline.Interface, {
+    constructor: function(commandLine, initCommands, options) {
+        options = options || {};
+        var idPrefix = options.idPrefix || "command_";
+        var parentElement = options.parentElement || dojo.body();
+        this.commandLine = dojo.byId(commandLine);
+        this.setKeyBindings();
+        this.history = new bespin.cmd.commandline.History(this);
+        this.history.store = new bespin.debug.SimpleHistoryStore();
+        this.output = dojo.byId(idPrefix + "output");
+    },
+    setKeyBindings: function() {
+        dojo.connect(this.commandLine, "onfocus", this, function() {
+            bespin.publish("cmdline:focus");
+        });
+
+        dojo.connect(this.commandLine, "onblur", this, function() {
+            bespin.publish("cmdline:blur");
+        });
+
+        dojo.connect(this.commandLine, "onkeypress", this, function(e) {
+            var key = bespin.util.keys.Key;
+            if (e.keyCode == key.ENTER) {
+                this.executeCommand(this.commandLine.value);
+
+                return false;
+            }
+        });
+
+    },
+    executeCommand: function(value) {
+        if (!this.evalFunction) {
+            return;
+        }
+        console.log("Evaling: " + value);
+        var self = this;
+        
+        var instruction = new bespin.cmd.commandline.Instruction(null, value);
+        this.executing = instruction;
+        
+        var frame = null;
+        if (dojo.byId("debugbar_position").innerHTML != "") {
+            var frame = 0;
+        }
+        this.evalFunction(value, frame, function(output) {
+            console.log("EvalCL got output: " + output);
+            instruction.addOutput(output);
+            self.updateOutput();
+        });
+        this.history.add(instruction);
+        this.updateOutput();
+    },
+    
+    updateOutput: function() {
+        var outputNode = this.output;
+        outputNode.innerHTML = "";
+        dojo.forEach(this.history.instructions, function(instruction) {
+            var rowin = dojo.create("div", {
+                className: "command_rowin",
+                style: "background-image: url(/images/instruction11.png)"
+            }, outputNode);
+            rowin.innerHTML = instruction.typed || "";
+            
+            var rowout = dojo.create("div", {
+                className: "command_rowout"
+            }, outputNode);
+            rowout.innerHTML = instruction.output || "";
+        });
+    }
+});
+
 dojo.mixin(bespin.debug, {
     /*
      * Array of objects that look like this:
@@ -40,6 +124,9 @@ dojo.mixin(bespin.debug, {
     
     // internal ID numbers for these breakpoints.
     _sequence: 1,
+    
+    // has the debugbar been initialized?
+    _initialized: false,
 
     // helper to check for duplicate breakpoints before adding this one
     addBreakpoint: function(newBreakpoint) {
@@ -109,5 +196,73 @@ dojo.mixin(bespin.debug, {
             content: dojo.toJson(this.breakpoints),
             timestamp: new Date().getTime()
         });
+    },
+    
+    _initialize: function() {
+        if (bespin.debug._initialized) {
+            return;
+        }
+        dojo.connect(dojo.byId("debugbar_break"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:break", {});
+                    });
+                    
+        dojo.connect(dojo.byId("debugbar_continue"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:continue", {});
+                    });
+                
+        bespin.debug.evalLine = new bespin.debug.EvalCommandLineInterface(
+                'debugbar_command', {}, {
+                    idPrefix: "debugbar_",
+                    parentElement: dojo.byId("debugbar")
+                });
+        
+        bespin.debug._initialized = true;
+    },
+    
+    // Note that evalFunction should be an
+    // extension point
+    showDebugBar: function(evalFunction) {
+        bespin.debug._initialize();
+        bespin.debug.evalLine.evalFunction = evalFunction;
+        dojo.style("debugbar", "display", "block");
+        bespin.page.editor.recalcLayout();
+        bespin.debug.evalLine.commandLine.focus();
+    },
+    
+    hideDebugBar: function() {
+        dojo.style("debugbar", "display", "none");
+        bespin.page.editor.recalcLayout();
     }
+});
+
+bespin.subscribe("debugger:running", function() {
+    var el = dojo.byId("debugbar_status");
+    el.innerHTML = "Running";
+    dojo.addClass(el, "running");
+    dojo.byId("debugbar_position").innerHTML = "";
+});
+
+bespin.subscribe("debugger:stopped", function() {
+    var el = dojo.byId("debugbar_status");
+    el.innerHTML = "Stopped";
+    dojo.removeClass(el, "running");
+});
+
+bespin.subscribe("debugger:halted", function(location) {
+    var el = dojo.byId("debugbar_position");
+    var newtext = "";
+    
+    if (location.exception) {
+        newtext = "Exception " + location.exception + " at<br>";
+    }
+    
+    newtext += location.sourceLineText + "<br>" + 
+                location.scriptName + ":" + (location.sourceLine + 1);
+    if (location.invocationText) {
+        newtext += "<br>called by " + location.invocationText;
+    }
+    
+    el.innerHTML = newtext;
 });
