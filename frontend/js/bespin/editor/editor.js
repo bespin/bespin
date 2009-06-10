@@ -299,7 +299,11 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         if (dojo.isFunction(action)) {
             hasAction = true;
-            action(args);
+            try {
+                action(args);
+            } catch (e) {
+                console.log("Action caused an error! ", e);
+            }
             this.lastAction = action;
         }
 
@@ -834,6 +838,10 @@ dojo.declare("bespin.editor.UI", null, {
         return lh;
     },
 
+    resetCanvas: function() { // forces a resize of the canvas
+        dojo.attr(dojo.byId(this.editor.canvas), { width: this.getWidth(), height: this.getHeight() });
+    },
+
     // ** {{{ paint }}} **
     //
     // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
@@ -952,7 +960,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
-        // refreshCanvas = true;
+        //refreshCanvas = true;
 
         // START RENDERING
 
@@ -1043,6 +1051,7 @@ dojo.declare("bespin.editor.UI", null, {
 
                 ctx.fillStyle = theme.lineNumberColor;
                 ctx.font = this.editor.theme.lineNumberFont;
+                //console.log(currentLine + " " + x + " " + cy);
                 ctx.fillText(currentLine + 1, x, cy);
 
                 y += this.lineHeight;

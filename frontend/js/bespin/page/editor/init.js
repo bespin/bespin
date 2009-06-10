@@ -63,6 +63,14 @@ dojo.provide("bespin.page.editor.init");
                 move.push(footer);
             }
 
+            // This should really move into a debugger plugin!
+            // note also that this interferes with collab below.
+            var debugbar = dojo.byId("debugbar");
+            if (debugbar.style.display == "block") {
+                dojo.forEach(move, function(item) { item.style.right = "201px"; });
+            }
+
+
             if (bespin.get('toolbar').showCollab) {
                 collab.style.display = "block";
                 dojo.forEach(move, function(item) { item.style.right = "201px"; });
@@ -296,6 +304,7 @@ dojo.provide("bespin.page.editor.init");
         var project = event.project || bespin.get('editSession').project;
         var filename = event.file.name;
 
+// TODO: FIX ME WITH THUNDERHEAD 2
 //        projectLabel.attributes.text = project;
 //        fileLabel.attributes.text = filename;
 //        scene.render();
@@ -305,7 +314,8 @@ dojo.provide("bespin.page.editor.init");
     //
     // Add a notifier to show that the file is dirty and needs to be saved
     bespin.subscribe("editor:dirty", function(event) {
-        dirtyLabel.attributes.text = "●";
+        // TODO: FIX ME WITH THUNDERHEAD 2
+        //dirtyLabel.attributes.text = "●";
         //scene.render();
     });
 
@@ -320,7 +330,8 @@ dojo.provide("bespin.page.editor.init");
     //
     // Take away the notifier. Just saved
     bespin.subscribe("editor:clean", function(event) {
-        dirtyLabel.attributes.text = "";
+        // TODO: FIX ME WITH THUNDERHEAD 2
+        //dirtyLabel.attributes.text = "";
         //scene.render();
     });
 
