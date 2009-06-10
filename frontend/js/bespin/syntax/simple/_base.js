@@ -139,13 +139,14 @@ bespin.syntax.simple.Resolver = new function() {
 
           var type = extension2type[extension]; // convert the extension (e.g. js) to a type (JavaScript)
 
-          if (!engines[type] || engines[type] != "LOADING") { // does an object already exist?
+          if (!engines[type] || (typeof engines[type] === "string" && engines[type] != "LOADING")) { // does an object already exist?
               engines[type] = "LOADING"; // cheat and have this show that the engine is loading so don't do it twice
               var dr = dojo.require;
               dr.call(dojo, "bespin.syntax.simple." + type.toLowerCase());
 
               if (bespin.syntax.simple[type]) {
                   engines[type] = new bespin.syntax.simple[type]();
+                  //setTimeout(function() { console.log("TIMEOUT: " + type); bespin.get('editor').paint(true) }, 3600);
               }
           }
           return engines[type] || NoopSyntaxEngine;
