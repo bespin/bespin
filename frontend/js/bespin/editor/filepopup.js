@@ -92,10 +92,14 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             if (self.urlTimeout) {
                 clearTimeout(self.urlTimeout);
             }
+
+            // TODO: This makes urlbar try (and fail) to load a file. Sure that's not right
+            /*
             self.urlTimeout = setTimeout(function () {
                 self.lastSelectedPath = pathSelected;
                 location.hash = '#path=' + pathSelected;
             }, 300);
+            */
         }, this);
 
         this.scene.bus.bind("itemselected", this.tree.lists[0], function(e) {
@@ -199,8 +203,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 continue;
             }
             if (/\/$/.test(name)) {
-                name = name.substring(0, name.length - 1);
-                fdata.push({ name: name, contents: this.fetchFiles });
+                fdata.push({
+                    name: name.substring(0, name.length - 1),
+                    contents: dojo.hitch(this, this.fetchFiles)
+                });
             } else {
                 fdata.push({ name: name });
             }
@@ -273,30 +279,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         var contentsPath = new Array(newPath.length);
         var countSetupPaths = sameLevel;
 
-        // this function should stay here, as this funciton is accessing "pathContents" and "countSetupPaths"
-        var self = this;
-        var displayFetchedFiles = function(files) {
-            // "this" is the callbackData object!
-            var contents = self.prepareFilesForTree(files);
-            if (this.index != 0) {
-                contentsPath[this.index] = contents;
-            }
-
-            self.tree.replaceList(this.index, contents);
-            self.tree.lists[this.index].selectItemByText(fakePath[this.index].name);
-            countSetupPaths ++;
-
-            if (countSetupPaths == newPath.length) {
-                for (var x = 0; x < newPath.length - 1; x++) {
-                    // when the path is not restored from the root, then there are contents without contents!
-                    if (contentsPath[x + 1]) {
-                        // todo: I added the if () to fix an error, not sure if it was a symptom of something larger
-                        if (self.tree.lists[x].selected) self.tree.lists[x].selected.contents = contentsPath[x + 1];
-                    }
-                }
-            }
-        };
-
         // get the data for the lists
         for (var x = sameLevel; x < newPath.length; x++) {
             var selected = this.tree.lists[x - 1].selected;
@@ -308,11 +290,40 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     this.tree.replaceList(x, selected.contents);
                 }
                 this.tree.lists[x].selectItemByText(fakePath[x].name);
-                countSetupPaths ++;
+                countSetupPaths++;
             } else {
                 // load filelist form this.server
                 var filepath = this.currentProject + "/" + this.getFilePath(fakePath.slice(1, x));
-                this.server.list(filepath, null, dojo.hitch({index: x}, displayFetchedFiles));
+
+                var self = this;
+                // Closure creator to capture the value of x in index
+                bespin.get("server").list(filepath, null, (function(index) {
+                    return function(files) {
+                        // "this" is the callbackData object!
+                        var contents = self.prepareFilesForTree(files);
+                        if (index != 0) {
+                            contentsPath[index] = contents;
+                        }
+
+                        self.tree.replaceList(index, contents);
+                        self.tree.lists[index].selectItemByText(fakePath[index].name);
+                        countSetupPaths++;
+
+                        if (countSetupPaths == newPath.length) {
+                            for (var x = 0; x < newPath.length - 1; x++) {
+                                // when the path is not restored from the root,
+                                // then there are contents without contents!
+                                if (contentsPath[x + 1]) {
+                                    // todo: I added the if () to fix an error,
+                                    // not sure if it was a symptom of something larger
+                                    if (self.tree.lists[x].selected) {
+                                        self.tree.lists[x].selected.contents = contentsPath[x + 1];
+                                    }
+                                }
+                            }
+                        }
+                    };
+                })(x));
             }
         }
 
