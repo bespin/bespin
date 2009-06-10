@@ -220,6 +220,21 @@ dojo.mixin(bespin.debug, {
                         bespin.publish("debugger:continue", {});
                     });
                 
+        dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepnext", {});
+                    });
+
+        dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepout", {});
+                    });
+
+        dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepin", {});
+                    });
+
         bespin.debug.evalLine = new bespin.debug.EvalCommandLineInterface(
                 'debugbar_command', {}, {
                     idPrefix: "debugbar_",
