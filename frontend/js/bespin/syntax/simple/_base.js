@@ -29,12 +29,12 @@
 
 dojo.provide("bespin.syntax.simple._base");
 
-
 // ** {{{ bespin.syntax.simple.Model }}} **
 //
 // Tracks syntax highlighting data on a per-line basis.
 dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
-    lineMetaInfo:  [],
+    lineMetaInfo: [],
+
     // ** {{{ Meta Info }}} **
     //
     // We store meta info on the lines, such as the fact that it is in a multiline comment
@@ -93,6 +93,7 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
 // The resolver holds the engines per language that are available to do the actual syntax highlighting
 bespin.syntax.simple.Resolver = new function() {
   var engines = {};
+  var extension2type = {};
 
   // ** {{{ NoopSyntaxEngine }}} **
   //
@@ -119,29 +120,32 @@ bespin.syntax.simple.Resolver = new function() {
       // ** {{{ register }}} **
       //
       // Engines register themselves,
-      // e.g. {{{bespin.syntax.EngineResolver.register(new bespin.syntax.simple.CSS() || "CSS", ['css']);}}}
-      register: function(syntaxEngine, types) {
-          if (bespin.syntax.simple[syntaxEngine]) {
-              syntaxEngine = new bespin.syntax.simple[syntaxEngine]();
+      // e.g. {{{bespin.syntax.EngineResolver.register("CSS", ['css'], new bespin.syntax.simple.CSS());}}}
+      register: function(type, extensions, syntaxEngine) {
+          if (syntaxEngine) { // map the type (e.g. CSS to the syntax engine object if one is passed)
+              engines[type] = syntaxEngine;
           }
 
-          for (var i = 0; i < types.length; i++) {
-              engines[types[i]] = syntaxEngine;
+          for (var i = 0; i < extensions.length; i++) { // link the extension to the type (js -> JavaScript)
+              extension2type[extensions[i]] = type;
           }
       },
 
       // ** {{{ resolve }}} **
       //
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
-      resolve: function(type) {
-          var engineType = engines[type];
-          if (typeof engineType === "string") { // lazy load time
-              // build system does not like require of dynamic names
-              var dr = dojo.require;
-              dr.call(dojo, "bespin.syntax.simple." + engineType.toLowerCase());
+      resolve: function(extension) {
+          if (!extension) return NoopSyntaxEngine;
 
-              if (bespin.syntax.simple[engineType]) {
-                  engines[type] = new bespin.syntax.simple[engineType]();
+          var type = extension2type[extension]; // convert the extension (e.g. js) to a type (JavaScript)
+
+          if (!engines[type] || engines[type] != "LOADING") { // does an object already exist?
+              engines[type] = "LOADING"; // cheat and have this show that the engine is loading so don't do it twice
+              var dr = dojo.require;
+              dr.call(dojo, "bespin.syntax.simple." + type.toLowerCase());
+
+              if (bespin.syntax.simple[type]) {
+                  engines[type] = new bespin.syntax.simple[type]();
               }
           }
           return engines[type] || NoopSyntaxEngine;
