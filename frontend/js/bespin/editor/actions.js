@@ -1049,23 +1049,23 @@ dojo.declare("bespin.editor.Actions", null, {
     replaceDocument: function(args) {
 
         var startPos = { row: 0, col: 0 };
-		var endPos = {
+        var endPos = {
             row: this.editor.model.getRowCount() - 1,
             col: this.editor.ui.getRowScreenLength(this.editor.model.getRowCount() - 1)
         };
 
         var selection = {
-    		startPos: bespin.editor.utils.copyPos(startPos),
-    		endPos: bespin.editor.utils.copyPos(endPos),
-    		startModelPos: this.editor.getModelPos(startPos),
-    		endModelPos	: this.editor.getModelPos(endPos),
+            startPos: bespin.editor.utils.copyPos(startPos),
+            endPos: bespin.editor.utils.copyPos(endPos),
+            startModelPos: this.editor.getModelPos(startPos),
+            endModelPos	: this.editor.getModelPos(endPos),
             queued: true
         }
 
-		var original = this.editor.model.getChunk(selection);
+        var original = this.editor.model.getChunk(selection);
 
-		var cursorPos = this.editor.getCursorPos();
-		var oldqueued = args.queued;
+        var cursorPos = this.editor.getCursorPos();
+        var oldqueued = args.queued;
 
         args.pos = startPos;
         args.queued = true;
@@ -1092,16 +1092,15 @@ dojo.declare("bespin.editor.Actions", null, {
 
         var original = this.editor.model.getDocument();
         this.editor.model.replace(args.search, args.replace);
-		var modified = this.editor.model.getDocument();
+        var modified = this.editor.model.getDocument();
 
-		this.repaint();
-
+        this.repaint();
 
         // undo/redo
         var redoOperation = {
             action: "replaceDocument",
             chunk: modified
-		}
+        }
         var undoOperation = {
             action: "replaceDocument",
             chunk: original
