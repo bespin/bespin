@@ -25,11 +25,8 @@
 dojo.provide("bespin.editor.filepopup");
 
 dojo.declare("bespin.editor.filepopup.MainPanel", null, {
-    setup: function() {
-        // if we've already setup the scene, bail
-        if (this.scene) return;
-
-        this.canvas = document.getElementById("piefilepopupcanvas");
+    constructor: function() {
+        this.canvas = dojo.byId("piefilepopupcanvas");
 
         if (!this.canvas) {
             this.canvas = dojo.create("canvas", {
@@ -37,7 +34,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 tabIndex: -1,
                 style: {
                     position: "absolute",
-                    zIndex: 101,
+                    zIndex: 400,
                     display: "none"
                 }
             }, dojo.body());
@@ -50,14 +47,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         // make the root transparent
         //scene.root.paintSelf = function() {}
 
-        
-
         this.scene = scene;
     },
 
     show: function(coords) {
-        this.setup();
-
         console.log(coords);
 
         this.canvas.width = coords.w;
@@ -68,7 +61,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             top: coords.t + "px",
             left: coords.l + "px"
         });
-        
+
         this.scene.render();
     },
 
