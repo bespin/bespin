@@ -61,7 +61,7 @@ bespin.test.runner._boredTimeout = null;
 
 /**
  * Even though several tests may be running at a time, through the magic of
- * the single thredded nature of JavaScript we can say that there is only
+ * the single threaded nature of JavaScript we can say that there is only
  * one that is actually current when the test itself or one of its
  * asynchronous handlers are running.
  */
@@ -377,7 +377,7 @@ bespin.test.runner.runTest = function(testName) {
 bespin.test.runner.link = function(func) {
     this._setStatus(this._currentTest, this._status.asynchronous, true);
     var delayedTest = this._currentTest;
-    // Keep a count of the outstanding asynchrous tasks
+    // Keep a count of the outstanding asynchronous tasks
     if (!delayedTest.outstanding) {
         delayedTest.outstanding = 1;
     }

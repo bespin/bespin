@@ -377,7 +377,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     resize: function() {
         if (this.currentSlice == null) return;
 
-        // TODO: we did have +10 on both of these. Why?
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
         this.canvas.style.display = 'block';
