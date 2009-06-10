@@ -375,7 +375,7 @@ th.BespinProjectPanel = Class.define({
     member: {
         init: function(parms) {
             if (!parms) parms = {};
-            this.super(parms);
+            this._super(parms);
 
             this.projectLabel = new th.Label({ text: "Projects", className: "projectLabel" });
 
