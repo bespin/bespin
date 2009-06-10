@@ -78,38 +78,44 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         this.scene.render();
 
-        this.scene.bus.bind("dblclick", this, function(e) {
+        this.scene.bus.bind("dblclick", this.tree, function(e) {
             var newTab = e.shiftKey;
             var path = this.tree.getSelectedPath();
-            if (path.length == 0 || path[path.length - 1].contents) return; // don't allow directories either
-            //go.editor(this.currentProject, this.getFilePath(path.slice(1, path.length)), newTab);
-            console.log("implement go.editor");
-        });
+            if (!path) {
+                console.error("Got tree.getSelectedPath == null, bailing out");
+                return;
+            }
+            if (path.length == 0 || path[path.length - 1].contents) {
+                return; // don't allow directories either
+            }
+            var file = this.getFilePath(path.slice(1, path.length));
+            bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
+        }, this);
 
         this.scene.bus.bind("itemselected", this.tree, function(e) {
-            var pathSelected = self.tree.getSelectedPath(true);
+            var pathSelected = this.tree.getSelectedPath(true);
             // this keeps the url to be changed if the file path changes to frequently
-            if (self.urlTimeout) {
-                clearTimeout(self.urlTimeout);
+            if (this.urlTimeout) {
+                clearTimeout(this.urlTimeout);
             }
 
             // TODO: This makes urlbar try (and fail) to load a file. Sure that's not right
             /*
-            self.urlTimeout = setTimeout(function () {
-                self.lastSelectedPath = pathSelected;
+            this.urlTimeout = setTimeout(function () {
+                this.lastSelectedPath = pathSelected;
                 location.hash = '#path=' + pathSelected;
             }, 300);
             */
         }, this);
 
         this.scene.bus.bind("itemselected", this.tree.lists[0], function(e) {
-            self.currentProject = e.item.name;
+            this.currentProject = e.item.name;
             bespin.publish("project:set", {
-                project: self.currentProject,
+                project: this.currentProject,
                 suppressPopup: true,
                 fromDashboardItemSelected: true
             });
-        });
+        }, this);
 
         // get logged in name; if not logged in, display an error of some kind
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
