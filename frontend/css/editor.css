@@ -555,6 +555,8 @@ tr#jetpack_dropdown_or td {
     font-family: Calibri, Arial, sans-serif;
 }
 
+#debugbar div { margin-left: 10px;;}
+
 #debugbar_output  { width: 100%; height: 100px; overflow: auto;}
 
 #debugbar_output tr.debugbar_rowin {
