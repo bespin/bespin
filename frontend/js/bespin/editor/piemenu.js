@@ -46,6 +46,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }, dojo.body());
 
         this.canvas = dojo.create("canvas", {
+            id: "piemenu",
             tabIndex: -1,
             height: this.editor.canvas.height,
             width: this.editor.canvas.width,
@@ -245,6 +246,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             filePanel: new bespin.editor.filepopup.MainPanel(),
 
             showContents: function(coords) {
+                this.filePanel.checkInit();
                 this.filePanel.show(coords);
             },
 
