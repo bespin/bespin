@@ -146,7 +146,9 @@ bespin.syntax.simple.Resolver = new function() {
 
               if (bespin.syntax.simple[type]) {
                   engines[type] = new bespin.syntax.simple[type]();
-                  //setTimeout(function() { console.log("TIMEOUT: " + type); bespin.get('editor').paint(true) }, 3600);
+                  // This is an ugly work around for a weirdness in Firefox 3.5b99
+                  // For some reason the lines aren't painted correctly, but if we force a reset of the canvas all repaints well
+                  setTimeout(function() { bespin.get('editor').ui.resetCanvas(); }, 0);
               }
           }
           return engines[type] || NoopSyntaxEngine;

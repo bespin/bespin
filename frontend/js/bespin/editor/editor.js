@@ -838,6 +838,10 @@ dojo.declare("bespin.editor.UI", null, {
         return lh;
     },
 
+    resetCanvas: function() { // forces a resize of the canvas
+        dojo.attr(dojo.byId(this.editor.canvas), { width: this.getWidth(), height: this.getHeight() });
+    },
+
     // ** {{{ paint }}} **
     //
     // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
