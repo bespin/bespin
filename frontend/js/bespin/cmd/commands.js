@@ -183,7 +183,7 @@ bespin.cmd.commands.add({
             type = typeof result;
         }
 
-        commandLine.addOutput("<u>Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): </u><br><br>"+ msg);
+        commandLine.addOutput("Result for eval <b>\""+jscode+"\"</b> (type: "+ type+"): <br><br>"+ msg);
     }
 });
 
@@ -664,7 +664,7 @@ bespin.cmd.commands.add({
     preview: 's/foo/bar/g',
     completeText: 'add the search regex, and then the replacement text',
     execute: function(commandLine, args) {
-        commandLine.editor.model.replace(args.search, args.replace);
+        commandLine.editor.ui.actions.replace(args);
     }
 });
 
@@ -897,25 +897,20 @@ bespin.cmd.commands.add({
     preview: 'trim trailing or leading whitespace',
     completeText: 'optionally, give a side of left, right, or both (defaults to right)',
     execute: function(commandLine, side) {
-        commandLine.editor.model.changeEachRow(function(row) {
-            if (!side) side = "right";
+		if (!side) side = "right";
+		var replaceArgs = {
+			replace: ''
+		}
 
-            if (bespin.util.include(["left", "both"], side)) {
-                while (row[0] == ' ') {
-                    row.shift();
-                }
-            }
+		if (bespin.util.include(["left", "both"], side)) {
+			replaceArgs.search = "^\\s+";
+	        commandLine.editor.ui.actions.replace(replaceArgs);
+		}
 
-            if (bespin.util.include(["right", "both"], side)) {
-                var i = row.length - 1;
-
-                while (row[i] == ' ') {
-                    delete row[i];
-                    i--;
-                }
-            }
-            return bespin.util.shrinkArray(row);
-        });
+		if (bespin.util.include(["right", "both"], side)) {
+			replaceArgs.search = "\\s+$";
+	        commandLine.editor.ui.actions.replace(replaceArgs);
+		}
     }
 });
 
@@ -1034,21 +1029,6 @@ bespin.cmd.commands.add({
         output.push("</table>");
 
         commandLine.addOutput(output.join(''));
-    }
-});
-
-//** {{{Command: history}}} **
-bespin.cmd.commands.add({
-    name: '!',
-    takes: ['number'],
-    preview: 'Execute a command from the history',
-    execute: function(commandLine, number) {
-        number = parseInt(number);
-        if (!number) {
-            commandLine.addErrorOutput("You're gonna need to give me a history number to execute.");
-            return;
-        }
-        commandLine.addOutput(commandLine.history.getInstructions()[number - 1].typed);
     }
 });
 

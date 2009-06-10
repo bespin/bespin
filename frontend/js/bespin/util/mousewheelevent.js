@@ -12,15 +12,15 @@ dojo.mixin(bespin.util.mousewheelevent, {
         var delta = 0;
         if (!event) event = window.event;
         if (event.wheelDelta) {
-            delta = -(event.wheelDelta/620);
-            if (window.opera) delta = -delta;
+            delta = -event.wheelDelta / 40;
+            if (window.opera && window.opera.version() < 9.2) delta = -delta;
         } else if (event.detail) {
             delta = event.detail;
         }  
 
-        return Math.round(delta); // Safari Round
+        return delta;
     },
-    
+
     axis: function(event) {
         var returnType = "vertical";
         if (event.axis) { // Firefox 3.1 world

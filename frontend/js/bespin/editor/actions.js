@@ -1044,5 +1044,69 @@ dojo.declare("bespin.editor.Actions", null, {
             this.editor.ui.ensureCursorVisible();
             this.editor.paint();
         }
-    }
+    },
+
+    replaceDocument: function(args) {
+
+        var startPos = { row: 0, col: 0 };
+        var endPos = {
+            row: this.editor.model.getRowCount() - 1,
+            col: this.editor.ui.getRowScreenLength(this.editor.model.getRowCount() - 1)
+        };
+
+        var selection = {
+            startPos: bespin.editor.utils.copyPos(startPos),
+            endPos: bespin.editor.utils.copyPos(endPos),
+            startModelPos: this.editor.getModelPos(startPos),
+            endModelPos	: this.editor.getModelPos(endPos),
+            queued: true
+        }
+
+        var original = this.editor.model.getChunk(selection);
+
+        var cursorPos = this.editor.getCursorPos();
+        var oldqueued = args.queued;
+
+        args.pos = startPos;
+        args.queued = true;
+        
+        this.deleteChunk(selection);
+        this.insertChunk(args);
+
+        this.cursorManager.moveCursor(cursorPos);
+        args.queued = oldqueued;
+
+        // undo/redo
+        args.action = "replaceDocument";
+        var redoOperation = args;
+        var undoOperation = {
+            action: "replaceDocument",
+            queued: args.queued,
+            chunk: original,
+        };
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+
+    },
+
+    replace: function(args) {
+
+        var original = this.editor.model.getDocument();
+        this.editor.model.replace(args.search, args.replace);
+        var modified = this.editor.model.getDocument();
+
+        this.repaint();
+
+        // undo/redo
+        var redoOperation = {
+            action: "replaceDocument",
+            chunk: modified
+        }
+        var undoOperation = {
+            action: "replaceDocument",
+            chunk: original
+        };
+        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+
+	}
+
 });

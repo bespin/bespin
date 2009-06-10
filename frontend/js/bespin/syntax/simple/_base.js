@@ -139,13 +139,16 @@ bespin.syntax.simple.Resolver = new function() {
 
           var type = extension2type[extension]; // convert the extension (e.g. js) to a type (JavaScript)
 
-          if (!engines[type] || engines[type] != "LOADING") { // does an object already exist?
+          if (!engines[type] || (typeof engines[type] === "string" && engines[type] != "LOADING")) { // does an object already exist?
               engines[type] = "LOADING"; // cheat and have this show that the engine is loading so don't do it twice
               var dr = dojo.require;
               dr.call(dojo, "bespin.syntax.simple." + type.toLowerCase());
 
               if (bespin.syntax.simple[type]) {
                   engines[type] = new bespin.syntax.simple[type]();
+                  // This is an ugly work around for a weirdness in Firefox 3.5b99
+                  // For some reason the lines aren't painted correctly, but if we force a reset of the canvas all repaints well
+                  setTimeout(function() { bespin.get('editor').ui.resetCanvas(); }, 0);
               }
           }
           return engines[type] || NoopSyntaxEngine;

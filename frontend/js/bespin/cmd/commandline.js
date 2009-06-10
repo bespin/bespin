@@ -423,7 +423,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     style: "vertical-align:middle; padding:2px;",
                     alt: "Remove this command from the history",
                     title: "Remove this command from the history",
-                    onclick: function() {
+                    onclick: function(ev) {
                         self.history.remove(instruction);
                         self.updateOutput();
                         dojo.stopEvent(ev);
@@ -469,17 +469,17 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var settings = bespin.get("settings");
 
         var self = this;
-        var set = function(size) {
+        var setSize = function(size) {
             settings.set("consolefontsize", size);
             self.updateOutput();
         };
 
         var size = parseInt(settings.get("consolefontsize"));
         switch (size) {
-            case 9: set(11); break;
-            case 11: set(14); break;
-            case 14: set(9); break;
-            default: set(11); break;
+            case 9: setSize(11); break;
+            case 11: setSize(14); break;
+            case 14: setSize(9); break;
+            default: setSize(11); break;
         }
     },
 
@@ -488,17 +488,17 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         var settings = bespin.get("settings");
 
         var self = this;
-        var set = function(mode) {
+        var setMode = function(mode) {
             settings.set("historytimemode", mode);
             self.updateOutput();
         };
 
         var size = settings.get("historytimemode");
         switch (size) {
-            case "history": set("time"); break;
-            case "time": set("blank"); break;
-            case "blank": set("history"); break;
-            default: set("history"); break;
+            case "history": setMode("time"); break;
+            case "time": setMode("blank"); break;
+            case "blank": setMode("history"); break;
+            default: setMode("history"); break;
         }
     },
 
@@ -515,6 +515,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.executeCommand(command);
     },
 
+    // == Command line completion ==
     complete: function(value) {
         var completions = this.commandStore.findCompletions(value);
         var matches = completions.matches;
@@ -547,6 +548,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         }
     },
 
+    // == Execute Command ==
     executeCommand: function(value) {
         if (!value || value == "") {
             return;
@@ -562,15 +564,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         try {
             if (instruction.error) {
-                bespin.get('commandLine').addOutput(instruction.error);
+                this.addOutput(instruction.error);
             } else {
                 instruction.command.execute(this, instruction.args, instruction.command);
             }
         }
         catch (ex) {
-            bespin.get('commandLine').addErrorOutput(ex);
+            this.addErrorOutput(ex);
         }
         finally {
+            if (this.executing.linked == null) {
+                this.executing.complete = true;
+            }
+
             this.executing = null;
         }
 
@@ -579,25 +585,41 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.scrollConsole();
     },
 
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
         if (!this.executing) {
             return action;
         }
 
         var originalExecuting = this.executing;
-        var self = this;
 
-        return function() {
+        // We could allow multiple linked functions, however that would
+        // make completion harder to calculate, and we're being lazy
+        if (this.executing.linked) {
+            throw new Error("Multiply linked instruction");
+        }
+
+        var self = this;
+        this.executing.linked = function() {
             var confusedExecuting = null;
             if (self.executing) {
+                console.warn("Nested instruction contexts");
                 confusedExecuting = self.executing;
             }
             self.executing = originalExecuting;
 
             action.apply(context || dojo.global, arguments);
 
+            if (!self.executing.complete) {
+                self.executing.complete = true;
+                self.updateOutput();
+            }
+
             self.executing = confusedExecuting;
         };
+
+        return this.executing.linked;
     },
 
     handleCommandLineFocus: function(e) {
@@ -609,6 +631,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             dojo.stopEvent(e);
             return true;
         }
+        return false;
     }
 });
 
@@ -635,6 +658,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             this.complete = true;
             this.historical = true;
         }
+    },
+
+    toString: function() {
+        return dojo.toJson({ typed:typed, output:output, start:start, end:end });
     },
 
     // == Set Output ==
@@ -703,7 +730,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 }
             }
 
-            return;
+            return null;
         }
 
         if (command.subcommands) {
@@ -714,6 +741,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         return [command, commandStore.getArgs(argstr.split(' '), command)];
     }
 });
+
+bespin.cmd.commandline.Instruction.fromString = function(str) {
+    
+};
 
 // ** {{{ bespin.cmd.commandline.KeyBindings }}} **
 //
@@ -857,18 +888,6 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         maxEntries: 50
     },
 
-    // TODO: get from the database
-    seed: function(typings) {
-        dojo.forEach(typings, function(typing) {
-            if (typing && typing != "") {
-                var instruction = new bespin.cmd.commandline.Instruction(null, typing);
-                this.instructions.push(instruction);
-            }
-        }, this);
-        this.trim();
-        this.pointer = this.instructions.length; // make it one past the end so you can go back and hit the last one not the one before last
-    },
-
     // Keep the history to settings.maxEntries
     trim: function() {
         if (this.instructions.length > this.settings.maxEntries) {
@@ -914,6 +933,19 @@ dojo.declare("bespin.cmd.commandline.History", null, {
         return this.instructions[0];
     },
 
+    setInstructions: function(instructions) {
+        if (instructions) {
+            this.instructions = instructions;
+            this.trim();
+        } else {
+            this.instructions = [];
+        }
+
+        // Set the pointer to one past the end so you can go back and hit the
+        // last one not the one before last
+        this.pointer = this.instructions.length;
+    },
+
     getInstructions: function() {
         return this.instructions;
     }
@@ -939,18 +971,28 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
         var self = this;
 
         if (bespin.authenticated) {
-            self.seed();
+            self._load();
         } else {
             bespin.subscribe("authenticated", function() {
-                self.seed();
+                self._load();
             });
         }
     },
 
-    seed: function() {
+    _load: function() {
         // load last 50 instructions from history
         bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
-            this.history.seed(file.content.split(/\n/));
+            var typings = file.content.split(/\n/);
+            var instructions = [];
+
+            dojo.forEach(typings, function(typing) {
+                if (typing && typing != "") {
+                    var instruction = new bespin.cmd.commandline.Instruction(null, typing);
+                    instructions.push(instruction);
+                }
+            });
+
+            this.history.setInstructions(instructions);
         }));
     },
 
@@ -967,6 +1009,41 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
             content: content,
             timestamp: new Date().getTime()
         });
+    }
+});
+
+//** {{{ bespin.cmd.commandline.LocalHistoryStore }}} **
+//
+// Store the history in BespinSettings/command.history
+dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
+    constructor: function(history) {
+        this.history = history;
+        var self = this;
+
+        if (bespin.authenticated) {
+            self._load();
+        } else {
+            bespin.subscribe("authenticated", function() {
+                self._load();
+            });
+        }
+    },
+
+    _load: function() {
+        if (window.globalStorage) {
+            var data = globalStorage[location.hostname].history;
+            console.log("load", data);
+            var instructions = dojo.fromJson(data);
+            this.history.setInstructions(instructions);
+        }
+    },
+
+    save: function(instructions) {
+        var data = dojo.toJson(instructions);
+        console.log("save", data);
+        if (window.globalStorage) {
+            globalStorage[location.hostname].history = data;
+        }
     }
 });
 

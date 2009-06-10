@@ -47,7 +47,7 @@ var uriDecodeSource = function(uri) {
 // try to build one using Google Gears API
 if (typeof Worker == "undefined") {
     BespinGearsInitializeGears(); // this functions initializes Gears only if we need it
-    if(window.google && google.gears) {
+    if (window.google && google.gears) {
         USE_GEARS   = true; // OK, gears is here
 
         var wp      = google.gears.factory.create('beta.workerpool');
@@ -69,7 +69,7 @@ if (typeof Worker == "undefined") {
         wp.onmessage = function(a, b, message) {
             var worker = workers[message.sender];
             var cb = worker.onmessage;
-            if(cb) {
+            if (cb) {
                 cb.call(worker, {
                     data: message.body
                 });
@@ -120,7 +120,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         // __hasWorkers__ is a public API of the facade
         this.__hasWorkers__ = false;
 
-        if(typeof Worker != "undefined") { // We have a Worker implementation
+        if (typeof Worker != "undefined") { // We have a Worker implementation
             this.__hasWorkers__ = true;
 
             var source  = this.createWorkerSource(obj, libs);
@@ -148,14 +148,14 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         // the callIndex that is set upon sending the method
         var cb = function(event) {
             var data  = event.data;
-            if(typeof data == "string") {
+            if (typeof data == "string") {
                 data = dojo.fromJson(data);
             }
             var index = data.callIndex;
 
             var callback = self.__callbacks__[index];
             delete self.__callbacks__[index];
-            if(callback) {
+            if (callback) {
                 callback(data.returnValue);
             }
         };
@@ -170,11 +170,11 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         };
 
 
-        for(var i = 0; i < this.__workerCount__;i++) {
+        for (var i = 0; i < this.__workerCount__;i++) {
             //console.log("Create worker")
             var worker = new Worker("/js/bespin/bootstrap_worker.js", source);
             //console.log("Worker created")
-            
+
             var onmessage = function(event) {
                 var message = event.data;
                 if(typeof message == "string") {
@@ -183,7 +183,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                         return
                     }
                     else
-                    if(message.indexOf("__IMPORT_SCRIPT__") == 0) {
+                    if (message.indexOf("__IMPORT_SCRIPT__") == 0) {
                         var json = message.substr("__IMPORT_SCRIPT__".length);
                         var paras = dojo.fromJson(json);
                         loadScript.apply(this, paras);
@@ -193,8 +193,8 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                         message = dojo.fromJson(message);
                     }
                 }
-                
-                if(message.type == "subscribe") {
+
+                if (message.type == "subscribe") {
                     (function () {
                     var index = message.index;
                     var name  = message.name;
@@ -210,7 +210,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     });
                     })();
                 }
-                else if(message.type == "publish") {
+                else if (message.type == "publish") {
                     //console.log("From-Worker-Event: "+message.name)
                     bespin.publish(message.name, message.event);
                 }
@@ -218,9 +218,8 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                     throw message;
                     cb.call(this, event);
                 }
-
             };
-            
+
             worker.onmessage = onmessage;
             source = "// YOUcannotGuessMe\n" + source;
             window.setTimeout(function() {
@@ -236,23 +235,23 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
 
         var facade = this;
 
-        for(var prop in obj) {
-            if(prop.charAt(0) != "_") { // supposedly we dont need "private" methods. Delete if assumption is wrong
+        for (var prop in obj) {
+            if (prop.charAt(0) != "_") { // supposedly we dont need "private" methods. Delete if assumption is wrong
                 (function() { // make a lexical scope
                     var val    = obj[prop];
                     var method = prop;
-                    if(typeof val == "function") { // functions are replaced with code to call the worker
+                    if (typeof val == "function") { // functions are replaced with code to call the worker
                         facade[prop] = function() {
                              var self  = this;
                              var index = CALL_INDEX++; // each call gets a globally unique index
                              var paras = Array.prototype.slice.call(arguments);
-                             if(this.__hasWorkers__) {
+                             if (this.__hasWorkers__) {
                                  var data = {
                                      callIndex: index,
                                      method: method,
                                      paras:  paras
                                  };
-                                 if(!USE_GEARS) {
+                                 if (!USE_GEARS) {
                                       // here we should really test whether our postMessage supports structured data. Safari 4 does not
                                      data = dojo.toJson(data);
                                  }
@@ -267,7 +266,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                                      var retVal = self.__obj__[method].apply(self.__obj__, paras);
                                      var callback = self.__callbacks__[index];
                                      delete self.__callbacks__[index];
-                                     if(callback) {
+                                     if (callback) {
                                          callback(retVal);
                                      }
                                  }, 0);
@@ -279,7 +278,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
                              return {
                                  and: function(context, mutex, paras, callback) {
                                      var func = arguments[arguments.length - 1]; // always the last para
-                                     if(mutex instanceof bespin.worker.Mutex) {
+                                     if (mutex instanceof bespin.worker.Mutex) {
                                          mutex.start();
                                          func = function() {
                                              callback.apply(this, arguments);
@@ -305,13 +304,13 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
 
     // Determines whether there are functions (deeply) inside a JS object
     hasFunctions: function(obj) {
-        for(var i in obj) {
+        for (var i in obj) {
             var val = obj[i];
-            if(typeof val == "function") {
+            if (typeof val == "function") {
                 return true;
             }
-            if(val && typeof val == "object") {
-                if(this.hasFunctions(val)) {
+            if (val && typeof val == "object") {
+                if (this.hasFunctions(val)) {
                     return true;
                 }
             }
@@ -322,25 +321,25 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
     // Recursively turn a JS object into its source including functions
     serializeToPortableSource: function(obj) {
         var self   = this;
-        
+
         var isArray = dojo.isArray(obj);
-        
+
         var source = isArray ? "[\n" : "{\n";
 
-        for(var prop in obj) {
+        for (var prop in obj) {
             // console.log("Serializing "+prop);
             (function() { // lexical scope
-                if(prop == "_constructor") { // workaround for unserializable method in dojo
+                if (prop == "_constructor") { // workaround for unserializable method in dojo
                     return;                  // maybe replace with test for [native code] in string
                 }
                 var val    = obj[prop];
                 var method = prop;
                 var src = "";
-                if(typeof val == "function") { // serialize function to their string representation
+                if (typeof val == "function") { // serialize function to their string representation
                     src = val.toString();      // toSource() might be better but toString insert nice line breaks
                 }
                 // if val is an object that included functions we need to call ourselves recursively
-                else if(val && typeof val == "object" && self.hasFunctions(val)) {
+                else if (val && typeof val == "object" && self.hasFunctions(val)) {
                     src = self.serializeToPortableSource(val);
                 }
                 // everything else is turned into JSON
@@ -350,9 +349,9 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
 
                 // Make sure to encode the property so nobody can insert arbitrary string into our JS
                 prop = '"'+prop.replace(/"/g, '\\"', 'g')+'"';
-                
-                source += isArray ? "" : prop+": ";        
-                
+
+                source += isArray ? "" : prop+": ";
+
                 source += src+",\n";
             })();
         }
@@ -368,7 +367,7 @@ dojo.declare("bespin.worker.WorkerFacade", null, {
         };
         var source = "";
 
-        if(libs) {
+        if (libs) {
             var quoted = [];
             dojo.forEach(libs, function(lib) {
                 quoted.push("'"+lib+"'");
@@ -404,14 +403,14 @@ dojo.declare("bespin.worker.Mutex", null, {
     },
     stop: function() {
         this.count = this.count - 1;
-        if(this.count == 0) {
-            if(this.options.onlyLast) {
+        if (this.count == 0) {
+            if (this.options.onlyLast) {
                 var last = this.afterJobs[this.afterJobs.length-1];
-                if(last) {
+                if (last) {
                     last();
                 }
             } else {
-                for(var i = 0; i < this.afterJobs.length; ++i) {
+                for (var i = 0; i < this.afterJobs.length; ++i) {
                     var job = this.afterJobs[i];
                     job();
                 }

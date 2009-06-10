@@ -113,17 +113,14 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     replace: function(search, replace) {
-      for (var x = 0; x < this.getRowCount(); x++) {
-        var line = this.getRowArray(x).join('');
-
-        if (line.match(search)) {
-          var regex = new RegExp(search, "g");
-          var newline = line.replace(regex, replace);
-          if (newline != line) {
-            this.rows[x] = newline.split('');
-          }
+        var regex = new RegExp(search, "g");
+        for (var x = 0; x < this.getRowCount(); x++) {
+            var line = this.getRowArray(x).join('');
+            var newline = line.replace(regex, replace);
+            if (newline != line) {
+                this.rows[x] = newline.split('');
+            }
         }
-      }
     },
 
     // will silently adjust the length argument if invalid

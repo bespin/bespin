@@ -173,8 +173,8 @@ bespin.util.leadingWhitespace = function(row)
 //
 // Given a camelCaseWord convert to "Camel Case Word"
 bespin.util.englishFromCamel = function(camel) {
-    dojo.trim(camel.replace(/([A-Z])/g, function(str) { return " " + str.toLowerCase() }));
-}
+    dojo.trim(camel.replace(/([A-Z])/g, function(str) { return " " + str.toLowerCase(); }));
+};
 
 // = isMac =
 //
@@ -194,4 +194,18 @@ bespin.util.contains = document.compareDocumentPosition ? function(a, b) {
 	return a.compareDocumentPosition(b) & 16;
 } : function(a, b) {
 	return a !== b && (a.contains ? a.contains(b) : true);
+};
+
+// = randomPassword =
+//
+// Create a random password of the given length (default 16 chars)
+bespin.util.randomPassword = function(length) {
+    length = length || 16;
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    pass = "";
+    for (var x = 0; x < length; x++) {
+        var charIndex = Math.floor(Math.random() * chars.length);
+        pass += chars.charAt(charIndex);
+    }
+    return pass;
 };
