@@ -24,27 +24,60 @@
 
 dojo.provide("bespin.test");
 
-//dojo.require("doh.runner");
-//dojo.require("bespin.util.doh.bespinRunner");
-
-dojo.require("bespin.test.runner");
+dojo.require("bespin.util.util");
 
 //** {{{ Command: test }}} **
 bespin.cmd.commands.add({
     name: 'test',
+    takes: ['suite'],
+    preview: 'run a test suite or suites',
+    completeText: 'suite name, or \'all\' to run all tests, or press return to list tests.',
     // ** {{{execute}}}
-    execute: function(commandline, type) {
-        
-        /*
-        doh.register("basicTest", [
-            function() {
-                doh.t(true);
-                doh.f(false);
-                doh.is("a", "b");
+    execute: function(commandline, suite) {
+        if (!suite) {
+            if (bespin.util.isEmpty(bespin.test._knownTests)) {
+                commandline.addOutput("No test suites registered. See bespin.test.addTests() to add them.");
+            } else {
+                var msg = "Available test targets: all";
+                for (var name in bespin.test._knownTests) {
+                    msg += ", " + name;
+                }
+                commandline.addOutput(msg);
             }
-        ]);
+        } else if (suite == "all") {
+            // TODO: run all tests
+        } else {
+            if (bespin.test._knownTests[suite]) {
+                // TODO: run just suite
+            } else {
+                commandline.addErrorOutput("No test suite called: " + suite);
+            }
+        }
+    }
+});
 
-        doh.run();
-        */
+/**
+ * The bespin.test object is used in setting up test suites.
+ */
+dojo.mixin(bespin.test, {
+    /**
+     * Add a named test suite to the list of available tests
+     * @param name The new test suite name
+     * @param container Object containing setup|teardown|test* methods
+     */
+    addTests: function(name, container) {
+        if (name == "all") throw new Error("Test suites can't be called 'all'");
+        this._knownTests[name] = container;
+    },
+
+    /**
+     * @private
+     * Registered tests are stored in here
+     */
+    _knownTests: {}
+});
+
+dojo.declare("bespin.test.Runner", null, {
+    constructor: function(opts) {
     }
 });

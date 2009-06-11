@@ -209,3 +209,13 @@ bespin.util.randomPassword = function(length) {
     }
     return pass;
 };
+
+//= randomPassword =
+//
+// Create a random password of the given length (default 16 chars)
+bespin.util.isEmpty = function(object) {
+    for (var x in object) {
+        if (object.hasOwnProperty(x)) return false;
+    }
+    return true;
+};
