@@ -170,8 +170,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
     },
 
     show: function(coords) {
-        console.log(coords);
-
         this.canvas.width = coords.w;
         this.canvas.height = coords.h;
 

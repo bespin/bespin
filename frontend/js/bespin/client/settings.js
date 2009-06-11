@@ -555,7 +555,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                     try {
                         eval(file.content);
                     } catch (e) {
-                        //console.log(e)
+                        console.log("Error with theme loading: ", e);
                     }
 
                     if (!checkSetAndExit()) {
