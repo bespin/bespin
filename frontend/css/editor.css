@@ -533,6 +533,14 @@ tr#jetpack_dropdown_or td {
     padding: 3px 0 0 9px;
 }
 
+.debugbar_button {
+    margin-left: 10px;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 10pt;
+    color: #eee;
+    padding: 3px 0 0 9px;
+}
+
 #debugbar_status {
     color: red;
 }

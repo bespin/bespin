@@ -191,6 +191,13 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands, options) {
+        this.setup(commandLine, initCommands, options);
+    },
+    
+    // Dojo automatically calls superclass constructors. So,
+    // if you don't want the constructor behavior, there's no
+    // way out. Move to a separate function to allow overriding.
+    setup: function(commandLine, initCommands, options) {
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         var parentElement = options.parentElement || dojo.body();
@@ -218,8 +225,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.history = new bespin.cmd.commandline.History(this);
-        this.customEvents = new bespin.cmd.commandline.Events(this);
+        this.configureEvents();
         this.hideOutput();
+    },
+    
+    configureEvents: function() {
+        this.customEvents = new bespin.cmd.commandline.Events(this);
     },
 
     showUsage: function(command) {

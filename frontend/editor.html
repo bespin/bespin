@@ -97,13 +97,16 @@
     <div id="debugbar">
         <h1><div>Debugging</div></h1>
         <div id="debugbar_status">Unknown</div>
-        <div id="debugbar_toolbar"><span id="debugbar_break">Break</span>
-            <span id="debugbar_continue">Continue</span>
+        <div id="debugbar_toolbar"><span id="debugbar_break" class="debugbar_button">Break</span>
+            <span id="debugbar_continue" class="debugbar_button">Continue</span>
+            <span id="debugbar_stepnext" class="debugbar_button">Step Next</span>
+            <span id="debugbar_stepin" class="debugbar_button">Step In</span>
+            <span id="debugbar_stepout" class="debugbar_button">Step Out</span>
         </div>
         <h2><div>Stopped At</div></h2>
-        <div id="debugbar_position"></div>
+        <div id="debugbar_position" class="debugbar_text"></div>
         <h2><div>Eval</div></h2>
-        <div id="debugbar_output"></div>
+        <div id="debugbar_output" class="debugbar_text"></div>
         <div id="debugbar_commandline"><input id="debugbar_command" spellcheck="false"></div>
     </div>
     <!-- debugbar HTML should move to a plugin -->

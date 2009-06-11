@@ -42,7 +42,9 @@ dojo.declare("bespin.debug.SimpleHistoryStore", null, {
 
 dojo.declare("bespin.debug.EvalCommandLineInterface",
     bespin.cmd.commandline.Interface, {
-    constructor: function(commandLine, initCommands, options) {
+    
+    setup: function(commandLine, initCommands, options) {
+        console.log("overridden setup called");
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         var parentElement = options.parentElement || dojo.body();
@@ -52,6 +54,12 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         this.history.store = new bespin.debug.SimpleHistoryStore();
         this.output = dojo.byId(idPrefix + "output");
     },
+    
+    // we don't want the typical events in this command line
+    configureEvents: function() {
+        
+    },
+    
     setKeyBindings: function() {
         dojo.connect(this.commandLine, "onfocus", this, function() {
             bespin.publish("cmdline:focus");
@@ -212,6 +220,21 @@ dojo.mixin(bespin.debug, {
                         bespin.publish("debugger:continue", {});
                     });
                 
+        dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepnext", {});
+                    });
+
+        dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepout", {});
+                    });
+
+        dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepin", {});
+                    });
+
         bespin.debug.evalLine = new bespin.debug.EvalCommandLineInterface(
                 'debugbar_command', {}, {
                     idPrefix: "debugbar_",
