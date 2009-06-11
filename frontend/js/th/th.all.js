@@ -1906,7 +1906,12 @@ th.ComponentHelpers = new Trait({
             if (typeof this.styles == "undefined" || this.refreshCss) this.resolveCss();
 
             if (this.styles[pseudoBit] === undefined) this.styles[pseudoBit] = {};
-            if (this.styles[pseudoBit][property]) return this.styles[pseudoBit][property];
+
+            var propertyValue = this.styles[pseudoBit][property];
+
+            if (propertyValue && propertyValue != "inherit") return this.styles[pseudoBit][property];
+
+            if (propertyValue == "inherit" && this.parent) return this.parent.cssValue(property);
 
             if (pseudoBit != "(default)") return this.cssValue(property, "(default)");
 
@@ -5671,7 +5676,7 @@ th.HorizontalTree = Class.define({
         }
     }
 });
-th.DEFAULT_CSS = "* {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;color: black;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;}Button {background-color: gray;";
+th.DEFAULT_CSS = "* {/* this should probably be the browser's default font */font: 10pt Arial, sans-serif;}Scrollbar {/*-th-vertical-top-image: url(/images/dash_vscroll_track_top.png);*//*-th-vertical-middle-image: url(/images/dash_vscroll_track_middle.png);*//*-th-vertical-bottom-image: url(/images/dash_vscroll_track_bottom.png);*/-th-vertical-top-image: url(/images/scroll_gutter_top.png);-th-vertical-middle-image: url(/images/scroll_gutter_mid.png);-th-vertical-bottom-image: url(/images/scroll_gutter_btm.png);}Scrollbar > Button.bar {-th-top-image: url(/images/scroll_thumb_top.png);-th-middle-image: url(/images/scroll_thumb_mid.png);-th-bottom-image: url(/images/scroll_thumb_btm.png);}Scrollbar > Button.up {background-image: url(/images/scroll_cntrl_up.png);}Scrollbar > Button.down {background-image: url(/images/scroll_cntrl_dwn.png);}ResizeNib {-th-vertical-bar-color: rgb(10, 10, 8);-th-vertical-bar-shadow-color: rgb(185, 180, 158);-th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);-th-horizontal-bar-shadow-color: black;-th-horizontal-bar-color: rgb(183, 180, 160);}Label {padding: 2px 5px;color: black;}HorizontalTree {-th-list-width: 160px;-th-details-width: 150px;}Splitter.vertical {height: 20px;}Splitter.horizontal {width: 17px;}Button {background-color: gray;}HorizontalTree List {background-color: inherit;}";
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1
  *
