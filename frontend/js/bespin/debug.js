@@ -83,7 +83,9 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         if (!this.evalFunction) {
             return;
         }
-        console.log("Evaling: " + value);
+        
+        this.commandLine.value = "";
+        
         var self = this;
         
         var instruction = new bespin.cmd.commandline.Instruction(null, value);
@@ -107,10 +109,9 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         outputNode.innerHTML = "";
         dojo.forEach(this.history.instructions, function(instruction) {
             var rowin = dojo.create("div", {
-                className: "command_rowin",
-                style: "background-image: url(/images/instruction11.png)"
+                className: "command_rowin"
             }, outputNode);
-            rowin.innerHTML = instruction.typed || "";
+            rowin.innerHTML = "> " + instruction.typed || "";
             
             var rowout = dojo.create("div", {
                 className: "command_rowout"
@@ -251,7 +252,6 @@ dojo.mixin(bespin.debug, {
         bespin.debug.evalLine.evalFunction = evalFunction;
         dojo.style("debugbar", "display", "block");
         bespin.page.editor.recalcLayout();
-        bespin.debug.evalLine.commandLine.focus();
     },
     
     hideDebugBar: function() {

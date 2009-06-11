@@ -169,7 +169,7 @@ body {
     width: 4px;
 }
 
-#footer {
+.footer {
     position: absolute;
     bottom: -1px;
     right: 0;
@@ -497,24 +497,25 @@ tr#jetpack_dropdown_or td {
     display: none;
     background-image: url("../images/collab_pane_bg.png");
     background-repeat: repeat-y;
+    padding-left: 10px;
 }
 
 #debugbar h1 {
     background-image: url("../images/collab_hdr_bg.gif");
     height: 32px;
-    margin-left: 10px;
+    margin-top: 0px;
 }
 
 #debugbar h1 div {
     font-family: Calibri, Arial, sans-serif;
-    font-size: 12pt;
+    font-size: 10pt;
     color: #DDDDDD;
     padding: 5px 0 0 9px;
+    font-weight: normal;
 }
 
 #debugbar h2 {
     background-image: url("../images/collab_categorybar_bg.gif");
-    margin-left: 10px;
     height: 23px;
 }
 
@@ -523,10 +524,10 @@ tr#jetpack_dropdown_or td {
     font-size: 10pt;
     color: #dad4ba;
     padding: 3px 0 0 9px;
+    font-weight: normal;
 }
 
 .debugbar_text {
-    margin-left: 10px;
     font-family: Calibri, Arial, sans-serif;
     font-size: 10pt;
     color: #dad4ba;
@@ -534,7 +535,6 @@ tr#jetpack_dropdown_or td {
 }
 
 .debugbar_button {
-    margin-left: 10px;
     font-family: Calibri, Arial, sans-serif;
     font-size: 10pt;
     color: #eee;
@@ -549,6 +549,10 @@ tr#jetpack_dropdown_or td {
     color: green;
 }
 
+#debugbar_position {
+    height: 100px;
+}
+
 #debugbar_commandline {
     position: absolute;
     bottom: 0px;
@@ -561,22 +565,16 @@ tr#jetpack_dropdown_or td {
     color: #999;
     z-index: 210;
     font-family: Calibri, Arial, sans-serif;
+    width: 100%;
 }
 
-#debugbar div { margin-left: 10px;;}
-
-#debugbar_output  { width: 100%; height: 100px; overflow: auto;}
-
-#debugbar_output tr.debugbar_rowin {
-    background-repeat: repeat-x;
-    /*
-    background-color: #1e1916;
-    */
-   	border-bottom: 2px solid #000;
+#debugbar_output .command_rowin {
 	height: 22px;
 	font-size: 110%;
+	color: #fff;
+	font-weight: bold;
 }
-#debugbar_output tr.debugbar_rowout { }
+#debugbar_output command_rowout { }
 #debugbar_output tr.debugbar_rowin:hover .debugbar_main { color: #83bfe1; }
 #debugbar_output tr.debugbar_rowin img { cursor:pointer; }
 #debugbar_output tr.debugbar_rowin img.hover { display:none; }
