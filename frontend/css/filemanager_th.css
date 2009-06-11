@@ -1,0 +1,86 @@
+Splitter.horizontal {
+    border-left: 1px solid rgb(106, 105, 98);
+    border-right: 1px solid black;
+    background-image: -webkit-gradient(linear, left top, right top, from(#44423A), to(#3F3D36));
+}
+
+Splitter.vertical {
+    border-top: 1px solid rgb(73, 72, 66);
+    border-bottom: 1px solid black;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
+}
+
+Splitter > Label {
+    color: white;
+    font: 9pt Tahoma;
+    padding-top: 4px;
+}
+
+/* this selects the project list in the horizontal tree */
+#htree-list-1 Label {
+    background-color: rgb(61, 59, 52);
+    border: 0;
+}
+
+#htree-list-1 Label.evenmore, #htree-list-1 Label.oddmore {
+    border-top: 1px solid rgb(75, 74, 67);
+    border-bottom: 1px solid rgb(41, 40, 35);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730)), url(../images/dash_icn_more.png);
+    background-repeat: repeat-x, no-repeat;
+    background-position: left top, right center;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+HorizontalTree {
+    background-color: rgb(61, 59, 52);
+}
+
+HorizontalTree Label {
+    font: 9pt Tahoma;
+    color: white;
+}
+
+HorizontalTree Label:active {
+    border-top: 1px solid rgb(180, 114, 30);
+    border-bottom: 1px solid rgb(162, 97, 19);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
+}
+
+HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png);
+    background-repeat: repeat-x, no-repeat;
+    background-position: left top, right center;
+}
+
+#htree-list-1 Label.header {
+    border-bottom: black;
+    border-top: rgb(51, 50, 46);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#272621), to(#161613));
+}
+
+/* I need to support multiple classes per component; right now I don't, hence, this mess */
+HorizontalTree Label.evenmore, HorizontalTree Label.oddmore {
+    background-image: url(../images/dash_icn_more.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-top: 3px;
+    padding-bottom: 1px;
+}
+
+HorizontalTree Label.even, HorizontalTree Label.odd {
+    padding-top: 3px;
+    padding-bottom: 1px;
+}
+
+HorizontalTree Label.even, HorizontalTree Label.evenmore {
+    background-color: rgb(76, 75, 65);
+    border-top: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
+    border-bottom: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
+}
+
+HorizontalTree Label.odd, HorizontalTree Label.oddmore {
+    background-color: rgb(83, 80, 71);
+    border-top: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */
+    border-bottom: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */ 
+}
