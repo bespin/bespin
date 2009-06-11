@@ -1054,7 +1054,6 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     replaceDocument: function(args) {
-
         var startPos = { row: 0, col: 0 };
         var endPos = {
             row: this.editor.model.getRowCount() - 1,
@@ -1096,7 +1095,6 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     replace: function(args) {
-
         var original = this.editor.model.getDocument();
         this.editor.model.replace(args.search, args.replace);
         var modified = this.editor.model.getDocument();
