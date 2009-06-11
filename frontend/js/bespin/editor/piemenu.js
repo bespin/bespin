@@ -23,6 +23,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 dojo.provide("bespin.editor.piemenu");
+
 dojo.require("dojo.fx.easing");
 dojo.require("bespin.editor.filepopup");
 

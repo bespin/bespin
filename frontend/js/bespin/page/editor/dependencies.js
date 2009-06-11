@@ -68,7 +68,6 @@ dojo.require("bespin.editor.piemenu");
 //dojo.require("bespin.editor.filesearch");
 dojo.require("bespin.editor.formatter");
 dojo.require("bespin.editor.codecompletion");
-dojo.require("bespin.editor.piemenu");
 
 dojo.require("bespin.themes.default");
 
