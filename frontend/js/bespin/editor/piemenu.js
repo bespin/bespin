@@ -262,7 +262,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
             showContents: function(coords) {
-                this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
+                if (this.piemenu.refNode.src != "https://wiki.mozilla.org/Labs/Bespin") {
+                    this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
+                }
                 dojo.style(this.piemenu.refNode, {
                     left: coords.l + "px",
                     top: coords.t + "px",
