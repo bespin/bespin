@@ -25,15 +25,17 @@
 dojo.provide("bespin.socialTest");
 
 dojo.require("bespin.social");
+dojo.require("bespin.test");
 
 bespin.test.addTests("social", {
     setup: function() {
         this.server = bespin.get("server");
         this.commandLine = bespin.get("commandLine");
         this.originalServerFollow = server.follow();
+        this.originalServerUnfollow = server.unfollow();
     },
 
-    follow: function(test) {
+    testFollow: function(test) {
         this.server.follow = function(usernames, opts) {
             opts.onSuccess("{ }");
         };
@@ -50,19 +52,15 @@ bespin.test.addTests("social", {
         test.assertCommand("follow", "Failed to add follower: 99");
     },
 
-    unfollow: function(test) {
+    testUnfollow: function(test) {
         this.server.unfollow = function(usernames, opts) {
             opts.onSuccess({ });
         };
         test.asssertCommand("unfollow fred", "You are not following anyone");
     },
 
-    otherTests: function(test) {
-        test.assertTrue(true);
-        test.assertEquals("a", "b");
-    },
-
     tearDown: function() {
         this.server.follow = this.originalServerFollow;
+        this.server.unfollow = this.originalServerUnfollow;
     }
 });

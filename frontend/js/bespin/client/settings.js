@@ -678,8 +678,8 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
-            if (!settings.isSettingOn("hidewelcomescreen")) {
-                bespin.publish("wizard:show", { type: "newuser", warnOnFail: false, showonce: true });
+            if (!settings.isSettingOn("hidewelcomescreen") && bespin.wizard) {
+                bespin.wizard.show("newuser", false);
             }
 
             // if this is a new file, deal with it and setup the state
