@@ -130,8 +130,7 @@ dojo.declare("bespin.syntax.simple.Python", null, {
                        if (i + 2 < line.length && line.charAt(i + 1) == c
 && line.charAt(i + 2) == c) {
                                triquote = true;
-                               i+=2; // skip to after tripple quotes - dont
-want to prematurely detect end
+                               i+=2; // skip to after tripple quotes - dont want to prematurely detect end
                        }
                        buffer += c;
                        continue;

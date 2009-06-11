@@ -278,8 +278,12 @@ dojo.declare("thx.textarea.TextArea", th.Container, {
         var start = dojo.clone(this.selection.start);
         var end = dojo.clone(this.selection.end);
         // swap if the selection "end" is before the selection "start"
-        if (start.row > end.row)
-            [start, end] = [end, start];
+        if (start.row > end.row) {
+            var tmpstart = start;
+            start = end;
+            end = tmpstart;
+        }
+
         // calculate the position of the selection start and end "cursors"
         var vstart = this.getScreenCursor(start);
         var vend = this.getScreenCursor(end);
