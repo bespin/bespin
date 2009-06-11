@@ -90,5 +90,17 @@ dojo.mixin(bespin.util.path, {
     // This function doubles down and calls {{{combine}}} and then escapes the output
     escape: function() {
         return escape(this.combine.apply(this, arguments));
+    },
+
+    // ** {{{ bespin.util.path.fileType }}} **
+    //
+    // This function returns a file type based on the extension (foo.html -> html)
+    fileType: function(path) {
+        if (path.indexOf('.') >= 0) {
+            var split = path.split('.');
+            if (split.length > 1) {
+                return split[split.length - 1];
+            }
+        }
     }
 });
