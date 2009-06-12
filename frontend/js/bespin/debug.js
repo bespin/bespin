@@ -73,7 +73,9 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         dojo.connect(this.commandLine, "onkeypress", this, function(e) {
             var key = bespin.util.keys.Key;
             if (e.keyCode == key.ENTER) {
-                this.executeCommand(this.commandLine.value);
+                var typed = this.commandLine.value;
+                this.commandLine.value = '';
+                this.executeCommand(typed);
 
                 return false;
             }

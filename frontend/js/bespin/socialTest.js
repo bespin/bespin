@@ -25,44 +25,41 @@
 dojo.provide("bespin.socialTest");
 
 dojo.require("bespin.social");
+dojo.require("bespin.test");
 
 bespin.test.addTests("social", {
     setup: function() {
         this.server = bespin.get("server");
-        this.commandLine = bespin.get("commandLine");
-        this.originalServerFollow = server.follow();
+        this.originalServerFollowers = this.server.followers;
+        this.originalServerUnfollow = this.server.unfollow;
     },
 
-    follow: function(test) {
-        this.server.follow = function(usernames, opts) {
-            opts.onSuccess("{ }");
+    testFollow: function(test) {
+        this.server.followers = function(opts) {
+            opts.onSuccess("[ ]");
         };
-        test.asssertCommand("follow", "You are not following anyone");
+        test.command("follow", "You are not following anyone");
 
-        this.server.follow = function(usernames, opts) {
+        this.server.followers = function(opts) {
             opts.onSuccess("[ 'joe', 'fred' ]");
         };
-        test.asssertCommand("follow", "Following: joe, fred");
+        test.command("follow", "Following: joe, fred");
 
-        this.server.follow = function(usernames, opts) {
-            opts.onFailure({ responseText:"99" });
+        this.server.followers = function(opts) {
+            opts.onFailure({ responseText:"ERR" });
         };
-        test.assertCommand("follow", "Failed to add follower: 99");
+        test.command("follow", "Failed to retrieve followers: ERR");
     },
 
-    unfollow: function(test) {
+    testUnfollow: function(test) {
         this.server.unfollow = function(usernames, opts) {
-            opts.onSuccess({ });
+            opts.onSuccess("[ ]");
         };
-        test.asssertCommand("unfollow fred", "You are not following anyone");
-    },
-
-    otherTests: function(test) {
-        test.assertTrue(true);
-        test.assertEquals("a", "b");
+        test.command("unfollow fred", "You are not following anyone");
     },
 
     tearDown: function() {
-        this.server.follow = this.originalServerFollow;
+        this.server.followers = this.originalServerFollowers;
+        this.server.unfollow = this.originalServerUnfollow;
     }
 });

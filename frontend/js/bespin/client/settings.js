@@ -647,7 +647,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:set:trimonsave", function(event) {
             if (settings.isOn(event.value)) {
                 _trimOnSave = bespin.subscribe("editor:savefile:before", function(event) {
-                    bespin.publish("command:execute", { name: "trim" });
+                    bespin.get("commandLine").executeCommand('trim', true);
                 });
             } else {
                 bespin.unsubscribe(_trimOnSave);
@@ -678,8 +678,8 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
-            if (!settings.isSettingOn("hidewelcomescreen")) {
-                bespin.publish("wizard:show", { type: "newuser", warnOnFail: false, showonce: true });
+            if (!settings.isSettingOn("hidewelcomescreen") && bespin.wizard) {
+                bespin.wizard.show("newuser", false);
             }
 
             // if this is a new file, deal with it and setup the state
