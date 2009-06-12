@@ -544,10 +544,10 @@ dojo.declare("bespin.client.settings.Events", null, {
                 try {
                     var dr = dojo.require;
                     // the build system doesn't like dynamic names.
-                    dr("bespin.themes." + theme);
+                    dr.call(dojo, "bespin.themes." + theme);
                     if (checkSetAndExit()) return true;
                 } catch (e) {
-                    //console.log(e);
+                    console.log("Unable to load theme: " + theme, e);
                 }
 
                 // Not in bespin.themes, load from users directory
@@ -555,7 +555,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                     try {
                         eval(file.content);
                     } catch (e) {
-                        //console.log(e)
+                        console.log("Error with theme loading: ", e);
                     }
 
                     if (!checkSetAndExit()) {
