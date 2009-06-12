@@ -31,32 +31,32 @@ bespin.test.addTests("social", {
     setup: function() {
         this.server = bespin.get("server");
         this.commandLine = bespin.get("commandLine");
-        this.originalServerFollow = server.follow();
-        this.originalServerUnfollow = server.unfollow();
+        this.originalServerFollow = this.server.follow();
+        this.originalServerUnfollow = this.server.unfollow();
     },
 
     testFollow: function(test) {
         this.server.follow = function(usernames, opts) {
             opts.onSuccess("{ }");
         };
-        test.asssertCommand("follow", "You are not following anyone");
+        test.command("follow", "You are not following anyone");
 
         this.server.follow = function(usernames, opts) {
             opts.onSuccess("[ 'joe', 'fred' ]");
         };
-        test.asssertCommand("follow", "Following: joe, fred");
+        test.command("follow", "Following: joe, fred");
 
         this.server.follow = function(usernames, opts) {
             opts.onFailure({ responseText:"99" });
         };
-        test.assertCommand("follow", "Failed to add follower: 99");
+        test.command("follow", "Failed to add follower: 99");
     },
 
     testUnfollow: function(test) {
         this.server.unfollow = function(usernames, opts) {
             opts.onSuccess({ });
         };
-        test.asssertCommand("unfollow fred", "You are not following anyone");
+        test.command("unfollow fred", "You are not following anyone");
     },
 
     tearDown: function() {
