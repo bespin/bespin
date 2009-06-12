@@ -61,7 +61,11 @@ if(typeof google != "undefined" && google.gears && google.gears.workerPool) { //
             if(url) {
                 load(url, loader)
             } else {
-                global.eval(src)
+                try {
+                    global.eval(src)
+                } catch (e) {
+                    console.log("Error evaluating source ", e);
+                }
                 loadDone()
             }
         }
@@ -92,7 +96,11 @@ if (typeof importScripts == "undefined") {
             if (loaded[i]) {
                 nextLoad = i+1;
                 //console.log("Evalling "+i)
-                __GLOBAL__.eval(loaded[i]);
+                try {
+                    __GLOBAL__.eval(loaded[i]);
+                } catch (e) {
+                    console.log("Error evaluating script from import: ", e);
+                }
                 //console.log("evaled "+i)
                 if(loadCounter == i) {
                     //console.log("Done")
@@ -123,7 +131,11 @@ onmessage = function(event) {
             if (EMULATE_LOAD) {
                 __GLOBAL__.__evalScriptFromImport(SCRIPT_COUNT++, body);
             } else {
-                __GLOBAL__.eval(body);
+                try {
+                    __GLOBAL__.eval(body);
+                } catch (e) {
+                    console.log("Unable to evaluate onmessage()", e);
+                }
                 loadDone()
             }
             return
@@ -135,7 +147,6 @@ onmessage = function(event) {
             if(match) {
                 var index = parseInt(match[1], 10);
                 __evalScriptFromImport(index, source)
-
             }
             return
         }

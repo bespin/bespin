@@ -34,7 +34,7 @@ bespin.themes.white = {
     lineMarkerErrorColor: "#CC4444",
     lineMarkerWarningColor: "#B8860B",
     zebraStripeColor: "#FFFFFF",
-    highlightCurrentLineColor: "#3a312b",
+    highlightCurrentLineColor: "#dddddd",
     editorTextFont: "10pt Monaco, Lucida Console, monospace",
     editorTextColor: "#000000",
     editorSelectedTextColor: "rgb(240, 240, 240)",
