@@ -118,6 +118,14 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
             }, outputNode);
             rowout.innerHTML = instruction.output || "";
         });
+    },
+    
+    resize: function() {
+        
+    },
+    
+    clearAll: function() {
+        this.history.setInstructions();
     }
 });
 
@@ -257,20 +265,23 @@ dojo.mixin(bespin.debug, {
     hideDebugBar: function() {
         dojo.style("debugbar", "display", "none");
         bespin.page.editor.recalcLayout();
+        bespin.debug.evalLine.clearAll();
     }
 });
 
 bespin.subscribe("debugger:running", function() {
-    var el = dojo.byId("debugbar_status");
-    el.innerHTML = "Running";
-    dojo.addClass(el, "running");
+    dojo.style("debugbar_status_running", "display", "inline");
+    dojo.style("debugbar_status_stopped", "display", "none");
     dojo.byId("debugbar_position").innerHTML = "";
+    dojo.style("debugbar_break", "display", "inline");
+    dojo.style("debugbar_continue", "display", "none");
 });
 
 bespin.subscribe("debugger:stopped", function() {
-    var el = dojo.byId("debugbar_status");
-    el.innerHTML = "Stopped";
-    dojo.removeClass(el, "running");
+    dojo.style("debugbar_status_running", "display", "none");
+    dojo.style("debugbar_status_stopped", "display", "inline");
+    dojo.style("debugbar_break", "display", "none");
+    dojo.style("debugbar_continue", "display", "inline");
 });
 
 bespin.subscribe("debugger:halted", function(location) {
