@@ -369,12 +369,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    visible: function() {
+        return this.currentSlice != null;
+    },
+
     // == Toggle whether the pie menu is visible ==
     toggle: function() {
-        if (this.currentSlice == null) {
-            this.show();
-        } else {
+        if (this.visible()) {
             this.hide();
+        } else {
+            this.show();
         }
     },
 

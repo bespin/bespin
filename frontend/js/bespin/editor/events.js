@@ -189,7 +189,7 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
-            
+
             bespin.publish("editor:savefile:before", { filename: filename });
 
             // saves the current state of the editor to a cookie

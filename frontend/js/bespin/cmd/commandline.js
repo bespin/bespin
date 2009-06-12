@@ -193,7 +193,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands, options) {
         this.setup(commandLine, initCommands, options);
     },
-    
+
     // Dojo automatically calls superclass constructors. So,
     // if you don't want the constructor behavior, there's no
     // way out. Move to a separate function to allow overriding.
@@ -204,9 +204,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.commandLine = dojo.byId(commandLine);
 
         // * Create the div for hints
+        this.styles = {
+          bottom: "0px",
+          left: "31px"
+        };
+
         this.commandHint = dojo.create("div", {
             id: idPrefix + "hint",
-            style: "display:none; bottom:0px; left:31px; width:500px;"
+            style: "display:none; bottom: " + this.styles.bottom + "; left:" + this.styles.left + "; width:500px;"
         }, parentElement);
         dojo.connect(this.commandHint, "onclick", this, this.hideHint);
 
@@ -228,7 +233,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.configureEvents();
         this.hideOutput();
     },
-    
+
     configureEvents: function() {
         this.customEvents = new bespin.cmd.commandline.Events(this);
     },
@@ -241,8 +246,18 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Hint ==
     // Hints are displayed while typing. They are transient and ignorable
     showHint: function(html) {
+        var styles = {
+            display: 'block'
+        };
+
+        // move the puppy up to the pie menu
+        if (!bespin.get('piemenu').visible()) {
+            styles.bottom = this.styles.bottom;
+            styles.left = this.styles.left;
+        }
+
         dojo.attr(this.commandHint, { innerHTML: html });
-        dojo.style(this.commandHint, "display", "block");
+        dojo.style(this.commandHint, styles);
 
         if (this.hintTimeout) clearTimeout(this.hintTimeout);
         this.hintTimeout = setTimeout(dojo.hitch(this, function() {
@@ -269,15 +284,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var footerHeight = dojo.style("footer", "height") + 2;
 
+        if (bespin.get('piemenu').visible()) {
+            bottom += footerHeight;
+        }
+
         dojo.style(this.commandHint, {
             left: left + "px",
-            bottom: (bottom + footerHeight) + "px",
+            bottom: bottom + "px",
             width: width + "px"
         });
 
         dojo.style(this.output, {
             left: left + "px",
-            bottom: (bottom + footerHeight) + "px",
+            bottom: bottom + "px",
             width: width + "px",
             height: height + "px",
             display: "block"
@@ -765,7 +784,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         var self = this;
         return function() {
             try {
-                action.apply(context || dojo.global, arguments);                
+                action.apply(context || dojo.global, arguments);
             } finally {
                 self._outstanding--;
 
@@ -845,7 +864,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 });
 
 bespin.cmd.commandline.Instruction.fromString = function(str) {
-    
+
 };
 
 // ** {{{ bespin.cmd.commandline.KeyBindings }}} **
@@ -1110,6 +1129,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
         bespin.get('files').saveFile(bespin.userSettingsProject, {
             name: "command.history",
             content: content,
+            autosave: true,
             timestamp: new Date().getTime()
         });
     }
