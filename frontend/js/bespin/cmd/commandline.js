@@ -294,6 +294,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.maxInfoHeight = null;
     },
 
+    // == Add Element ==
+    // Instead of doing output by appending strings, commands can pass in a
+    // DOM node that they update. It is assumed that commands doing this will
+    // provide their own progress indicators.
+    setElement: function(element) {
+        if (this.executing) {
+            this.executing.setElement(element);
+        } else {
+            console.trace();
+            console.debug("orphan command node:", element);
+        }
+    },
+
     // == Add Output ==
     // Complete the currently executing command with successful output
     addOutput: function(html) {
@@ -316,18 +329,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // Complete the currently executing command with successful output
     _addOutput: function(html, error, complete) {
         if (this.executing) {
-            this.executing.addOutput(html, complete);
-            this.executing.hideOutput = false;
-            this.executing.error = error;
-            this.executing.complete = complete;
+            this.executing.addOutput(html, error, complete);
         } else {
             console.trace();
             console.debug("orphan output:", html);
         }
-
-        this.hideHint();
-        this.updateOutput();
-        this.scrollConsole();
     },
 
     // == Make the console scroll to the bottom ==
@@ -447,17 +453,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
                 // The row for the output (if required)
                 if (!instruction.hideOutput) {
-                    var contents = instruction.output || "";
-                    if (!instruction.complete) {
-                        contents += "<img src='/images/throbber.gif'/> Working ...";
-                    }
                     var rowout = dojo.create("tr", { className: 'command_rowout' }, table);
                     dojo.create("td", { }, rowout);
-                    dojo.create("td", {
+                    var td = dojo.create("td", {
                         colSpan: 2,
-                        className: (instruction.error ? "command_error" : ""),
-                        innerHTML: contents
+                        className: (instruction.error ? "command_error" : "")
                     }, rowout);
+
+                    if (instruction.element) {
+                        dojo.place(instruction.element, td);
+                    } else {
+                        var contents = instruction.output || "";
+                        if (!instruction.complete) {
+                            contents += "<img src='/images/throbber.gif'/> Working ...";
+                        }
+                        td.innerHTML = contents;
+                    }
                 }
             }
             count ++;
@@ -549,47 +560,34 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     // == Execute Command ==
-    executeCommand: function(value) {
+    executeCommand: function(value, hidden) {
         if (!value || value == "") {
-            return;
+            return null;
         }
 
         var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
-        // clear after the command
-        this.commandLine.value = '';
-
-        this.history.add(instruction);
-        this.executing = instruction;
-
-        try {
-            if (instruction.error) {
-                this.addOutput(instruction.error);
-            } else {
-                instruction.command.execute(this, instruction.args, instruction.command);
-            }
-        }
-        catch (ex) {
-            this.addErrorOutput(ex);
-        }
-        finally {
-            if (this.executing.linked == null) {
-                this.executing.complete = true;
-            }
-
-            this.executing = null;
+        if (hidden !== true) {
+            this.history.add(instruction);
         }
 
-        this.hideHint();
-        this.updateOutput();
-        this.scrollConsole();
+        var self = this;
+        instruction.onOutput(function() {
+            self.hideHint();
+            self.updateOutput();
+            self.scrollConsole();
+        });
+
+        instruction.exec(this);
+
+        return instruction;
     },
 
     // == Link Function to Instruction ==
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
         if (!this.executing) {
-            return action;
+            return dojo.hitch(context, action);
         }
 
         var originalExecuting = this.executing;
@@ -642,6 +640,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     constructor: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
         this.output = "";
+        this.callbacks = [];
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
@@ -660,19 +659,122 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         }
     },
 
+    // == Exec ==
+    // Execute the command
+    exec: function(commandLine) {
+        try {
+            if (this.error) {
+                this.addErrorOutput(html);
+            } else {
+                commandLine.executing = this;
+                this.command.execute(this, this.args, this.command);
+            }
+        }
+        catch (ex) {
+            this.addErrorOutput(ex);
+        }
+        finally {
+            commandLine.executing = null;
+
+            if (this.linked == null) {
+                this.complete = true;
+            }
+        }
+    },
+
+    // == To String ==
+    // A string version of this Instruction suitable for serialization
     toString: function() {
         return dojo.toJson({ typed:typed, output:output, start:start, end:end });
     },
 
+    // == Add Output ==
+    // Complete the currently executing command with successful output
+    addOutput: function(html) {
+        this._addOutput(html, false, true);
+    },
+
+    // == Add Error Output ==
+    // Complete the currently executing command with error output
+    addErrorOutput: function(html) {
+        this._addOutput(html, true, true);
+    },
+
+    // == Add Usage Output ==
+    // Complete the currently executing command with usage output
+    addUsageOutput: function(command) {
+        var usage = command.usage || "no usage information found for " + command.name;
+        this._addOutput("Usage: " + command.name + " " + usage, true, true);
+    },
+
+    // == Add Incomplete Output ==
+    // Add output to the currently executing command with successful output
+    addIncompleteOutput: function(html) {
+        this._addOutput(html, false, false);
+    },
+
     // == Set Output ==
     // On completion we finish a command by settings it's output
-    addOutput: function(output, complete) {
+    _addOutput: function(output, error, complete) {
         this.output += output;
+        this.error = error;
+        this.complete = complete;
+        this.hideOutput = false;
+
         if (complete) {
             this.end = new Date();
         } else {
             this.output += "<br/>";
         }
+
+        this.callbacks.forEach(function(callback) {
+            callback.call(null, output);
+        });
+    },
+
+    // == On Output ==
+    // Monitor output that goes to an instruction
+    onOutput: function(callback) {
+        // Catch-up on the output so far
+        callback.call(null, this.output);
+
+        this.callbacks.push(callback);
+
+        // TODO: return an element to allow us to unregister the listener
+        // TODO: maybe dojo.connect is a better way to do this?
+    },
+
+    // == Add Element ==
+    // Instead of doing output by appending strings, commands can pass in a
+    // DOM node that they update. It is assumed that commands doing this will
+    // provide their own progress indicators.
+    setElement: function(element) {
+        this.element = element;
+        this.end = new Date();
+        this.hideOutput = false;
+        this.error = false;
+        this.complete = true;
+    },
+
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
+    link: function(action, context) {
+        this.outstanding = this.outstanding || 0;
+        this.outstanding++;
+
+        var self = this;
+        return function() {
+            try {
+                action.apply(context || dojo.global, arguments);                
+            } finally {
+                self._outstanding--;
+
+                if (self._outstanding == 0) {
+                    self.complete = true;
+                    self.onOutput();
+                }
+            }
+        };
     },
 
     // == Split Command and Args
@@ -806,61 +908,62 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             var key = bespin.util.keys.Key;
 
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
-                dojo.stopEvent(e);
-
                 dojo.byId('command').blur();
-
                 bespin.publish("cmdline:blur");
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
-                dojo.stopEvent(e);
-
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
-                dojo.stopEvent(e);
-
                 var prev = this.history.previous();
                 if (prev) {
                     cl.commandLine.value = prev.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyChar == 'u' && e.ctrlKey) {
-                dojo.stopEvent(e);
-
                 cl.commandLine.value = '';
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.ENTER) {
-                this.executeCommand(cl.commandLine.value);
+                var typed = cl.commandLine.value;
+                this.commandLine.value = '';
+                this.executeCommand(typed);
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.TAB) {
-                dojo.stopEvent(e);
-
                 this.complete(cl.commandLine.value);
+
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.ESCAPE) {
                 // ESCAPE onkeydown fails on Moz, so we need this. Why?
                 this.hideHint();
                 bespin.get("piemenu").hide();
+
                 dojo.stopEvent(e);
                 return false;
             } else if (bespin.get("piemenu").keyRunsMe(e)) {
-                dojo.stopEvent(e);
 
                 this.hideHint();
                 var piemenu = bespin.get("piemenu");
                 piemenu.show(piemenu.slices.off);
 
+                dojo.stopEvent(e);
                 return false;
             }
+
+            // TODO: Should we return true here?
         });
 
         // ESCAPE onkeypress fails on Safari, so we need this. Why?

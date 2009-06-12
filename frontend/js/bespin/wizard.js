@@ -24,102 +24,113 @@
 
 dojo.provide("bespin.wizard");
 
-// This list of wizards that we can run. Each must have a url, which is a
-// pointer to the server side resource to display, and a set of functions that
-// are run by parts of the resource. A special onLoad function (note the exact
-// case) will be called when the wizard is first displayed.
-bespin.wizard._wizards = {
-    newuser: {
-        url: "/overlays/newuser.html"
+/**
+ * A collection of functions for displaying Wizards
+ */
+dojo.mixin(bespin.wizard, {
+    /**
+     * This list of wizards that we can run. Each must have a url, which is a
+     * pointer to the server side resource to display, and a set of functions that
+     * are run by parts of the resource. A special onLoad function (note the exact
+     * case) will be called when the wizard is first displayed.
+     */
+    _wizards: {
+        newuser: {
+            url: "/overlays/newuser.html"
+        },
+        overview: {
+            url: "/overlays/overview.html"
+        }
     },
-    overview: {
-        url: "/overlays/overview.html"
-    }
-};
 
-//** {{{ Command: wizard }}} **
-bespin.cmd.commands.add({
-    name: 'wizard',
-    takes: ['type'],
-    preview: 'display a named wizard to step through some process',
-    completeText: 'The name of the wizard to run. Leave blank to list known wizards',
-    usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
-    // ** {{{execute}}}
-    execute: function(commandline, type) {
-        if (!type) {
-            var list = "";
-            for (name in bespin.wizard._wizards) {
-                list += ", " + name;
+    /**
+     * Passed to bespin.cmd.commands.add below
+     */
+    _command: {
+        name: 'wizard',
+        takes: ['type'],
+        preview: 'display a named wizard to step through some process',
+        completeText: 'The name of the wizard to run. Leave blank to list known wizards',
+        usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
+        // ** {{{execute}}}
+        execute: function(instruction, type) {
+            if (!type) {
+                var list = "";
+                for (name in bespin.wizard._wizards) {
+                    list += ", " + name;
+                }
+                instruction.addOutput("Known wizards: " + list.substring(2));
+                return;
             }
-            bespin.publish("message:output", { msg: "Known wizards: " + list.substring(2) });
+
+            bespin.wizard.show(instruction, type, true);
+        }
+    },
+
+    /**
+     * Change the session settings when a new file is opened
+     */
+    show: function(instruction, type, warnOnFail) {
+        var wizard = this._wizards[type];
+        if (!wizard) {
+            instruction.addErrorOutput("Unknown wizard: " + type);
             return;
         }
 
-        bespin.publish("wizard:show", { type:type, warnOnFail:true });
+        // Warn when the HTML fetch fails
+        var warn = function(xhr) {
+            instruction.addErrorOutput("Failed to display wizard: " + xhr.responseText);
+        };
+
+        var localOnFailure = warnOnFail ? warn : null;
+        var localOnSuccess = function(data) {
+            bespin.wizard._onSuccess(data, wizard);
+        };
+
+        bespin.get('server').fetchResource(wizard.url, localOnSuccess, localOnFailure);
+    },
+
+    /**
+     * Designed to be called by a button in a wizard:
+     * Close the wizard
+     */
+    onClose: function() {
+        bespin.util.webpieces.hideCenterPopup(this.element);
+    },
+
+    /**
+     * Designed to be called by a button in a wizard:
+     * Open a web page as we close the wizard
+     */
+    onJump: function(url) {
+        window.open(url);
+        this.onClose();
+    },
+
+    /**
+     * Designed to be called by a button in a wizard:
+     * Open another wizard page as we close this one
+     */
+    onWizard: function(type) {
+        this.show(type);
+        this.onClose();
+    },
+
+    /**
+     * When the HTML fetch succeeds, display it in the centerpopup div
+     */
+    _onSuccess: function(data, wizard) {
+        this.element = dojo.byId('centerpopup');
+        this.element.innerHTML = data;
+        dojo.query("#centerpopup script").forEach(function(node) {
+            dojo.eval(node.innerHTML);
+        });
+        bespin.util.webpieces.showCenterPopup(this.element, true);
+        if (typeof wizard.onLoad == "function") {
+            wizard.onLoad();
+        }
     }
 });
 
-// Designed to be called by a button in a wizard:
-// Close the wizard
-bespin.wizard.onClose = function() {
-    bespin.util.webpieces.hideCenterPopup(bespin.wizard.el);
-};
-
-// Designed to be called by a button in a wizard:
-// Open a web page as we close the wizard
-bespin.wizard.onJump = function(url) {
-    window.open(url);
-    bespin.wizard.onClose();
-};
-
-// Designed to be called by a button in a wizard:
-// Open another wizard page as we close this one
-bespin.wizard.onWizard = function(type) {
-    bespin.publish("wizard:show", { type:type });
-    bespin.wizard.onClose();
-};
-
-// ** {{{ Event: wizard:show }}} **
-//
-// Change the session settings when a new file is opened
-bespin.subscribe("wizard:show", function(event) {
-    if (!event.type) {
-        throw new Error("wizard:show event must have a type");
-    }
-
-    var wizard = bespin.wizard._wizards[event.type];
-    if (!wizard) {
-        bespin.publish("message:error", { msg: "Unknown wizard: " + event.type });
-        return;
-    }
-    
-    // TODO: Get rid of this when we've got the basic devt done
-    if (event.showonce) {
-        bespin.get('settings').set('hidewelcomescreen', 'true');
-    }
-
-    var localOnFailure = event.warnOnFail ? bespin.wizard._onFailure : null;
-    var localOnSuccess = function(data) {
-        bespin.wizard._onSuccess(data, wizard);
-    };
-
-    bespin.get('server').fetchResource(wizard.url, localOnSuccess, localOnFailure);
-});
-
-// When the HTML fetch succeeds, display it in the centerpopup div
-bespin.wizard._onSuccess = function(data, wizard) {
-    bespin.wizard.el = dojo.byId('centerpopup');
-    bespin.wizard.el.innerHTML = data;
-    dojo.query("#centerpopup script").forEach(function(node) {
-        dojo.eval(node.innerHTML);
-    });
-    bespin.util.webpieces.showCenterPopup(bespin.wizard.el, true);
-    if (typeof wizard.onLoad == "function") {
-        wizard.onLoad();
-    }
-};
-
-// Warn when the HTML fetch fails
-bespin.wizard._onFailure = function(xhr) {
-    bespin.publish("message:error", { msg: "Failed to display wizard: " + xhr.responseText });
-};
+//** {{{ Command: wizard }}} **
+bespin.cmd.commands.add(bespin.wizard._command);

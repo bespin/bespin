@@ -30,6 +30,10 @@ dojo.require("bespin.cmd.dashboardcommands");
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
 bespin.social.displayFollowers = function(followers) {
+    if (!followers || followers.length == 0) {
+        bespin.get("commandLine").addOutput("You are not following anyone");
+        return;
+    }
     var message = "Following: " + followers.join(", ");
     bespin.get("commandLine").addOutput(message);
 };
@@ -45,7 +49,7 @@ bespin.cmd.commands.add({
     preview: 'add to the list of users we are following, or (with no args) list the current set',
     completeText: 'username(s) of person(s) to follow',
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
-    execute: function(commandline, args) {
+    execute: function(instruction, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
             bespin.get('server').followers({
@@ -53,7 +57,7 @@ bespin.cmd.commands.add({
                     bespin.social.displayFollowers(dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to retrieve followers: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to retrieve followers: " + xhr.responseText);
                 }
             });
         }
@@ -63,7 +67,7 @@ bespin.cmd.commands.add({
                     bespin.social.displayFollowers(dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to add follower: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to add follower: " + xhr.responseText);
                 }
             });
         }
@@ -100,10 +104,10 @@ bespin.cmd.commands.add({
     completeText: 'username(s) of person(s) to stop following',
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
     // ** {{{execute}}}
-    execute: function(commandline, args) {
+    execute: function(instruction, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length == 0) {
-            commandline.addErrorOutput('Please specify the users to cease following');
+            instruction.addErrorOutput('Please specify the users to cease following');
         }
         else {
             bespin.get('server').unfollow(usernames, {
@@ -111,7 +115,7 @@ bespin.cmd.commands.add({
                     bespin.social.displayFollowers(dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to remove follower: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to remove follower: " + xhr.responseText);
                 }
             });
         }
@@ -139,7 +143,7 @@ bespin.cmd.commands.add({
     takes: ['[{name}|--add|--remove] ...'],
     preview: 'Collect the people you follow into groups, and display the existing groups',
     // ** {{{execute}}}
-    execute: function(commandline, args) {
+    execute: function(instruction, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
         if (args.length == 0) {
@@ -148,15 +152,15 @@ bespin.cmd.commands.add({
                 onSuccess: function(data) {
                     var groups = dojo.fromJson(data);
                     if (groups.length == 0) {
-                        commandline.addErrorOutput("You have no groups");
+                        instruction.addErrorOutput("You have no groups");
                     }
                     else {
                         var message = "You have the following groups: " + groups.join(", ");
-                        commandline.addErrorOutput(message);
+                        instruction.addErrorOutput(message);
                     }
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to retrieve groups: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to retrieve groups: " + xhr.responseText);
                 }
             });
         }
@@ -168,15 +172,15 @@ bespin.cmd.commands.add({
                     var members = dojo.fromJson(data);
                     if (members.length == 0) {
                         console.warn("Group " + group + " has no members - it should have been auto-deleted!");
-                        commandline.addOutput("" + group + " has no members.");
+                        instruction.addOutput("" + group + " has no members.");
                     }
                     else {
                         var message = "Members of " + group + ": " + members.join(", ");
-                        commandline.addOutput(message);
+                        instruction.addOutput(message);
                     }
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
                 }
             });
         }
@@ -186,15 +190,15 @@ bespin.cmd.commands.add({
                 var group = args[0];
                 bespin.get('server').groupRemoveAll(group, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Removed group " + group);
+                        instruction.addOutput("Removed group " + group);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to retrieve group members. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to retrieve group members. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
             else {
-                commandline.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
+                instruction.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
             }
         }
         else if (args.length > 2) {
@@ -204,10 +208,10 @@ bespin.cmd.commands.add({
                 // Add to members of a group
                 bespin.get('server').groupAdd(group, args, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Members of " + group + ": " + data);
+                        instruction.addOutput("Members of " + group + ": " + data);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
@@ -216,15 +220,15 @@ bespin.cmd.commands.add({
                 args.shift();
                 bespin.get('server').groupRemove(group, args, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Members of " + group + ": " + data);
+                        instruction.addOutput("Members of " + group + ": " + data);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
             else {
-                commandline.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
+                instruction.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
             }
         }
     }
@@ -275,7 +279,7 @@ bespin.cmd.commands.add({
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
     // * {{{ execute }}}
-    execute: function(commandline, args) {
+    execute: function(instruction, args) {
         args = args.pieces;
 
         if (args.length == 0) {
@@ -283,11 +287,11 @@ bespin.cmd.commands.add({
             // i.e. 'share'
             bespin.get('server').shareListAll({
                 onSuccess: function(data) {
-                    commandline.addOutput("Project sharing: " + data);
+                    instruction.addOutput("Project sharing: " + data);
 
                     var shares = dojo.fromJson(data);
                     if (shares.length == 0) {
-                        commandline.addOutput("You are not sharing any projects");
+                        instruction.addOutput("You are not sharing any projects");
                     }
                     else {
                         var message = "You have the following shares:<ul>\n";
@@ -305,11 +309,11 @@ bespin.cmd.commands.add({
                             }
                         });
                         message += "</ul>";
-                        commandline.addErrorOutput(message);
+                        instruction.addErrorOutput(message);
                     }
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to list project shares: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to list project shares: " + xhr.responseText);
                 }
             });
         }
@@ -319,10 +323,10 @@ bespin.cmd.commands.add({
             var project = args[0];
             bespin.get('server').shareListProject(project, {
                 onSuccess: function(data) {
-                    commandline.addOutput("Project sharing for " + project + ": " + data);
+                    instruction.addOutput("Project sharing for " + project + ": " + data);
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
                 }
             });
         }
@@ -333,10 +337,10 @@ bespin.cmd.commands.add({
                 var project = args[0];
                 bespin.get('server').shareRemoveAll(project, {
                     onSuccess: function(data) {
-                        commandline.addOutput("All sharing removed from " + project);
+                        instruction.addOutput("All sharing removed from " + project);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to remove sharing permissions. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to remove sharing permissions. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
@@ -347,10 +351,10 @@ bespin.cmd.commands.add({
                 var member = args[1];
                 bespin.get('server').shareListProjectMember(project, member, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Project sharing for " + project + ", " + member + ": " + data);
+                        instruction.addOutput("Project sharing for " + project + ", " + member + ": " + data);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
@@ -363,10 +367,10 @@ bespin.cmd.commands.add({
                 var member = args[1];
                 bespin.get('server').shareRemove(project, member, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Removed sharing permission from " + member + " to " + project);
+                        instruction.addOutput("Removed sharing permission from " + member + " to " + project);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to remove sharing permission. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to remove sharing permission. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
@@ -396,17 +400,17 @@ bespin.cmd.commands.add({
     },
 
     _syntaxError: function(message) {
-        commandline.addErrorOutput(message + '<br/>Syntax: share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
+        instruction.addErrorOutput(message + '<br/>Syntax: share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
     },
 
     // === Add a member to the sharing list for a project ===
     _shareAdd: function(project, member, options) {
         bespin.get('server').shareAdd(project, member, options, {
             onSuccess: function(data) {
-                commandline.addOutput("Adding sharing permission for " + member + " to " + project);
+                instruction.addOutput("Adding sharing permission for " + member + " to " + project);
             },
             onFailure: function(xhr) {
-                commandline.addErrorOutput("Failed to add sharing permission. Maybe due to: " + xhr.responseText);
+                instruction.addErrorOutput("Failed to add sharing permission. Maybe due to: " + xhr.responseText);
             }
         });
     }
@@ -463,7 +467,7 @@ bespin.cmd.commands.add({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
     // ** {{{execute}}}
-    execute: function(commandline, args) {
+    execute: function(instruction, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
         if (args.length == 0) {
@@ -471,10 +475,10 @@ bespin.cmd.commands.add({
             // i.e. 'viewme'
             bespin.get('server').viewmeListAll({
                 onSuccess: function(data) {
-                    commandline.addOutput("All view settings: " + data);
+                    instruction.addOutput("All view settings: " + data);
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to retrieve view settings. Maybe due to: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to retrieve view settings. Maybe due to: " + xhr.responseText);
                 }
             });
         }
@@ -484,10 +488,10 @@ bespin.cmd.commands.add({
             var member = args[0];
             bespin.get('server').viewmeList(member, {
                 onSuccess: function(data) {
-                    commandline.addOutput("View settings for " + member + ": " + data);
+                    instruction.addOutput("View settings for " + member + ": " + data);
                 },
                 onFailure: function(xhr) {
-                    commandline.addErrorOutput("Failed to retrieve view settings. Maybe due to: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to retrieve view settings. Maybe due to: " + xhr.responseText);
                 }
             });
         }
@@ -501,10 +505,10 @@ bespin.cmd.commands.add({
                 var value = args[1];
                 bespin.get('server').viewmeSet(member, value, {
                     onSuccess: function(data) {
-                        commandline.addOutput("Changed view settings for " + member);
+                        instruction.addOutput("Changed view settings for " + member);
                     },
                     onFailure: function(xhr) {
-                        commandline.addErrorOutput("Failed to change view setttings. Maybe due to: " + xhr.responseText);
+                        instruction.addErrorOutput("Failed to change view setttings. Maybe due to: " + xhr.responseText);
                     }
                 });
             }
@@ -514,7 +518,7 @@ bespin.cmd.commands.add({
         }
     },
     _syntaxError: function(message) {
-        commandline.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
+        instruction.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
 
