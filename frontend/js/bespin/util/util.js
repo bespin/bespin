@@ -210,9 +210,9 @@ bespin.util.randomPassword = function(length) {
     return pass;
 };
 
-//= randomPassword =
-//
-// Create a random password of the given length (default 16 chars)
+// = isEmpty =
+// Is the passed object free of members, i.e. are there any enumerable
+// properties which the objects claims as it's own using hasOwnProperty()
 bespin.util.isEmpty = function(object) {
     for (var x in object) {
         if (object.hasOwnProperty(x)) return false;
