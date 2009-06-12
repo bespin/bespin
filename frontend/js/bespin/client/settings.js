@@ -647,7 +647,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:set:trimonsave", function(event) {
             if (settings.isOn(event.value)) {
                 _trimOnSave = bespin.subscribe("editor:savefile:before", function(event) {
-                    bespin.publish("command:execute", { name: "trim" });
+                    bespin.get("commandLine").executeCommand('trim', true);
                 });
             } else {
                 bespin.unsubscribe(_trimOnSave);

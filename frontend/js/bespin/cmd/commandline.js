@@ -656,7 +656,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 this.addErrorOutput(html);
             } else {
                 commandLine.executing = this;
-                this.command.execute(commandLine, this.args, this.command);
+                this.command.execute(this, this.args, this.command);
             }
         }
         catch (ex) {
@@ -687,6 +687,13 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     // Complete the currently executing command with error output
     addErrorOutput: function(html) {
         this._addOutput(html, true, true);
+    },
+
+    // == Add Usage Output ==
+    // Complete the currently executing command with usage output
+    addUsageOutput: function(command) {
+        var usage = command.usage || "no usage information found for " + command.name;
+        this._addOutput("Usage: " + command.name + " " + usage, true, true);
     },
 
     // == Add Incomplete Output ==
@@ -736,6 +743,27 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.hideOutput = false;
         this.error = false;
         this.complete = true;
+    },
+
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
+    link: function(action, context) {
+        this.outstanding = this.outstanding || 0;
+        this.outstanding++;
+
+        var self = this;
+        return function() {
+            try {
+                action.apply(context || dojo.global, arguments);                
+            } finally {
+                self._outstanding--;
+
+                if (self._outstanding == 0) {
+                    self.complete = true;
+                    self.onOutput();
+                }
+            }
+        };
     },
 
     // == Split Command and Args
@@ -869,63 +897,62 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             var key = bespin.util.keys.Key;
 
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
-                dojo.stopEvent(e);
-
                 dojo.byId('command').blur();
-
                 bespin.publish("cmdline:blur");
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
-                dojo.stopEvent(e);
-
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
-                dojo.stopEvent(e);
-
                 var prev = this.history.previous();
                 if (prev) {
                     cl.commandLine.value = prev.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyChar == 'u' && e.ctrlKey) {
-                dojo.stopEvent(e);
-
                 cl.commandLine.value = '';
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.ENTER) {
                 var typed = cl.commandLine.value;
                 this.commandLine.value = '';
-
                 this.executeCommand(typed);
+
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.TAB) {
-                dojo.stopEvent(e);
-
                 this.complete(cl.commandLine.value);
+
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.ESCAPE) {
                 // ESCAPE onkeydown fails on Moz, so we need this. Why?
                 this.hideHint();
                 bespin.get("piemenu").hide();
+
                 dojo.stopEvent(e);
                 return false;
             } else if (bespin.get("piemenu").keyRunsMe(e)) {
-                dojo.stopEvent(e);
 
                 this.hideHint();
                 var piemenu = bespin.get("piemenu");
                 piemenu.show(piemenu.slices.off);
 
+                dojo.stopEvent(e);
                 return false;
             }
+
+            // TODO: Should we return true here?
         });
 
         // ESCAPE onkeypress fails on Safari, so we need this. Why?

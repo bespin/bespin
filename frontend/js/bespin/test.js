@@ -33,28 +33,28 @@ bespin.cmd.commands.add({
     preview: 'run a test suite or suites',
     completeText: 'suite name, or \'all\' to run all tests, or press return to list tests.',
     // ** {{{execute}}}
-    execute: function(commandline, suite) {
+    execute: function(instruction, suite) {
         if (!suite) {
             if (bespin.util.isEmpty(bespin.test._knownTests)) {
-                commandline.addOutput("No test suites registered. See bespin.test.addTests() to add them.");
+                instruction.addOutput("No test suites registered. See bespin.test.addTests() to add them.");
             } else {
                 var msg = "Available test targets: all";
                 for (var name in bespin.test._knownTests) {
                     msg += ", " + name;
                 }
-                commandline.addOutput(msg);
+                instruction.addOutput(msg);
             }
         } else if (suite == "all") {
             var tests = [];
             for (var name in bespin.test._knownTests) {
                 tests.push(name);
             }
-            bespin.test.run(commandline, tests);
+            bespin.test.run(instruction, tests);
         } else {
             if (bespin.test._knownTests[suite]) {
-                bespin.test.run(commandline, [suite]);
+                bespin.test.run(instruction, [suite]);
             } else {
-                commandline.addErrorOutput("No test suite called: " + suite);
+                instruction.addErrorOutput("No test suite called: " + suite);
             }
         }
     }
@@ -79,11 +79,11 @@ dojo.mixin(bespin.test, {
      * Run the named test suites
      * @param names An array of test suite names
      */
-    run: function(commandline, suiteNames) {
+    run: function(instruction, suiteNames) {
         console.log("bespin.test.run", suiteNames);
 
         var table = dojo.create("table");
-        commandline.setElement(table);
+        instruction.setElement(table);
 
         var tbody = dojo.create("tbody", {}, table);
 
@@ -255,15 +255,16 @@ dojo.declare("bespin.test.Assert", null, {
         if (instruction.element) {
             this._addMessage("Can't us command() to test commands that use setElement()");
             this._updateStatus(bespin.test.Status.fail);
-        } else if (instruction.linked) {
+        } else if (instruction.outstanding != 0) {
+            var self = this;
             instruction.onOutput(function() {
                 if (instruction.complete && instruction.output != expect) {
-                    this._fail("command", arguments);
+                    self._fail("command", [ type, expect ], instruction.output);
                 }
             });
         } else {
             if (instruction.output != expect) {
-                this._fail("command", arguments);
+                this._fail("command", [ type, expect ], instruction.output);
             }
         }
     },
@@ -350,15 +351,18 @@ dojo.declare("bespin.test.Assert", null, {
             }
         }
     },
-    _fail: function(type, args) {
-        this._addFunctionMessage(type, args);
+    _fail: function(type, args, reply) {
+        this._addFunctionMessage(type, args, reply);
         this._updateStatus(bespin.test.Status.fail);
         if (this.failFast) {
             throw "failFast";
         }
     },
-    _addFunctionMessage: function(type, args) {
+    _addFunctionMessage: function(type, args, reply) {
         var message = type + this._argsToString(args);
+        if (reply) {
+            message += " = " + dojo.toJson(reply);
+        }
         this._addMessage(message);
     },
     _addMessage: function(message) {

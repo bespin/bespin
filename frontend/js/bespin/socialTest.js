@@ -30,37 +30,36 @@ dojo.require("bespin.test");
 bespin.test.addTests("social", {
     setup: function() {
         this.server = bespin.get("server");
-        this.commandLine = bespin.get("commandLine");
-        this.originalServerFollow = this.server.follow();
-        this.originalServerUnfollow = this.server.unfollow();
+        this.originalServerFollowers = this.server.followers;
+        this.originalServerUnfollow = this.server.unfollow;
     },
 
     testFollow: function(test) {
-        this.server.follow = function(usernames, opts) {
-            opts.onSuccess("{ }");
+        this.server.followers = function(opts) {
+            opts.onSuccess("[ ]");
         };
         test.command("follow", "You are not following anyone");
 
-        this.server.follow = function(usernames, opts) {
+        this.server.followers = function(opts) {
             opts.onSuccess("[ 'joe', 'fred' ]");
         };
         test.command("follow", "Following: joe, fred");
 
-        this.server.follow = function(usernames, opts) {
-            opts.onFailure({ responseText:"99" });
+        this.server.followers = function(opts) {
+            opts.onFailure({ responseText:"ERR" });
         };
-        test.command("follow", "Failed to add follower: 99");
+        test.command("follow", "Failed to retrieve followers: ERR");
     },
 
     testUnfollow: function(test) {
         this.server.unfollow = function(usernames, opts) {
-            opts.onSuccess({ });
+            opts.onSuccess("[ ]");
         };
         test.command("unfollow fred", "You are not following anyone");
     },
 
     tearDown: function() {
-        this.server.follow = this.originalServerFollow;
+        this.server.followers = this.originalServerFollowers;
         this.server.unfollow = this.originalServerUnfollow;
     }
 });

@@ -53,31 +53,36 @@ dojo.mixin(bespin.wizard, {
         completeText: 'The name of the wizard to run. Leave blank to list known wizards',
         usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
         // ** {{{execute}}}
-        execute: function(commandline, type) {
+        execute: function(instruction, type) {
             if (!type) {
                 var list = "";
                 for (name in bespin.wizard._wizards) {
                     list += ", " + name;
                 }
-                bespin.get("commandLine").addOutput("Known wizards: " + list.substring(2));
+                instruction.addOutput("Known wizards: " + list.substring(2));
                 return;
             }
 
-            bespin.wizard.show(type, true);
+            bespin.wizard.show(instruction, type, true);
         }
     },
 
     /**
      * Change the session settings when a new file is opened
      */
-    show: function(type, warnOnFail) {
+    show: function(instruction, type, warnOnFail) {
         var wizard = this._wizards[type];
         if (!wizard) {
-            bespin.get("commandLine").addErrorOutput("Unknown wizard: " + type);
+            instruction.addErrorOutput("Unknown wizard: " + type);
             return;
         }
 
-        var localOnFailure = warnOnFail ? this._onFailure : null;
+        // Warn when the HTML fetch fails
+        var warn = function(xhr) {
+            instruction.addErrorOutput("Failed to display wizard: " + xhr.responseText);
+        };
+
+        var localOnFailure = warnOnFail ? warn : null;
         var localOnSuccess = function(data) {
             bespin.wizard._onSuccess(data, wizard);
         };
@@ -124,13 +129,6 @@ dojo.mixin(bespin.wizard, {
         if (typeof wizard.onLoad == "function") {
             wizard.onLoad();
         }
-    },
-
-    /**
-     * Warn when the HTML fetch fails
-     */
-    _onFailure: function(xhr) {
-        bespin.get("commandLine").addErrorOutput("Failed to display wizard: " + xhr.responseText);
     }
 });
 

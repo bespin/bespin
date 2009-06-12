@@ -9,7 +9,7 @@ dojo.provide("bespin.cmd.debugcommands");
         takes: ['actionname'],
         preview: 'execute any editor action',
         hidden: true,
-        execute: function(commandline, actionname) {
+        execute: function(instruction, actionname) {
             bespin.publish("editor:doaction", {
                 action: actionname
             });
@@ -22,8 +22,8 @@ dojo.provide("bespin.cmd.debugcommands");
         takes: ['message ...'],
         preview: 'A test echo command',
         // ** {{{execute}}}
-        execute: function(commandline, args) {
-            commandline.addOutput(args);
+        execute: function(instruction, args) {
+            instruction.addOutput(args);
         }
     });
 
@@ -45,9 +45,9 @@ dojo.provide("bespin.cmd.debugcommands");
         },
         preview: 'login to the service',
         completeText: 'pass in your username and password',
-        execute: function(commandline, args) {
+        execute: function(instruction, args) {
             if (!args) { // short circuit if no username
-                commandline.executeCommand("status");
+                bespin.get('commandLine').executeCommand("status");
                 return;
             }
             bespin.get('editSession').username = args.user; // TODO: normalize syncing
@@ -61,8 +61,9 @@ dojo.provide("bespin.cmd.debugcommands");
         takes: ['text'],
         preview: 'insert the given text at this point.',
         hidden: true,
-        execute: function(commandline, text) {
-            commandline.editor.model.insertChunk(commandline.editor.getModelPos(), text);
+        execute: function(instruction, text) {
+            var editor = bespin.get("editor");
+            editor.model.insertChunk(editor.getModelPos(), text);
         }
     });
 
@@ -72,11 +73,11 @@ dojo.provide("bespin.cmd.debugcommands");
         takes: ['flag'],
         preview: 'Turn on and off readonly mode',
         hidden: true,
-        execute: function(commandline, flag) {
+        execute: function(instruction, flag) {
             var msg;
 
             if (flag === undefined || flag == '') {
-                flag = !commandline.editor.readonly;
+                flag = !bespin.get("editor").readonly;
                 msg = "Toggling read only to " + flag;
             } else if (flag == 'off' || flag == 'false') {
                 flag = false;
@@ -85,8 +86,8 @@ dojo.provide("bespin.cmd.debugcommands");
                 flag = true;
                 msg = "Read only mode turned on.";
             }
-            commandline.editor.setReadOnly(flag);
-            commandline.addOutput(msg);
+            bespin.get("editor").setReadOnly(flag);
+            instruction.addOutput(msg);
         }
     });
 
@@ -96,7 +97,7 @@ dojo.provide("bespin.cmd.debugcommands");
         takes: ['arg'],
         preview: 'Display the events available via pub/sub.',
         hidden: true,
-        execute: function(commandline, arg) {
+        execute: function(instruction, arg) {
             var all = typeof arg != "undefined" && arg == "all";
             var html = "<u>Showing all Bespin Events</u><br><br>";
             for (var topic in dojo._topics) {
@@ -104,7 +105,7 @@ dojo.provide("bespin.cmd.debugcommands");
                     html += topic + "<br>";
                 }
             }
-            commandline.addOutput(html);
+            instruction.addOutput(html);
         }
     });
 
@@ -113,20 +114,20 @@ dojo.provide("bespin.cmd.debugcommands");
         name: 'typingtest',
         preview: 'type in the alphabet a few times',
         hidden: true,
-        execute: function(commandline) {
+        execute: function(instruction) {
             var start = Date.now();
 
             for (var i = 0; i < 3; i++) {
                 dojo.forEach(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], function(c) {
-                    var args = { pos: bespin.editor.utils.copyPos(commandline.editor.getCursorPos()) };
+                    var args = { pos: bespin.editor.utils.copyPos(bespin.get('editor').getCursorPos()) };
                     args.newchar = c;
-                    commandline.editor.ui.actions.insertCharacter(args);
+                    bespin.get('editor').ui.actions.insertCharacter(args);
                 });
             }
 
             var stop = Date.now();
 
-            commandline.addOutput("It took " + (stop - start) + " milliseconds to do this");
+            instruction.addOutput("It took " + (stop - start) + " milliseconds to do this");
         }
     });
 })();

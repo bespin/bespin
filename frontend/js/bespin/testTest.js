@@ -132,7 +132,7 @@ bespin.cmd.commands.add({
     takes: ['message ...'],
     preview: 'A test echo command',
     // ** {{{execute}}}
-    execute: function(commandline, args) {
-        commandline.addOutput(args);
+    execute: function(instruction, args) {
+        instruction.addOutput(args);
     }
 });
