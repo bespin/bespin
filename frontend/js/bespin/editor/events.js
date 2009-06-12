@@ -245,12 +245,16 @@ dojo.declare("bespin.editor.Events", null, {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.file.name;
 
-            // reset the state of the editor based on saved cookie
-            var data = dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'));
-            if (data) {
-                bespin.get('editor').resetView(dojo.fromJson(data));
-            } else {
-                bespin.get('editor').basicView();
+            try {
+                // reset the state of the editor based on saved cookie
+                var data = dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'));
+                if (data) {
+                    bespin.get('editor').resetView(dojo.fromJson(data));
+                } else {
+                    bespin.get('editor').basicView();
+                }
+            } catch (e) {
+                console.log("Error setting in the view: ", e);
             }
 
             bespin.publish("editor:titlechange", { filename: filename });

@@ -47,7 +47,7 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
     },
 
     getSyntaxStylesPerLine: function(lineText, lineNumber, language) {
-        if (this.language != language) {
+        if (!this.language || (this.language != language)) {
             this.engine = bespin.syntax.simple.Resolver.resolve(language);
             this.language = language;
         }
@@ -86,7 +86,6 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
         return syntaxResult;
     }
 });
-
 
 // ** {{{ bespin.syntax.simple.Resolver }}} **
 //

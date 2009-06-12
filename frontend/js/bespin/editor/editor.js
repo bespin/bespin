@@ -1662,7 +1662,6 @@ dojo.declare("bespin.editor.API", null, {
         this.setSelection(data.selection);
         this.ui.yoffset = data.offset.y;
         this.ui.xoffset = data.offset.x;
-        this.paint();
     },
 
     basicView: function() {
@@ -1670,7 +1669,6 @@ dojo.declare("bespin.editor.API", null, {
         this.setSelection(undefined);
         this.ui.yoffset = 0;
         this.ui.xoffset = 0;
-        this.paint();
     },
 
     getCurrentView: function() {

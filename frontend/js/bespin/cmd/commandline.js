@@ -1155,7 +1155,7 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
     _load: function() {
         if (window.globalStorage) {
             var data = globalStorage[location.hostname].history;
-            console.log("load", data);
+            //console.log("load", data);
             var instructions = dojo.fromJson(data);
             this.history.setInstructions(instructions);
         }
@@ -1163,7 +1163,7 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
 
     save: function(instructions) {
         var data = dojo.toJson(instructions);
-        console.log("save", data);
+        //console.log("save", data);
         if (window.globalStorage) {
             globalStorage[location.hostname].history = data;
         }
