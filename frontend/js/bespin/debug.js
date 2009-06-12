@@ -53,6 +53,7 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         this.history = new bespin.cmd.commandline.History(this);
         this.history.store = new bespin.debug.SimpleHistoryStore();
         this.output = dojo.byId(idPrefix + "output");
+        this._resizeConnection = null;
     },
     
     // we don't want the typical events in this command line
@@ -121,11 +122,25 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
     },
     
     resize: function() {
-        
+        if (this.resizeConnection == null) {
+            this._resizeConnection = dojo.connect(window, "resize", this, 
+                                                this.resize);
+        }
+        // The total size of the debugbar is 19+47+20+100+20+X+39+16
+        // where X is the size of the output, adjusted so that
+        // the total matches the height of the editor canvas.
+        var canvas = bespin.get("editor").canvas;
+        var totalHeight = canvas.offsetHeight;
+        var outputHeight = totalHeight - 261;
+        dojo.style("debugbar_output", "height", outputHeight + "px");
     },
     
     clearAll: function() {
         this.history.setInstructions();
+        if (this._resizeConnection != null) {
+            dojo.disconnect(this._resizeConnection);
+        }
+        this.updateOutput();
     }
 });
 
@@ -257,15 +272,19 @@ dojo.mixin(bespin.debug, {
     // extension point
     showDebugBar: function(evalFunction) {
         bespin.debug._initialize();
-        bespin.debug.evalLine.evalFunction = evalFunction;
+        
+        var evalLine = bespin.debug.evalLine;
+        evalLine.evalFunction = evalFunction;
         dojo.style("debugbar", "display", "block");
         bespin.page.editor.recalcLayout();
+        evalLine.resize();
     },
     
     hideDebugBar: function() {
+        var evalLine = bespin.debug.evalLine;
         dojo.style("debugbar", "display", "none");
         bespin.page.editor.recalcLayout();
-        bespin.debug.evalLine.clearAll();
+        evalLine.clearAll();
     }
 });
 

@@ -562,7 +562,7 @@ tr#jetpack_dropdown_or td {
     color: #999;
     z-index: 210;
     font-family: Calibri, Arial, sans-serif;
-    width: 100%;
+    width: 190px;
 }
 
 #debugbar_output .command_rowin {
