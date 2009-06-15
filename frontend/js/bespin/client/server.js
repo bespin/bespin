@@ -183,9 +183,16 @@ dojo.declare("bespin.client.Server", null, {
 
         var jobid = message.jobid;
         if (jobid === null || jobid === undefined) {
-            console.error("Missing jobid in message", message);
-            console.trace();
-            return;
+            // Maybe there was more than one message
+            if (dojo.isArray(message)) {
+                message.forEach(function(child) {
+                    this._processResponse(child);
+                });
+            } else {
+                console.error("Missing jobid in message", message);
+                console.trace();
+                return;
+            }
         }
 
         var job = this._jobs[jobid];
