@@ -280,6 +280,11 @@ dojo.mixin(bespin.debug, {
         dojo.style("debugbar", "display", "block");
         bespin.page.editor.recalcLayout();
         evalLine.resize();
+        
+        var settings = bespin.get("settings");
+        if (settings && settings.isSettingOff("debugmode")) {
+            settings.set("debugmode", "on");
+        }
     },
     
     hideDebugBar: function() {
