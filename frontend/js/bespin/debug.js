@@ -78,6 +78,27 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
                 this.executeCommand(typed);
 
                 return false;
+            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
+                var next = this.history.next();
+                if (next) {
+                    this.commandLine.value = next.typed;
+                }
+
+                dojo.stopEvent(e);
+                return false;
+            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
+                var prev = this.history.previous();
+                if (prev) {
+                    this.commandLine.value = prev.typed;
+                }
+
+                dojo.stopEvent(e);
+                return false;
+            } else if (e.keyChar == 'u' && e.ctrlKey) {
+                this.commandLine.value = '';
+
+                dojo.stopEvent(e);
+                return false;
             }
         });
 
@@ -109,10 +130,17 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
     
     updateOutput: function() {
         var outputNode = this.output;
+        var self = this;
         outputNode.innerHTML = "";
         dojo.forEach(this.history.instructions, function(instruction) {
             var rowin = dojo.create("div", {
-                className: "command_rowin"
+                className: "command_rowin",
+                onclick: function(ev) {
+                    self.historyClick(instruction.typed, ev);
+                },
+                ondblclick: function(ev) {
+                    self.historyDblClick(instruction.typed, ev);
+                }
             }, outputNode);
             rowin.innerHTML = "> " + instruction.typed || "";
             
