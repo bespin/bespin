@@ -387,6 +387,10 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             return (letterCode < 48) || (letterCode > 122); // alpha only
         };
 
+        //validate col to prevent endless loop
+        if (col >= line.length)
+            col = line.length - 1;
+        
         while (col > 0) {
             var letter = line[col];
             if (!letter) continue;

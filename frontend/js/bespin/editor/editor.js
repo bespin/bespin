@@ -418,6 +418,7 @@ dojo.declare("bespin.editor.UI", null, {
         //this.nibright;          // rect
 
         //this.selectMouseDownPos;        // position when the user moused down
+        //this.selectMouseDetail;         // the detail (number of clicks) for the mouse down.
 
         this.xoffset = 0;       // number of pixels to translate the canvas for scrolling
         this.yoffset = 0;
@@ -521,6 +522,7 @@ dojo.declare("bespin.editor.UI", null, {
             }
         }
 
+        this.selectMouseDetail = e.detail;
         if (e.shiftKey) {
             this.selectMouseDownPos = (this.editor.selection) ? this.editor.selection.startPos : this.editor.getCursorPos();
             this.setSelection(e);
@@ -547,6 +549,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.setSelection(e);
         this.selectMouseDownPos = undefined;
+        this.selectMouseDetail = undefined;
     },
 
     setSelection: function(e) {
@@ -583,30 +586,77 @@ dojo.declare("bespin.editor.UI", null, {
         }
         if (up.col == -1) up.col = 0;
 
-        if (!bespin.editor.utils.posEquals(down, up)) {
-            this.editor.setSelection({ startPos: down, endPos: up });
-        } else {
-            if (e.detail == 1) {
-                this.editor.setSelection(undefined);
-            } else if (e.detail == 2) {
-                var row = this.editor.model.rows[down.row];
-                var cursorAt = row[down.col];
-                if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
-                    // For now, don't select anything, but think about copying Textmate and grabbing around it
-                } else {
-                    var startPos = (up = this.editor.model.findBefore(down.row, down.col));
+        //we'll be dealing with the model directly, so we need model positions.
+        //might as well
+        var modelup = this.editor.cursorManager.getModelPosition(up);
+        var modeldown = this.editor.cursorManager.getModelPosition(down);
+        var modelstart = modeldown;
+        var modelend = modelup;
+        var backwards = false;
+        
+        //validate
+        if (modelup.row >= this.editor.model.getRowCount()) {
+            modelup.row = this.editor.model.getRowCount() - 1;
+        }
+        
+        if (modeldown.row >= this.editor.model.getRowCount()) {
+            modeldown.row = this.editor.model.getRowCount() - 1;
+        }
+        
+        //to make things simpler, go ahead and check if it is reverse
+        if (modelend.row < modelstart.row || (modelend.row == modelstart.row && modelend.col < modelstart.col)) {
+            backwards = true; //need to know so that we can maintain direction for shift-click select
+            modelstart = modelup;
+            modelend = modeldown;
+        }
+        
+        //get detail
+        var detail = this.selectMouseDetail;
 
-                    var endPos = this.editor.model.findAfter(down.row, down.col);
-
-                    this.editor.setSelection({ startPos: startPos, endPos: endPos });
-                }
-            } else if (e.detail > 2) {
-                // select the line
-                this.editor.setSelection({ startPos: { row: down.row, col: 0 }, endPos: { row: down.row + 1, col: 0 } });
+        //single click
+        if (detail == 1) {
+            if (bespin.editor.utils.posEquals(down, up)) {
+                this.editor.setSelection(undefined);   
+            } else {
+                //down and up work here because they are editor positions (and setSelection wants that)
+                this.editor.setSelection({ startPos: down, endPos: up });
             }
+            this.editor.cursorManager.moveCursor(up);
+        } else if (detail == 2) { //double click
+            var row = this.editor.model.rows[modeldown.row];
+            var cursorAt = row[modeldown.col];
+            if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
+                // For now, don't select anything, but think about copying Textmate and grabbing around it
+            } else {
+                var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col);
+                var endPos = this.editor.model.findAfter(modelend.row, modelend.col);
+
+                this.editor.setSelection({ 
+                    startPos: this.editor.cursorManager.getCursorPosition(backwards ? endPos : startPos), 
+                    endPos: this.editor.cursorManager.getCursorPosition(backwards ? startPos : endPos)
+                });
+                
+                //set cursor so that it is at selection end (even if mouse wasn't there)
+                this.editor.cursorManager.moveCursor(this.editor.cursorManager.getCursorPosition(backwards ? startPos : endPos));
+            }
+        } else if (detail > 2) { //triple plus duluxe
+            // select the line
+            var startPos = {row: modelstart.row, col: 0};
+            var endPos = {row: modelend.row, col: 0};
+            if (this.editor.model.hasRow(endPos.row + 1)) {
+                endPos.row = endPos.row + 1;
+            } else {
+                endPos.col = this.editor.model.getRowArray(endPos.row).length;
+            }
+            
+            this.editor.setSelection({
+                startPos: backwards ? endPos : startPos, 
+                endPos: backwards ? startPos: endPos
+            });
+            this.editor.cursorManager.moveCursor(backwards ? startPos : endPos);
         }
 
-        this.editor.cursorManager.moveCursor(up);
+
         this.editor.paint();
     },
 
