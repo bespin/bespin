@@ -246,6 +246,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Hint ==
     // Hints are displayed while typing. They are transient and ignorable
     showHint: function(html) {
+        if (html == null) {
+            console.warning("showHint passed null");
+            return;
+        }
+
         var styles = {
             display: 'block'
         };
@@ -606,37 +611,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
         if (!this.executing) {
+            if (context == null) return action;
             return dojo.hitch(context, action);
         }
 
-        var originalExecuting = this.executing;
-
-        // We could allow multiple linked functions, however that would
-        // make completion harder to calculate, and we're being lazy
-        if (this.executing.linked) {
-            throw new Error("Multiply linked instruction");
-        }
-
-        var self = this;
-        this.executing.linked = function() {
-            var confusedExecuting = null;
-            if (self.executing) {
-                console.warn("Nested instruction contexts");
-                confusedExecuting = self.executing;
-            }
-            self.executing = originalExecuting;
-
-            action.apply(context || dojo.global, arguments);
-
-            if (!self.executing.complete) {
-                self.executing.complete = true;
-                self.updateOutput();
-            }
-
-            self.executing = confusedExecuting;
-        };
-
-        return this.executing.linked;
+        return this.executing.link(action, context);
     },
 
     handleCommandLineFocus: function(e) {
@@ -683,7 +662,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     exec: function(commandLine) {
         try {
             if (this.error) {
-                this.addErrorOutput(html);
+                this.addErrorOutput(this.error);
             } else {
                 commandLine.executing = this;
                 this.command.execute(this, this.args, this.command);
@@ -694,11 +673,28 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         }
         finally {
             commandLine.executing = null;
-
-            if (this.linked == null) {
-                this.complete = true;
-            }
         }
+    },
+
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
+    link: function(action, context) {
+        this.outstanding = this.outstanding || 0;
+        this.outstanding++;
+
+        var self = this;
+        return function() {
+            try {
+                action.apply(context || dojo.global, arguments);
+            } finally {
+                self._outstanding--;
+
+                if (self._outstanding == 0) {
+                    self.complete = true;
+                    self.onOutput();
+                }
+            }
+        };
     },
 
     // == To String ==
@@ -773,27 +769,6 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.hideOutput = false;
         this.error = false;
         this.complete = true;
-    },
-
-    // == Link Function to Instruction ==
-    // Make a function be part of the thread of execution of an instruction
-    link: function(action, context) {
-        this.outstanding = this.outstanding || 0;
-        this.outstanding++;
-
-        var self = this;
-        return function() {
-            try {
-                action.apply(context || dojo.global, arguments);
-            } finally {
-                self._outstanding--;
-
-                if (self._outstanding == 0) {
-                    self.complete = true;
-                    self.onOutput();
-                }
-            }
-        };
     },
 
     // == Split Command and Args
