@@ -587,23 +587,33 @@ dojo.declare("bespin.editor.UI", null, {
         if (!bespin.editor.utils.posEquals(down, up)) {
             this.editor.setSelection({ startPos: down, endPos: up });
         } else {
+            //we'll be dealing with the model directly, so we need model positions.
+            modelup = this.editor.cursorManager.getModelPosition(up);
+            modeldown = this.editor.cursorManager.getModelPosition(down);
+            
+            //single click
             if (e.detail == 1) {
                 this.editor.setSelection(undefined);
-            } else if (e.detail == 2) {
-                var row = this.editor.model.rows[down.row];
-                var cursorAt = row[down.col];
+            } else if (e.detail == 2) { //double click
+                var row = this.editor.model.rows[modeldown.row];
+                var cursorAt = row[modeldown.col];
                 if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
                     // For now, don't select anything, but think about copying Textmate and grabbing around it
                 } else {
-                    var startPos = (up = this.editor.model.findBefore(down.row, down.col));
+                    var startPos = (modelup = this.editor.model.findBefore(modeldown.row, modeldown.col));
+                    var endPos = this.editor.model.findAfter(modeldown.row, modeldown.col);
 
-                    var endPos = this.editor.model.findAfter(down.row, down.col);
-
-                    this.editor.setSelection({ startPos: startPos, endPos: endPos });
+                    this.editor.setSelection({ 
+                        startPos: this.editor.cursorManager.getCursorPosition(startPos), 
+                        endPos: this.editor.cursorManager.getCursorPosition(endPos)
+                    });
                 }
-            } else if (e.detail > 2) {
+            } else if (e.detail > 2) { //triple plus duluxe
                 // select the line
-                this.editor.setSelection({ startPos: { row: down.row, col: 0 }, endPos: { row: down.row + 1, col: 0 } });
+                this.editor.setSelection({
+                    startPos: this.editor.cursorManager.getCursorPosition({ row: modeldown.row, col: 0 }), 
+                    endPos: this.editor.cursorManager.getCursorPosition({ row: modeldown.row + 1, col: 0 })
+                });
             }
         }
 
