@@ -285,6 +285,8 @@ dojo.mixin(bespin.debug, {
         if (settings && settings.isSettingOff("debugmode")) {
             settings.set("debugmode", "on");
         }
+        
+        bespin.debug.project = bespin.get("editSession").project;
     },
     
     hideDebugBar: function() {
@@ -292,6 +294,7 @@ dojo.mixin(bespin.debug, {
         dojo.style("debugbar", "display", "none");
         bespin.page.editor.recalcLayout();
         evalLine.clearAll();
+        bespin.debug.project = undefined;
     }
 });
 
@@ -315,13 +318,19 @@ bespin.subscribe("debugger:halted", function(location) {
     var newtext = "";
     
     if (location.exception) {
-        newtext = "Exception " + location.exception + " at<br>";
+        newtext = 'Exception <span class="error">' + location.exception + "</span> at<br>";
     }
     
-    newtext += location.sourceLineText + "<br>" + 
-                location.scriptName + ":" + (location.sourceLine + 1);
+    var linenum = location.sourceLine + 1;
+    if (bespin.debug.project) {
+        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  ' + location.scriptName + ' ' + bespin.debug.project + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
+    } else {
+        var scriptloc = location.scriptName + ':' + linenum;
+    }
+    newtext += '<span class="code">' + location.sourceLineText + '</span><br>' + 
+                scriptloc;
     if (location.invocationText) {
-        newtext += "<br>called by " + location.invocationText;
+        newtext += '<br>invoked by <span class="code">' + location.invocationText + '</span>';
     }
     
     el.innerHTML = newtext;

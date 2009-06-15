@@ -606,3 +606,17 @@ tr#jetpack_dropdown_or td {
 
 #debugbar_output tr.debugbar_rowout th { text-align: left; }
 #debugbar_output tr.debugbar_rowout a { font-weight: bold; color: inherit; }
+
+#debugbar_position a {
+    color: white;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#debugbar_position .code {
+    color: #FCF6DC;
+}
+
+#debugbar_position .error {
+    color: red;
+}
