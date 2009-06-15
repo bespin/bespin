@@ -619,34 +619,3 @@ dojo.extend(bespin.client.Server, {
         this.requestDisconnected('POST', '/vcs/clone/', data, instruction, opts);
     }
 });
-
-// ** {{{ Event: bespin:vcs:response }}} **
-// Handle a response from a version control system command
-bespin.subscribe("vcs:response", function(event) {
-    var output = event.output;
-
-    // if the output is all whitespace, we should display something
-    // nicer
-    if (/^\s*$/.exec(output)) {
-        output = "(Successful command with no visible output)";
-    }
-
-    bespin.util.webpieces.showContentOverlay("<h2>vcs "
-                    + event.command
-                    + " output</h2><pre>"
-                    + output
-                    + "</pre>");
-
-    if (event.command) {
-        var command = event.command;
-        if (command == "clone") {
-            bespin.publish("project:create", { project: event.project });
-        }
-    }
-});
-
-// ** {{{ Event: bespin:vcs:error }}} **
-// Handle a negative response from a version control system command
-bespin.subscribe("vcs:error", function(event) {
-    bespin.get("commandLine").addErrorOutput(event.output);
-});

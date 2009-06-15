@@ -130,8 +130,7 @@ def clone_run(qi):
     user = User.find_user(message['user'])
     message['user'] = user
     result = _clone_impl(**message)
-    result.update(dict(eventName="vcs:response",
-                        asyncDone=True))
+    result.update(dict(jobid=qi.id, asyncDone=True))
     retvalue = Message(user_id=user.id, message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
@@ -195,11 +194,11 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
     user.amount_used += space_used
 
     metadata.close()
-    
+
     result = dict(output=str(output), command="clone",
                     project=command.dest)
     return result
-    
+
 def run_command(user, project, args, kcpass=None):
     """Run any VCS command through UVC."""
     user = user.username
@@ -208,7 +207,7 @@ def run_command(user, project, args, kcpass=None):
     return queue.enqueue("vcs", job_body, execute="bespin.vcs:run_command_run",
                         error_handler="bespin.vcs:vcs_error",
                         use_db=True)
-    
+
 def run_command_run(qi):
     """Runs the queued up run_command job."""
     message = qi.message
@@ -216,13 +215,10 @@ def run_command_run(qi):
     user = User.find_user(message['user'])
     message['user'] = user
     message['project'] = get_project(user, user, message['project'])
-    
+
     result = _run_command_impl(**message)
-    result.update(dict(eventName="vcs:response",
-                        asyncDone=True))
-                        
-    retvalue = Message(user_id=user.id, 
-        message=simplejson.dumps(result))
+    result.update(dict(jobid=qi.id, asyncDone=True))
+    retvalue = Message(user_id=user.id, message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
 
