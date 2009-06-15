@@ -201,8 +201,8 @@ bespin.util.contains = document.compareDocumentPosition ? function(a, b) {
 // Create a random password of the given length (default 16 chars)
 bespin.util.randomPassword = function(length) {
     length = length || 16;
-    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    pass = "";
+    var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    var pass = "";
     for (var x = 0; x < length; x++) {
         var charIndex = Math.floor(Math.random() * chars.length);
         pass += chars.charAt(charIndex);
