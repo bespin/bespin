@@ -176,47 +176,53 @@ dojo.declare("bespin.client.Server", null, {
     },
 
     _processResponse: function(message) {
-        var eventName = message.eventName;
-        if (eventName) {
-            bespin.publish(eventName, message);
+        // TODO: remove this warning
+        if (message.eventName) {
+            console.error("Message has an eventName", message);
         }
 
         var jobid = message.jobid;
-        if (jobid !== null && jobid !== undefined) {
-            var job = this._jobs[jobid];
-            if (!job) {
-                throw new Error("Unknown jobid: " + jobid);
-            }
+        if (jobid === null || jobid === undefined) {
+            console.error("Missing jobid in message", message);
+            console.trace();
+            return;
+        }
 
-            delete this._jobs[jobid];
+        var job = this._jobs[jobid];
+        if (!job) {
+            console.error("jobid unknown", message);
+            console.trace();
+            return;
+        }
 
-            // TODO: Errors come through with message.error=true, but we're not
-            // currently doing anything with that. It's complicated by the
-            // need for a partial error system, and the question about how we
-            // treat messages that errored half way through
-            if (message.asyncDone) {
-                if (dojo.isArray(job.partials)) {
-                    // We're done, and we've got outstanding messages
-                    // that we need to pass on. We aggregate the
-                    // messages and call originalOnSuccess
-                    job.partials.push(message.output);
-                    job.options.originalOnSuccess(job.partials.join("<br/>"));
-                } else {
-                    // We're done, and all we have is what we've just
-                    // been sent, so just call originalOnSuccess
-                    job.options.originalOnSuccess(message.output);
-                }
+        delete this._jobs[jobid];
+
+        // TODO: Errors come through with message.error=true, but we're not
+        // currently doing anything with that. It's complicated by the
+        // need for a partial error system, and the question about how we
+        // treat messages that errored half way through
+        if (message.asyncDone) {
+            if (dojo.isArray(job.partials)) {
+                // We're done, and we've got outstanding messages
+                // that we need to pass on. We aggregate the
+                // messages and call originalOnSuccess
+                job.partials.push(message.output);
+                job.options.originalOnSuccess(job.partials.join("<br/>"));
+            } else {
+                // We're done, and all we have is what we've just
+                // been sent, so just call originalOnSuccess
+                job.options.originalOnSuccess(message.output);
             }
-            else {
-                if (dojo.isFunction(job.options.onPartial)) {
-                    // In progress, and we have somewhere to send the
-                    // messages that we've just been sent
-                    job.options.onPartial(message.output);
-                } else {
-                    // In progress, and no-where to send the messages,
-                    // so we store them for onSuccess when we're done
-                    job.partials.push(message.output);
-                }
+        }
+        else {
+            if (dojo.isFunction(job.options.onPartial)) {
+                // In progress, and we have somewhere to send the
+                // messages that we've just been sent
+                job.options.onPartial(message.output);
+            } else {
+                // In progress, and no-where to send the messages,
+                // so we store them for onSuccess when we're done
+                job.partials.push(message.output);
             }
         }
 
@@ -231,6 +237,7 @@ dojo.declare("bespin.client.Server", null, {
     // Starts up message retrieve for this user. Call this only once.
     _poll: function() {
         var self = this;
+
         this.request('POST', '/messages/', null, {
             evalJSON: true,
             onSuccess: function(messages) {
