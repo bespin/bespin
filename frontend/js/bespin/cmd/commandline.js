@@ -246,12 +246,18 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Hint ==
     // Hints are displayed while typing. They are transient and ignorable
     showHint: function(html) {
+        if (html == null) {
+            console.warning("showHint passed null");
+            return;
+        }
+
         var styles = {
             display: 'block'
         };
 
         // move the puppy up to the pie menu
-        if (!bespin.get('piemenu').visible()) {
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && !piemenu.visible()) {
             styles.bottom = this.styles.bottom;
             styles.left = this.styles.left;
         }
@@ -284,7 +290,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var footerHeight = dojo.style("footer", "height") + 2;
 
-        if (bespin.get('piemenu').visible()) {
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && piemenu.visible()) {
             bottom += footerHeight;
         }
 
@@ -606,37 +613,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
         if (!this.executing) {
+            if (context == null) return action;
             return dojo.hitch(context, action);
         }
 
-        var originalExecuting = this.executing;
-
-        // We could allow multiple linked functions, however that would
-        // make completion harder to calculate, and we're being lazy
-        if (this.executing.linked) {
-            throw new Error("Multiply linked instruction");
-        }
-
-        var self = this;
-        this.executing.linked = function() {
-            var confusedExecuting = null;
-            if (self.executing) {
-                console.warn("Nested instruction contexts");
-                confusedExecuting = self.executing;
-            }
-            self.executing = originalExecuting;
-
-            action.apply(context || dojo.global, arguments);
-
-            if (!self.executing.complete) {
-                self.executing.complete = true;
-                self.updateOutput();
-            }
-
-            self.executing = confusedExecuting;
-        };
-
-        return this.executing.linked;
+        return this.executing.link(action, context);
     },
 
     handleCommandLineFocus: function(e) {
@@ -683,7 +664,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     exec: function(commandLine) {
         try {
             if (this.error) {
-                this.addErrorOutput(html);
+                this.addErrorOutput(this.error);
             } else {
                 commandLine.executing = this;
                 this.command.execute(this, this.args, this.command);
@@ -694,11 +675,28 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         }
         finally {
             commandLine.executing = null;
-
-            if (this.linked == null) {
-                this.complete = true;
-            }
         }
+    },
+
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
+    link: function(action, context) {
+        this.outstanding = this.outstanding || 0;
+        this.outstanding++;
+
+        var self = this;
+        return function() {
+            try {
+                action.apply(context || dojo.global, arguments);
+            } finally {
+                self._outstanding--;
+
+                if (self._outstanding == 0) {
+                    self.complete = true;
+                    self.onOutput();
+                }
+            }
+        };
     },
 
     // == To String ==
@@ -773,27 +771,6 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.hideOutput = false;
         this.error = false;
         this.complete = true;
-    },
-
-    // == Link Function to Instruction ==
-    // Make a function be part of the thread of execution of an instruction
-    link: function(action, context) {
-        this.outstanding = this.outstanding || 0;
-        this.outstanding++;
-
-        var self = this;
-        return function() {
-            try {
-                action.apply(context || dojo.global, arguments);
-            } finally {
-                self._outstanding--;
-
-                if (self._outstanding == 0) {
-                    self.complete = true;
-                    self.onOutput();
-                }
-            }
-        };
     },
 
     // == Split Command and Args
@@ -965,31 +942,37 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 dojo.stopEvent(e);
                 return false;
-            } else if (e.keyCode == key.ESCAPE) {
-                // ESCAPE onkeydown fails on Moz, so we need this. Why?
-                this.hideHint();
-                bespin.get("piemenu").hide();
-
-                dojo.stopEvent(e);
-                return false;
-            } else if (bespin.get("piemenu").keyRunsMe(e)) {
-
-                this.hideHint();
+            } else { // pie menu use cases here
                 var piemenu = bespin.get("piemenu");
-                piemenu.show(piemenu.slices.off);
+                if (piemenu) {
+                    if (e.keyCode == key.ESCAPE) {
+                        // ESCAPE onkeydown fails on Moz, so we need this. Why?
+                        this.hideHint();
+                        piemenu.hide();
 
-                dojo.stopEvent(e);
-                return false;
+                        dojo.stopEvent(e);
+                        return false;
+                    } else if (piemenu.keyRunsMe(e)) {
+                        this.hideHint();
+                        piemenu.show(piemenu.slices.off);
+
+                        dojo.stopEvent(e);
+                        return false;
+                    }
+                }
             }
 
-            // TODO: Should we return true here?
+            return true;
         });
 
         // ESCAPE onkeypress fails on Safari, so we need this. Why?
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-                bespin.get("piemenu").hide();
+
+                // if pie menu is available
+                var piemenu = bespin.get("piemenu");
+                if (piemenu) piemenu.hide();
             }
         });
     }
@@ -1103,7 +1086,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
     _load: function() {
         // load last 50 instructions from history
-        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
+        bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             var typings = file.content.split(/\n/);
             var instructions = [];
 
@@ -1126,7 +1109,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
             }
         });
         // save instructions back to server asynchronously
-        bespin.get('files').saveFile(bespin.userSettingsProject, {
+        bespin.get("files").saveFile(bespin.userSettingsProject, {
             name: "command.history",
             content: content,
             autosave: true,
@@ -1254,7 +1237,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("project:set", function(event) {
             var project = event.project;
 
-            bespin.get('editSession').project = project;
+            bespin.get("editSession").project = project;
             if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
         });
     }

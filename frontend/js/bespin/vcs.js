@@ -37,20 +37,17 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     subcommanddefault: 'help'
 }});
 
-bespin.vcs.createStandardHandler = function() {
-    var commandLine = bespin.get("commandLine");
+bespin.vcs.createStandardHandler = function(instruction) {
     return {
         evalJSON: true,
         onPartial: function(response) {
-            console.log("partial", response);
-            commandLine.addPartialOutput(response);
+            instruction.addPartialOutput(response);
         },
         onSuccess: function(response) {
-            console.log("success", response);
-            commandLine.addOutput(response);
+            instruction.addOutput(response);
         },
         onFailure: function(xhr) {
-            commandLine.addErrorOutput(xhr.response);
+            instruction.addErrorOutput(xhr.response);
         }
     };
 };
@@ -86,7 +83,6 @@ bespin.subscribe("vcs:remoteauthUpdate", function(event) {
 });
 
 bespin.vcs.clone = function(instruction, url) {
-    var commandLine = bespin.get("commandLine");
     var el = dojo.byId('centerpopup');
 
     el.innerHTML = '<form method="POST" id="vcsauth">'
@@ -165,7 +161,7 @@ bespin.vcs.clone = function(instruction, url) {
             }
         }
         data = dojo.objectToQuery(data);
-        bespin.get('server').clone(data, bespin.vcs.createStandardHandler());
+        bespin.get('server').clone(data, instruction, bespin.vcs.createStandardHandler(instruction));
     }));
 
     bespin.util.webpieces.showCenterPopup(el, true);
@@ -197,10 +193,10 @@ bespin.vcs.setProjectPassword = function(instruction, project) {
         bespin.get("server").setauth(project, "vcsauth",
             {
                 onSuccess: function() {
-                    bespin.publish("message:output", {msg: "Password saved for " + project});
+                    instruction.addOutput("Password saved for " + project);
                 },
                 onFailure: function(xhr) {
-                    bespin.publish("message:error", {msg: "Password save failed: " + xhr.responseText});
+                    instruction.addErrorOutput("Password save failed: " + xhr.responseText);
                 }
             });
     });
@@ -276,9 +272,9 @@ bespin.vcs.commands.addCommand({
 
         bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
             bespin.get('server').vcs(project,
-                                    {command: ['push', '_BESPIN_PUSH'],
-                                    kcpass: kcpass},
-                                    bespin.vcs.createStandardHandler());
+                                    { command: ['push', '_BESPIN_PUSH'], kcpass: kcpass },
+                                    instruction,
+                                    bespin.vcs.createStandardHandler(instruction));
         });
     }
 });
@@ -328,8 +324,9 @@ bespin.vcs.commands.addCommand({
         }
 
         bespin.get('server').vcs(project,
-                                {command: ['status']},
-                                bespin.vcs.createStandardHandler());
+                                { command: ['status'] },
+                                instruction,
+                                bespin.vcs.createStandardHandler(instruction));
     }
 });
 
@@ -375,7 +372,8 @@ bespin.vcs.commands.addCommand({
 
             bespin.get('server').vcs(project,
                                     command,
-                                    bespin.vcs.createStandardHandler());
+                                    instruction,
+                                    bespin.vcs.createStandardHandler(instruction));
         };
 
         bespin.vcs.getRemoteauth(project, function(remoteauth) {
@@ -423,8 +421,9 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
         command.concat(args.varargs);
     }
     bespin.get('server').vcs(project,
-                            {command: command},
-                            bespin.vcs.createStandardHandler());
+                            { command: command },
+                            instruction,
+                            bespin.vcs.createStandardHandler(instruction));
 };
 
 // ** {{{Command: add}}} **
@@ -462,8 +461,9 @@ bespin.vcs.commands.addCommand({
             return;
         }
         bespin.get('server').vcs(project,
-                                {command: ['commit', '-m', message]},
-                                bespin.vcs.createStandardHandler());
+                                { command: [ 'commit', '-m', message ] },
+                                instruction,
+                                bespin.vcs.createStandardHandler(instruction));
     }
 });
 
@@ -554,8 +554,9 @@ bespin.vcs.hgCommands.addCommand({
             return;
         }
         bespin.get('server').vcs(project,
-                                {command: ['hg', 'init']},
-                                bespin.vcs.createStandardHandler());
+                                { command: ['hg', 'init'] },
+                                instruction,
+                                bespin.vcs.createStandardHandler(instruction));
     }
 });
 
@@ -588,9 +589,9 @@ dojo.extend(bespin.client.Server, {
     // Commands that require authentication should also
     // have kcpass, which is a string containing the user's
     // keychain password.
-    vcs: function(project, command, opts) {
+    vcs: function(project, command, instruction, opts) {
         var url = '/vcs/command/' + project + '/';
-        this.requestDisconnected('POST', url, dojo.toJson(command), opts);
+        this.requestDisconnected('POST', url, dojo.toJson(command), instruction, opts);
     },
 
     // ** {{{ setauth() }}}
@@ -612,38 +613,7 @@ dojo.extend(bespin.client.Server, {
 
     // ** {{{ clone() }}}
     // Clone a remote repository
-    clone: function(data, opts) {
-        this.requestDisconnected('POST', '/vcs/clone/', data, opts);
+    clone: function(data, instruction, opts) {
+        this.requestDisconnected('POST', '/vcs/clone/', data, instruction, opts);
     }
-});
-
-// ** {{{ Event: bespin:vcs:response }}} **
-// Handle a response from a version control system command
-bespin.subscribe("vcs:response", function(event) {
-    var output = event.output;
-
-    // if the output is all whitespace, we should display something
-    // nicer
-    if (/^\s*$/.exec(output)) {
-        output = "(Successful command with no visible output)";
-    }
-
-    bespin.util.webpieces.showContentOverlay("<h2>vcs "
-                    + event.command
-                    + " output</h2><pre>"
-                    + output
-                    + "</pre>");
-
-    if (event.command) {
-        var command = event.command;
-        if (command == "clone") {
-            bespin.publish("project:create", { project: event.project });
-        }
-    }
-});
-
-// ** {{{ Event: bespin:vcs:error }}} **
-// Handle a negative response from a version control system command
-bespin.subscribe("vcs:error", function(event) {
-    bespin.get("commandLine").addErrorOutput(event.output);
 });

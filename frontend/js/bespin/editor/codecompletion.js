@@ -39,21 +39,21 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         var startIndex  = cursorPos.col - 1;
         var substr = "";
         var find = function () {
-            if(substr.length >= 1) {
+            if (substr.length >= 1) {
                 self.findCompletion(substr);
             }
-        }
+        };
         for (var i = startIndex; i >= 0; --i) { // looking back
             var ch = row[i];
             if (this.charMarksStartOfIdentifier(ch)) {
-                find()
+                find();
                 return
             } else {
                 substr = ch + substr;
             }
         }
         // start of line reached
-        find()
+        find();
     },
     
     findInArray: function (candidates, substr, array) {
@@ -70,81 +70,78 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
     findCompletion: function (substr) {
         var self = this;
         var candidates = [];
-        
-        if(self.currentMetaInfo) {
+
+        if (self.currentMetaInfo) {
             // use elements from outline like functions, class names and event names
             if(self.currentMetaInfo.outline) {
                 this.findInArray(candidates, substr, self.currentMetaInfo.outline);
             }
             // try complex identifier chains like bespin.foo.bar
-            if(self.currentMetaInfo.idents) { // complex idents
+            if (self.currentMetaInfo.idents) { // complex idents
                 var idents = [];
                 for(var i in self.currentMetaInfo.idents) {
-                    idents.push({
-                        name: i
-                    })
+                    idents.push({ name: i });
                 }
                 this.findInArray(candidates, substr, idents);
             }
         }
-        
+
         // If there are any candidates, display a message
-        // We should probably just send a custom event with the candiates here.
+        // We should probably just send a custom event with the candidates here.
         // Can do that once we have fancy UI
         if (candidates.length > 0) {
-            bespin.publish("message:hint", { msg: "Code Completions<br><br>" + candidates.join("<br>") });
+            bespin.get("commandLine").showHint("Code Completions<br><br>" + candidates.join("<br>"));
         }
     },
-        
     
     // find something that we might be able to complete
     // Works for JS. Need to extend this to support for languages
     charMarksStartOfIdentifier: function (ch) {
         return ch === " " || ch === "\t" || ch == "\"" || ch == "'"; // rough estimation
     },
-    
+
     // This is called after we are loaded into a worker.
     initialize: function () {
         var self = this;
-        
+
         bespin.subscribe("parser:metainfo", function (evt) {
-            self.currentMetaInfo = evt.info
-        })
+            self.currentMetaInfo = evt.info;
+        });
         
         // ** {{{ Event: codecomplete:suggest }}} **
         //
         // Fire to make the code completion engine provide suggestions
         bespin.subscribe("codecomplete:suggest", function (evt) {
-            self.complete(evt.cursorPos, evt.row)
-        })
+            self.complete(evt.cursorPos, evt.row);
+        });
     }
 
 });
 
 (function () {
-// put facade into a worker
-var facade = new bespin.worker.WorkerFacade(new bespin.editor.codecompletion.Suggester());
-if(!facade.__hasWorkers__) {
-    facade.initialize()
-}
-var subscription
-
-// for now we do suggestions upon every doc change
-// could change this to be more unobstrusive
-bespin.subscribe("settings:set:codecomplete", function (data) {
-    if (bespin.get("settings").isOn(data.value)) {
-        subscription = bespin.subscribe("editor:document:changed", function () {
-            var editor = bespin.get("editor");
-            var pos    = editor.getCursorPos();
-            var row    = editor.model.getRowArray(pos.row);
-            
-            bespin.publish("codecomplete:suggest", {
-                cursorPos: pos,
-                row: row
-            })
-        }, 400);
-    } else {
-        bespin.unsubscribe(subscription)
+    // put facade into a worker
+    var facade = new bespin.worker.WorkerFacade(new bespin.editor.codecompletion.Suggester());
+    if (!facade.__hasWorkers__) {
+        facade.initialize();
     }
-});
-})()
+    var subscription;
+    
+    // for now we do suggestions upon every doc change
+    // could change this to be more unobtrusive
+    bespin.subscribe("settings:set:codecomplete", function (data) {
+        if (bespin.get("settings").isOn(data.value)) {
+            subscription = bespin.subscribe("editor:document:changed", function () {
+                var editor = bespin.get("editor");
+                var pos    = editor.getCursorPos();
+                var row    = editor.model.getRowArray(pos.row);
+                
+                bespin.publish("codecomplete:suggest", {
+                    cursorPos: pos,
+                    row: row
+                });
+            }, 400);
+        } else {
+            bespin.unsubscribe(subscription);
+        }
+    });
+})();

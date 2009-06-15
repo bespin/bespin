@@ -163,7 +163,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     list.moveSelectionDown();
                     break;
                 case key.ENTER:
-                    this.bus.fire("dblclick", e, this.tree);
+                    this.scene.bus.fire("dblclick", e, this.tree);
                     break;
             }
         }));
