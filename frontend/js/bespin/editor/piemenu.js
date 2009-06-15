@@ -318,7 +318,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // If there is already a slice showing, just show that, and don't
         // bother with any animation
-        if (this.currentSlice) {
+        if (this.visible()) {
             this.unrenderCurrentSlice();
             this.currentSlice = slice;
             this.renderCurrentSlice();
@@ -369,6 +369,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    // == Check to see if the pie is visible ==
     visible: function() {
         return this.currentSlice != null;
     },
@@ -385,7 +386,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     // == Resize the pie menu ==
     // To be called from a window.onresize event
     resize: function() {
-        if (this.currentSlice == null) return;
+        if (!this.visible()) return;
 
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
