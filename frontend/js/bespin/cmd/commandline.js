@@ -256,7 +256,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         };
 
         // move the puppy up to the pie menu
-        if (!bespin.get('piemenu').visible()) {
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && !piemenu.visible()) {
             styles.bottom = this.styles.bottom;
             styles.left = this.styles.left;
         }
@@ -289,7 +290,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var footerHeight = dojo.style("footer", "height") + 2;
 
-        if (bespin.get('piemenu').visible()) {
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && piemenu.visible()) {
             bottom += footerHeight;
         }
 
@@ -940,31 +942,37 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
 
                 dojo.stopEvent(e);
                 return false;
-            } else if (e.keyCode == key.ESCAPE) {
-                // ESCAPE onkeydown fails on Moz, so we need this. Why?
-                this.hideHint();
-                bespin.get("piemenu").hide();
-
-                dojo.stopEvent(e);
-                return false;
-            } else if (bespin.get("piemenu").keyRunsMe(e)) {
-
-                this.hideHint();
+            } else { // pie menu use cases here
                 var piemenu = bespin.get("piemenu");
-                piemenu.show(piemenu.slices.off);
+                if (piemenu) {
+                    if (e.keyCode == key.ESCAPE) {
+                        // ESCAPE onkeydown fails on Moz, so we need this. Why?
+                        this.hideHint();
+                        piemenu.hide();
 
-                dojo.stopEvent(e);
-                return false;
+                        dojo.stopEvent(e);
+                        return false;
+                    } else if (piemenu.keyRunsMe(e)) {
+                        this.hideHint();
+                        piemenu.show(piemenu.slices.off);
+
+                        dojo.stopEvent(e);
+                        return false;
+                    }
+                }
             }
 
-            // TODO: Should we return true here?
+            return true;
         });
 
         // ESCAPE onkeypress fails on Safari, so we need this. Why?
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-                bespin.get("piemenu").hide();
+
+                // if pie menu is available
+                var piemenu = bespin.get("piemenu");
+                if (piemenu) piemenu.hide();
             }
         });
     }
@@ -1078,7 +1086,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
     _load: function() {
         // load last 50 instructions from history
-        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
+        bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             var typings = file.content.split(/\n/);
             var instructions = [];
 
@@ -1101,7 +1109,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
             }
         });
         // save instructions back to server asynchronously
-        bespin.get('files').saveFile(bespin.userSettingsProject, {
+        bespin.get("files").saveFile(bespin.userSettingsProject, {
             name: "command.history",
             content: content,
             autosave: true,
@@ -1229,7 +1237,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("project:set", function(event) {
             var project = event.project;
 
-            bespin.get('editSession').project = project;
+            bespin.get("editSession").project = project;
             if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
         });
     }
