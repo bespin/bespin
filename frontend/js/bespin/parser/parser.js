@@ -55,15 +55,14 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             if (syntaxcheck === "all" || syntaxcheck === message.type) {
                 //don't trigger message if it's the line we're still typing on, because that's annoying
                 if (cursorRow + 1 != message.line) {
-                    bespin.publish("message:hint", {
-                        msg: 'Syntax ' + message.type +
+                    var msg = 'Syntax ' + message.type +
                              (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
                              ': ' + message.reason + '<p>' +
                              (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
                                  replace(/&/g, '&amp;').
                                  replace(/</g, '&lt;').
-                                 replace(/>/g, '&gt;'))
-                    });
+                                 replace(/>/g, '&gt;'));
+                    bespin.get("commandLine").showHint(msg);
                 }
                 self.lineMarkers.push(message);
             }
@@ -74,7 +73,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // Show a window with a code structure outline of the current document
         bespin.subscribe("parser:showoutline", function() {
             var html = self.currentMetaInfo ? self.currentMetaInfo.html : "Outline not yet available";
-            bespin.publish("message:output", { msg: html });
+            bespin.get("commandLine").addOutput(html);
         });
 
         // ** {{{ Event: parser:gotofunction }}} **
@@ -84,16 +83,14 @@ dojo.declare("bespin.parser.CodeInfo", null, {
             var functionName = event.functionName;
 
             if (!functionName) {
-                bespin.publish("message:error", { msg: "Please pass me a valid function name." });
+                bespin.get("commandLine").addErrorOutput("Please pass me a valid function name.");
                 return;
             }
             var matches = dojo.filter(self.foldPoints, function(func) {
                 return func['(name)'] == functionName;
             });
             if (matches.length === 0) {
-               bespin.publish("message:error", {
-                   msg: "Unable to find the function " + functionName + " in this file."
-               });
+               bespin.get("commandLine").addErrorOutput("Unable to find the function " + functionName + " in this file.");
             } else {
                bespin.publish("editor:moveandcenter", { row: matches[0].row });
             }

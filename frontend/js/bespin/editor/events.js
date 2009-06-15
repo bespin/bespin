@@ -210,8 +210,8 @@ dojo.declare("bespin.editor.Events", null, {
 
             bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("message:hint", { msg: 'Saved file: ' + file.name });
-            
+            bespin.get("commandLine").showHint('Saved file: ' + file.name);
+
             bespin.publish("editor:clean");
         });
 
@@ -292,10 +292,8 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("session:status", function(event) {
             var editSession = bespin.get('editSession');
             var file = editSession.path || 'a new scratch file';
-            
-            bespin.publish("message:output", {
-                msg: 'Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project
-            });
+
+            bespin.get("commandLine").addOutput('Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project);
         });
 
         // ** {{{ Event: cmdline:focus }}} **

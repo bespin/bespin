@@ -62,7 +62,7 @@ bespin.subscribe("session:status", function(event) {
         msg += ", you haven't select a project yet.";
     }
 
-    bespin.publish("message:output", { msg: msg });
+    bespin.get("commandLine").addOutput(msg);
 });
 
 // ** {{{ Event: editor:newfile }}} **
@@ -72,7 +72,7 @@ bespin.subscribe("editor:newfile", function(event) {
     var project = event.project || bespin.get('editSession').project;
 
     if (!project) {
-        bespin.publish("message:error", { msg: 'The new file action requires a project' });
+        bespin.get("commandLine").addErrorOutput('The new file action requires a project');
         return;
     }
 

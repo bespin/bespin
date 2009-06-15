@@ -559,14 +559,10 @@ dojo.declare("bespin.client.settings.Events", null, {
                     }
 
                     if (!checkSetAndExit()) {
-                        bespin.publish("message:error", {
-                            msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                        });
+                        bespin.get("commandLine").addErrorOutput("Sorry old chap. No theme called '" + theme + "'. Fancy making it?");
                     }
                 }), function() {
-                    bespin.publish("message:error", {
-                        msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                    });
+                    bespin.get("commandLine").addErrorOutput("Sorry old chap. No theme called '" + theme + "'. Fancy making it?");
                 });
             }
         });

@@ -636,7 +636,7 @@ bespin.cmd.commands.add({
                             functionName: value
                         });
                     } else {
-                        bespin.publish("message:error", { msg: "Please enter a valid line number." });
+                        instruction.addErrorOutput("Please enter a valid line number.");
                     }
                 } else {
                     bespin.publish("editor:moveandcenter", {

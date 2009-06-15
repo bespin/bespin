@@ -29,13 +29,13 @@ dojo.require("bespin.cmd.dashboardcommands");
 // * Utility {{{ displayFollowers }}} **
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
-bespin.social.displayFollowers = function(followers) {
+bespin.social.displayFollowers = function(instruction, followers) {
     if (!followers || followers.length == 0) {
-        bespin.get("commandLine").addOutput("You are not following anyone");
+        instruction.addOutput("You are not following anyone");
         return;
     }
     var message = "Following: " + followers.join(", ");
-    bespin.get("commandLine").addOutput(message);
+    instruction.addOutput(message);
 };
 
 // =============================================================================
@@ -54,7 +54,7 @@ bespin.cmd.commands.add({
         if (usernames.length == 0) {
             bespin.get('server').followers({
                 onSuccess: function(data) {
-                    bespin.social.displayFollowers(dojo.fromJson(data));
+                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve followers: " + xhr.responseText);
@@ -64,7 +64,7 @@ bespin.cmd.commands.add({
         else {
             bespin.get('server').follow(usernames, {
                 onSuccess: function(data) {
-                    bespin.social.displayFollowers(dojo.fromJson(data));
+                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to add follower: " + xhr.responseText);
@@ -112,7 +112,7 @@ bespin.cmd.commands.add({
         else {
             bespin.get('server').unfollow(usernames, {
                 onSuccess: function(data) {
-                    bespin.social.displayFollowers(dojo.fromJson(data));
+                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to remove follower: " + xhr.responseText);
