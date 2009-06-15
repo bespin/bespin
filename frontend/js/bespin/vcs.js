@@ -41,11 +41,9 @@ bespin.vcs.createStandardHandler = function(instruction) {
     return {
         evalJSON: true,
         onPartial: function(response) {
-            console.log("partial", response);
             instruction.addPartialOutput(response);
         },
         onSuccess: function(response) {
-            console.log("success", response);
             instruction.addOutput(response);
         },
         onFailure: function(xhr) {
