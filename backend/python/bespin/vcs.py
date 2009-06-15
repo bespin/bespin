@@ -118,10 +118,9 @@ def vcs_error(qi, e):
             # otherwise, it looks like a programming error and we
             # want more information
             tb = format_exc()
-        message = dict(eventName="vcs:error", output=tb)
+        message = dict(jobid=qi.id, output=tb, error=True)
         message['asyncDone'] = True
-        retval = Message(user_id=user.id, 
-                            message=simplejson.dumps(message))
+        retval = Message(user_id=user.id, message=simplejson.dumps(message))
         s.add(retval)
 
 def clone_run(qi):
@@ -133,8 +132,7 @@ def clone_run(qi):
     result = _clone_impl(**message)
     result.update(dict(eventName="vcs:response",
                         asyncDone=True))
-    retvalue = Message(user_id=user.id, 
-        message=simplejson.dumps(result))
+    retvalue = Message(user_id=user.id, message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
 
@@ -167,11 +165,14 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
             keyfile = TempSSHKeyFile()
             keyfile.store(public_key, private_key)
             auth['key'] = keyfile.filename
-    
+
     try:
         context = main.SecureContext(working_dir, auth)
         command = main.convert(context, args, dialect)
+        print "exec in: ", working_dir
+        print "$", str(command)
         output = main.run_command(command, context)
+        print output
     finally:
         if keyfile:
             keyfile.delete()
