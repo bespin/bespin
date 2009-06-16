@@ -189,7 +189,7 @@ dojo.provide("bespin.page.editor.init");
             }
         });
 
-        // preform a new search after a character has been added to the searchquery-input-field
+        // perform a new search after a character has been added to the searchquery-input-field
         dojo.connect(dojo.byId('searchquery'), 'keypress', function(e) {
             var key = bespin.util.keys.Key;
             var isOkay = false;
