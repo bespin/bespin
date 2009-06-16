@@ -22,11 +22,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.model");  
+dojo.provide("bespin.editor.model");
 
 // = Model =
 //
-// The editor has a model of the data that it works with. 
+// The editor has a model of the data that it works with.
 // This representation is encapsulated in Bespin.Editor.DocumentModel
 dojo.declare("bespin.editor.DocumentModel", null, {
     constructor: function(editor) {
@@ -156,7 +156,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
         this.setRowDirty(modelPos.row);
 
-        var row = this.getRowArray(modelPos.row); 
+        var row = this.getRowArray(modelPos.row);
 
         var newRow;
         if (autoindent && autoindent.length > 0) {
@@ -180,12 +180,12 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             var newCacheRowMetadata = this.cacheRowMetadata.splice(0, modelPos.row + 1);
             newCacheRowMetadata.push(undefined);
             this.cacheRowMetadata = newCacheRowMetadata.concat(this.cacheRowMetadata);
-        } 
+        }
     },
 
     // joins the passed row with the row beneath it; optionally removes leading whitespace as well.
     joinRow: function(rowIndex, autounindentSize) {
-        this.editor.ui.syntaxModel.invalidateCache(rowIndex); 
+        this.editor.ui.syntaxModel.invalidateCache(rowIndex);
         this.setRowDirty(rowIndex);
 
         if (rowIndex >= this.rows.length - 1) return;
@@ -196,11 +196,11 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         if (typeof autounindentSize != "undefined") {
             nextrow.splice(0, autounindentSize)
         }
-       
+
         //now, remove the row
         this.rows[rowIndex] = row.concat(nextrow);
         this.rows.splice(rowIndex + 1, 1);
-        
+
         this.cacheRowMetadata.splice(rowIndex + 1, 1);
     },
 
@@ -280,7 +280,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // inserts the chunk and returns the ending position
     insertChunk: function(modelPos, chunk) {
-        this.editor.ui.syntaxModel.invalidateCache(modelPos.row);  
+        this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
 
         var lines = chunk.split("\n");
         var cModelPos = bespin.editor.utils.copyPos(modelPos);
@@ -293,13 +293,13 @@ dojo.declare("bespin.editor.DocumentModel", null, {
                 cModelPos.col = 0;
                 cModelPos.row = cModelPos.row + 1;
             }
-        } 
+        }
 
         return cModelPos;
     },
 
     // returns an array with the col positions of the substrings str in the given row
-    getStringIndicesInRow: function(row, str) {        
+    getStringIndicesInRow: function(row, str) {
         str = str.toLowerCase()
         var row = this.getRowArray(row).join('').toLowerCase();
 
@@ -332,12 +332,12 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         return count;
     },
-    
-    searchStringChanged: function(str) {        
+
+    searchStringChanged: function(str) {
         for (var row = 0; row < this.cacheRowMetadata.length; row++) {
             if (this.cacheRowMetadata[row]) {
                 if (str) {
-                    this.cacheRowMetadata[row].searchIndices = this.getStringIndicesInRow(row, str);            
+                    this.cacheRowMetadata[row].searchIndices = this.getStringIndicesInRow(row, str);
                 } else {
                     this.cacheRowMetadata[row].searchIndices = false;
                 }
@@ -390,7 +390,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         //validate col to prevent endless loop
         if (col >= line.length)
             col = line.length - 1;
-        
+
         while (col > 0) {
             var letter = line[col];
             if (!letter) continue;
@@ -413,10 +413,10 @@ dojo.declare("bespin.editor.DocumentModel", null, {
             var letterCode = letter.charCodeAt(0);
             return (letterCode < 48) || (letterCode > 122); // alpha only
         };
-        
+
         while (col < line.length) {
             col++;
-            
+
             var letter = line[col];
             if (!letter) continue;
 
@@ -425,7 +425,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         return { row: row, col: col };
     },
-    
+
     // returns various metadata about the row, mainly concerning tab information
     // uses a cache to speed things up
     getRowMetadata: function(row) {
@@ -433,9 +433,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         if (!this.isRowDirty(row) && this.cacheRowMetadata[row]) {
             return this.cacheRowMetadata[row];
         }
-        
+
         // No cache or row is dirty? Well, then we have to calculate things new...
-        
+
         // contains the row metadata; this object is returned at the end of the function
         var meta = { tabExpansions: [] };
 
@@ -473,9 +473,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         }
 
         meta.lineText = lineText;
-        
+
         if (this.editor.ui.searchString) {
-            meta.searchIndices = this.getStringIndicesInRow(row, this.editor.ui.searchString);            
+            meta.searchIndices = this.getStringIndicesInRow(row, this.editor.ui.searchString);
         } else {
             meta.searchIndices = false;
         }

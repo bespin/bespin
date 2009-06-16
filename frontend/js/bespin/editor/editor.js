@@ -593,30 +593,30 @@ dojo.declare("bespin.editor.UI", null, {
         var modelstart = modeldown;
         var modelend = modelup;
         var backwards = false;
-        
+
         //validate
         if (modelup.row >= this.editor.model.getRowCount()) {
             modelup.row = this.editor.model.getRowCount() - 1;
         }
-        
+
         if (modeldown.row >= this.editor.model.getRowCount()) {
             modeldown.row = this.editor.model.getRowCount() - 1;
         }
-        
+
         //to make things simpler, go ahead and check if it is reverse
         if (modelend.row < modelstart.row || (modelend.row == modelstart.row && modelend.col < modelstart.col)) {
             backwards = true; //need to know so that we can maintain direction for shift-click select
             modelstart = modelup;
             modelend = modeldown;
         }
-        
+
         //get detail
         var detail = this.selectMouseDetail;
 
         //single click
         if (detail == 1) {
             if (bespin.editor.utils.posEquals(down, up)) {
-                this.editor.setSelection(undefined);   
+                this.editor.setSelection(undefined);
             } else {
                 //down and up work here because they are editor positions (and setSelection wants that)
                 this.editor.setSelection({ startPos: down, endPos: up });
@@ -631,11 +631,11 @@ dojo.declare("bespin.editor.UI", null, {
                 var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col);
                 var endPos = this.editor.model.findAfter(modelend.row, modelend.col);
 
-                this.editor.setSelection({ 
-                    startPos: this.editor.cursorManager.getCursorPosition(backwards ? endPos : startPos), 
+                this.editor.setSelection({
+                    startPos: this.editor.cursorManager.getCursorPosition(backwards ? endPos : startPos),
                     endPos: this.editor.cursorManager.getCursorPosition(backwards ? startPos : endPos)
                 });
-                
+
                 //set cursor so that it is at selection end (even if mouse wasn't there)
                 this.editor.cursorManager.moveCursor(this.editor.cursorManager.getCursorPosition(backwards ? startPos : endPos));
             }
@@ -648,9 +648,9 @@ dojo.declare("bespin.editor.UI", null, {
             } else {
                 endPos.col = this.editor.model.getRowArray(endPos.row).length;
             }
-            
+
             this.editor.setSelection({
-                startPos: backwards ? endPos : startPos, 
+                startPos: backwards ? endPos : startPos,
                 endPos: backwards ? startPos: endPos
             });
             this.editor.cursorManager.moveCursor(backwards ? startPos : endPos);

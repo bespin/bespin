@@ -408,7 +408,7 @@ bespin.cmd.commands.add({
 bespin.cmd.commands.add({
     name: 'load',
     aliases: ['open'],
-    takes: ['filename', 'project'],
+    takes: ['filename', 'project', 'line'],
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(instruction, opts) {

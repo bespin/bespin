@@ -78,6 +78,27 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
                 this.executeCommand(typed);
 
                 return false;
+            } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
+                var next = this.history.next();
+                if (next) {
+                    this.commandLine.value = next.typed;
+                }
+
+                dojo.stopEvent(e);
+                return false;
+            } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
+                var prev = this.history.previous();
+                if (prev) {
+                    this.commandLine.value = prev.typed;
+                }
+
+                dojo.stopEvent(e);
+                return false;
+            } else if (e.keyChar == 'u' && e.ctrlKey) {
+                this.commandLine.value = '';
+
+                dojo.stopEvent(e);
+                return false;
             }
         });
 
@@ -109,10 +130,17 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
     
     updateOutput: function() {
         var outputNode = this.output;
+        var self = this;
         outputNode.innerHTML = "";
         dojo.forEach(this.history.instructions, function(instruction) {
             var rowin = dojo.create("div", {
-                className: "command_rowin"
+                className: "command_rowin",
+                onclick: function(ev) {
+                    self.historyClick(instruction.typed, ev);
+                },
+                ondblclick: function(ev) {
+                    self.historyDblClick(instruction.typed, ev);
+                }
             }, outputNode);
             rowin.innerHTML = "> " + instruction.typed || "";
             
@@ -280,6 +308,13 @@ dojo.mixin(bespin.debug, {
         dojo.style("debugbar", "display", "block");
         bespin.page.editor.recalcLayout();
         evalLine.resize();
+        
+        var settings = bespin.get("settings");
+        if (settings && settings.isSettingOff("debugmode")) {
+            settings.set("debugmode", "on");
+        }
+        
+        bespin.debug.project = bespin.get("editSession").project;
     },
     
     hideDebugBar: function() {
@@ -287,6 +322,7 @@ dojo.mixin(bespin.debug, {
         dojo.style("debugbar", "display", "none");
         bespin.page.editor.recalcLayout();
         evalLine.clearAll();
+        bespin.debug.project = undefined;
     }
 });
 
@@ -310,13 +346,19 @@ bespin.subscribe("debugger:halted", function(location) {
     var newtext = "";
     
     if (location.exception) {
-        newtext = "Exception " + location.exception + " at<br>";
+        newtext = 'Exception <span class="error">' + location.exception + "</span> at<br>";
     }
     
-    newtext += location.sourceLineText + "<br>" + 
-                location.scriptName + ":" + (location.sourceLine + 1);
+    var linenum = location.sourceLine + 1;
+    if (bespin.debug.project) {
+        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  ' + location.scriptName + ' ' + bespin.debug.project + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
+    } else {
+        var scriptloc = location.scriptName + ':' + linenum;
+    }
+    newtext += '<span class="code">' + location.sourceLineText + '</span><br>' + 
+                scriptloc;
     if (location.invocationText) {
-        newtext += "<br>called by " + location.invocationText;
+        newtext += '<br>invoked by <span class="code">' + location.invocationText + '</span>';
     }
     
     el.innerHTML = newtext;

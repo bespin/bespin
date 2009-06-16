@@ -557,11 +557,11 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.readonly || !this.editor.selection) return;
 
         var selection;
-        
+
         //first, check to see if we had one saved, because if we did, that is the one we want.
         if (args.selection) selection = args.selection;
         else selection = this.editor.getSelection();
-        
+
         var chunk = this.model.getChunk(selection);
         this.model.deleteChunk(selection);
 
@@ -569,14 +569,14 @@ dojo.declare("bespin.editor.Actions", null, {
         args.action = "deleteSelection";
         var redoOperation = args;
         redoOperation.selection = selection;
-        
+
         var undoArgs = {
             action: "insertChunkAndSelect",
             pos: bespin.editor.utils.copyPos(selection.startPos),
             queued: args.queued,
             chunk: chunk
         };
-        
+
         var undoOperation = undoArgs;
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
@@ -1088,7 +1088,7 @@ dojo.declare("bespin.editor.Actions", null, {
 
         args.pos = startPos;
         args.queued = true;
-        
+
         this.deleteChunk(selection);
         this.insertChunk(args);
 

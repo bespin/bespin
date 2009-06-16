@@ -90,6 +90,10 @@ dojo.declare("bespin.editor.Events", null, {
             var project  = event.project || editSession.project;
 
             if (editSession.checkSameFile(project, filename)) {
+                if (event.line) {
+                    // Jump to the desired line.
+                    bespin.get('commandLine').executeCommand('goto ' + event.line, true);
+                }
                 return; // short circuit
             }
             
@@ -100,6 +104,10 @@ dojo.declare("bespin.editor.Events", null, {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
                     bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+                    if (event.line) {
+                        // Jump to the desired line.
+                        bespin.get('commandline').executeCommand('goto ' + event.line, true);
+                    }
 
                     var settings = bespin.get("settings");
 

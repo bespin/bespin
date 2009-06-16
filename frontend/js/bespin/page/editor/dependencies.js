@@ -89,7 +89,7 @@ dojo.require("bespin.wizardTest");
 dojo.require("bespin.social");
 dojo.require("bespin.socialTest");
 
-dojo.require("bespin.cmd.editorcommands");
+dojo.require("bespin.cmd.editorcommands"); // now load the default editor commands
 
 
 dojo.require("bespin.mobwrite.core");
