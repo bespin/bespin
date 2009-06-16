@@ -34,6 +34,7 @@ import os
 import tempfile
 import random
 from traceback import format_exc
+import logging
 
 from path import path
 import simplejson
@@ -44,6 +45,8 @@ from Crypto.Cipher import AES
 from bespin import config, queue, database, filesystem
 from bespin.database import User, Message
 from bespin.filesystem import FSException, NotAuthorized, get_project
+
+log = logging.getLogger("bespin.vcs")
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -168,10 +171,10 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
     try:
         context = main.SecureContext(working_dir, auth)
         command = main.convert(context, args, dialect)
-        print "exec in: ", working_dir
-        print "$", str(command)
+        log.debug("exec in: %s" % working_dir)
+        log.debug("$ %s" % str(command))
         output = main.run_command(command, context)
-        print output
+        log.debug(output)
     finally:
         if keyfile:
             keyfile.delete()
@@ -275,7 +278,12 @@ def _run_command_impl(user, project, args, kcpass):
                 
         try:
             command = command_class.from_args(context, args)
+
+            log.debug("exec in: %s" % working_dir)
+            log.debug("$ %s" % str(command))
             output = main.run_command(command, context)
+            log.debug(output)
+            log.debug(output)
         finally:
             if keyfile:
                 keyfile.delete()
