@@ -90,6 +90,13 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
             var file = this.getFilePath(path.slice(1, path.length));
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
+
+            var settings = bespin.get("settings");
+            if (settings && settings.isSettingOn('keepfilepopuponopen')) {
+                // keep the file popup up!
+            } else {
+                bespin.publish("ui:escape");
+            }
         }, this);
 
         this.scene.bus.bind("itemselected", this.tree, function(e) {
