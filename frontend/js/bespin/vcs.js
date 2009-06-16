@@ -28,8 +28,10 @@ dojo.require("bespin.util.webpieces");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.commandline");
 
-// Command store for the VCS commands
-// (which are subcommands of the main 'vcs' command)
+/**
+ * Command store for the VCS commands
+ * (which are subcommands of the main 'vcs' command)
+ */
 bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'vcs',
     preview: 'run a version control command',
@@ -37,51 +39,10 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     subcommanddefault: 'help'
 }});
 
-bespin.vcs.createStandardHandler = function(instruction) {
-    return {
-        evalJSON: true,
-        onPartial: function(response) {
-            instruction.addPartialOutput(response);
-        },
-        onSuccess: function(response) {
-            instruction.addOutput(response);
-        },
-        onFailure: function(xhr) {
-            instruction.addErrorOutput(xhr.response);
-        }
-    };
-};
-
-//** {{{ bespin.vcs.createCancelHandler }}}
-// Create an event handler to sort out the output if the user clicks cancel
-bespin.vcs.createCancelHandler = function(instruction) {
-    return instruction.link(function() {
-        var el = dojo.byId('centerpopup');
-        bespin.util.webpieces.hideCenterPopup(el);
-        instruction.addErrorOutput("Cancelled");
-    });
-};
-
-bespin.vcs._remoteauthCache = {};
-
-// ** {{{ bespin.vcs.get_remoteauth }}}
-// Looks in the cache or calls to the server to find
-// out if the given project requires remote authentication.
-// The result is published at vcs:remoteauth:project
-bespin.vcs.getRemoteauth = function(project, callback) {
-    var cached = bespin.vcs._remoteauthCache[project];
-    if (cached === undefined) {
-        bespin.get('server').remoteauth(project, callback);
-        return;
-    }
-    // work from cache
-    callback(cached);
-};
-
-bespin.subscribe("vcs:remoteauthUpdate", function(event) {
-    bespin.vcs._remoteauthCache[event.project] = event.remoteauth;
-});
-
+/**
+ * Display the clone dialog to allow the user to fill out additional details
+ * to the clone process
+ */
 bespin.vcs.clone = function(instruction, url) {
     var el = dojo.byId('centerpopup');
 
@@ -143,7 +104,7 @@ bespin.vcs.clone = function(instruction, url) {
         }
     });
 
-    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs.createCancelHandler(instruction));
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs._createCancelHandler(instruction));
 
     dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", instruction.link(function(e) {
         dojo.stopEvent(e);
@@ -161,16 +122,18 @@ bespin.vcs.clone = function(instruction, url) {
             }
         }
         data = dojo.objectToQuery(data);
-        bespin.get('server').clone(data, instruction, bespin.vcs.createStandardHandler(instruction));
+        bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
     }));
 
     bespin.util.webpieces.showCenterPopup(el, true);
     dojo.byId("kcpass").focus();
 };
 
-// Is this called from anywhere? Probably not (this appears to be the only
-// instance of the string 'setProjectPassword' in an *.js file) however if
-// it is used then we've added the initial 'instruction' parameter.
+/**
+ * TODO: Is this called from anywhere? Probably not (this appears to be the only
+ * instance of the string 'setProjectPassword' in an *.js file) however if
+ * it is used then we've added the initial 'instruction' parameter.
+ */
 bespin.vcs.setProjectPassword = function(instruction, project) {
     var el = dojo.byId('centerpopup');
 
@@ -186,7 +149,7 @@ bespin.vcs.setProjectPassword = function(instruction, project) {
             + '<input type="button" id="vcsauthcancel" value="Cancel">'
             + '</td></tr></tbody></table></form>';
 
-    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs.createCancelHandler(instruction));
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs._createCancelHandler(instruction));
 
     dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", function() {
         bespin.util.webpieces.hideCenterPopup(el);
@@ -204,11 +167,11 @@ bespin.vcs.setProjectPassword = function(instruction, project) {
     bespin.util.webpieces.showCenterPopup(el, true);
 };
 
-// ** {{{ getKeychainPassword }}}
-// Presents the user with a dialog requesting their keychain
-// password. If they click the submit button, the password
-// is sent to the callback. If they do not, the callback
-// is not called.
+/**
+ * Presents the user with a dialog requesting their keychain password.
+ * If they click the submit button, the password is sent to the callback.
+ * If they do not, the callback is not called.
+ */
 bespin.vcs.getKeychainPassword = function(instruction, callback) {
     var el = dojo.byId('centerpopup');
 
@@ -220,7 +183,7 @@ bespin.vcs.getKeychainPassword = function(instruction, callback) {
             + '<input type="button" id="vcsauthcancel" value="Cancel">'
             + '</td></tr></tbody></table></form>';
 
-    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs.createCancelHandler(instruction));
+    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs._createCancelHandler(instruction));
 
     function saveform() {
         bespin.util.webpieces.hideCenterPopup(el);
@@ -237,10 +200,26 @@ bespin.vcs.getKeychainPassword = function(instruction, callback) {
     dojo.byId("kcpass").focus();
 };
 
-// = Commands =
-// Version Control System-related commands
+/**
+ * Add command.
+ * Add the specified files on the next commit
+ */
+bespin.vcs.commands.addCommand({
+    name: 'add',
+    preview: 'Adds missing files to the project',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
+    // ** {{{execute}}} **
+    execute: function(instruction, args) {
+        bespin.vcs._performVCSCommandWithFiles("add", instruction, args);
+    }
+});
 
-// ** {{{{Command: clone}}}} **
+/**
+ * Clone command.
+ * Create a copy of an existing repository in a new directory
+ */
 bespin.vcs.commands.addCommand({
     name: 'clone',
     takes: ['url'],
@@ -252,8 +231,89 @@ bespin.vcs.commands.addCommand({
     }
 });
 
+/**
+ * Commit command.
+ * Commit the specified files or all outstanding changes
+ */
+bespin.vcs.commands.addCommand({
+    name: 'commit',
+    takes: ['message'],
+    aliases: [ 'ci' ],
+    preview: 'Commit to the repository',
+    // ** {{{execute}}} **
+    execute: function(instruction, message) {
+        if (!message) {
+            instruction.addErrorOutput("You must enter a log message");
+            return;
+        }
+        var project;
 
-// ** {{{Command: push}}} **
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            instruction.addErrorOutput("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project,
+                                { command: [ 'commit', '-m', message ] },
+                                instruction,
+                                bespin.vcs._createStandardHandler(instruction));
+    }
+});
+
+/**
+ * Diff command.
+ * Report on the changes between the working files and the respository
+ */
+bespin.vcs.commands.addCommand({
+    name: 'diff',
+    preview: 'Display the differences in the checkout out files',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
+    // ** {{{execute}}} **
+    execute: function(instruction, args) {
+        bespin.vcs._performVCSCommandWithFiles("diff", instruction, args);
+    }
+});
+
+/**
+ * Retrieve an SSH public key for authentication use
+ */
+bespin.vcs.commands.addCommand({
+    name: 'getkey',
+    preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
+    execute: function(instruction) {
+        bespin.get('server').getkey(null, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: bespin.vcs._getSSHKeyAuthenticated(instruction),
+            onFailure: function(response) {
+                instruction.addErrorOutput("getkey failed: " + response);
+            }
+        });
+    }
+});
+
+/**
+ * Display sub-command help
+ */
+bespin.vcs.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for vcs subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
+    }
+});
+
+/**
+ * Push command.
+ * Push changes to the specified destination
+ */
 bespin.vcs.commands.addCommand({
     name: 'push',
     preview: 'push to the remote repository',
@@ -274,27 +334,18 @@ bespin.vcs.commands.addCommand({
             bespin.get('server').vcs(project,
                                     { command: ['push', '_BESPIN_PUSH'], kcpass: kcpass },
                                     instruction,
-                                    bespin.vcs.createStandardHandler(instruction));
+                                    bespin.vcs._createStandardHandler(instruction));
         });
     }
 });
 
-// ** {{{Command: diff}}} **
-bespin.vcs.commands.addCommand({
-    name: 'diff',
-    preview: 'Display the differences in the checkout out files',
-    takes: ['*'],
-    completeText: 'Use the current file, add -a for all files or add filenames',
-    description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
-    // ** {{{execute}}} **
-    execute: function(instruction, args) {
-        bespin.vcs._performVCSCommandWithFiles("diff", instruction, args);
-    }
-});
-
-// ** {{{Command: remove}}} **
+/**
+ * Remove command.
+ * Remove the specified files on the next commit
+ */
 bespin.vcs.commands.addCommand({
     name: 'remove',
+    aliases: [ 'rm' ],
     preview: 'Remove a file from version control (also deletes it)',
     takes: ['*'],
     description: 'The files presented will be deleted and removed from version control.',
@@ -305,9 +356,30 @@ bespin.vcs.commands.addCommand({
     }
 });
 
-// ** {{{Command: status}}} **
+/**
+ * Resolved command.
+ * Retry file merges from a merge or update
+ */
+bespin.vcs.commands.addCommand({
+    name: 'resolved',
+    takes: ['*'],
+    aliases: [ 'resolve' ],
+    preview: 'Mark files as resolved',
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
+    // ** {{{execute}}} **
+    execute: function(instruction, args) {
+        bespin.vcs._performVCSCommandWithFiles("resolved", instruction, args);
+    }
+});
+
+/**
+ * Status command.
+ * Show changed files under the working directory
+ */
 bespin.vcs.commands.addCommand({
     name: 'status',
+    aliases: [ 'st' ],
     preview: 'Display the status of the repository files.',
     description: 'Shows the current state of the files in the repository<br>M for modified, ? for unknown (you may need to add), R for removed, ! for files that are deleted but not removed',
     // ** {{{execute}}} **
@@ -326,27 +398,17 @@ bespin.vcs.commands.addCommand({
         bespin.get('server').vcs(project,
                                 { command: ['status'] },
                                 instruction,
-                                bespin.vcs.createStandardHandler(instruction));
+                                bespin.vcs._createStandardHandler(instruction));
     }
 });
 
-// ** {{{Command: diff}}} **
-bespin.vcs.commands.addCommand({
-    name: 'resolved',
-    takes: ['*'],
-    preview: 'Mark files as resolved',
-    completeText: 'Use the current file, add -a for all files or add filenames',
-    description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
-    // ** {{{execute}}} **
-    execute: function(instruction, args) {
-        bespin.vcs._performVCSCommandWithFiles("resolved", instruction, args);
-    }
-});
-
-
-// ** {{{Command: update}}} **
+/**
+ * Update command.
+ * Pull updates from the repository into the current working directory
+ */
 bespin.vcs.commands.addCommand({
     name: 'update',
+    aliases: [ 'up', 'checkout', 'co' ],
     preview: 'Update your working copy from the remote repository',
     // ** {{{execute}}} **
     execute: function(instruction) {
@@ -373,10 +435,10 @@ bespin.vcs.commands.addCommand({
             bespin.get('server').vcs(project,
                                     command,
                                     instruction,
-                                    bespin.vcs.createStandardHandler(instruction));
+                                    bespin.vcs._createStandardHandler(instruction));
         };
 
-        bespin.vcs.getRemoteauth(project, function(remoteauth) {
+        bespin.vcs._getRemoteauth(project, function(remoteauth) {
             console.log("remote auth is: " + remoteauth);
             if (remoteauth == "both") {
                 bespin.vcs.getKeychainPassword(instruction, sendRequest);
@@ -388,22 +450,102 @@ bespin.vcs.commands.addCommand({
     }
 });
 
-bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
-            options) {
+/**
+ * Command store for the Mercurial commands
+ * (which are subcommands of the main 'hg' command)
+ */
+bespin.vcs.hgCommands = new bespin.cmd.commandline.CommandStore({ subCommand: {
+    name: 'hg',
+    preview: 'run a Mercurial command',
+    subcommanddefault: 'help'
+}});
+
+/**
+ * Display sub-command help
+ */
+bespin.vcs.hgCommands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for hg subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        bespin.cmd.displayHelp(bespin.vcs.hgCommands, instruction, extra);
+    }
+});
+
+/**
+ * Initialize an HG repository
+ */
+bespin.vcs.hgCommands.addCommand({
+    name: 'init',
+    preview: 'initialize a new hg repository',
+    description: 'This will create a new repository in this project.',
+    execute: function(instruction) {
+        var project;
+
+        bespin.withComponent('editSession', function(editSession) {
+            project = editSession.project;
+        });
+
+        if (!project) {
+            instruction.addErrorOutput("You need to pass in a project");
+            return;
+        }
+        bespin.get('server').vcs(project,
+                                { command: ['hg', 'init'] },
+                                instruction,
+                                bespin.vcs._createStandardHandler(instruction));
+    }
+});
+
+/**
+ * Display the SSH public key in a dialog
+ */
+bespin.vcs._displaySSHKey = function(response) {
+    bespin.util.webpieces.showContentOverlay(
+        '<h2>Your Bespin SSH public key</h2><input type="text" value="'
+        + response + '" id="sshkey" style="width: 95%">'
+    );
+    dojo.byId("sshkey").select();
+};
+
+/**
+ * Retrieve the user's SSH public key using their keychain password.
+ * This is required if they have not already set up a public key.
+ */
+bespin.vcs._getSSHKeyAuthenticated = function(instruction) {
+    bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
+        bespin.get('server').getkey(kcpass, {
+            onSuccess: bespin.vcs._displaySSHKey,
+            on401: function(response) {
+                instruction.addErrorOutput("Bad keychain password.");
+            },
+            onFailure: function(response) {
+                instruction.addErrorOutput("getkey failed: " + response);
+            }
+        });
+    });
+};
+
+/**
+ * Generic vcs remote command handler
+ */
+bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args, options) {
     options = options || { acceptAll: true };
     var project;
     var path;
-
+    
     bespin.withComponent('editSession', function(editSession) {
         project = editSession.project;
         path = editSession.path;
     });
-
+    
     if (!project) {
         instruction.addErrorOutput("You need to pass in a project");
         return;
     }
-
+    
     if (args.varargs.length == 0) {
         if (!path) {
             var dasha = "";
@@ -423,151 +565,77 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
     bespin.get('server').vcs(project,
                             { command: command },
                             instruction,
-                            bespin.vcs.createStandardHandler(instruction));
+                            bespin.vcs._createStandardHandler(instruction));
 };
 
-// ** {{{Command: add}}} **
-bespin.vcs.commands.addCommand({
-    name: 'add',
-    preview: 'Adds missing files to the project',
-    takes: ['*'],
-    completeText: 'Use the current file, add -a for all files or add filenames',
-    description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
-    // ** {{{execute}}} **
-    execute: function(instruction, args) {
-        bespin.vcs._performVCSCommandWithFiles("add", instruction, args);
+/**
+ * The cache for <pre>bespin.vcs._getRemoteauth</pre>
+ * @see bespin.vcs._getRemoteauth
+ */
+bespin.vcs._remoteauthCache = {};
+
+/**
+ * Looks in the cache or calls to the server to find out if the given project
+ * requires remote authentication.
+ * The result is published at vcs:remoteauth:project
+ */
+bespin.vcs._getRemoteauth = function(project, callback) {
+    var cached = bespin.vcs._remoteauthCache[project];
+    if (cached === undefined) {
+        bespin.get('server').remoteauth(project, callback);
+        return;
     }
-});
-
-// ** {{{Command: commit}}} **
-bespin.vcs.commands.addCommand({
-    name: 'commit',
-    takes: ['message'],
-    preview: 'Commit to the repository',
-    // ** {{{execute}}} **
-    execute: function(instruction, message) {
-        if (!message) {
-            instruction.addErrorOutput("You must enter a log message");
-            return;
-        }
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            instruction.addErrorOutput("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project,
-                                { command: [ 'commit', '-m', message ] },
-                                instruction,
-                                bespin.vcs.createStandardHandler(instruction));
-    }
-});
-
-bespin.vcs._displaySSHKey = function(response) {
-    bespin.util.webpieces.showContentOverlay(
-        '<h2>Your Bespin SSH public key</h2><input type="text" value="'
-        + response + '" id="sshkey" style="width: 95%">'
-    );
-    dojo.byId("sshkey").select();
+    // work from cache
+    callback(cached);
 };
 
-// Retrieve the user's SSH public key using their keychain password.
-// This is required if they have not already set up a public key.
-bespin.vcs._getSSHKeyAuthenticated = function(instruction) {
-    bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
-        bespin.get('server').getkey(kcpass, {
-            onSuccess: bespin.vcs._displaySSHKey,
-            on401: function(response) {
-                instruction.addErrorOutput("Bad keychain password.");
-            },
-            onFailure: function(response) {
-                instruction.addErrorOutput("getkey failed: " + response);
-            }
-        });
+/**
+ * Catch publishes primarily from bespin.client.Server.remoteauth (below)
+ */
+bespin.subscribe("vcs:remoteauthUpdate", function(event) {
+    bespin.vcs._remoteauthCache[event.project] = event.remoteauth;
+});
+
+/**
+ * Most of the VCS commands just want to output to the CLI
+ */
+bespin.vcs._createStandardHandler = function(instruction) {
+    return {
+        evalJSON: true,
+        onPartial: function(response) {
+            instruction.addPartialOutput("<pre>" + response + "</pre>");
+        },
+        onSuccess: function(response) {
+            instruction.addOutput("<pre>" + response + "</pre>");
+        },
+        onFailure: function(xhr) {
+            instruction.addErrorOutput(xhr.response);
+        }
+    };
+};
+
+/**
+ * Create an event handler to sort out the output if the user clicks cancel
+ * in one of the popup dialogs
+ */
+bespin.vcs._createCancelHandler = function(instruction) {
+    return instruction.link(function() {
+        var el = dojo.byId('centerpopup');
+        bespin.util.webpieces.hideCenterPopup(el);
+        instruction.addErrorOutput("Cancelled");
     });
 };
 
-bespin.vcs.commands.addCommand({
-    name: 'getkey',
-    preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
-    execute: function(instruction) {
-        bespin.get('server').getkey(null, {
-            onSuccess: bespin.vcs._displaySSHKey,
-            on401: bespin.vcs._getSSHKeyAuthenticated(instruction),
-            onFailure: function(response) {
-                instruction.addErrorOutput("getkey failed: " + response);
-            }
-        });
-    }
-});
-
-// ** {{{Command: help}}} **
-bespin.vcs.commands.addCommand({
-    name: 'help',
-    takes: ['search'],
-    preview: 'show commands for vcs subcommand',
-    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
-    completeText: 'optionally, narrow down the search',
-    execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
-    }
-});
-
-// Command store for the Mercurial commands
-// (which are subcommands of the main 'hg' command)
-bespin.vcs.hgCommands = new bespin.cmd.commandline.CommandStore({ subCommand: {
-    name: 'hg',
-    preview: 'run a Mercurial command',
-    subcommanddefault: 'help'
-}});
-
-// ** {{{Command: help}}} **
-bespin.vcs.hgCommands.addCommand({
-    name: 'help',
-    takes: ['search'],
-    preview: 'show commands for hg subcommand',
-    description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
-    completeText: 'optionally, narrow down the search',
-    execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.hgCommands, instruction, extra);
-    }
-});
-
-// ** {{{Command: init}}} **
-bespin.vcs.hgCommands.addCommand({
-    name: 'init',
-    preview: 'initialize a new hg repository',
-    description: 'This will create a new repository in this project.',
-    execute: function(instruction) {
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            instruction.addErrorOutput("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project,
-                                { command: ['hg', 'init'] },
-                                instruction,
-                                bespin.vcs.createStandardHandler(instruction));
-    }
-});
-
-// == Extension to {{{ bespin.client.Server }}} ==
+/**
+ * Extension to bespin.client.Server
+ */
 dojo.extend(bespin.client.Server, {
-    // ** {{{ remoteauth() }}}
-    // Finds out if the given project requires remote authentication
-    // the values returned are "", "both" (for read and write), "write"
-    // when only writes require authentication
-    // the result is published as an object with project, remoteauth
-    // values to vcs:remoteauthUpdate and sent to the callback.
+    /**
+     * Finds out if the given project requires remote authentication the values
+     * returned are "", "both" (for read and write), "write" when only writes
+     * require authentication the result is published as an object with project,
+     * remoteauth values to vcs:remoteauthUpdate and sent to the callback.
+     */
     remoteauth: function(project, callback) {
         var url = '/vcs/remoteauth/' + escape(project) + '/';
         this.request('GET', url, null, {
@@ -582,27 +650,29 @@ dojo.extend(bespin.client.Server, {
         });
     },
 
-    // ** {{{ vcs() }}}
-    // Run a Version Control System (VCS) command
-    // The command object should have a command attribute
-    // on it that is a list of the arguments.
-    // Commands that require authentication should also
-    // have kcpass, which is a string containing the user's
-    // keychain password.
+    /**
+     * Run a Version Control System (VCS) command.
+     * The command object should have a command attribute on it that is a list
+     * of the arguments.
+     * Commands that require authentication should also have kcpass, which is a
+     * string containing the user's keychain password.
+     */
     vcs: function(project, command, instruction, opts) {
         var url = '/vcs/command/' + project + '/';
         this.requestDisconnected('POST', url, dojo.toJson(command), instruction, opts);
     },
 
-    // ** {{{ setauth() }}}
-    // Sets authentication for a project
+    /**
+     * Sets authentication for a project
+     */
     setauth: function(project, form, opts) {
         this.request('POST', '/vcs/setauth/' + project + '/',
                     dojo.formToQuery(form), opts || {});
     },
 
-    // ** {{{ getkey() }}}
-    // Retrieves the user's SSH public key that can be used for VCS functions
+    /**
+     * Retrieves the user's SSH public key that can be used for VCS functions
+     */
     getkey: function(kcpass, opts) {
         if (kcpass == null) {
             this.request('POST', '/vcs/getkey/', null, opts || {});
@@ -611,8 +681,9 @@ dojo.extend(bespin.client.Server, {
         }
     },
 
-    // ** {{{ clone() }}}
-    // Clone a remote repository
+    /**
+     * Clone a remote repository
+     */
     clone: function(data, instruction, opts) {
         this.requestDisconnected('POST', '/vcs/clone/', data, instruction, opts);
     }
