@@ -8,11 +8,11 @@ img {
     margin-right: 30px;
 }
 
-#commandline {
+.commandline {
     width: 100%;
 }
 
-#command {
+.commandline input {
     border: 0;
     background: none;
     color: #DDDDDD;
@@ -21,7 +21,7 @@ img {
     width: 100%;
 }
 
-#prompt {
+.commandline .prompt {
     width: 11px;
 }
 

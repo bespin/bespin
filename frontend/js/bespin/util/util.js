@@ -201,11 +201,21 @@ bespin.util.contains = document.compareDocumentPosition ? function(a, b) {
 // Create a random password of the given length (default 16 chars)
 bespin.util.randomPassword = function(length) {
     length = length || 16;
-    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    pass = "";
+    var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    var pass = "";
     for (var x = 0; x < length; x++) {
         var charIndex = Math.floor(Math.random() * chars.length);
         pass += chars.charAt(charIndex);
     }
     return pass;
+};
+
+// = isEmpty =
+// Is the passed object free of members, i.e. are there any enumerable
+// properties which the objects claims as it's own using hasOwnProperty()
+bespin.util.isEmpty = function(object) {
+    for (var x in object) {
+        if (object.hasOwnProperty(x)) return false;
+    }
+    return true;
 };

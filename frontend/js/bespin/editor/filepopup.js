@@ -163,15 +163,13 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     list.moveSelectionDown();
                     break;
                 case key.ENTER:
-                    this.bus.fire("dblclick", e, this.tree);
+                    this.scene.bus.fire("dblclick", e, this.tree);
                     break;
             }
         }));
     },
 
     show: function(coords) {
-        console.log(coords);
-
         this.canvas.width = coords.w;
         this.canvas.height = coords.h;
 
@@ -375,7 +373,7 @@ th.BespinProjectPanel = Class.define({
     member: {
         init: function(parms) {
             if (!parms) parms = {};
-            this.super(parms);
+            this['super'](parms);
 
             this.projectLabel = new th.Label({ text: "Projects", className: "projectLabel" });
 

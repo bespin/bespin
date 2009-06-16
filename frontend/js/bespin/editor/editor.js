@@ -570,15 +570,14 @@ dojo.declare("bespin.editor.UI", null, {
             for (var i = 0; i < lineMarkers.length; i++) {
                 if (lineMarkers[i].line === down.row + 1) {
                     message = lineMarkers[i];
-                    bespin.publish("message:hint", {
-                        msg: 'Syntax ' + message.type +
+                    var msg = 'Syntax ' + message.type +
                              (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
                              ': ' + message.reason + '<p>' +
                              (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
                                  replace(/&/g, '&amp;').
                                  replace(/</g, '&lt;').
-                                 replace(/>/g, '&gt;'))
-                    });
+                                 replace(/>/g, '&gt;'));
+                    bespin.get("commandLine").showHint(msg);
                 }
             }
         }
@@ -782,7 +781,9 @@ dojo.declare("bespin.editor.UI", null, {
 
         // handle key to jump between editor and other windows / commandline
         listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
-        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Commandline");
+        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
+        listener.bindKeyString("CTRL", Key.F, this.actions.focusFileBrowser, "Open File Browser");
+
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
@@ -1660,7 +1661,6 @@ dojo.declare("bespin.editor.API", null, {
         this.setSelection(data.selection);
         this.ui.yoffset = data.offset.y;
         this.ui.xoffset = data.offset.x;
-        this.paint();
     },
 
     basicView: function() {
@@ -1668,7 +1668,6 @@ dojo.declare("bespin.editor.API", null, {
         this.setSelection(undefined);
         this.ui.yoffset = 0;
         this.ui.xoffset = 0;
-        this.paint();
     },
 
     getCurrentView: function() {

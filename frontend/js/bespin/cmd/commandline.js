@@ -191,15 +191,27 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands, options) {
+        this.setup(commandLine, initCommands, options);
+    },
+
+    // Dojo automatically calls superclass constructors. So,
+    // if you don't want the constructor behavior, there's no
+    // way out. Move to a separate function to allow overriding.
+    setup: function(commandLine, initCommands, options) {
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         var parentElement = options.parentElement || dojo.body();
         this.commandLine = dojo.byId(commandLine);
 
         // * Create the div for hints
+        this.styles = {
+          bottom: "0px",
+          left: "31px"
+        };
+
         this.commandHint = dojo.create("div", {
             id: idPrefix + "hint",
-            style: "display:none; bottom:0px; left:31px; width:500px;"
+            style: "display:none; bottom: " + this.styles.bottom + "; left:" + this.styles.left + "; width:500px;"
         }, parentElement);
         dojo.connect(this.commandHint, "onclick", this, this.hideHint);
 
@@ -218,8 +230,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.history = new bespin.cmd.commandline.History(this);
-        this.customEvents = new bespin.cmd.commandline.Events(this);
+        this.configureEvents();
         this.hideOutput();
+    },
+
+    configureEvents: function() {
+        this.customEvents = new bespin.cmd.commandline.Events(this);
     },
 
     showUsage: function(command) {
@@ -230,8 +246,24 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Hint ==
     // Hints are displayed while typing. They are transient and ignorable
     showHint: function(html) {
+        if (html == null) {
+            console.warning("showHint passed null");
+            return;
+        }
+
+        var styles = {
+            display: 'block'
+        };
+
+        // move the puppy up to the pie menu
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && !piemenu.visible()) {
+            styles.bottom = this.styles.bottom;
+            styles.left = this.styles.left;
+        }
+
         dojo.attr(this.commandHint, { innerHTML: html });
-        dojo.style(this.commandHint, "display", "block");
+        dojo.style(this.commandHint, styles);
 
         if (this.hintTimeout) clearTimeout(this.hintTimeout);
         this.hintTimeout = setTimeout(dojo.hitch(this, function() {
@@ -258,15 +290,20 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         var footerHeight = dojo.style("footer", "height") + 2;
 
+        var piemenu = bespin.get("piemenu");
+        if (piemenu && piemenu.visible()) {
+            bottom += footerHeight;
+        }
+
         dojo.style(this.commandHint, {
             left: left + "px",
-            bottom: (bottom + footerHeight) + "px",
+            bottom: bottom + "px",
             width: width + "px"
         });
 
         dojo.style(this.output, {
             left: left + "px",
-            bottom: (bottom + footerHeight) + "px",
+            bottom: bottom + "px",
             width: width + "px",
             height: height + "px",
             display: "block"
@@ -281,6 +318,19 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         dojo.style(this.output, "display", "none");
         dojo.style("footer", "display", "none");
         this.maxInfoHeight = null;
+    },
+
+    // == Add Element ==
+    // Instead of doing output by appending strings, commands can pass in a
+    // DOM node that they update. It is assumed that commands doing this will
+    // provide their own progress indicators.
+    setElement: function(element) {
+        if (this.executing) {
+            this.executing.setElement(element);
+        } else {
+            console.trace();
+            console.debug("orphan command node:", element);
+        }
     },
 
     // == Add Output ==
@@ -305,18 +355,11 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // Complete the currently executing command with successful output
     _addOutput: function(html, error, complete) {
         if (this.executing) {
-            this.executing.addOutput(html, complete);
-            this.executing.hideOutput = false;
-            this.executing.error = error;
-            this.executing.complete = complete;
+            this.executing.addOutput(html, error, complete);
         } else {
             console.trace();
             console.debug("orphan output:", html);
         }
-
-        this.hideHint();
-        this.updateOutput();
-        this.scrollConsole();
     },
 
     // == Make the console scroll to the bottom ==
@@ -436,17 +479,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
                 // The row for the output (if required)
                 if (!instruction.hideOutput) {
-                    var contents = instruction.output || "";
-                    if (!instruction.complete) {
-                        contents += "<img src='/images/throbber.gif'/> Working ...";
-                    }
                     var rowout = dojo.create("tr", { className: 'command_rowout' }, table);
                     dojo.create("td", { }, rowout);
-                    dojo.create("td", {
+                    var td = dojo.create("td", {
                         colSpan: 2,
-                        className: (instruction.error ? "command_error" : ""),
-                        innerHTML: contents
+                        className: (instruction.error ? "command_error" : "")
                     }, rowout);
+
+                    if (instruction.element) {
+                        dojo.place(instruction.element, td);
+                    } else {
+                        var contents = instruction.output || "";
+                        if (!instruction.complete) {
+                            contents += "<img src='/images/throbber.gif'/> Working ...";
+                        }
+                        td.innerHTML = contents;
+                    }
                 }
             }
             count ++;
@@ -538,77 +586,38 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     // == Execute Command ==
-    executeCommand: function(value) {
+    executeCommand: function(value, hidden) {
         if (!value || value == "") {
-            return;
+            return null;
         }
 
         var instruction = new bespin.cmd.commandline.Instruction(this, value);
 
-        // clear after the command
-        this.commandLine.value = '';
-
-        this.history.add(instruction);
-        this.executing = instruction;
-
-        try {
-            if (instruction.error) {
-                this.addOutput(instruction.error);
-            } else {
-                instruction.command.execute(this, instruction.args, instruction.command);
-            }
-        }
-        catch (ex) {
-            this.addErrorOutput(ex);
-        }
-        finally {
-            if (this.executing.linked == null) {
-                this.executing.complete = true;
-            }
-
-            this.executing = null;
+        if (hidden !== true) {
+            this.history.add(instruction);
         }
 
-        this.hideHint();
-        this.updateOutput();
-        this.scrollConsole();
+        var self = this;
+        instruction.onOutput(function() {
+            self.hideHint();
+            self.updateOutput();
+            self.scrollConsole();
+        });
+
+        instruction.exec(this);
+
+        return instruction;
     },
 
     // == Link Function to Instruction ==
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
         if (!this.executing) {
-            return action;
+            if (context == null) return action;
+            return dojo.hitch(context, action);
         }
 
-        var originalExecuting = this.executing;
-
-        // We could allow multiple linked functions, however that would
-        // make completion harder to calculate, and we're being lazy
-        if (this.executing.linked) {
-            throw new Error("Multiply linked instruction");
-        }
-
-        var self = this;
-        this.executing.linked = function() {
-            var confusedExecuting = null;
-            if (self.executing) {
-                console.warn("Nested instruction contexts");
-                confusedExecuting = self.executing;
-            }
-            self.executing = originalExecuting;
-
-            action.apply(context || dojo.global, arguments);
-
-            if (!self.executing.complete) {
-                self.executing.complete = true;
-                self.updateOutput();
-            }
-
-            self.executing = confusedExecuting;
-        };
-
-        return this.executing.linked;
+        return this.executing.link(action, context);
     },
 
     handleCommandLineFocus: function(e) {
@@ -631,6 +640,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     constructor: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
         this.output = "";
+        this.callbacks = [];
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
@@ -649,19 +659,118 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         }
     },
 
+    // == Exec ==
+    // Execute the command
+    exec: function(commandLine) {
+        try {
+            if (this.error) {
+                this.addErrorOutput(this.error);
+            } else {
+                commandLine.executing = this;
+                this.command.execute(this, this.args, this.command);
+            }
+        }
+        catch (ex) {
+            this.addErrorOutput(ex);
+        }
+        finally {
+            commandLine.executing = null;
+        }
+    },
+
+    // == Link Function to Instruction ==
+    // Make a function be part of the thread of execution of an instruction
+    link: function(action, context) {
+        this.outstanding = this.outstanding || 0;
+        this.outstanding++;
+
+        var self = this;
+        return function() {
+            try {
+                action.apply(context || dojo.global, arguments);
+            } finally {
+                self._outstanding--;
+
+                if (self._outstanding == 0) {
+                    self.complete = true;
+                    self.onOutput();
+                }
+            }
+        };
+    },
+
+    // == To String ==
+    // A string version of this Instruction suitable for serialization
     toString: function() {
         return dojo.toJson({ typed:typed, output:output, start:start, end:end });
     },
 
+    // == Add Output ==
+    // Complete the currently executing command with successful output
+    addOutput: function(html) {
+        this._addOutput(html, false, true);
+    },
+
+    // == Add Error Output ==
+    // Complete the currently executing command with error output
+    addErrorOutput: function(html) {
+        this._addOutput(html, true, true);
+    },
+
+    // == Add Usage Output ==
+    // Complete the currently executing command with usage output
+    addUsageOutput: function(command) {
+        var usage = command.usage || "no usage information found for " + command.name;
+        this._addOutput("Usage: " + command.name + " " + usage, true, true);
+    },
+
+    // == Add Incomplete Output ==
+    // Add output to the currently executing command with successful output
+    addIncompleteOutput: function(html) {
+        this._addOutput(html, false, false);
+    },
+
     // == Set Output ==
     // On completion we finish a command by settings it's output
-    addOutput: function(output, complete) {
+    _addOutput: function(output, error, complete) {
         this.output += output;
+        this.error = error;
+        this.complete = complete;
+        this.hideOutput = false;
+
         if (complete) {
             this.end = new Date();
         } else {
             this.output += "<br/>";
         }
+
+        this.callbacks.forEach(function(callback) {
+            callback.call(null, output);
+        });
+    },
+
+    // == On Output ==
+    // Monitor output that goes to an instruction
+    onOutput: function(callback) {
+        // Catch-up on the output so far
+        callback.call(null, this.output);
+
+        this.callbacks.push(callback);
+
+        // TODO: return an element to allow us to unregister the listener
+        // TODO: maybe dojo.connect is a better way to do this?
+    },
+
+    // == Add Element ==
+    // Instead of doing output by appending strings, commands can pass in a
+    // DOM node that they update. It is assumed that commands doing this will
+    // provide their own progress indicators.
+    setElement: function(element) {
+        this.element = element;
+        this.end = new Date();
+        this.hideOutput = false;
+        this.error = false;
+        this.complete = true;
     },
 
     // == Split Command and Args
@@ -732,7 +841,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 });
 
 bespin.cmd.commandline.Instruction.fromString = function(str) {
-    
+
 };
 
 // ** {{{ bespin.cmd.commandline.KeyBindings }}} **
@@ -795,68 +904,75 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
             var key = bespin.util.keys.Key;
 
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
-                dojo.stopEvent(e);
-
                 dojo.byId('command').blur();
-
                 bespin.publish("cmdline:blur");
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
-                dojo.stopEvent(e);
-
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'p' && e.ctrlKey) || e.keyCode == key.UP_ARROW) {
-                dojo.stopEvent(e);
-
                 var prev = this.history.previous();
                 if (prev) {
                     cl.commandLine.value = prev.typed;
                 }
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyChar == 'u' && e.ctrlKey) {
-                dojo.stopEvent(e);
-
                 cl.commandLine.value = '';
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.ENTER) {
-                this.executeCommand(cl.commandLine.value);
+                var typed = cl.commandLine.value;
+                this.commandLine.value = '';
+                this.executeCommand(typed);
 
+                dojo.stopEvent(e);
                 return false;
             } else if (e.keyCode == key.TAB) {
-                dojo.stopEvent(e);
-
                 this.complete(cl.commandLine.value);
-                return false;
-            } else if (e.keyCode == key.ESCAPE) {
-                // ESCAPE onkeydown fails on Moz, so we need this. Why?
-                this.hideHint();
-                bespin.get("piemenu").hide();
-                dojo.stopEvent(e);
-                return false;
-            } else if (bespin.get("piemenu").keyRunsMe(e)) {
-                dojo.stopEvent(e);
 
-                this.hideHint();
+                dojo.stopEvent(e);
+                return false;
+            } else { // pie menu use cases here
                 var piemenu = bespin.get("piemenu");
-                piemenu.show(piemenu.slices.off);
+                if (piemenu) {
+                    if (e.keyCode == key.ESCAPE) {
+                        // ESCAPE onkeydown fails on Moz, so we need this. Why?
+                        this.hideHint();
+                        piemenu.hide();
 
-                return false;
+                        dojo.stopEvent(e);
+                        return false;
+                    } else if (piemenu.keyRunsMe(e)) {
+                        this.hideHint();
+                        piemenu.show(piemenu.slices.off);
+
+                        dojo.stopEvent(e);
+                        return false;
+                    }
+                }
             }
+
+            return true;
         });
 
         // ESCAPE onkeypress fails on Safari, so we need this. Why?
         dojo.connect(cl.commandLine, "onkeydown", cl, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-                bespin.get("piemenu").hide();
+
+                // if pie menu is available
+                var piemenu = bespin.get("piemenu");
+                if (piemenu) piemenu.hide();
             }
         });
     }
@@ -970,7 +1086,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
     _load: function() {
         // load last 50 instructions from history
-        bespin.get('files').loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
+        bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
             var typings = file.content.split(/\n/);
             var instructions = [];
 
@@ -993,9 +1109,10 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
             }
         });
         // save instructions back to server asynchronously
-        bespin.get('files').saveFile(bespin.userSettingsProject, {
+        bespin.get("files").saveFile(bespin.userSettingsProject, {
             name: "command.history",
             content: content,
+            autosave: true,
             timestamp: new Date().getTime()
         });
     }
@@ -1021,7 +1138,7 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
     _load: function() {
         if (window.globalStorage) {
             var data = globalStorage[location.hostname].history;
-            console.log("load", data);
+            //console.log("load", data);
             var instructions = dojo.fromJson(data);
             this.history.setInstructions(instructions);
         }
@@ -1029,7 +1146,7 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
 
     save: function(instructions) {
         var data = dojo.toJson(instructions);
-        console.log("save", data);
+        //console.log("save", data);
         if (window.globalStorage) {
             globalStorage[location.hostname].history = data;
         }
@@ -1120,7 +1237,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("project:set", function(event) {
             var project = event.project;
 
-            bespin.get('editSession').project = project;
+            bespin.get("editSession").project = project;
             if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
         });
     }

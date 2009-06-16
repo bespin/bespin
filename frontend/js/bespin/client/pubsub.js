@@ -35,14 +35,14 @@ dojo.declare("bespin.client.pubsub.Proxy", null, {
         this.server = bespin.get("server");
     },
 
-    listen: function () {
+    listen: function() {
         var self = this;
-        var onSuccess = function (pub) {
+        var onSuccess = function(pub) {
             bespin.publish(pub.topic, pub.event);
             
             self.listen(); // recurse immediately
         };
-        var url = "/event/listen/?"+"queue="+self.queue;
+        var url = "/event/listen/?queue=" + self.queue;
         this.server.request('GET', url, null, { 
             log: 'Message arrived', 
             onSuccess: onSuccess,
@@ -50,34 +50,34 @@ dojo.declare("bespin.client.pubsub.Proxy", null, {
         });
     },
     
-    forward: function (topic, event) {
+    forward: function(topic, event) {
         var self = this;
-        var url = "/event/forward/?"+"queue="+self.queue+"&topic="+encodeURIComponent(topic)+"&event="+encodeURIComponent(dojo.toJson(event));
+        var url = "/event/forward/?queue=" + self.queue + "&topic=" + encodeURIComponent(topic) + "&event=" + encodeURIComponent(dojo.toJson(event));
         this.server.request('GET', url, null, { 
-            log: 'Event '+topic+" forwarded."
+            log: 'Event ' + topic + " forwarded."
         });
     },
     
-    bind: function () {
+    bind: function() {
         var self = this;
         var url = "/event/bind/";
         this.server.request('GET', url, null, {
             evalJSON: true,
-            onSuccess: function (info) {
+            onSuccess: function(info) {
                 self.queue = info.queue; 
                 var topics = info.topics;
-                dojo.forEach(topics, function (topic) {
-                    bespin.subscribe(topic, function (event) {
-                        self.forward(topic, event)
-                    })
-                })
+                dojo.forEach(topics, function(topic) {
+                    bespin.subscribe(topic, function(event) {
+                        self.forward(topic, event);
+                    });
+                });
                 self.listen();
             }
         });
     }
 });
 
-bespin.subscribe("bind", function () {
+bespin.subscribe("bind", function() {
     var proxy = new bespin.client.pubsub.Proxy();
     proxy.bind();
-})
+});

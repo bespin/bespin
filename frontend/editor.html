@@ -30,7 +30,7 @@
     <link type="text/css" rel="stylesheet" href="css/editor.css">
     <link type="text/css" rel="stylesheet" href="css/shared.css">
 
-    <link type="text/css" rel="thstylesheet" href="css/dashboard_th.css">
+    <link type="text/css" rel="thstylesheet" href="css/editor_th.css">
 
     <!-- this script tag needs to be included as is -->
     <script type="text/javascript" src="js/th/th.all.js"></script>
@@ -38,7 +38,7 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: true, debugAtAllCosts: false };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
     <script type="text/javascript" src="js/dojo/dojo.js.uncompressed.js"></script>
 
@@ -51,7 +51,7 @@
     <div id="header">
         <div style="float: left;">
             <a href="index.html" title="Go Home" style="float: left;"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
-            <a href="javascript:bespin.util.navigate.dashboard()" style="float: left;" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a>
+            <!-- <a href="javascript:bespin.util.navigate.dashboard()" style="float: left;" title="Visit the Dashboard"><img id="toolbar_dashboard" src="images/icn_dashboard_off.png" alt="Dashboard" border="0"></a> -->
 
             <div id="status"><canvas id="projectLabel"></canvas></div>
             <div id="toolbar">
@@ -73,11 +73,11 @@
 
     <div id="editor"></div>
     <div id="preview" style="display: none"></div>
-    <div id="footer" style="display: none">
-        <table cellpadding="0">
+    <div id="footer" class="footer" style="display: none">
+        <table class="commandline" cellpadding="0">
             <tr>
-                <td id="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></td>
-                <td id="commandline"><input id="command" spellcheck="false"></td>
+                <td class="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></td>
+                <td class="input"><input id="command" spellcheck="false"></td>
                 <!-- <td id="error_bar">
                     <div style="float: left"><img src="images/icn_error.png" alt="Errors"></div>
                     <div id="error_bar_text" style="float: right">3</div>
@@ -95,18 +95,32 @@
     </div>
     <!-- debugbar HTML should move to a plugin -->
     <div id="debugbar">
-        <h1><div>Debugging</div></h1>
-        <div id="debugbar_status">Unknown</div>
-        <div id="debugbar_toolbar"><span id="debugbar_break">Break</span>
-            <span id="debugbar_continue">Continue</span>
+        <div><img src="images/debug/hdr_debugging.png" width="200" height="19"></div>
+        <div id="debugbar_toolbar">
+            <span id="debugbar_break" class="debugbar_button" style="display:none"><img src="images/debug/btn_pause.png" width="62" height="42"></span>
+            <span id="debugbar_continue" class="debugbar_button"><img src="images/debug/btn_play.png" width="62" height="42"></span>
+            <span id="debugbar_stepnext" class="debugbar_button"><img src="images/debug/btn_stepovr.png" width="26" height="27"></span>
+            <span id="debugbar_stepin" class="debugbar_button"><img src="images/debug/btn_stepin.png" width="25" height="27"></span>
+            <span id="debugbar_stepout" class="debugbar_button"><img src="images/debug/btn_stepout.png" width="26" height="27"></span>
         </div>
-        <h2><div>Stopped At</div></h2>
-        <div id="debugbar_position"></div>
-        <h2><div>Eval</div></h2>
-        <div id="debugbar_output"></div>
-        <div id="debugbar_commandline"><input id="debugbar_command" spellcheck="false"></div>
+        <div><img id="debugbar_status_running" src="images/debug/status_running.png" width="200" height="20" style="display:none"><img id="debugbar_status_stopped" src="images/debug/status_stopped.png" width="200" height="20"></div>
+        <div id="debugbar_position" class="debugbar_text"></div>
+        <div id="debugbar_eval">
+            <div><img src="images/debug/hdr_eval.png" width="200" height="20"></div>
+            <div id="debugbar_output" class="debugbar_text"></div>
+            <div class="footer">
+                <div><img src="images/debug/eval_splitter.png" width="200" height="11"></div>
+                <table class="commandline" cellpadding="0">
+                    <tr>
+                        <td class="prompt"><img id="promptimg" src="images/debug/icn_command.png" alt=">" height="15" width="15"></td>
+                        <td class="input"><input id="debugbar_command" spellcheck="false"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </div>
     <!-- debugbar HTML should move to a plugin -->
+    
     <div id="target_browsers">
         <table id="target_browsers_table">
             <tr>

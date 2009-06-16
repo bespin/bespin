@@ -90,6 +90,10 @@ dojo.declare("bespin.editor.Events", null, {
             var project  = event.project || editSession.project;
 
             if (editSession.checkSameFile(project, filename)) {
+                if (event.line) {
+                    // Jump to the desired line.
+                    bespin.get('commandLine').executeCommand('goto ' + event.line, true);
+                }
                 return; // short circuit
             }
             
@@ -100,6 +104,10 @@ dojo.declare("bespin.editor.Events", null, {
                     bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
                 } else {
                     bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+                    if (event.line) {
+                        // Jump to the desired line.
+                        bespin.get('commandline').executeCommand('goto ' + event.line, true);
+                    }
 
                     var settings = bespin.get("settings");
 
@@ -189,7 +197,7 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
-            
+
             bespin.publish("editor:savefile:before", { filename: filename });
 
             // saves the current state of the editor to a cookie
@@ -210,8 +218,8 @@ dojo.declare("bespin.editor.Events", null, {
 
             bespin.publish("editor:titlechange", { filename: filename });
 
-            bespin.publish("message:hint", { msg: 'Saved file: ' + file.name });
-            
+            bespin.get("commandLine").showHint('Saved file: ' + file.name);
+
             bespin.publish("editor:clean");
         });
 
@@ -245,12 +253,16 @@ dojo.declare("bespin.editor.Events", null, {
             var project = event.project || bespin.get('editSession').project; 
             var filename = event.file.name;
 
-            // reset the state of the editor based on saved cookie
-            var data = dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'));
-            if (data) {
-                bespin.get('editor').resetView(dojo.fromJson(data));
-            } else {
-                bespin.get('editor').basicView();
+            try {
+                // reset the state of the editor based on saved cookie
+                var data = dojo.cookie('viewData_' + project + '_' + filename.split('/').join('_'));
+                if (data) {
+                    bespin.get('editor').resetView(dojo.fromJson(data));
+                } else {
+                    bespin.get('editor').basicView();
+                }
+            } catch (e) {
+                console.log("Error setting in the view: ", e);
             }
 
             bespin.publish("editor:titlechange", { filename: filename });
@@ -288,10 +300,8 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("session:status", function(event) {
             var editSession = bespin.get('editSession');
             var file = editSession.path || 'a new scratch file';
-            
-            bespin.publish("message:output", {
-                msg: 'Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project
-            });
+
+            bespin.get("commandLine").addOutput('Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project);
         });
 
         // ** {{{ Event: cmdline:focus }}} **

@@ -68,7 +68,6 @@ dojo.require("bespin.editor.piemenu");
 //dojo.require("bespin.editor.filesearch");
 dojo.require("bespin.editor.formatter");
 dojo.require("bespin.editor.codecompletion");
-dojo.require("bespin.editor.piemenu");
 
 dojo.require("bespin.themes.default");
 
@@ -80,13 +79,17 @@ dojo.require("bespin.parser.parser");
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 
+dojo.require("bespin.test");
+dojo.require("bespin.testTest");
+
 // To register commands just using bespin.cmd.commands.add place them here
 dojo.require("bespin.wizard");
-//dojo.require("bespin.social");
-dojo.require("bespin.test");
-dojo.provide("bespin.test.runner");
+dojo.require("bespin.wizardTest");
 
-dojo.require("bespin.cmd.editorcommands");
+dojo.require("bespin.social");
+dojo.require("bespin.socialTest");
+
+dojo.require("bespin.cmd.editorcommands"); // now load the default editor commands
 
 
 dojo.require("bespin.mobwrite.core");

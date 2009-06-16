@@ -47,7 +47,7 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
     },
 
     getSyntaxStylesPerLine: function(lineText, lineNumber, language) {
-        if (this.language != language) {
+        if (!this.language || (this.language != language)) {
             this.engine = bespin.syntax.simple.Resolver.resolve(language);
             this.language = language;
         }
@@ -86,7 +86,6 @@ dojo.declare("bespin.syntax.simple.Model", bespin.syntax.Model, {
         return syntaxResult;
     }
 });
-
 
 // ** {{{ bespin.syntax.simple.Resolver }}} **
 //
@@ -135,7 +134,8 @@ bespin.syntax.simple.Resolver = new function() {
       //
       // Hunt down the engine for the given {{{type}}} (e.g. css, js, html) or return the {{{NoopSyntaxEngine}}}
       resolve: function(extension) {
-          if (!extension) return NoopSyntaxEngine;
+          // make sure there is a valid extension that actually has a highlighter
+          if (!extension || extension == "off" || !extension2type[extension]) return NoopSyntaxEngine;
 
           var type = extension2type[extension]; // convert the extension (e.g. js) to a type (JavaScript)
 

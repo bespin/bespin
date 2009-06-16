@@ -51,7 +51,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 onSuccess();
             },
             elseFailed: function() {
-                bespin.publish("message:error", { msg: 'The file ' + path + ' already exists my friend.'});
+                bespin.get("commandLine").addErrorOutput('The file ' + path + ' already exists my friend.');
             }
         });
     },

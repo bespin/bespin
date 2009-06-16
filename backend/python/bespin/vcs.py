@@ -34,6 +34,7 @@ import os
 import tempfile
 import random
 from traceback import format_exc
+import logging
 
 from path import path
 import simplejson
@@ -44,6 +45,8 @@ from Crypto.Cipher import AES
 from bespin import config, queue, database, filesystem
 from bespin.database import User, Message
 from bespin.filesystem import FSException, NotAuthorized, get_project
+
+log = logging.getLogger("bespin.vcs")
 
 # remote repository requires authentication for read and write
 AUTH_BOTH = "both"
@@ -118,10 +121,9 @@ def vcs_error(qi, e):
             # otherwise, it looks like a programming error and we
             # want more information
             tb = format_exc()
-        message = dict(eventName="vcs:error", output=tb)
+        message = dict(jobid=qi.id, output=tb, error=True)
         message['asyncDone'] = True
-        retval = Message(user_id=user.id, 
-                            message=simplejson.dumps(message))
+        retval = Message(user_id=user.id, message=simplejson.dumps(message))
         s.add(retval)
 
 def clone_run(qi):
@@ -131,10 +133,8 @@ def clone_run(qi):
     user = User.find_user(message['user'])
     message['user'] = user
     result = _clone_impl(**message)
-    result.update(dict(eventName="vcs:response",
-                        asyncDone=True))
-    retvalue = Message(user_id=user.id, 
-        message=simplejson.dumps(result))
+    result.update(dict(jobid=qi.id, asyncDone=True))
+    retvalue = Message(user_id=user.id, message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
 
@@ -167,11 +167,14 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
             keyfile = TempSSHKeyFile()
             keyfile.store(public_key, private_key)
             auth['key'] = keyfile.filename
-    
+
     try:
         context = main.SecureContext(working_dir, auth)
         command = main.convert(context, args, dialect)
+        log.debug("exec in: %s" % working_dir)
+        log.debug("$ %s" % str(command))
         output = main.run_command(command, context)
+        log.debug(output)
     finally:
         if keyfile:
             keyfile.delete()
@@ -194,11 +197,11 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
     user.amount_used += space_used
 
     metadata.close()
-    
+
     result = dict(output=str(output), command="clone",
                     project=command.dest)
     return result
-    
+
 def run_command(user, project, args, kcpass=None):
     """Run any VCS command through UVC."""
     user = user.username
@@ -207,7 +210,7 @@ def run_command(user, project, args, kcpass=None):
     return queue.enqueue("vcs", job_body, execute="bespin.vcs:run_command_run",
                         error_handler="bespin.vcs:vcs_error",
                         use_db=True)
-    
+
 def run_command_run(qi):
     """Runs the queued up run_command job."""
     message = qi.message
@@ -215,13 +218,10 @@ def run_command_run(qi):
     user = User.find_user(message['user'])
     message['user'] = user
     message['project'] = get_project(user, user, message['project'])
-    
+
     result = _run_command_impl(**message)
-    result.update(dict(eventName="vcs:response",
-                        asyncDone=True))
-                        
-    retvalue = Message(user_id=user.id, 
-        message=simplejson.dumps(result))
+    result.update(dict(jobid=qi.id, asyncDone=True))
+    retvalue = Message(user_id=user.id, message=simplejson.dumps(result))
     s.add(retvalue)
     config.c.stats.incr('vcs_DATE')
 
@@ -278,7 +278,12 @@ def _run_command_impl(user, project, args, kcpass):
                 
         try:
             command = command_class.from_args(context, args)
+
+            log.debug("exec in: %s" % working_dir)
+            log.debug("$ %s" % str(command))
             output = main.run_command(command, context)
+            log.debug(output)
+            log.debug(output)
         finally:
             if keyfile:
                 keyfile.delete()

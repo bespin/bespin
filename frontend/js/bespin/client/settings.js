@@ -467,11 +467,9 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
-            var split = event.file.name.split('.');
-            var type = split[split.length - 1];
-
-            if (type) {
-                bespin.publish("settings:language", { language: type });
+            var fileType = bespin.util.path.fileType(event.file.name);
+            if (fileType) {
+                bespin.publish("settings:language", { language: fileType });
             }
         });
 
@@ -493,9 +491,10 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
-                var split = window.location.hash.split('.');
-                var type = split[split.length - 1];
-                if (type) editor.language = type;
+                var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
+                if (fileType) {
+                    editor.language = fileType;
+                }
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
             } else if (languageSetting == 'off') {
@@ -545,10 +544,10 @@ dojo.declare("bespin.client.settings.Events", null, {
                 try {
                     var dr = dojo.require;
                     // the build system doesn't like dynamic names.
-                    dr("bespin.themes." + theme);
+                    dr.call(dojo, "bespin.themes." + theme);
                     if (checkSetAndExit()) return true;
                 } catch (e) {
-                    //console.log(e);
+                    console.log("Unable to load theme: " + theme, e);
                 }
 
                 // Not in bespin.themes, load from users directory
@@ -556,18 +555,14 @@ dojo.declare("bespin.client.settings.Events", null, {
                     try {
                         eval(file.content);
                     } catch (e) {
-                        //console.log(e)
+                        console.log("Error with theme loading: ", e);
                     }
 
                     if (!checkSetAndExit()) {
-                        bespin.publish("message:error", {
-                            msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                        });
+                        bespin.get("commandLine").addErrorOutput("Sorry old chap. No theme called '" + theme + "'. Fancy making it?");
                     }
                 }), function() {
-                    bespin.publish("message:error", {
-                        msg: "Sorry old chap. No theme called '" + theme + "'. Fancy making it?"
-                    });
+                    bespin.get("commandLine").addErrorOutput("Sorry old chap. No theme called '" + theme + "'. Fancy making it?");
                 });
             }
         });
@@ -648,7 +643,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         bespin.subscribe("settings:set:trimonsave", function(event) {
             if (settings.isOn(event.value)) {
                 _trimOnSave = bespin.subscribe("editor:savefile:before", function(event) {
-                    bespin.publish("command:execute", { name: "trim" });
+                    bespin.get("commandLine").executeCommand('trim', true);
                 });
             } else {
                 bespin.unsubscribe(_trimOnSave);
@@ -679,8 +674,8 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
-            if (!settings.isSettingOn("hidewelcomescreen")) {
-                bespin.publish("wizard:show", { type: "newuser", warnOnFail: false, showonce: true });
+            if (!settings.isSettingOn("hidewelcomescreen") && bespin.wizard) {
+                bespin.wizard.show("newuser", false);
             }
 
             // if this is a new file, deal with it and setup the state

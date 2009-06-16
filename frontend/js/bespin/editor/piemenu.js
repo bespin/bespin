@@ -23,6 +23,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 dojo.provide("bespin.editor.piemenu");
+
 dojo.require("dojo.fx.easing");
 dojo.require("bespin.editor.filepopup");
 
@@ -260,8 +261,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_lft",
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
+            url: "https://wiki.mozilla.org/Labs/Bespin",
             showContents: function(coords) {
-                this.piemenu.refNode.src = "https://wiki.mozilla.org/Labs/Bespin";
+                if (this.piemenu.refNode.src != this.piemenu.slices.reference.url) {
+                    this.piemenu.refNode.src = this.piemenu.slices.reference.url;
+                }
                 dojo.style(this.piemenu.refNode, {
                     left: coords.l + "px",
                     top: coords.t + "px",
@@ -314,7 +318,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         // If there is already a slice showing, just show that, and don't
         // bother with any animation
-        if (this.currentSlice) {
+        if (this.visible()) {
             this.unrenderCurrentSlice();
             this.currentSlice = slice;
             this.renderCurrentSlice();
@@ -365,19 +369,24 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.hideAnimation.play();
     },
 
+    // == Check to see if the pie is visible ==
+    visible: function() {
+        return this.currentSlice != null;
+    },
+
     // == Toggle whether the pie menu is visible ==
     toggle: function() {
-        if (this.currentSlice == null) {
-            this.show();
-        } else {
+        if (this.visible()) {
             this.hide();
+        } else {
+            this.show();
         }
     },
 
     // == Resize the pie menu ==
     // To be called from a window.onresize event
     resize: function() {
-        if (this.currentSlice == null) return;
+        if (!this.visible()) return;
 
         this.canvas.height = this.editor.canvas.height;
         this.canvas.width = this.editor.canvas.width;
