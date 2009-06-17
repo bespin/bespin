@@ -641,6 +641,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.typed = dojo.trim(typed);
         this.output = "";
         this.callbacks = [];
+        this.commandLine = commandLine;
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
