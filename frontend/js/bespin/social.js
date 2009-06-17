@@ -142,11 +142,10 @@ bespin.cmd.commands.add({
                 onSuccess: function(data) {
                     var groups = dojo.fromJson(data);
                     if (groups.length == 0) {
-                        instruction.addErrorOutput("You have no groups");
+                        instruction.addOutput("You have no groups");
                     }
                     else {
-                        var message = "You have the following groups: " + groups.join(", ");
-                        instruction.addErrorOutput(message);
+                        instruction.addOutput("You have the following groups: " + groups.join(", "));
                     }
                 },
                 onFailure: function(xhr) {
@@ -295,7 +294,7 @@ bespin.cmd.commands.add({
                             }
                         });
                         message += "</ul>";
-                        instruction.addErrorOutput(message);
+                        instruction.addOutput(message);
                     }
                 },
                 onFailure: function(xhr) {
