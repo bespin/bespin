@@ -961,8 +961,17 @@ bespin.cmd.commands.add({
     completeText: 'pass in the template name',
     templates: { 'in': "for (var key in object) {\n\n}" },
     execute: function(instruction, type) {
-        var editor = bespin.get("editor");
-        editor.model.insertChunk(editor.cursorPosition, this.templates[type]);
+        var value = this.templates[type];
+        if (value) {
+            var editor = bespin.get("editor");
+            editor.model.insertChunk(editor.cursorPosition, value);
+            instruction.complete();
+        } else {
+            var names = [];
+            for (var name in this.templates) { names.push(name); }
+            var complain = (!type || type == "") ? "" : "Unknown pattern '" + type + "'.<br/>";
+            instruction.addErrorOutput(complain + "Known patterns: " + names.join(", "));
+        }
     }
 });
 
