@@ -336,23 +336,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Add Output ==
     // Complete the currently executing command with successful output
     addOutput: function(html) {
-        this._addOutput(html, false, true);
+        if (this.executing) {
+            this.executing.addOutput(html);
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
     },
 
     // == Add Error Output ==
     // Complete the currently executing command with error output
     addErrorOutput: function(html) {
-        this._addOutput(html, true, true);
-    },
-
-    // == Generic Add Output ==
-    // Complete the currently executing command with successful output
-    _addOutput: function(html, error, completed) {
         if (this.executing) {
-            this.executing.addOutput(html, error, completed);
+            this.executing.addErrorOutput(html);
         } else {
             console.trace();
-            console.debug("orphan output:", html);
+            console.debug("orphan error output:", html);
         }
     },
 
@@ -598,7 +597,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             self.scrollConsole();
         });
 
-        instruction.exec(this);
+        instruction.exec();
 
         return instruction;
     },
@@ -658,12 +657,12 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
     // == Exec ==
     // Execute the command
-    exec: function(commandLine) {
+    exec: function() {
         try {
-            if (this.error) {
-                this.addErrorOutput(this.error);
+            if (this._parseError) {
+                this.addErrorOutput(this._parseError);
             } else {
-                commandLine.executing = this;
+                this.commandLine.executing = this;
                 this.command.execute(this, this.args, this.command);
             }
         }
@@ -674,9 +673,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             this.addErrorOutput(ex);
         }
         finally {
-            commandLine.executing = null;
-
-            console.log("finished command", this);
+            this.commandLine.executing = null;
 
             if (this._outstanding == 0) {
                 this.completed = true;
@@ -723,37 +720,32 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     // == Add Output ==
     // Complete the currently executing command with successful output
     addOutput: function(html) {
-        this._addOutput(html, false, true);
+        if (html && html != "") {
+            if (this.output != "") this.output += "<br/>";
+            this.output += html;
+        }
+
+        this.hideOutput = false;
+        this.end = new Date();
+
+        this._callbacks.forEach(function(callback) {
+            callback(html);
+        });
     },
 
     // == Add Error Output ==
     // Complete the currently executing command with error output
     addErrorOutput: function(html) {
-        this._addOutput(html, true, true);
+        this.error = true;
+        this.addOutput(html);
     },
 
     // == Add Usage Output ==
     // Complete the currently executing command with usage output
     addUsageOutput: function(command) {
+        this.error = true;
         var usage = command.usage || "no usage information found for " + command.name;
-        this._addOutput("Usage: " + command.name + " " + usage, true, true);
-    },
-
-    // == Generic Add Output ==
-    // On completion we finish a command by settings it's output
-    _addOutput: function(output, error) {
-        if (output != "") {
-            this.output += "<br/>";
-        }
-
-        this.output += output;
-        this.error = error;
-        this.hideOutput = false;
-        this.end = new Date();
-
-        this._callbacks.forEach(function(callback) {
-            callback(output);
-        });
+        this.addOutput("Usage: " + command.name + " " + usage);
     },
 
     // == On Output ==
@@ -802,9 +794,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             command = commandStore.commands[aliascmd];
         } else {
             if (commandname == "") {
-                this.error = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
+                this._parseError = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
             } else {
-                this.error = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
+                this._parseError = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
             }
 
             // Sometime I hate JavaScript ...
@@ -820,20 +812,20 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             };
 
             if (length <= 30) {
-                this.error += "Try one of: ";
+                this._parseError += "Try one of: ";
                 for (command in commandStore.commands) {
-                    this.error += commandStore.commands[command].name + ", ";
+                    this._parseError += commandStore.commands[command].name + ", ";
                 }
                 if (parent != null) {
-                    this.error += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
+                    this._parseError += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
                 } else {
-                    this.error += "<br/>Or use '" + linkup("help") + "'.";
+                    this._parseError += "<br/>Or use '" + linkup("help") + "'.";
                 }
             } else {
                 if (parent != null) {
-                    this.error += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
+                    this._parseError += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
                 } else {
-                    this.error += "Use '" + linkup("help") + "' to enumerate commands.";
+                    this._parseError += "Use '" + linkup("help") + "' to enumerate commands.";
                 }
             }
 
