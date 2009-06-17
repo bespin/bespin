@@ -161,6 +161,18 @@ img {
     z-index: 220;
 }
 
+#command_output input[type=password], #command_output input[type=text], #command_output textarea {
+	background: transparent;
+	border: 1px solid #ff9600;
+	color: #fff;
+	font-family: Calibri,Arial,sans-serif;
+	font-size: 100%;
+	-moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    padding: 3px;
+}
+
 #info {
     position: absolute;
     padding: 20px 40px 10px 30px;

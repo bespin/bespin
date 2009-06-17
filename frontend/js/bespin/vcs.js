@@ -282,14 +282,19 @@ bespin.vcs.commands.addCommand({
 /**
  * Retrieve an SSH public key for authentication use
  */
-bespin.vcs.commands.addCommand({
+bespin.vcs.getkey = {
     name: 'getkey',
-    preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
-    execute: function(instruction) {
+    takes: [ 'password' ],
+    completeText: 'Recommended: Don\'t pass in a password, put it in the following dialog',
+    preview: 'Get your SSH public key that Bespin can use for remote repository authentication. (May prompt for your keychain password)',
+    execute: function(instruction, kcpass) {
         var server = bespin.get('server');
-        server.getkey(null, {
-            onSuccess: function(response) {
-                instruction.addOutput(response);
+        server.getkey(kcpass, {
+            onSuccess: function(key) {
+                var msg = 'SSH public key that Bespin can use for remote repository authentication:<br/>' +
+                          '<textarea type="text" id="sshkey" style="width:400px; height:100px; overflow:auto;">' + key + '</textarea>';
+                instruction.addOutput(msg);
+                dojo.byId("sshkey").select();
             },
 
             /**
@@ -298,25 +303,18 @@ bespin.vcs.commands.addCommand({
              */
             on401: function() {
                 bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
-                    server.getkey(kcpass, {
-                        onSuccess: function(response) {
-                            instruction.addOutput(response);
-                        },
-                        on401: function(xhr) {
-                            instruction.addErrorOutput("Bad keychain password.");
-                        },
-                        onFailure: function(xhr) {
-                            instruction.addErrorOutput("getkey failed: " + xhr.responseText);
-                        }
-                    });
+                    bespin.vcs.getkey.execute(instruction, kcpass);
                 });
             },
+
             onFailure: function(response) {
                 instruction.addErrorOutput("getkey failed: " + response);
             }
         });
     }
-});
+};
+
+bespin.vcs.commands.addCommand(bespin.vcs.getkey);
 
 /**
  * Display sub-command help
