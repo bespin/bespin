@@ -114,6 +114,9 @@ options(
           "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsdefs.js?raw=1",
           "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsparse.js?raw=1"
         ]
+    ),
+    th=Bunch(
+        src_url="http://hg.mozilla.org/labs/th"
     )
 )
 
@@ -254,7 +257,19 @@ def try_upgrade():
     dburl = config.c.dburl
     dry("Test the database upgrade", main, ["test", repository, dburl])
 
-
+def replace_block(f, begin, end, new_content):
+    html_lines = f.lines()
+    start_marker = None
+    end_marker = None
+    for i in range(0, len(html_lines)):
+        if begin in html_lines[i]:
+            start_marker = i
+        elif end in html_lines[i]:
+            end_marker = i
+    del html_lines[start_marker:end_marker+1]
+    html_lines.insert(start_marker, new_content)
+    f.write_bytes("".join(html_lines))
+    
 
 def _install_compressed(html_file, jslayer):
     html_lines = html_file.lines()
@@ -268,20 +283,15 @@ def _install_compressed(html_file, jslayer):
                 break
         del html_lines[0:end_marker+1]
     
-    start_marker = None
-    end_marker = None
-    for i in range(0, len(html_lines)):
-        if "<!-- begin script tags -->" in html_lines[i]:
-            start_marker = i
-        elif "<!-- end script tags -->" in html_lines[i]:
-            end_marker = i
-    del html_lines[start_marker:end_marker+1]
-    html_lines.insert(start_marker, """
-            <script type="text/javascript" src="js/dojo/dojo.js"></script>
-            <script type="text/javascript" src="js/%s"></script>
-""" % jslayer)
     html_file.write_bytes("".join(html_lines))
+    
+    replace_block(html_file, "<!-- begin script tags -->", "<!-- end script tags -->",
+                """
+                        <script type="text/javascript" src="js/dojo/dojo.js"></script>
+                        <script type="text/javascript" src="js/%s"></script>
+""" % jslayer)
 
+    
 @task
 def copy_front_end():
     build_dir = options.build_dir
@@ -662,3 +672,4 @@ def seeddb():
     j.add_sharing(jproject, zuck, edit=False)
     j.add_sharing(jproject, tom, edit=False)
     j.add_sharing(jproject, ev, edit=False)
+
