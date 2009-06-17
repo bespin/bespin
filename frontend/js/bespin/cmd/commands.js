@@ -306,7 +306,7 @@ bespin.cmd.commands.add({
         if (projectname) {
             bespin.publish("project:set", { project: projectname });
         } else {
-            instruction.commandLine.executeCommand('status');
+            instruction.commandLine.executeCommand('status', false /*hidden*/);
         }
     }
 });

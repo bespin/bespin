@@ -122,11 +122,15 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         this.scene.bus.bind("itemselected", this.tree.lists[0], function(e) {
             this.currentProject = e.item.name;
-            bespin.publish("project:set", {
-                project: this.currentProject,
-                suppressPopup: true,
-                fromDashboardItemSelected: true
-            });
+
+            // Do not set the project when you select it in the browser, the project
+            // stays that of the file that is open
+            // 
+            // bespin.publish("project:set", {
+            //     project: this.currentProject,
+            //     suppressPopup: true,
+            //     fromDashboardItemSelected: true
+            // });
         }, this);
 
         // get logged in name; if not logged in, display an error of some kind
@@ -139,6 +143,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             //bespin.page.dashboard.restorePath(pathSelected);
             self.restorePath(pathSelected);
         });
+        
+        // handle updating a path that has changed due to an action such as newfile, rm, etc
+        // bespin.subscribe("path:changed", function(e) {
+        //     var path = this.tree.getSelectedPath();
+        //     this.refreshFiles(path, this.tree);
+        // });        
 
         // TODO: commenting this out as it is throwing errors at the moment
         // provide arrow navigation to dashboard
