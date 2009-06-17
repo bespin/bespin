@@ -182,6 +182,9 @@ def set_profile(profile):
 
         c.async_jobs = False
         c.fslevels = 0
+        
+        # in development, assume a Th directory above the bespin root
+        c.static_map['js/thsrc'] = c.static_dir / ".." / ".." / "th" / "src"
 
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
