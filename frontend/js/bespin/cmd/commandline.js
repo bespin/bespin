@@ -586,12 +586,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     // == Execute Command ==
-    executeCommand: function(value, hidden) {
-        if (!value || value == "") {
+    executeCommand: function(typed, hidden) {
+        if (!typed || typed == "") {
             return null;
         }
 
-        var instruction = new bespin.cmd.commandline.Instruction(this, value);
+        var instruction = new bespin.cmd.commandline.Instruction(this, typed);
 
         if (hidden !== true) {
             this.history.add(instruction);
@@ -640,8 +640,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     constructor: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
         this.output = "";
-        this.callbacks = [];
         this.commandLine = commandLine;
+
+        this._outstanding = 0;
+        this._callbacks = [];
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
@@ -679,14 +681,22 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         }
         finally {
             commandLine.executing = null;
+
+            console.log("finished command", this);
+
+            if (this._outstanding == 0) {
+                this.completed = true;
+                this._callbacks.forEach(function(callback) {
+                    callback();
+                });
+            }
         }
     },
 
     // == Link Function to Instruction ==
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
-        this.outstanding = this.outstanding || 0;
-        this.outstanding++;
+        this._outstanding++;
 
         var self = this;
         return function() {
@@ -697,7 +707,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
                 if (self._outstanding == 0) {
                     self.completed = true;
-                    self.onOutput();
+                    this._callbacks.forEach(function(callback) {
+                        callback();
+                    });
                 }
             }
         };
@@ -706,7 +718,12 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     // == To String ==
     // A string version of this Instruction suitable for serialization
     toString: function() {
-        return dojo.toJson({ typed:typed, output:output, start:start, end:end });
+        return dojo.toJson({
+            typed: this.typed,
+            output: this.output,
+            start: this.start ? this.start.getTime() : -1,
+            end: this.end ? this.end.getTime() : -1
+        });
     },
 
     // == Add Output ==
@@ -734,12 +751,6 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this._addOutput(html, false, false);
     },
 
-    // Complete an instruction without providing output
-    complete: function() {
-        this.completed = true;
-        this.end = new Date();
-    },
-
     // == Set Output ==
     // On completion we finish a command by settings it's output
     _addOutput: function(output, error, completed) {
@@ -748,13 +759,14 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.hideOutput = false;
 
         if (completed) {
-            this.complete();
+            this.completed = true;
+            this.end = new Date();
         } else {
             this.output += "<br/>";
         }
 
-        this.callbacks.forEach(function(callback) {
-            callback.call(null, output);
+        this._callbacks.forEach(function(callback) {
+            callback(output);
         });
     },
 
@@ -764,7 +776,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         // Catch-up on the output so far
         callback.call(null, this.output);
 
-        this.callbacks.push(callback);
+        this._callbacks.push(callback);
 
         // TODO: return an element to allow us to unregister the listener
         // TODO: maybe dojo.connect is a better way to do this?
@@ -780,6 +792,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.hideOutput = false;
         this.error = false;
         this.completed = true;
+
+        this._callbacks.forEach(function(callback) {
+            callback();
+        });
     },
 
     // == Split Command and Args
