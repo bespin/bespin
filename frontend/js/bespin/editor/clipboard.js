@@ -66,12 +66,16 @@ dojo.mixin(bespin.editor.clipboard, {
 dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
     install: function(editor) {
 
-        // * Configure the hidden copynpaster element
-        var copynpaster = dojo.create("input", {
-            type: 'text',
-            id: 'copynpaster',
-            style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
-        }, dojo.body());
+        // * Configure the hidden copynpaster element, if it doesn't already exist
+        var copynpaster = dojo.byId("copynpaster");
+        if (!copynpaster)
+        {
+             copynpaster = dojo.create("input", {
+                type: 'text',
+                id: 'copynpaster',
+                style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
+            }, dojo.body());   
+        }
 
         // * Defensively stop doing copy/cut/paste magic if you are in the command line
         var stopAction = function(e) {
