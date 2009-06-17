@@ -698,7 +698,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
                 if (self._outstanding == 0) {
                     self.completed = true;
-                    this._callbacks.forEach(function(callback) {
+                    self._callbacks.forEach(function(callback) {
                         callback();
                     });
                 }
@@ -1237,6 +1237,15 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             bespin.get("editSession").project = project;
             if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
         });
+
+        // ** {{{ Event: ui:escape }}} **
+        //
+        // When escaped, take out the hints and output
+        bespin.subscribe("ui:escape", function(event) {
+            commandline.hideHint();
+            commandline.hideOutput();
+        });
+
     }
 });
 
