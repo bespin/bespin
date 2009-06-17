@@ -286,9 +286,31 @@ bespin.vcs.commands.addCommand({
     name: 'getkey',
     preview: 'Get your SSH public key that Bespin can use for remote repository authentication. This will prompt for your keychain password.',
     execute: function(instruction) {
-        bespin.get('server').getkey(null, {
-            onSuccess: bespin.vcs._displaySSHKey,
-            on401: bespin.vcs._getSSHKeyAuthenticated(instruction),
+        var server = bespin.get('server');
+        server.getkey(null, {
+            onSuccess: function(response) {
+                instruction.addOutput(response);
+            },
+
+            /**
+             * Retrieve the user's SSH public key using their keychain password.
+             * This is required if they have not already set up a public key.
+             */
+            on401: function() {
+                bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
+                    server.getkey(kcpass, {
+                        onSuccess: function(response) {
+                            instruction.addOutput(response);
+                        },
+                        on401: function(xhr) {
+                            instruction.addErrorOutput("Bad keychain password.");
+                        },
+                        onFailure: function(xhr) {
+                            instruction.addErrorOutput("getkey failed: " + xhr.responseText);
+                        }
+                    });
+                });
+            },
             onFailure: function(response) {
                 instruction.addErrorOutput("getkey failed: " + response);
             }
@@ -498,35 +520,6 @@ bespin.vcs.hgCommands.addCommand({
                                 bespin.vcs._createStandardHandler(instruction));
     }
 });
-
-/**
- * Display the SSH public key in a dialog
- */
-bespin.vcs._displaySSHKey = function(response) {
-    bespin.util.webpieces.showContentOverlay(
-        '<h2>Your Bespin SSH public key</h2><input type="text" value="'
-        + response + '" id="sshkey" style="width: 95%">'
-    );
-    dojo.byId("sshkey").select();
-};
-
-/**
- * Retrieve the user's SSH public key using their keychain password.
- * This is required if they have not already set up a public key.
- */
-bespin.vcs._getSSHKeyAuthenticated = function(instruction) {
-    bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
-        bespin.get('server').getkey(kcpass, {
-            onSuccess: bespin.vcs._displaySSHKey,
-            on401: function(response) {
-                instruction.addErrorOutput("Bad keychain password.");
-            },
-            onFailure: function(response) {
-                instruction.addErrorOutput("getkey failed: " + response);
-            }
-        });
-    });
-};
 
 /**
  * Generic vcs remote command handler
