@@ -569,15 +569,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: dashboard}}} **
-bespin.cmd.commands.add({
-    name: 'dashboard',
-    preview: 'navigate to the file',
-    execute: function(instruction) {
-        bespin.util.navigate.dashboard();
-    }
-});
-
 // ** {{{Command: version}}} **
 bespin.cmd.commands.add({
     name: 'version',

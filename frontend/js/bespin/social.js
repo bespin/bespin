@@ -24,8 +24,6 @@
 
 dojo.provide("bespin.social");
 
-dojo.require("bespin.cmd.dashboardcommands");
-
 // * Utility {{{ displayFollowers }}} **
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
@@ -74,10 +72,6 @@ bespin.cmd.commands.add({
     }
 });
 
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('follow');
-}
-
 // == Extension to {{{ bespin.client.Server }}} ==
 dojo.extend(bespin.client.Server, {
     // * {{{ follows(opts) }}}
@@ -121,10 +115,6 @@ bespin.cmd.commands.add({
         }
     }
 });
-
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('unfollow');
-}
 
 dojo.extend(bespin.client.Server, {
     // ** {{{ follows(opts) }}}
@@ -233,10 +223,6 @@ bespin.cmd.commands.add({
         }
     }
 });
-
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('group');
-}
 
 dojo.extend(bespin.client.Server, {
     // * {{{ groupListAll() }}}
@@ -416,10 +402,6 @@ bespin.cmd.commands.add({
     }
 });
 
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('share');
-}
-
 dojo.extend(bespin.client.Server, {
     // * {{{ shareListAll() }}}
     // List all project shares
@@ -521,10 +503,6 @@ bespin.cmd.commands.add({
         instruction.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
-
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('viewme');
-}
 
 dojo.extend(bespin.client.Server, {
     // * {{{ viewmeListAll() }}}

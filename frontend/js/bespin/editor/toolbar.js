@@ -123,18 +123,6 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
         },
 
-        dashboard: function(toolbar, el) {
-            var dashboard = dojo.byId(el) || dojo.byId("toolbar_dashboard");
-            dojo.connect(dashboard, 'mouseover', function() {
-                dashboard.style.cursor = "pointer";
-                dashboard.src = "images/icn_dashboard_on.png";
-            });
-            dojo.connect(dashboard, 'mouseout', function() {
-                dashboard.style.cursor = "default";
-                dashboard.src = "images/icn_dashboard_off.png";
-            });
-        },
-
         target_browsers: function(toolbar, el) {
             var target = dojo.byId(el) || dojo.byId("toolbar_target_browsers");
             dojo.connect(target, 'click', function() {

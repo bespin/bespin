@@ -54,15 +54,6 @@ dojo.require("bespin.client.settings");
     // Simple methods to construct URLs within Bespin and go to them
 
     dojo.mixin(bespin.util.navigate, {
-        dashboard: function(newTab) {
-            var pathSelected = (new bespin.client.settings.URL()).get('fromDashboardPath');
-            if (pathSelected) {
-                go("dashboard.html#path="+pathSelected, newTab);    // this contains the pathSelected parameter!
-            } else {
-                go("dashboard.html", newTab);
-            }
-        },
-
         home: function(newTab) {
             go("index.html", newTab);
         },
