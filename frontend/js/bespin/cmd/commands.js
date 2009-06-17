@@ -610,7 +610,7 @@ bespin.cmd.commands.add({
     aliases: ['cls'],
     preview: 'clear the file',
     execute: function(instruction) {
-        bespin.get("editor").editor.model.clear();
+        bespin.get("editor").model.clear();
     }
 });
 
@@ -965,7 +965,6 @@ bespin.cmd.commands.add({
         if (value) {
             var editor = bespin.get("editor");
             editor.model.insertChunk(editor.cursorPosition, value);
-            instruction.complete();
         } else {
             var names = [];
             for (var name in this.templates) { names.push(name); }
