@@ -152,7 +152,7 @@ dojo.declare("bespin.client.Server", null, {
             }
 
             if (response.taskname) {
-                instruction.addIncompleteOutput("Server is running : " + response.taskname);
+                console.log("Server is running : " + response.taskname);
             }
 
             self._jobs[response.jobid] = {

@@ -345,13 +345,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this._addOutput(html, true, true);
     },
 
-    // == Add Incomplete Output ==
-    // Add output to the currently executing command with successful output
-    addIncompleteOutput: function(html) {
-        this._addOutput(html, false, false);
-    },
-
-    // == Add Incomplete Output ==
+    // == Generic Add Output ==
     // Complete the currently executing command with successful output
     _addOutput: function(html, error, completed) {
         if (this.executing) {
@@ -745,25 +739,17 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this._addOutput("Usage: " + command.name + " " + usage, true, true);
     },
 
-    // == Add Incomplete Output ==
-    // Add output to the currently executing command with successful output
-    addIncompleteOutput: function(html) {
-        this._addOutput(html, false, false);
-    },
-
-    // == Set Output ==
+    // == Generic Add Output ==
     // On completion we finish a command by settings it's output
-    _addOutput: function(output, error, completed) {
+    _addOutput: function(output, error) {
+        if (output != "") {
+            this.output += "<br/>";
+        }
+
         this.output += output;
         this.error = error;
         this.hideOutput = false;
-
-        if (completed) {
-            this.completed = true;
-            this.end = new Date();
-        } else {
-            this.output += "<br/>";
-        }
+        this.end = new Date();
 
         this._callbacks.forEach(function(callback) {
             callback(output);
@@ -779,7 +765,6 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this._callbacks.push(callback);
 
         // TODO: return an element to allow us to unregister the listener
-        // TODO: maybe dojo.connect is a better way to do this?
     },
 
     // == Add Element ==
@@ -791,7 +776,6 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.end = new Date();
         this.hideOutput = false;
         this.error = false;
-        this.completed = true;
 
         this._callbacks.forEach(function(callback) {
             callback();
@@ -1194,11 +1178,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
                 return;
             }
 
-            if (event.incomplete) {
-                commandline.addIncompleteOutput(event.msg);
-            } else {
-                commandline.addOutput(event.msg);
-            }
+            commandline.addOutput(event.msg);
         });
 
         // ** {{{ Event: message:output }}} **
