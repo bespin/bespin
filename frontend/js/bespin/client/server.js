@@ -47,6 +47,36 @@ dojo.declare("bespin.client.Server", null, {
 
     // == Helpers ==
 
+    // This is a nasty hack to call callback like onSuccess and if there is
+    // some syntax problem to do something other than swallow the error
+    _callCallback: function(options, functionName, args) {
+        if (dojo.isFunction(options[functionName])) {
+            try {
+                options[functionName].apply(null, args);
+                return true;
+            } catch (ex) {
+                console.group("Error calling options." + functionName + " from server.request");
+                console.error(ex);
+                console.trace();
+                console.groupEnd();
+
+                // If got an exception on success it's really a failure
+                if (functionName == "onSuccess" && dojo.isFunction(options['onFailure'])) {
+                    try {
+                        options.onFailure({ responseText: ex.toString() });
+                    } catch (ex) {
+                        console.group("Error calling options.onFailure from server.request");
+                        console.error(ex);
+                        console.trace();
+                        console.groupEnd();
+                    }
+                }
+            }
+        }
+
+        return false;
+    },
+
     // ** {{{ request(method, url, payload, callbackOptions) }}}
     //
     // The core way to access the backend system.
@@ -88,17 +118,15 @@ dojo.declare("bespin.client.Server", null, {
                             }
                         }
 
-                        if (dojo.isFunction(options['onSuccess'])) {
-                            options['onSuccess'](response, xhr);
-                        } else if (options['log']) {
-                            console.log(options['log']);
+                        var handled = server._callCallback(options, "onSuccess", [ response, xhr ]);
+
+                        if (!handled && options['log']) {
+                            console.log(options.log);
                         }
                     } else {
-                        var onStatus = 'on' + xhr.status;
-                        if (options[onStatus]) {
-                            options[onStatus](xhr);
-                        } else if (options['onFailure']) {
-                            options['onFailure'](xhr);
+                        var handled = server._callCallback(options, 'on' + xhr.status, [ xhr ]);
+                        if (!handled) {
+                            server._callCallback(options, 'onFailure', [ xhr ]);
                         }
                     }
                 }
