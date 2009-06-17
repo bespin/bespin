@@ -424,7 +424,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
                 // The execution time
                 if (instruction.start && instruction.end) {
-                    dojo.create("span", {
+                    dojo.create("div", {
+                        className: 'command_duration',
                         innerHTML: ((instruction.end.getTime() - instruction.start.getTime()) / 1000) + " sec "
                     }, hover);
                 }
