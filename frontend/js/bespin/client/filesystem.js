@@ -48,6 +48,12 @@ dojo.declare("bespin.client.FileSystem", null, {
             execute: function() {
                 bespin.get('editSession').startSession(project, path || "new.txt");
 
+                // alert the system that a path has changed
+                // bespin.publish("path:changed", {
+                //     project: project,
+                //     path: path
+                // });
+
                 onSuccess();
             },
             elseFailed: function() {

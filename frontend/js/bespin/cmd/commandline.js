@@ -698,7 +698,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
                 if (self._outstanding == 0) {
                     self.completed = true;
-                    this._callbacks.forEach(function(callback) {
+                    self._callbacks.forEach(function(callback) {
                         callback();
                     });
                 }
