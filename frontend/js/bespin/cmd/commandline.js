@@ -353,9 +353,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Add Incomplete Output ==
     // Complete the currently executing command with successful output
-    _addOutput: function(html, error, complete) {
+    _addOutput: function(html, error, completed) {
         if (this.executing) {
-            this.executing.addOutput(html, error, complete);
+            this.executing.addOutput(html, error, completed);
         } else {
             console.trace();
             console.debug("orphan output:", html);
@@ -490,7 +490,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                         dojo.place(instruction.element, td);
                     } else {
                         var contents = instruction.output || "";
-                        if (!instruction.complete) {
+                        if (!instruction.completed) {
                             contents += "<img src='/images/throbber.gif'/> Working ...";
                         }
                         td.innerHTML = contents;
@@ -647,7 +647,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         // history from disk, but in that case we don't need to parse it
         if (commandLine != null) {
             this.start = new Date();
-            this.complete = false;
+            this.completed = false;
 
             var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
@@ -655,7 +655,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 this.args = ca[1];
             }
         } else {
-            this.complete = true;
+            this.completed = true;
             this.historical = true;
         }
     },
@@ -672,6 +672,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             }
         }
         catch (ex) {
+            if (ex instanceof TypeError) {
+                console.error(ex);
+            }
             this.addErrorOutput(ex);
         }
         finally {
@@ -693,7 +696,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 self._outstanding--;
 
                 if (self._outstanding == 0) {
-                    self.complete = true;
+                    self.completed = true;
                     self.onOutput();
                 }
             }
@@ -731,16 +734,21 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this._addOutput(html, false, false);
     },
 
+    // Complete an instruction without providing output
+    complete: function() {
+        this.completed = true;
+        this.end = new Date();
+    },
+
     // == Set Output ==
     // On completion we finish a command by settings it's output
-    _addOutput: function(output, error, complete) {
+    _addOutput: function(output, error, completed) {
         this.output += output;
         this.error = error;
-        this.complete = complete;
         this.hideOutput = false;
 
-        if (complete) {
-            this.end = new Date();
+        if (completed) {
+            this.complete();
         } else {
             this.output += "<br/>";
         }
@@ -771,7 +779,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.end = new Date();
         this.hideOutput = false;
         this.error = false;
-        this.complete = true;
+        this.completed = true;
     },
 
     // == Split Command and Args
