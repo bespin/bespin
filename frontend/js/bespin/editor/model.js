@@ -192,9 +192,9 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         var row = this.getRowArray(rowIndex);
         var nextrow = this.rows[rowIndex + 1];
 
-        //first, remove any autoindent
+        // first, remove any auto-indent
         if (typeof autounindentSize != "undefined") {
-            nextrow.splice(0, autounindentSize)
+            nextrow.splice(0, autounindentSize);
         }
 
         //now, remove the row
@@ -300,7 +300,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
     // returns an array with the col positions of the substrings str in the given row
     getStringIndicesInRow: function(row, str) {
-        str = str.toLowerCase()
+        str = str.toLowerCase();
         var row = this.getRowArray(row).join('').toLowerCase();
 
         if (row.indexOf(str) == -1) return false;
@@ -484,5 +484,5 @@ dojo.declare("bespin.editor.DocumentModel", null, {
         this.cacheRowMetadata[row] = meta;
 
         return meta;
-    },
+    }
 });
