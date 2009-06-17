@@ -46,9 +46,9 @@
 
   <div id="not_logged_in" style="display: none;">
       <form onsubmit="bespin.user.login(); return false;">
-          <input id="loginbutton" type="image" src="images/splash_btn_login.gif" />
+          <input id="loginbutton" type="image" src="images/splash_btn_login.gif" tabindex="3">
           <div id="login-holder"><span id="login_label"><a href="#" onclick="bespin.user.register.showForm();">Sign up</a> or log in:</span>
-              <label for="username">Username: </label><input id="username" type="text" /> <label id="psw-label" for="password">Password: </label><input id="password" type="password" maxlength="20"/> <div id="status" style="display: none;"></div>
+              <label for="username">Username: </label><input id="username" type="text" tabindex="1"> <label id="psw-label" for="password">Password: </label><input id="password" type="password" maxlength="20" tabindex="2"> <div id="status" style="display: none;"></div>
           </div>
       </form>
   </div>

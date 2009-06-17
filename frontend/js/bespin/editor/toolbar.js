@@ -30,8 +30,8 @@ dojo.provide("bespin.editor.toolbar");
 // Such examples are collaboration views, file browser, undo/redo, cut/copy/paste and more.
 
 dojo.declare("bespin.editor.Toolbar", null, {
-    DEFAULT_TOOLBAR: ["collaboration", "dashboard", "target_browsers", "save",
-                      "close", "undo", "redo", "preview", "fontsize"],
+    DEFAULT_TOOLBAR: ["collaboration", "filepopup", "commandline", "target_browsers",
+                      "save", "close", "undo", "redo", "preview", "fontsize"],
     showCollab: false,
     showFiles: false,
     showTarget: false,
@@ -87,15 +87,39 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
         },
 
-        dashboard: function(toolbar, el) {
-            var dashboard = dojo.byId(el) || dojo.byId("toolbar_dashboard");
-            dojo.connect(dashboard, 'mouseover', function() {
-                dashboard.style.cursor = "pointer";
-                dashboard.src = "images/icn_dashboard_on.png";
+        filepopup: function(toolbar, el) {
+            var filepopup = dojo.byId(el) || dojo.byId("toolbar_popup");
+
+            dojo.connect(filepopup, 'click', function() {
+                toolbar.editor.ui.actions.focusFileBrowser();
             });
-            dojo.connect(dashboard, 'mouseout', function() {
-                dashboard.style.cursor = "default";
-                dashboard.src = "images/icn_dashboard_off.png";
+
+            dojo.connect(filepopup, 'mouseover', function() {
+                filepopup.style.cursor = "pointer";
+                filepopup.src = "images/icn_filepopup_on.png";
+            });
+
+            dojo.connect(filepopup, 'mouseout', function() {
+                filepopup.style.cursor = "default";
+                filepopup.src = "images/icn_filepopup.png";
+            });
+        },
+
+        commandline: function(toolbar, el) {
+            var commandline = dojo.byId(el) || dojo.byId("toolbar_commandline");
+
+            dojo.connect(commandline, 'click', function() {
+                toolbar.editor.ui.actions.focusCommandline();
+            });
+
+            dojo.connect(commandline, 'mouseover', function() {
+                commandline.style.cursor = "pointer";
+                commandline.src = "images/icn_command_on.png";
+            });
+
+            dojo.connect(commandline, 'mouseout', function() {
+                commandline.style.cursor = "default";
+                commandline.src = "images/icn_command.png";
             });
         },
 

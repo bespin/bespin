@@ -24,17 +24,27 @@
 
 dojo.provide("bespin.social");
 
-dojo.require("bespin.cmd.dashboardcommands");
+// = Utilities =
 
-// * Utility {{{ displayFollowers }}} **
+// == Utility {{{ displayFollowers }}} ==
 // Take an string array of follower names, and publish a "Following: ..."
 // message as a command line response.
 bespin.social.displayFollowers = function(instruction, followers) {
-    if (!followers || followers.length == 0) {
-        instruction.addOutput("You are not following anyone");
+    bespin.social.displayArray(instruction,
+            "You are not following anyone",
+            "You are following these users:",
+            followers);
+};
+
+// == Utility {{{ displayArray }}} ==
+// Take an string array of strings, and publish a ul list to the instruction
+bespin.social.displayArray = function(instruction, titleNone, titleSome, array) {
+    if (!array || array.length == 0) {
+        instruction.addOutput(titleNone);
         return;
     }
-    var message = "Following: " + followers.join(", ");
+    var message = titleSome;
+    message += "<ul><li>" + array.join("</li><li>") + "</li></ul>";
     instruction.addOutput(message);
 };
 
@@ -73,10 +83,6 @@ bespin.cmd.commands.add({
         }
     }
 });
-
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('follow');
-}
 
 // == Extension to {{{ bespin.client.Server }}} ==
 dojo.extend(bespin.client.Server, {
@@ -122,10 +128,6 @@ bespin.cmd.commands.add({
     }
 });
 
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('unfollow');
-}
-
 dojo.extend(bespin.client.Server, {
     // ** {{{ follows(opts) }}}
     // Get a list of the users the current user is following
@@ -149,15 +151,11 @@ bespin.cmd.commands.add({
         if (args.length == 0) {
             // List all groups
             bespin.get('server').groupListAll({
-                onSuccess: function(data) {
-                    var groups = dojo.fromJson(data);
-                    if (groups.length == 0) {
-                        instruction.addErrorOutput("You have no groups");
-                    }
-                    else {
-                        var message = "You have the following groups: " + groups.join(", ");
-                        instruction.addErrorOutput(message);
-                    }
+                onSuccess: function(groups) {
+                    bespin.social.displayArray(instruction,
+                            "You have no groups",
+                            "You have the following groups:",
+                            dojo.fromJson(groups));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve groups: " + xhr.responseText);
@@ -168,16 +166,11 @@ bespin.cmd.commands.add({
             // List members in a group
             var group = args[0];
             bespin.get('server').groupList(group, {
-                onSuccess: function(data) {
-                    var members = dojo.fromJson(data);
-                    if (members.length == 0) {
-                        console.warn("Group " + group + " has no members - it should have been auto-deleted!");
-                        instruction.addOutput("" + group + " has no members.");
-                    }
-                    else {
-                        var message = "Members of " + group + ": " + members.join(", ");
-                        instruction.addOutput(message);
-                    }
+                onSuccess: function(members) {
+                    bespin.social.displayArray(instruction,
+                            group + " has no members.",
+                            "Members of " + group + ":",
+                            dojo.fromJson(members));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
@@ -234,10 +227,6 @@ bespin.cmd.commands.add({
     }
 });
 
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('group');
-}
-
 dojo.extend(bespin.client.Server, {
     // * {{{ groupListAll() }}}
     // Get a list of the users the current user is following
@@ -273,7 +262,7 @@ dojo.extend(bespin.client.Server, {
 // =============================================================================
 // = Share =
 
-// == Command {{{ share}}} ==
+// == Command {{{ share }}} ==
 bespin.cmd.commands.add({
     name: 'share',
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
@@ -287,8 +276,6 @@ bespin.cmd.commands.add({
             // i.e. 'share'
             bespin.get('server').shareListAll({
                 onSuccess: function(data) {
-                    instruction.addOutput("Project sharing: " + data);
-
                     var shares = dojo.fromJson(data);
                     if (shares.length == 0) {
                         instruction.addOutput("You are not sharing any projects");
@@ -309,7 +296,7 @@ bespin.cmd.commands.add({
                             }
                         });
                         message += "</ul>";
-                        instruction.addErrorOutput(message);
+                        instruction.addOutput(message);
                     }
                 },
                 onFailure: function(xhr) {
@@ -416,10 +403,6 @@ bespin.cmd.commands.add({
     }
 });
 
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('share');
-}
-
 dojo.extend(bespin.client.Server, {
     // * {{{ shareListAll() }}}
     // List all project shares
@@ -521,10 +504,6 @@ bespin.cmd.commands.add({
         instruction.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
-
-if (bespin.cmd.dashboardcommands) {
-    bespin.cmd.dashboardcommands.Commands.push('viewme');
-}
 
 dojo.extend(bespin.client.Server, {
     // * {{{ viewmeListAll() }}}

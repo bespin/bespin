@@ -124,7 +124,7 @@ bespin.cmd.commands.add({
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.get("commandLine").commandStore, instruction, extra);
+        bespin.cmd.displayHelp(instruction.commandLine.commandStore, instruction, extra);
     }
 });
 
@@ -306,7 +306,7 @@ bespin.cmd.commands.add({
         if (projectname) {
             bespin.publish("project:set", { project: projectname });
         } else {
-            bespin.get("commandLine").executeCommand('status');
+            instruction.commandLine.executeCommand('status');
         }
     }
 });
@@ -569,15 +569,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: dashboard}}} **
-bespin.cmd.commands.add({
-    name: 'dashboard',
-    preview: 'navigate to the file',
-    execute: function(instruction) {
-        bespin.util.navigate.dashboard();
-    }
-});
-
 // ** {{{Command: version}}} **
 bespin.cmd.commands.add({
     name: 'version',
@@ -588,7 +579,7 @@ bespin.cmd.commands.add({
         var bespinVersion = 'Your Bespin is at version ' + bespin.versionNumber + ', Code name: "' + bespin.versionCodename + '"';
         var version;
         if (command) {
-            var theCommand = bespin.get("commandLine").commandStore.commands[command];
+            var theCommand = instruction.commandLine.commandStore.commands[command];
             if (!theCommand) {
                 version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
             } else {
@@ -610,7 +601,7 @@ bespin.cmd.commands.add({
     aliases: ['cls'],
     preview: 'clear the file',
     execute: function(instruction) {
-        bespin.get("editor").editor.model.clear();
+        bespin.get("editor").model.clear();
     }
 });
 
@@ -690,7 +681,7 @@ bespin.cmd.commands.add({
     completeText: 'pass in your username and password',
     execute: function(instruction, args) {
         if (!args) { // short circuit if no username
-            bespin.get("commandLine").executeCommand("status");
+            instruction.commandLine.executeCommand("status");
             return;
         }
         bespin.get('editSession').username = args.user; // TODO: normalize syncing
@@ -959,9 +950,18 @@ bespin.cmd.commands.add({
     takes: ['type'],
     preview: 'insert templates',
     completeText: 'pass in the template name',
-    templates: { 'in': "for (var key in object) {\n\n}"},
+    templates: { 'in': "for (var key in object) {\n\n}" },
     execute: function(instruction, type) {
-        instruction.editor.model.insertChunk(cmdline.editor.cursorPosition, this.templates[type]);
+        var value = this.templates[type];
+        if (value) {
+            var editor = bespin.get("editor");
+            editor.model.insertChunk(editor.cursorPosition, value);
+        } else {
+            var names = [];
+            for (var name in this.templates) { names.push(name); }
+            var complain = (!type || type == "") ? "" : "Unknown pattern '" + type + "'.<br/>";
+            instruction.addErrorOutput(complain + "Known patterns: " + names.join(", "));
+        }
     }
 });
 
@@ -972,7 +972,7 @@ bespin.cmd.commands.add({
     preview: 'define and show aliases for commands',
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(instruction, args) {
-        var aliases = bespin.get("commandLine").commandStore.aliases;
+        var aliases = instruction.commandLine.commandStore.aliases;
 
         if (!args.alias) {
             // * show all
@@ -997,9 +997,9 @@ bespin.cmd.commands.add({
                 var value = args.command;
                 var aliascmd = value.split(' ')[0];
 
-                if (bespin.get("commandLine").commandStore.commands[key]) {
+                if (instruction.commandLine.commandStore.commands[key]) {
                     instruction.addErrorOutput("Sorry, there is already a command with the name: " + key);
-                } else if (bespin.get("commandLine").commandStore.commands[aliascmd]) {
+                } else if (instruction.commandLine.commandStore.commands[aliascmd]) {
                     aliases[key] = value;
                     instruction.addOutput("Saving alias: " + key + " &#x2192; " + value);
                 } else if (aliases[aliascmd]) {
@@ -1019,7 +1019,7 @@ bespin.cmd.commands.add({
     name: 'history',
     preview: 'Show history of the commands',
     execute: function(instruction) {
-        var instructions = bespin.get("commandLine").history.getInstructions();
+        var instructions = instruction.commandLine.history.getInstructions();
         var output = [];
         output.push("<table>");
         var count = 1;
@@ -1042,19 +1042,28 @@ bespin.cmd.commands.add({
     takes: ['type'],
     preview: 'use patterns to bring in code',
     completeText: '"sound" will add sound support',
-    libnames: {
-        'jquery': 'jquery.min.js'
-    },
-    execute: function(instruction, type) {
-        if (type == 'sound') {
+    uses: {
+        sound: function() {
             bespin.get("editor").model.insertChunk({ row: 3, col: 0 },
                 '  <script type="text/javascript" src="soundmanager2.js"></script>\n');
             bespin.get("editor").model.insertChunk({ row: 4, col: 0 },
                 "  <script>\n  var sound; \n  soundManager.onload = function() {\n    sound =  soundManager.createSound('mySound','/path/to/mysoundfile.mp3');\n  }\n  </script>\n");
-        } else if (type == 'js') {
+        },
+        jquery: function() {
             var jslib = 'http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js';
             var script = '<script type="text/javascript" src="' + jslib + '"></script>\n';
             bespin.get("editor").model.insertChunk({ row: 3, col: 0 }, script);
+        }
+    },
+    execute: function(instruction, type) {
+        if (dojo.isFunction(this.uses[type])) {
+            this.uses[type]();
+            instruction.addOutput("Added code for " + type + ".<br>Please check the results carefully.");
+        } else {
+            var names = [];
+            for (var name in this.uses) { names.push(name); }
+            var complain = (!type || type == "") ? "" : "Unknown pattern '" + type + "'.<br/>";
+            instruction.addErrorOutput(complain + "Known patterns: " + names.join(", "));
         }
     }
 });

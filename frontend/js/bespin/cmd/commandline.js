@@ -336,29 +336,22 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Add Output ==
     // Complete the currently executing command with successful output
     addOutput: function(html) {
-        this._addOutput(html, false, true);
+        if (this.executing) {
+            this.executing.addOutput(html);
+        } else {
+            console.trace();
+            console.debug("orphan output:", html);
+        }
     },
 
     // == Add Error Output ==
     // Complete the currently executing command with error output
     addErrorOutput: function(html) {
-        this._addOutput(html, true, true);
-    },
-
-    // == Add Incomplete Output ==
-    // Add output to the currently executing command with successful output
-    addIncompleteOutput: function(html) {
-        this._addOutput(html, false, false);
-    },
-
-    // == Add Incomplete Output ==
-    // Complete the currently executing command with successful output
-    _addOutput: function(html, error, complete) {
         if (this.executing) {
-            this.executing.addOutput(html, error, complete);
+            this.executing.addErrorOutput(html);
         } else {
             console.trace();
-            console.debug("orphan output:", html);
+            console.debug("orphan error output:", html);
         }
     },
 
@@ -490,7 +483,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                         dojo.place(instruction.element, td);
                     } else {
                         var contents = instruction.output || "";
-                        if (!instruction.complete) {
+                        if (!instruction.completed) {
                             contents += "<img src='/images/throbber.gif'/> Working ...";
                         }
                         td.innerHTML = contents;
@@ -586,12 +579,12 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     // == Execute Command ==
-    executeCommand: function(value, hidden) {
-        if (!value || value == "") {
+    executeCommand: function(typed, hidden) {
+        if (!typed || typed == "") {
             return null;
         }
 
-        var instruction = new bespin.cmd.commandline.Instruction(this, value);
+        var instruction = new bespin.cmd.commandline.Instruction(this, typed);
 
         if (hidden !== true) {
             this.history.add(instruction);
@@ -604,7 +597,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             self.scrollConsole();
         });
 
-        instruction.exec(this);
+        instruction.exec();
 
         return instruction;
     },
@@ -640,13 +633,16 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     constructor: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
         this.output = "";
-        this.callbacks = [];
+        this.commandLine = commandLine;
+
+        this._outstanding = 0;
+        this._callbacks = [];
 
         // It is valid to not know the commandLine when we are filling the
         // history from disk, but in that case we don't need to parse it
         if (commandLine != null) {
             this.start = new Date();
-            this.complete = false;
+            this.completed = false;
 
             var ca = this._splitCommandAndArgs(commandLine.commandStore, typed);
             if (ca) {
@@ -654,35 +650,44 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 this.args = ca[1];
             }
         } else {
-            this.complete = true;
+            this.completed = true;
             this.historical = true;
         }
     },
 
     // == Exec ==
     // Execute the command
-    exec: function(commandLine) {
+    exec: function() {
         try {
-            if (this.error) {
-                this.addErrorOutput(this.error);
+            if (this._parseError) {
+                this.addErrorOutput(this._parseError);
             } else {
-                commandLine.executing = this;
+                this.commandLine.executing = this;
                 this.command.execute(this, this.args, this.command);
             }
         }
         catch (ex) {
+            if (ex instanceof TypeError) {
+                console.error(ex);
+            }
             this.addErrorOutput(ex);
         }
         finally {
-            commandLine.executing = null;
+            this.commandLine.executing = null;
+
+            if (this._outstanding == 0) {
+                this.completed = true;
+                this._callbacks.forEach(function(callback) {
+                    callback();
+                });
+            }
         }
     },
 
     // == Link Function to Instruction ==
     // Make a function be part of the thread of execution of an instruction
     link: function(action, context) {
-        this.outstanding = this.outstanding || 0;
-        this.outstanding++;
+        this._outstanding++;
 
         var self = this;
         return function() {
@@ -692,8 +697,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
                 self._outstanding--;
 
                 if (self._outstanding == 0) {
-                    self.complete = true;
-                    self.onOutput();
+                    self.completed = true;
+                    this._callbacks.forEach(function(callback) {
+                        callback();
+                    });
                 }
             }
         };
@@ -702,51 +709,43 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
     // == To String ==
     // A string version of this Instruction suitable for serialization
     toString: function() {
-        return dojo.toJson({ typed:typed, output:output, start:start, end:end });
+        return dojo.toJson({
+            typed: this.typed,
+            output: this.output,
+            start: this.start ? this.start.getTime() : -1,
+            end: this.end ? this.end.getTime() : -1
+        });
     },
 
     // == Add Output ==
     // Complete the currently executing command with successful output
     addOutput: function(html) {
-        this._addOutput(html, false, true);
+        if (html && html != "") {
+            if (this.output != "") this.output += "<br/>";
+            this.output += html;
+        }
+
+        this.hideOutput = false;
+        this.end = new Date();
+
+        this._callbacks.forEach(function(callback) {
+            callback(html);
+        });
     },
 
     // == Add Error Output ==
     // Complete the currently executing command with error output
     addErrorOutput: function(html) {
-        this._addOutput(html, true, true);
+        this.error = true;
+        this.addOutput(html);
     },
 
     // == Add Usage Output ==
     // Complete the currently executing command with usage output
     addUsageOutput: function(command) {
+        this.error = true;
         var usage = command.usage || "no usage information found for " + command.name;
-        this._addOutput("Usage: " + command.name + " " + usage, true, true);
-    },
-
-    // == Add Incomplete Output ==
-    // Add output to the currently executing command with successful output
-    addIncompleteOutput: function(html) {
-        this._addOutput(html, false, false);
-    },
-
-    // == Set Output ==
-    // On completion we finish a command by settings it's output
-    _addOutput: function(output, error, complete) {
-        this.output += output;
-        this.error = error;
-        this.complete = complete;
-        this.hideOutput = false;
-
-        if (complete) {
-            this.end = new Date();
-        } else {
-            this.output += "<br/>";
-        }
-
-        this.callbacks.forEach(function(callback) {
-            callback.call(null, output);
-        });
+        this.addOutput("Usage: " + command.name + " " + usage);
     },
 
     // == On Output ==
@@ -755,10 +754,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         // Catch-up on the output so far
         callback.call(null, this.output);
 
-        this.callbacks.push(callback);
+        this._callbacks.push(callback);
 
         // TODO: return an element to allow us to unregister the listener
-        // TODO: maybe dojo.connect is a better way to do this?
     },
 
     // == Add Element ==
@@ -770,7 +768,10 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         this.end = new Date();
         this.hideOutput = false;
         this.error = false;
-        this.complete = true;
+
+        this._callbacks.forEach(function(callback) {
+            callback();
+        });
     },
 
     // == Split Command and Args
@@ -793,9 +794,9 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             command = commandStore.commands[aliascmd];
         } else {
             if (commandname == "") {
-                this.error = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
+                this._parseError = "Missing " + (parent == null ? "command" : "subcommand") + ".<br/>";
             } else {
-                this.error = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
+                this._parseError = "Sorry, no " + (parent == null ? "command" : "subcommand") + " '" + commandname + "'.<br/>";
             }
 
             // Sometime I hate JavaScript ...
@@ -811,20 +812,20 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             };
 
             if (length <= 30) {
-                this.error += "Try one of: ";
+                this._parseError += "Try one of: ";
                 for (command in commandStore.commands) {
-                    this.error += commandStore.commands[command].name + ", ";
+                    this._parseError += commandStore.commands[command].name + ", ";
                 }
                 if (parent != null) {
-                    this.error += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
+                    this._parseError += "<br/>Or use '" + linkup(parent.name + " help") + "'.";
                 } else {
-                    this.error += "<br/>Or use '" + linkup("help") + "'.";
+                    this._parseError += "<br/>Or use '" + linkup("help") + "'.";
                 }
             } else {
                 if (parent != null) {
-                    this.error += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
+                    this._parseError += "Use '" + linkup(parent.name + " help") + "' to enumerate commands.";
                 } else {
-                    this.error += "Use '" + linkup("help") + "' to enumerate commands.";
+                    this._parseError += "Use '" + linkup("help") + "' to enumerate commands.";
                 }
             }
 
@@ -1169,11 +1170,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
                 return;
             }
 
-            if (event.incomplete) {
-                commandline.addIncompleteOutput(event.msg);
-            } else {
-                commandline.addOutput(event.msg);
-            }
+            commandline.addOutput(event.msg);
         });
 
         // ** {{{ Event: message:output }}} **

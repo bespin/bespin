@@ -79,17 +79,29 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.scene.render();
 
         this.scene.bus.bind("dblclick", this.tree, function(e) {
-            var newTab = e.shiftKey;
             var path = this.tree.getSelectedPath();
             if (!path) {
                 console.error("Got tree.getSelectedPath == null, bailing out");
                 return;
             }
-            if (path.length == 0 || path[path.length - 1].contents) {
-                return; // don't allow directories either
+
+            if (path.length == 0) return;   // bad state, get out
+
+            if (path[path.length - 1].contents) {
+                // if we're in a directory, refresh the files in the directory
+                this.refreshFiles(path, this.tree);
+                return;
             }
+
             var file = this.getFilePath(path.slice(1, path.length));
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
+
+            var settings = bespin.get("settings");
+            if (settings && settings.isSettingOn('keepfilepopuponopen')) {
+                // keep the file popup up!
+            } else {
+                bespin.publish("ui:escape");
+            }
         }, this);
 
         this.scene.bus.bind("itemselected", this.tree, function(e) {
@@ -228,6 +240,22 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
         }
         return filepath;
+    },
+
+    refreshFiles: function(path, tree) {
+        var filepath = this.getFilePath(path);
+
+        var self = this;
+        bespin.get("server").list(filepath, null, function(files) {
+            var contents = path[path.length - 1].contents;
+            contents.length = 0; // really, dojo? really? could you not provide a little clear()?
+
+            dojo.forEach(self.prepareFilesForTree(files), function(file) {
+                contents.push(file);
+            });
+
+            tree.render();
+        });
     },
 
     fetchFiles: function(path, tree) {
