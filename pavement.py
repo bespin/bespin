@@ -673,3 +673,21 @@ def seeddb():
     j.add_sharing(jproject, tom, edit=False)
     j.add_sharing(jproject, ev, edit=False)
 
+@task
+def th(options):
+    """Get or update the Thunderhead project in a directory next to the bespin directory.
+    This assumes that the hg fetch plugin is on and that hg is on your path."""
+    th_dir = path("..") / "th"
+    curdir = path.getcwd()
+    try:
+        if not th_dir.exists():
+            info("Checking out Th")
+            path("..").chdir()
+            sh("hg clone %s" % (options.th.src_url))
+        else:
+            info("Updating Th")
+            th_dir.chdir()
+            sh("hg fetch")
+    finally:
+        curdir.chdir()
+        
