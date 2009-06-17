@@ -179,6 +179,12 @@ def start():
     # automatically install Dojo if it's not there already
     if not (options.dojo.destination / "dojo").exists():
         dojo()
+        
+    # automatically fetch Th if it's not there
+    th_dir = path("..") / "th"
+    if not th_dir.exists():
+        th()
+    
     
     from bespin import config, controllers
     from paste.httpserver import serve
