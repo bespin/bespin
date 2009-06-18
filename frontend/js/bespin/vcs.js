@@ -44,42 +44,48 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
  * to the clone process
  */
 bespin.vcs.clone = function(instruction, url) {
-    var el = dojo.byId('centerpopup');
+    var el = dojo.create("div", { });
 
     el.innerHTML = '<form method="POST" id="vcsauth">'
             + '<table><tbody>'
             + '<tr><th colspan=2>Add Project from Source Control</th></tr>'
             + '<tr><td>Keychain password:</td><td>'
             + '<input type="password" name="kcpass" id="kcpass"></td></tr>'
+
             + '<tr><td>URL:</td>'
             + '<td><input type="text" name="source" value="' + url + '" style="width: 85%"></td></tr>'
+
             + '<tr><td>Project name:</td>'
             + '<td><input type="text" name="dest" value=""> (defaults to last part of URL path)</td></tr>'
+
             + '<tr><td>Authentication:</td><td><select name="remoteauth" id="remoteauth">'
             + '<option value="">None (read-only access to the remote repo)</option>'
             + '<option value="write">Only for writing</option>'
             + '<option value="both">For reading and writing</option>'
             + '</select></td></tr>'
+
             + '<tr id="push_row" style="display:none" class="authfields"><td>Push to URL</td>'
             + '<td><input type="text" name="push" style="width: 85%" value="' + url + '"></td></tr>'
+
             + '<tr id="authtype_row" style="display:none" class="authfields"><td>Authentication type</td>'
             + '<td><select name="authtype" id="authtype">'
             + '<option value="ssh">SSH</option>'
             + '<option value="password">Username/Password</option>'
             + '</select></td></tr>'
+
             + '<tr id="username_row" style="display:none" class="authfields"><td>Username</td>'
             + '<td><input type="text" name="username">'
             + '</td></tr>'
+
             + '<tr id="password_row" style="display:none" class="authfields userfields"><td>Password</td><td>'
             + '<input type="password" name="password">'
             + '</td></tr><tr><td>&nbsp;</td><td>'
             + '<input type="submit" id="vcsauthsubmit" value="Clone">'
             + '<input type="button" id="vcsauthcancel" value="Cancel">'
             + '</td></tr></tbody></table></form>';
+    instruction.setElement(el);
 
     dojo.style("vcsauth", {
-        background: "white",
-        '-moz-border-radius': "5px",
         padding: "5px"
     });
 
@@ -125,7 +131,6 @@ bespin.vcs.clone = function(instruction, url) {
         bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
     }));
 
-    bespin.util.webpieces.showCenterPopup(el, true);
     dojo.byId("kcpass").focus();
 };
 
@@ -594,13 +599,15 @@ bespin.vcs._createStandardHandler = function(instruction) {
     return {
         evalJSON: true,
         onPartial: function(response) {
-            instruction.addPartialOutput("<pre>" + response + "</pre>");
+            instruction.addOutput("<pre>" + response + "</pre>");
         },
         onSuccess: function(response) {
             instruction.addOutput("<pre>" + response + "</pre>");
+            instruction.unlink();
         },
         onFailure: function(xhr) {
             instruction.addErrorOutput(xhr.response);
+            instruction.unlink();
         }
     };
 };
@@ -614,6 +621,7 @@ bespin.vcs._createCancelHandler = function(instruction) {
         var el = dojo.byId('centerpopup');
         bespin.util.webpieces.hideCenterPopup(el);
         instruction.addErrorOutput("Cancelled");
+        instruction.unlink();
     });
 };
 

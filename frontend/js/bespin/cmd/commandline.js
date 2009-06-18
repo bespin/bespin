@@ -706,6 +706,16 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         };
     },
 
+    // A hack to allow an instruction that has called link to forget all the
+    // linked functions.
+    unlink: function() {
+       this._outstanding = 0;
+       this.completed = true;
+       this._callbacks.forEach(function(callback) {
+           callback();
+       });
+   },
+
     // == To String ==
     // A string version of this Instruction suitable for serialization
     toString: function() {
@@ -725,6 +735,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             this.output += html;
         }
 
+        this.element = null;
         this.hideOutput = false;
         this.end = new Date();
 
