@@ -78,3 +78,15 @@ HorizontalTree Label.odd, HorizontalTree Label.oddmore {
     border-top: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */
     border-bottom: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */ 
 }
+
+/* Project Label Area */
+
+Label.statusProject, Label.statusFile {
+   color: white;
+   font: 10pt Calibri, Arial, sans-serif;
+}
+
+Label.statusSymbol, Label.statusDirty {
+   color: gray;
+   font: 10pt Calibri, Arial, sans-serif;
+}
