@@ -204,7 +204,7 @@ def activate_profile():
     for ep in pkg_resources.iter_entry_points("bespin_extensions"):
         ep.load()
         
-    if isinstance(c.email_port):
+    if isinstance(c.email_port, basestring):
         c.email_port = int(c.email_port)
     
     if isinstance(c.static_map, basestring):
