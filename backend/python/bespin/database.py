@@ -144,6 +144,12 @@ class User(Base):
             if str(user.password) != digest:
                 user = None
         return user
+        
+    @classmethod
+    def find_by_email(cls, email):
+        """Looks up a user by email address."""
+        users = _get_session().query(cls).filter_by(email=email).all()
+        return users
 
     def __init__(self, username, password, email):
         self.username = username

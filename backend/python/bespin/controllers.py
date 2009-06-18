@@ -27,6 +27,8 @@ import httplib2
 from urlparse import urlparse
 import logging
 from datetime import date
+import socket
+import urllib
 
 from urlrelay import URLRelay, register
 from paste.auth import auth_tkt
@@ -41,8 +43,7 @@ from bespin.database import User, get_project
 from bespin.filesystem import NotAuthorized, OverQuota, File
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
-import socket
-import urllib
+from bespin.utils import send_email_template
 
 log = logging.getLogger("bespin.controllers")
 
@@ -121,6 +122,19 @@ def logout(request, response):
     request.environ['paste.auth_tkt.logout_user']()
     response.status = "200 OK"
     response.body = "Logged out"
+    return response()
+    
+@expose(r'^/register/lost/$')
+def lost(request, response):
+    email = request.POST.get('email')
+    if email:
+        users = User.find_by_email(email)
+        context = dict(email=email,
+            usernames=[dict(username=user.username) for user in users],
+            base_url=c.base_url)
+        send_email_template(email, "Your username for " + c.base_url,
+                            "lost_username.txt", context)
+        
     return response()
 
 @expose(r'^/settings/$', 'POST')
