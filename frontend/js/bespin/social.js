@@ -366,7 +366,7 @@ bespin.cmd.commands.add({
             }
             else {
                 // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
-                this._shareAdd([ args[0], args[1], [ args[2] ] ]);
+                this._shareAdd(instruction, [ args[0], args[1], [ args[2] ] ]);
             }
         }
         else if (args.length == 4) {
@@ -378,7 +378,7 @@ bespin.cmd.commands.add({
             }
             else {
                 // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
-                this._shareAdd(args[0], args[1], [ args[2], args[3] ]);
+                this._shareAdd(instruction, args[0], args[1], [ args[2], args[3] ]);
             }
         }
         else {
@@ -391,7 +391,7 @@ bespin.cmd.commands.add({
     },
 
     // === Add a member to the sharing list for a project ===
-    _shareAdd: function(project, member, options) {
+    _shareAdd: function(instruction, project, member, options) {
         bespin.get('server').shareAdd(project, member, options, {
             onSuccess: function(data) {
                 instruction.addOutput("Adding sharing permission for " + member + " to " + project);
