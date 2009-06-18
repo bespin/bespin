@@ -44,7 +44,8 @@ bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
  * to the clone process
  */
 bespin.vcs.clone = function(instruction, url) {
-    var el = dojo.create("div", { });
+    // var el = dojo.create("div", { });
+    var el = dojo.byId('centerpopup');
 
     el.innerHTML = '<form method="POST" id="vcsauth">'
             + '<table><tbody>'
@@ -83,9 +84,11 @@ bespin.vcs.clone = function(instruction, url) {
             + '<input type="submit" id="vcsauthsubmit" value="Clone">'
             + '<input type="button" id="vcsauthcancel" value="Cancel">'
             + '</td></tr></tbody></table></form>';
-    instruction.setElement(el);
+    // instruction.setElement(el);
+    bespin.util.webpieces.showCenterPopup(el, true);
 
     dojo.style("vcsauth", {
+        background: "white",
         padding: "5px"
     });
 
@@ -177,32 +180,43 @@ bespin.vcs.setProjectPassword = function(instruction, project) {
  * If they click the submit button, the password is sent to the callback.
  * If they do not, the callback is not called.
  */
-bespin.vcs.getKeychainPassword = function(instruction, callback) {
-    var el = dojo.byId('centerpopup');
-
-    el.innerHTML = '<form id="vcsauth">'
-            + '<table><tbody><tr><td>Keychain password</td><td>'
-            + '<input type="password" id="kcpass">'
-            + '</td></tr><tr><td>&nbsp;</td><td>'
-            + '<input type="button" id="vcsauthsubmit" value="Submit">'
-            + '<input type="button" id="vcsauthcancel" value="Cancel">'
-            + '</td></tr></tbody></table></form>';
-
-    dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs._createCancelHandler(instruction));
-
-    function saveform() {
-        bespin.util.webpieces.hideCenterPopup(el);
-        var kcpass = dojo.byId("kcpass").value;
-        el.innerHTML = "";
-        callback(kcpass);
+bespin.vcs.getKeychainPassword = function(instruction, callback, errmsg) {
+    var saveform = function() {
+        callback(kcpass.value);
+        instruction.unlink();
         return false;
     };
 
-    dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", saveform);
-    dojo.connect(dojo.byId("vcsauth"), "onsubmit", saveform);
+    var vcsauth = dojo.create("form", { onsubmit: saveform });
+    var table = dojo.create("table", { }, vcsauth);
 
-    bespin.util.webpieces.showCenterPopup(el, true);
-    dojo.byId("kcpass").focus();
+    var tr = dojo.create("tr", { }, table);
+    dojo.create("td", { innerHTML: "Keychain password: " }, tr);
+    var td = dojo.create("td", { }, tr);
+    var kcpass = dojo.create("input", { type: "password" }, td);
+    dojo.create("span", {
+        style: "padding-left:5px; color:#f88;",
+        innerHTML: errmsg
+    }, td);
+
+    tr = dojo.create("tr", { }, table);
+    dojo.create("td", { innerHTML: "&nbsp;" }, tr);
+    td = dojo.create("td", { }, tr);
+
+    dojo.create("input", {
+        type: "button",
+        value: "Submit",
+        onclick: saveform
+    }, td);
+
+    dojo.create("input", {
+        type: "button",
+        value: "Cancel",
+        onclick: bespin.vcs._createCancelHandler(instruction)
+    }, td);
+
+    instruction.setElement(vcsauth);
+    kcpass.focus();
 };
 
 /**
@@ -296,24 +310,31 @@ bespin.vcs.getkey = {
         var server = bespin.get('server');
         server.getkey(kcpass, {
             onSuccess: function(key) {
-                var msg = 'SSH public key that Bespin can use for remote repository authentication:<br/>' +
-                          '<textarea type="text" id="sshkey" style="width:400px; height:100px; overflow:auto;">' + key + '</textarea>';
-                instruction.addOutput(msg);
-                dojo.byId("sshkey").select();
+                var parent = dojo.create("div", {
+                    innerHTML: "SSH public key that Bespin can use for remote repository authentication:<br/>"
+                });
+                var textarea = dojo.create("textarea", {
+                    style: "width:400px; height:100px; overflow:auto;",
+                    innerHTML: key
+                }, parent);
+                instruction.setElement(parent);
+                textarea.select();
             },
 
             /**
              * Retrieve the user's SSH public key using their keychain password.
              * This is required if they have not already set up a public key.
              */
-            on401: function() {
+            on401: function(xhr) {
+                // If kcpass is non-empty then this is due to a rejected password
+                var errmsg = (!kcpass || kcpass === "") ? "" : "Wrong password";
                 bespin.vcs.getKeychainPassword(instruction, function(kcpass) {
                     bespin.vcs.getkey.execute(instruction, kcpass);
-                });
+                }, errmsg);
             },
 
-            onFailure: function(response) {
-                instruction.addErrorOutput("getkey failed: " + response);
+            onFailure: function(xhr) {
+                instruction.addErrorOutput("getkey failed: " + xhr.response);
             }
         });
     }
