@@ -67,6 +67,13 @@ c.secure_cookie = True
 c.http_only_cookie = True
 c.template_path = [path(__file__).dirname().abspath()]
 
+c.base_url = "https://bespin.mozilla.com/"
+
+# Settings for sending email
+c.email_from = "invalid@ThisIsNotAValidEmailAddressUseSomethingElse.com"
+c.email_host = "localhost"
+c.email_port = 25
+
 # additional mappings from top-level of URL to directory
 # in the config file, this can be provided as
 # static_map=foo=/path/to/files;bar=/path/to/other/files
@@ -185,6 +192,8 @@ def set_profile(profile):
         
         # in development, assume a Th directory above the bespin root
         c.static_map['js/thsrc'] = c.static_dir / ".." / ".." / "th" / "src"
+        
+        c.base_url = "http://localhost:8080/"
 
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
@@ -194,6 +203,9 @@ def load_config(configfile):
 def activate_profile():
     for ep in pkg_resources.iter_entry_points("bespin_extensions"):
         ep.load()
+        
+    if isinstance(c.email_port):
+        c.email_port = int(c.email_port)
     
     if isinstance(c.static_map, basestring):
         static_map = {}
