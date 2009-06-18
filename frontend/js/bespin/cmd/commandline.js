@@ -91,7 +91,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             return true;
         }
 
-        for (command in this.commands) { // try the aliases
+        for (var command in this.commands) { // try the aliases
             if (this.commands[command]['aliases']) {
                 if (bespin.util.include(this.commands[command]['aliases'], commandname)) {
                     return true;
@@ -221,6 +221,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             style: "display:none;"
         }, parentElement);
 
+        this.footer = dojo.byId("footer");
+
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
         if (bespin.get('editor')) this.editor = bespin.get('editor');
@@ -280,7 +282,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Output ==
     // Show the output area in the given display rectangle
     showOutput: function(left, bottom, width, height) {
-        dojo.style("footer", {
+        dojo.style(this.footer, {
             left: left + "px",
             width: (width - 10) + "px",
             bottom: bottom + "px",
@@ -288,7 +290,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         });
         this.commandLine.focus();
 
-        var footerHeight = dojo.style("footer", "height") + 2;
+        var footerHeight = dojo.style(this.footer, "height") + 2;
 
         var piemenu = bespin.get("piemenu");
         if (piemenu && piemenu.visible()) {
@@ -314,9 +316,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Hide Output ==
     hideOutput: function() {
-        this.hideHint();
+        dojo.style(this.commandHint, {
+            left: "32px",
+            bottom: "0px",
+            width: "500px"
+        });
+        //this.hideHint();
         dojo.style(this.output, "display", "none");
-        dojo.style("footer", "display", "none");
+        dojo.style(this.footer, "display", "none");
         this.maxInfoHeight = null;
     },
 
