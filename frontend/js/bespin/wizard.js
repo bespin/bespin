@@ -56,8 +56,10 @@ dojo.mixin(bespin.wizard, {
         execute: function(instruction, type) {
             if (!type) {
                 var list = "";
-                for (name in bespin.wizard._wizards) {
-                    list += ", " + name;
+                for (var name in bespin.wizard._wizards) {
+                    if (bespin.wizard._wizards.hasOwnProperty(name)) {
+                        list += ", " + name;
+                    }
                 }
                 instruction.addOutput("Known wizards: " + list.substring(2));
                 return;
