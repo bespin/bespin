@@ -139,6 +139,10 @@ img {
     text-align: right;
     display: none;
     color: #666;
+}
+
+#command_output .command_hover .command_duration {
+    float: left;
     padding-top: 2px;
 }
 

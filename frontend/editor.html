@@ -32,9 +32,20 @@
 
     <link type="text/css" rel="thstylesheet" href="css/editor_th.css">
 
-    <!-- this script tag needs to be included as is -->
-    <script type="text/javascript" src="js/th/th.all.js"></script>
-    <!-- the script tags below will be replaced during the build -->
+    <!-- begin Th -->
+    <script type="text/javascript" src="/js/thsrc/jstraits.js"></script>
+    <script type="text/javascript" src="/js/thsrc/util.js"></script>
+    <script type="text/javascript" src="/js/thsrc/traits.js"></script>
+    <script type="text/javascript" src="/js/thsrc/css.js"></script>
+    <script type="text/javascript" src="/js/thsrc/th.js"></script>
+    <script type="text/javascript" src="/js/thsrc/components.js"></script>
+    <script type="text/javascript" src="/js/thsrc/jshashtable.js"></script>
+    <script type="text/javascript" src="/js/thsrc/formlayout/formLayout.js"></script>
+    <script>
+    // Tell Th where the base URL is so it knows where to load resources
+    th.global_resources.load("/js/thsrc/");
+    </script>
+    <!-- end Th -->
 
     <!-- begin script tags -->
     <script type="text/javascript">

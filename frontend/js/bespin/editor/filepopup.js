@@ -79,15 +79,20 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.scene.render();
 
         this.scene.bus.bind("dblclick", this.tree, function(e) {
-            var newTab = e.shiftKey;
             var path = this.tree.getSelectedPath();
             if (!path) {
                 console.error("Got tree.getSelectedPath == null, bailing out");
                 return;
             }
-            if (path.length == 0 || path[path.length - 1].contents) {
-                return; // don't allow directories either
+
+            if (path.length == 0) return;   // bad state, get out
+
+            if (path[path.length - 1].contents) {
+                // if we're in a directory, refresh the files in the directory
+                this.refreshFiles(path, this.tree);
+                return;
             }
+
             var file = this.getFilePath(path.slice(1, path.length));
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
 
@@ -117,11 +122,15 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         this.scene.bus.bind("itemselected", this.tree.lists[0], function(e) {
             this.currentProject = e.item.name;
-            bespin.publish("project:set", {
-                project: this.currentProject,
-                suppressPopup: true,
-                fromDashboardItemSelected: true
-            });
+
+            // Do not set the project when you select it in the browser, the project
+            // stays that of the file that is open
+            // 
+            // bespin.publish("project:set", {
+            //     project: this.currentProject,
+            //     suppressPopup: true,
+            //     fromDashboardItemSelected: true
+            // });
         }, this);
 
         // get logged in name; if not logged in, display an error of some kind
@@ -134,6 +143,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             //bespin.page.dashboard.restorePath(pathSelected);
             self.restorePath(pathSelected);
         });
+        
+        // handle updating a path that has changed due to an action such as newfile, rm, etc
+        // bespin.subscribe("path:changed", function(e) {
+        //     var path = this.tree.getSelectedPath();
+        //     this.refreshFiles(path, this.tree);
+        // });        
 
         // TODO: commenting this out as it is throwing errors at the moment
         // provide arrow navigation to dashboard
@@ -235,6 +250,22 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
         }
         return filepath;
+    },
+
+    refreshFiles: function(path, tree) {
+        var filepath = this.getFilePath(path);
+
+        var self = this;
+        bespin.get("server").list(filepath, null, function(files) {
+            var contents = path[path.length - 1].contents;
+            contents.length = 0; // really, dojo? really? could you not provide a little clear()?
+
+            dojo.forEach(self.prepareFilesForTree(files), function(file) {
+                contents.push(file);
+            });
+
+            tree.render();
+        });
     },
 
     fetchFiles: function(path, tree) {

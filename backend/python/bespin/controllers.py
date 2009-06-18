@@ -932,7 +932,8 @@ def make_app():
     register("^/docs/", docs_app)
     
     for location, directory in c.static_map.items():
-        more_static = pathpopper_middleware(static.Cling(directory))
+        topop = 1 + location.count('/')
+        more_static = pathpopper_middleware(static.Cling(directory), topop)
         register("^/%s/" % location, more_static)
 
     app = URLRelay(default=static_app)
