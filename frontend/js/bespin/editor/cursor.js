@@ -35,42 +35,56 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     // Returns 'this.position' or 'pos' from optional input 'modelPos'
     getCursorPosition: function(modelPos) {
-        if (modelPos != undefined) {
-            var pos = bespin.editor.utils.copyPos(modelPos);
-            var line = this.editor.model.getRowArray(pos.row);
-            var tabsize = this.editor.getTabSize();
-
-            // Special tab handling
-            if (line.indexOf("\t") != -1) {
-//              console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
-                var tabs = 0, nottabs = 0;
-
-                for (var i = 0; i < modelPos.col; i++) {
-                    if (line[i] == "\t") {
-                        pos.col += tabsize - 1 - ( nottabs % tabsize );
-                        tabs++;
-                        nottabs = 0;
-                    } else {
-                        nottabs++;
-                        tabs = 0;
-                    }
-//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
-                }
-
-//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
-            }
-
-            return pos;
-        } else {
+        if (modelPos == undefined)
+        {
             return this.position;
         }
+        
+        
+        var pos = bespin.editor.utils.copyPos(modelPos);
+        
+        //avoid modifying model by just using an empty array if row is out of range
+        //this is because getRowArray adds rows if the row is out of range.
+        var line = [];
+        if (this.editor.model.hasRow(pos.row))
+            line = this.editor.model.getRowArray(pos.row);
+            
+        var tabsize = this.editor.getTabSize();
+
+        // Special tab handling
+        if (line.indexOf("\t") != -1) {
+//          console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+            var tabs = 0, nottabs = 0;
+
+            for (var i = 0; i < modelPos.col; i++) {
+                if (line[i] == "\t") {
+                    pos.col += tabsize - 1 - ( nottabs % tabsize );
+                    tabs++;
+                    nottabs = 0;
+                } else {
+                    nottabs++;
+                    tabs = 0;
+                }
+//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
+            }
+
+//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
+        }
+
+        return pos;
     },
 
     // Returns 'modelPos' from optional input 'pos' or 'this.position'
     getModelPosition: function(pos) {
         pos = (pos != undefined) ? pos : this.position;
         var modelPos = bespin.editor.utils.copyPos(pos);
-        var line = this.editor.model.getRowArray(pos.row);
+        
+        //avoid modifying model by just using an empty array if row is out of range
+        //this is because getRowArray adds rows if the row is out of range.
+        var line = [];
+        if (this.editor.model.hasRow(pos.row))
+            line = this.editor.model.getRowArray(pos.row);
+        
         var tabsize = this.editor.getTabSize();
 
         // Special tab handling
