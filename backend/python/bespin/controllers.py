@@ -29,6 +29,7 @@ import logging
 from datetime import date
 import socket
 import urllib
+from hashlib import sha256
 
 from urlrelay import URLRelay, register
 from paste.auth import auth_tkt
@@ -124,16 +125,40 @@ def logout(request, response):
     response.body = "Logged out"
     return response()
     
+def _get_password_verify_code(user):
+    h = sha256()
+    h.update(c.secret)
+    h.update(user.username)
+    h.update(user.password)
+    return h.hexdigest()
+
 @expose(r'^/register/lost/$')
 def lost(request, response):
+    """Generates lost password email messages"""
     email = request.POST.get('email')
-    if email:
+    username = request.POST.get('username')
+    if username:
+        user = User.find_user(username)
+        if not user:
+            raise BadRequest("Unknown user: " + username)
+            
+        verify_code = _get_password_verify_code(user)
+        change_url = c.base_url + "?pwchange=%s;%s" % (username, verify_code)
+        context = dict(username=username, base_url=c.base_url,
+                        change_url=change_url)
+        
+        send_email_template(user.email, "Requested password change for " + c.base_url,
+                            "lost_password.txt", context)
+        
+    elif email:
         users = User.find_by_email(email)
         context = dict(email=email,
             usernames=[dict(username=user.username) for user in users],
             base_url=c.base_url)
         send_email_template(email, "Your username for " + c.base_url,
                             "lost_username.txt", context)
+    else:
+        raise BadRequest("Username or email is required.")
         
     return response()
 

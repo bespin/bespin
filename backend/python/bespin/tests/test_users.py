@@ -285,3 +285,22 @@ def test_lost_username(send_text_email):
     assert "Your username is:" in args[2]
     assert "BillBixby" in args[2]
     
+@patch('bespin.utils.send_text_email')
+def test_lost_password_request(send_text_email):
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    resp = app.post('/register/lost/', dict(username='BillBixby'))
+    assert send_text_email.called
+    args = send_text_email.call_args[0]
+    assert args[0] == 'bill@bixby.com'
+    assert args[1].startswith("Requested password change for ")
+    user = User.find_user("BillBixby")
+    verify_code = controllers._get_password_verify_code(user)
+    assert verify_code in args[2]
+    
