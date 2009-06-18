@@ -295,6 +295,8 @@ def test_lost_password_request(send_text_email):
     app = BespinTestApp(app)
     resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
                                                     password="notangry"))
+    
+    app.reset()
     resp = app.post('/register/lost/', dict(username='BillBixby'))
     assert send_text_email.called
     args = send_text_email.call_args[0]
@@ -303,4 +305,40 @@ def test_lost_password_request(send_text_email):
     user = User.find_user("BillBixby")
     verify_code = controllers._get_password_verify_code(user)
     assert verify_code in args[2]
+    
+def test_password_change_with_confirmation_code():
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    app.reset()
+    
+    user = User.find_user("BillBixby")
+    verify_code = controllers._get_password_verify_code(user)
+    resp = app.post('/register/password/BillBixby', dict( 
+                                            code=verify_code,
+                                            newPassword="hatetraffic"))
+    
+    user = User.find_user('BillBixby', 'hatetraffic')
+    assert user
+    
+def test_password_change_bad_code():
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    app.reset()
+    
+    resp = app.post('/register/password/BillBixby', dict( 
+                                            code="42",
+                                            newPassword="hatetraffic"),
+                    status=400)
     

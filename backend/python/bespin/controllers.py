@@ -132,7 +132,7 @@ def _get_password_verify_code(user):
     h.update(user.password)
     return h.hexdigest()
 
-@expose(r'^/register/lost/$')
+@expose(r'^/register/lost/$', 'POST', auth=False)
 def lost(request, response):
     """Generates lost password email messages"""
     email = request.POST.get('email')
@@ -160,6 +160,18 @@ def lost(request, response):
     else:
         raise BadRequest("Username or email is required.")
         
+    return response()
+
+@expose(r'^/register/password/(?P<username>.+)$', 'POST', auth=False)
+def password_change(request, response):
+    """Changes a user's password."""
+    username = request.kwargs.get('username')
+    user = User.find_user(username)
+    verify_code = _get_password_verify_code(user)
+    code = request.POST.get('code')
+    if verify_code != code:
+        raise BadRequest("Code doesn't match.")
+    user.password = User.generate_password(request.POST['newPassword'])
     return response()
 
 @expose(r'^/settings/$', 'POST')
