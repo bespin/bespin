@@ -682,5 +682,18 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/project/template/', project, "");
         this.request('POST', url,
                     dojo.toJson(templateOptions), opts || {});
+    },
+    
+    lost: function(values, opts) {
+        var opts = opts || {};
+        var url = '/register/lost/';
+        this.request('POST', url, dojo.objectToQuery(values), opts);
+    },
+    
+    changePassword: function(username, newPassword, verifyCode, opts) {
+        var url = "/register/password/" + username;
+        var opts = opts || {};
+        var query = {newPassword: newPassword, code: verifyCode};
+        this.request('POST', url, dojo.objectToQuery(query), opts);
     }
 });

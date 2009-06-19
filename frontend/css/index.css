@@ -270,7 +270,7 @@ body {
     -webkit-border-radius: 10px;
 }
 
-#register_title {
+.register_title {
     background-color: #000;
     background-image: url("../images/register_toolbar_background.png");
     background-repeat: repeat-x;
@@ -280,15 +280,24 @@ body {
     height: 16px;
 }
 
-#register_title p {
+.register_title p {
     margin: 0;
 }
 
-#register_form {
+.register_form {
     border: 1px solid #000;
     background: #d1cfc1;
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
+    display: none;
+}
+
+.register_form .instructions {
+    font-size: 80%;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-bottom: 10px;
+    width: 200px;
 }
 
 #register_form table {

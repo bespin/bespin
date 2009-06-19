@@ -27,6 +27,9 @@ import httplib2
 from urlparse import urlparse
 import logging
 from datetime import date
+import socket
+import urllib
+from hashlib import sha256
 
 from urlrelay import URLRelay, register
 from paste.auth import auth_tkt
@@ -41,8 +44,7 @@ from bespin.database import User, get_project
 from bespin.filesystem import NotAuthorized, OverQuota, File
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
-import socket
-import urllib
+from bespin.utils import send_email_template
 
 log = logging.getLogger("bespin.controllers")
 
@@ -121,6 +123,57 @@ def logout(request, response):
     request.environ['paste.auth_tkt.logout_user']()
     response.status = "200 OK"
     response.body = "Logged out"
+    return response()
+    
+def _get_password_verify_code(user):
+    h = sha256()
+    h.update(c.secret)
+    h.update(user.username)
+    h.update(user.password)
+    return h.hexdigest()
+
+@expose(r'^/register/lost/$', 'POST', auth=False)
+def lost(request, response):
+    """Generates lost password email messages"""
+    email = request.POST.get('email')
+    username = request.POST.get('username')
+    if username:
+        user = User.find_user(username)
+        if not user:
+            raise BadRequest("Unknown user: " + username)
+            
+        verify_code = _get_password_verify_code(user)
+        change_url = c.base_url + "?pwchange=%s;%s" % (username, verify_code)
+        context = dict(username=username, base_url=c.base_url,
+                        change_url=change_url)
+        
+        send_email_template(user.email, "Requested password change for " + c.base_url,
+                            "lost_password.txt", context)
+        
+    elif email:
+        users = User.find_by_email(email)
+        context = dict(email=email,
+            usernames=[dict(username=user.username) for user in users],
+            base_url=c.base_url)
+        send_email_template(email, "Your username for " + c.base_url,
+                            "lost_username.txt", context)
+    else:
+        raise BadRequest("Username or email is required.")
+        
+    return response()
+
+@expose(r'^/register/password/(?P<username>.+)$', 'POST', auth=False)
+def password_change(request, response):
+    """Changes a user's password."""
+    username = request.kwargs.get('username')
+    user = User.find_user(username)
+    if not user:
+        raise BadRequest("Unknown user: " + username)
+    verify_code = _get_password_verify_code(user)
+    code = request.POST.get('code')
+    if verify_code != code:
+        raise BadRequest("Invalid verification code for password change.")
+    user.password = User.generate_password(request.POST['newPassword'])
     return response()
 
 @expose(r'^/settings/$', 'POST')

@@ -37,6 +37,13 @@ dojo.provide("bespin.page.index.init");
         bespin.displayVersion();
         server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
 		webpieces.fillScreenOverlay();
+		var query = dojo.queryToObject(location.search.substring(1));
+		if (query && query.pwchange) {
+		    var parts = query.pwchange.split(';');
+		    bespin.user.register._cpusername = parts[0];
+		    bespin.user.register._cpcode = parts[1];
+		    bespin.user.register.showChangePassword();
+		}
     });
 
     dojo.connect(window, "resize", function() {
