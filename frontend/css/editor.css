@@ -13,6 +13,11 @@ body {
     background-image: url("../images/toolbar_sub_bg2.png");
 }
 
+#home {
+    float: left;
+    width: 101px;
+}
+
 #history {
     margin-right: 40px !important;
 }
@@ -338,7 +343,9 @@ body {
     width: 300px;
     height: 24px;
     float: left;
-    padding-top: 5px;
+    padding-top: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
     margin: 0;
     color: #DDDDDD;
     font-family: Calibri, Arial, sans-serif;

@@ -96,7 +96,7 @@ dojo.provide("bespin.page.editor.init");
             dojo.attr('projectLabel', { width: d.w, height: d.h });
 
             // Repaint the various canvas'
-            //scene.paint();
+            scene.paint();
             bespin.get('editor').paint();
         }
     });
@@ -254,46 +254,34 @@ dojo.provide("bespin.page.editor.init");
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 
-//        scene = new th.Scene(dojo.byId("projectLabel"));
-//
-//        var panel = new th.components.Panel();
-//        scene.root.add(panel);
-//
-//        projectLabel = new th.components.Label({ style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        var symbolThingie = new th.components.Label({ text: ":", style: {
-//            color: "gray",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        fileLabel = new th.components.Label({ style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        dirtyLabel = new th.components.Label({ text: "", style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//
-//        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
-//        panel.layout = function() {
-//            var d = this.d();
-//
-//            var x = 0;
-//            for (var i = 0; i < 2; i++) {
-//                var width = this.children[i].getPreferredWidth(d.b.h);
-//                this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
-//                x += width;
-//            }
-//
-//            var dirtyWidth = this.children[3].getPreferredWidth(d.b.h);
-//            var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
-//            this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
-//            x += filenameWidth - 18; // 18 is an evil magic number that is caused by a DOM bug. The new Thunderhead will fix this :)
-//            this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
-//        };
-//        scene.render();
+        // -- Deal with the project label (project, filename, dirty flag)
+        scene = new th.Scene(dojo.byId("projectLabel"));
+        var panel = new th.Panel();
+
+        projectLabel = new th.Label({ className: "statusProject" });
+        var symbolThingie = new th.Label({ text: ":", className: "statusSymbol" });
+        fileLabel = new th.Label({ className: "statusFile" });
+        dirtyLabel = new th.Label({ text: "", className: "statusDirty"});
+
+        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
+        panel.layout = function() {
+           var d = this.d();
+
+           var x = 0;
+           for (var i = 0; i < 2; i++) {
+               var width = this.children[i].getPreferredSize().width;
+               this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
+               x += width;
+           }
+
+           var dirtyWidth = this.children[3].getPreferredSize().width;
+           var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
+           this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
+           x += filenameWidth;
+           this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
+        };
+        scene.root.add(panel);
+        scene.render();
     });
 
     // ** {{{ Event: editor:openfile:opensuccess }}} **
@@ -304,19 +292,18 @@ dojo.provide("bespin.page.editor.init");
         var project = event.project || bespin.get('editSession').project;
         var filename = event.file.name;
 
-// TODO: FIX ME WITH THUNDERHEAD 2
-//        projectLabel.attributes.text = project;
-//        fileLabel.attributes.text = filename;
-//        scene.render();
+        // update the project label
+        projectLabel.text = project;
+        fileLabel.text = filename;
+        scene.render();
     });
 
     // ** {{{ Event: editor:dirty }}} **
     //
     // Add a notifier to show that the file is dirty and needs to be saved
     bespin.subscribe("editor:dirty", function(event) {
-        // TODO: FIX ME WITH THUNDERHEAD 2
-        //dirtyLabel.attributes.text = "●";
-        //scene.render();
+        dirtyLabel.text = "●";
+        scene.render();
     });
 
     // ** {{{ Event: editor:dirty }}} **
@@ -330,9 +317,8 @@ dojo.provide("bespin.page.editor.init");
     //
     // Take away the notifier. Just saved
     bespin.subscribe("editor:clean", function(event) {
-        // TODO: FIX ME WITH THUNDERHEAD 2
-        //dirtyLabel.attributes.text = "";
-        //scene.render();
+        dirtyLabel.text = "";
+        scene.render();
     });
 
     // ** {{{ Event: editor:clean }}} **
