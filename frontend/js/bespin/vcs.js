@@ -311,7 +311,8 @@ bespin.vcs.getkey = {
                 });
                 var textarea = dojo.create("textarea", {
                     style: "width:400px; height:100px; overflow:auto;",
-                    innerHTML: key
+                    innerHTML: key,
+                    readonly: true
                 }, parent);
                 instruction.setElement(parent);
                 textarea.select();
@@ -614,18 +615,17 @@ bespin.subscribe("vcs:remoteauthUpdate", function(event) {
  */
 bespin.vcs._createStandardHandler = function(instruction) {
     return {
-        evalJSON: true,
         onPartial: function(response) {
             instruction.addOutput("<pre>" + response + "</pre>");
         },
-        onSuccess: function(response) {
+        onSuccess: instruction.link(function(response) {
             instruction.addOutput("<pre>" + response + "</pre>");
             instruction.unlink();
-        },
-        onFailure: function(xhr) {
+        }),
+        onFailure: instruction.link(function(xhr) {
             instruction.addErrorOutput(xhr.response);
             instruction.unlink();
-        }
+        })
     };
 };
 
