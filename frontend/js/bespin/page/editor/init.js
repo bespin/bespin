@@ -113,7 +113,7 @@ dojo.provide("bespin.page.editor.init");
         bespin.register('actions', editor.ui.actions);
 //        bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
-//        bespin.register('quickopen', new bespin.editor.quickopen.API());
+        bespin.register('quickopen', new bespin.editor.quickopen.API());
         bespin.register('piemenu', new bespin.editor.piemenu.Window());
 
         // Get going when settings are loaded

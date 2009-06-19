@@ -31,6 +31,7 @@
     <link type="text/css" rel="stylesheet" href="css/shared.css">
 
     <link type="text/css" rel="thstylesheet" href="css/editor_th.css">
+    <link type="text/css" rel="thstylesheet" href="css/quickopen_th.css">
 
     <!-- begin Th -->
     <script type="text/javascript" src="/js/thsrc/jstraits.js"></script>
@@ -199,7 +200,17 @@
     </div>
     <div id="centerpopup" style="display:none;"></div>
     <div id="popup_insert_point"></div>
-    <div id="quickopen" class="popupWindow"></div>
+    <div id="quickopenContainer">
+        <input id="quickopen_input_first" style="z-index: -100"></input>
+        <input id="quickopen_input_last" style="z-index: -100"></input><br>
+
+        <canvas id="quickopen" flowLayout="vertical" width="300" height="393">
+            <input id="quickopen_input"></input>
+            <list id="quickopen_list" layoutData="1.0"></list>
+            <label id="quickopen_label" text="Path to file..."></label>
+        </canvas>
+    </div>
+
     <div id="filesearch" class="popupWindow">
         <input id="search_text" type="text">
         <input id="replace_text" type="text">
