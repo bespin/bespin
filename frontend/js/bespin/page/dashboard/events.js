@@ -45,6 +45,11 @@ bespin.subscribe("project:create", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });
 
+// JOE: I don't see how this could ever work. project:delete is a request for
+// action rather than a happened action. It might fluke it if this is called
+// after the other subscription. Based on this flaw and the fact that we're
+// deleting the dashbaord anyway, I'm not going to fix this. This event will
+// not be called.
 bespin.subscribe("project:delete", function(event) {
     bespin.page.dashboard.refreshProjects(); // get projects
 });

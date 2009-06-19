@@ -347,12 +347,28 @@ bespin.cmd.commands.add({
     takes: ['projectname'],
     preview: 'delete a project',
     usage: '[projectname]',
-    execute: function(instruction, projectname) {
-        if (!projectname) {
+    execute: function(instruction, project) {
+        if (!project) {
             instruction.addUsageOutput(this);
             return;
         }
-        bespin.publish("project:delete", { project: projectname });
+
+        if (!project || project == bespin.userSettingsProject) {
+            instruction.addErrorOutput('Sorry, you can\'t delete the settings project.');
+            return; // don't delete the settings project
+        }
+
+        var onSuccess = instruction.link(function() {
+            instruction.addOutput('Deleted project ' + project);
+            instruction.unlink();
+        });
+
+        var onFailure = instruction.link(function(xhr) {
+            instruction.addErrorOutput('Failed to delete project ' + project + ': ' + xhr.responseText);
+            instruction.unlink();
+        });
+
+        bespin.get('files').removeDirectory(project, '', onSuccess, onFailure);
     }
 });
 
