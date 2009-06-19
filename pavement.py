@@ -697,3 +697,11 @@ def th(options):
     finally:
         curdir.chdir()
         
+@task
+@needs('th')
+def fetch():
+    """Update Bespin and Th via the hg fetch command. Note that hg needs to be
+    on your path and the fetch plugin must be active."""
+    info("Updating Bespin")
+    sh('hg fetch')
+    

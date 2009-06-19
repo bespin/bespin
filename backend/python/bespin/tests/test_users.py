@@ -261,4 +261,12 @@ def test_users_can_be_locked_out():
     resp = app.post("/register/login/BillBixby",
         dict(password="notangry"), status=401)
     
+def test_lost_username():
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    
     

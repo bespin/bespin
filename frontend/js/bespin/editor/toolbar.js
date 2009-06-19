@@ -31,7 +31,7 @@ dojo.provide("bespin.editor.toolbar");
 
 dojo.declare("bespin.editor.Toolbar", null, {
     DEFAULT_TOOLBAR: ["collaboration", "filepopup", "commandline", "target_browsers",
-                      "save", "close", "undo", "redo", "preview", "fontsize"],
+                      "save", "close", "preview", "fontsize"],
     showCollab: false,
     showFiles: false,
     showTarget: false,

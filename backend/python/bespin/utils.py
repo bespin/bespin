@@ -23,7 +23,12 @@
 
 import re
 import logging
-from bespin import config
+import smtplib
+from email.mime.text import MIMEText
+
+import pkg_resources
+
+from bespin import config, jsontemplate
 
 log = logging.getLogger("bespin.model")
 
@@ -39,3 +44,40 @@ def _check_identifiers(kind, value):
     if not good_pattern.match(value):
         log.error("Invalid identifier kind='%s', value='%s'" % (kind, value))
         raise BadValue("%s must only contain letters, numbers and dashes and must start with a letter or number." % (kind))
+
+def send_text_email(to_addr, subject, text, from_addr=None):
+    """Send email to addresses given by to_addr (can be a string or a list),
+    with the subject provided and the message text given.
+    If not given, from_addr will be set to the configured email_from value.
+    The message will be sent via the configured server at email_host, email_port.
+    
+    If the configured email_host is None or "", no email will be sent.
+    """
+    
+    if not config.c.email_host:
+        return
+    
+    if from_addr is None:
+        from_addr = config.c.email_from
+        
+    if isinstance(to_addr, basestring):
+        to_addr = [to_addr]
+    msg = MIMEText(text)
+    msg['Subject'] = subject
+    msg['From'] = from_addr
+    msg['To'] = ", ".join(to_addr)
+    
+    s = smtplib.SMTP()
+    s.connect(config.c.email_host, config.c.email_port)
+    s.sendmail(from_addr, to_addr, msg.as_string())
+    s.quit()
+    
+def send_email_template(to_addr, subject, template_name, context, from_addr=None):
+    """Send an email by applying context to the template in bespin/mailtemplates
+    given by template_name and passing the resulting text to send_text_email."""
+    template_file = pkg_resources.resource_filename("bespin", 
+                                        "mailtemplates/%s" % template_name)
+    template = jsontemplate.FromFile(template_file)
+    text = template.expand(context)
+    send_text_email(to_addr, subject, text, from_addr)
+    
