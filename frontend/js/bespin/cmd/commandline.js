@@ -933,6 +933,9 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
+                } else {
+                    this.history.pointer = this.history.instructions.length;
+                    cl.commandLine.value = '';
                 }
 
                 dojo.stopEvent(e);
