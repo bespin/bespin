@@ -31,7 +31,7 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: true };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
     </script>
     <script type="text/javascript" src="js/dojo/dojo.js"></script>
     <script type="text/javascript">
@@ -136,12 +136,51 @@
               <th>&nbsp;</th>
               <th>
                 <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.hideLostUsername();"/>
-                <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
+                <input type="button" class="darkButton" value="Get Username >" onclick="bespin.user.register.sendLostUsername();"/>
               </th>
-              <td><div id="register_register_error"></div></td>
+            </tr>
+            <tr>
+              <td colspan="2"><div id="lost_username_register_error"></div></td>
             </tr>
           </tbody>
         </table>
+    </div>
+    <div id="change_password_form" class="register_form">
+      <div class="register_title">
+        <p>Change Your Password</p>
+      </div>
+      <table>
+        <tbody>
+          <tr>
+            <th>Password:</th>
+            <td><input type="password" id="change_password_password" onchange="bespin.user.register.checkPassword('change_password');"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="change_password_password_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>Confirm Password:</th>
+            <td><input type="password" id="change_password_confirm" onchange="bespin.user.register.checkConfirm('change_password');"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="change_password_confirm_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>&nbsp;</th>
+            <th>
+              <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.hideChangePassword();"/>
+              <input type="button" class="darkButton" value="Save and Login >" onclick="bespin.user.register.sendChangePassword();"/>
+            </th>
+          </tr>
+          <tr>
+            <td colspan="2"><div id="change_password_register_error"></div></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <div id="register_form" class="register_form">
       <div id="register_title" class="register_title">
@@ -160,7 +199,7 @@
           </tr>
           <tr>
             <th>Password:</th>
-            <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
+            <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword('register');"/></td>
           </tr>
           <tr>
             <td class="register_error" colspan="2">
@@ -169,7 +208,7 @@
           </tr>
           <tr>
             <th>Confirm Password:</th>
-            <td><input type="password" id="register_confirm" onchange="bespin.user.register.checkConfirm();"/></td>
+            <td><input type="password" id="register_confirm" onchange="bespin.user.register.checkConfirm('register');"/></td>
           </tr>
           <tr>
             <td class="register_error" colspan="2">

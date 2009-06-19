@@ -67,11 +67,11 @@ dojo.provide("bespin.user.register");
             }
             dojo.byId(idPrefix + '_username_error').innerHTML = username_error.join(", ");
         },
-        checkPassword: function() {
-            dojo.byId('register_password_error').innerHTML = (!utils.validatePassword(dojo.byId('register_password').value)) ? "Password must be between 6 and 20 characters" : "";
+        checkPassword: function(idPrefix) {
+            dojo.byId(idPrefix + '_password_error').innerHTML = (!utils.validatePassword(dojo.byId(idPrefix + '_password').value)) ? "Password must be between 6 and 20 characters" : "";
         },
-        checkConfirm: function() {
-            dojo.byId('register_confirm_error').innerHTML = (dojo.byId('register_password').value != dojo.byId('register_confirm').value) ? "Passwords do not match" : "";
+        checkConfirm: function(idPrefix) {
+            dojo.byId(idPrefix + '_confirm_error').innerHTML = (dojo.byId(idPrefix + '_password').value != dojo.byId(idPrefix + '_confirm').value) ? "Passwords do not match" : "";
         },
         checkEmail: function(idPrefix) {
             dojo.byId(idPrefix + '_email_error').innerHTML = (!utils.validateEmail(dojo.byId(idPrefix + '_email').value)) ? "Invalid email address" : "";
@@ -104,6 +104,14 @@ dojo.provide("bespin.user.register");
             webpieces.hideCenterPopup(dojo.byId('centerpopup'));
             dojo.style("lost_username_form", "display", "none");
         },
+        showChangePassword: function() {
+            dojo.style("change_password_form", "display", "block");
+            webpieces.showCenterPopup(dojo.byId('centerpopup'), true);  
+        },
+        hideChangePassword: function() {
+            webpieces.hideCenterPopup(dojo.byId('centerpopup'));
+            dojo.style("change_password_form", "display", "none");
+        },
         send: function() {
             var pw = dojo.byId('register_password').value;
     	    if (utils.validatePassword(pw) && (pw == dojo.byId('register_confirm').value)) {
@@ -130,6 +138,36 @@ dojo.provide("bespin.user.register");
                     dojo.byId("lost_password_register_error").innerHTML = xhr.responseText;
                 }
             });
+        },
+        sendLostUsername: function() {
+            var email = dojo.byId("lost_username_email").value;
+            server.lost({email: email}, {
+                onSuccess: function() {
+                    bespin.user.register.hideLostPassword();
+                    bespin.util.webpieces.showStatus("Username email sent!");
+                },
+                onFailure: function(xhr) {
+                    dojo.byId("lost_username_register_error").innerHTML = xhr.responseText;
+                }
+            });
+        },
+        sendChangePassword: function() {
+            var pw = dojo.byId("change_password_password").value;
+    	    if (utils.validatePassword(pw) && (pw == dojo.byId('change_password_confirm').value)) {
+    	        server.changePassword(bespin.user.register._cpusername, pw,
+    	                            bespin.user.register._cpcode, {
+    	            onSuccess: function() {
+    	                bespin.user.register.hideChangePassword();
+    	                // log the user in
+    	                dojo.byId("username").value = bespin.user.register._cpusername;
+    	                dojo.byId("password").value = pw;
+    	                bespin.user.login();
+    	            },
+    	            onFailure: function(xhr) {
+    	                dojo.byId("change_password_register_error").innerHTML = xhr.responseText;
+    	            }
+	            });
+            }
         }
     });
 })();

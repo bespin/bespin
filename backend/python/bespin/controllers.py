@@ -167,10 +167,12 @@ def password_change(request, response):
     """Changes a user's password."""
     username = request.kwargs.get('username')
     user = User.find_user(username)
+    if not user:
+        raise BadRequest("Unknown user: " + username)
     verify_code = _get_password_verify_code(user)
     code = request.POST.get('code')
     if verify_code != code:
-        raise BadRequest("Code doesn't match.")
+        raise BadRequest("Invalid verification code for password change.")
     user.password = User.generate_password(request.POST['newPassword'])
     return response()
 
