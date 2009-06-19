@@ -171,8 +171,7 @@ def _clone_impl(user, source, dest=None, push=None, remoteauth="write",
     try:
         context = main.SecureContext(working_dir, auth)
         command = main.convert(context, args, dialect)
-        log.debug("exec in: %s" % working_dir)
-        log.debug("$ %s" % str(command))
+
         output = main.run_command(command, context)
         log.debug(output)
     finally:
@@ -279,10 +278,7 @@ def _run_command_impl(user, project, args, kcpass):
         try:
             command = command_class.from_args(context, args)
 
-            log.debug("exec in: %s" % working_dir)
-            log.debug("$ %s" % str(command))
             output = main.run_command(command, context)
-            log.debug(output)
             log.debug(output)
         finally:
             if keyfile:
