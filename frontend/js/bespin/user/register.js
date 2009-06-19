@@ -118,6 +118,18 @@ dojo.provide("bespin.user.register");
         },
         cancel: function() { 
             this.hideForm();
+        },
+        sendLostPassword: function() {
+            var username = dojo.byId("lost_password_username").value;
+            server.lost({username: username}, {
+                onSuccess: function() {
+                    bespin.user.register.hideLostPassword();
+                    bespin.util.webpieces.showStatus("Password change email sent!");
+                },
+                onFailure: function(xhr) {
+                    dojo.byId("lost_password_register_error").innerHTML = xhr.responseText;
+                }
+            });
         }
     });
 })();

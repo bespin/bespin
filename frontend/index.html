@@ -31,7 +31,7 @@
 
     <!-- begin script tags -->
     <script type="text/javascript">
-        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
+        var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: true };
     </script>
     <script type="text/javascript" src="js/dojo/dojo.js"></script>
     <script type="text/javascript">
@@ -103,9 +103,11 @@
               <th>&nbsp;</th>
               <th>
                 <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.hideLostPassword();"/>
-                <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
+                <input type="button" class="darkButton" value="Get Email >" onclick="bespin.user.register.sendLostPassword();"/>
               </th>
-              <td><div id="register_register_error"></div></td>
+            </tr>
+            <tr>
+              <td colspan="2"><div id="lost_password_register_error"></div></td>
             </tr>
           </tbody>
         </table>
