@@ -35,12 +35,18 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.inited = false;
     },
 
+    // creates the Thunderhead file browser scene
     checkInit: function() {
+        // if we've already executed this method, bail--only need to setup the scene once
         if (this.inited) return;
+
+        // prevent a second execution; see above
         this.inited = true;
 
+        // JS FTW!
         var self = this;
 
+        // Joe's favorite Dojo feature in action, baby!
         this.canvas = dojo.create("canvas", {
             id: "piefilepopupcanvas",
             tabIndex: -1,
@@ -51,30 +57,65 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
         }, dojo.body());
 
+        // create the Thunderhead scene representing the file browser; will consist of various lists in one column on the left,
+        // and a horizontal tree component on the right
         this.scene = new th.Scene(this.canvas);
-        this.scene.root.addCss("background-color", "blue");
 
-        // make the root transparent
-        // this.scene.root.paintSelf = function() {}
-
-        this.tree = new th.HorizontalTree({ id: "htree" });
-
-        // invoking showChildren() here causes the List containing the children to be created, which is necessary
-        // for us to manipulate it a touch here
-        this.tree.showChildren(null, [{name: ''}]);
-
-        // set various properties of this first list, which contains the projects to display
-        this.tree.lists[0].addTopLabel(new th.Label({ text: "Projects" }));
-        this.tree.lists[0].allowDeselection = false;
-
+        // container for the scene
         var topPanel = new th.Panel();
-        topPanel.add([ this.tree ]);
-        topPanel.layout = function() {
-            var d = this.d();
-            self.tree.bounds = { x: d.i.l, y: d.i.t, width: d.b.w - d.i.w, height: d.b.h - d.i.h };
-        };
 
         this.scene.root.add(topPanel);
+
+        // create a scroll pane for the left column, and a top-level container to put in the scroll pane
+        var leftColumnContents = new th.Panel();
+        var leftColumnScrollPane = new th.ScrollPane({ splitter: true });
+        leftColumnScrollPane.add(leftColumnContents);
+        topPanel.add(leftColumnScrollPane);
+
+        // add the project label and project list
+        var projectLabel = new th.Label({ text: "Projects" });
+        leftColumnContents.add(projectLabel);
+        this.projects = new th.List();
+        this.projects.getItemText = function(item) { return item.name };
+        leftColumnContents.add(this.projects);
+
+        // how to layout the two
+        leftColumnContents.layout = function() {
+            var top = this.children[0];
+            var bottom = this.children[1];
+
+            var d = this.d();
+
+            top.setBounds(d.i.l, d.i.t, d.b.iw, top.getPreferredSize().height);
+            bottom.setBounds(d.i.l, top.bounds.y + top.bounds.height, d.b.iw, d.b.ih - top.bounds.height);
+        }
+
+        // and a preferred size
+        leftColumnContents.getPreferredSize = function() {
+            var width = 200;    // todo: tie into CSS sizer thingie 
+            var height = this.children[0].getPreferredSize().height + this.children[1].getPreferredSize().height;
+            return { width: width, height: height };
+        }
+
+        // the horizontal tree that will display the contents of a selected project
+        this.tree = new th.HorizontalTree({ id: "htree" });
+
+        this.tree.getItemText = this.projects.getItemText;
+
+        topPanel.add(this.tree);
+
+        // homegrown layout; sorry, that's how I roll
+        topPanel.layout = function() {
+            var d = this.d();
+
+            var left = this.children[0];
+            var right = this.children[1];
+
+            var pref = left.getPreferredSize();
+
+            left.setBounds(d.i.l, d.i.t, pref.width, d.b.ih);
+            right.setBounds(left.bounds.x + left.bounds.width, d.i.t, d.b.iw - left.bounds.width, d.b.ih);
+        };
 
         this.scene.render();
 
@@ -93,7 +134,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 return;
             }
 
-            var file = this.getFilePath(path.slice(1, path.length));
+            var file = this.getFilePath(path, true);
+            console.log("file", file);
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
 
             var settings = bespin.get("settings");
@@ -104,8 +146,23 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
         }, this);
 
+        this.scene.bus.bind("itemselected", this.projects, function(e) {
+            var item = e.item;
+            this.fetchRootFiles(item.name, this.tree);
+
+            this.currentProject = item.name;
+
+            bespin.publish("project:set", {
+                project: this.currentProject,
+                suppressPopup: true,
+                fromDashboardItemSelected: true
+            });
+        }, this);
+
         this.scene.bus.bind("itemselected", this.tree, function(e) {
             var pathSelected = this.tree.getSelectedPath(true);
+
+
             // this keeps the url to be changed if the file path changes to frequently
             if (this.urlTimeout) {
                 clearTimeout(this.urlTimeout);
@@ -120,29 +177,16 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             */
         }, this);
 
-        this.scene.bus.bind("itemselected", this.tree.lists[0], function(e) {
-            this.currentProject = e.item.name;
-
-            // Do not set the project when you select it in the browser, the project
-            // stays that of the file that is open
-            // 
-            // bespin.publish("project:set", {
-            //     project: this.currentProject,
-            //     suppressPopup: true,
-            //     fromDashboardItemSelected: true
-            // });
-        }, this);
-
         // get logged in name; if not logged in, display an error of some kind
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
 
         // provide history for the dashboard
-        bespin.subscribe("url:changed", function(e) {
-            var pathSelected =  (new bespin.client.settings.URL()).get('path');
-            // TODO throw new TooManyAliasesForThisException();
-            //bespin.page.dashboard.restorePath(pathSelected);
-            self.restorePath(pathSelected);
-        });
+//        bespin.subscribe("url:changed", function(e) {
+//            var pathSelected =  (new bespin.client.settings.URL()).get('path');
+//            // TODO throw new TooManyAliasesForThisException();
+//            //bespin.page.dashboard.restorePath(pathSelected);
+//            self.restorePath(pathSelected);
+//        });
         
         // handle updating a path that has changed due to an action such as newfile, rm, etc
         // bespin.subscribe("path:changed", function(e) {
@@ -152,43 +196,43 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         // TODO: commenting this out as it is throwing errors at the moment
         // provide arrow navigation to dashboard
-        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-            var key = bespin.util.keys.Key;
-            var path = this.tree.getSelectedPath();
-            if (path === undefined) return;
-            // things to make life much more easy :)
-            var index = path.length - 1;
-            var list = this.tree.lists[index];
-            var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
-            var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
-
-            switch (e.keyCode) {
-                case key.LEFT_ARROW:
-                    if (!listPre) break;
-                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
-                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
-                    break;
-                case key.RIGHT_ARROW:
-                    if (!listNext) break;
-                    if (list.selected.lastSelected) {
-                        listNext.selectItemByText(list.selected.lastSelected);
-                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                    } else {
-                        listNext.selected = listNext.items[0];
-                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                    }
-                    break;
-                case key.UP_ARROW:
-                    list.moveSelectionUp();
-                    break;
-                case key.DOWN_ARROW:
-                    list.moveSelectionDown();
-                    break;
-                case key.ENTER:
-                    this.scene.bus.fire("dblclick", e, this.tree);
-                    break;
-            }
-        }));
+//        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
+//            var key = bespin.util.keys.Key;
+//            var path = this.tree.getSelectedPath();
+//            if (path === undefined) return;
+//            // things to make life much more easy :)
+//            var index = path.length - 1;
+//            var list = this.tree.lists[index];
+//            var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
+//            var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
+//
+//            switch (e.keyCode) {
+//                case key.LEFT_ARROW:
+//                    if (!listPre) break;
+//                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
+//                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
+//                    break;
+//                case key.RIGHT_ARROW:
+//                    if (!listNext) break;
+//                    if (list.selected.lastSelected) {
+//                        listNext.selectItemByText(list.selected.lastSelected);
+//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+//                    } else {
+//                        listNext.selected = listNext.items[0];
+//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+//                    }
+//                    break;
+//                case key.UP_ARROW:
+//                    list.moveSelectionUp();
+//                    break;
+//                case key.DOWN_ARROW:
+//                    list.moveSelectionDown();
+//                    break;
+//                case key.ENTER:
+//                    this.scene.bus.fire("dblclick", e, this.tree);
+//                    break;
+//            }
+//        }));
     },
 
     show: function(coords) {
@@ -241,8 +285,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         return fdata;
     },
 
-    getFilePath: function(treePath) {
-        var filepath = "";
+    getFilePath: function(treePath, noProject) {
+        var filepath = (noProject) ? "" : this.currentProject + "/";
 
         for (var i = 0; i < treePath.length; i++) {
             if (treePath[i] && treePath[i].name) {
@@ -264,6 +308,14 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 contents.push(file);
             });
 
+            tree.render();
+        });
+    },
+
+    fetchRootFiles: function(project, tree) {
+        var self = this;
+        bespin.get("server").list(project, null, function(files) {
+            tree.setData(self.prepareFilesForTree(files));
             tree.render();
         });
     },
@@ -290,7 +342,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         oldPath = oldPath.split('/');
         this.currentProject = newPath[0];
 
-        this.tree.lists[0].selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
+        this.tree.scrollPanes[0].view.selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
         this.scene.renderAllowed = false;
 
         var sameLevel = 1;  // the value is 1 and not 0, as the first list (the project list) is not affected!
@@ -305,16 +357,16 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             if (x != newPath.length - 1) {
                 fakeItem.contents = 'fake';
             }
-            if (x > this.tree.lists.length - 1) {
+            if (x > this.tree.scrollPanes.length - 1) {
                 this.tree.showChildren(null, new Array(fakeItem));
             }
             if (newPath[x] != '') {
-                this.tree.lists[x].selectItemByText(newPath[x]);
+                this.tree.scrollPanes[x].view.selectItemByText(newPath[x]);
             }
             fakePath[x] = fakeItem;
         }
 
-        if (newPath.length <= this.tree.lists.length) {
+        if (newPath.length <= this.tree.scrollPanes.length) {
             this.tree.removeListsFrom(newPath.length);
         }
 
@@ -323,15 +375,15 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         // get the data for the lists
         for (var x = sameLevel; x < newPath.length; x++) {
-            var selected = this.tree.lists[x - 1].selected;
+            var selected = this.tree.scrollPanes[x - 1].view.selected;
             if (selected && selected.contents && dojo.isArray(selected.contents)) {
                 // restore filelist from local memory (the filelists was ones fetched)
-                if (x > this.tree.lists.length - 1) {
+                if (x > this.tree.scrollPanes.length - 1) {
                     this.tree.showChildren(null, selected.contents);
                 } else {
                     this.tree.replaceList(x, selected.contents);
                 }
-                this.tree.lists[x].selectItemByText(fakePath[x].name);
+                this.tree.scrollPanes[x].view.selectItemByText(fakePath[x].name);
                 countSetupPaths++;
             } else {
                 // load filelist form this.server
@@ -348,7 +400,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                         }
 
                         self.tree.replaceList(index, contents);
-                        self.tree.lists[index].selectItemByText(fakePath[index].name);
+                        self.tree.scrollPanes[index].view.selectItemByText(fakePath[index].name);
                         countSetupPaths++;
 
                         if (countSetupPaths == newPath.length) {
@@ -358,8 +410,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                 if (contentsPath[x + 1]) {
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
-                                    if (self.tree.lists[x].selected) {
-                                        self.tree.lists[x].selected.contents = contentsPath[x + 1];
+                                    if (self.tree.scrollPanes[x].view.selected) {
+                                        self.tree.scrollPanes[x].view.selected.contents = contentsPath[x + 1];
                                     }
                                 }
                             }
@@ -370,8 +422,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         }
 
         // deselect lists if needed
-        for (var x = newPath.length; x < this.tree.lists.length; x++) {
-            delete this.tree.lists[x].selected;
+        for (var x = newPath.length; x < this.tree.scrollPanes.length; x++) {
+            delete this.tree.scrollPanes[x].view.selected;
         }
 
         this.scene.renderAllowed = true;
@@ -379,6 +431,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
     },
 
     displayProjects: function(projectItems) {
+        console.log("displayProjects");
+
         for (var i = 0; i < projectItems.length; i++) {
             projectItems[i] = {
                 name: projectItems[i].name.substring(0, projectItems[i].name.length - 1),
@@ -386,95 +440,21 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             };
         }
 
-        this.tree.replaceList(0, projectItems);
+        this.projects.items = projectItems;
+        this.scene.render();
 
-        // Restore the last selected file
-        var path =  (new bespin.client.settings.URL()).get('path');
-        if (!this.lastSelectedPath) {
-            this.restorePath(path);
-        } else {
-            this.scene.render();
-        }
+//        // Restore the last selected file
+//        var path = (new bespin.client.settings.URL()).get('path');
+//        if (!this.lastSelectedPath) {
+//            this.restorePath(path);
+//        } else {
+//            this.scene.render();
+//        }
     },
 
     refreshProjects: function() {
+        console.log("refreshProjects");
+
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     }
 });
-
-
-th.BespinProjectPanel = Class.define({
-    type: "BespinProjectPanel",
-
-    superclass: th.Panel,
-
-    member: {
-        init: function(parms) {
-            if (!parms) parms = {};
-            this['super'](parms);
-
-            this.projectLabel = new th.Label({ text: "Projects", className: "projectLabel" });
-
-            this.list = new th.List();
-
-            this.splitter = new th.Splitter({ orientation: th.HORIZONTAL });
-
-            this.footer = new th.BespinProjectPanelFooter();
-
-            this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
-
-            this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
-            this.bus.bind("drag", this.splitter, this.ondrag, this);
-            this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
-
-            // this is a closed container
-            delete this.add;
-            delete this.remove;
-        },
-
-        ondragstart: function(e) {
-            this.startWidth = this.bounds.width;
-        },
-
-        ondrag: function(e) {
-            var delta = e.currentPos.x - e.startPos.x;
-            this.prefWidth = this.startWidth + delta;
-            this.getScene().render();
-        },
-
-        ondragstop: function(e) {
-            delete this.startWidth;
-        },
-
-        getPreferredSize: function() {
-            return { width: this.prefWidth || 150, height: 0 };
-        },
-
-        layout: function() {
-            var d = this.d();
-
-            var y = d.i.t;
-
-            // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
-            //var lh = this.projectLabel.getPreferredHeight(d.b.w);
-            var lh = this.projectLabel.getPreferredSize().height;
-
-            this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
-            y += lh;
-
-            var sw = this.splitter.getPreferredSize().width;
-            this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
-
-            var innerWidth = d.b.w - d.i.w - sw;
-
-            // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
-//            var ph = this.footer.getPreferredHeight(innerWidth);
-            var ph = this.footer.getPreferredSize().height;
-
-            this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };
-
-            this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
-        }
-    }
-});
-

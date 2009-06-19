@@ -64,81 +64,6 @@
     </script>
 
     <script type="text/javascript">
-    th.BespinProjectPanel = Class.define({
-        type: "BespinProjectPanel",
-
-        superclass: th.Panel,
-
-        member: {
-            init: function(parms) {
-                if (!parms) parms = {};
-                this._super(parms);
-
-                this.projectLabel = new th.Label({ text: "Projects", className: "projectLabel" });
-
-                this.list = new th.List();
-
-                this.splitter = new th.Splitter({ orientation: th.HORIZONTAL });
-
-                this.footer = new th.BespinProjectPanelFooter();
-
-                this.add([ this.projectLabel, this.list, this.splitter, this.footer ]);
-
-                this.bus.bind("dragstart", this.splitter, this.ondragstart, this);
-                this.bus.bind("drag", this.splitter, this.ondrag, this);
-                this.bus.bind("dragstop", this.splitter, this.ondragstop, this);
-
-                // this is a closed container
-                delete this.add;
-                delete this.remove;
-            },
-
-            ondragstart: function(e) {
-                this.startWidth = this.bounds.width;
-            },
-
-            ondrag: function(e) {
-                var delta = e.currentPos.x - e.startPos.x;
-                this.prefWidth = this.startWidth + delta;
-                this.getScene().render();
-            },
-
-            ondragstop: function(e) {
-                delete this.startWidth;
-            },
-
-            getPreferredSize: function() {
-                return { width: this.prefWidth || 150, height: 0 };
-            },
-
-            layout: function() {
-                var d = this.d();
-
-                var y = d.i.t;
-
-                // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
-                //var lh = this.projectLabel.getPreferredHeight(d.b.w);
-                var lh = this.projectLabel.getPreferredSize().height;
-
-                this.projectLabel.bounds = { y: y, x: d.i.l, height: lh, width: d.b.w };
-                y += lh;
-
-                var sw = this.splitter.getPreferredSize().width;
-                this.splitter.bounds = { x: d.b.w - d.i.r - sw, height: d.b.h - d.i.b - y, y: y, width: sw };
-
-                var innerWidth = d.b.w - d.i.w - sw;
-
-                // todo: when I have a better way to do uni-dimensional preferred sizing, restore this
-    //            var ph = this.footer.getPreferredHeight(innerWidth);
-                var ph = this.footer.getPreferredSize().height;
-
-                this.footer.bounds = { x: d.i.l, y: d.b.h - ph, width: innerWidth, height: ph };
-
-                this.list.bounds = { x: d.i.l, y: y, width: innerWidth, height: this.splitter.bounds.height };
-            }
-        }
-    });
-
     var heightDiff;
     var projects;
     var scene;
@@ -345,57 +270,126 @@
     });
 
     function onLoad() {
-        scene = new th.Scene(dojo.byId("canvas"));
+        // create the Thunderhead scene representing the file browser; will consist of various lists in one column on the left,
+        // and a horizontal tree component on the right
+        this.scene = new th.Scene(dojo.byId("canvas"));
+        var scene = this.scene;
 
-        tree = new th.HorizontalTree({ id: "htree" });
-
-        bd.tree = tree;
-
-        // invoking showChildren() here causes the List containing the children to be created, which is necessary
-        // for us to manipulate it a touch here
-        bd.tree.showChildren(null, [{name: ''}]);
-
-        // set various properties of this first list, which contains the projects to display
-        tree.lists[0].addTopLabel(new th.Label({ text: "Projects" }));
-        tree.lists[0].allowDeselection = false;
-
+        // container for the scene
         var topPanel = new th.Panel();
-        topPanel.add([ tree ]);
+
+        this.scene.root.add(topPanel);
+
+//        this.scene.bus.bind("click", topPanel, function(e) {
+//            console.log("top panel click!");
+//        });
+//
+//        this.scene.bus.bind("click", leftColumn, function(e) {
+//            console.log("left column click!");
+//        });
+//
+        // create a scroll pane for the left column, and a top-level container to put in the scroll pane
+        var leftColumnContents = new th.Panel();
+        var leftColumnScrollPane = new th.ScrollPane({ splitter: true });
+        leftColumnScrollPane.add(leftColumnContents);
+        topPanel.add(leftColumnScrollPane);
+//
+//        this.scene.bus.bind("click", leftColumnContents, function(e) {
+//            console.log("left column contents click!");
+//        });
+//
+//        this.scene.bus.bind("click", leftColumnScrollPane, function(e) {
+//            console.log("left column scroll pane click!");
+//        });
+//
+//        // add the project label and project list
+        var projectLabel = new th.Label({ text: "Projects" });
+        leftColumnContents.add(projectLabel);
+        this.projects = new th.List();
+        this.projects.getItemText = function(item) { return item.name };
+        leftColumnContents.add(this.projects);
+//
+//        this.scene.bus.bind("click", projectLabel, function(e) {
+//            console.log("project label click!");
+//        });
+//
+//
+//        // how to layout the two
+        leftColumnContents.layout = function() {
+            var top = this.children[0];
+            var bottom = this.children[1];
+
+            var d = this.d();
+
+            top.setBounds(d.i.l, d.i.t, d.b.iw, top.getPreferredSize().height);
+            bottom.setBounds(d.i.l, top.bounds.y + top.bounds.height, d.b.iw, d.b.ih - top.bounds.height);
+        }
+//
+//        // and a preferred size
+        leftColumnContents.getPreferredSize = function() {
+            var width = 200;    // todo: tie into CSS sizer thingie
+            var height = this.children[0].getPreferredSize().height + this.children[1].getPreferredSize().height;
+
+            return { width: width, height: height };
+        }
+//
+//        // the horizontal tree that will display the contents of a selected project
+        this.tree = new th.HorizontalTree({ id: "htree" });
+        topPanel.add(this.tree);
+//
+//        // homegrown layout; sorry, that's how I roll
         topPanel.layout = function() {
             var d = this.d();
-            tree.bounds = { x: d.i.l, y: d.i.t, width: d.b.w - d.i.w, height: d.b.h - d.i.h };
+
+            console.log("d", d);
+
+            var left = this.children[0];
+            var right = this.children[1];
+
+            console.log("left", left);
+            console.log("right", right);
+
+            var pref = left.getPreferredSize();
+
+            console.log("left type: " + left.type);
+
+            console.log("pref", pref);
+
+            left.setBounds(d.i.l, d.i.t, pref.width, d.b.ih);
+            right.setBounds(left.bounds.x + left.bounds.width, d.i.t, d.b.iw - left.bounds.width, d.b.ih);
+
+            console.log("left bounds", left.bounds);
+            console.log("right bounds", right.bounds);
         };
 
-        scene.root.add(topPanel);
+        this.scene.render();
 
-        scene.render();
+//        scene.bus.bind("dblclick", tree, function(e) {
+//            var newTab = e.shiftKey;
+//            var path = tree.getSelectedPath();
+//            if (path.length == 0 || path[path.length - 1].contents) return; // don't allow directories either
+//            //go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
+//            console.log("implement go.editor");
+//        });
+//
+//        scene.bus.bind("itemselected", tree, function(e) {
+//            var pathSelected = tree.getSelectedPath(true);
+//            //var db = bespin.page.dashboard;
+//            var db = this;
+//            // this keeps the url to be changed if the file path changes to frequently
+//            if (db.urlTimeout) {
+//                clearTimeout(db.urlTimeout);
+//            }
+//            db.urlTimeout = setTimeout(dojo.hitch(pathSelected, function () {
+//                db.lastSelectedPath = this;
+//                location.hash = '#path=' + this;
+//            }), 300);
+//        }, this);
 
-        scene.bus.bind("dblclick", tree, function(e) {
-            var newTab = e.shiftKey;
-            var path = tree.getSelectedPath();
-            if (path.length == 0 || path[path.length - 1].contents) return; // don't allow directories either
-            //go.editor(currentProject, bd.getFilePath(path.slice(1, path.length)), newTab);
-            console.log("implement go.editor");
-        });
-
-        scene.bus.bind("itemselected", tree, function(e) {
-            var pathSelected = tree.getSelectedPath(true);
-            //var db = bespin.page.dashboard;
-            var db = this;
-            // this keeps the url to be changed if the file path changes to frequently
-            if (db.urlTimeout) {
-                clearTimeout(db.urlTimeout);
-            }
-            db.urlTimeout = setTimeout(dojo.hitch(pathSelected, function () {
-                db.lastSelectedPath = this;
-                location.hash = '#path=' + this;
-            }), 300);
-        }, this);
-
-        scene.bus.bind("itemselected", tree.lists[0], function(e) {
-            currentProject = e.item.name;
-            bespin.publish("project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
-        });
+//        scene.bus.bind("itemselected", tree.lists[0], function(e) {
+//            currentProject = e.item.name;
+//            bespin.publish("project:set", { project: currentProject, suppressPopup: true, fromDashboardItemSelected: true });
+//        });
 
         // setup the command line
         server = bespin.register('server', new bespin.client.Server());
@@ -404,53 +398,13 @@
         files = bespin.register('files', new bespin.client.FileSystem());
 
         // get logged in name; if not logged in, display an error of some kind
-        server.currentuser(bd.loggedIn, bd.notLoggedIn);
+        //server.currentuser(bd.loggedIn, bd.notLoggedIn);
 
         // provide history for the dashboard
-        bespin.subscribe("url:changed", function(e) {
-            var pathSelected =  (new bespin.client.settings.URL()).get('path');
-            bespin.page.dashboard.restorePath(pathSelected);
-        });
-
-        // TODO: commenting this out as it is throwing errors at the moment
-        // provide arrow navigation to dashboard
-        dojo.connect(window, "keydown", dojo.hitch(tree, function(e) {
-            var key = bespin.util.keys.Key;
-            var path = this.getSelectedPath();
-            if (path === undefined) return;
-            // things to make life much more easy :)
-            var index = path.length - 1;
-            var list = this.lists[index];
-            var listNext = (this.lists.length > index ? this.lists[index + 1] : false);
-            var listPre = (index != 0 ? this.lists[index - 1] : false);
-
-            switch (e.keyCode) {
-                case key.LEFT_ARROW:
-                    if (!listPre) break;
-                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
-                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
-                    break;
-                case key.RIGHT_ARROW:
-                    if (!listNext) break;
-                    if (list.selected.lastSelected) {
-                        listNext.selectItemByText(list.selected.lastSelected);
-                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                    } else {
-                        listNext.selected = listNext.items[0];
-                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                    }
-                    break;
-                case key.UP_ARROW:
-                    list.moveSelectionUp();
-                    break;
-                case key.DOWN_ARROW:
-                    list.moveSelectionDown();
-                    break;
-                case key.ENTER:
-                    this.bus.fire("dblclick", e, tree);
-                    break;
-            }
-        }));
+//        bespin.subscribe("url:changed", function(e) {
+//            var pathSelected =  (new bespin.client.settings.URL()).get('path');
+//            bespin.page.dashboard.restorePath(pathSelected);
+//        });
     }
     </script>
 
