@@ -56,16 +56,16 @@ dojo.provide("bespin.user.register");
     });
     
     dojo.mixin(bespin.user.register, {
-        checkUsername: function() {
+        checkUsername: function(idPrefix) {
             var username_error = [];
-            var username = dojo.byId("register_username").value;
+            var username = dojo.byId(idPrefix + "_username").value;
             if (username.length < 4) {
                 username_error.push("Usernames must be at least 4 characters long");   
             }
             if (/[<>| '"]/.test(username)) {
                 username_error.push("Usernames must not contain any of: <>| '\"");   
             }
-            dojo.byId('register_username_error').innerHTML = username_error.join(", ");
+            dojo.byId(idPrefix + '_username_error').innerHTML = username_error.join(", ");
         },
         checkPassword: function() {
             dojo.byId('register_password_error').innerHTML = (!utils.validatePassword(dojo.byId('register_password').value)) ? "Password must be between 6 and 20 characters" : "";
@@ -73,18 +73,36 @@ dojo.provide("bespin.user.register");
         checkConfirm: function() {
             dojo.byId('register_confirm_error').innerHTML = (dojo.byId('register_password').value != dojo.byId('register_confirm').value) ? "Passwords do not match" : "";
         },
-        checkEmail: function() {
-            dojo.byId('register_email_error').innerHTML = (!utils.validateEmail(dojo.byId('register_email').value)) ? "Invalid email address" : "";
+        checkEmail: function(idPrefix) {
+            dojo.byId(idPrefix + '_email_error').innerHTML = (!utils.validateEmail(dojo.byId(idPrefix + '_email').value)) ? "Invalid email address" : "";
         },
         showForm: function() {
             if (utils.showingBrowserCompatScreen()) return;
+            dojo.style("register_form", "display", "block");
             dojo.style('logged_in', 'display', 'none');
             dojo.style('not_logged_in', 'display', 'none');           
             webpieces.showCenterPopup(dojo.byId('centerpopup'), true);  
         },
         hideForm: function() {
             webpieces.hideCenterPopup(dojo.byId('centerpopup'));
+            dojo.style("register_form", "display", "none");
             server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
+        },
+        showLostPassword: function() {
+            dojo.style("lost_password_form", "display", "block");
+            webpieces.showCenterPopup(dojo.byId('centerpopup'), true);  
+        },
+        hideLostPassword: function() {
+            webpieces.hideCenterPopup(dojo.byId('centerpopup'));
+            dojo.style("lost_password_form", "display", "none");
+        },
+        showLostUsername: function() {
+            dojo.style("lost_username_form", "display", "block");
+            webpieces.showCenterPopup(dojo.byId('centerpopup'), true);  
+        },
+        hideLostUsername: function() {
+            webpieces.hideCenterPopup(dojo.byId('centerpopup'));
+            dojo.style("lost_username_form", "display", "none");
         },
         send: function() {
             var pw = dojo.byId('register_password').value;

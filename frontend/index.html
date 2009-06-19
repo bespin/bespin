@@ -47,7 +47,9 @@
   <div id="not_logged_in" style="display: none;">
       <form onsubmit="bespin.user.login(); return false;">
           <input id="loginbutton" type="image" src="images/splash_btn_login.gif" tabindex="3">
-          <div id="login-holder"><span id="login_label"><a href="#" onclick="bespin.user.register.showForm();">Sign up</a> or log in:</span>
+          <div id="login-holder"><span id="login_label"><a href="#" onclick="bespin.user.register.showForm();">Sign up</a> 
+            or log in (lost <a href="#" onclick="bespin.user.register.showLostPassword();">password</a> or 
+            <a href="#" onclick="bespin.user.register.showLostUsername();">username</a>?):</span>
               <label for="username">Username: </label><input id="username" type="text" tabindex="1"> <label id="psw-label" for="password">Password: </label><input id="password" type="password" maxlength="20" tabindex="2"> <div id="status" style="display: none;"></div>
           </div>
       </form>
@@ -77,59 +79,121 @@
 </div>
 
 <div id="centerpopup" style="display:none;">
-<div id="register_form">
-  <div id="register_title">
-    <p>Register for Bespin</p>
-  </div>
-  <table>
-    <tbody>
-      <tr>
-        <th>Username:</th>
-        <td><input type="text" id="register_username" onchange="bespin.user.register.checkUsername();"/></td>
-      </tr>
-      <tr>
-        <td class="register_error" colspan="2">
-          <div id="register_username_error"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>Password:</th>
-        <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
-      </tr>
-      <tr>
-        <td class="register_error" colspan="2">
-          <div id="register_password_error"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>Confirm Password:</th>
-        <td><input type="password" id="register_confirm" onchange="bespin.user.register.checkConfirm();"/></td>
-      </tr>
-      <tr>
-        <td class="register_error" colspan="2">
-          <div id="register_confirm_error"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>Email:</th>
-        <td><input type="text" id="register_email" onchange="bespin.user.register.checkEmail();"/></td>
-      </tr>
-      <tr>
-        <td class="register_error" colspan="2">
-          <div id="register_email_error"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>&nbsp;</th>
-        <th>
-          <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.cancel();"/>
-          <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
-        </th>
-        <td><div id="register_register_error"></div></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+    <div id="lost_password_form" class="register_form">
+        <div id="lost_title" class="register_title">
+            <p>Lost your password?</p>
+        </div>
+        <table>
+          <tbody>
+            <tr>
+              <td colspan="2" class="instructions">
+                An email with a password change link will be sent
+                to your registered email address.
+              </td>
+            <tr>
+              <th>Username:</th>
+              <td><input type="text" id="lost_password_username" onchange="bespin.user.register.checkUsername('lost_password');"/></td>
+            </tr>
+            <tr>
+              <td class="register_error" colspan="2">
+                <div id="lost_password_username_error"></div>
+              </td>
+            </tr>
+            <tr>
+              <th>&nbsp;</th>
+              <th>
+                <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.hideLostPassword();"/>
+                <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
+              </th>
+              <td><div id="register_register_error"></div></td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+    <div id="lost_username_form" class="register_form">
+        <div id="lost_title" class="register_title">
+            <p>Lost your username?</p>
+        </div>
+        <table>
+          <tbody>
+            <tr>
+              <td colspan="2" class="instructions">
+                An email with your username will be sent
+                to your email address.
+              </td>
+          <tr>
+            <th>Email:</th>
+            <td><input type="text" id="lost_username_email" onchange="bespin.user.register.checkEmail('lost_username');"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="lost_username_email_error"></div>
+            </td>
+          </tr>
+            <tr>
+              <th>&nbsp;</th>
+              <th>
+                <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.hideLostUsername();"/>
+                <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
+              </th>
+              <td><div id="register_register_error"></div></td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+    <div id="register_form" class="register_form">
+      <div id="register_title" class="register_title">
+        <p>Register for Bespin</p>
+      </div>
+      <table>
+        <tbody>
+          <tr>
+            <th>Username:</th>
+            <td><input type="text" id="register_username" onchange="bespin.user.register.checkUsername('register');"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="register_username_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>Password:</th>
+            <td><input type="password" id="register_password" onchange="bespin.user.register.checkPassword();"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="register_password_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>Confirm Password:</th>
+            <td><input type="password" id="register_confirm" onchange="bespin.user.register.checkConfirm();"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="register_confirm_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>Email:</th>
+            <td><input type="text" id="register_email" onchange="bespin.user.register.checkEmail('register');"/></td>
+          </tr>
+          <tr>
+            <td class="register_error" colspan="2">
+              <div id="register_email_error"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>&nbsp;</th>
+            <th>
+              <input type="button" class="darkButton" value="< Cancel" onclick="bespin.user.register.cancel();"/>
+              <input type="button" class="darkButton" value="Register >" onclick="bespin.user.register.send();"/>
+            </th>
+            <td><div id="register_register_error"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 </div>
 
 <div id="welcome" align="center">
