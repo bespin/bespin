@@ -86,7 +86,7 @@ Label.statusProject, Label.statusFile {
    font: 10pt Calibri, Arial, sans-serif;
 }
 
-Label.statusSymbol, Label.statusDirty {
+Label.statusSymbol {
    color: gray;
    font: 10pt Calibri, Arial, sans-serif;
 }

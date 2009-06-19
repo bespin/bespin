@@ -64,7 +64,7 @@
         <div style="float: left;">
             <a href="index.html" title="Go Home" id="home"><img id="logo" src="images/logo.png" alt="Bespin" border="0"></a>
 
-            <div id="status" title="Current Project : Current File"><canvas id="projectLabel"></canvas></div>
+            <div id="status" title="Current Project : Current File"><canvas id="projectStatus"></canvas></div>
             <div id="toolbar">
                 <img class="icon" id="toolbar_commandline" src="images/icn_command.png" alt="Show Command Line (Ctrl-J)" title="Show Command Line (Ctrl-J)">
                 <img class="icon" id="toolbar_filepopup" src="images/icn_filepopup.png" alt="Show Files (Ctrl-F)" title="Show Files (Ctrl-F)" style="padding-right: 20px">
@@ -201,11 +201,11 @@
     <div id="centerpopup" style="display:none;"></div>
     <div id="popup_insert_point"></div>
     <div id="quickopenContainer">
-        <input id="quickopen_input_first" style="z-index: -100"></input>
-        <input id="quickopen_input_last" style="z-index: -100"></input><br>
+        <input id="quickopen_input_first" style="z-index: -100">
+        <input id="quickopen_input_last" style="z-index: -100"><br>
 
         <canvas id="quickopen" flowLayout="vertical" width="300" height="393">
-            <input id="quickopen_input"></input>
+            <input id="quickopen_input">
             <list id="quickopen_list" layoutData="1.0"></list>
             <label id="quickopen_label" text="Path to file..."></label>
         </canvas>
