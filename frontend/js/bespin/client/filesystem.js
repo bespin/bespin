@@ -72,6 +72,11 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
     loadContents: function(project, path, onSuccess, onFailure) {
+        if (path === undefined) {
+            console.trace();
+            throw new Error("waddayaknow: path === undefined.");
+        }
+
         this.server.loadFile(project, path, function(content) {
             if (/\n$/.test(content)) {
                 content = content.substr(0, content.length - 1);
