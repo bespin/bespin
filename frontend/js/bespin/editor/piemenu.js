@@ -54,16 +54,18 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.canvas = dojo.create("canvas", {
             id: "piemenu",
             tabIndex: -1,
-            height: this.editor.canvas.height,
-            width: this.editor.canvas.width,
+            height: window.innerHeight, // See comments on resize()
+            width: window.innerWidth,
             style: {
                 position: "absolute",
                 zIndex: 100,
                 top: this.settings.canvasTop + "px",
+                left: "0px",
                 display: "none"
             }
         }, dojo.body());
         this.ctx = this.canvas.getContext('2d');
+        th.fixCanvas(this.ctx);
 
         // Load the slice images
         for (var dir in this.slices) {
@@ -183,7 +185,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
      */
     settings: {
         // How far from the top of the window does the pie go
-        canvasTop: 31,
+        canvasTop: 0,
         // How much space do we leave around the opened slices?
         topMargin: 10,
         leftMargin: 60,
@@ -387,7 +389,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 onEnd: function() {
                     self.canvas.style.display = 'none';
                     self.currentSlice = null;
-                    bespin.get("editor").setFocus(true);
+                    self.editor.setFocus(true);
                 }
             });
         }
@@ -419,8 +421,19 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     resize: function() {
         if (!this.visible()) return;
 
-        this.canvas.height = this.editor.canvas.height;
-        this.canvas.width = this.editor.canvas.width;
+        // This fixes some redraw problems (due to resize events firing in
+        // unpredictable orders) however this code doesn't work on IE. There
+        // is a dojo function to use clientHeight on IE, but that's in dijit
+        // so in the sort term we hack.
+        // http://www.dojotoolkit.org/forum/dojo-core-dojo-0-9/dojo-core-support/how-get-cross-browser-window-innerheight-value
+        // http://code.google.com/p/doctype/wiki/WindowInnerHeightProperty
+        //  this.canvas.height = this.editor.canvas.height;
+        //  this.canvas.width = this.editor.canvas.width;
+        // Also the height maths is wonky because it puts the pie off the bottom
+        // of the screen, but we'll be changing the way that works shortly
+        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
+
         this.canvas.style.display = 'block';
 
         this.renderCurrentSlice();
