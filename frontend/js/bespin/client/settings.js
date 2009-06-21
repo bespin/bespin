@@ -53,6 +53,7 @@ dojo.declare("bespin.client.settings.Core", null, {
 
     loadSession: function() {
         var editSession = bespin.get('editSession');
+        
         var path    = this.fromURL.get('path') || editSession.path;
         var project = this.fromURL.get('project') || editSession.project;
 
@@ -309,7 +310,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
     _load: function() {
         var self = this;
-
+        
         var checkLoaded = function() {
             if (!self.loaded) { // first time load
                 self.loaded = true;
@@ -326,7 +327,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
                         self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
                     }
                 });
-
+                
                 checkLoaded();
             }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
         };
@@ -491,9 +492,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
-                var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
-                if (fileType) {
-                    editor.language = fileType;
+                var path = bespin.get('editSession').path;
+                if (path) {
+                    var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
+                    if (fileType) {
+                        editor.language = fileType;
+                    }                                        
                 }
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
@@ -678,33 +682,21 @@ dojo.declare("bespin.client.settings.Events", null, {
                 bespin.wizard.show("newuser", false);
             }
 
-            // if this is a new file, deal with it and setup the state
-            var newfile = settings.fromURL.get('new');
-            if (newfile) { // scratch file
-                bespin.publish("editor:newfile", {
-                   project: project,
-                   newfilename: path,
-                   content: settings.fromURL.get('content') || " "
-                });
-            }
-            else {
-                // existing file, so open it
-                if (path) {
-                    bespin.publish("editor:openfile", { filename: path });
+            // existing file, so open it
+            if (path) {
+                bespin.publish("editor:openfile", { filename: path });
+            } else {
+                var lastUsed = settings.getObject("_lastused");
+                if (!lastUsed) {
+                    bespin.publish("project:set", { project: "SampleProject" });
+                    bespin.publish("editor:openfile", { filename: "readme.txt" });
                 }
                 else {
-                    var lastUsed = settings.getObject("_lastused");
-                    if (!lastUsed) {
-                        bespin.publish("project:set", { project: "SampleProject" });
-                        bespin.publish("editor:openfile", { filename: "readme.txt" });
-                    }
-                    else {
-                        // Warning: Publishing an extra filename member to
-                        // project:set and an extra project member to
-                        // editor:openfile
-                        bespin.publish("project:set", lastUsed[0]);
-                        bespin.publish("editor:openfile", lastUsed[0]);
-                    }
+                    // Warning: Publishing an extra filename member to
+                    // project:set and an extra project member to
+                    // editor:openfile                
+                    bespin.publish("project:set", lastUsed[0]);
+                    bespin.publish("editor:openfile", lastUsed[0]);
                 }
             }
         });
