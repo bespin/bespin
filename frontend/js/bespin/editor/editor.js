@@ -430,6 +430,8 @@ dojo.declare("bespin.editor.UI", null, {
         this.hasFocus = false;
 
         var source = this.editor.container;
+        this.globalHandles = []; //a collection of global handles to event listeners that will need to be disposed.
+        
         dojo.connect(source, "mousemove", this, "handleScrollBars");
         dojo.connect(source, "mouseout", this, "handleScrollBars");
         dojo.connect(source, "click", this, "handleScrollBars");
@@ -450,9 +452,11 @@ dojo.declare("bespin.editor.UI", null, {
             this.xoffset = -this.xscrollbar.value;
             this.editor.paint();
         });
-        dojo.connect(window, "mousemove", this.xscrollbar, "onmousemove");
-        dojo.connect(window, "mouseup", this.xscrollbar, "onmouseup");
-        dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel");
+        this.globalHandles.push(dojo.connect(window, "mousemove", this.xscrollbar, "onmousemove"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this.xscrollbar, "onmouseup"));
+        this.globalHandles.push(
+            dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel")
+        );
 
         this.yscrollbar = new bespin.editor.Scrollbar(this, "vertical");
         this.yscrollbar.valueChanged = dojo.hitch(this, function() {
@@ -461,9 +465,13 @@ dojo.declare("bespin.editor.UI", null, {
         });
 
         var scope = editor.opts.actsAsComponent ? editor.canvas : window;
-        dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove");
-        dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup");
-        dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel");
+        
+        //the following MAY be global, or may not.
+        this.globalHandles.push(dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove"));
+        this.globalHandles.push(dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup"));
+        this.globalHandles.push(
+            dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel")
+        );
 
         setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
@@ -1636,6 +1644,12 @@ dojo.declare("bespin.editor.UI", null, {
         this.model.searchStringChanged(this.searchString);
 
         this.editor.paint(true);
+    },
+    dispose: function()
+    {
+        for (var i = 0; i < this.globalHandles.length; i++) {
+            dojo.disconnect(this.globalHandles[i]);
+        }
     }
 });
 
@@ -1779,5 +1793,13 @@ dojo.declare("bespin.editor.API", null, {
 
     setReadOnly: function(readonly) {
         this.readonly = readonly;
+    },
+    
+    // anything that this editor creates should be gotten rid of. Useful when you will be creating and destroying
+    // editors more than once.
+    dispose: function()
+    {
+        bespin.editor.clipboard.uninstall(); // uninstall the clipboard
+        this.ui.dispose();
     }
 });
