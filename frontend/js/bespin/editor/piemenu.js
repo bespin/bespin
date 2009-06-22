@@ -224,7 +224,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             toolbar: [
                 {
                     icon: "images/slice_aaa.png",
-                    alt: "Font Size",
+                    alt: "Toggle Font Size",
                     onclick: function() {
                         bespin.get("commandLine").toggleFontSize();
                     }
@@ -634,12 +634,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // this evil fix which only works because only 1 slice has a toolbar
         left = d.rightLeft - 150;
 
+        // 27 is an evil number. Again.
+        var toolbarOffsetTop = (this.settings.topMargin + this.settings.canvasTop + 27) + "px";
+
         dojo.forEach(this.currentSlice.toolbar, function(button) {
             dojo.style(button.img, {
                 display: "block",
                 // This is DOM so top is relative to top of window not canvas
-                // TODO: But why 18 and not this.settings.canvasTop?
-                top: (18 + top) + "px",
+                top: toolbarOffsetTop,
                 left: left + "px"
             });
 
@@ -650,7 +652,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             // Close Button
             dojo.style(this.closer, {
                 display: 'block',
-                top: (this.settings.topMargin + this.settings.canvasTop + 27) + "px",
+                top: toolbarOffsetTop,
                 left: (d.rightLeft - 16) + "px"
             });
         }

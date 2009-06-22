@@ -381,9 +381,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return date.getHours() + ":" + mins + ":" + secs;
         };
 
-        var settings = bespin.get("settings");
-        var size = parseInt(settings.get("consolefontsize"));
-        var mode = settings.get("historytimemode");
+        var size = parseInt(this.settings.get("consolefontsize"));
+        var mode = this.settings.get("historytimemode");
 
         dojo.attr(this.output, "innerHTML", "");
 
@@ -504,15 +503,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Toggle Font Size ==
     toggleFontSize: function() {
-        var settings = bespin.get("settings");
-
         var self = this;
         var setSize = function(size) {
-            settings.set("consolefontsize", size);
+            self.settings.set("consolefontsize", size);
             self.updateOutput();
         };
 
-        var size = parseInt(settings.get("consolefontsize"));
+        var size = parseInt(this.settings.get("consolefontsize"));
         switch (size) {
             case 9: setSize(11); break;
             case 11: setSize(14); break;
@@ -523,15 +520,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Toggle History / Time Mode ==
     toggleHistoryTimeMode: function() {
-        var settings = bespin.get("settings");
-
         var self = this;
         var setMode = function(mode) {
-            settings.set("historytimemode", mode);
+            self.settings.set("historytimemode", mode);
             self.updateOutput();
         };
 
-        var size = settings.get("historytimemode");
+        var size = this.settings.get("historytimemode");
         switch (size) {
             case "history": setMode("time"); break;
             case "time": setMode("blank"); break;
@@ -563,12 +558,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
             if (this.commandStore.aliases[commandLineValue]) {
                 this.showHint(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
-                commandLineValue += ' ';
+                // if the completewithspace setting is on, add on
+                if (this.settings.isSettingOn('completewithspace')) commandLineValue += ' ';
             } else {
                 var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
 
                 if (command) {
-                    if (this.commandStore.commandTakesArgs(command)) {
+                    if (this.commandStore.commandTakesArgs(command) && 
+                        this.settings.isSettingOn('completewithspace')) {
                         commandLineValue += ' ';
                     }
 
@@ -933,6 +930,9 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
+                } else {
+                    this.history.pointer = this.history.instructions.length;
+                    cl.commandLine.value = '';
                 }
 
                 dojo.stopEvent(e);
