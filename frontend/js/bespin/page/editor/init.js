@@ -38,10 +38,7 @@ dojo.provide("bespin.page.editor.init");
 
 // pieces in the scene
 (function() {
-    var projectLabel;
-    var fileLabel;
-    var dirtyLabel;
-    var scene;
+    var statusScene;
 
     dojo.mixin(bespin.page.editor, {
         // ** {{{ recalcLayout() }}} **
@@ -93,10 +90,10 @@ dojo.provide("bespin.page.editor.init");
         // When a user resizes the window, deal with resizing the canvas and repaint
         doResize: function() {
             var d = dojo.coords('status');
-            dojo.attr('projectLabel', { width: d.w, height: d.h });
+            dojo.attr('projectStatus', { width: d.w, height: d.h });
 
             // Repaint the various canvas'
-            //scene.paint();
+            statusScene.paint();
             bespin.get('editor').paint();
         }
     });
@@ -113,7 +110,7 @@ dojo.provide("bespin.page.editor.init");
         bespin.register('actions', editor.ui.actions);
 //        bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
-//        bespin.register('quickopen', new bespin.editor.quickopen.API());
+        bespin.register('quickopen', new bespin.editor.quickopen.API());
         bespin.register('piemenu', new bespin.editor.piemenu.Window());
 
         // Get going when settings are loaded
@@ -174,7 +171,7 @@ dojo.provide("bespin.page.editor.init");
            }
        });
 
-        // // Handle Enter & Escape
+        // Handle Enter & Escape
         dojo.connect(dojo.byId('searchquery'), 'keydown', function(e) {
             var key = bespin.util.keys.Key;
 
@@ -254,93 +251,98 @@ dojo.provide("bespin.page.editor.init");
 
         dojo.connect(window, 'resize', bespin.page.editor, "doResize");
 
-//        scene = new th.Scene(dojo.byId("projectLabel"));
-//
-//        var panel = new th.components.Panel();
-//        scene.root.add(panel);
-//
-//        projectLabel = new th.components.Label({ style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        var symbolThingie = new th.components.Label({ text: ":", style: {
-//            color: "gray",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        fileLabel = new th.components.Label({ style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//        dirtyLabel = new th.components.Label({ text: "", style: {
-//            color: "white",
-//            font: "12pt Calibri, Arial, sans-serif"
-//        }});
-//
-//        panel.add([ projectLabel, symbolThingie, fileLabel, dirtyLabel ]);
-//        panel.layout = function() {
-//            var d = this.d();
-//
-//            var x = 0;
-//            for (var i = 0; i < 2; i++) {
-//                var width = this.children[i].getPreferredWidth(d.b.h);
-//                this.children[i].bounds = { x: x, y: 0, width: width, height: d.b.h };
-//                x += width;
-//            }
-//
-//            var dirtyWidth = this.children[3].getPreferredWidth(d.b.h);
-//            var filenameWidth = d.b.w - d.i.w - x - dirtyWidth;
-//            this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
-//            x += filenameWidth - 18; // 18 is an evil magic number that is caused by a DOM bug. The new Thunderhead will fix this :)
-//            this.children[3].bounds = { x: x, y: 0, width: dirtyWidth, height: d.b.h };
-//        };
-//        scene.render();
+        // -- Deal with the project label (project, filename, dirty flag)
+        statusScene = new ProjectStatusScene();
     });
 
-    // ** {{{ Event: editor:openfile:opensuccess }}} **
-    //
-    // When a file is opened successfully change the project and file status area.
-    // Then change the window title, and change the URL hash area
-    bespin.subscribe("editor:openfile:opensuccess", function(event) {
-        var project = event.project || bespin.get('editSession').project;
-        var filename = event.file.name;
+    // The object that understands how to render the project label scene
+    // It paints "project name [status of clean or dirty] file name"
+    var ProjectStatusScene = function() {
+        var projectLabel, fileLabel, statusLabel, statusLabelWidth;
 
-// TODO: FIX ME WITH THUNDERHEAD 2
-//        projectLabel.attributes.text = project;
-//        fileLabel.attributes.text = filename;
-//        scene.render();
-    });
+        var scene = new th.Scene(dojo.byId("projectStatus"));
+        var panel = new th.Panel();
 
-    // ** {{{ Event: editor:dirty }}} **
-    //
-    // Add a notifier to show that the file is dirty and needs to be saved
-    bespin.subscribe("editor:dirty", function(event) {
-        // TODO: FIX ME WITH THUNDERHEAD 2
-        //dirtyLabel.attributes.text = "●";
-        //scene.render();
-    });
+        projectLabel = new th.Label({ className: "statusProject" });
+        statusLabel = new th.Label({ text: "–", className: "statusSymbol" });
+        fileLabel = new th.Label({ className: "statusFile" });
 
-    // ** {{{ Event: editor:dirty }}} **
-    //
-    // Change the HTML title to change - to ● as a subtle indicator
-    bespin.subscribe("editor:dirty", function() {
-        document.title = document.title.replace('- editing with Bespin', '● editing with Bespin');
-    });
+        panel.add([ projectLabel, statusLabel, fileLabel ]);
+        panel.layout = function() {
+           var d = this.d();
 
-    // ** {{{ Event: editor:clean }}} **
-    //
-    // Take away the notifier. Just saved
-    bespin.subscribe("editor:clean", function(event) {
-        // TODO: FIX ME WITH THUNDERHEAD 2
-        //dirtyLabel.attributes.text = "";
-        //scene.render();
-    });
+           var x = 0;
 
-    // ** {{{ Event: editor:clean }}} **
-    //
-    // Take away the notifier from the HTML title.
-    bespin.subscribe("editor:clean", function(event) {
-        document.title = document.title.replace('● editing with Bespin', '- editing with Bespin');
-    });
+           // Layout the project name
+           var width = this.children[0].getPreferredSize().width;
+           this.children[0].bounds = { x: x, y: 0, width: width, height: d.b.h };
+           x += width;
+
+           // Layout the status (save the clean statuses width)
+           if (!statusLabelWidth) statusLabelWidth = this.children[1].getPreferredSize().width;
+           this.children[1].bounds = { x: x, y: 0, width: statusLabelWidth, height: d.b.h };
+           x += statusLabelWidth;
+
+           // Layout the filename
+           var filenameWidth = d.b.w - d.i.w - x;
+           this.children[2].bounds = { x: x, y: 0, width: filenameWidth, height: d.b.h };
+        };
+        scene.root.add(panel);
+        scene.render();
+
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
+        //
+        // When a file is opened successfully change the project and file status area.
+        // Then change the window title, and change the URL hash area
+        bespin.subscribe("editor:openfile:opensuccess", function(event) {
+            var project = event.project || bespin.get('editSession').project;
+            var filename = event.file.name;
+
+            // update the project label
+            projectLabel.text = project;
+            fileLabel.text = filename;
+            scene.render();
+        });
+
+        // ** {{{ Event: editor:dirty }}} **
+        //
+        // Add a notifier to show that the file is dirty and needs to be saved
+        bespin.subscribe("editor:dirty", function(event) {
+            statusLabel.text = "●";
+            scene.render();
+        });
+
+        // ** {{{ Event: editor:dirty }}} **
+        //
+        // Change the HTML title to change - to ● as a subtle indicator
+        bespin.subscribe("editor:dirty", function() {
+            document.title = document.title.replace('- editing with Bespin', '● editing with Bespin');
+        });
+
+        // ** {{{ Event: editor:clean }}} **
+        //
+        // Take away the notifier. Just saved
+        bespin.subscribe("editor:clean", function(event) {
+            statusLabel.text = "–";
+            scene.render();
+        });
+
+        // ** {{{ Event: editor:clean }}} **
+        //
+        // Take away the notifier from the HTML title.
+        bespin.subscribe("editor:clean", function(event) {
+            document.title = document.title.replace('● editing with Bespin', '- editing with Bespin');
+        });
+
+        return {
+            render: function() {
+                scene.render();
+            },
+            paint: function() {
+                scene.paint();
+            }
+        }
+    }
 
 })();
 

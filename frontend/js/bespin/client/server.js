@@ -56,6 +56,8 @@ dojo.declare("bespin.client.Server", null, {
                 return true;
             } catch (ex) {
                 console.group("Error calling options." + functionName + " from server.request");
+                console.log(options);
+                console.log(options[functionName].toString());
                 console.error(ex);
                 console.trace();
                 console.groupEnd();
@@ -163,15 +165,12 @@ dojo.declare("bespin.client.Server", null, {
     // As request() except that the response is fetched without a connection,
     // instead using the /messages URL
     requestDisconnected: function(method, url, payload, instruction, options) {
-        var self = this;
-        if (!options.evalJSON) {
-            console.error("Disconnected calls must use JSON");
-        }
         options.evalJSON = true;
-
         // The response that we get from the server isn't a 'done it' response
         // any more - it's just a 'working on it' response.
         options.originalOnSuccess = options.onSuccess;
+
+        var self = this;
         options.onSuccess = function(response, xhr) {
             if (response.jobid == null) {
                 console.error("Missing jobid", response);
@@ -204,33 +203,16 @@ dojo.declare("bespin.client.Server", null, {
     },
 
     _processResponse: function(message) {
-        // TODO: remove this warning
-        if (message.eventName) {
-            console.error("Message has an eventName", message);
-        }
-
-        var jobid = message.jobid;
-        if (jobid === null || jobid === undefined) {
-            // Maybe there was more than one message
-            if (dojo.isArray(message)) {
-                message.forEach(function(child) {
-                    this._processResponse(child);
-                });
-            } else {
-                console.error("Missing jobid in message", message);
-                console.trace();
-                return;
-            }
-        }
-
-        var job = this._jobs[jobid];
-        if (!job) {
-            console.error("jobid unknown", message);
-            console.trace();
+        if (message.jobid === undefined) {
+            console.warning("Missing jobid in message", message);
             return;
         }
 
-        delete this._jobs[jobid];
+        var job = this._jobs[message.jobid];
+        if (!job) {
+            console.debug("job unknown. page reload?", message, this);
+            return;
+        }
 
         // TODO: Errors come through with message.error=true, but we're not
         // currently doing anything with that. It's complicated by the
@@ -265,6 +247,7 @@ dojo.declare("bespin.client.Server", null, {
             if (this._jobsCount > 0) {
                 this._jobsCount--;
             }
+            delete this._jobs[message.jobid];
         }
     },
 
@@ -276,7 +259,8 @@ dojo.declare("bespin.client.Server", null, {
         this.request('POST', '/messages/', null, {
             evalJSON: true,
             onSuccess: function(messages) {
-                for (var i=0; i < messages.length; i++) {
+
+                for (var i = 0; i < messages.length; i++) {
                     self._processResponse(messages[i]);
                 }
 
@@ -698,5 +682,18 @@ dojo.declare("bespin.client.Server", null, {
         var url = bespin.util.path.combine('/project/template/', project, "");
         this.request('POST', url,
                     dojo.toJson(templateOptions), opts || {});
+    },
+    
+    lost: function(values, opts) {
+        var opts = opts || {};
+        var url = '/register/lost/';
+        this.request('POST', url, dojo.objectToQuery(values), opts);
+    },
+    
+    changePassword: function(username, newPassword, verifyCode, opts) {
+        var url = "/register/password/" + username;
+        var opts = opts || {};
+        var query = {newPassword: newPassword, code: verifyCode};
+        this.request('POST', url, dojo.objectToQuery(query), opts);
     }
 });

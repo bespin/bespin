@@ -297,26 +297,6 @@ bespin.subscribe("directory:create", function(event) {
     });
 });
 
-// ** {{{ Event: directory:delete }}} **
-//
-// Delete a directory
-bespin.subscribe("directory:delete", function(event) {
-    var editSession = bespin.get('editSession');
-    var files = bespin.get('files');
-
-    var project = event.project || editSession.project;
-    var path = event.path || '';
-
-    if (project == bespin.userSettingsProject && path == '/') return; // don't delete the settings project
-
-    files.removeDirectory(project, path, function() {
-        if (path == '/') bespin.publish("project:set", { project: '' }); // reset
-        bespin.get("commandLine").addOutput('Successfully deleted directory: [project=' + project + ', path=' + path + ']');
-    }, function() {
-        bespin.get("commandLine").addOutput('Unable to delete directory: [project=' + project + ', path=' + path + ']');
-    });
-});
-
 // ** {{{ Event: project:create }}} **
 //
 // Create a new project
@@ -324,16 +304,6 @@ bespin.subscribe("project:create", function(event) {
     var project = event.project || bespin.get('editSession').project;
 
     bespin.publish("directory:create", { project: project });
-});
-
-// ** {{{ Event: project:delete }}} **
-//
-// Delete a project
-bespin.subscribe("project:delete", function(event) {
-    var project = event.project;
-    if (!project || project == bespin.userSettingsProject) return; // don't delete the settings project
-
-    bespin.publish("directory:delete", { project: project });
 });
 
 // ** {{{ Event: project:rename }}} **

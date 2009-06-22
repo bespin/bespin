@@ -1,0 +1,11 @@
+We've received a request to retrieve your username for the Bespin project
+server at {base_url}. 
+
+If you didn't request this, please ignore this message.
+
+Your username is:
+{.repeated section usernames}
+    {username}
+{.end}
+
+You can now go to {base_url} and login!

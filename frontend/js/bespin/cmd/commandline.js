@@ -91,7 +91,7 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
             return true;
         }
 
-        for (command in this.commands) { // try the aliases
+        for (var command in this.commands) { // try the aliases
             if (this.commands[command]['aliases']) {
                 if (bespin.util.include(this.commands[command]['aliases'], commandname)) {
                     return true;
@@ -221,6 +221,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             style: "display:none;"
         }, parentElement);
 
+        this.footer = dojo.byId("footer");
+
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
         if (bespin.get('editor')) this.editor = bespin.get('editor');
@@ -280,7 +282,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     // == Show Output ==
     // Show the output area in the given display rectangle
     showOutput: function(left, bottom, width, height) {
-        dojo.style("footer", {
+        dojo.style(this.footer, {
             left: left + "px",
             width: (width - 10) + "px",
             bottom: bottom + "px",
@@ -288,7 +290,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         });
         this.commandLine.focus();
 
-        var footerHeight = dojo.style("footer", "height") + 2;
+        var footerHeight = dojo.style(this.footer, "height") + 2;
 
         var piemenu = bespin.get("piemenu");
         if (piemenu && piemenu.visible()) {
@@ -314,9 +316,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Hide Output ==
     hideOutput: function() {
-        this.hideHint();
+        dojo.style(this.commandHint, {
+            left: "32px",
+            bottom: "0px",
+            width: "500px"
+        });
+        //this.hideHint();
         dojo.style(this.output, "display", "none");
-        dojo.style("footer", "display", "none");
+        dojo.style(this.footer, "display", "none");
         this.maxInfoHeight = null;
     },
 
@@ -374,9 +381,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return date.getHours() + ":" + mins + ":" + secs;
         };
 
-        var settings = bespin.get("settings");
-        var size = parseInt(settings.get("consolefontsize"));
-        var mode = settings.get("historytimemode");
+        var size = parseInt(this.settings.get("consolefontsize"));
+        var mode = this.settings.get("historytimemode");
 
         dojo.attr(this.output, "innerHTML", "");
 
@@ -497,15 +503,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Toggle Font Size ==
     toggleFontSize: function() {
-        var settings = bespin.get("settings");
-
         var self = this;
         var setSize = function(size) {
-            settings.set("consolefontsize", size);
+            self.settings.set("consolefontsize", size);
             self.updateOutput();
         };
 
-        var size = parseInt(settings.get("consolefontsize"));
+        var size = parseInt(this.settings.get("consolefontsize"));
         switch (size) {
             case 9: setSize(11); break;
             case 11: setSize(14); break;
@@ -516,15 +520,13 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
     // == Toggle History / Time Mode ==
     toggleHistoryTimeMode: function() {
-        var settings = bespin.get("settings");
-
         var self = this;
         var setMode = function(mode) {
-            settings.set("historytimemode", mode);
+            self.settings.set("historytimemode", mode);
             self.updateOutput();
         };
 
-        var size = settings.get("historytimemode");
+        var size = this.settings.get("historytimemode");
         switch (size) {
             case "history": setMode("time"); break;
             case "time": setMode("blank"); break;
@@ -556,12 +558,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
             if (this.commandStore.aliases[commandLineValue]) {
                 this.showHint(commandLineValue + " is an alias for: " + this.commandStore.aliases[commandLineValue]);
-                commandLineValue += ' ';
+                // if the completewithspace setting is on, add on
+                if (this.settings.isSettingOn('completewithspace')) commandLineValue += ' ';
             } else {
                 var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
 
                 if (command) {
-                    if (this.commandStore.commandTakesArgs(command)) {
+                    if (this.commandStore.commandTakesArgs(command) && 
+                        this.settings.isSettingOn('completewithspace')) {
                         commandLineValue += ' ';
                     }
 
@@ -707,6 +711,16 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
         };
     },
 
+    // A hack to allow an instruction that has called link to forget all the
+    // linked functions.
+    unlink: function() {
+       this._outstanding = 0;
+       this.completed = true;
+       this._callbacks.forEach(function(callback) {
+           callback();
+       });
+   },
+
     // == To String ==
     // A string version of this Instruction suitable for serialization
     toString: function() {
@@ -726,6 +740,7 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
             this.output += html;
         }
 
+        this.element = null;
         this.hideOutput = false;
         this.end = new Date();
 
@@ -915,6 +930,9 @@ dojo.declare("bespin.cmd.commandline.KeyBindings", null, {
                 var next = this.history.next();
                 if (next) {
                     cl.commandLine.value = next.typed;
+                } else {
+                    this.history.pointer = this.history.instructions.length;
+                    cl.commandLine.value = '';
                 }
 
                 dojo.stopEvent(e);

@@ -307,7 +307,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
             // end of the line, so go to the start of the next line
             if ((settings && settings.isSettingOn('strictlines')) && (this.position.col >= this.editor.ui.getRowScreenLength(this.position.row))) {
                 this.moveDown();
-                if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveToLineStart();
+                if (oldPos.row < this.editor.model.getRowCount() - 1) this.moveCursor({ col: 0 });
             } else {
                 this.moveCursor({ col: this.position.col + 1 });
             }

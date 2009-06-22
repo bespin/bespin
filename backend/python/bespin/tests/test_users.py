@@ -26,12 +26,14 @@
 # ***** END LICENSE BLOCK *****
 # 
 
-from bespin.tests import BespinTestApp
 import simplejson
 
 from bespin import config, controllers, auth
 from bespin.database import User, Base, ConflictError
 from bespin.filesystem import get_project
+
+from bespin.tests import BespinTestApp
+from bespin.tests.mock import patch
 
 def setup_module(module):
     config.set_profile("test")
@@ -61,6 +63,9 @@ def test_create_new_user():
     assert len(user.uuid) == 36
     num_users = s.query(User).count()
     assert num_users == 1
+    
+    users = User.find_by_email("bill@bixby.com")
+    assert users[0].username == "BillBixby"
     
 def test_create_duplicate_user():
     s = _get_session(True)
@@ -261,4 +266,79 @@ def test_users_can_be_locked_out():
     resp = app.post("/register/login/BillBixby",
         dict(password="notangry"), status=401)
     
+@patch('bespin.utils.send_text_email')
+def test_lost_username(send_text_email):
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    
+    resp = app.post('/register/lost/', dict(email='bill@bixby.com'))
+    assert send_text_email.called
+    args = send_text_email.call_args[0]
+    assert args[0] == 'bill@bixby.com'
+    assert args[1].startswith("Your username for ")
+    assert "Your username is:" in args[2]
+    assert "BillBixby" in args[2]
+    
+@patch('bespin.utils.send_text_email')
+def test_lost_password_request(send_text_email):
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    
+    app.reset()
+    resp = app.post('/register/lost/', dict(username='BillBixby'))
+    assert send_text_email.called
+    args = send_text_email.call_args[0]
+    assert args[0] == 'bill@bixby.com'
+    assert args[1].startswith("Requested password change for ")
+    user = User.find_user("BillBixby")
+    verify_code = controllers._get_password_verify_code(user)
+    assert verify_code in args[2]
+    
+def test_password_change_with_confirmation_code():
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    app.reset()
+    
+    user = User.find_user("BillBixby")
+    verify_code = controllers._get_password_verify_code(user)
+    resp = app.post('/register/password/BillBixby', dict( 
+                                            code=verify_code,
+                                            newPassword="hatetraffic"))
+    
+    user = User.find_user('BillBixby', 'hatetraffic')
+    assert user
+    
+def test_password_change_bad_code():
+    config.set_profile("test")
+    config.activate_profile()
+    _clear_db()
+    
+    app = controllers.make_app()
+    app = BespinTestApp(app)
+    resp = app.post('/register/new/BillBixby', dict(email="bill@bixby.com",
+                                                    password="notangry"))
+    app.reset()
+    
+    resp = app.post('/register/password/BillBixby', dict( 
+                                            code="42",
+                                            newPassword="hatetraffic"),
+                    status=400)
     
