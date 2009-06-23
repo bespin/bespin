@@ -234,6 +234,14 @@ dojo.declare("bespin.editor.Component", null, {
         } catch (e) {
             // catch the command prompt errors
         }
+    },
+    
+    // ** {{{ dispose }}} **
+    //
+    // Disposes the editor as best as possible, clearing resources, clipboard helpers, and the like.
+    dispose: function()
+    {
+        this.editor.dispose();
     }
 });
 

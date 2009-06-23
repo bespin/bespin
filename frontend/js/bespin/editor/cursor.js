@@ -35,42 +35,56 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
     // Returns 'this.position' or 'pos' from optional input 'modelPos'
     getCursorPosition: function(modelPos) {
-        if (modelPos != undefined) {
-            var pos = bespin.editor.utils.copyPos(modelPos);
-            var line = this.editor.model.getRowArray(pos.row);
-            var tabsize = this.editor.getTabSize();
-
-            // Special tab handling
-            if (line.indexOf("\t") != -1) {
-//              console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
-                var tabs = 0, nottabs = 0;
-
-                for (var i = 0; i < modelPos.col; i++) {
-                    if (line[i] == "\t") {
-                        pos.col += tabsize - 1 - ( nottabs % tabsize );
-                        tabs++;
-                        nottabs = 0;
-                    } else {
-                        nottabs++;
-                        tabs = 0;
-                    }
-//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
-                }
-
-//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
-            }
-
-            return pos;
-        } else {
+        if (modelPos == undefined)
+        {
             return this.position;
         }
+        
+        
+        var pos = bespin.editor.utils.copyPos(modelPos);
+        
+        //avoid modifying model by just using an empty array if row is out of range
+        //this is because getRowArray adds rows if the row is out of range.
+        var line = [];
+        if (this.editor.model.hasRow(pos.row))
+            line = this.editor.model.getRowArray(pos.row);
+            
+        var tabsize = this.editor.getTabSize();
+
+        // Special tab handling
+        if (line.indexOf("\t") != -1) {
+//          console.log( 'Cursor modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+            var tabs = 0, nottabs = 0;
+
+            for (var i = 0; i < modelPos.col; i++) {
+                if (line[i] == "\t") {
+                    pos.col += tabsize - 1 - ( nottabs % tabsize );
+                    tabs++;
+                    nottabs = 0;
+                } else {
+                    nottabs++;
+                    tabs = 0;
+                }
+//                  console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'pos.col: ' + pos.col );
+            }
+
+//              console.log( 'Cursor modelPos.col/pos.col end: ' + modelPos.col, pos.col );
+        }
+
+        return pos;
     },
 
     // Returns 'modelPos' from optional input 'pos' or 'this.position'
     getModelPosition: function(pos) {
         pos = (pos != undefined) ? pos : this.position;
         var modelPos = bespin.editor.utils.copyPos(pos);
-        var line = this.editor.model.getRowArray(pos.row);
+        
+        //avoid modifying model by just using an empty array if row is out of range
+        //this is because getRowArray adds rows if the row is out of range.
+        var line = [];
+        if (this.editor.model.hasRow(pos.row))
+            line = this.editor.model.getRowArray(pos.row);
+        
         var tabsize = this.editor.getTabSize();
 
         // Special tab handling
@@ -305,18 +319,36 @@ dojo.declare("bespin.editor.CursorManager", null, {
     },
 
     movePageUp: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var settings = bespin.get("settings");
+        var selection = this.editor.getSelection();
 
+        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
+        
         this.moveCursor({ row: Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0) });
+
+        if ((settings && settings.isSettingOn('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
+        }
 
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 
     movePageDown: function() {
-        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var settings = bespin.get("settings");
+        var selection = this.editor.getSelection();
 
+        var oldPos = bespin.editor.utils.copyPos(this.position);
+        var oldVirualCol = this.virtualCol;
+        
         this.moveCursor({ row: Math.min(this.position.row + this.editor.ui.visibleRows, this.editor.model.getRowCount() - 1) });
 
+        if ((settings && settings.isSettingOn('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
+            this.moveToLineEnd();   // this sets this.virtulaCol = 0!
+            this.virtualCol = Math.max(oldPos.col, oldVirualCol);
+        }
+        
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 

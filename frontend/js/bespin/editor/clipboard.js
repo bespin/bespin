@@ -39,9 +39,20 @@ dojo.mixin(bespin.editor.clipboard, {
     //
     // Given a clipboard adapter implementation, save it, an call install() on it
     install: function(editor, newImpl) {
-        if (this.uses && typeof this.uses['uninstall'] == "function") this.uses.uninstall();
+        this.uninstall();
         this.uses = newImpl;
         this.uses.install(editor);
+    },
+    
+    // ** {{{ uninstall }}} **
+    //
+    // Uninstalls the clipboard handler installed by install()
+    uninstall: function()
+    {
+        if (this.uses && typeof this.uses['uninstall'] == "function") this.uses.uninstall();
+        
+        //clear uses, because we are no longer using anything.
+        this.uses = undefined;
     },
 
     // ** {{{ setup }}} **
@@ -66,12 +77,14 @@ dojo.mixin(bespin.editor.clipboard, {
 dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
     install: function(editor) {
 
-        // * Configure the hidden copynpaster element
-        var copynpaster = dojo.create("input", {
+        // * Configure the hidden copynpaster element, if it doesn't already exist
+        this.copynpaster = dojo.create("input", {
             type: 'text',
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
+        
+        var copynpaster = this.copynpaster; //because we'll be needing to use it from functions below...
 
         // * Defensively stop doing copy/cut/paste magic if you are in the command line
         var stopAction = function(e) {
@@ -164,6 +177,11 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         dojo.disconnect(this.cutHandle);
         dojo.disconnect(this.beforecopyHandle);
         dojo.disconnect(this.copyHandle);
+        
+        if (this.copynpaster)
+            document.body.removeChild(copynpaster);
+        
+        this.copynpaster = undefined;
     }
 });
 
@@ -175,12 +193,14 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
     install: function(editor) {
 
         // * Configure the hidden copynpaster element
-        var copynpaster = dojo.create("textarea", {
+        this.copynpaster = dojo.create("textarea", {
             id: 'copynpaster',
             tabIndex: '-1',
             autocomplete: 'off',
             style: "position:absolute; z-index:999; top:-10000px; width:0; height:0; border:none;"
         }, dojo.body());
+        
+        var copynpaster = this.copynpaster; //proxy for functions below...
 
         var copyToClipboard = function(text) {
             copynpaster.value = text;
@@ -236,6 +256,11 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
 
     uninstall: function() {
         dojo.disconnect(this.keyDown);
+        
+        if (this.copynpaster)
+            document.body.removeChild(copynpaster);
+        
+        this.copynpaster = undefined;
     }
 });
 

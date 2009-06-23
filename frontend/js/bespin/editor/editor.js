@@ -430,6 +430,8 @@ dojo.declare("bespin.editor.UI", null, {
         this.hasFocus = false;
 
         var source = this.editor.container;
+        this.globalHandles = []; //a collection of global handles to event listeners that will need to be disposed.
+        
         dojo.connect(source, "mousemove", this, "handleScrollBars");
         dojo.connect(source, "mouseout", this, "handleScrollBars");
         dojo.connect(source, "click", this, "handleScrollBars");
@@ -450,9 +452,11 @@ dojo.declare("bespin.editor.UI", null, {
             this.xoffset = -this.xscrollbar.value;
             this.editor.paint();
         });
-        dojo.connect(window, "mousemove", this.xscrollbar, "onmousemove");
-        dojo.connect(window, "mouseup", this.xscrollbar, "onmouseup");
-        dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel");
+        this.globalHandles.push(dojo.connect(window, "mousemove", this.xscrollbar, "onmousemove"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this.xscrollbar, "onmouseup"));
+        this.globalHandles.push(
+            dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel")
+        );
 
         this.yscrollbar = new bespin.editor.Scrollbar(this, "vertical");
         this.yscrollbar.valueChanged = dojo.hitch(this, function() {
@@ -461,9 +465,13 @@ dojo.declare("bespin.editor.UI", null, {
         });
 
         var scope = editor.opts.actsAsComponent ? editor.canvas : window;
-        dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove");
-        dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup");
-        dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel");
+        
+        //the following MAY be global, or may not.
+        this.globalHandles.push(dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove"));
+        this.globalHandles.push(dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup"));
+        this.globalHandles.push(
+            dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel")
+        );
 
         setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
@@ -473,7 +481,7 @@ dojo.declare("bespin.editor.UI", null, {
         var settings = bespin.get("settings");
         var x, y;
 
-        if (pos.y > (this.lineHeight * this.editor.model.getRowCount())) {
+        if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) {
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -587,27 +595,26 @@ dojo.declare("bespin.editor.UI", null, {
         if (up.col == -1) up.col = 0;
 
         //we'll be dealing with the model directly, so we need model positions.
-        //might as well
-        var modelup = this.editor.getModelPos(up);
-        var modeldown = this.editor.getModelPos(down);
-        var modelstart = modeldown;
-        var modelend = modelup;
-        var backwards = false;
-
-        //validate
-        if (modelup.row >= this.editor.model.getRowCount()) {
-            modelup.row = this.editor.model.getRowCount() - 1;
-        }
-
-        if (modeldown.row >= this.editor.model.getRowCount()) {
-            modeldown.row = this.editor.model.getRowCount() - 1;
-        }
+        var modelstart = this.editor.getModelPos(down);
+        var modelend = this.editor.getModelPos(up);
 
         //to make things simpler, go ahead and check if it is reverse
+        var backwards = false;
         if (modelend.row < modelstart.row || (modelend.row == modelstart.row && modelend.col < modelstart.col)) {
             backwards = true; //need to know so that we can maintain direction for shift-click select
-            modelstart = modelup;
-            modelend = modeldown;
+            
+            var temp = modelstart;
+            modelstart = modelend;
+            modelend = temp;
+        }
+        
+        //validate
+        if (!this.editor.model.hasRow(modelstart.row)) {
+            modelstart.row = this.editor.model.getRowCount() - 1;
+        }
+
+        if (!this.editor.model.hasRow(modelend.row)) {
+            modelend.row = this.editor.model.getRowCount() - 1;
         }
 
         //get detail
@@ -615,16 +622,20 @@ dojo.declare("bespin.editor.UI", null, {
 
         //single click
         if (detail == 1) {
-            if (bespin.editor.utils.posEquals(down, up)) {
+            if (bespin.editor.utils.posEquals(modelstart, modelend)) {
                 this.editor.setSelection(undefined);
             } else {
-                //down and up work here because they are editor positions (and setSelection wants that)
-                this.editor.setSelection({ startPos: down, endPos: up });
+                //we could use raw "down" and "up", but that would skip validation.
+                this.editor.setSelection({
+                    startPos: this.editor.getCursorPos(backwards ? modelend : modelstart), 
+                    endPos: this.editor.getCursorPos(backwards ? modelstart : modelend) 
+                });
             }
-            this.editor.moveCursor(up);
+            
+            this.editor.moveCursor(this.editor.getCursorPos(backwards ? modelstart : modelend));
         } else if (detail == 2) { //double click
-            var row = this.editor.model.rows[modeldown.row];
-            var cursorAt = row[modeldown.col];
+            var row = this.editor.model.rows[modelstart.row];
+            var cursorAt = row[modelstart.col];
             if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
                 // For now, don't select anything, but think about copying Textmate and grabbing around it
             } else {
@@ -778,7 +789,9 @@ dojo.declare("bespin.editor.UI", null, {
             }
         }
 
-        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled) this.editor.paint();
+        //mousing over the scroll bars requires a full refresh
+        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled) 
+            this.editor.paint(true);
     },
 
     installKeyListener: function(listener) {
@@ -1636,6 +1649,12 @@ dojo.declare("bespin.editor.UI", null, {
         this.model.searchStringChanged(this.searchString);
 
         this.editor.paint(true);
+    },
+    dispose: function()
+    {
+        for (var i = 0; i < this.globalHandles.length; i++) {
+            dojo.disconnect(this.globalHandles[i]);
+        }
     }
 });
 
@@ -1692,7 +1711,7 @@ dojo.declare("bespin.editor.API", null, {
             startPos = endPos;
             endPos = foo;
         }
-
+        
         return {
             startPos: bespin.editor.utils.copyPos(startPos),
             endPos: bespin.editor.utils.copyPos(endPos),
@@ -1779,5 +1798,13 @@ dojo.declare("bespin.editor.API", null, {
 
     setReadOnly: function(readonly) {
         this.readonly = readonly;
+    },
+    
+    // anything that this editor creates should be gotten rid of. Useful when you will be creating and destroying
+    // editors more than once.
+    dispose: function()
+    {
+        bespin.editor.clipboard.uninstall(); // uninstall the clipboard
+        this.ui.dispose();
     }
 });
