@@ -188,10 +188,14 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 // ** {{{ bespin.cmd.commandline.Interface }}} **
 //
 // The core command line driver. It executes commands, stores them, and handles completion
-
 dojo.declare("bespin.cmd.commandline.Interface", null, {
     constructor: function(commandLine, initCommands, options) {
         this.setup(commandLine, initCommands, options);
+    },
+
+    // Take focus so we can begin work while the pie is rendering for ex
+    focus: function() {
+        this.commandLine.focus();
     },
 
     // Dojo automatically calls superclass constructors. So,
@@ -285,10 +289,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         dojo.style(this.footer, {
             left: left + "px",
             width: (width - 10) + "px",
-            bottom: bottom + "px",
-            display: "block"
+            bottom: bottom + "px"
         });
-        this.commandLine.focus();
+        this.focus();
 
         var footerHeight = dojo.style(this.footer, "height") + 2;
 
@@ -321,9 +324,9 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             bottom: "0px",
             width: "500px"
         });
-        //this.hideHint();
+
         dojo.style(this.output, "display", "none");
-        dojo.style(this.footer, "display", "none");
+        dojo.style(this.footer, "left", "-10000px");
         this.maxInfoHeight = null;
     },
 
