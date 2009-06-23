@@ -1041,15 +1041,19 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     focusCommandline: function() {
-        var piemenu = bespin.get('piemenu');
-        if (piemenu) {
-            piemenu.show(piemenu.slices.commandLine);
-        } else {
-            var commandLine = bespin.get('commandLine');
-            if (commandLine) {
-                commandLine.commandLine.focus();
-            }
+        var commandLine = bespin.get('commandLine');
+        if (commandLine) {
+            commandLine.focus();
         }
+
+        // Give the browser time to focus the (invisible) command line before
+        // animating it into view, so you can type while it is showing
+        setTimeout(function() {
+            var piemenu = bespin.get('piemenu');
+            if (piemenu) {
+                piemenu.show(piemenu.slices.commandLine, false);
+            }
+        }, 10);
     },
 
     focusFileBrowser: function() {
@@ -1079,7 +1083,7 @@ dojo.declare("bespin.editor.Actions", null, {
             startModelPos: this.editor.getModelPos(startPos),
             endModelPos	: this.editor.getModelPos(endPos),
             queued: true
-        }
+        };
 
         var original = this.editor.model.getChunk(selection);
 
@@ -1101,7 +1105,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoOperation = {
             action: "replaceDocument",
             queued: args.queued,
-            chunk: original,
+            chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
 
@@ -1118,13 +1122,11 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoOperation = {
             action: "replaceDocument",
             chunk: modified
-        }
+        };
         var undoOperation = {
             action: "replaceDocument",
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-
 	}
-
 });

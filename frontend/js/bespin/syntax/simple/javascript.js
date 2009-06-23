@@ -44,11 +44,11 @@ bespin.syntax.JavaScriptConstants = {
 };
 
 dojo.declare("bespin.syntax.simple.JavaScript", null, {
-    keywords: 'abstract boolean break byte case catch char class const continue debugger ' +
+    keywords: ' abstract boolean break byte case catch char class const continue debugger ' +
                     'default delete do double else enum export extends false final finally float ' +
                     'for function goto if implements import in instanceof int interface let long native ' +
                     'new null package private protected public return short static super switch ' +
-                    'synchronized this throw throws transient true try typeof var void volatile while with'.split(" "),
+                    'synchronized this throw throws transient true try typeof var void volatile while with ',
 
     punctuation: '{ } > < / + - % * . , ; ( ) ? : = " \''.split(" "),
 
@@ -104,7 +104,7 @@ dojo.declare("bespin.syntax.simple.JavaScript", null, {
                     currentRegion.stop = i;
 
                     if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
-                        if (this.keywords.indexOf(buffer) != -1) {
+                        if (this.keywords.indexOf(" " + buffer + " ") > -1) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
                         } else {

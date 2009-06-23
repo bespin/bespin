@@ -210,6 +210,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_btm",
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
+            preAnimate: function() {
+                bespin.get("commandLine").focus();
+            },
             showContents: function(coords) {
                 var left = coords.l;
                 var bottom = this.piemenu.slices.off.img.height - 10;
@@ -334,7 +337,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Show a specific slice, and animate the opening if needed
      */
-    show: function(slice) {
+    show: function(slice, takeFocus) {
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
@@ -351,7 +354,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         this.canvas.style.display = 'block';
-        this.canvas.focus();
+        if (takeFocus) {
+            this.canvas.focus();
+        }
+        this.currentSlice = slice;
+
+        if (dojo.isFunction(this.currentSlice.preAnimate)) {
+            this.currentSlice.preAnimate();
+        }
 
         var self = this;
         dojo.fadeIn({
@@ -363,9 +373,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 self.renderPie(progress);
             },
             onEnd: function() {
-                self.canvas.focus();
-                self.currentSlice = slice;
-                self.renderCurrentSlice();
+                if (takeFocus) {
+                    self.canvas.focus();
+                }
+                self.renderCurrentSlice(takeFocus);
+                console.log("render done");
             }
         }).play();
     },
@@ -436,7 +448,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         this.canvas.style.display = 'block';
 
-        this.renderCurrentSlice();
+        this.renderCurrentSlice(false);
     },
 
     /**
@@ -494,11 +506,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Animation renderer
      */
-    renderCurrentSlice: function() {
+    renderCurrentSlice: function(takeFocus) {
         // If something else causes us to show a slice directly we need to
         // have focus to do the arrow thing, but we need to do this at the top
         // because slices might have other focus ideas
-        this.canvas.focus();
+        if (takeFocus) {
+            this.canvas.focus();
+        }
 
         var d = this.calculateSlicePositions();
         this.renderPopout(d);
