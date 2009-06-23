@@ -317,6 +317,7 @@ bespin.vcs.getkey = {
     completeText: 'Recommended: Don\'t pass in a password, put it in the following dialog',
     preview: 'Get your SSH public key that Bespin can use for remote repository authentication. (May prompt for your keychain password)',
     execute: function(instruction, kcpass) {
+        if (kcpass == '') kcpass = undefined;
         var server = bespin.get('server');
         server.getkey(kcpass, {
             onSuccess: function(key) {
