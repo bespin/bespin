@@ -10,18 +10,31 @@ Splitter.vertical {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
 }
 
+#file_browser Panel, #file_browser List {
+    background-color: rgb(61, 59, 52);
+}
+
+#file_browser Label {
+    background-color: rgb(61, 59, 52);
+    color: white;
+}
+
+#projects_label {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
+}
+
 /* this selects the project list in the horizontal tree */
 #htree-list-1 Label {
     background-color: rgb(61, 59, 52);
     border: 0;
 }
 
-#htree-list-1 Label.evenmore, #htree-list-1 Label.oddmore {
+#file_browser Label.evenmore, #file_browser Label.oddmore {
     border-top: 1px solid rgb(75, 74, 67);
     border-bottom: 1px solid rgb(41, 40, 35);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730)), url(../images/dash_icn_more.png);
-    background-repeat: repeat-x, no-repeat;
-    background-position: left top, right center;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
+    background-repeat: repeat-x;
+    background-position: left top;
     padding-top: 2px;
     padding-bottom: 2px;
 }
