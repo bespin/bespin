@@ -447,15 +447,19 @@ dojo.declare("bespin.editor.UI", null, {
         this.lastxoffset = 0;
         this.lastyoffset = 0;
 
+        //if we act as component, onmousewheel should only be listened to inside of the editor canvas.
+        var scope = editor.opts.actsAsComponent ? editor.canvas : window;
+
         this.xscrollbar = new bespin.editor.Scrollbar(this, "horizontal");
         this.xscrollbar.valueChanged = dojo.hitch(this, function() {
             this.xoffset = -this.xscrollbar.value;
             this.editor.paint();
         });
+
         this.globalHandles.push(dojo.connect(window, "mousemove", this.xscrollbar, "onmousemove"));
         this.globalHandles.push(dojo.connect(window, "mouseup", this.xscrollbar, "onmouseup"));
         this.globalHandles.push(
-            dojo.connect(window, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel")
+            dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.xscrollbar, "onmousewheel")
         );
 
         this.yscrollbar = new bespin.editor.Scrollbar(this, "vertical");
@@ -463,12 +467,9 @@ dojo.declare("bespin.editor.UI", null, {
             this.yoffset = -this.yscrollbar.value;
             this.editor.paint();
         });
-
-        var scope = editor.opts.actsAsComponent ? editor.canvas : window;
         
-        //the following MAY be global, or may not.
-        this.globalHandles.push(dojo.connect(scope, "mousemove", this.yscrollbar, "onmousemove"));
-        this.globalHandles.push(dojo.connect(scope, "mouseup", this.yscrollbar, "onmouseup"));
+        this.globalHandles.push(dojo.connect(window, "mousemove", this.yscrollbar, "onmousemove"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup"));
         this.globalHandles.push(
             dojo.connect(scope, (!dojo.isMozilla ? "onmousewheel" : "DOMMouseScroll"), this.yscrollbar, "onmousewheel")
         );
