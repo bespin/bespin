@@ -207,6 +207,11 @@ img {
     color: #999;
 }
 
+#quickopenContainer {
+    height: 0;
+    width: 0;
+}
+
 /*
  * Contains the Styles Scrollbars
  */
