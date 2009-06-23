@@ -194,7 +194,9 @@ def set_profile(profile):
         c.static_map['js/thsrc'] = c.static_dir / ".." / ".." / "th" / "src"
         
         c.base_url = "http://localhost:8080/"
-
+        
+        c.email_host = None
+        
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
     cp.read(configfile)

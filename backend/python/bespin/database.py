@@ -103,6 +103,13 @@ class User(Base):
                             primaryjoin=Connection.followed_id==id,
                             secondary=Connection.__table__,
                             secondaryjoin=id==Connection.following_id)
+                    
+                    
+    @staticmethod
+    def generate_password(password):
+        password_hash = sha256()
+        password_hash.update(config.c.pw_secret + password)
+        return password_hash.hexdigest()
 
     @classmethod
     def create_user(cls, username, password, email, override_location=None):
@@ -112,9 +119,7 @@ class User(Base):
         _check_identifiers("Usernames", username)
 
         log.debug("Creating user %s", username)
-        password_hash = sha256()
-        password_hash.update(config.c.pw_secret + password)
-        password = password_hash.hexdigest()
+        password = User.generate_password(password)
         
         user = cls(username, password, email)
         if override_location is not None:
@@ -138,12 +143,16 @@ class User(Base):
         found or the password does not match."""
         user = _get_session().query(cls).filter_by(username=username).first()
         if user and password is not None:
-            password_hash = sha256()
-            password_hash.update(config.c.pw_secret + password)
-            digest = password_hash.hexdigest()
+            digest = User.generate_password(password)
             if str(user.password) != digest:
                 user = None
         return user
+        
+    @classmethod
+    def find_by_email(cls, email):
+        """Looks up a user by email address."""
+        users = _get_session().query(cls).filter_by(email=email).all()
+        return users
 
     def __init__(self, username, password, email):
         self.username = username

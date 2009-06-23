@@ -1015,7 +1015,7 @@ dojo.declare("bespin.editor.Actions", null, {
     toggleQuickopen: function() {
         var quickopen = bespin.get('quickopen');
         if (quickopen) {
-            quickopen.window.toggle();
+            quickopen.toggle();
         }
     },
 

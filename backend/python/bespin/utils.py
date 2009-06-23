@@ -75,9 +75,15 @@ def send_text_email(to_addr, subject, text, from_addr=None):
 def send_email_template(to_addr, subject, template_name, context, from_addr=None):
     """Send an email by applying context to the template in bespin/mailtemplates
     given by template_name and passing the resulting text to send_text_email."""
-    template_file = pkg_resources.resource_filename("bespin", 
+    template_filename = pkg_resources.resource_filename("bespin", 
                                         "mailtemplates/%s" % template_name)
-    template = jsontemplate.FromFile(template_file)
+    template_file = open(template_filename)
+    
+    try:
+        template = jsontemplate.FromFile(template_file)
+    finally:
+        template_file.close()
+        
     text = template.expand(context)
     send_text_email(to_addr, subject, text, from_addr)
     
