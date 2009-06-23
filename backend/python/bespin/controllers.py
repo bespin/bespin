@@ -35,7 +35,7 @@ from urlrelay import URLRelay, register
 from paste.auth import auth_tkt
 import simplejson
 import tempfile
-from webob import Request
+from webob import Request, Response
 
 from bespin.config import c
 from bespin.framework import expose, BadRequest
@@ -45,6 +45,7 @@ from bespin.filesystem import NotAuthorized, OverQuota, File
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 from bespin.utils import send_email_template
+from bespin import jsontemplate
 
 log = logging.getLogger("bespin.controllers")
 
@@ -970,6 +971,26 @@ def pathpopper_middleware(app, num_to_pop=1):
         return app(environ, start_response)
     return new_app
 
+def scriptwrapper_middleware(app):
+    def new_app(environ, start_response):
+        req = Request(environ)
+        if req.path_info.startswith("/getscript"):
+            req.path_info_pop()
+            process_script = True
+        else:
+            process_script = False
+        result = req.get_response(app)
+        if process_script and result.status.startswith("200"):
+            contents = result.body
+            template = jsontemplate.FromFile(open(os.path.dirname(os.path.abspath(__file__)) + "/jsmodule.jsont"))
+            start_response(result.status, result.headers.items())
+            newbody = template.expand(dict(script=contents, 
+                                      script_name=req.path_info))
+            return [newbody]
+        start_response(result.status, result.headers.items())
+        return result.body
+    return new_app
+
 def make_app():
     from webob import Response
     import static
@@ -999,4 +1020,5 @@ def make_app():
         from paste.translogger import TransLogger
         app = TransLogger(app)
         
+    app = scriptwrapper_middleware(app)
     return app
