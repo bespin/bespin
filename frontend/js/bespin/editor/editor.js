@@ -631,8 +631,8 @@ dojo.declare("bespin.editor.UI", null, {
                 var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col);
                 var endPos = this.editor.model.findAfter(modelend.row, modelend.col);
 
-                this.editor.setSelection({ 
-                    startPos: this.editor.getCursorPos(backwards ? endPos : startPos), 
+                this.editor.setSelection({
+                    startPos: this.editor.getCursorPos(backwards ? endPos : startPos),
                     endPos: this.editor.getCursorPos(backwards ? startPos : endPos)
                 });
 
@@ -648,7 +648,7 @@ dojo.declare("bespin.editor.UI", null, {
             } else {
                 endPos.col = this.editor.model.getRowArray(endPos.row).length;
             }
-            
+
             startPos = this.editor.getCursorPos(startPos);
             endPos = this.editor.getCursorPos(endPos);
 
@@ -823,14 +823,15 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("", Key.TAB, this.actions.insertTab, "Indent / insert tab");
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
 
-        // SEARCH / FIND
         listener.bindKeyString("", Key.ESCAPE, this.actions.escape, "Clear fields and dialogs");
+
+        // SEARCH / FIND
         // This is at the moment done by a observe(window) within init.js
         // listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
         // listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
         // listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
-        listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
+        listener.bindKeyString("", Key.A, this.actions.selectAll, "Select All");
 
         // handle key to jump between editor and other windows / commandline
         listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
@@ -838,6 +839,8 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.F, this.actions.focusFileBrowser, "Open File Browser");
 
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
+
+        listener.bindKeyString("CMD", Key.B, "editor:preview", "Preview in Browser");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
         listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");

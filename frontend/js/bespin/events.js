@@ -359,7 +359,7 @@ bespin.subscribe("project:import", function(event) {
 dojo.mixin(bespin.events, {
     toFire: function(eventString) {
         var event = {};
-        if (!eventString.indexOf(';')) { // just a plain command with no args
+        if (eventString.indexOf(';') < 0) { // just a plain command with no args
             event.name = eventString;
         } else { // split up the args
             var pieces = eventString.split(';');
