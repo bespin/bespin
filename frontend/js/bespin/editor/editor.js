@@ -789,7 +789,9 @@ dojo.declare("bespin.editor.UI", null, {
             }
         }
 
-        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled) this.editor.paint();
+        //mousing over the scroll bars requires a full refresh
+        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled) 
+            this.editor.paint(true);
     },
 
     installKeyListener: function(listener) {
