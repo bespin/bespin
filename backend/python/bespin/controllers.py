@@ -988,7 +988,7 @@ def scriptwrapper_middleware(app):
                                       script_name=req.path_info))
             return [newbody]
         start_response(result.status, result.headers.items())
-        return result.body
+        return [result.body]
     return new_app
 
 def make_app():
