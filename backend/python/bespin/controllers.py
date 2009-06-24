@@ -330,6 +330,16 @@ def install_template(request, response):
     response.body = ""
     return response()
     
+@expose(r'^/project/rescan/(?P<project_name>.*/$)', 'POST')
+def rescan_project(request, response):
+    user = request.user
+    project_name = request.kwargs['project_name']
+    project = get_project(user, user, project_name)
+    project.scan_files()
+    response.content_type = "text/plain"
+    response.body = ""
+    return response()
+    
 @expose(r'^/file/template/(?P<path>.*)', 'PUT')
 def install_file_template(request, response):
     user = request.user
