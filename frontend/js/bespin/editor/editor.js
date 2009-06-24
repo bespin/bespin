@@ -1804,8 +1804,7 @@ dojo.declare("bespin.editor.API", null, {
     
     // anything that this editor creates should be gotten rid of. Useful when you will be creating and destroying
     // editors more than once.
-    dispose: function()
-    {
+    dispose: function() {
         bespin.editor.clipboard.uninstall(); // uninstall the clipboard
         this.ui.dispose();
     }
