@@ -101,6 +101,7 @@ def clone(user, source, dest=None, push=None, remoteauth="write",
 def vcs_error(qi, e):
     """Handles exceptions that come up during VCS operations.
     A message is added to the user's message queue."""
+    log.debug("Handling VCS error: %s", e)
     s = database._get_session()
     user = qi.message['user']
     # if the user hadn't already been looked up, go ahead and pull

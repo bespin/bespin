@@ -288,9 +288,23 @@ bespin.vcs.commands.addCommand({
     takes: ['*'],
     completeText: 'Use the current file, add -a for all files or add filenames',
     description: 'Without any options, the vcs diff command will diff the currently selected file against the repository copy. If you pass in -a, the command will diff <em>all</em> files. Finally, you can list files to diff individually.',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         bespin.vcs._performVCSCommandWithFiles("diff", instruction, args);
+    }
+});
+
+/**
+ * Revert command.
+ * Restore individual files or dirs to an earlier state
+ */
+bespin.vcs.commands.addCommand({
+    name: 'revert',
+    preview: 'Restore individual files or dirs to an earlier state',
+    takes: ['*'],
+    completeText: 'Use the current file, add -a for all files or add filenames',
+    description: 'Without any options, the \'vcs revert\' command will restore the currently opened file with the repository copy. If you pass in -a, the command will restore <em>all</em> files. Finally, you can list files to restore individually.',
+    execute: function(instruction, args) {
+        bespin.vcs._performVCSCommandWithFiles("revert", instruction, args);
     }
 });
 

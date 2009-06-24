@@ -1138,3 +1138,28 @@ bespin.cmd.commands.add({
         }), seconds * 1000);
     }
 });
+
+//** {{{Command: rescan}}} **
+bespin.cmd.commands.add({
+    name: 'rescan',
+    takes: ['project'],
+    preview: 'update the project catalog of files used by quick open',
+    execute: function(instruction, project) {
+        if (!project) {
+            bespin.withComponent('editSession', function(editSession) {
+                project = editSession.project;
+            });
+        }
+        bespin.get("server").rescan(project, instruction, {
+            onSuccess: instruction.link(function(response) {
+                instruction.addOutput(response);
+                instruction.unlink();
+            }),
+            onFailure: instruction.link(function(xhr) {
+                instruction.addErrorOutput(xhr.response);
+                instruction.unlink();
+            })
+        });
+    }
+});
+

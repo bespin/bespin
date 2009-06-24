@@ -148,7 +148,8 @@ bespin.syntax.simple.Resolver = new function() {
                   engines[type] = new bespin.syntax.simple[type]();
                   // This is an ugly work around for a weirdness in Firefox 3.5b99
                   // For some reason the lines aren't painted correctly, but if we force a reset of the canvas all repaints well
-                  setTimeout(function() { bespin.get('editor').ui.resetCanvas(); }, 0);
+                  // Seems to be fixed in Firefox 3.5RC2
+                  //setTimeout(function() { bespin.get('editor').ui.resetCanvas(); }, 0);
               }
           }
           return engines[type] || NoopSyntaxEngine;

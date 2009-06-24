@@ -62,7 +62,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.scene = new th.Scene(this.canvas);
 
         // container for the scene
-        var topPanel = new th.Panel();
+        var topPanel = new th.Panel({id: 'file_browser'});
 
         this.scene.root.add(topPanel);
 
@@ -73,7 +73,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         topPanel.add(leftColumnScrollPane);
 
         // add the project label and project list
-        var projectLabel = new th.Label({ text: "Projects" });
+        var projectLabel = new th.Label({ id: "projects_label", 
+                                          text: "Projects" });
         leftColumnContents.add(projectLabel);
         this.projects = new th.List();
         this.projects.getItemText = function(item) { return item.name };

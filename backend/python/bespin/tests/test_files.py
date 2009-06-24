@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 #  ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1
 # 
@@ -604,6 +606,9 @@ def _run_search_tests(search_func):
         "foo_some_other",
         "some_deeply_nested_file_here"
     ]
+    
+    result = search_func(u'ø')
+    assert result == []
 
 def test_project_rename_should_be_secure():
     _init_data()
@@ -777,7 +782,7 @@ def test_search_from_the_web():
     assert resp.content_type == "application/json"
     def run_search(q, limit=20):
         resp = app.get("/file/search/bigmac?%s" 
-            % urlencode([('q', q), ('limit', limit)]))
+            % urlencode([('q', q.encode('utf-8')), ('limit', limit)]))
         assert resp.content_type == "application/json"
         return simplejson.loads(resp.body)
     _run_search_tests(run_search)
