@@ -136,8 +136,8 @@ dojo.declare("bespin.client.settings.Core", null, {
         try {
             return dojo.fromJson(this.get(key));
         } catch(e) {
-            console.log("Error in getObject: " + e)
-            return {}
+            console.log("Error in getObject: " + e);
+            return {};
         }
     },
 
@@ -534,7 +534,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                     return true;
                 }
                 return false;
-            }
+            };
 
             if (theme) {
                 // Try to load the theme from the themes hash
