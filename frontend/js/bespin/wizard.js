@@ -74,14 +74,16 @@ dojo.mixin(bespin.wizard, {
      */
     show: function(instruction, type, warnOnFail) {
         var wizard = this._wizards[type];
-        if (!wizard) {
+        if (!wizard && instruction) {
             instruction.addErrorOutput("Unknown wizard: " + type);
             return;
         }
 
         // Warn when the HTML fetch fails
         var warn = function(xhr) {
-            instruction.addErrorOutput("Failed to display wizard: " + xhr.responseText);
+            if (instruction) {
+                instruction.addErrorOutput("Failed to display wizard: " + xhr.responseText);
+            }
         };
 
         var localOnFailure = warnOnFail ? warn : null;
