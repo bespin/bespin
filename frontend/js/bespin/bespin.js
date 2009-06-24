@@ -87,8 +87,8 @@ dojo.mixin(bespin, {
             } else {
                 bespin.subscribe(topic, function () {
                     --count;
-                    done()
-                })
+                    done();
+                });
             }
             done();
         }
@@ -166,5 +166,4 @@ dojo.mixin(bespin, {
     }
 
 });
-})()
-
+})();
