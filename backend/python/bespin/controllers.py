@@ -45,7 +45,7 @@ from bespin.filesystem import NotAuthorized, OverQuota, File
 from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
 from bespin.mobwrite.mobwrite_daemon import Persister
 from bespin.utils import send_email_template
-from bespin import jsontemplate
+from bespin import jsontemplate, filesystem, queue
 
 log = logging.getLogger("bespin.controllers")
 
@@ -330,14 +330,18 @@ def install_template(request, response):
     response.body = ""
     return response()
     
-@expose(r'^/project/rescan/(?P<project_name>.*/$)', 'POST')
+@expose(r'^/project/rescan/(?P<project_name>.*$)', 'POST')
 def rescan_project(request, response):
     user = request.user
     project_name = request.kwargs['project_name']
     project = get_project(user, user, project_name)
-    project.scan_files()
-    response.content_type = "text/plain"
-    response.body = ""
+    job_body = dict(user=user.username, project=project_name)
+    jobid = queue.enqueue("vcs", job_body, execute="bespin.filesystem:rescan_project",
+                        error_handler="bespin.vcs:vcs_error",
+                        use_db=True)
+    response.content_type = "application/json"
+    response.body = simplejson.dumps(dict(jobid=jobid, 
+                    taskname="Rescan %s" % project_name))
     return response()
     
 @expose(r'^/file/template/(?P<path>.*)', 'PUT')

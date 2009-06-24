@@ -154,10 +154,12 @@ def enqueue(queue_name, message, execute, error_handler=None, use_db=True):
     if config.c.queue:
         id = config.c.queue.enqueue(queue_name, message, execute,
                                     error_handler, use_db)
+        log.debug("Running job asynchronously (%s)", id)
         return id
     else:
         qi = QueueItem(None, queue_name, message, execute,
                         error_handler=error_handler, use_db=use_db)
+        log.debug("Running job synchronously (%s)", qi.id)
         return qi.run()
 
 def process_queue(args=None):

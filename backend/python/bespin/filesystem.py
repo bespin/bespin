@@ -332,6 +332,23 @@ def _regexp(expr, item):
     p = path_obj(item)
     item = p.basename()
     return re.search(expr, item, re.UNICODE|re.I) is not None
+    
+def rescan_project(qi):
+    """Runs an asynchronous rescan of a project"""
+    from bespin import database
+    
+    message = qi.message
+    s = database._get_session()
+    user = database.User.find_user(message['user'])
+    project = get_project(user, user, message['project'])
+    print "Got project %s from user %s" % (project.name, user.username)
+    project.scan_files()
+    print "Scan done"
+    retvalue = database.Message(user_id=user.id, message=simplejson.dumps(
+            dict(asyncDone=True,
+            jobid=qi.id, output="Rescan complete")))
+    s.add(retvalue)
+    
 
 class Project(object):
     """Provides access to the files in a project."""

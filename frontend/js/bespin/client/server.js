@@ -695,5 +695,10 @@ dojo.declare("bespin.client.Server", null, {
         var opts = opts || {};
         var query = {newPassword: newPassword, code: verifyCode};
         this.request('POST', url, dojo.objectToQuery(query), opts);
+    },
+    
+    rescan: function(project, instruction, opts) {
+        this.requestDisconnected('POST', '/project/rescan/' + escape(project), 
+                {}, instruction, opts);
     }
 });
