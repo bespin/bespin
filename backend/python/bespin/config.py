@@ -30,6 +30,7 @@ import os
 import logging
 import logging.handlers
 import ConfigParser
+import sys
 
 import pkg_resources
 from path import path
@@ -129,6 +130,7 @@ c.fslevels = 3
 c.max_import_file_size = 20000000
 
 c.log_requests_to_stdout = False
+c.log_to_stdout = False
 
 # should Project and User names be restricted to a subset
 # of characters
@@ -173,9 +175,10 @@ def set_profile(profile):
                         % os.path.dirname(__file__))
         root_log = logging.getLogger()
         root_log.setLevel(logging.DEBUG)
-        handler = logging.handlers.RotatingFileHandler(c.log_file)
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-        root_log.addHandler(handler)
+
+        file_handler = logging.handlers.RotatingFileHandler(c.log_file)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        root_log.addHandler(file_handler)
 
         paste_log = logging.getLogger("paste.httpserver.ThreadPool")
         paste_log.setLevel(logging.ERROR)
@@ -184,19 +187,20 @@ def set_profile(profile):
         # will be HTTP
         c.secure_cookie = False
         c.use_uuid_as_dir_identifier = False
-        c.default_quota=10000
+        c.default_quota = 10000
         c.log_requests_to_stdout = True
+        c.log_to_stdout = True
 
         c.async_jobs = False
         c.fslevels = 0
-        
+
         # in development, assume a Th directory above the bespin root
         c.static_map['js/thsrc'] = c.static_dir / ".." / ".." / "th" / "src"
-        
+
         c.base_url = "http://localhost:8080/"
-        
+
         c.email_host = None
-        
+
 def load_config(configfile):
     cp = ConfigParser.ConfigParser()
     cp.read(configfile)
@@ -205,28 +209,28 @@ def load_config(configfile):
 def activate_profile():
     for ep in pkg_resources.iter_entry_points("bespin_extensions"):
         ep.load()
-        
+
     if isinstance(c.email_port, basestring):
         c.email_port = int(c.email_port)
-    
+
     if isinstance(c.static_map, basestring):
         static_map = {}
         mappings = c.static_map.split(";")
         for mapping in mappings:
             name, directory = mapping.split("=")
             static_map[name] = directory
-            
+
     c.dbengine = create_engine(c.dburl)
     c.session_factory = scoped_session(sessionmaker(bind=c.dbengine))
     c.fsroot = path(c.fsroot)
-    
+
     c.static_dir = path(c.static_dir)
-    
+
     if not c.template_file_dir:
         c.template_file_dir = c.static_dir / "templates"
-        
+
     c.template_file_dir = path(c.template_file_dir)
-    
+
     if not c.fsroot.exists:
         c.fsroot.makedirs()
 
@@ -236,16 +240,16 @@ def activate_profile():
 
         from bespin import queue
         c.queue = queue.BeanstalkQueue(c.queue_host, c.queue_port)
-    
+
     if c.redis_port:
         c.redis_port = int(c.redis_port)
-    
+
     if c.stats_type == "redis" or c.login_failure_tracking == "redis":
         from bespin import redis
         redis_client = redis.Redis(c.redis_host, c.redis_port)
     else:
         redis_client = None
-        
+
     if c.stats_type == "redis":
         if not redis_client:
             raise InvalidConfiguration("Stats is set to redis, but redis is not configured")
@@ -259,14 +263,13 @@ def activate_profile():
         c.stats_users = set(c.stats_users.split(','))
     if isinstance(c.stats_display, basestring):
         c.stats_display = set(c.stats_display.split(','))
-        
-    
+
     if c.login_attempts:
         c.login_attempts = int(c.login_attempts)
-    
+
     if c.lockout_period:
         c.lockout_period = int(c.lockout_period)
-        
+
     if c.login_failure_tracking == "redis":
         if not redis_client:
             raise InvalidConfiguration("Login failure tracking is set to redis, but redis is not configured")
@@ -275,7 +278,11 @@ def activate_profile():
                                                         c.lockout_period)
     else:
         c.login_tracker = auth.DoNothingFailedLoginTracker()
-        
+
+    if c.log_to_stdout:
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        logging.getLogger().addHandler(stdout_handler)
 
 def dev_spawning_factory(spawning_config):
     spawning_config['app_factory'] = spawning_config['args'][0]
