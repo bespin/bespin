@@ -337,7 +337,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Show a specific slice, and animate the opening if needed
      */
-    show: function(slice, takeFocus) {
+    show: function(slice, dontTakeFocus) {
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
@@ -354,7 +354,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         this.canvas.style.display = 'block';
-        if (takeFocus) {
+        if (!dontTakeFocus) {
             this.canvas.focus();
         }
         this.currentSlice = slice;
@@ -373,11 +373,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 self.renderPie(progress);
             },
             onEnd: function() {
-                if (takeFocus) {
+                if (!dontTakeFocus) {
                     self.canvas.focus();
                 }
-                self.renderCurrentSlice(takeFocus);
-                console.log("render done");
+                self.renderCurrentSlice(dontTakeFocus);
             }
         }).play();
     },
@@ -481,7 +480,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        var alpha = Math.max(progress - 0.9, 0); // Was 0.4
+        var alpha = Math.max(progress - 0.4, 0);
         ctx.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -506,11 +505,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Animation renderer
      */
-    renderCurrentSlice: function(takeFocus) {
+    renderCurrentSlice: function(dontTakeFocus) {
         // If something else causes us to show a slice directly we need to
         // have focus to do the arrow thing, but we need to do this at the top
         // because slices might have other focus ideas
-        if (takeFocus) {
+        if (!dontTakeFocus) {
             this.canvas.focus();
         }
 
@@ -586,7 +585,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     renderPopout: function(d) {
         // Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // was 0.6
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Don't draw the menu area for the 'off' slice
@@ -599,7 +598,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
             // Middle row
             this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
-            this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // Was 0.4
+            this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
             this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
 
             // Draw the middle bit after so it doesn't get overridden

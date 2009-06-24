@@ -1051,7 +1051,7 @@ dojo.declare("bespin.editor.Actions", null, {
         setTimeout(function() {
             var piemenu = bespin.get('piemenu');
             if (piemenu) {
-                piemenu.show(piemenu.slices.commandLine, false);
+                piemenu.show(piemenu.slices.commandLine, true);
             }
         }, 10);
     },

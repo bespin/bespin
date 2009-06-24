@@ -143,8 +143,11 @@ def devconfig(options):
     options.server.config_file.write_text("""
 from bespin.config import c
 
-# uncomment the following line to turn of stdout logging
+# uncomment the following line to turn off stdout logging of requests
 # c.log_requests_to_stdout = False
+
+# uncomment the following line to turn off stdout logging of log statements
+# c.log_to_stdout = False
 
 # change the following line if you want to test Bespin
 # with another database, such as MySQL
