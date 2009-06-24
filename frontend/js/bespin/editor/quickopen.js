@@ -90,7 +90,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
         // load the current opened files at startup
         bespin.subscribe('settings:loaded', function() {
-            bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
+            // bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
 
         bespin.subscribe('ui:escape', dojo.hitch(this, function() {

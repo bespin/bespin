@@ -89,7 +89,7 @@ dojo.declare("bespin.editor.Events", null, {
 
             var project  = event.project || editSession.project;
 
-            if (editSession.checkSameFile(project, filename)) {
+            if (!(event.reload) && editSession.checkSameFile(project, filename)) {
                 if (event.line) {
                     // Jump to the desired line.
                     bespin.get('commandLine').executeCommand('goto ' + event.line, true);
@@ -151,17 +151,35 @@ dojo.declare("bespin.editor.Events", null, {
             var filename = event.filename;
             var project  = event.project;
             var content  = event.content || " ";
+            var reload = event.reload;
 
             var editSession = bespin.get('editSession');
 
             if (editSession) {
                 if (!project) project = editSession.project;
-                if (editSession.checkSameFile(project, filename)) return; // short circuit
+                if (!reload) {
+                    if (editSession.checkSameFile(project, filename)) return; // short circuit
+                } else {
+                    if (!filename) filename = editSession.path;
+                }
             }
 
             if (!project) return; // short circuit
 
             bespin.get('files').forceOpenFile(project, filename, content);
+        });
+        
+        // ** {{{ Event: editor:reload }}} **
+        // 
+        // Reload the current file from the server.
+        bespin.subscribe("editor:reload", function(event) {
+            var editSession = bespin.get('editSession');
+
+            bespin.publish("editor:openfile", {
+                reload: true,
+                project: editSession.project,
+                filename: editSession.path
+            });
         });
 
         // ** {{{ Event: editor:newfile }}} **

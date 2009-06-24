@@ -189,7 +189,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // How much space do we leave around the opened slices?
         topMargin: 10,
         leftMargin: 60,
-        rightMargin: 60
+        rightMargin: 60,
+        fadeInDuration: 200
     },
 
     /**
@@ -364,9 +365,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         var self = this;
+        var duration = parseInt(bespin.get('settings').get('menufadeinduration'));
+
+        // Set the duration for the fade in.
+        if (typeof duration == "undefined" || isNaN(duration)) {
+            duration = this.settings.fadeInDuration;
+        }
+
         dojo.fadeIn({
             node: { style:{} },
-            duration: 500,
+            duration: duration,
             easing: dojo.fx.easing.backOut,
             onAnimate: function(values) {
                 var progress = values.opacity;
