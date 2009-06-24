@@ -848,7 +848,7 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
         // handle key to jump between editor and other windows / commandline
-        listener.bindKeyString("ALT", Key.O, this.actions.toggleQuickopen, "Toggle Quickopen");
+        listener.bindKeyString("CTRL", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CTRL", Key.O, this.actions.focusFileBrowser, "Open File Browser");
         listener.bindKeyString("CTRL", Key.F, this.actions.findInFiles, "Find");
