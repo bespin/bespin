@@ -326,6 +326,8 @@ def _get_space_used(directory):
     return total
 
 def _regexp(expr, item):
+    if expr is None:
+        return False
     # only search on basenames
     p = path_obj(item)
     item = p.basename()
@@ -739,6 +741,8 @@ class Project(object):
         # make the query lower case so that the match boosting
         # in _SearchMatch can use it
         query = query.lower()
+        if isinstance(query, unicode):
+            query = query.encode('utf-8')
         escaped_query = [re.escape(char) for char in query]
         search_re = ".*".join(escaped_query)
         files = self.metadata.search_files(search_re)
