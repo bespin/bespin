@@ -25,56 +25,56 @@
 dojo.provide("bespin.editor.quickopen");
 
 dojo.declare("bespin.editor.quickopen.API", null, {
-    constructor: function() {    
+    constructor: function() {
         this.requestFinished = true;
         this.preformNewRequest = false;
-                    
+
         this.scene = new th.WindowScene( {
-            canvasOrId: document.getElementById("quickopen"), 
+            canvasOrId: document.getElementById("quickopen"),
             isVisible: false,
             isDraggable: true,
             title: "Find Files"
         });
-                     
+
         this.focusManager = new th.FocusManager(th.global_event_bus, th.byId('quickopen_input_first'), th.byId('quickopen_input_last'));
         this.scene.focusManager = this.focusManager;
         this.focusManager.relateTo(this.scene);
-        
+
         this.input = this.scene.byId('quickopen_input');
         this.input.selectAll();
-        
+
         this.list = this.scene.byId('quickopen_list');
         this.list.items = [ 'Loading...'];
         this.list.remove(this.list.renderer);
         this.list.renderer = new th.HtmlLabel();
         this.list.add(this.list.renderer);
         this.list.renderer.addCss('padding', '2px 5px');
-        
+
         this.label = this.scene.byId('quickopen_label');
-        
+
         //this.focusManager.subscribe(this.list);
         this.focusManager.subscribe(this.input);
         this.focusManager.focus(this.input);
-        
+
         this.scene.render();
         this.scene.center();
-        
+
         // add some key bindings
         this.input.key.bind("", this.input.key.ARROW_UP, this.list.moveSelectionUp, this.list);
         this.input.key.bind("", this.input.key.ARROW_DOWN, this.list.moveSelectionDown, this.list);
         this.input.key.bind("", this.input.key.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
         this.input.key.bind("", this.input.key.ENTER, this.openFile, this);
-        
+
         // bind to some events
-        
+
         this.scene.bus.bind("dblclick", this.list, this.openFile, this);
-        
+
         this.scene.bus.bind("itemselected", this.list, function(e) {
             this.label.text = e.item.filename;
             this.label.repaint();
         }, this);
-        
-        this.input.bus.bind("text:changed", this.input, function() {  
+
+        this.input.bus.bind("text:changed", this.input, function() {
             if (this.input.text == '') {
                 this.showFiles(this.openSessionFiles, true);
             } else {
@@ -84,52 +84,55 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                     bespin.get('server').searchFiles(bespin.get('editSession').project, this.input.text, this.displayResult);
                 } else {
                     this.preformNewRequest = true;
-                }                
+                }
             }
         }, this);
-        
+
         // load the current opened files at startup
-        bespin.subscribe('settings:loaded', function() {            
+        bespin.subscribe('settings:loaded', function() {
             bespin.get('server').listOpen(bespin.get('quickopen').displaySessions);
         });
-        
-        bespin.subscribe('ui:escape', dojo.hitch(this, function() {            
+
+        bespin.subscribe('ui:escape', dojo.hitch(this, function() {
             if (this.scene.isVisible) {
                 this.toggle();
                 bespin.get('editor').setFocus(true);
             }
         }));
     },
-    
+
     toggle: function() {
         this.scene.toggle();
-        
+
         if (!this.scene.isVisible) {
             this.focusManager.removeFocus();
         } else {
-            this.focusManager.focus(this.input);
-            this.input.setText('');
+            var self = this;
+            setTimeout(function() {
+                self.focusManager.focus(self.input);
+                self.input.setText('');
+            }, 10);
         }
     },
-    
+
     openFile: function() {
-        var item = this.list.selected
+        var item = this.list.selected;
         if (!item) return; // short circuit if we don't have an item to click on
-        
+
         // save the current file and load up the new one
         bespin.publish("editor:savefile", {});
         bespin.publish("editor:openfile", { filename: item.filename });
-                    
+
         // adds the new opened file to the top of the openSessionFiles
         if (this.openSessionFiles.indexOf(item.filename) != -1) {
             this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1);
-        }                
+        }
         this.openSessionFiles.unshift(item.filename);
-        
+
         this.toggle();
         bespin.get('editor').setFocus(true);
     },
-    
+
     highlightText: function(text, highlight) {
         if (highlight == '') return text;
         var lastIndex = 0, startIndex = -1;
@@ -137,7 +140,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         highlight = highlight.toLowerCase();
         var result = '';
         for (var i=0; i < highlight.length; i++) {
-            lastIndex = startIndex
+            lastIndex = startIndex;
             startIndex = lowerText.indexOf(highlight[i], startIndex);
             if (startIndex == -1) break;
             result += text.substring(lastIndex + 1, startIndex) + '<#000000>' + text[startIndex] + '</#000000>';
@@ -145,7 +148,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         result += text.substring(startIndex + 1);
         return result.replace(/<\/#000000><#000000>/g, '');
     },
-    
+
     showFiles: function(files, sortFiles) {
         sortFiles = sortFiles || false;
         var items = new Array();
@@ -157,8 +160,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         var path;
         var lastSlash;
         var file;
-        
-        for (var x = 0; x < files.length; x++) {                
+
+        for (var x = 0; x < files.length; x++) {
             file = files[x];
             lastSlash = file.lastIndexOf("/");
             path = (lastSlash == -1) ? "" : file.substring(0, lastSlash);
@@ -173,11 +176,11 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 if (items[y].name == name) {
                     if (!items[y].lastFolder) {
                         lastFolder = items[y].filename.split('/');
-                        items[y].lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                        
+                        items[y].lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');
                     }
-                    
+
                     lastFolder = file.split('/');
-                    lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');                   
+                    lastFolder = (lastFolder.length > 1 ? lastFolder[lastFolder.length - 2] : '');
                     break;
                 }
             }
@@ -186,7 +189,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
         // for the moment there are only 12 files displayed...
         items = items.slice(0, 14);
-        
+
         if (sortFiles) {
             items.sort(function(a, b) {
                 var x = a.text.toLowerCase();
@@ -194,7 +197,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 return ((x < y) ? -1 : ((x > y) ? 1 : 0));
             });
         }
-        
+
         quickopen.list.items = items;
         if (items.length != 0) {
             quickopen.list.selected = items[0];
@@ -203,13 +206,13 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         quickopen.scene.render();
         //quickopen.window.layoutAndRender();
     },
-    
+
     displayResult: function(files) {
         var quickopen = bespin.get('quickopen');
         quickopen.showFiles(files);
-        
+
         quickopen.requestFinished = true;
-        
+
         if (quickopen.preformNewRequest) {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
@@ -217,9 +220,9 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.text, quickopen.displayResult);
         }
     },
-    
+
     displaySessions: function(sessions) {
-        var quickopen =  bespin.get('quickopen');        
+        var quickopen =  bespin.get('quickopen');
         var currentProject = bespin.get('editSession').project;
         var currentFile = bespin.get('editSession').path;
         var items = new Array();
@@ -231,12 +234,12 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             }
             items.push(file);
         }
-        
+
         if (currentFile) {
             items.push(currentFile);
         }
-        
+
         quickopen.showFiles(items, true);
-        quickopen.openSessionFiles = items;                        
+        quickopen.openSessionFiles = items;
     }
 });
