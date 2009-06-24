@@ -357,6 +357,13 @@ class KeyChain(object):
         self.public_key_file.write_bytes(pubkey)
         self._save()
         return pubkey, private_key
+        
+    def set_ssh_key(self, private_key, public_key):
+        """Sets the SSH key. This key should be a passwordless key."""
+        kcdata = self.kcdata
+        kcdata['ssh'] = dict(public=public_key, private=private_key)
+        self.public_key_file.write_bytes(public_key)
+        self._save()
     
     @property
     def kcdata(self):

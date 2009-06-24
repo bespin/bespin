@@ -583,6 +583,54 @@ def jsparser(options):
             output_file.close()
             datafile.close()"""
             
+
+@task
+@cmdopts([('user=', 'u', 'User to set up for Bespin editing'),
+          ('file=', 'f', 'Passwordless SSH private key file')])
+def installkey(options):
+    """Install an SSH key into your Bespin keychain. This will
+    prompt you for your Bespin keychain password. You must
+    give a Bespin username with -u. You must also specify
+    a passwordless SSH private key file with -f."""
+    
+    if not 'installkey' in options or not options.installkey.user:
+        raise BuildFailure("You must specify a user with -u for this task.")
+    
+    if not options.installkey.file:
+        raise BuildFailure("You must specify a private key with with -f")
+    
+    private_key = path(options.installkey.file)
+    public_key = private_key + ".pub"
+    
+    if not private_key.exists() or not public_key.exists():
+        raise BuildFailure("Either your private key file or public key file does not exist")
+        
+    
+        
+    user = options.installkey.user
+    
+    import getpass
+    
+    password = getpass.getpass("Enter your keychain password: ")
+    
+    from bespin import config
+    from bespin import database, filesystem, vcs
+    from sqlalchemy.orm.exc import NoResultFound
+    
+    config.set_profile("dev")
+    config.activate_profile()
+    session = config.c.session_factory()
+    try:
+        user = session.query(database.User).filter_by(username=user).one()
+    except NoResultFound:
+        raise BuildFailure("I couldn't find %s in the database. Sorry!" % (user))
+    
+    keychain = vcs.KeyChain(user, password)
+    public_key = public_key.bytes()
+    private_key = private_key.bytes()
+    keychain.set_ssh_key(private_key, public_key)
+
+
 @task
 @cmdopts([('user=', 'u', 'User to set up for Bespin editing')])
 def editbespin(options):
