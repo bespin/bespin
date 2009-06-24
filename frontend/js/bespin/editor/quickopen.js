@@ -63,8 +63,11 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         this.input.key.bind("", this.input.key.ARROW_UP, this.list.moveSelectionUp, this.list);
         this.input.key.bind("", this.input.key.ARROW_DOWN, this.list.moveSelectionDown, this.list);
         this.input.key.bind("", this.input.key.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
+        this.input.key.bind("", this.input.key.ENTER, this.openFile, this);
         
         // bind to some events
+        
+        this.scene.bus.bind("dblclick", this.list, this.openFile, this);
         
         this.scene.bus.bind("itemselected", this.list, function(e) {
             this.label.text = e.item.filename;
@@ -107,6 +110,24 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             this.focusManager.focus(this.input);
             this.input.setText('');
         }
+    },
+    
+    openFile: function() {
+        var item = this.list.selected
+        if (!item) return; // short circuit if we don't have an item to click on
+        
+        // save the current file and load up the new one
+        bespin.publish("editor:savefile", {});
+        bespin.publish("editor:openfile", { filename: item.filename });
+                    
+        // adds the new opened file to the top of the openSessionFiles
+        if (this.openSessionFiles.indexOf(item.filename) != -1) {
+            this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1);
+        }                
+        this.openSessionFiles.unshift(item.filename);
+        
+        this.toggle();
+        bespin.get('editor').setFocus(true);
     },
     
     highlightText: function(text, highlight) {
