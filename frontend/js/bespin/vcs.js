@@ -295,16 +295,22 @@ bespin.vcs.commands.addCommand({
 
 /**
  * Revert command.
- * Restore individual files or dirs to an earlier state
+ * Report on the changes between the working files and the respository
  */
 bespin.vcs.commands.addCommand({
     name: 'revert',
-    preview: 'Restore individual files or dirs to an earlier state',
+    preview: 'Revert files back to their checked-in state',
     takes: ['*'],
     completeText: 'Use the current file, add -a for all files or add filenames',
-    description: 'Without any options, the \'vcs revert\' command will restore the currently opened file with the repository copy. If you pass in -a, the command will restore <em>all</em> files. Finally, you can list files to restore individually.',
+    description: 'Without any options, the vcs revert command will revert the currently selected file against the repository copy. If you pass in -a, the command will revert <em>all</em> files. Finally, you can list files to revert individually. No backups are kept!',
     execute: function(instruction, args) {
-        bespin.vcs._performVCSCommandWithFiles("revert", instruction, args);
+        bespin.vcs._performVCSCommandWithFiles("revert", instruction, args, 
+            {
+                acceptAll: true,
+                onSuccess: function() {
+                    bespin.publish("editor:reload", {});
+                }
+            });
     }
 });
 
@@ -591,10 +597,16 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
         var command = [vcsCommand];
         command.concat(args.varargs);
     }
+    
+    var handlerOptions = {};
+    if (options.onSuccess) {
+        handlerOptions.onSuccess = options.onSuccess;
+    }
+    
     bespin.get('server').vcs(project,
                             { command: command },
                             instruction,
-                            bespin.vcs._createStandardHandler(instruction));
+                            bespin.vcs._createStandardHandler(instruction, handlerOptions));
 };
 
 /**
@@ -628,7 +640,8 @@ bespin.subscribe("vcs:remoteauthUpdate", function(event) {
 /**
  * Most of the VCS commands just want to output to the CLI
  */
-bespin.vcs._createStandardHandler = function(instruction) {
+bespin.vcs._createStandardHandler = function(instruction, options) {
+    options = options || {};
     return {
         onPartial: function(response) {
             instruction.addOutput("<pre>" + response + "</pre>");
@@ -636,6 +649,10 @@ bespin.vcs._createStandardHandler = function(instruction) {
         onSuccess: instruction.link(function(response) {
             instruction.addOutput("<pre>" + response + "</pre>");
             instruction.unlink();
+            if (options.onSuccess) {
+                console.log("Calling other onsuccess");
+                options.onSuccess(response);
+            }
         }),
         onFailure: instruction.link(function(xhr) {
             instruction.addErrorOutput(xhr.response);
