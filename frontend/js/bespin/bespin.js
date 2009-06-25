@@ -75,6 +75,9 @@ dojo.mixin(bespin, {
     // Given an array of topics, fires given callback as soon as all of the topics have
     // fired at least once
     fireAfter: function (topics, callback) {
+        if (!dojo.isArray(topics)) {
+            throw new Error("fireAfter() takes an array of topics. '" + topics + "' is not an array.");
+        }
         var count = topics.length;
         var done  = function () {
             if(count == 0) {

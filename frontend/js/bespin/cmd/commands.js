@@ -292,7 +292,7 @@ bespin.cmd.commands.add({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(instruction) {
-        bespin.publish("session:status");
+        instruction.addOutput(bespin.get('editSession').getStatus());
     }
 });
 
@@ -304,9 +304,10 @@ bespin.cmd.commands.add({
     completeText: 'optionally, add the project name to change to that project',
     execute: function(instruction, projectname) {
         if (projectname) {
-            bespin.publish("project:set", { project: projectname });
+            bespin.get('editSession').setProject(projectname);
+            instruction.addOutput('Changed project to ' + projectname);
         } else {
-            instruction.commandLine.executeCommand('status', false /*hidden*/);
+            instruction.addOutput(bespin.get('editSession').getStatus());
         }
     }
 });
@@ -332,12 +333,22 @@ bespin.cmd.commands.add({
     takes: ['projectname'],
     preview: 'create a new project',
     usage: '[newprojectname]',
-    execute: function(instruction, projectname) {
-        if (!projectname) {
+    execute: function(instruction, project) {
+        if (!project) {
             instruction.addUsageOutput(this);
             return;
         }
-        bespin.publish("project:create", { project: projectname });
+
+        var onSuccess = instruction.link(function() {
+            bespin.get('editSession').setProject(project);
+            instruction.addOutput('Successfully created project \'' + project + '\'.');
+        });
+
+        var onFailure = instruction.link(function(xhr) {
+            instruction.addErrorOutput('Unable to create project \'' + project + '\: ' + xhr.responseText);
+        });
+
+        bespin.get('files').makeDirectory(project, '', onSuccess, onFailure);
     }
 });
 
@@ -355,7 +366,7 @@ bespin.cmd.commands.add({
 
         if (!project || project == bespin.userSettingsProject) {
             instruction.addErrorOutput('Sorry, you can\'t delete the settings project.');
-            return; // don't delete the settings project
+            return;
         }
 
         var onSuccess = instruction.link(function() {
@@ -399,10 +410,23 @@ bespin.cmd.commands.add({
             return;
         }
 
-        var opts = { path: args.path };
-        if (args.projectname) opts.project = args.projectname;
+        var editSession = bespin.get('editSession');
 
-        bespin.publish("directory:create", opts);
+        var path = args.path;
+        var project = args.projectname || editSession.project;
+
+        var onSuccess = instruction.link(function() {
+            if (path == '') editSession.setProject(project);
+            instruction.addOutput('Successfully created directory \'/' + project + '/' + path + '\'');
+            instruction.unlink();
+        });
+
+        var onFailure = instruction.link(function(xhr) {
+            instruction.addErrorOutput('Unable to create directory \'/' + project + '/' + path + '\': ' + xhr.responseText);
+            instruction.unlink();
+        });
+
+        bespin.get('files').makeDirectory(project, path, onSuccess, onFailure);
     }
 });
 
@@ -547,7 +571,7 @@ bespin.cmd.commands.add({
     aliases: ['remove', 'del'],
     takes: ['filename', 'project'],
     preview: 'remove the file',
-    completeText: 'add the filename to remove, and optionally a specific project at the end',
+    completeText: 'add the filename to remove, and optionally a specific project at the end. To delete a directory end the path in a '/'',
     execute: function(instruction, args) {
         var project = args.project || bespin.get('editSession').project;
         var filename = args.filename;

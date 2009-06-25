@@ -68,7 +68,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'tabmode': 'off',
             'tabarrow': 'on',
             'fontsize': '10',
-            'consolefontsize': '10',
+            'consolefontsize': '11',
             'autocomplete': 'off',
             'collaborate': 'off',
             'language': 'auto',
@@ -310,36 +310,30 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     _load: function() {
         var self = this;
 
-        var checkLoaded = function() {
+        var postLoad = function() {
             if (!self.loaded) { // first time load
                 self.loaded = true;
                 bespin.publish("settings:loaded");
             }
         };
 
-        var loadSettings = function() {
-            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", function(file) {
-                dojo.forEach(file.content.split(/\n/), function(setting) {
-                    if (setting.match(/^\s*#/)) return; // if comments are added ignore
-                    if (setting.match(/\S+\s+\S+/)) {
-                        var pieces = setting.split(/\s+/);
-                        self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
-                    }
-                });
+        var onLoad = function(file) {
+            // Strip \n\n from the end of the file and insert into this.settings
+            dojo.forEach(file.content.split(/\n/), function(setting) {
+                if (setting.match(/^\s*#/)) return; // if comments are added ignore
+                if (setting.match(/\S+\s+\S+/)) {
+                    var pieces = setting.split(/\s+/);
+                    self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
+                }
+            });
 
-                checkLoaded();
-            }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
+            postLoad();
         };
 
-        // setTimeout(loadSettings, 0);
-
-        if (bespin.authenticated) {
-            loadSettings();
-        } else {
-            bespin.subscribe("authenticated", function() {
-                loadSettings();
-            });
-        }
+        bespin.fireAfter([ "authenticated" ], function() {
+            // postLoad even if we can't read the settings file
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", onLoad, postLoad);
+        });
     }
 });
 
@@ -688,7 +682,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             var project = event.project;
 
             if (project && (editSession.project != project)) {
-                bespin.publish("project:set", { project: project });
+                editSession.setProject(project);
             }
 
             // Now we know what are settings are we can decide if we need to
@@ -714,14 +708,17 @@ dojo.declare("bespin.client.settings.Events", null, {
                 else {
                     var lastUsed = settings.getObject("_lastused");
                     if (!lastUsed) {
-                        bespin.publish("project:set", { project: "SampleProject" });
+                        editSession.setProject("SampleProject");
                         bespin.publish("editor:openfile", { filename: "readme.txt" });
+                        // When we replace editor:openfile with a function call
+                        // we should do the commandLine hint here rather than
+                        // in the function call so we can show project and filename
                     }
                     else {
                         // Warning: Publishing an extra filename member to
                         // project:set and an extra project member to
                         // editor:openfile
-                        bespin.publish("project:set", lastUsed[0]);
+                        editSession.setProject(lastUsed[0]);
                         bespin.publish("editor:openfile", lastUsed[0]);
                     }
                 }

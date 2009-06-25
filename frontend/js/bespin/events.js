@@ -279,33 +279,6 @@ bespin.subscribe("command:delete", function(event) {
     });
 });
 
-// ** {{{ Event: directory:create }}} **
-//
-// Create a new directory
-bespin.subscribe("directory:create", function(event) {
-    var editSession = bespin.get('editSession');
-    var files = bespin.get('files');
-
-    var project = event.project || editSession.project;
-    var path = event.path || '';
-
-    files.makeDirectory(project, path, function() {
-        if (path == '') bespin.publish("project:set", { project: project });
-        bespin.get("commandLine").addOutput('Successfully created directory: [project=' + project + ', path=' + path + ']');
-    }, function() {
-        bespin.get("commandLine").addErrorOutput('Unable to create directory: [project=' + project + ', path=' + path + '] ' + project);
-    });
-});
-
-// ** {{{ Event: project:create }}} **
-//
-// Create a new project
-bespin.subscribe("project:create", function(event) {
-    var project = event.project || bespin.get('editSession').project;
-
-    bespin.publish("directory:create", { project: project });
-});
-
 // ** {{{ Event: project:rename }}} **
 //
 // Rename a project
@@ -316,7 +289,7 @@ bespin.subscribe("project:rename", function(event) {
 
     bespin.get('server').renameProject(currentProject, newProject, {
         onSuccess: function() {
-            bespin.publish("project:set", { project: newProject });
+            bespin.get('editSession').setProject(newProject);
         },
         onFailure: function(xhr) {
             bespin.get("commandLine").addErrorOutput('Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>");
