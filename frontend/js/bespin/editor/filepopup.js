@@ -396,10 +396,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                 // when the path is not restored from the root,
                                 // then there are contents without contents!
                                 if (contentsPath[x]) {
+                                    var list = self.tree.getList(x);
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
-                                    if (self.tree.scrollPanes[x].view.selected) {
-                                        self.tree.scrollPanes[x].view.selected.contents = contentsPath[x];
+                                    console.log("list selected: " + list.selected);
+                                    if (list.selected) {
+                                        list.selected.contents = contentsPath[x];
                                     }
                                 }
                             }
