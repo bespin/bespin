@@ -1102,30 +1102,22 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
         this.history = history;
         var self = this;
 
-        if (bespin.authenticated) {
-            self._load();
-        } else {
-            bespin.subscribe("authenticated", function() {
-                self._load();
-            });
-        }
-    },
+        bespin.fireAfter([ "authenticated" ], function() {
+            // load last 50 instructions from history
+            bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
+                var typings = file.content.split(/\n/);
+                var instructions = [];
 
-    _load: function() {
-        // load last 50 instructions from history
-        bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
-            var typings = file.content.split(/\n/);
-            var instructions = [];
+                dojo.forEach(typings, function(typing) {
+                    if (typing && typing != "") {
+                        var instruction = new bespin.cmd.commandline.Instruction(null, typing);
+                        instructions.push(instruction);
+                    }
+                });
 
-            dojo.forEach(typings, function(typing) {
-                if (typing && typing != "") {
-                    var instruction = new bespin.cmd.commandline.Instruction(null, typing);
-                    instructions.push(instruction);
-                }
-            });
-
-            this.history.setInstructions(instructions);
-        }));
+                self.history.setInstructions(instructions);
+            }));
+        });
     },
 
     save: function(instructions) {
@@ -1153,27 +1145,17 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
         this.history = history;
         var self = this;
 
-        if (bespin.authenticated) {
-            self._load();
-        } else {
-            bespin.subscribe("authenticated", function() {
-                self._load();
-            });
-        }
-    },
-
-    _load: function() {
-        if (window.globalStorage) {
-            var data = globalStorage[location.hostname].history;
-            //console.log("load", data);
-            var instructions = dojo.fromJson(data);
-            this.history.setInstructions(instructions);
-        }
+        bespin.fireAfter([ "authenticated" ], function() {
+            if (window.globalStorage) {
+                var data = globalStorage[location.hostname].history;
+                var instructions = dojo.fromJson(data);
+                self.history.setInstructions(instructions);
+            }
+        });
     },
 
     save: function(instructions) {
         var data = dojo.toJson(instructions);
-        //console.log("save", data);
         if (window.globalStorage) {
             globalStorage[location.hostname].history = data;
         }
@@ -1186,44 +1168,6 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
 
 dojo.declare("bespin.cmd.commandline.Events", null, {
     constructor: function(commandline) {
-        // ** {{{ Event: message:output }}} **
-        //
-        // message:output is good output for the console
-        bespin.subscribe("message:output", function(event) {
-            if (!event.msg) {
-                console.warning("Empty msg in publish to message:output");
-                console.trace();
-                return;
-            }
-
-            commandline.addOutput(event.msg);
-        });
-
-        // ** {{{ Event: message:output }}} **
-        //
-        // message:output is good output for the console
-        bespin.subscribe("message:error", function(event) {
-            if (!event.msg) {
-                console.warning("Empty msg in publish to message:error");
-                console.trace();
-                return;
-            }
-
-            commandline.addErrorOutput(event.msg);
-        });
-
-        // ** {{{ Event: message:output }}} **
-        //
-        // message:output is good output for the console
-        bespin.subscribe("message:hint", function(event) {
-            if (!event.msg) {
-                console.warning("Empty msg in publish to message:hint");
-                console.trace();
-                return;
-            }
-
-            if (event.msg) commandline.showHint(event.msg);
-        });
 
         // ** {{{ Event: command:execute }}} **
         //
@@ -1252,18 +1196,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             commandline.showHint('Loaded file: ' + event.file.name);
         });
-
-        // -- Projects
-        // ** {{{ Event: project:set }}} **
-        //
-        // When the project changes, alert the user
-        bespin.subscribe("project:set", function(event) {
-            var project = event.project;
-
-            bespin.get("editSession").project = project;
-            if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
-        });
-
+        
         // ** {{{ Event: ui:escape }}} **
         //
         // When escaped, take out the hints and output
@@ -1271,7 +1204,5 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
             commandline.hideHint();
             commandline.hideOutput();
         });
-
     }
 });
-

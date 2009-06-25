@@ -78,7 +78,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                           text: "Projects" });
         leftColumnContents.add(projectLabel);
         this.projects = new th.List();
-        this.projects.getItemText = function(item) { return item.name };
+        this.projects.getItemText = function(item) { return item.name; };
         leftColumnContents.add(this.projects);
 
         // how to layout the two
@@ -90,14 +90,14 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
             top.setBounds(d.i.l, d.i.t, d.b.iw, top.getPreferredSize().height);
             bottom.setBounds(d.i.l, top.bounds.y + top.bounds.height, d.b.iw, d.b.ih - top.bounds.height);
-        }
+        };
 
         // and a preferred size
         leftColumnContents.getPreferredSize = function() {
             var width = 200;    // todo: tie into CSS sizer thingie 
             var height = this.children[0].getPreferredSize().height + this.children[1].getPreferredSize().height;
             return { width: width, height: height };
-        }
+        };
 
         // the horizontal tree that will display the contents of a selected project
         this.tree = new th.HorizontalTree({ id: "htree" });

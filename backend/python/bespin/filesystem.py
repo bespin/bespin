@@ -396,22 +396,6 @@ class Project(object):
 
         file_loc = self.location / destpath
 
-        # this is the case where save_file is being used to
-        # create a directory
-        if contents is None:
-            if destpath.endswith("/"):
-                if file_loc.exists():
-                    if file_loc.isfile():
-                        raise FileConflict("Cannot create directory %s "
-                            "because there is already a file there."
-                            % destpath)
-                else:
-                    file_loc.makedirs()
-                    return
-            else:
-                raise FSException("Cannot create %s because no content "
-                    " was provided for the file" % destpath)
-
         if file_loc.isdir():
             raise FileConflict("Cannot save file at %s in project "
                 "%s, because there is already a directory with that name."
@@ -431,6 +415,24 @@ class Project(object):
         file.save(contents)
         self.owner.amount_used += size_delta
         return file
+
+    def create_directory(self, destpath):
+        """Create a new directory"""
+        if "../" in destpath:
+            raise BadValue("Relative directories are not allowed")
+
+        # chop off any leading slashes
+        while destpath and destpath.startswith("/"):
+            destpath = destpath[1:]
+
+        file_loc = self.location / destpath
+        if file_loc.exists():
+            if file_loc.isfile():
+                raise FileConflict("Cannot create directory %s "
+                    "because there is already a file there."
+                    % destpath)
+        else:
+            file_loc.makedirs()
 
     def install_template_file(self, path, options):
         """Installs a single template file at the path
