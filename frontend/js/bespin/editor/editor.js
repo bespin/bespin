@@ -438,8 +438,8 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(source, "mousedown", this, "handleScrollBars");
 
         dojo.connect(source, "mousedown", this, "mouseDownSelect");
-        dojo.connect(source, "mousemove", this, "mouseMoveSelect");
-        dojo.connect(source, "mouseup", this, "mouseUpSelect");
+        this.globalHandles.push(dojo.connect(window, "mousemove", this, "mouseMoveSelect"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this, "mouseUpSelect"));
 
         // painting optimization state
         this.lastLineCount = 0;
@@ -481,8 +481,10 @@ dojo.declare("bespin.editor.UI", null, {
     convertClientPointToCursorPoint: function(pos) {
         var settings = bespin.get("settings");
         var x, y;
-
-        if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) {
+        
+        if (pos.y < 0) { //ensure line >= first
+            y = 0;
+        } else if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) { //ensure line <= last
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -671,6 +673,16 @@ dojo.declare("bespin.editor.UI", null, {
             this.editor.moveCursor(backwards ? startPos : endPos);
         }
 
+        //finally, and the LAST thing we should do (otherwise we'd mess positioning up)
+        //scroll down, up, right, or left a bit if needed.
+        
+        //up and down. optimally, we should have a timeout or something to keep checking...
+        if (clientY < 0) {
+            this.yoffset = Math.min(1, this.yoffset + (-clientY));
+        } else if (clientY >= this.getHeight()) {
+            var virtualHeight = this.lineHeight * this.editor.model.getRowCount();
+            this.yoffset = Math.max(-(virtualHeight - (this.getHeight() / 2)), this.yoffset - (clientY - this.getHeight()));
+        }
 
         this.editor.paint();
     },
@@ -757,8 +769,9 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         if ((e.type == "mousemove") || (e.type == "click")) {
-            this.overYScrollBar = p.x > sx;
-            this.overXScrollBar = p.y > sy;
+            //and only true IF the scroll bar is visible, obviously.
+            this.overYScrollBar = (p.x > sx) && this.yscrollbarVisible;
+            this.overXScrollBar = (p.y > sy) && this.xscrollbarVisible;
         }
 
         if (e.type == "click") {
@@ -983,7 +996,7 @@ dojo.declare("bespin.editor.UI", null, {
             if ((Math.abs(this.xoffset)) > (virtualwidth - (cwidth - this.gutterWidth))) this.xoffset = (cwidth - this.gutterWidth) - virtualwidth;
         }
         if (this.yoffset < 0) {
-            if ((Math.abs(this.yoffset)) > (virtualheight - cheight)) this.yoffset = cheight - virtualheight;
+            if ((Math.abs(this.yoffset)) > (virtualheight - (cheight / 2))) this.yoffset = cheight - (virtualheight / 2);
         }
 
         // if the current scrolled positions are different than the scroll positions we used for the last paint, refresh the entire canvas
@@ -1515,7 +1528,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.yscrollbar.rect = new Rect(this.nibup.x - 1, sy, this.nibup.w + 1, sh);
         this.yscrollbar.value = -this.yoffset;
         this.yscrollbar.min = 0;
-        this.yscrollbar.max = virtualheight - cheight;
+        this.yscrollbar.max = virtualheight - (cheight / 2);
         this.yscrollbar.extent = cheight;
 
         if (yscroll) {
@@ -1536,6 +1549,10 @@ dojo.declare("bespin.editor.UI", null, {
         if (!showDownScrollNib) this.nibdown = new Rect();
         if (!showLeftScrollNib) this.nibleft = new Rect();
         if (!showRightScrollNib) this.nibright = new Rect();
+        
+        //set whether scrollbars are visible, so mouseover and such can pass through if not.
+        this.xscrollbarVisible = xscroll;
+        this.yscrollbarVisible = yscroll;
     },
 
     paintScrollbar: function(ctx, scrollbar) {
