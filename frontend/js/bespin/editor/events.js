@@ -342,7 +342,8 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("ui:escape", function(event) {
             if (editor.ui.searchString) {
                 editor.ui.setSearchString(false);
-                dojo.byId('searchresult').style.display = 'none';                
+                // commented out because this bit of UI does not exist right now
+                // dojo.byId('searchresult').style.display = 'none';                
             }
         });
 
