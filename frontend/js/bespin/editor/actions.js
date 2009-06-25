@@ -1059,7 +1059,7 @@ dojo.declare("bespin.editor.Actions", null, {
     focusFileBrowser: function() {
         var piemenu = bespin.get('piemenu');
         if (piemenu) {
-            piemenu.show(piemenu.slices.fileBrowser);
+            piemenu.show(piemenu.slices.fileBrowser, true);
         }
     },
 

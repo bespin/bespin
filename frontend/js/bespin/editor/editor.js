@@ -851,7 +851,10 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CTRL", Key.O, this.actions.focusFileBrowser, "Open File Browser");
-        listener.bindKeyString("CTRL", Key.F, this.actions.findInFiles, "Find");
+        // commented out until find in file is brought back
+        // listener.bindKeyString("CTRL", Key.F, this.actions.findInFiles, "Find");
+        listener.bindKeyString("CTRL", Key.G, this.actions.findNext, "Find Next");
+        listener.bindKeyString("SHIFT CTRL", Key.G, this.actions.findPrev, "Find Previous");
 
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
