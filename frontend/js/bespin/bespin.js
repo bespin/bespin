@@ -55,7 +55,7 @@ dojo.mixin(bespin, {
 
     defaultTabSize: 4,
     userSettingsProject: "BespinSettings",
-    
+
     eventLog: {},
 
     // == Methods for tying to the event bus
@@ -64,14 +64,15 @@ dojo.mixin(bespin, {
     //
     // Given a topic and a set of parameters, publish onto the bus
     publish: function(topic, args) {
+        //console.log("publish", topic, args);
         bespin.eventLog[topic] = true;
-        
+
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
-    
+
     // ** {{{ fireAfter }}} **
     //
-    // Given an array of topics, fires given callback as soon as all of the topics have 
+    // Given an array of topics, fires given callback as soon as all of the topics have
     // fired at least once
     fireAfter: function (topics, callback) {
         var count = topics.length;
