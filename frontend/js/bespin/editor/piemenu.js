@@ -187,7 +187,8 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         topMargin: 10,
         leftMargin: 60,
         rightMargin: 60,
-        fadeInDuration: 200
+        showMenuDuration: 200,
+        hideMenuDuration: 400
     },
 
     /**
@@ -362,11 +363,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         }
 
         var self = this;
-        var duration = parseInt(bespin.get('settings').get('menufadeinduration'));
+        var duration = parseInt(bespin.get('settings').get('menushowduration'));
 
         // Set the duration for the fade in.
         if (typeof duration == "undefined" || isNaN(duration)) {
-            duration = this.settings.fadeInDuration;
+            duration = this.settings.showMenuDuration;
         }
 
         dojo.fadeIn({
@@ -393,10 +394,17 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.unrenderCurrentSlice();
 
         if (!this.hideAnimation) {
+            var duration = parseInt(bespin.get('settings').get('menuhideduration'));
+
+            // Set the duration for the fade in.
+            if (typeof duration == "undefined" || isNaN(duration)) {
+                duration = this.settings.hideMenuDuration;
+            }
+
             var self = this;
             this.hideAnimation = dojo.fadeIn({
                 node: { style: {} },
-                duration: 400,
+                duration: duration,
                 easing: dojo.fx.easing.backIn,
                 onAnimate: function(values) {
                     var progress = Math.max(1 - values.opacity, 0);
