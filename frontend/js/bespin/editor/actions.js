@@ -930,7 +930,7 @@ dojo.declare("bespin.editor.Actions", null, {
             var pos = bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition());
 
             // first try to find the searchSting from the current position
-            if (!this.editor.ui.actions.findNext(true)) {
+            if (!this.editor.ui.actions.findNext(null, true)) {
                 // there was nothing found? Search from the beginning
                 this.editor.cursorManager.moveCursor({col: 0, row: 0 });
                 this.editor.ui.actions.findNext();
@@ -967,7 +967,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     // find the next match in the file
-    findNext: function(canBeSamePosition) {
+    findNext: function(event, canBeSamePosition) {
         if (!this.editor.ui.searchString) return;
         var pos = bespin.editor.utils.copyPos(this.cursorManager.getModelPosition());
         var sel = this.editor.getSelection();

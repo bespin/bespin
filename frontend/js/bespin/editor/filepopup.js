@@ -29,7 +29,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         // Old global definitions
         this.heightDiff = null;
         this.currentProject = null;
-
+        
         // Old members mixed into this
         this.lastSelectedPath = null;
         this.inited = false;
@@ -195,44 +195,54 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         //     this.refreshFiles(path, this.tree);
         // });        
         console.log("Setting key bindings on file popup.");
-       dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+        dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             console.log("I have a file browser keydown.");
-           var key = bespin.util.keys.Key;
-           var path = this.tree.getSelectedPath();
-           console.log("The path is: " + path);
-           if (path === undefined) return;
-           // things to make life much more easy :)
-           var index = path.length - 1;
-           var list = this.tree.lists[index];
-           var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
-           var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
-           console.log("The index is: " + index);
-
-           switch (e.keyCode) {
-               case key.LEFT_ARROW:
-                   if (!listPre) break;
+            var key = bespin.util.keys.Key;
+            var path = this.tree.getSelectedPath();
+            console.log("The path is: " + path);
+            if (path == undefined) {
+                console.log("in projects list");
+                var list = this.projects;
+                console.log("tl: " + this.tree.scrollPanes);
+                var listNext = this.tree.getList(0);
+                var listPre = null;
+            } else {
+                // things to make life much more easy :)
+                var index = path.length - 1;
+                console.log("The index is: " + index);
+                var list = this.tree.getList(index);
+                var listNext = (this.tree.getListCount() > index ? this.tree.getList(index + 1) : false);
+                var listPre = (index != 0 ? this.tree.getList(index - 1) : this.projects);
+            }
+        
+            switch (e.keyCode) {
+                case key.LEFT_ARROW:
+                    if (!listPre) break;
                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
                    break;
-               case key.RIGHT_ARROW:
-                   if (!listNext) break;
-                   if (list.selected.lastSelected) {
-                       listNext.selectItemByText(list.selected.lastSelected);
-                       listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                   } else {
-                       listNext.selected = listNext.items[0];
-                       listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-                   }
-                   break;
-               case key.UP_ARROW:
-                   list.moveSelectionUp();
-                   break;
-               case key.DOWN_ARROW:
-                   list.moveSelectionDown();
-                   break;
-               case key.ENTER:
-                   this.scene.bus.fire("dblclick", e, this.tree);
-                   break;
+                case key.RIGHT_ARROW:
+                    if (!listNext) break;
+                    if (list.selected.lastSelected) {
+                        listNext.selectItemByText(list.selected.lastSelected);
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    } else {
+                        listNext.selected = listNext.items[0];
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    }
+                    break;
+                case key.UP_ARROW:
+                    list.moveSelectionUp();
+                    break;
+                case key.DOWN_ARROW:
+                    list.moveSelectionDown();
+                    break;
+                case key.ENTER:
+                    this.scene.bus.fire("dblclick", e, this.tree);
+                    break;
+                case key.ESCAPE:
+                    bespin.get('piemenu').hide();
+                    break;
            }
        }));
     },
