@@ -36,6 +36,7 @@ dojo.declare("bespin.editor.Events", null, {
             var content = event.file.content || "";
             editor.model.insertDocument(content);
             editor.cursorManager.moveCursor({ row: 0, col: 0 });
+            editor.setFocus(true);
         });
 
         // -- fire an event here and you can run any editor action
@@ -121,7 +122,7 @@ dojo.declare("bespin.editor.Events", null, {
                     var newItem = {
                         project:project,
                         filename:filename
-                    }
+                    };
 
                     // Remove newItem from down in the list and place at top
                     var cleanLastUsed = [];
@@ -308,6 +309,9 @@ dojo.declare("bespin.editor.Events", null, {
         // ** {{{ Event: url:changed }}} **
         // 
         // Observe a request for session status
+        // This should kick in when the user uses the back button, otherwise
+        // editor:openfile will check and see that the current file is the same
+        // as the file from the urlbar
         bespin.subscribe("url:changed", function(event) {
             bespin.publish("editor:openfile", { filename: event.now.get('path') });
         });
