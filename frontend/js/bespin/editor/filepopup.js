@@ -196,15 +196,17 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         // });        
         console.log("Setting key bindings on file popup.");
        dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+            console.log("I have a file browser keydown.");
            var key = bespin.util.keys.Key;
-           console.log("Got a key in the file popup: " + key);
            var path = this.tree.getSelectedPath();
+           console.log("The path is: " + path);
            if (path === undefined) return;
            // things to make life much more easy :)
            var index = path.length - 1;
            var list = this.tree.lists[index];
            var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
            var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
+           console.log("The index is: " + index);
 
            switch (e.keyCode) {
                case key.LEFT_ARROW:
@@ -246,6 +248,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         });
 
         this.scene.render();
+        this.canvas.focus();
     },
 
     hide: function() {
