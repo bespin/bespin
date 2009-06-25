@@ -1098,7 +1098,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
         this.history = history;
         var self = this;
 
-        bespin.fireAfter("authenticated", function() {
+        bespin.fireAfter([ "authenticated" ], function() {
             // load last 50 instructions from history
             bespin.get("files").loadContents(bespin.userSettingsProject, "command.history", dojo.hitch(this, function(file) {
                 var typings = file.content.split(/\n/);
@@ -1111,7 +1111,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
                     }
                 });
 
-                this.history.setInstructions(instructions);
+                self.history.setInstructions(instructions);
             }));
         });
     },
@@ -1141,11 +1141,11 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
         this.history = history;
         var self = this;
 
-        bespin.fireAfter("authenticated", function() {
+        bespin.fireAfter([ "authenticated" ], function() {
             if (window.globalStorage) {
                 var data = globalStorage[location.hostname].history;
                 var instructions = dojo.fromJson(data);
-                this.history.setInstructions(instructions);
+                self.history.setInstructions(instructions);
             }
         });
     },
@@ -1192,18 +1192,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             commandline.showHint('Loaded file: ' + event.file.name);
         });
-
-        // -- Projects
-        // ** {{{ Event: project:set }}} **
-        //
-        // When the project changes, alert the user
-        bespin.subscribe("project:set", function(event) {
-            var project = event.project;
-
-            bespin.get("editSession").project = project;
-            if (!event.suppressPopup) commandline.showHint('Changed project to ' + project);
-        });
-
+        
         // ** {{{ Event: ui:escape }}} **
         //
         // When escaped, take out the hints and output

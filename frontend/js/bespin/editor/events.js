@@ -316,16 +316,6 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.publish("editor:openfile", { filename: event.now.get('path') });
         });
 
-        // ** {{{ Event: session:status }}} **
-        // 
-        // Observe a request for session status
-        bespin.subscribe("session:status", function(event) {
-            var editSession = bespin.get('editSession');
-            var file = editSession.path || 'a new scratch file';
-
-            bespin.get("commandLine").addOutput('Hey ' + editSession.username + ', you are editing ' + file + ' in project ' + editSession.project);
-        });
-
         // ** {{{ Event: cmdline:focus }}} **
         // 
         // If the command line is in focus, unset focus from the editor

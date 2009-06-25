@@ -330,7 +330,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
             postLoad();
         };
 
-        bespin.fireAfter("authenticated", function() {
+        bespin.fireAfter([ "authenticated" ], function() {
             // postLoad even if we can't read the settings file
             bespin.get('files').loadContents(bespin.userSettingsProject, "settings", onLoad, postLoad);
         });
@@ -663,7 +663,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             var project = event.project;
 
             if (project && (editSession.project != project)) {
-                bespin.publish("project:set", { project: project });
+                editSession.setProject(project);
             }
 
             // Now we know what are settings are we can decide if we need to
@@ -689,14 +689,17 @@ dojo.declare("bespin.client.settings.Events", null, {
                 else {
                     var lastUsed = settings.getObject("_lastused");
                     if (!lastUsed) {
-                        bespin.publish("project:set", { project: "SampleProject" });
+                        editSession.setProject("SampleProject");
                         bespin.publish("editor:openfile", { filename: "readme.txt" });
+                        // When we replace editor:openfile with a function call
+                        // we should do the commandLine hint here rather than
+                        // in the function call so we can show project and filename
                     }
                     else {
                         // Warning: Publishing an extra filename member to
                         // project:set and an extra project member to
                         // editor:openfile
-                        bespin.publish("project:set", lastUsed[0]);
+                        editSession.setProject(lastUsed[0]);
                         bespin.publish("editor:openfile", lastUsed[0]);
                     }
                 }
