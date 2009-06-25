@@ -473,6 +473,25 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
+        //
+        // If a file (such as BespinSettings/config) is loaded that you want to auto
+        // syntax highlight, here is where you do it
+        // FUTURE: allow people to add in their own special things
+        (function() {
+            var specialFileMap = {
+              'BespinSettings/config': 'js'
+            };
+            bespin.subscribe("editor:openfile:opensuccess", function(event) {
+                var project = event.project || bespin.get('editSession').project;
+                var filename = event.file.name;
+                var mapName = project + "/" + filename;
+                if (specialFileMap[mapName]) {
+                    bespin.publish("settings:language", { language: specialFileMap[mapName] });
+                }
+            });
+        }());
+
         // ** {{{ Event: settings:set:language }}} **
         //
         // When the syntax setting is changed, tell the syntax system to change
