@@ -162,19 +162,16 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         dojo.connect(this.canvas, 'click', function(e) {
             var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
-            var fullWidth = self.canvas.width;
-            var centerWidth = Math.round(fullWidth / 2);
             var x = e.layerX || e.offsetX;
             var y = e.layerY || e.offsetY;
-            var zoneLeft = centerWidth - pieRadius;
-            var zoneRight = centerWidth + pieRadius;
 
             // only do the calculation if you are clicking on the hot zone
-            if (x > zoneLeft && x < zoneRight) {
-                var p = self.centerPoint(x, y); // change coord scheme to center based
+            var p = self.centerPoint(x, y); // change coord scheme to center based
 
+            var distanceFromCenter = Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2));
+
+            if (distanceFromCenter < pieRadius - 4) {
                 var degrees = self.angle(p.x, p.y);
-
                 self.show(self.slice(degrees));
             }
         });
