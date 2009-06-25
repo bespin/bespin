@@ -438,8 +438,8 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(source, "mousedown", this, "handleScrollBars");
 
         dojo.connect(source, "mousedown", this, "mouseDownSelect");
-        dojo.connect(source, "mousemove", this, "mouseMoveSelect");
-        dojo.connect(source, "mouseup", this, "mouseUpSelect");
+        this.globalHandles.push(dojo.connect(window, "mousemove", this, "mouseMoveSelect"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this, "mouseUpSelect"));
 
         // painting optimization state
         this.lastLineCount = 0;
