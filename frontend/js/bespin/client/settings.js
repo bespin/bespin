@@ -68,7 +68,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'tabmode': 'off',
             'tabarrow': 'on',
             'fontsize': '10',
-            'consolefontsize': '10',
+            'consolefontsize': '11',
             'autocomplete': 'off',
             'collaborate': 'off',
             'language': 'auto',
@@ -310,36 +310,30 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
     _load: function() {
         var self = this;
 
-        var checkLoaded = function() {
+        var postLoad = function() {
             if (!self.loaded) { // first time load
                 self.loaded = true;
                 bespin.publish("settings:loaded");
             }
         };
 
-        var loadSettings = function() {
-            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", function(file) {
-                dojo.forEach(file.content.split(/\n/), function(setting) {
-                    if (setting.match(/^\s*#/)) return; // if comments are added ignore
-                    if (setting.match(/\S+\s+\S+/)) {
-                        var pieces = setting.split(/\s+/);
-                        self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
-                    }
-                });
+        var onLoad = function(file) {
+            // Strip \n\n from the end of the file and insert into this.settings
+            dojo.forEach(file.content.split(/\n/), function(setting) {
+                if (setting.match(/^\s*#/)) return; // if comments are added ignore
+                if (setting.match(/\S+\s+\S+/)) {
+                    var pieces = setting.split(/\s+/);
+                    self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
+                }
+            });
 
-                checkLoaded();
-            }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
+            postLoad();
         };
 
-        // setTimeout(loadSettings, 0);
-
-        if (bespin.authenticated) {
-            loadSettings();
-        } else {
-            bespin.subscribe("authenticated", function() {
-                loadSettings();
-            });
-        }
+        bespin.fireAfter("authenticated", function() {
+            // postLoad even if we can't read the settings file
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", onLoad, postLoad);
+        });
     }
 });
 
