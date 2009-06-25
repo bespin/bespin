@@ -178,7 +178,7 @@ body {
 .footer {
     position: absolute;
     bottom: -1px;
-    /* right: 0; The width seems to be set by script now, so it should be hidden at first */
+    right: 0;
     left: 0;
     height: 28px;
     /*

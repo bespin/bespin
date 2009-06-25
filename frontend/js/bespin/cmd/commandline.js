@@ -289,7 +289,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         dojo.style(this.footer, {
             left: left + "px",
             width: (width - 10) + "px",
-            bottom: bottom + "px"
+            bottom: bottom + "px",
+            display: "block"
         });
         this.focus();
 
@@ -326,7 +327,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         });
 
         dojo.style(this.output, "display", "none");
-        dojo.style(this.footer, "left", "-10000px");
+        dojo.style(this.footer, {
+            "left": "-10000px",
+            "display": "none"
+        });
         this.maxInfoHeight = null;
     },
 
