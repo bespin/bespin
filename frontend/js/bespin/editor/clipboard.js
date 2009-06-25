@@ -91,14 +91,20 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             return e.target.id == "command";
         };
 
+        var editorHasFocus = function() {
+            return bespin.get('editor').focus;
+        }
+
         // Copy
         this.beforecopyHandle = dojo.connect(document, "beforecopy", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
             e.preventDefault();
             copynpaster.focus();
         });
 
         this.copyHandle = dojo.connect(document, "copy", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
 
             var selectionText = editor.getSelectionAsText();
@@ -113,6 +119,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Cut
         this.beforecutHandle = dojo.connect(document, "beforecut", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
 
             e.preventDefault();
@@ -120,6 +127,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         });
 
         this.cutHandle = dojo.connect(document, "cut", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
 
             var selectionObject = editor.getSelection();
@@ -139,6 +147,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Paste
         this.beforepasteHandle = dojo.connect(document, "beforepaste", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
 
             e.preventDefault();
@@ -146,6 +155,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         });
 
         this.pasteHandle = dojo.connect(document, "paste", function(e) {
+            if (!editorHasFocus()) return;
             if (stopAction(e)) return;
 
             e.preventDefault();
@@ -213,6 +223,8 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
         };
 
         this.keyDown = dojo.connect(editor.opts.actsAsComponent ? editor.canvas : document, "keydown", function(e) {
+            if (!bespin.get('editor').focus) return;
+            
             if ((bespin.util.isMac() && e.metaKey) || e.ctrlKey) {
                 // Copy
                 if (e.keyCode == 67 /*c*/) {

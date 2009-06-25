@@ -841,7 +841,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         // SEARCH / FIND
         // This is at the moment done by a observe(window) within init.js
-        // listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
+        listener.bindKeyString("ALT", Key.F, this.actions.toggleFilesearch, "Show find dialog");
         // listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
         // listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 

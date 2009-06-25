@@ -1029,14 +1029,9 @@ dojo.declare("bespin.editor.Actions", null, {
     toggleFilesearch: function() {
         var settings = bespin.get("settings");
 
-        if (settings && !settings.isSettingOn('searchwindow')) {
-            dojo.byId('searchquery').focus();
-            dojo.byId('searchquery').select();
-        } else {
-            var filesearch = bespin.get('filesearch');
-            if (filesearch) {
-                filesearch.window.toggle();
-            }
+        var filesearch = bespin.get('filesearch');
+        if (filesearch) {
+            filesearch.toggle();
         }
     },
 
