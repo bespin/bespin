@@ -194,46 +194,45 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         //     var path = this.tree.getSelectedPath();
         //     this.refreshFiles(path, this.tree);
         // });        
+        console.log("Setting key bindings on file popup.");
+       dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+           var key = bespin.util.keys.Key;
+           console.log("Got a key in the file popup: " + key);
+           var path = this.tree.getSelectedPath();
+           if (path === undefined) return;
+           // things to make life much more easy :)
+           var index = path.length - 1;
+           var list = this.tree.lists[index];
+           var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
+           var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
 
-        // TODO: commenting this out as it is throwing errors at the moment
-        // provide arrow navigation to dashboard
-//        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-//            var key = bespin.util.keys.Key;
-//            var path = this.tree.getSelectedPath();
-//            if (path === undefined) return;
-//            // things to make life much more easy :)
-//            var index = path.length - 1;
-//            var list = this.tree.lists[index];
-//            var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
-//            var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
-//
-//            switch (e.keyCode) {
-//                case key.LEFT_ARROW:
-//                    if (!listPre) break;
-//                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
-//                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
-//                    break;
-//                case key.RIGHT_ARROW:
-//                    if (!listNext) break;
-//                    if (list.selected.lastSelected) {
-//                        listNext.selectItemByText(list.selected.lastSelected);
-//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-//                    } else {
-//                        listNext.selected = listNext.items[0];
-//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-//                    }
-//                    break;
-//                case key.UP_ARROW:
-//                    list.moveSelectionUp();
-//                    break;
-//                case key.DOWN_ARROW:
-//                    list.moveSelectionDown();
-//                    break;
-//                case key.ENTER:
-//                    this.scene.bus.fire("dblclick", e, this.tree);
-//                    break;
-//            }
-//        }));
+           switch (e.keyCode) {
+               case key.LEFT_ARROW:
+                   if (!listPre) break;
+                   // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
+                   listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
+                   break;
+               case key.RIGHT_ARROW:
+                   if (!listNext) break;
+                   if (list.selected.lastSelected) {
+                       listNext.selectItemByText(list.selected.lastSelected);
+                       listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                   } else {
+                       listNext.selected = listNext.items[0];
+                       listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                   }
+                   break;
+               case key.UP_ARROW:
+                   list.moveSelectionUp();
+                   break;
+               case key.DOWN_ARROW:
+                   list.moveSelectionDown();
+                   break;
+               case key.ENTER:
+                   this.scene.bus.fire("dblclick", e, this.tree);
+                   break;
+           }
+       }));
     },
 
     show: function(coords) {
