@@ -245,7 +245,11 @@ def putfile(request, response):
     owner, project, path = _split_path(request)
     project = get_project(user, owner, project, create=True)
 
-    if path:
+    if path.endswith('/'):
+        if request.body != None and request.body != '':
+            raise BadRequest("Path ended in '/' indicating directory, but request contains ")
+        project.create_directory(path)
+    elif path:
         project.save_file(path, request.body)
     return response()
 
