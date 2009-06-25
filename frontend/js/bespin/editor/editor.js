@@ -438,8 +438,8 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(source, "mousedown", this, "handleScrollBars");
 
         dojo.connect(source, "mousedown", this, "mouseDownSelect");
-        dojo.connect(source, "mousemove", this, "mouseMoveSelect");
-        dojo.connect(source, "mouseup", this, "mouseUpSelect");
+        this.globalHandles.push(dojo.connect(window, "mousemove", this, "mouseMoveSelect"));
+        this.globalHandles.push(dojo.connect(window, "mouseup", this, "mouseUpSelect"));
 
         // painting optimization state
         this.lastLineCount = 0;
@@ -481,8 +481,10 @@ dojo.declare("bespin.editor.UI", null, {
     convertClientPointToCursorPoint: function(pos) {
         var settings = bespin.get("settings");
         var x, y;
-
-        if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) {
+        
+        if (pos.y < 0) { //ensure line >= first
+            y = 0;
+        } else if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) { //ensure line <= last
             y = this.editor.model.getRowCount() - 1;
         } else {
             var ty = pos.y;
@@ -671,6 +673,16 @@ dojo.declare("bespin.editor.UI", null, {
             this.editor.moveCursor(backwards ? startPos : endPos);
         }
 
+        //finally, and the LAST thing we should do (otherwise we'd mess positioning up)
+        //scroll down, up, right, or left a bit if needed.
+        
+        //up and down. optimally, we should have a timeout or something to keep checking...
+        if (clientY < 0) {
+            this.yoffset = Math.min(1, this.yoffset + (-clientY));
+        } else if (clientY >= this.getHeight()) {
+            var virtualHeight = this.lineHeight * this.editor.model.getRowCount();
+            this.yoffset = Math.max(-(virtualHeight - this.getHeight()), this.yoffset - (clientY - this.getHeight()));
+        }
 
         this.editor.paint();
     },
