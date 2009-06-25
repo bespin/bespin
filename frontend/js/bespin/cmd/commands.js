@@ -960,27 +960,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: template}}} **
-bespin.cmd.commands.add({
-    name: 'template',
-    takes: ['type'],
-    preview: 'insert templates',
-    completeText: 'pass in the template name',
-    templates: { 'in': "for (var key in object) {\n\n}" },
-    execute: function(instruction, type) {
-        var value = this.templates[type];
-        if (value) {
-            var editor = bespin.get("editor");
-            editor.model.insertChunk(editor.cursorPosition, value);
-        } else {
-            var names = [];
-            for (var name in this.templates) { names.push(name); }
-            var complain = (!type || type == "") ? "" : "Unknown pattern '" + type + "'.<br/>";
-            instruction.addErrorOutput(complain + "Known patterns: " + names.join(", "));
-        }
-    }
-});
-
 // ** {{{Command: alias}}} **
 bespin.cmd.commands.add({
     name: 'alias',
@@ -1052,38 +1031,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: use}}} **
-bespin.cmd.commands.add({
-    name: 'use',
-    takes: ['type'],
-    preview: 'use patterns to bring in code',
-    completeText: '"sound" will add sound support',
-    uses: {
-        sound: function() {
-            bespin.get("editor").model.insertChunk({ row: 3, col: 0 },
-                '  <script type="text/javascript" src="soundmanager2.js"></script>\n');
-            bespin.get("editor").model.insertChunk({ row: 4, col: 0 },
-                "  <script>\n  var sound; \n  soundManager.onload = function() {\n    sound =  soundManager.createSound('mySound','/path/to/mysoundfile.mp3');\n  }\n  </script>\n");
-        },
-        jquery: function() {
-            var jslib = 'http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js';
-            var script = '<script type="text/javascript" src="' + jslib + '"></script>\n';
-            bespin.get("editor").model.insertChunk({ row: 3, col: 0 }, script);
-        }
-    },
-    execute: function(instruction, type) {
-        if (dojo.isFunction(this.uses[type])) {
-            this.uses[type]();
-            instruction.addOutput("Added code for " + type + ".<br>Please check the results carefully.");
-        } else {
-            var names = [];
-            for (var name in this.uses) { names.push(name); }
-            var complain = (!type || type == "") ? "" : "Unknown pattern '" + type + "'.<br/>";
-            instruction.addErrorOutput(complain + "Known patterns: " + names.join(", "));
-        }
-    }
-});
-
 bespin.cmd.commands.add({
     name: 'uc',
     preview: 'Change all selected text to uppercase',
@@ -1104,17 +1051,6 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: codecomplete}}} **
-bespin.cmd.commands.add({
-    name: 'complete',
-    preview: 'auto complete a piece of code',
-    completeText: 'enter the start of the string',
-    withKey: "SHIFT SPACE",
-    execute: function(instruction, args) {
-        console.log("Complete");
-    }
-});
-
 // ** {{{Command: outline}}} **
 bespin.cmd.commands.add({
     name: 'outline',
@@ -1122,20 +1058,6 @@ bespin.cmd.commands.add({
     withKey: "ALT SHIFT O",
     execute: function(instruction) {
         bespin.publish("parser:showoutline");
-    }
-});
-
-//** {{{Command: slow}}} **
-bespin.cmd.commands.add({
-    name: 'slow',
-    takes: ['seconds'],
-    preview: 'create some output, slowly, after a given time (default 5s)',
-    execute: function(instruction, seconds) {
-        seconds = seconds || 5;
-
-        setTimeout(instruction.link(function() {
-            bespin.publish("session:status");
-        }), seconds * 1000);
     }
 });
 
