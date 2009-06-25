@@ -153,63 +153,26 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
             this.currentProject = item.name;
 
-            bespin.publish("project:set", {
-                project: this.currentProject,
-                suppressPopup: true,
-                fromDashboardItemSelected: true
-            });
-        }, this);
-
-        this.scene.bus.bind("itemselected", this.tree, function(e) {
-            var pathSelected = this.tree.getSelectedPath(true);
-
-
-            // this keeps the url to be changed if the file path changes to frequently
-            if (this.urlTimeout) {
-                clearTimeout(this.urlTimeout);
-            }
-
-            // TODO: This makes urlbar try (and fail) to load a file. Sure that's not right
-            /*
-            this.urlTimeout = setTimeout(function () {
-                this.lastSelectedPath = pathSelected;
-                location.hash = '#path=' + pathSelected;
-            }, 300);
-            */
+            // bespin.publish("project:set", {
+            //     project: this.currentProject,
+            //     suppressPopup: true,
+            //     fromDashboardItemSelected: true
+            // });
         }, this);
 
         // get logged in name; if not logged in, display an error of some kind
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
 
-        // provide history for the dashboard
-//        bespin.subscribe("url:changed", function(e) {
-//            var pathSelected =  (new bespin.client.settings.URL()).get('path');
-//            // TODO throw new TooManyAliasesForThisException();
-//            //bespin.page.dashboard.restorePath(pathSelected);
-//            self.restorePath(pathSelected);
-//        });
-        
-        // handle updating a path that has changed due to an action such as newfile, rm, etc
-        // bespin.subscribe("path:changed", function(e) {
-        //     var path = this.tree.getSelectedPath();
-        //     this.refreshFiles(path, this.tree);
-        // });        
-        console.log("Setting key bindings on file popup.");
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
-            console.log("I have a file browser keydown.");
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
-            console.log("The path is: " + path);
             if (path == undefined) {
-                console.log("in projects list");
                 var list = this.projects;
-                console.log("tl: " + this.tree.scrollPanes);
                 var listNext = this.tree.getList(0);
                 var listPre = null;
             } else {
                 // things to make life much more easy :)
                 var index = path.length - 1;
-                console.log("The index is: " + index);
                 var list = this.tree.getList(index);
                 var listNext = (this.tree.getListCount() > index ? this.tree.getList(index + 1) : false);
                 var listPre = (index != 0 ? this.tree.getList(index - 1) : this.projects);
@@ -218,9 +181,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             switch (e.keyCode) {
                 case key.LEFT_ARROW:
                     if (!listPre) break;
-                   // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
-                   listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
-                   break;
+                    listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
+                    list.selected = null;
+                    this.tree.repaint();
+                    break;
                 case key.RIGHT_ARROW:
                     if (!listNext) break;
                     if (list.selected.lastSelected) {
