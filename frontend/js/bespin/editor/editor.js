@@ -834,6 +834,7 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight, "Delete a word to the right");
 
         listener.bindKeyString("", Key.ENTER, this.actions.newline, "Insert newline");
+        listener.bindKeyString("CMD", Key.ENTER, this.actions.newlineBelow, "Insert newline at end of current line");
         listener.bindKeyString("", Key.TAB, this.actions.insertTab, "Indent / insert tab");
         listener.bindKeyString("SHIFT", Key.TAB, this.actions.unindent, "Unindent");
 

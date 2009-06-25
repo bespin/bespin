@@ -707,6 +707,10 @@ dojo.declare("bespin.editor.Actions", null, {
         this.repaint();
     },
 
+    newlineBelow: function(args) {
+        this.newline(this.moveToLineEnd(args));
+    },
+
     // it seems kinda silly, but when you have a region selected and you insert a character, I have a separate action that is invoked.
     // this is because it's really two operations: deleting the selected region and then inserting a character. Each of these two
     // actions adds an operation to the undo queue. So I have two choices for
