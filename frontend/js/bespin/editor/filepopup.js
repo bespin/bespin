@@ -29,10 +29,11 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         // Old global definitions
         this.heightDiff = null;
         this.currentProject = null;
-
+        
         // Old members mixed into this
         this.lastSelectedPath = null;
         this.inited = false;
+        this.firstdisplay = true;
     },
 
     // creates the Thunderhead file browser scene
@@ -152,83 +153,57 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             this.fetchRootFiles(item.name, this.tree);
 
             this.currentProject = item.name;
-            bespin.get("editSession").setProject(this.currentProject);
-        }, this);
-
-        this.scene.bus.bind("itemselected", this.tree, function(e) {
-            var pathSelected = this.tree.getSelectedPath(true);
-
-
-            // this keeps the url to be changed if the file path changes to frequently
-            if (this.urlTimeout) {
-                clearTimeout(this.urlTimeout);
-            }
-
-            // TODO: This makes urlbar try (and fail) to load a file. Sure that's not right
-            /*
-            this.urlTimeout = setTimeout(function () {
-                this.lastSelectedPath = pathSelected;
-                location.hash = '#path=' + pathSelected;
-            }, 300);
-            */
         }, this);
 
         // get logged in name; if not logged in, display an error of some kind
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
 
-        // provide history for the dashboard
-//        bespin.subscribe("url:changed", function(e) {
-//            var pathSelected =  (new bespin.client.settings.URL()).get('path');
-//            // TODO throw new TooManyAliasesForThisException();
-//            //bespin.page.dashboard.restorePath(pathSelected);
-//            self.restorePath(pathSelected);
-//        });
+        dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+            var key = bespin.util.keys.Key;
+            var path = this.tree.getSelectedPath();
+            if (path == undefined) {
+                var list = this.projects;
+                var listNext = this.tree.getList(0);
+                var listPre = null;
+            } else {
+                // things to make life much more easy :)
+                var index = path.length - 1;
+                var list = this.tree.getList(index);
+                var listNext = (this.tree.getListCount() > index ? this.tree.getList(index + 1) : false);
+                var listPre = (index != 0 ? this.tree.getList(index - 1) : this.projects);
+            }
         
-        // handle updating a path that has changed due to an action such as newfile, rm, etc
-        // bespin.subscribe("path:changed", function(e) {
-        //     var path = this.tree.getSelectedPath();
-        //     this.refreshFiles(path, this.tree);
-        // });        
-
-        // TODO: commenting this out as it is throwing errors at the moment
-        // provide arrow navigation to dashboard
-//        dojo.connect(window, "keydown", dojo.hitch(this, function(e) {
-//            var key = bespin.util.keys.Key;
-//            var path = this.tree.getSelectedPath();
-//            if (path === undefined) return;
-//            // things to make life much more easy :)
-//            var index = path.length - 1;
-//            var list = this.tree.lists[index];
-//            var listNext = (this.tree.lists.length > index ? this.tree.lists[index + 1] : false);
-//            var listPre = (index != 0 ? this.tree.lists[index - 1] : false);
-//
-//            switch (e.keyCode) {
-//                case key.LEFT_ARROW:
-//                    if (!listPre) break;
-//                    // listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
-//                    listPre.bus.fire("itemselected", { container: listPre, item: list.selected }, listPre);
-//                    break;
-//                case key.RIGHT_ARROW:
-//                    if (!listNext) break;
-//                    if (list.selected.lastSelected) {
-//                        listNext.selectItemByText(list.selected.lastSelected);
-//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-//                    } else {
-//                        listNext.selected = listNext.items[0];
-//                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
-//                    }
-//                    break;
-//                case key.UP_ARROW:
-//                    list.moveSelectionUp();
-//                    break;
-//                case key.DOWN_ARROW:
-//                    list.moveSelectionDown();
-//                    break;
-//                case key.ENTER:
-//                    this.scene.bus.fire("dblclick", e, this.tree);
-//                    break;
-//            }
-//        }));
+            switch (e.keyCode) {
+                case key.LEFT_ARROW:
+                    if (!listPre) break;
+                    listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
+                    list.selected = null;
+                    this.tree.repaint();
+                    break;
+                case key.RIGHT_ARROW:
+                    if (!listNext) break;
+                    if (list.selected.lastSelected) {
+                        listNext.selectItemByText(list.selected.lastSelected);
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    } else {
+                        listNext.selected = listNext.items[0];
+                        listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
+                    }
+                    break;
+                case key.UP_ARROW:
+                    list.moveSelectionUp();
+                    break;
+                case key.DOWN_ARROW:
+                    list.moveSelectionDown();
+                    break;
+                case key.ENTER:
+                    this.scene.bus.fire("dblclick", e, this.tree);
+                    break;
+                case key.ESCAPE:
+                    bespin.get('piemenu').hide();
+                    break;
+           }
+       }));
     },
 
     show: function(coords) {
@@ -240,8 +215,18 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             top: coords.t + "px",
             left: coords.l + "px"
         });
-
+        
         this.scene.render();
+        this.canvas.focus();
+
+        if (this.firstdisplay) {
+            this.firstdisplay = false;
+            var session = bespin.get("editSession");
+            var project = session.project;
+            this.currentProject = project;
+            var path = session.path;
+            this.restorePath(path);
+        }
     },
 
     hide: function() {
@@ -331,23 +316,26 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         newPath = newPath || '';
         var oldPath = this.lastSelectedPath;
         this.lastSelectedPath = newPath;
+        
+        console.log("New path: " + newPath + " oldPath: " + oldPath);
 
         if (newPath == oldPath && newPath != '') return;     // the path has not changed
 
         newPath = newPath.split('/');
         oldPath = oldPath.split('/');
-        this.currentProject = newPath[0];
 
-        this.tree.scrollPanes[0].view.selectItemByText(newPath[0]);    // this also perform a rendering of the project.list
         this.scene.renderAllowed = false;
+        
+        console.log("level counting stuff");
 
-        var sameLevel = 1;  // the value is 1 and not 0, as the first list (the project list) is not affected!
+        var sameLevel = 0;  // the value is 1 and not 0, as the first list (the project list) is not affected!
         while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel] && newPath[sameLevel] != '') {
             sameLevel ++;
         }
-
+        
+        console.log("fake paths");
         var fakePath = new Array(newPath.length);
-        for (var x = 1; x < newPath.length; x++) {
+        for (var x = 0; x < newPath.length; x++) {
             var fakeItem = new Object();
             fakeItem.name = newPath[x];
             if (x != newPath.length - 1) {
@@ -361,17 +349,19 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
             fakePath[x] = fakeItem;
         }
-
+        
+        console.log("remove extra lists");
         if (newPath.length <= this.tree.scrollPanes.length) {
             this.tree.removeListsFrom(newPath.length);
         }
 
         var contentsPath = new Array(newPath.length);
         var countSetupPaths = sameLevel;
-
+        
+        console.log("filling in the data");
         // get the data for the lists
         for (var x = sameLevel; x < newPath.length; x++) {
-            var selected = this.tree.scrollPanes[x - 1].view.selected;
+            var selected = this.tree.scrollPanes[x].view.selected;
             if (selected && selected.contents && dojo.isArray(selected.contents)) {
                 // restore filelist from local memory (the filelists was ones fetched)
                 if (x > this.tree.scrollPanes.length - 1) {
@@ -383,7 +373,9 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 countSetupPaths++;
             } else {
                 // load filelist form this.server
-                var filepath = this.currentProject + "/" + this.getFilePath(fakePath.slice(1, x));
+                var filepath = this.getFilePath(fakePath.slice(0, x));
+                console.dir(fakePath);
+                console.log("Loading " + filepath + " fp: " + fakePath + " x: " + x);
 
                 var self = this;
                 // Closure creator to capture the value of x in index
@@ -391,23 +383,23 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     return function(files) {
                         // "this" is the callbackData object!
                         var contents = self.prepareFilesForTree(files);
-                        if (index != 0) {
-                            contentsPath[index] = contents;
-                        }
+                        contentsPath[index] = contents;
 
                         self.tree.replaceList(index, contents);
-                        self.tree.scrollPanes[index].view.selectItemByText(fakePath[index].name);
+                        var list = self.tree.getList(index);
+                        console.log("Selecting " + index);
+                        list.selectItemByText(fakePath[index].name);
                         countSetupPaths++;
 
                         if (countSetupPaths == newPath.length) {
                             for (var x = 0; x < newPath.length - 1; x++) {
                                 // when the path is not restored from the root,
                                 // then there are contents without contents!
-                                if (contentsPath[x + 1]) {
+                                if (contentsPath[x]) {
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
                                     if (self.tree.scrollPanes[x].view.selected) {
-                                        self.tree.scrollPanes[x].view.selected.contents = contentsPath[x + 1];
+                                        self.tree.scrollPanes[x].view.selected.contents = contentsPath[x];
                                     }
                                 }
                             }
@@ -416,12 +408,14 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 })(x));
             }
         }
-
+        
+        console.log("deselecting");
         // deselect lists if needed
         for (var x = newPath.length; x < this.tree.scrollPanes.length; x++) {
             delete this.tree.scrollPanes[x].view.selected;
         }
-
+        
+        console.log("ready to render");
         this.scene.renderAllowed = true;
         this.scene.render();
     },
@@ -437,15 +431,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         }
 
         this.projects.items = projectItems;
-        this.scene.render();
-
-//        // Restore the last selected file
-//        var path = (new bespin.client.settings.URL()).get('path');
-//        if (!this.lastSelectedPath) {
-//            this.restorePath(path);
-//        } else {
-//            this.scene.render();
-//        }
+        if (this.currentProject) {
+            this.projects.selectItemByText(this.currentProject);
+        }
+        this.projects.repaint();
     },
 
     refreshProjects: function() {

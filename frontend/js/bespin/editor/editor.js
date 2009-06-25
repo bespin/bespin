@@ -856,8 +856,8 @@ dojo.declare("bespin.editor.UI", null, {
         // SEARCH / FIND
         // This is at the moment done by a observe(window) within init.js
         // listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
-        // listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
-        // listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
+        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
+        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
 
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
@@ -865,7 +865,6 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CTRL", Key.O, this.actions.focusFileBrowser, "Open File Browser");
-        listener.bindKeyString("CTRL", Key.F, this.actions.findInFiles, "Find");
 
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
