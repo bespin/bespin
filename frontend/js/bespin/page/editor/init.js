@@ -155,6 +155,7 @@ dojo.provide("bespin.page.editor.init");
         bespin.displayVersion();
 
         // START SEARCH BINDINGS
+        // TODO: Move these out alongside the rest of the key bindings
         // bind in things for search :)
         // some of the key-bindings go to the window object direct, to make them happen all over the window
         dojo.connect(window, 'keydown', function(e) {
