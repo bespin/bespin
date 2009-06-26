@@ -161,6 +161,10 @@ c.javascript_plugins = []
 # focus the user on the capabilities provided by this server.
 c.capabilities = set(["vcs"])
 
+# Set this variable to point to the location of a Thunderhead
+# source directory and that will be used during development.
+c.th_src = None
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
@@ -194,9 +198,6 @@ def set_profile(profile):
         c.async_jobs = False
         c.fslevels = 0
 
-        # in development, assume a Th directory above the bespin root
-        c.static_map['js/thsrc'] = c.static_dir / ".." / ".." / "th" / "src"
-
         c.base_url = "http://localhost:8080/"
 
         c.email_host = None
@@ -209,6 +210,10 @@ def load_config(configfile):
 def activate_profile():
     for ep in pkg_resources.iter_entry_points("bespin_extensions"):
         ep.load()
+        
+    if c.th_src:
+        # in development, assume a Th directory above the bespin root
+        c.static_map['js/thsrc'] = c.th_src
 
     if isinstance(c.email_port, basestring):
         c.email_port = int(c.email_port)

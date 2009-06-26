@@ -163,6 +163,11 @@ from bespin.config import c
 # uncomment the next line to turn off the restrictions
 # c.restrict_identifiers = False
 
+# if you are going to be working on the Thunderhead project code,
+# you can point at the directory where Thunderhead is located
+# and the script tags will be dynamically replaced
+# c.th_src = c.static_dir / ".." / ".." / "th" / "src"
+
 # Look in bespin.config to see more options you can set
 """)
     info("Config file created in: %s", options.server.config_file)
@@ -730,29 +735,3 @@ def seeddb():
     j.add_sharing(jproject, tom, edit=False)
     j.add_sharing(jproject, ev, edit=False)
 
-@task
-def th(options):
-    """Get or update the Thunderhead project in a directory next to the bespin directory.
-    This assumes that the hg fetch plugin is on and that hg is on your path."""
-    th_dir = path("..") / "th"
-    curdir = path.getcwd()
-    try:
-        if not th_dir.exists():
-            info("Checking out Th")
-            path("..").chdir()
-            sh("hg clone %s" % (options.th.src_url))
-        else:
-            info("Updating Th")
-            th_dir.chdir()
-            sh("hg fetch")
-    finally:
-        curdir.chdir()
-        
-@task
-@needs('th')
-def fetch():
-    """Update Bespin and Th via the hg fetch command. Note that hg needs to be
-    on your path and the fetch plugin must be active."""
-    info("Updating Bespin")
-    sh('hg fetch')
-    
