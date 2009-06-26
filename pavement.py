@@ -115,9 +115,6 @@ options(
           "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsparse.js?raw=1"
         ]
     ),
-    th=Bunch(
-        src_url="http://hg.mozilla.org/labs/th"
-    )
 )
 
 @task
@@ -188,12 +185,6 @@ def start():
     if not (options.dojo.destination / "dojo").exists():
         dojo()
         
-    # automatically fetch Th if it's not there
-    th_dir = path("..") / "th"
-    if not th_dir.exists():
-        th()
-    
-    
     from bespin import config, controllers
     from paste.httpserver import serve
     
