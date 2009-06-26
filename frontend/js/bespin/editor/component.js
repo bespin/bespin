@@ -83,7 +83,7 @@ dojo.declare("bespin.editor.Component", null, {
             if (typeof opts.commandline == "boolean") { // literally, true
                 commandlineElement = dojo.create("div", {
                    id: "commandlinewrapper",
-                   hidden: true,
+                   hidden: true
                 }, dojo.body());
                 commandlineElement.innerHTML = '<table style="display: none;" cellpadding="0"><tr><td id="prompt"><img id="promptimg" src="https://bespin.mozilla.com/images/icn_command.png" alt=">" ></td><td id="commandline"><input id="command" spellcheck="false"></td></tr></table>';
             } else {
@@ -230,7 +230,7 @@ dojo.declare("bespin.editor.Component", null, {
             // catch the command prompt errors
         }
     },
-    
+
     // ** {{{ dispose }}} **
     //
     // Disposes the editor as best as possible, clearing resources, clipboard helpers, and the like.

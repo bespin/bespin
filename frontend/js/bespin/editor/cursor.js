@@ -39,16 +39,16 @@ dojo.declare("bespin.editor.CursorManager", null, {
         {
             return this.position;
         }
-        
-        
+
+
         var pos = bespin.editor.utils.copyPos(modelPos);
-        
+
         //avoid modifying model by just using an empty array if row is out of range
         //this is because getRowArray adds rows if the row is out of range.
         var line = [];
         if (this.editor.model.hasRow(pos.row))
             line = this.editor.model.getRowArray(pos.row);
-            
+
         var tabsize = this.editor.getTabSize();
 
         // Special tab handling
@@ -78,13 +78,13 @@ dojo.declare("bespin.editor.CursorManager", null, {
     getModelPosition: function(pos) {
         pos = (pos != undefined) ? pos : this.position;
         var modelPos = bespin.editor.utils.copyPos(pos);
-        
+
         //avoid modifying model by just using an empty array if row is out of range
         //this is because getRowArray adds rows if the row is out of range.
         var line = [];
         if (this.editor.model.hasRow(pos.row))
             line = this.editor.model.getRowArray(pos.row);
-        
+
         var tabsize = this.editor.getTabSize();
 
         // Special tab handling
@@ -109,7 +109,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         return modelPos;
     },
-    
+
     getCharacterLength: function(character, column) {
         if (character.length > 1) return;
         if (column == undefined) column = this.position.col;
@@ -131,7 +131,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         }
         return count;
     },
-    
+
     // returns the numbers of white spaces from the beginning of the line
     // tabs are counted as whitespace
     getLeadingWhitespace: function(rowIndex) {
@@ -139,7 +139,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
         var match = /^(\s+).*/.exec(row);
         return (match && match.length == 2 ? this.getStringLength(match[1]) : 0);
     },
-    
+
     // Returns the numbers of white spaces (NOT '\t'!!!) in a row
     // if the string between <from> and <to> is "  ab     " this will give you 2, as
     // there are 2 white spaces together from the beginning
@@ -155,27 +155,27 @@ dojo.declare("bespin.editor.CursorManager", null, {
         to = this.getModelPosition({col: to, row: rowIndex}).col;
         if (settings && settings.isSettingOn('strictlines')) {
             from = Math.min(from, length);
-            to = Math.min(to, length);            
+            to = Math.min(to, length);
         }
         var count = 0;
         for (var x = from; x != to; x += delta) {
             if (x < length) {
                 if (row[x] != ' ') {
                     break;
-                }   
+                }
             }
             count++;
         }
         return count;
     },
-    
+
     getNextTablevelLeft: function(col) {
         var tabsize = this.editor.getTabSize();
         col = col || this.position.col;
         col--;
         return Math.floor(col / tabsize) * tabsize;
     },
-    
+
     getNextTablevelRight: function(col) {
         var tabsize = this.editor.getTabSize();
         col = col || this.position.col;
@@ -267,8 +267,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
             if (settings && settings.isSettingOn('smartmove')) {
                 var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelLeft());
                 if (freeSpaces == this.editor.getTabSize()) {
-                    this.moveCursor({ col: oldPos.col - freeSpaces });  
-                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+                    this.moveCursor({ col: oldPos.col - freeSpaces });
+                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
                 } // else {
                 //  this case is handled by the code following
                 //}
@@ -295,10 +295,10 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         if (!this.editor.getSelection() || shiftKey) {
             if ((settings && settings.isSettingOn('smartmove')) && args != true) {
-                var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());                       
+                var freeSpaces = this.getContinuousSpaceCount(oldPos.col, this.getNextTablevelRight());
                 if (freeSpaces == this.editor.getTabSize()) {
-                    this.moveCursor({ col: oldPos.col + freeSpaces })  
-                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) }
+                    this.moveCursor({ col: oldPos.col + freeSpaces });
+                    return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
                 }// else {
                 //  this case is handled by the code following
                 //}
@@ -324,7 +324,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
-        
+
         this.moveCursor({ row: Math.max(this.editor.ui.firstVisibleRow - this.editor.ui.visibleRows, 0) });
 
         if ((settings && settings.isSettingOn('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
@@ -341,14 +341,14 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         var oldPos = bespin.editor.utils.copyPos(this.position);
         var oldVirualCol = this.virtualCol;
-        
+
         this.moveCursor({ row: Math.min(this.position.row + this.editor.ui.visibleRows, this.editor.model.getRowCount() - 1) });
 
         if ((settings && settings.isSettingOn('strictlines')) && this.position.col > this.editor.ui.getRowScreenLength(this.position.row)) {
             this.moveToLineEnd();   // this sets this.virtulaCol = 0!
             this.virtualCol = Math.max(oldPos.col, oldVirualCol);
         }
-        
+
         return { oldPos: oldPos, newPos: bespin.editor.utils.copyPos(this.position) };
     },
 

@@ -342,8 +342,6 @@ dojo.provide("bespin.page.editor.init");
             paint: function() {
                 scene.paint();
             }
-        }
-    }
-
+        };
+    };
 })();
-

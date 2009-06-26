@@ -139,16 +139,42 @@ dojo.extend(bespin.client.Server, {
 // =============================================================================
 // = Group =
 
-// == Command {{{ group }}} ==
-bespin.cmd.commands.add({
+/**
+ * Command store for the group commands
+ * (which are subcommands of the main 'group' command)
+ */
+bespin.social.group.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
     name: 'group',
-    takes: ['[{name}|--add|--remove] ...'],
     preview: 'Collect the people you follow into groups, and display the existing groups',
-    // ** {{{execute}}}
-    execute: function(instruction, args) {
-        args = bespin.cmd.commands.toArgArray(args);
+    completeText: 'subcommands: add, remove, list, help',
+    subcommanddefault: 'help'
+}});
 
-        if (args.length == 0) {
+/**
+ * Display sub-command help
+ */
+bespin.social.group.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show subcommands for group command',
+    description: 'The <u>help</u> gives you access to the various subcommands in the group command space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        bespin.cmd.displayHelp(bespin.social.group.commands, instruction, extra);
+    }
+});
+
+/**
+ * 'group list' subcommand.
+ */
+bespin.vcs.commands.addCommand({
+    name: 'list',
+    preview: 'List the current group and group members',
+    takes: ['group'],
+    completeText: 'An optional group name or leave blank to list groups',
+    description: 'List the current group and group members.',
+    execute: function(instruction, group) {
+        if (group) {
             // List all groups
             bespin.get('server').groupListAll({
                 onSuccess: function(groups) {
@@ -161,8 +187,7 @@ bespin.cmd.commands.add({
                     instruction.addErrorOutput("Failed to retrieve groups: " + xhr.responseText);
                 }
             });
-        }
-        else if (args.length == 1) {
+        } else {
             // List members in a group
             var group = args[0];
             bespin.get('server').groupList(group, {
@@ -177,52 +202,74 @@ bespin.cmd.commands.add({
                 }
             });
         }
-        else if (args.length == 2) {
-            if (args[1] == "-r" || args[1] == "--remove") {
-                // Remove all members from a group
-                var group = args[0];
-                bespin.get('server').groupRemoveAll(group, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("Removed group " + group);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to retrieve group members. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-            else {
-                instruction.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
-            }
+    }
+});
+
+/**
+ * 'group add' subcommand.
+ */
+bespin.vcs.commands.addCommand({
+    name: 'add',
+    preview: 'Add members to a new or existing group',
+    takes: [ 'group', 'member' ],
+    completeText: 'A group name followed by a list of members to add',
+    description: 'Add members to a new or existing group',
+    execute: function(instruction, group) {
+    var group = args.shift();
+    var command = args.shift();
+        if (command == "-a" || command == "--add") {
+            // Add to members of a group
+            bespin.get('server').groupAdd(group, args, {
+                onSuccess: function(data) {
+                    instruction.addOutput("Members of " + group + ": " + data);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
+                }
+            });
         }
-        else if (args.length > 2) {
-            var group = args.shift();
-            var command = args.shift();
-            if (command == "-a" || command == "--add") {
-                // Add to members of a group
-                bespin.get('server').groupAdd(group, args, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("Members of " + group + ": " + data);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-            else if (command == "-r" || command == "--remove") {
-                // Remove members from a group
-                args.shift();
-                bespin.get('server').groupRemove(group, args, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("Members of " + group + ": " + data);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-            else {
-                instruction.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
-            }
+        else if (command == "-r" || command == "--remove") {
+            // Remove members from a group
+            args.shift();
+            bespin.get('server').groupRemove(group, args, {
+                onSuccess: function(data) {
+                    instruction.addOutput("Members of " + group + ": " + data);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
+                }
+            });
+        }
+        else {
+            instruction.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
+        }
+    }
+});
+
+/**
+ * 'group remove' subcommand.
+ */
+bespin.vcs.commands.addCommand({
+    name: 'remove',
+    preview: 'Remove members from an existing group (and remove group if empty)',
+    takes: [ 'group', 'member' ],
+    completeText: 'A group name followed by a list of members to remove',
+    description: 'Remove members from an existing group (and remove group if empty)',
+    execute: function(instruction, group) {
+        if (args[1] == "-r" || args[1] == "--remove") {
+            // Remove all members from a group
+            var group = args[0];
+            bespin.get('server').groupRemoveAll(group, {
+                onSuccess: function(data) {
+                    instruction.addOutput("Removed group " + group);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Failed to retrieve group members. Maybe due to: " + xhr.responseText);
+                }
+            });
+        }
+        else {
+            instruction.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
         }
     }
 });
