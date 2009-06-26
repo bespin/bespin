@@ -89,6 +89,11 @@ dojo.declare("bespin.editor.Events", null, {
             var files = bespin.get('files');
 
             var project  = event.project || editSession.project;
+            
+            // if we're changing projects, make sure the new one is set
+            if (project != editSession.project) {
+                editSession.project = project;
+            }
 
             if (!(event.reload) && editSession.checkSameFile(project, filename)) {
                 if (event.line) {
