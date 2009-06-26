@@ -358,6 +358,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         var contentsPath = new Array(newPath.length);
         var countSetupPaths = sameLevel;
         
+        console.log("deselecting");
+        // deselect lists if needed
+        for (var x = newPath.length; x < this.tree.scrollPanes.length; x++) {
+            delete this.tree.getList(x).selected;
+        }
+        
         console.log("filling in the data");
         // get the data for the lists
         for (var x = sameLevel; x < newPath.length; x++) {
@@ -369,7 +375,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 } else {
                     this.tree.replaceList(x, selected.contents);
                 }
-                this.tree.scrollPanes[x].view.selectItemByText(fakePath[x].name);
+                this.tree.getList(x).selectItemByText(fakePath[x].name);
                 countSetupPaths++;
             } else {
                 // load filelist form this.server
@@ -399,7 +405,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                     var list = self.tree.getList(x);
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
-                                    console.log("list selected: " + list.selected);
+                                    console.log("list selected: " + list.selected.name);
                                     if (list.selected) {
                                         list.selected.contents = contentsPath[x];
                                     }
@@ -409,12 +415,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     };
                 })(x));
             }
-        }
-        
-        console.log("deselecting");
-        // deselect lists if needed
-        for (var x = newPath.length; x < this.tree.scrollPanes.length; x++) {
-            delete this.tree.scrollPanes[x].view.selected;
         }
         
         console.log("ready to render");
