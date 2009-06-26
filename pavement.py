@@ -407,10 +407,10 @@ def compress_js():
     cwd = path.getcwd()
     try:
         builder_dir.chdir()
-        sh("sh build.sh action=release profileFile=%s version=%s "
-            "releaseDir=%s optimize=shrinksafe releaseName=js "
-            'scopeMap=[[\\"dojo\\",\\"bespindojo\\"],[\\"th\\",\\"bespinth\\"],[\\"dijit\\",\\"bespindijit\\"]]' 
-            % (embed_profile, options.version.number, embed_release_dir))
+        # sh("sh build.sh action=release profileFile=%s version=%s "
+        #     "releaseDir=%s optimize=shrinksafe releaseName=js "
+        #     'scopeMap=[[\\"dojo\\",\\"bespindojo\\"],[\\"dijit\\",\\"bespindijit\\"]]' 
+        #     % (embed_profile, options.version.number, embed_release_dir))
         sh("sh build.sh action=release profileFile=%s version=%s "
             "releaseDir=%s optimize=shrinksafe releaseName=js" 
             % (profile_file, options.version.number, release_dir))
@@ -426,15 +426,14 @@ def compress_js():
     editor_filename = front_end_target / "editor.html"
     _install_compressed(editor_filename, "editor_all.js")
     
-    dashboard_filename = front_end_target / "dashboard.html"
-    _install_compressed(dashboard_filename, "dashboard_all.js")
-    
     index_filename = front_end_target / "index.html"
     _install_compressed(index_filename, "index_all.js")
     
     final_util_directory = front_end_target / "js" / "util"
     final_util_directory.rmtree()
-
+    
+    # put the th file back in
+    (path("frontend") / "js" / "th.compressed.js").copy(front_end_target / "js")
         
 @task
 def prod_server():

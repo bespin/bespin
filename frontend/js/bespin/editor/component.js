@@ -35,12 +35,7 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
 
-dojo.require("th.helpers"); // -- Thunderhead... hooooo
-dojo.require("th.css");
-dojo.require("th.th");
-dojo.require("th.models");
-dojo.require("th.borders");
-dojo.require("th.components");
+dojo.require("th.compressed");
 
 // = Editor Component =
 //
