@@ -230,11 +230,11 @@ bespin.subscribe("toolbar:init", function(event) {
 
         var highlightOn = function() {
             jetpack.src = "images/icn_jetpack_on.png";
-        }
+        };
 
         var highlightOff = function() {
             jetpack.src = "images/icn_jetpack.png";
-        }
+        };
 
         dojo.connect(jetpack, 'mouseover', highlightOn);
         dojo.connect(jetpack, 'mouseout',  function() {
@@ -251,7 +251,7 @@ bespin.subscribe("toolbar:init", function(event) {
 
                 dropdown = dropdown || (function() {
                     var dd = dojo.create("div", {
-                        id: 'jetpack_dropdown',
+                        id: 'jetpack_dropdown'
                     });
 
                     var editor_coords = dojo.coords('editor');
@@ -263,7 +263,7 @@ bespin.subscribe("toolbar:init", function(event) {
                         left: (jetpack_coorders.x - 30) + 'px',
                         display: 'none',
                         zIndex: '150'
-                    })
+                    });
 
                     dd.innerHTML = '<table id="jetpack_dropdown_content"><tr><th colspan="3">Jetpack Actions</th></tr><tr><td>create</td><td><input type="text" size="7" id="jetpack_dropdown_input_create" value="myjetpack" onfocus="bespin.get(\'editor\').setFocus(false);"></td><td><input id="jetpack_dropdown_now_create" type="button" value="now &raquo;"></td></tr><tr id="jetpack_dropdown_or"><td colspan="3" align="center">or</td></tr><tr><td>install</td><td><select id="jetpack_dropdown_input_install"><option></option></select></td><td><input id="jetpack_dropdown_now_install" type="button" value="now &raquo;"></td></tr></table><div id="jetpack_dropdown_border">&nbsp;</div>';
 
@@ -327,7 +327,7 @@ bespin.jetpack.install = function(feature) {
     // // init and dispatch the event.
     // event.initEvent("mozjpinstall", true, false);
     // element.dispatchEvent(event);
-}
+};
 
 bespin.jetpack.sizeDropDownBorder = function(dd) {
     var keephidden = false;
@@ -353,7 +353,7 @@ bespin.jetpack.sizeDropDownBorder = function(dd) {
         width: content_coords.w + 'px',
         height: content_coords.h + 'px'
     });
-}
+};
 
 bespin.jetpack.loadInstallScripts = function() {
     bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
@@ -370,4 +370,4 @@ bespin.jetpack.loadInstallScripts = function() {
         dojo.byId("jetpack_dropdown_input_install").innerHTML = output;
         bespin.jetpack.sizeDropDownBorder();
     });
-}
+};

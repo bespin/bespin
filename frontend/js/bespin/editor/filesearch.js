@@ -50,39 +50,39 @@ dojo.declare("bespin.editor.filesearch.Panel", th.components.Panel, {
         var sw = 14;
         var sh = d.b.h - d.i.b - y - lh;
         var innerWidth = d.b.w - d.i.w - sw;
-        
+
         this.list.bounds = { x: d.i.l, y: y, width: innerWidth + sw, height: sh - 1 };
         this.pathLabel.bounds = { x: d.i.l, y: y + sh, width: innerWidth + sw, height: lh };*/
     },
-    
-    paintSelf: function(ctx) {      
+
+    paintSelf: function(ctx) {
         var d = this.d();
         ctx.fillStyle = "#D5D0C0";
         ctx.fillRect(0, 0, d.b.w, d.b.h);
-        
+
 /*      ctx.lineWidth = 1;
         ctx.strokeStyle = "black";
         ctx.beginPath()
         ctx.moveTo(0, 50.5);
         ctx.lineTo(d.b.w, 50.5);
-        
+
         ctx.stroke();*/
     }
 });
 
 dojo.declare("bespin.editor.filesearch.API", null, {
-    constructor: function() {                
-        
+    constructor: function() {
+
         this.serachTimeout = null;
-        
+
         // create the Window!
         this.panel = new bespin.editor.filesearch.Panel();
         this.window = new th.Window({
-            title: 'Find & Replace', 
-            top: 100, 
-            left: 200, 
-            width: 290, 
-            height: 115, 
+            title: 'Find & Replace',
+            top: 100,
+            left: 200,
+            width: 290,
+            height: 115,
             userPanel: this.panel,
             containerId: 'filesearch',
             closeOnClickOutside: true
@@ -94,21 +94,21 @@ dojo.declare("bespin.editor.filesearch.API", null, {
         this.replaceInput = dojo.byId('replace_text');
         this.nextButton = dojo.byId('bu_search_next');
         this.prevButton = dojo.byId('bu_search_prev');
-        
+
         // listen to the bus, whether the window got toggled
-        this.window.scene.bus.bind("toggle", this.window, dojo.hitch(this, function(e) {            
+        this.window.scene.bus.bind("toggle", this.window, dojo.hitch(this, function(e) {
             if (e.isVisible) {
                 this.searchInput.focus();
                 // the editor has no longer the focus
                 bespin.get('editor').setFocus(false);
             } else {
                 bespin.get('editor').setFocus(true);
-            } 
+            }
         }));
-        
+
         dojo.connect(this.searchInput, 'keyup', dojo.hitch(this, function(e) {
             if (!this.window.isVisible) return; // short circuit if the popup isn't up
-            
+
             if (this.serachTimeout) {
                 clearTimeout(this.serachTimeout);
             }
@@ -116,27 +116,27 @@ dojo.declare("bespin.editor.filesearch.API", null, {
                 bespin.get('editor').ui.setSearchString(this.searchInput.value);
             }), 100);
         }));
-        
+
         dojo.connect(this.searchInput, 'keydown', dojo.hitch(this, function(e) {
             if (!this.window.isVisible) return; // short circuit if the popup isn't up
-            
+
             var key = bespin.util.keys.Key;
-            
+
             if (e.keyCode == key.ENTER) {
                 bespin.get('actions').findNext();
             }
         }));
-        
+
         dojo.connect(this.nextButton, 'click', dojo.hitch(this, function(e) {
             if (!this.window.isVisible) return; // short circuit if the popup isn't up
-            
+
             bespin.get('actions').findNext();
         }));
-        
+
         dojo.connect(this.prevButton, 'click', dojo.hitch(this, function(e) {
             if (!this.window.isVisible) return; // short circuit if the popup isn't up
-            
+
             bespin.get('actions').findPrev();
         }));
-    },
+    }
 });
