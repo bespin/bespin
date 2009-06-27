@@ -334,6 +334,18 @@ dojo.declare("bespin.test.Assert", null, {
         dojo.attr(this._resultsTd, this.status.attr);
     },
     _runTest: function() {
+        if (this._suite.setupTest) {
+            try {
+                this._suite.setupTest.call(this._suite);
+            }
+            catch (e) {
+                console.error("setupTest failure when running: " + this._suiteName + "." + this._testName + "(): ", e);
+                this._addFunctionMessage(this._testName, [ e.toString() ]);
+                this._updateStatus(bespin.test.Status.fail);
+                return;
+            }
+        }
+        
         console.log("Running test", this._testName);
         this._updateStatus(bespin.test.Status.exec);
         try {
@@ -346,6 +358,17 @@ dojo.declare("bespin.test.Assert", null, {
         catch (e) {
             if (e != "failFast") {
                 console.error(this._suiteName + "." + this._testName + "(): ", e);
+                this._addFunctionMessage(this._testName, [ e.toString() ]);
+                this._updateStatus(bespin.test.Status.fail);
+            }
+        }
+        
+        if (this._suite.tearDownTest) {
+            try {
+                this._suite.tearDownTest.call(this._suite);
+            }
+            catch (e) {
+                console.error("tearDownTest failure when running: " + this._suiteName + "." + this._testName + "(): ", e);
                 this._addFunctionMessage(this._testName, [ e.toString() ]);
                 this._updateStatus(bespin.test.Status.fail);
             }
