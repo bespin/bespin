@@ -80,9 +80,11 @@ bespin.test.addTests("loader", {
     testModuleWithSingleDep: function(test) {
         var lq = bespin.plugins.loader.loadQueue;
         
-        loadCheck = {didLoad: false};
+        loadCheck = {didLoad: false, otherDidLoad: false};
         var modName = "/js/bespin/nonModule.js";
         var depModName = "/js/bespin/depModule.js";
+        
+        bespin.plugins.loader.loadScript(modName);
     
         bespin.plugins.loader.moduleLoaded(modName,
             function(require, exports) {
@@ -90,14 +92,30 @@ bespin.test.addTests("loader", {
                 
                 loadCheck.didLoad = true;
                 
-                exports.secretValue = 27;
+                exports.secretValue = othermod.secretValue;
                 
                 return exports;
             });
+            
         test.isFalse(loadCheck.didLoad);
         
         test.isNotUndefined(lq[modName], "main module should be in the queue");
         test.isNotUndefined(lq[depModName], 
                 "dependent module should be in queue");
+        
+        bespin.plugins.loader.moduleLoaded(depModName,
+            function(require, exports) {
+                loadCheck.otherDidLoad = true;
+                
+                exports.secretValue = 192;
+                
+                return exports;
+            });
+        
+        test.isTrue(loadCheck.didLoad, "Main module should load");
+        test.isTrue(loadCheck.otherDidLoad, "Module it depended on should load");
+        
+        var mod = bespin.plugins.loader.require(modName);
+        test.isEqual(192, mod.secretValue, "secret value should have been set");
     }
 });

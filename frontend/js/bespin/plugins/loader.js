@@ -51,8 +51,6 @@ dojo.mixin(bespin.plugins.loader, {
         if (deps.length == 0) {
             modules[scriptName] = 
                 moduleFactory(bespin.plugins.loader.require, {});
-        } else {
-            
         }
     },
 
