@@ -431,7 +431,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         var source = this.editor.container;
         this.globalHandles = []; //a collection of global handles to event listeners that will need to be disposed.
-        
+
         dojo.connect(source, "mousemove", this, "handleScrollBars");
         dojo.connect(source, "mouseout", this, "handleScrollBars");
         dojo.connect(source, "click", this, "handleScrollBars");
@@ -467,7 +467,7 @@ dojo.declare("bespin.editor.UI", null, {
             this.yoffset = -this.yscrollbar.value;
             this.editor.paint();
         });
-        
+
         this.globalHandles.push(dojo.connect(window, "mousemove", this.yscrollbar, "onmousemove"));
         this.globalHandles.push(dojo.connect(window, "mouseup", this.yscrollbar, "onmouseup"));
         this.globalHandles.push(
@@ -481,7 +481,7 @@ dojo.declare("bespin.editor.UI", null, {
     convertClientPointToCursorPoint: function(pos) {
         var settings = bespin.get("settings");
         var x, y;
-        
+
         if (pos.y < 0) { //ensure line >= first
             y = 0;
         } else if (pos.y >= (this.lineHeight * this.editor.model.getRowCount())) { //ensure line <= last
@@ -605,12 +605,12 @@ dojo.declare("bespin.editor.UI", null, {
         var backwards = false;
         if (modelend.row < modelstart.row || (modelend.row == modelstart.row && modelend.col < modelstart.col)) {
             backwards = true; //need to know so that we can maintain direction for shift-click select
-            
+
             var temp = modelstart;
             modelstart = modelend;
             modelend = temp;
         }
-        
+
         //validate
         if (!this.editor.model.hasRow(modelstart.row)) {
             modelstart.row = this.editor.model.getRowCount() - 1;
@@ -630,11 +630,11 @@ dojo.declare("bespin.editor.UI", null, {
             } else {
                 //we could use raw "down" and "up", but that would skip validation.
                 this.editor.setSelection({
-                    startPos: this.editor.getCursorPos(backwards ? modelend : modelstart), 
-                    endPos: this.editor.getCursorPos(backwards ? modelstart : modelend) 
+                    startPos: this.editor.getCursorPos(backwards ? modelend : modelstart),
+                    endPos: this.editor.getCursorPos(backwards ? modelstart : modelend)
                 });
             }
-            
+
             this.editor.moveCursor(this.editor.getCursorPos(backwards ? modelstart : modelend));
         } else if (detail == 2) { //double click
             var row = this.editor.model.rows[modelstart.row];
@@ -675,7 +675,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         //finally, and the LAST thing we should do (otherwise we'd mess positioning up)
         //scroll down, up, right, or left a bit if needed.
-        
+
         //up and down. optimally, we should have a timeout or something to keep checking...
         if (clientY < 0) {
             this.yoffset = Math.min(1, this.yoffset + (-clientY));
@@ -804,7 +804,7 @@ dojo.declare("bespin.editor.UI", null, {
         }
 
         //mousing over the scroll bars requires a full refresh
-        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled) 
+        if ((oldX != this.overXScrollBar) || (oldY != this.overYScrollBar) || scrolled)
             this.editor.paint(true);
     },
 
@@ -868,7 +868,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
-        listener.bindKeyString("CMD", Key.B, "editor:preview", "Preview in Browser");
+        // TODO: Find a way to move this into preview.js
+        listener.bindKeyString("CMD", Key.B, bespin.preview.show, "Preview in Browser");
 
         listener.bindKeyString("CMD", Key.Z, this.actions.undo, "Undo");
         listener.bindKeyString("SHIFT CMD", Key.Z, this.actions.redo, "Redo");
@@ -1549,7 +1550,7 @@ dojo.declare("bespin.editor.UI", null, {
         if (!showDownScrollNib) this.nibdown = new Rect();
         if (!showLeftScrollNib) this.nibleft = new Rect();
         if (!showRightScrollNib) this.nibright = new Rect();
-        
+
         //set whether scrollbars are visible, so mouseover and such can pass through if not.
         this.xscrollbarVisible = xscroll;
         this.yscrollbarVisible = yscroll;
@@ -1730,7 +1731,7 @@ dojo.declare("bespin.editor.API", null, {
             startPos = endPos;
             endPos = foo;
         }
-        
+
         return {
             startPos: bespin.editor.utils.copyPos(startPos),
             endPos: bespin.editor.utils.copyPos(endPos),
@@ -1818,7 +1819,7 @@ dojo.declare("bespin.editor.API", null, {
     setReadOnly: function(readonly) {
         this.readonly = readonly;
     },
-    
+
     // anything that this editor creates should be gotten rid of. Useful when you will be creating and destroying
     // editors more than once.
     dispose: function() {

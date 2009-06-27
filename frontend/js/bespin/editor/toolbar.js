@@ -166,7 +166,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             dojo.connect(close, 'click', function() {
-                bespin.publish("editor:closefile");
+                bespin.get("commandLine").executeCommand("closefile", true);
             });
         },
 
@@ -213,7 +213,8 @@ dojo.declare("bespin.editor.Toolbar", null, {
             });
 
             dojo.connect(preview, 'click', function() {
-                bespin.publish("editor:preview"); // use default file
+                // Defaults to current
+                bespin.preview.show();
             });
         },
 

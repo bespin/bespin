@@ -232,6 +232,13 @@ bespin.cmd.commands.add({
             }
         }
         instruction.addOutput(output);
+    },
+    sendAllOptions: function(type, callback) {
+        var settings = bespin.get("settings").list();
+        var names = settings.map(function(setting) {
+            return setting.key;
+        });
+        callback(names);
     }
 });
 
@@ -394,7 +401,24 @@ bespin.cmd.commands.add({
             instruction.addUsageOutput(this);
             return;
         }
-        bespin.publish("project:rename", { currentProject: args.currentProject, newProject: args.newProject });
+
+        var currentProject = args.currentProject;
+        var newProject = args.newProject;
+
+        if ((!currentProject || !newProject) || (currentProject == newProject)) {
+            return;
+        }
+
+        bespin.get('server').renameProject(currentProject, newProject, {
+            onSuccess: instruction.link(function() {
+                bespin.get('editSession').setProject(newProject);
+                instruction.unlink();
+            }),
+            onFailure: instruction.link(function(xhr) {
+                instruction.addErrorOutput('Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>");
+                instruction.unlink();
+            })
+        });
     }
 });
 
@@ -456,26 +480,21 @@ bespin.cmd.commands.add({
     }
 });
 
-// ** {{{Command: preview}}} **
-bespin.cmd.commands.add({
-    name: 'preview',
-    takes: ['filename'],
-    preview: 'view the file in a new browser window',
-    completeText: 'add the filename to view or use the current file',
-    execute: function(instruction, filename) {
-        bespin.publish("editor:preview", {
-            filename: filename
-        });
-    }
-});
-
 // ** {{{Command: editconfig}}} **
 bespin.cmd.commands.add({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
     execute: function(instruction) {
-        bespin.publish("editor:config:edit");
+        if (!bespin.userSettingsProject) {
+            instruction.addErrorOutput("You don't seem to have a user project. Sorry.");
+            return;
+        }
+
+        bespin.publish("editor:openfile", {
+            project: bespin.userSettingsProject,
+            filename: "config"
+        });
     }
 });
 
@@ -484,7 +503,7 @@ bespin.cmd.commands.add({
     name: 'runconfig',
     preview: 'run your config file',
     execute: function(instruction) {
-        bespin.publish("editor:config:run");
+        bespin.get('files').evalFile(bespin.userSettingsProject, "config");
     }
 });
 
@@ -500,7 +519,22 @@ bespin.cmd.commands.add({
             instruction.addUsageOutput(this);
             return;
         }
-        bespin.publish("command:load", { commandname: commandname });
+
+        if (!commandname) {
+            instruction.addErrorOutput("Please pass me a command name to load.");
+            return;
+        }
+
+        var onSuccess = function(file) {
+            try {
+                // TODO: I'm not antievalist, but I wonder if there is a better way ...
+                eval('bespin.get("commandLine").commandStore.addCommands([' + file.content + '])');
+            } catch (e) {
+                instruction.addErrorOutput("Something is wrong about the command:<br><br>" + e);
+            }
+        };
+
+        bespin.get('files').loadContents(bespin.userSettingsProject, "commands/" + commandname + ".js", onSuccess, true);
     }
 });
 
@@ -518,7 +552,21 @@ bespin.cmd.commands.add({
             return;
         }
 
-        bespin.publish("command:edit", { commandname: commandname });
+        if (!bespin.userSettingsProject) {
+            instruction.addErrorOutput("You don't seem to have a user project. Sorry.");
+            return;
+        }
+
+        if (!commandname) {
+            instruction.addErrorOutput("Please pass me a command name to edit.");
+            return;
+        }
+
+        bespin.publish("editor:forceopenfile", {
+            project: bespin.userSettingsProject,
+            filename: "commands/" + commandname + ".js",
+            content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
+        });
     }
 });
 
@@ -527,7 +575,30 @@ bespin.cmd.commands.add({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(instruction) {
-        bespin.publish("command:list");
+        if (!bespin.userSettingsProject) {
+            instruction.addOutput("You don't seem to have a user project. Sorry.");
+            return;
+        }
+
+        bespin.get('server').list(bespin.userSettingsProject, 'commands/', function(commands) {
+            var output;
+
+            if (!commands || commands.length < 1) {
+                output = "You haven't installed any custom commands.<br>Want to <a href='https://wiki.mozilla.org/Labs/Bespin/Roadmap/Commands'>learn how?</a>";
+            } else {
+                output = "<u>Your Custom Commands</u><br/><br/>";
+
+                var jsCommands = dojo.filter(commands, function(file) {
+                    return bespin.util.endsWith(file.name, '\\.js');
+                });
+
+                output += dojo.map(jsCommands, function(jsCommand) {
+                    return jsCommand.name.replace(/\.js$/, '');
+                }).join("<br>");
+            }
+
+            instruction.addOutput(output);
+        });
     }
 });
 
@@ -544,7 +615,31 @@ bespin.cmd.commands.add({
             return;
         }
 
-        bespin.publish("command:delete", { commandname: commandname });
+        var editSession = bespin.get('editSession');
+        var files = bespin.get('files');
+
+        if (!bespin.userSettingsProject) {
+            instruction.addErrorOutput("You don't seem to have a user project. Sorry.");
+            return;
+        }
+
+        if (!commandname) {
+            instruction.addErrorOutput("Please pass me a command name to delete.");
+            return;
+        }
+
+        var commandpath = "commands/" + commandname + ".js";
+
+        var onSuccess = instruction.link(function() {
+            if (editSession.checkSameFile(bespin.userSettingsProject, commandpath)) bespin.get('editor').model.clear(); // only clear if deleting the same file
+            instruction.addOutput('Removed command: ' + commandname);
+        });
+
+        var onFailure = instruction.link(function(xhr) {
+            instruction.addOutput("Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
+        });
+
+        files.removeFile(bespin.userSettingsProject, commandpath, onSuccess, onFailure);
     }
 });
 
@@ -586,15 +681,21 @@ bespin.cmd.commands.add({
             return;
         }
 
-        bespin.get('files').removeFile(project, filename, function() {
+        var onSuccess = instruction.link(function() {
             if (bespin.get('editSession').checkSameFile(project, filename)) {
                 bespin.get("editor").model.clear(); // only clear if deleting the same file
             }
 
             instruction.addOutput('Removed file: ' + filename, true);
-        }, function(xhr) {
-            instruction.addErrorOutput("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
+            instruction.unlink();
         });
+
+        var onFailure = instruction.link(function(xhr) {
+            instruction.addErrorOutput("Wasn't able to remove the file <b>" + filename + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
+            instruction.unlink();
+        });
+
+        bespin.get('files').removeFile(project, filename, onSuccess, onFailure);
     }
 });
 
@@ -605,7 +706,18 @@ bespin.cmd.commands.add({
     preview: 'close the file (may lose edits)',
     completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
     execute: function(instruction, args) {
-        bespin.publish("editor:closefile", args);
+        var editSession = bespin.get('editSession');
+        var filename = args.filename || editSession.path;  // default to current page
+        var project  = args.project  || editSession.project;
+
+        bespin.get('files').closeFile(project, filename, function() {
+            bespin.publish("editor:closedfile", { filename: filename });
+
+            // if the current file, move on to a new one
+            if (filename == editSession.path) bespin.publish("editor:newfile");
+
+            bespin.get("commandLine").addOutput('Closed file: ' + filename);
+        });
     }
 });
 
@@ -660,7 +772,7 @@ bespin.cmd.commands.add({
             var settings = bespin.get("settings");
             if (value) {
                 var linenum = parseInt(value, 10); // parse the line number as a decimal
-    
+
                 if (isNaN(linenum)) { // it's not a number, so for now it is a function name
                     if(settings.isOn(settings.get("syntaxcheck"))) {
                         bespin.publish("parser:gotofunction", {
@@ -920,7 +1032,14 @@ bespin.cmd.commands.add({
 
             instruction.addOutput("About to import " + project + " from:<br><br>" + url + "<br><br><em>It can take awhile to download the project, so be patient!</em>");
 
-            bespin.publish("project:import", { project: project, url: url });
+            bespin.get('server').importProject(project, url, {
+                onSuccess: function() {
+                    instruction.addOutput("Project " + project + " imported from:<br><br>" + url);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
+                }
+            });
         }
     }
 });

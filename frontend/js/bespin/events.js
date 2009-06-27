@@ -26,336 +26,35 @@ dojo.provide("bespin.events");
 
 dojo.require("bespin.util.util");
 
-// = Event Bus =
-//
-// Global home for event watching where it doesn't fit using the pattern
-// of custom events tied to components themselves such as:
-//
-// * {{{bespin.cmd.commandline.Events}}}
-// * {{{bespin.client.settings.Events}}}
-
-// ** {{{ Event: editor:titlechange }}} **
-//
-// Observe a title change event and then... change the document.title!
-bespin.subscribe("editor:titlechange", function(event) {
-    var title;
-    if (event.filename) title = event.filename + ' - editing with Bespin';
-    else if (event.title) title = event.title;
-    else title = 'Bespin &raquo; Code in the Cloud';
-
-    document.title = title;
-});
-
-// ** {{{ Event: editor:evalfile }}} **
-//
-// Load up the given file and try to run it
-bespin.subscribe("editor:evalfile", function(event) {
-    var project  = event.project;
-    var filename = event.filename;
-    var scope    = event.scope || bespin.events.defaultScope();
-
-    if (!project || !filename) {
-        bespin.get('commandLine').addErrorOutput("Please, I need a project and filename to evaulate");
-        return;
+/**
+ * Given an <code>eventString</code> parse out the arguments and configure an
+ * event object.
+ * <p>For example:
+ * <li><code>command:execute;name=ls,args=bespin</code>
+ * <li><code>command:execute</code>
+ */
+bespin.events.toFire = function(eventString) {
+    var event = {};
+    if (eventString.indexOf(';') < 0) { // just a plain command with no args
+        event.name = eventString;
+    } else { // split up the args
+        var pieces = eventString.split(';');
+        event.name = pieces[0];
+        event.args = bespin.util.queryToObject(pieces[1], ',');
     }
+    return event;
+};
 
-    bespin.get('files').loadContents(project, filename, function(file) {
-        // wow, using with. crazy.
-        with (scope) {
-            try {
-                eval(file.content);
-            } catch (e) {
-                var html = "There is a error trying to run " + filename + " in project " + project + ":<br>" + e;
-                bespin.get('commandLine').addErrorOutput(html);
-            }
-        }
-    }, true);
-});
-
-// ** {{{ Event: editor:preview }}} **
-//
-// Preview the given file in a browser context
-bespin.subscribe("editor:preview", function(event) {
-    var editSession = bespin.get('editSession');
-    var filename = event.filename || editSession.path;  // default to current page
-    var project  = event.project  || editSession.project;
-    var url = bespin.util.path.combine("preview/at", project, filename);
-    var settings = bespin.get("settings");
-
-    // Make sure to save the file first
-    bespin.publish("editor:savefile", {
-        filename: filename
-    });
-
-    if (settings && filename) {
-        var type = event.type || settings.get("preview"); // allow a type to override the global setting
-        if (type == "inline") {
-            var preview = dojo.byId("preview");
-            var subheader = dojo.byId("subheader");
-            var editor = dojo.byId("editor");
-            if (dojo.style(preview, "display") == "none") {
-                dojo.style(editor, "display", "none");
-                dojo.style(subheader, "display", "none");
-                dojo.style(preview, "display", "block");
-                var inlineIframe = dojo.create("iframe", {
-                    frameBorder: 0,
-                    src: url,
-                    style: "border:0; width:100%; height:100%; background-color: white; display:block"
-                }, preview);
-                var esc = dojo.connect(document, "onkeypress", function(e) {
-                    var key = e.keyCode || e.charCode;
-                    if (key == bespin.util.keys.Key.ESCAPE) {
-                        preview.removeChild(inlineIframe);
-                        dojo.style(preview, "display", "none");
-                        dojo.style(subheader, "display", "block");
-                        dojo.style(editor, "display", "block");
-                        dojo.disconnect(esc);
-                    }
-                });
-            }
-        } else if (type == "iphone") {
-            var centerpopup = dojo.byId("centerpopup");
-            if (dojo.byId("iphoneIframe") == null) {
-                var iphoneIframe = dojo.create("iframe", {
-                    id: "iphoneIframe",
-                    frameBorder: 0,
-                    src: url,
-                    style: "border:0; width:320px; height:460px; background-color: white; display:block"
-                }, centerpopup);
-                bespin.util.webpieces.showCenterPopup(centerpopup);
-                var esc = dojo.connect(document, "onkeypress", function(e) {
-                    var key = e.keyCode || e.charCode;
-                    if (key == bespin.util.keys.Key.ESCAPE) {
-                        centerpopup.removeChild(iphoneIframe);
-                        bespin.util.webpieces.hideCenterPopup(centerpopup);
-                        dojo.disconnect(esc);
-                    }
-                });
-            }
-        } else {
-            window.open(url);
-        }
-    }
-});
-
-// ** {{{ Event: editor:closefile }}} **
-//
-// Close the given file (wrt the session)
-bespin.subscribe("editor:closefile", function(event) {
-    var editSession = bespin.get('editSession');
-    var filename = event.filename || editSession.path;  // default to current page
-    var project  = event.project  || editSession.project;
-
-    bespin.get('files').closeFile(project, filename, function() {
-        bespin.publish("editor:closedfile", { filename: filename });
-
-        // if the current file, move on to a new one
-        if (filename == editSession.path) bespin.publish("editor:newfile");
-
-        bespin.get("commandLine").addOutput('Closed file: ' + filename);
-    });
-});
-
-// ** {{{ Event: editor:config:run }}} **
-//
-// Load and execute the user's config file
-bespin.subscribe("editor:config:run", function(event) {
-    bespin.publish("editor:evalfile", {
-        project: bespin.userSettingsProject,
-        filename: "config"
-    });
-});
-
-// ** {{{ Event: editor:config:edit }}} **
-//
-// Open the users special config file
-bespin.subscribe("editor:config:edit", function(event) {
-    if (!bespin.userSettingsProject) {
-        bespin.get("commandLine").addErrorOutput("You don't seem to have a user project. Sorry.");
-        return;
-    }
-
-    bespin.publish("editor:openfile", {
-        project: bespin.userSettingsProject,
-        filename: "config"
-    });
-});
-
-// ** {{{ Event: command:load }}} **
-//
-// Create a new command in your special command directory
-bespin.subscribe("command:load", function(event) {
-    var commandname = event.commandname;
-
-    if (!commandname) {
-        bespin.get("commandLine").addErrorOutput("Please pass me a command name to load.");
-        return;
-    }
-
-    bespin.get('files').loadContents(bespin.userSettingsProject, "commands/" + commandname + ".js", function(file) {
-        try {
-            eval('bespin.get("commandLine").commandStore.addCommands([' + file.content + '])');
-        } catch (e) {
-            bespin.get("commandLine").addErrorOutput("Something is wrong about the command:<br><br>" + e);
-        }
-    }, true);
-});
-
-// ** {{{ Event: command:edit }}} **
-//
-// Edit the given command
-bespin.subscribe("command:edit", function(event) {
-    var commandname = event.commandname;
-
-    if (!bespin.userSettingsProject) {
-        bespin.get("commandLine").addErrorOutput("You don't seem to have a user project. Sorry.");
-        return;
-    }
-
-    if (!commandname) {
-        bespin.get("commandLine").addErrorOutput("Please pass me a command name to edit.");
-        return;
-    }
-
-    bespin.publish("editor:forceopenfile", {
-        project: bespin.userSettingsProject,
-        filename: "commands/" + commandname + ".js",
-        content: "{\n    name: '" + commandname + "',\n    takes: [YOUR_ARGUMENTS_HERE],\n    preview: 'execute any editor action',\n    execute: function(self, args) {\n\n    }\n}"
-    });
-});
-
-// ** {{{ Event: command:list }}} **
-//
-// List the custom commands that a user has
-bespin.subscribe("command:list", function(event) {
-    if (!bespin.userSettingsProject) {
-        bespin.get("commandLine").addOutput("You don't seem to have a user project. Sorry.");
-        return;
-    }
-
-    bespin.get('server').list(bespin.userSettingsProject, 'commands/', function(commands) {
-        var output;
-
-        if (!commands || commands.length < 1) {
-            output = "You haven't installed any custom commands.<br>Want to <a href='https://wiki.mozilla.org/Labs/Bespin/Roadmap/Commands'>learn how?</a>";
-        } else {
-            output = "<u>Your Custom Commands</u><br/><br/>";
-
-            output += dojo.map(dojo.filter(commands, function(file) {
-                return bespin.util.endsWith(file.name, '\\.js');
-            }), function(c) { return c.name.replace(/\.js$/, ''); }).join("<br>");
-        }
-
-        bespin.get("commandLine").addOutput(output);
-    });
-});
-
-// ** {{{ Event: command:delete }}} **
-//
-// Delete the named command
-bespin.subscribe("command:delete", function(event) {
-    var commandname = event.commandname;
-
-    var editSession = bespin.get('editSession');
-    var files = bespin.get('files');
-
-    if (!bespin.userSettingsProject) {
-        bespin.get("commandLine").addErrorOutput("You don't seem to have a user project. Sorry.");
-        return;
-    }
-
-    if (!commandname) {
-        bespin.get("commandLine").addErrorOutput("Please pass me a command name to delete.");
-        return;
-    }
-
-    var commandpath = "commands/" + commandname + ".js";
-
-    files.removeFile(bespin.userSettingsProject, commandpath, function() {
-        if (editSession.checkSameFile(bespin.userSettingsProject, commandpath)) bespin.get('editor').model.clear(); // only clear if deleting the same file
-        bespin.get("commandLine").addOutput('Removed command: ' + commandname);
-    }, function(xhr) {
-        bespin.get("commandLine").addOutput("Wasn't able to remove the command <b>" + commandname + "</b><br/><em>Error</em> (probably doesn't exist): " + xhr.responseText);
-    });
-});
-
-// ** {{{ Event: project:rename }}} **
-//
-// Rename a project
-bespin.subscribe("project:rename", function(event) {
-    var currentProject = event.currentProject;
-    var newProject = event.newProject;
-    if ( (!currentProject || !newProject) || (currentProject == newProject) ) return;
-
-    bespin.get('server').renameProject(currentProject, newProject, {
-        onSuccess: function() {
-            bespin.get('editSession').setProject(newProject);
-        },
-        onFailure: function(xhr) {
-            bespin.get("commandLine").addErrorOutput('Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>");
-        }
-    });
-});
-
-
-// ** {{{ Event: project:import }}} **
-//
-// Import a project
-bespin.subscribe("project:import", function(event) {
-    var project = event.project;
-    var url = event.url;
-
-    bespin.get('server').importProject(project, url, { onSuccess: function() {
-        bespin.get("commandLine").addOutput("Project " + project + " imported from:<br><br>" + url);
-    }, onFailure: function(xhr) {
-        bespin.get("commandLine").addErrorOutput("Unable to import " + project + " from:<br><br>" + url + ".<br><br>Maybe due to: " + xhr.responseText);
-    }});
-});
-
-
-
-// == Events
-//
-// ** {{{ bespin.events }}} **
-//
-// Helpers for the event subsystem
-
-// ** {{{ bespin.events.toFire }}} **
-//
-// Given an {{{eventString}}} parse out the arguments and configure an event object
-//
-// Example events:
-//
-// * {{{command:execute;name=ls,args=bespin}}}
-// * {{{command:execute}}}
-
-dojo.mixin(bespin.events, {
-    toFire: function(eventString) {
-        var event = {};
-        if (eventString.indexOf(';') < 0) { // just a plain command with no args
-            event.name = eventString;
-        } else { // split up the args
-            var pieces = eventString.split(';');
-            event.name = pieces[0];
-            event.args = bespin.util.queryToObject(pieces[1], ',');
-        }
-        return event;
-    }
-});
-
-// ** {{{ bespin.events.defaultScope }}} **
-//
-// Return a default scope to be used for evaluation files
+/**
+ * Return a default scope to be used for evaluation files
+ */
 bespin.events.defaultScope = function() {
     if (bespin.events._defaultScope) return bespin.events._defaultScope;
 
     var scope = {
         bespin: bespin,
         include: function(file) {
-            bespin.publish("editor:evalfile", {
-                project: bespin.userSettingsProject,
-                filename: file
-            });
+            bespin.get('files').evalFile(bespin.userSettingsProject, file);
         },
         tryTocopyComponent: function(id) {
             bespin.withComponent(id, dojo.hitch(this, function(component) {

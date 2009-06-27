@@ -746,9 +746,11 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Check for auto load
         bespin.subscribe("settings:init", function() {
-            if (settings.isOff(settings.get('autoconfig'))) return;
+            if (settings.isOff(settings.get('autoconfig'))) {
+                return;
+            }
 
-            bespin.publish("editor:config:run");
+            bespin.get('files').evalFile(bespin.userSettingsProject, "config");
         });
     }
 });

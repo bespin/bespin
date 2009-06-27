@@ -89,7 +89,7 @@ dojo.declare("bespin.editor.Events", null, {
             var files = bespin.get('files');
 
             var project  = event.project || editSession.project;
-            
+
             // if we're changing projects, make sure the new one is set
             if (project != editSession.project) {
                 editSession.project = project;
@@ -240,7 +240,7 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.get('files').saveFile(project, file); // it will save asynchronously.
             // TODO: Here we need to add in closure to detect errors and thus fire different success / error
 
-            bespin.publish("editor:titlechange", { filename: filename });
+            document.title = filename + ' - editing with Bespin';
 
             bespin.get("commandLine").showHint('Saved file: ' + file.name);
 
@@ -289,7 +289,7 @@ dojo.declare("bespin.editor.Events", null, {
                 console.log("Error setting in the view: ", e);
             }
 
-            bespin.publish("editor:titlechange", { filename: filename });
+            document.title = filename + ' - editing with Bespin';
 
             bespin.publish("url:change", { project: project, path: filename });
         });
@@ -342,7 +342,7 @@ dojo.declare("bespin.editor.Events", null, {
             if (editor.ui.searchString) {
                 editor.ui.setSearchString(false);
                 // commented out because this bit of UI does not exist right now
-                // dojo.byId('searchresult').style.display = 'none';                
+                // dojo.byId('searchresult').style.display = 'none';
             }
         });
 

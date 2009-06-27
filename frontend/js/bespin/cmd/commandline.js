@@ -36,20 +36,40 @@
 
 dojo.provide("bespin.cmd.commandline");
 
+/**
+ * When we are completing against some type, we need a place to cache the
+ * retrieved values
+ */
+bespin.cmd.commandline.caches = {};
+
+/**
+ *
+ */
+bespin.cmd.createSubCommandStore = function(parent, command) {
+    var child = new bespin.cmd.commandline.CommandStore();
+
+    // save the fact that we are a subcommand for this chap
+    child.subcommandFor = command.name;
+
+    // implicit that it takes something
+    command.takes = ['*'];
+
+    // link back to this store
+    command.subcommands = child;
+
+    // add the sub command to the parent store
+    parent[command.name] = command;
+
+    return child;
+};
+
+/**
+ *
+ */
 dojo.declare("bespin.cmd.commandline.CommandStore", null, {
-    constructor: function(opts) {
+    constructor: function() {
         this.commands = {};
         this.aliases = {};
-
-        if (opts.subCommand) {
-            this.subcommandFor = opts.subCommand.name; // save the fact that we are a subcommand for this chap
-            opts.subCommand.takes = ['*']; // implicit that it takes something
-            opts.subCommand.subcommands = this; // link back to this store
-
-            bespin.cmd.commands.add(opts.subCommand); // add the sub command to the root store
-        }
-
-        if (opts.initCommands) this.addCommands(opts.initCommands); // initialize the commands for the cli
     },
 
     addCommand: function(command) {
@@ -79,11 +99,12 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
     },
 
     addCommands: function(commands) {
-        dojo.forEach(commands, dojo.hitch(this, function(command) {
-            if (dojo.isString(command)) command = bespin.cmd.commands.get(command);
+        dojo.forEach(commands, function(command) {
+            if (dojo.isString(command)) {
+                command = bespin.cmd.commands.get(command);
+            }
             this.addCommand(command);
-        }));
-
+        }, this);
     },
 
     hasCommand: function(commandname) {
@@ -110,8 +131,49 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
 
         if (value.match(' ')) {
             var command = this.rootCommand(value);
-            if (command && command.subcommands) {
-                return command.subcommands.findCompletions(value.replace(new RegExp('^' + command.name + '\\s*'), ''), command.name);
+
+            if (command) {
+                // It's easy of there are sub-commands...
+                if (command.subcommands) {
+                    return command.subcommands.findCompletions(value.replace(new RegExp('^' + command.name + '\\s*'), ''), command.name);
+                }
+
+                // Using custom completions requires us to know the prefix that
+                // we are matching against. 'value' contains the command name
+                var prefix = value;
+                if (prefix.substr(0, command.name.length) === command.name) {
+                    prefix = dojo.trim(prefix.substr(command.name.length));
+                }
+
+                // We'll need to filter the possibles by the prefix
+                var filter = function(potentials, prefix) {
+                    return {
+                        matches: potentials.filter(function(potential) {
+                            return potential.substr(0, prefix.length) === prefix;
+                        })
+                    };
+                };
+
+                // MAJOR HACK - clearly this should not be hard coded
+                var type = "group";
+
+                var options = bespin.cmd.commandline.caches[type];
+
+                // If we've got some options already, use those. We need a
+                // recache strategy somehow...
+                // TODO: command is the WRONG place to store this
+                if (dojo.isArray(options)) {
+                    return filter(options, prefix);
+                }
+
+                if (options !== "outstanding" && dojo.isFunction(command.sendAllOptions)) {
+                    bespin.cmd.commandline.caches[type] = "outstanding";
+
+                    command.sendAllOptions(type, function(options) {
+                        bespin.cmd.commandline.caches[type] = options;
+                        return filter(options, prefix);
+                    });
+                }
             }
         }
 
@@ -120,13 +182,13 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         if (value.length > 0) {
             for (var command in this.commands) {
                 if (command.indexOf(value) == 0) {
-                  matches.push(command);
+                    matches.push(command);
                 }
             }
 
             for (var alias in this.aliases) {
                 if (alias.indexOf(value) == 0) {
-                  matches.push(alias);
+                    matches.push(alias);
                 }
             }
         }
@@ -139,11 +201,11 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         return command.takes != undefined;
     },
 
-    // ** {{{ getArgs }}} **
-    //
-    // Calculate the args object to be passed into the command.
-    // If it only takes one argument just send in that data, but if it wants more, split it all up for the command and send in an object.
-
+    /**
+     * Calculate the args object to be passed into the command.
+     * If it only takes one argument just send in that data, but if it wants
+     * more, split it all up for the command and send in an object.
+     */
     getArgs: function(fromUser, command) {
         if (!command.takes) return undefined;
 
@@ -180,6 +242,11 @@ dojo.declare("bespin.cmd.commandline.CommandStore", null, {
         return command;
     },
 
+    /**
+     * Given the entire string typed for this command, find the root command by
+     * looking for the first space and finding the command for everything to
+     * there.
+     */
     rootCommand: function(value) {
         return this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
     }
@@ -209,8 +276,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
 
         // * Create the div for hints
         this.styles = {
-          bottom: "0px",
-          left: "31px"
+            bottom: "0px",
+            left: "31px"
         };
 
         this.commandHint = dojo.create("div", {
@@ -232,7 +299,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         if (bespin.get('editor')) this.editor = bespin.get('editor');
 
         this.inCommandLine = false;
-        this.commandStore = bespin.register('commandStore', new bespin.cmd.commandline.CommandStore({ initCommands: initCommands }));
+
+        var rootStore = new bespin.cmd.commandline.CommandStore();
+        rootStore.addCommands(initCommands);
+        this.commandStore = bespin.register('commandStore', rootStore);
 
         this.commandLineKeyBindings = new bespin.cmd.commandline.KeyBindings(this);
         this.history = new bespin.cmd.commandline.History(this);
@@ -571,7 +641,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                 var command = this.commandStore.commands[commandLineValue] || this.commandStore.rootCommand(value).subcommands.commands[commandLineValue];
 
                 if (command) {
-                    if (this.commandStore.commandTakesArgs(command) && 
+                    if (this.commandStore.commandTakesArgs(command) &&
                         this.settings.isSettingOn('completewithspace')) {
                         commandLineValue += ' ';
                     }
@@ -1196,7 +1266,7 @@ dojo.declare("bespin.cmd.commandline.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             commandline.showHint('Loaded file: ' + event.file.name);
         });
-        
+
         // ** {{{ Event: ui:escape }}} **
         //
         // When escaped, take out the hints and output
