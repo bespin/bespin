@@ -32,12 +32,12 @@ dojo.require("bespin.cmd.commandline");
  * Command store for the VCS commands
  * (which are subcommands of the main 'vcs' command)
  */
-bespin.vcs.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
+bespin.vcs.commands = bespin.cmd.createSubCommandStore(bespin.cmd.commands.store, {
     name: 'vcs',
     preview: 'run a version control command',
     completeText: 'subcommands: add, clone, commit, diff, getkey, help, push, remove, resolved, update',
     subcommanddefault: 'help'
-}});
+});
 
 /**
  * TODO: Is this called from anywhere? Probably not (this appears to be the only
@@ -63,15 +63,14 @@ bespin.vcs.setProjectPassword = function(instruction, project) {
 
     dojo.connect(dojo.byId("vcsauthsubmit"), "onclick", function() {
         bespin.util.webpieces.hideCenterPopup(el);
-        bespin.get("server").setauth(project, "vcsauth",
-            {
-                onSuccess: function() {
-                    instruction.addOutput("Password saved for " + project);
-                },
-                onFailure: function(xhr) {
-                    instruction.addErrorOutput("Password save failed: " + xhr.responseText);
-                }
-            });
+        bespin.get("server").setauth(project, "vcsauth", {
+            onSuccess: function() {
+                instruction.addOutput("Password saved for " + project);
+            },
+            onFailure: function(xhr) {
+                instruction.addErrorOutput("Password save failed: " + xhr.responseText);
+            }
+        });
     });
 
     bespin.util.webpieces.showCenterPopup(el, true);
@@ -131,7 +130,6 @@ bespin.vcs.commands.addCommand({
     takes: ['*'],
     completeText: 'Use the current file, add -a for all files or add filenames',
     description: 'Without any options, the vcs add command will add the currently selected file. If you pass in -a, the command will add <em>all</em> files. Finally, you can list files individually.',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         bespin.vcs._performVCSCommandWithFiles("add", instruction, args);
     }
@@ -146,9 +144,10 @@ bespin.vcs.commands.addCommand({
     takes: ['url'],
     aliases: ['checkout'],
     preview: 'checkout or clone the project into a new Bespin project',
-    // ** {{{execute}}} **
-    // Display the clone dialog to allow the user to fill out additional details
-    // to the clone process
+    /**
+     * Display the clone dialog to allow the user to fill out additional details
+     * to the clone process
+     */
     execute: function(instruction, url) {
         url = url || "";
 
@@ -255,7 +254,6 @@ bespin.vcs.commands.addCommand({
     takes: ['message'],
     aliases: [ 'ci' ],
     preview: 'Commit to the repository',
-    // ** {{{execute}}} **
     execute: function(instruction, message) {
         if (!message) {
             instruction.addErrorOutput("You must enter a log message");
@@ -304,7 +302,7 @@ bespin.vcs.commands.addCommand({
     completeText: 'Use the current file, add -a for all files or add filenames',
     description: 'Without any options, the vcs revert command will revert the currently selected file against the repository copy. If you pass in -a, the command will revert <em>all</em> files. Finally, you can list files to revert individually. No backups are kept!',
     execute: function(instruction, args) {
-        bespin.vcs._performVCSCommandWithFiles("revert", instruction, args, 
+        bespin.vcs._performVCSCommandWithFiles("revert", instruction, args,
             {
                 acceptAll: true,
                 onSuccess: function() {
@@ -381,7 +379,6 @@ bespin.vcs.commands.addCommand({
 bespin.vcs.commands.addCommand({
     name: 'push',
     preview: 'push to the remote repository',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         var project;
 
@@ -413,10 +410,9 @@ bespin.vcs.commands.addCommand({
     preview: 'Remove a file from version control (also deletes it)',
     takes: ['*'],
     description: 'The files presented will be deleted and removed from version control.',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         bespin.vcs._performVCSCommandWithFiles("remove", instruction, args,
-            {acceptAll: false});
+            { acceptAll: false });
     }
 });
 
@@ -431,7 +427,6 @@ bespin.vcs.commands.addCommand({
     preview: 'Mark files as resolved',
     completeText: 'Use the current file, add -a for all files or add filenames',
     description: 'Without any options, the vcs resolved command will mark the currently selected file as resolved. If you pass in -a, the command will resolve <em>all</em> files. Finally, you can list files individually.',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         bespin.vcs._performVCSCommandWithFiles("resolved", instruction, args);
     }
@@ -446,7 +441,6 @@ bespin.vcs.commands.addCommand({
     aliases: [ 'st' ],
     preview: 'Display the status of the repository files.',
     description: 'Shows the current state of the files in the repository<br>M for modified, ? for unknown (you may need to add), R for removed, ! for files that are deleted but not removed',
-    // ** {{{execute}}} **
     execute: function(instruction, args) {
         var project;
 
@@ -474,7 +468,6 @@ bespin.vcs.commands.addCommand({
     name: 'update',
     aliases: [ 'up', 'checkout', 'co' ],
     preview: 'Update your working copy from the remote repository',
-    // ** {{{execute}}} **
     execute: function(instruction) {
         var project;
 
@@ -518,11 +511,11 @@ bespin.vcs.commands.addCommand({
  * Command store for the Mercurial commands
  * (which are subcommands of the main 'hg' command)
  */
-bespin.vcs.hgCommands = new bespin.cmd.commandline.CommandStore({ subCommand: {
+bespin.vcs.hgCommands = bespin.cmd.createSubCommandStore(bespin.cmd.commands.store, {
     name: 'hg',
     preview: 'run a Mercurial command',
     subcommanddefault: 'help'
-}});
+});
 
 /**
  * Display sub-command help
@@ -570,17 +563,17 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
     options = options || { acceptAll: true };
     var project;
     var path;
-    
+
     bespin.withComponent('editSession', function(editSession) {
         project = editSession.project;
         path = editSession.path;
     });
-    
+
     if (!project) {
         instruction.addErrorOutput("You need to pass in a project");
         return;
     }
-    
+
     if (args.varargs.length == 0) {
         if (!path) {
             var dasha = "";
@@ -597,12 +590,12 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
         var command = [vcsCommand];
         command.concat(args.varargs);
     }
-    
+
     var handlerOptions = {};
     if (options.onSuccess) {
         handlerOptions.onSuccess = options.onSuccess;
     }
-    
+
     bespin.get('server').vcs(project,
                             { command: command },
                             instruction,

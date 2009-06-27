@@ -24,6 +24,9 @@
 
 dojo.provide("bespin.social");
 
+dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.commandline");
+
 // = Utilities =
 
 // == Utility {{{ displayFollowers }}} ==
@@ -39,7 +42,7 @@ bespin.social.displayFollowers = function(instruction, followers) {
 // == Utility {{{ displayArray }}} ==
 // Take an string array of strings, and publish a ul list to the instruction
 bespin.social.displayArray = function(instruction, titleNone, titleSome, array) {
-    if (!array || array.length == 0) {
+    if (!array || array.length === 0) {
         instruction.addOutput(titleNone);
         return;
     }
@@ -61,7 +64,7 @@ bespin.cmd.commands.add({
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
     execute: function(instruction, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
-        if (usernames.length == 0) {
+        if (usernames.length === 0) {
             bespin.get('server').followers({
                 onSuccess: function(data) {
                     bespin.social.displayFollowers(instruction, dojo.fromJson(data));
@@ -112,7 +115,7 @@ bespin.cmd.commands.add({
     // ** {{{execute}}}
     execute: function(instruction, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
-        if (usernames.length == 0) {
+        if (usernames.length === 0) {
             instruction.addErrorOutput('Please specify the users to cease following');
         }
         else {
@@ -139,16 +142,20 @@ dojo.extend(bespin.client.Server, {
 // =============================================================================
 // = Group =
 
+if (!bespin.social.group) {
+    bespin.social.group = {};
+}
+
 /**
  * Command store for the group commands
  * (which are subcommands of the main 'group' command)
  */
-bespin.social.group.commands = new bespin.cmd.commandline.CommandStore({ subCommand: {
+bespin.social.group.commands = bespin.cmd.createSubCommandStore(bespin.cmd.commands.store, {
     name: 'group',
     preview: 'Collect the people you follow into groups, and display the existing groups',
     completeText: 'subcommands: add, remove, list, help',
     subcommanddefault: 'help'
-}});
+});
 
 /**
  * Display sub-command help
@@ -167,14 +174,17 @@ bespin.social.group.commands.addCommand({
 /**
  * 'group list' subcommand.
  */
-bespin.vcs.commands.addCommand({
+bespin.social.group.commands.addCommand({
     name: 'list',
     preview: 'List the current group and group members',
     takes: ['group'],
-    completeText: 'An optional group name or leave blank to list groups',
+    params: [
+        { name:'group', type:'user', varargs:true }
+    ],
+    //completeText: 'An optional group name or leave blank to list groups',
     description: 'List the current group and group members.',
     execute: function(instruction, group) {
-        if (group) {
+        if (!group) {
             // List all groups
             bespin.get('server').groupListAll({
                 onSuccess: function(groups) {
@@ -189,7 +199,6 @@ bespin.vcs.commands.addCommand({
             });
         } else {
             // List members in a group
-            var group = args[0];
             bespin.get('server').groupList(group, {
                 onSuccess: function(members) {
                     bespin.social.displayArray(instruction,
@@ -202,63 +211,50 @@ bespin.vcs.commands.addCommand({
                 }
             });
         }
+    },
+    sendAllOptions: function(type, callback) {
+        var opts = { onSuccess: callback, evalJSON: true };
+        if (type === "group") {
+            bespin.get('server').groupListAll(opts);
+        } else if (type === "user") {
+            bespin.get('server').followers(opts);
+        }
     }
 });
 
 /**
  * 'group add' subcommand.
  */
-bespin.vcs.commands.addCommand({
+bespin.social.group.commands.addCommand({
     name: 'add',
     preview: 'Add members to a new or existing group',
     takes: [ 'group', 'member' ],
     completeText: 'A group name followed by a list of members to add',
     description: 'Add members to a new or existing group',
-    execute: function(instruction, group) {
-    var group = args.shift();
-    var command = args.shift();
-        if (command == "-a" || command == "--add") {
-            // Add to members of a group
-            bespin.get('server').groupAdd(group, args, {
-                onSuccess: function(data) {
-                    instruction.addOutput("Members of " + group + ": " + data);
-                },
-                onFailure: function(xhr) {
-                    instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
-                }
-            });
-        }
-        else if (command == "-r" || command == "--remove") {
-            // Remove members from a group
-            args.shift();
-            bespin.get('server').groupRemove(group, args, {
-                onSuccess: function(data) {
-                    instruction.addOutput("Members of " + group + ": " + data);
-                },
-                onFailure: function(xhr) {
-                    instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
-                }
-            });
-        }
-        else {
-            instruction.addErrorOutput('Syntax error - To manipulate a group you must use add/remove');
-        }
+    execute: function(instruction, group, member) {
+        // Add to members of a group
+        bespin.get('server').groupAdd(group, member, {
+            onSuccess: function(data) {
+                instruction.addOutput("Members of " + group + ": " + data);
+            },
+            onFailure: function(xhr) {
+                instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
+            }
+        });
     }
 });
 
 /**
  * 'group remove' subcommand.
  */
-bespin.vcs.commands.addCommand({
+bespin.social.group.commands.addCommand({
     name: 'remove',
     preview: 'Remove members from an existing group (and remove group if empty)',
     takes: [ 'group', 'member' ],
     completeText: 'A group name followed by a list of members to remove',
     description: 'Remove members from an existing group (and remove group if empty)',
-    execute: function(instruction, group) {
-        if (args[1] == "-r" || args[1] == "--remove") {
-            // Remove all members from a group
-            var group = args[0];
+    execute: function(instruction, group, member) {
+        if (member === "all") {
             bespin.get('server').groupRemoveAll(group, {
                 onSuccess: function(data) {
                     instruction.addOutput("Removed group " + group);
@@ -267,9 +263,16 @@ bespin.vcs.commands.addCommand({
                     instruction.addErrorOutput("Failed to retrieve group members. Maybe due to: " + xhr.responseText);
                 }
             });
-        }
-        else {
-            instruction.addErrorOutput('Syntax error - You must specify what you want to do with your group.');
+        } else {
+            // Remove members from a group
+            bespin.get('server').groupRemove(group, member, {
+                onSuccess: function(data) {
+                    instruction.addOutput("Members of " + group + ": " + data);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);
+                }
+            });
         }
     }
 });
@@ -318,13 +321,13 @@ bespin.cmd.commands.add({
     execute: function(instruction, args) {
         args = args.pieces;
 
-        if (args.length == 0) {
+        if (args.length === 0) {
             // === List all project shares ===
             // i.e. 'share'
             bespin.get('server').shareListAll({
                 onSuccess: function(data) {
                     var shares = dojo.fromJson(data);
-                    if (shares.length == 0) {
+                    if (shares.length === 0) {
                         instruction.addOutput("You are not sharing any projects");
                     }
                     else {
@@ -351,7 +354,7 @@ bespin.cmd.commands.add({
                 }
             });
         }
-        else if (args.length == 1) {
+        else if (args.length === 1) {
             // === List sharing for a given project ===
             // i.e. 'share {project}'
             var project = args[0];
@@ -364,7 +367,7 @@ bespin.cmd.commands.add({
                 }
             });
         }
-        else if (args.length == 2) {
+        else if (args.length === 2) {
             if (args[1] == "none") {
                 // === Remove all sharing from a project ===
                 // i.e. 'share {project} none'
@@ -393,7 +396,7 @@ bespin.cmd.commands.add({
                 });
             }
         }
-        else if (args.length == 3) {
+        else if (args.length === 3) {
             if (args[2] == "none") {
                 // === Remove project sharing from a given member ===
                 // i.e. 'share {project} {user}|{group}|everyone none'
@@ -409,19 +412,19 @@ bespin.cmd.commands.add({
                 });
             }
             else if (args[2] != "readonly" && args[2] != "edit") {
-                this._syntaxError('Valid edit options are \'none\', \'readonly\' or \'edit\'.');
+                this._syntaxError(instruction, 'Valid edit options are \'none\', \'readonly\' or \'edit\'.');
             }
             else {
                 // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
                 this._shareAdd(instruction, [ args[0], args[1], [ args[2] ] ]);
             }
         }
-        else if (args.length == 4) {
+        else if (args.length === 4) {
             if (args[3] != "loadany") {
-                this._syntaxError('Valid scope options are loadany or <blank>');
+                this._syntaxError(instruction, 'Valid scope options are loadany or <blank>');
             }
             else if (args[2] != "readonly" && args[2] != "edit") {
-                this._syntaxError('Valid edit options are \'readonly\' or \'edit\'.');
+                this._syntaxError(instruction, 'Valid edit options are \'readonly\' or \'edit\'.');
             }
             else {
                 // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
@@ -433,7 +436,7 @@ bespin.cmd.commands.add({
         }
     },
 
-    _syntaxError: function(message) {
+    _syntaxError: function(instruction, message) {
         instruction.addErrorOutput(message + '<br/>Syntax: share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
     },
 
@@ -500,7 +503,7 @@ bespin.cmd.commands.add({
     execute: function(instruction, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
-        if (args.length == 0) {
+        if (args.length === 0) {
             // === List all the members with view settings on me ===
             // i.e. 'viewme'
             bespin.get('server').viewmeListAll({
@@ -512,7 +515,7 @@ bespin.cmd.commands.add({
                 }
             });
         }
-        else if (args.length == 1) {
+        else if (args.length === 1) {
             // === List the view settings for a given member ===
             // i.e. 'viewme {user|group}'
             var member = args[0];
@@ -525,7 +528,7 @@ bespin.cmd.commands.add({
                 }
             });
         }
-        else if (args.length == 2) {
+        else if (args.length === 2) {
             if (args[1] != 'false' && args[1] != 'true' && args[1] != 'default') {
                 this._syntaxError('Valid viewme settings are {true|false|deafult}');
             }
