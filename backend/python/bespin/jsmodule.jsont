@@ -1,5 +1,5 @@
 meta: {{}}
 
-moduleLoaded("{{script_name}}", function(requires,exports){ {{script}}
+moduleLoaded("{{script_name}}", function(require,exports){ {{script}}
 return exports;
-}(requires, {}));
+});

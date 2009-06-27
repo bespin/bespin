@@ -502,6 +502,9 @@ def editor_page(request, response):
                             "<!-- end Th -->", TH_SRC_BLOCK)
             body = "\n".join(bodylines)
             
+        if c.using_dojo_source:
+            body = body.replace("dojo.js.uncompressed.js", "dojo.js")
+            
         response.body = body
     return response()
 

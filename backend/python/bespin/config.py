@@ -165,6 +165,8 @@ c.capabilities = set(["vcs"])
 # source directory and that will be used during development.
 c.th_src = None
 
+c.using_dojo_source = False
+
 def set_profile(profile):
     if profile == "test":
         # this import will install the bespin_test store
