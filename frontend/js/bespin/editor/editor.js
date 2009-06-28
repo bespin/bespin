@@ -260,6 +260,19 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         if (name) this.keyMapDescriptions[[keyCode, metaKey, ctrlKey, altKey, shiftKey]] = name;
     },
 
+    bindKeyForPlatform: function(keysForPlatforms, action, name, isSelectable) {
+        var platform = bespin.util.getOS();
+
+        // default to Windows (e.g. Linux often the same)
+        var platformKeys = keysForPlatforms[platform] || keysForPlatforms['WINDOWS'];
+        if (!platformKeys) return;
+
+        var args = bespin.util.keys.fillArguments(platformKeys);
+        var bindFunction = (isSelectable) ? "bindKeyStringSelectable" : "bindKeyString";
+
+        this[bindFunction](args.modifiers, bespin.util.keys.toKeyCode(args.key), action, name);
+    },
+
     bindKeyString: function(modifiers, keyCode, action, name) {
         var ctrlKey = (modifiers.toUpperCase().indexOf("CTRL") != -1);
         var altKey = (modifiers.toUpperCase().indexOf("ALT") != -1);
@@ -834,14 +847,15 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart, "Move to start of line");
         listener.bindKeyStringSelectable("CMD", Key.LEFT_ARROW, this.actions.moveToLineStart, "Move to start of line");
+
         listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
         listener.bindKeyStringSelectable("CMD", Key.RIGHT_ARROW, this.actions.moveToLineEnd, "Move to end of line");
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
 
-        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace, "Backspace");
-        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
+        listener.bindKeyStringSelectable("", Key.BACKSPACE, this.actions.backspace, "Backspace");
+        listener.bindKeyStringSelectable("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
 
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey, "Delete");
         listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight, "Delete a word to the right");

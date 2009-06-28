@@ -175,8 +175,44 @@ bespin.util.englishFromCamel = function(camel) {
  * Take copy as an example, Mac people expect to use CMD or APPLE + C
  * Windows folks expect to use CTRL + C
  */
+bespin.util.OS = {
+    LINUX: 'LINUX',
+    MAC: 'MAC',
+    WINDOWS: 'WINDOWS'
+};
+
+/**
+ * Is the user using a browser that identifies itself as Mac OS
+ */
 bespin.util.isMac = function() {
-    return navigator.appVersion.indexOf("Macintosh") >= 0;
+    return navigator.appVersion.indexOf("Mac") >= 0;
+};
+
+/**
+ * Is the user using a browser that identifies itself as Linux
+ */
+bespin.util.isLinux = function() {
+    return navigator.appVersion.indexOf("Linux") >= 0;
+};
+
+/**
+ * Is the user using a browser that identifies itself as Windows
+ */
+bespin.util.isWindows = function() {
+    return navigator.appVersion.indexOf("Win") >= 0;
+};
+
+/**
+ * Return a bespin.util.OS constant
+ */
+bespin.util.getOS = function() {
+    if (bespin.util.isMac()) {
+        return bespin.util.OS['MAC'];
+    } else if (bespin.util.isLinux()) {
+        return bespin.util.OS['LINUX'];
+    } else {
+        return bespin.util.OS['WINDOWS'];
+    }
 };
 
 /**
