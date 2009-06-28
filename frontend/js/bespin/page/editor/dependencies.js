@@ -27,6 +27,7 @@ dojo.provide("bespin.page.editor.dependencies");
 dojo.require("dojo.cookie");
 
 dojo.require("bespin.bespin");
+dojo.require("bespin.command");
 dojo.require("bespin.debug");
 dojo.require("bespin.events");
 
@@ -107,6 +108,5 @@ dojo.require("bespin.mobwrite.integrate");
 */
 
 dojo.require("bespin.client.pubsub");
-
 
 dojo.require("bespin.page.editor.init");

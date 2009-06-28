@@ -41,7 +41,7 @@ bespin.jetpack.projectName = "jetpacks";
 
 // Command store for the Jetpack commands
 // (which are subcommands of the main 'jetpack' command)
-bespin.jetpack.commands = bespin.cmd.createSubCommandStore(bespin.cmd.commands.store, {
+bespin.jetpack.commands = new bespin.command.Store(bespin.cmd.commands.store, {
     name: 'jetpack',
     preview: 'play with jetpack features',
     completeText: 'jetpack subcommands:<br><br> create [name] [type]<br> install [name]<br> list<br> edit [name]',

@@ -40,13 +40,6 @@ bespin.cmd.commands.add = function(command) {
     bespin.cmd.commands.store[command.name] = command;
 };
 
-// ** {{{bespin.cmd.commands.get}}} **
-//
-// Return a command from the store
-bespin.cmd.commands.get = function(commandname) {
-    return bespin.cmd.commands.store[commandname];
-};
-
 // ** {{{Command: bespin.cmd.commands.toArgArray}}} **
 // Helper for when you have a command that needs to get a hold of it's params
 // as an array for processing

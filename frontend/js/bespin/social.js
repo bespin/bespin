@@ -150,7 +150,7 @@ if (!bespin.social.group) {
  * Command store for the group commands
  * (which are subcommands of the main 'group' command)
  */
-bespin.social.group.commands = bespin.cmd.createSubCommandStore(bespin.cmd.commands.store, {
+bespin.social.group.commands = new bespin.command.Store(bespin.cmd.commands.store, {
     name: 'group',
     preview: 'Collect the people you follow into groups, and display the existing groups',
     completeText: 'subcommands: add, remove, list, help',
