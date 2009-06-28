@@ -166,3 +166,4 @@ bespin.syntax.simple.Resolver.register("CSS",        ['css']);
 bespin.syntax.simple.Resolver.register("HTML",       ['html', 'htm', 'xml', 'xhtml', 'shtml']);
 bespin.syntax.simple.Resolver.register("PHP",        ['php', 'php3', 'php4', 'php5']);
 bespin.syntax.simple.Resolver.register("Python",     ['py', 'python']);
+bespin.syntax.simple.Resolver.register("Ruby",       ['rb', 'ruby']);
