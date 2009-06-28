@@ -103,6 +103,13 @@ dojo.provide("bespin.util.keys");
     }
 })();
 
+// ** {{{ bespin.util.keys.toKeyCode }}} **
+//
+// Given a key as a string, return the key code representation
+// E.g. toKeyCode("k") -> 75
+bespin.util.keys.toKeyCode = function(keyAsString) {
+    return bespin.util.keys.Key[keyAsString.toUpperCase()];
+}
 
 // ** {{{ bespin.util.keys.fillArguments }}} **
 //
@@ -115,19 +122,12 @@ bespin.util.keys.fillArguments = function(string, args) {
     var keys = string.split(' ');
     args = args || {};
 
-    var modifiers = [];
-    dojo.forEach(keys, function(key) {
-       if (key.length > 1) { // more than just an alpha/numeric
-           modifiers.push(key);
-       } else {
-           args.key = key;
-       }
-    });
+    args.key = keys.pop(); // the last item is the key
 
-    if (modifiers.length == 0) { // none if that is true
+    if (keys.length == 0) { // none if that is true
         args.modifiers = "none";
     } else {
-        args.modifiers = modifiers.join(',');
+        args.modifiers = keys.join(',');
     }
 
     return args;

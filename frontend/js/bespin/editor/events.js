@@ -60,7 +60,7 @@ dojo.declare("bespin.editor.Events", null, {
             var modifiers = event.modifiers || '';
             if (!event.key) return;
 
-            var keyCode = bespin.util.keys.Key[event.key.toUpperCase()];
+            var keyCode = bespin.util.keys.toKeyCode(event.key);
 
             // -- try an editor action first, else fire away at the event bus
             var action = editor.ui.actions[event.action] || event.action;
