@@ -22,13 +22,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
+/**
  * Jetpack Plugin
- * --------------
- *
- * The Jetpack plugin aims to make Bespin a good environment for creating and hosting Jetpack extensions.
- *
- * Read more about Jetpack at: https://wiki.mozilla.org/Labs/Jetpack/API
+ * <p>The Jetpack plugin aims to make Bespin a good environment for creating and
+ * hosting Jetpack extensions.
+ * <p>Read more about Jetpack at: https://wiki.mozilla.org/Labs/Jetpack/API
  */
 
 dojo.provide("bespin.jetpack");
@@ -39,8 +37,10 @@ dojo.require("bespin.cmd.commandline");
 
 bespin.jetpack.projectName = "jetpacks";
 
-// Command store for the Jetpack commands
-// (which are subcommands of the main 'jetpack' command)
+/**
+ * Command store for the Jetpack commands
+ * (which are subcommands of the main 'jetpack' command)
+ */
 bespin.jetpack.commands = new bespin.command.Store(bespin.cmd.commands.store, {
     name: 'jetpack',
     preview: 'play with jetpack features',
@@ -48,10 +48,9 @@ bespin.jetpack.commands = new bespin.command.Store(bespin.cmd.commands.store, {
     subcommanddefault: 'help'
 });
 
-// = Commands =
-// Jetpack related commands
-
-// ** {{{Command: jetpack help}}} **
+/**
+ * 'jetpack help' command
+ */
 bespin.jetpack.commands.addCommand({
     name: 'help',
     takes: ['search'],
@@ -63,7 +62,9 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: jetpack create}}} **
+/**
+ * 'jetpack create' command
+ */
 bespin.jetpack.commands.addCommand({
     name: 'create',
     takes: ['feature', 'type'],
@@ -102,7 +103,9 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: jetpack install}}} **
+/**
+ * 'jetpack install' command
+ */
 bespin.jetpack.commands.addCommand({
     name: 'install',
     takes: ['feature'],
@@ -132,7 +135,9 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: jetpack list}}} **
+/**
+ * 'jetpack list' command
+ */
 bespin.jetpack.commands.addCommand({
     name: 'list',
     preview: 'list out the Jetpacks that you have written',
@@ -158,7 +163,9 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-// ** {{{Command: jetpack edit}}} **
+/**
+ * 'jetpack edit' command
+ */
 bespin.jetpack.commands.addCommand({
     name: 'edit',
     takes: ['feature'],
@@ -187,15 +194,10 @@ bespin.jetpack.commands.addCommand({
     }
 });
 
-/*
- * Jetpack Settings
- *
- * If you "set jetpack on", wire up the toolbar to have the jetpack icon
+/**
+ * Jetpack setting to turn off the toolbar icon if set to off
+ * <p>If you "set jetpack on", wire up the toolbar to have the jetpack icon
  */
-
-// ** {{{ Event: settings:set:jetpack }}} **
-//
-// Turn off the toolbar icon if set to off
 bespin.subscribe("settings:set:jetpack", function(event) {
     var newset = bespin.get("settings").isOff(event.value);
     var jptb = dojo.byId('toolbar_jetpack');
@@ -221,9 +223,9 @@ bespin.subscribe("settings:set:jetpack", function(event) {
     }
 });
 
-// Toolbar
-// Add the jetpack toolbar
-
+/**
+ * Jetpack toolbar item
+ */
 bespin.subscribe("toolbar:init", function(event) {
     event.toolbar.addComponent('jetpack', function(toolbar, el) {
         var jetpack = dojo.byId(el) || dojo.byId("toolbar_jetpack");
@@ -300,6 +302,9 @@ bespin.subscribe("toolbar:init", function(event) {
     });
 });
 
+/**
+ * Install a jetpack
+ */
 bespin.jetpack.install = function(feature) {
     // add the link tag to the body
     // <link rel="jetpack" href="path/feature.js">
@@ -329,6 +334,9 @@ bespin.jetpack.install = function(feature) {
     // element.dispatchEvent(event);
 };
 
+/**
+ * Utility to get the size of the drop-down border
+ */
 bespin.jetpack.sizeDropDownBorder = function(dd) {
     var keephidden = false;
     if (dd) {
@@ -355,6 +363,9 @@ bespin.jetpack.sizeDropDownBorder = function(dd) {
     });
 };
 
+/**
+ * Utility to load the installation scripts
+ */
 bespin.jetpack.loadInstallScripts = function() {
     bespin.get('server').list(bespin.jetpack.projectName, '', function(jetpacks) {
         var output;

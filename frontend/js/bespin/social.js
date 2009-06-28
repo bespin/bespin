@@ -27,11 +27,10 @@ dojo.provide("bespin.social");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.commandline");
 
-// = Utilities =
-
-// == Utility {{{ displayFollowers }}} ==
-// Take an string array of follower names, and publish a "Following: ..."
-// message as a command line response.
+/**
+ * Utility to take an string array of follower names, and publish a
+ * "Following: ..." message as a command line response.
+ */
 bespin.social.displayFollowers = function(instruction, followers) {
     bespin.social.displayArray(instruction,
             "You are not following anyone",
@@ -39,8 +38,10 @@ bespin.social.displayFollowers = function(instruction, followers) {
             followers);
 };
 
-// == Utility {{{ displayArray }}} ==
-// Take an string array of strings, and publish a ul list to the instruction
+/**
+ * Utility to take an string array of strings, and publish a ul list to the
+ * instruction
+ */
 bespin.social.displayArray = function(instruction, titleNone, titleSome, array) {
     if (!array || array.length === 0) {
         instruction.addOutput(titleNone);
@@ -52,10 +53,10 @@ bespin.social.displayArray = function(instruction, titleNone, titleSome, array) 
 };
 
 // =============================================================================
-// = Follow =
-// Get a list of our followers
 
-// == Command {{{ follow }}} ==
+/**
+ * Add a 'follow' command that gets and adds to out list of our followers
+ */
 bespin.cmd.commands.add({
     name: 'follow',
     takes: ['username ...'],
@@ -87,32 +88,30 @@ bespin.cmd.commands.add({
     }
 });
 
-// == Extension to {{{ bespin.client.Server }}} ==
+/**
+ * Extend bespin.client.Server with follow / followers methods
+ */
 dojo.extend(bespin.client.Server, {
-    // * {{{ follows(opts) }}}
-    // Add to the list of the users the current user is following
     follow: function(usernames, opts) {
         this.request('POST', '/network/follow/', dojo.toJson(usernames), opts);
     },
 
-    // * {{{ follows(opts) }}}
-    // Get a list of the users the current user is following
     followers: function(opts) {
         this.request('GET', '/network/followers/', null, opts);
     }
 });
 
 // =============================================================================
-// = Unfollow =
 
-// == Command {{{ unfollow }}} ==
+/**
+ * Add an 'unfollow' command that removes from our list of our followers
+ */
 bespin.cmd.commands.add({
     name: 'unfollow',
     takes: ['username ...'],
     preview: 'remove from the list of users we are following',
     completeText: 'username(s) of person(s) to stop following',
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
-    // ** {{{execute}}}
     execute: function(instruction, args) {
         var usernames = bespin.cmd.commands.toArgArray(args);
         if (usernames.length === 0) {
@@ -131,17 +130,20 @@ bespin.cmd.commands.add({
     }
 });
 
+/**
+ * Extend bespin.client.Server with an unfollow method
+ */
 dojo.extend(bespin.client.Server, {
-    // ** {{{ follows(opts) }}}
-    // Get a list of the users the current user is following
     unfollow: function(users, opts) {
         this.request('POST', '/network/unfollow/', dojo.toJson(users), opts);
     }
 });
 
 // =============================================================================
-// = Group =
 
+/**
+ * Container for the group command
+ */
 if (!bespin.social.group) {
     bespin.social.group = {};
 }
@@ -277,47 +279,55 @@ bespin.social.group.commands.addCommand({
     }
 });
 
+/**
+ * Extend bespin.client.Server with group* methods
+ */
 dojo.extend(bespin.client.Server, {
-    // * {{{ groupListAll() }}}
-    // Get a list of the users the current user is following
+    /**
+     * Get a list of the users the current user is following
+     */
     groupListAll: function(opts) {
         this.request('GET', '/group/list/all/', null, opts);
     },
 
-    // * {{{ groupList() }}}
-    // Get a list of the users the current user is following
+    /**
+     * Get a list of the users the current user is following
+     */
     groupList: function(group, opts) {
         this.request('GET', '/group/list/' + group + '/', null, opts);
     },
 
-    // * {{{ groupRemove() }}}
-    // Get a list of the users the current user is following
+    /**
+     * Get a list of the users the current user is following
+     */
     groupRemove: function(group, users, opts) {
         this.request('POST', '/group/remove/' + group + '/', dojo.toJson(users), opts);
     },
 
-    // * {{{ groupRemoveAll() }}}
-    // Get a list of the users the current user is following
+    /**
+     * Get a list of the users the current user is following
+     */
     groupRemoveAll: function(group, opts) {
         this.request('POST', '/group/remove/all/' + group + '/', null, opts);
     },
 
-    // * {{{ groupAdd() }}}
-    // Get a list of the users the current user is following
+    /**
+     * Get a list of the users the current user is following
+     */
     groupAdd: function(group, users, opts) {
         this.request('POST', '/group/add/' + group + '/', dojo.toJson(users), opts);
     }
 });
 
 // =============================================================================
-// = Share =
 
-// == Command {{{ share }}} ==
+/**
+ * Add a 'share' command to open up projects to other people
+ */
 bespin.cmd.commands.add({
     name: 'share',
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
-    // * {{{ execute }}}
     execute: function(instruction, args) {
         args = args.pieces;
 
@@ -453,53 +463,61 @@ bespin.cmd.commands.add({
     }
 });
 
+/**
+ * Extensions to bespin.client.Server to add share* methods
+ */
 dojo.extend(bespin.client.Server, {
-    // * {{{ shareListAll() }}}
-    // List all project shares
+    /**
+     * List all project shares
+     */
     shareListAll: function(opts) {
         this.request('GET', '/share/list/all/', null, opts);
     },
 
-    // * {{{ shareListProject() }}}
-    // List sharing for a given project
+    /**
+     * List sharing for a given project
+     */
     shareListProject: function(project, opts) {
         this.request('GET', '/share/list/' + project + '/', null, opts);
     },
 
-    // * {{{ shareListProjectMember() }}}
-    // List sharing for a given project and member
+    /**
+     * List sharing for a given project and member
+     */
     shareListProjectMember: function(project, member, opts) {
         this.request('GET', '/share/list/' + project + '/' + member + '/', null, opts);
     },
 
-    // * {{{ shareRemoveAll() }}}
-    // Remove all sharing from a project
+    /**
+     * Remove all sharing from a project
+     */
     shareRemoveAll: function(project, opts) {
         this.request('POST', '/share/remove/' + project + '/all/', null, opts);
     },
 
-    // * {{{ shareRemove() }}}
-    // Remove project sharing from a given member
+    /**
+     * Remove project sharing from a given member
+     */
     shareRemove: function(project, member, opts) {
         this.request('POST', '/share/remove/' + project + '/' + member + '/', null, opts);
     },
 
-    // * {{{ shareAdd() }}}
-    // Add a member to the sharing list for a project
+    /**
+     * Add a member to the sharing list for a project
+     */
     shareAdd: function(project, member, options, opts) {
         this.request('POST', '/share/add/' + project + '/' + member + '/', dojo.toJson(options), opts);
     }
 });
 
 // =============================================================================
-// = Viewme =
 
-/*
-// == Command {{{ viewme}}} ==
+/**
+ * Add a 'viewme' command to allow people to screencast
+ *
 bespin.cmd.commands.add({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
-    // ** {{{execute}}}
     execute: function(instruction, args) {
         args = bespin.cmd.commands.toArgArray(args);
 
@@ -554,21 +572,22 @@ bespin.cmd.commands.add({
         instruction.addErrorOutput('Syntax error - viewme ({user}|{group}|everyone) (true|false|default)');
     }
 });
+// */
 
+/**
+ * Extensions to bespin.client.Server to add viewme* commands
+ *
 dojo.extend(bespin.client.Server, {
-    // * {{{ viewmeListAll() }}}
     // List all the members with view settings on me
     viewmeListAll: function(opts) {
         this.request('GET', '/viewme/list/all/', null, opts);
     },
 
-    // * {{{ viewmeList() }}}
     // List the view settings for a given member
     viewmeList: function(member, opts) {
         this.request('GET', '/viewme/list/' + member + '/', null, opts);
     },
 
-    // * {{{ viewmeSet() }}}
     // Alter the view setting for a given member
     viewmeSet: function(member, value, opts) {
         this.request('POST', '/viewme/set/' + member + '/' + value + '/', null, opts);
