@@ -64,7 +64,7 @@ dojo.mixin(bespin.util.path, {
 
     // ** {{{ bespin.util.path.makeDirectory }}} **
     //
-    // Given a {{{path}}} make sure that it returns as a directory 
+    // Given a {{{path}}} make sure that it returns as a directory
     // (As in, ends with a '/')
     //
     // * makeDirectory("/path/to/directory") -> /path/to/directory/
@@ -96,6 +96,12 @@ dojo.mixin(bespin.util.path, {
     //
     // This function returns a file type based on the extension (foo.html -> html)
     fileType: function(path) {
+        if (!path) {
+            console.error("path falsy in bespin.util.path.fileType");
+            console.trace();
+            return "";
+        }
+
         if (path.indexOf('.') >= 0) {
             var split = path.split('.');
             if (split.length > 1) {
