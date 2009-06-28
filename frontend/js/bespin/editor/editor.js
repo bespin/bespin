@@ -840,8 +840,8 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
 
-        listener.bindKeyString("", Key.BACKSPACE, this.actions.backspace, "Backspace");
-        listener.bindKeyString("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
+        listener.bindKeyStringSelectable("", Key.BACKSPACE, this.actions.backspace, "Backspace");
+        listener.bindKeyStringSelectable("CTRL", Key.BACKSPACE, this.actions.deleteWordLeft, "Delete a word to the left");
 
         listener.bindKeyString("", Key.DELETE, this.actions.deleteKey, "Delete");
         listener.bindKeyString("CTRL", Key.DELETE, this.actions.deleteWordRight, "Delete a word to the right");
