@@ -80,7 +80,6 @@ dojo.require("bespin.parser.parser");
 dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 
-// To register commands just using bespin.cmd.commands.add place them here
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");
 
@@ -97,8 +96,6 @@ dojo.require("bespin.wizardTest");
 
 dojo.require("bespin.social");
 dojo.require("bespin.socialTest");
-
-dojo.require("bespin.cmd.editorcommands"); // now load the default editor commands
 
 /*
 dojo.require("bespin.mobwrite.core");
