@@ -46,7 +46,7 @@ dojo.mixin(bespin, {
     /** Basic setting. TODO: Explain why this is here or move it */
     defaultTabSize: 4,
 
-    /** The name of the project that containst the users client side settings */
+    /** The name of the project that contains the users client side settings */
     userSettingsProject: "BespinSettings",
 
     /** A list of the events that have fired at least once, for fireAfter */
@@ -110,17 +110,17 @@ dojo.mixin(bespin, {
 
             var count = this._lazySubscriptionCount++;
 
-            callback = function lazySubscriptionWrapper() {
-                if (this._lazySubscriptionTimeout[count]) {
-                    clearTimeout(this._lazySubscriptionTimeout[count]);
+            var self = this;
+            callback = function() { // lazySubscriptionWrapper
+                if (self._lazySubscriptionTimeout[count]) {
+                    clearTimeout(self._lazySubscriptionTimeout[count]);
                 }
 
-                this._lazySubscriptionTimeout[count] = setTimeout(dojo.hitch(this, function() {
-                    orig.apply(this, arguments);
-                    delete this._lazySubscriptionTimeout[count];
-                }), minTimeBetweenPublishMillis);
+                self._lazySubscriptionTimeout[count] = setTimeout(function() {
+                    orig.apply(self, arguments);
+                    delete self._lazySubscriptionTimeout[count];
+                }, minTimeBetweenPublishMillis);
             };
-
         }
         return dojo.subscribe("bespin:" + topic, callback);
     },
