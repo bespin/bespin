@@ -32,7 +32,7 @@ dojo.require("bespin.cmd.commandline");
  * Command store for the VCS commands
  * (which are subcommands of the main 'vcs' command)
  */
-bespin.vcs.commands = new bespin.command.Store(bespin.cmd.commands.store, {
+bespin.vcs.commands = new bespin.command.Store(bespin.command.store, {
     name: 'vcs',
     preview: 'run a version control command',
     completeText: 'subcommands: add, clone, commit, diff, getkey, help, push, remove, resolved, update',
@@ -511,7 +511,7 @@ bespin.vcs.commands.addCommand({
  * Command store for the Mercurial commands
  * (which are subcommands of the main 'hg' command)
  */
-bespin.vcs.hgCommands = new bespin.command.Store(bespin.cmd.commands.store, {
+bespin.vcs.hgCommands = new bespin.command.Store(bespin.command.store, {
     name: 'hg',
     preview: 'run a Mercurial command',
     subcommanddefault: 'help'

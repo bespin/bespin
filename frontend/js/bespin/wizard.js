@@ -30,43 +30,13 @@ dojo.provide("bespin.wizard");
 dojo.mixin(bespin.wizard, {
     /**
      * This list of wizards that we can run. Each must have a url, which is a
-     * pointer to the server side resource to display, and a set of functions that
-     * are run by parts of the resource. A special onLoad function (note the exact
-     * case) will be called when the wizard is first displayed.
+     * pointer to the server side resource to display, and a set of functions
+     * that are run by parts of the resource. A special onLoad function (note
+     * the exact case) will be called when the wizard is first displayed.
      */
     _wizards: {
-        newuser: {
-            url: "/overlays/newuser.html"
-        },
-        overview: {
-            url: "/overlays/overview.html"
-        }
-    },
-
-    /**
-     * Passed to bespin.cmd.commands.add below
-     */
-    _command: {
-        name: 'wizard',
-        takes: ['type'],
-        preview: 'display a named wizard to step through some process',
-        completeText: 'The name of the wizard to run. Leave blank to list known wizards',
-        usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
-        // ** {{{execute}}}
-        execute: function(instruction, type) {
-            if (!type) {
-                var list = "";
-                for (var name in bespin.wizard._wizards) {
-                    if (bespin.wizard._wizards.hasOwnProperty(name)) {
-                        list += ", " + name;
-                    }
-                }
-                instruction.addOutput("Known wizards: " + list.substring(2));
-                return;
-            }
-
-            bespin.wizard.show(instruction, type, true);
-        }
+        newuser: { url: "/overlays/newuser.html" },
+        overview: { url: "/overlays/overview.html" }
     },
 
     /**
@@ -136,5 +106,28 @@ dojo.mixin(bespin.wizard, {
     }
 });
 
-//** {{{ Command: wizard }}} **
-bespin.cmd.commands.add(bespin.wizard._command);
+/**
+ * The wizard command to show a wizard
+ */
+bespin.command.store.addCommand({
+    name: 'wizard',
+    takes: ['type'],
+    hidden: true,
+    preview: 'display a named wizard to step through some process',
+    completeText: 'The name of the wizard to run. Leave blank to list known wizards',
+    usage: "[type] ...<br><br><em>[type] The name of the user to run (or blank to list wizards)</em>",
+    execute: function(instruction, type) {
+        if (!type) {
+            var list = "";
+            for (var name in bespin.wizard._wizards) {
+                if (bespin.wizard._wizards.hasOwnProperty(name)) {
+                    list += ", " + name;
+                }
+            }
+            instruction.addOutput("Known wizards: " + list.substring(2));
+            return;
+        }
+
+        bespin.wizard.show(instruction, type, true);
+    }
+});

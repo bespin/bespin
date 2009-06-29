@@ -48,7 +48,7 @@ dojo.declare("bespin.debug.SimpleHistoryStore", null, {
 dojo.declare("bespin.debug.EvalCommandLineInterface",
     bespin.cmd.commandline.Interface, {
 
-    setup: function(commandLine, initCommands, options) {
+    setup: function(commandLine, store, options) {
         console.log("overridden setup called");
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
@@ -336,7 +336,7 @@ dojo.mixin(bespin.debug, {
                     });
 
         bespin.debug.evalLine = new bespin.debug.EvalCommandLineInterface(
-                'debugbar_command', {}, {
+                'debugbar_command', null, {
                     idPrefix: "debugbar_",
                     parentElement: dojo.byId("debugbar")
                 });

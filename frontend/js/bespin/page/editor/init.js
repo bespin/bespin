@@ -123,7 +123,7 @@ dojo.provide("bespin.page.editor.init");
             bespin.get('editSession').setUserinfo(userinfo);
 
             bespin.register('settings', new bespin.client.settings.Core());
-            bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.cmd.editorcommands.Commands));
+            bespin.register('commandLine', new bespin.cmd.commandline.Interface('command', bespin.command.store));
 
             if (userinfo.serverCapabilities) {
                 var sc = userinfo.serverCapabilities;

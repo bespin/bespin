@@ -100,21 +100,18 @@ bespin.subscribe("component:register:actions", function(e) {
     });
 });
 
-// ** {{{Command: format}}} **
-bespin.subscribe("component:register:commandStore", function(event) {
-    event.object.addCommand({
-        name: 'format',
-        withKey: "CMD SHIFT F",
-        preview: 'format source code or selection',
-        description: 'Use this to indent the selected fragment of your code.  The entire source is indented if nothing is selected.',
-        execute: function(self) {
-            bespin.publish("editor:doaction", {
-                action: "formatCode"
-            });
-        }
-    });
+/**
+ * Register the 'format' command.
+ */
+bespin.command.store.addCommand({
+    name: 'format',
+    withKey: "CMD SHIFT F",
+    preview: 'format source code or selection',
+    description: 'Use this to indent the selected fragment of your code.  The entire source is indented if nothing is selected.',
+    execute: function(self) {
+        bespin.publish("editor:doaction", { action: "formatCode" });
+    }
 });
-
 
 dojo.declare("bespin.editor.formatter.API", null, {
 

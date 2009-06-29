@@ -90,7 +90,7 @@ dojo.declare("bespin.editor.Component", null, {
                 commandlineElement = dojo.byId(opts.commandline);
             }
 
-            this.commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface(commandlineElement, bespin.cmd.editorcommands.Commands));
+            this.commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface(commandlineElement, bespin.command.Store));
         }
 
         // Use in memory settings here instead of saving to the server which is default. Potentially use Cookie settings

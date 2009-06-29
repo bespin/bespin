@@ -1,10 +1,41 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ * See the License for the specific language governing rights and
+ * limitations under the License.
+ *
+ * The Original Code is Bespin.
+ *
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bespin Team (bespin@mozilla.com)
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 dojo.provide("bespin.cmd.debugcommands");
 
+/**
+ * A set of debug commands, that is, commands that could be useful in debugging
+ * bespin, as opposed to commands that are useful when using bespin to do
+ * debugging.
+ */
 (function() {
-    var commandStore = bespin.get("commandLine").commandStore;
+    var store = bespin.command.store;
 
-    // ** {{{Command: action}}} **
-    commandStore.addCommand({
+    /**
+     * The 'action' command
+     */
+    store.addCommand({
         name: 'action',
         takes: ['actionname'],
         preview: 'execute any editor action',
@@ -16,22 +47,25 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: echo}}} **
-    commandStore.addCommand({
+    /**
+     * The 'echo' command
+     */
+    store.addCommand({
         name: 'echo',
         takes: ['message ...'],
         preview: 'A test echo command',
-        // ** {{{execute}}}
         execute: function(instruction, args) {
             instruction.addOutput(args);
         }
     });
 
-    // ** {{{Command: login}}} **
-    commandStore.addCommand({
+    /**
+     * The 'login' command
+     */
+    store.addCommand({
         name: 'login',
         // aliases: ['user'],
-        //            takes: ['username', 'password'],
+        // takes: ['username', 'password'],
         hidden: true,
         takes: {
             order: ['username', 'password'],
@@ -55,8 +89,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: insert}}} **
-    commandStore.addCommand({
+    /**
+     * The 'insert' command
+     */
+    store.addCommand({
         name: 'insert',
         takes: ['text'],
         preview: 'insert the given text at this point.',
@@ -67,8 +103,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: readonly}}} **
-    commandStore.addCommand({
+    /**
+     * The 'readonly' command
+     */
+    store.addCommand({
         name: 'readonly',
         takes: ['flag'],
         preview: 'Turn on and off readonly mode',
@@ -91,8 +129,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: showevents}}} **
-    commandStore.addCommand({
+    /**
+     * The 'showevents' command
+     */
+    store.addCommand({
         name: 'showevents',
         takes: ['arg'],
         preview: 'Display the events available via pub/sub.',
@@ -109,8 +149,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: typingtest}}} **
-    commandStore.addCommand({
+    /**
+     * The 'typingtest' command
+     */
+    store.addCommand({
         name: 'typingtest',
         preview: 'type in the alphabet a few times',
         hidden: true,
@@ -131,8 +173,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: template}}} **
-    commandStore.addCommand({
+    /**
+     * The 'template' command
+     */
+    store.addCommand({
         name: 'template',
         takes: ['type'],
         preview: 'insert templates',
@@ -152,8 +196,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: use}}} **
-    commandStore.addCommand({
+    /**
+     * The 'use' command
+     */
+    store.addCommand({
         name: 'use',
         takes: ['type'],
         preview: 'use patterns to bring in code',
@@ -184,8 +230,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    // ** {{{Command: codecomplete}}} **
-    commandStore.addCommand({
+    /**
+     * The 'codecomplete' command
+     */
+    store.addCommand({
         name: 'complete',
         preview: 'auto complete a piece of code',
         completeText: 'enter the start of the string',
@@ -195,8 +243,10 @@ dojo.provide("bespin.cmd.debugcommands");
         }
     });
 
-    //** {{{Command: slow}}} **
-    commandStore.addCommand({
+    /**
+     * The 'slow' command
+     */
+    store.addCommand({
         name: 'slow',
         takes: ['seconds'],
         preview: 'create some output, slowly, after a given time (default 5s)',
@@ -208,5 +258,4 @@ dojo.provide("bespin.cmd.debugcommands");
             }), seconds * 1000);
         }
     });
-
 })();

@@ -28,6 +28,11 @@ dojo.provide("bespin.command");
  * A store of commands
  */
 dojo.declare("bespin.command.Store", null, {
+    /**
+     * To create a root command store, call with no parameters.
+     * To create a sub-command store, pass the parent store in first, and a
+     * single command into the second parameter
+     */
     constructor: function(parent, command) {
         this.commands = {};
         this.aliases = {};
@@ -44,14 +49,13 @@ dojo.declare("bespin.command.Store", null, {
             command.subcommands = this;
 
             // add the sub command to the parent store
-            parent[command.name] = command;
-        } else {
-            // When there is no parent, this is the root command store, and
-            // the second parameter is an array of child commands
-            this.addCommands(command);
+            parent.addCommand(command);
         }
     },
 
+    /**
+     * Add a new command to this command store
+     */
     addCommand: function(command) {
         if (!command) {
             return;
@@ -78,15 +82,8 @@ dojo.declare("bespin.command.Store", null, {
         }
     },
 
-    addCommands: function(commands) {
-        dojo.forEach(commands, function(command) {
-            if (dojo.isString(command)) {
-                command = bespin.cmd.commands.store[command];
-            }
-            this.addCommand(command);
-        }, this);
-    },
-
+    /*
+    // Do we need this?
     hasCommand: function(commandname) {
         if (this.commands[commandname]) { // yup, there she blows. shortcut
             return true;
@@ -101,7 +98,11 @@ dojo.declare("bespin.command.Store", null, {
         }
         return false;
     },
+    */
 
+    /**
+     * Find the commands that could work, given the value typed
+     */
     findCompletions: function(value, root) {
         var completions = {};
 
@@ -234,4 +235,11 @@ dojo.declare("bespin.command.Store", null, {
     rootCommand: function(value) {
         return this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
     }
+});
+
+/**
+ * Add a root command store to the main bespin namespace
+ */
+dojo.mixin(bespin.command, {
+    store: new bespin.command.Store()
 });

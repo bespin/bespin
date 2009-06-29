@@ -57,7 +57,7 @@ bespin.social.displayArray = function(instruction, titleNone, titleSome, array) 
 /**
  * Add a 'follow' command that gets and adds to out list of our followers
  */
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'follow',
     takes: ['username ...'],
     preview: 'add to the list of users we are following, or (with no args) list the current set',
@@ -106,7 +106,7 @@ dojo.extend(bespin.client.Server, {
 /**
  * Add an 'unfollow' command that removes from our list of our followers
  */
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'unfollow',
     takes: ['username ...'],
     preview: 'remove from the list of users we are following',
@@ -152,7 +152,7 @@ if (!bespin.social.group) {
  * Command store for the group commands
  * (which are subcommands of the main 'group' command)
  */
-bespin.social.group.commands = new bespin.command.Store(bespin.cmd.commands.store, {
+bespin.social.group.commands = new bespin.command.Store(bespin.command.store, {
     name: 'group',
     preview: 'Collect the people you follow into groups, and display the existing groups',
     completeText: 'subcommands: add, remove, list, help',
@@ -324,7 +324,7 @@ dojo.extend(bespin.client.Server, {
 /**
  * Add a 'share' command to open up projects to other people
  */
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'share',
     takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
     preview: 'List and alter sharing for a project',
@@ -515,7 +515,7 @@ dojo.extend(bespin.client.Server, {
 /**
  * Add a 'viewme' command to allow people to screencast
  *
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
     execute: function(instruction, args) {

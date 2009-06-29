@@ -28,18 +28,6 @@ dojo.provide("bespin.cmd.commands");
 //
 // This array stores all of the default commands.
 
-// ** {{{bespin.cmd.commands.store}}} **
-//
-// The core store to hold commands that others share.
-bespin.cmd.commands.store = {};
-
-// ** {{{bespin.cmd.commands.add}}} **
-//
-// Add the command to the store which has a name -> command hash
-bespin.cmd.commands.add = function(command) {
-    bespin.cmd.commands.store[command.name] = command;
-};
-
 // ** {{{Command: bespin.cmd.commands.toArgArray}}} **
 // Helper for when you have a command that needs to get a hold of it's params
 // as an array for processing
@@ -60,18 +48,18 @@ bespin.cmd.commands.toArgArray = function(args) {
 
 // == Start adding commands to the store ==
 //
-bespin.cmd.displayHelp = function(commandStore, instruction, extra, morehelpoutput) {
+bespin.cmd.displayHelp = function(store, instruction, extra, morehelpoutput) {
     var commands = [];
     var command, name;
 
-    if (commandStore.commands[extra]) { // caught a real command
-        command = commandStore.commands[extra];
+    if (store.commands[extra]) { // caught a real command
+        command = store.commands[extra];
         commands.push(command['description'] ? command.description : command.preview);
     } else {
         var showHidden = false;
 
         var subcmdextra = "";
-        if (commandStore.subcommandFor) subcmdextra = " for " + commandStore.subcommandFor;
+        if (store.subcommandFor) subcmdextra = " for " + store.subcommandFor;
 
         if (extra) {
             if (extra == "hidden") { // sneaky, sneaky.
@@ -82,7 +70,7 @@ bespin.cmd.displayHelp = function(commandStore, instruction, extra, morehelpoutp
         }
 
         var tobesorted = [];
-        for (name in commandStore.commands) {
+        for (name in store.commands) {
             tobesorted.push(name);
         }
 
@@ -91,7 +79,7 @@ bespin.cmd.displayHelp = function(commandStore, instruction, extra, morehelpoutp
         commands.push("<table>");
         for (var i = 0; i < sorted.length; i++) {
             name = sorted[i];
-            command = commandStore.commands[name];
+            command = store.commands[name];
 
             if (!showHidden && command.hidden) continue;
             if (extra && name.indexOf(extra) != 0) continue;
@@ -110,19 +98,19 @@ bespin.cmd.displayHelp = function(commandStore, instruction, extra, morehelpoutp
 };
 
 // ** {{{Command: help}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'help',
     takes: ['search'],
     preview: 'show commands',
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(instruction.commandLine.commandStore, instruction, extra);
+        bespin.cmd.displayHelp(instruction.commandLine.store, instruction, extra);
     }
 });
 
 // ** {{{Command: eval}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'eval',
     takes: ['js-code'],
     preview: 'evals given js code and show the result',
@@ -181,7 +169,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: set}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'set',
     takes: ['key', 'value'],
     preview: 'define and show settings',
@@ -236,7 +224,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: unset}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'unset',
     takes: ['key'],
     preview: 'unset a setting entirely',
@@ -248,7 +236,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: search}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'search',
     takes: ['searchString'],
     preview: 'searches the current file for the given searchString',
@@ -259,7 +247,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: files (ls, list)}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'files',
     aliases: ['ls', 'list'],
     takes: ['project'],
@@ -288,7 +276,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: status}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'status',
     preview: 'get info on the current project and file',
     execute: function(instruction) {
@@ -297,7 +285,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: project}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'project',
     takes: ['projectname'],
     preview: 'show the current project, or set to a new one',
@@ -313,7 +301,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: projects}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'projects',
     preview: 'show projects',
     execute: function(instruction, extra) {
@@ -328,7 +316,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: createproject}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'createproject',
     takes: ['projectname'],
     preview: 'create a new project',
@@ -353,7 +341,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: createproject}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'deleteproject',
     takes: ['projectname'],
     preview: 'delete a project',
@@ -384,7 +372,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: renameproject}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'renameproject',
     takes: ['currentProject', 'newProject'],
     preview: 'rename a project',
@@ -416,7 +404,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: mkdir}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'mkdir',
     takes: ['path', 'projectname'],
     preview: 'create a new directory in the given project',
@@ -448,7 +436,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: save}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'save',
     takes: ['filename'],
     preview: 'save the current contents',
@@ -462,7 +450,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: load (open)}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'load',
     aliases: ['open'],
     takes: ['filename', 'project', 'line'],
@@ -474,7 +462,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: editconfig}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'editconfig',
     aliases: ['config'],
     preview: 'load up the config file',
@@ -492,7 +480,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: runconfig}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'runconfig',
     preview: 'run your config file',
     execute: function(instruction) {
@@ -501,7 +489,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: cmdload}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'cmdload',
     takes: ['commandname'],
     preview: 'load up a new command',
@@ -518,21 +506,26 @@ bespin.cmd.commands.add({
             return;
         }
 
+        var path = "commands/" + commandname + ".js";
+        var project = bespin.userSettingsProject;
         var onSuccess = function(file) {
             try {
-                // TODO: I'm not antievalist, but I wonder if there is a better way ...
-                eval('bespin.get("commandLine").commandStore.addCommands([' + file.content + '])');
+                var command = eval(file.content);
+                // Note: This used to allow multiple commands to be stored in
+                // a single file, however that meant that the file was a (more)
+                // butchered version of JSON - the contents of an array.
+                bespin.command.store.addCommand(command);
             } catch (e) {
                 instruction.addErrorOutput("Something is wrong about the command:<br><br>" + e);
             }
         };
 
-        bespin.get('files').loadContents(bespin.userSettingsProject, "commands/" + commandname + ".js", onSuccess, true);
+        bespin.get('files').loadContents(project, path, onSuccess, true);
     }
 });
 
 // ** {{{Command: cmdedit}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'cmdedit',
     takes: ['commandname'],
     aliases: ['cmdadd'],
@@ -564,7 +557,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: cmdlist}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'cmdlist',
     preview: 'list my custom commands',
     execute: function(instruction) {
@@ -596,7 +589,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: cmdrm}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'cmdrm',
     takes: ['commandname'],
     preview: 'delete a custom command',
@@ -637,7 +630,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: newfile}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'newfile',
     //aliases: ['new'],
     takes: ['filename', 'project'],
@@ -654,7 +647,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: rm (remove, del)}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'rm',
     aliases: ['remove', 'del'],
     takes: ['filename', 'project'],
@@ -693,7 +686,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: closefile}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'closefile',
     takes: ['filename', 'project'],
     preview: 'close the file (may lose edits)',
@@ -715,7 +708,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: version}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'version',
     takes: ['command'],
     preview: 'show the version for Bespin or a command',
@@ -724,7 +717,7 @@ bespin.cmd.commands.add({
         var bespinVersion = 'Your Bespin is at version ' + bespin.versionNumber + ', Code name: "' + bespin.versionCodename + '"';
         var version;
         if (command) {
-            var theCommand = instruction.commandLine.commandStore.commands[command];
+            var theCommand = instruction.commandLine.store.commands[command];
             if (!theCommand) {
                 version = "It appears that there is no command named '" + command + "', but " + bespinVersion;
             } else {
@@ -741,7 +734,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: clear}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'clear',
     aliases: ['cls'],
     preview: 'clear the file',
@@ -782,7 +775,7 @@ bespin.cmd.commands.add({
             }
         }
     };
-    bespin.cmd.commands.add(gotoCmd);
+    bespin.command.store.addCommand(gotoCmd);
     bespin.subscribe("settings:set:syntaxcheck", function () {
         var settings = bespin.get("settings");
         if(settings.isOn(settings.get("syntaxcheck"))) {
@@ -796,7 +789,7 @@ bespin.cmd.commands.add({
 })();
 
 // ** {{{Command: replace}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'replace',
     takes: ['search', 'replace'],
     preview: 's/foo/bar/g',
@@ -807,7 +800,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: login}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'login',
     // aliases: ['user'],
     //            takes: ['username', 'password'],
@@ -835,7 +828,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: logout}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'logout',
     preview: 'log out',
     execute: function(instruction) {
@@ -847,7 +840,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: bespin}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'bespin',
     preview: 'has',
     hidden: true,
@@ -863,7 +856,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: sort}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'sort',
     takes: ['direction'],
     preview: 'sort the current buffer',
@@ -879,7 +872,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: quota}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'quota',
     preview: 'show your quota info',
     megabytes: function(bytes) {
@@ -896,7 +889,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: export}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'export',
     takes: ['project', 'archivetype'],
     preview: 'export the given project with an archivetype of zip or tgz',
@@ -914,7 +907,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: import}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'import',
     takes: ['url', 'project'],
     preview: 'import the given url as a project.<br>If a project name isn\'t given it will use the filename<br>If no URL is given to import, a file upload box will be shown to import.',
@@ -1038,31 +1031,31 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: trim}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'trim',
     takes: ['side'], // left, right, both
     preview: 'trim trailing or leading whitespace',
     completeText: 'optionally, give a side of left, right, or both (defaults to right)',
     execute: function(instruction, side) {
-		if (!side) side = "right";
-		var replaceArgs = {
-			replace: ''
-		};
+        if (!side) side = "right";
+        var replaceArgs = {
+            replace: ''
+        };
 
-		if (bespin.util.include(["left", "both"], side)) {
-			replaceArgs.search = "^\\s+";
-			bespin.get("editor").ui.actions.replace(replaceArgs);
-		}
+        if (bespin.util.include(["left", "both"], side)) {
+            replaceArgs.search = "^\\s+";
+            bespin.get("editor").ui.actions.replace(replaceArgs);
+        }
 
-		if (bespin.util.include(["right", "both"], side)) {
-			replaceArgs.search = "\\s+$";
-			bespin.get("editor").ui.actions.replace(replaceArgs);
-		}
+        if (bespin.util.include(["right", "both"], side)) {
+            replaceArgs.search = "\\s+$";
+            bespin.get("editor").ui.actions.replace(replaceArgs);
+        }
     }
 });
 
 // ** {{{Command: bindkey}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'bindkey',
     takes: ['modifiers', 'key', 'action'],
     preview: 'Bind a key to an action, or show bindings',
@@ -1097,13 +1090,13 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: alias}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'alias',
     takes: ['alias', 'command'],
     preview: 'define and show aliases for commands',
     completeText: 'optionally, add your alias name, and then the command name',
     execute: function(instruction, args) {
-        var aliases = instruction.commandLine.commandStore.aliases;
+        var aliases = instruction.commandLine.store.aliases;
 
         if (!args.alias) {
             // * show all
@@ -1128,9 +1121,9 @@ bespin.cmd.commands.add({
                 var value = args.command;
                 var aliascmd = value.split(' ')[0];
 
-                if (instruction.commandLine.commandStore.commands[key]) {
+                if (instruction.commandLine.store.commands[key]) {
                     instruction.addErrorOutput("Sorry, there is already a command with the name: " + key);
-                } else if (instruction.commandLine.commandStore.commands[aliascmd]) {
+                } else if (instruction.commandLine.store.commands[aliascmd]) {
                     aliases[key] = value;
                     instruction.addOutput("Saving alias: " + key + " &#x2192; " + value);
                 } else if (aliases[aliascmd]) {
@@ -1146,7 +1139,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: history}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'history',
     preview: 'Show history of the commands',
     execute: function(instruction) {
@@ -1167,7 +1160,7 @@ bespin.cmd.commands.add({
     }
 });
 
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'uc',
     preview: 'Change all selected text to uppercase',
     withKey: "CMD SHIFT U",
@@ -1177,7 +1170,7 @@ bespin.cmd.commands.add({
     }
 });
 
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'lc',
     preview: 'Change all selected text to lowercase',
     withKey: "CMD SHIFT L",
@@ -1188,7 +1181,7 @@ bespin.cmd.commands.add({
 });
 
 // ** {{{Command: outline}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'outline',
     preview: 'show outline of source code',
     withKey: "ALT SHIFT O",
@@ -1198,7 +1191,7 @@ bespin.cmd.commands.add({
 });
 
 //** {{{Command: rescan}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'rescan',
     takes: ['project'],
     preview: 'update the project catalog of files used by quick open',

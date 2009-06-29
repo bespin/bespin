@@ -32,7 +32,7 @@ dojo.provide("bespin.preview");
 /**
  * Add in the preview command
  */
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'preview',
     takes: ['filename'],
     preview: 'view the file in a new browser window',

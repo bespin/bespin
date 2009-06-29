@@ -29,7 +29,7 @@ dojo.require("bespin.util.util");
 /**
  * Add a 'test' command'
  */
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'test',
     takes: ['suite'],
     preview: 'run a test suite or suites',
