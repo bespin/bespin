@@ -68,13 +68,12 @@ dojo.declare("bespin.command.Store", null, {
 
         // Add bindings
         if (command.withKey) {
-            var action = "command:execute;name=" + command.name;
-            var editor = bespin.get('editor');
-            if (!editor) {
-                console.warn("Missing editor, skipping bind of " + action + " to " + command.withKey + ". We should promote bindKey.");
-            } else {
-                editor.bindKey(action, command.withKey);
-            }
+            // TODO - ensure that keyboard support is loaded earlier so we
+            // don't have to muck about like this
+            bespin.fireAfter([ "component:register:editor" ], function(e) {
+                var action = "command:execute;name=" + command.name;
+                bespin.get('editor').bindKey(action, command.withKey);
+            });
         }
 
         this.commands[command.name] = command;
