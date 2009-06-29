@@ -79,6 +79,7 @@ dojo.declare("bespin.editor.Scrollbar", null, {
         if (command_output && (target.id == "command_output" || bespin.util.contains(command_output, target))) return;
 
         var wheel = bespin.util.mousewheelevent.wheel(e);
+        //console.log("Wheel speed: ", wheel);
         var axis = bespin.util.mousewheelevent.axis(e);
 
         if (this.orientation == this.VERTICAL && axis == this.VERTICAL) {
@@ -826,20 +827,36 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.connect(scope, "keypress", this, "oldkeypress");
 
         // Modifiers, Key, Action
-
         listener.bindKeyStringSelectable("", Key.LEFT_ARROW, this.actions.moveCursorLeft, "Move Cursor Left");
         listener.bindKeyStringSelectable("", Key.RIGHT_ARROW, this.actions.moveCursorRight, "Move Cursor Right");
         listener.bindKeyStringSelectable("", Key.UP_ARROW, this.actions.moveCursorUp, "Move Cursor Up");
         listener.bindKeyStringSelectable("", Key.DOWN_ARROW, this.actions.moveCursorDown, "Move Cursor Down");
 
-        listener.bindKeyStringSelectable("ALT", Key.LEFT_ARROW, this.actions.moveWordLeft, "Move Word Left");
-        listener.bindKeyStringSelectable("ALT", Key.RIGHT_ARROW, this.actions.moveWordRight, "Move Word Right");
+        // Move Left: Mac = Alt+Left, Win/Lin = Ctrl+Left
+        listener.bindKeyForPlatform({
+            MAC: "ALT LEFT_ARROW",
+            WINDOWS: "CTRL LEFT_ARROW"
+        }, this.actions.moveWordLeft, "Move Word Left", true /* selectable */);
 
+        // Move Right: Mac = Alt+Right, Win/Lin = Ctrl+Right
+        listener.bindKeyForPlatform({
+            MAC: "ALT RIGHT_ARROW",
+            WINDOWS: "CTRL RIGHT_ARROW"
+        }, this.actions.moveWordRight, "Move Word Right", true /* selectable */);
+
+        // Start of line: All platforms support HOME. Mac = Apple+Left, Win/Lin = Alt+Left
         listener.bindKeyStringSelectable("", Key.HOME, this.actions.moveToLineStart, "Move to start of line");
-        listener.bindKeyStringSelectable("CMD", Key.LEFT_ARROW, this.actions.moveToLineStart, "Move to start of line");
+        listener.bindKeyForPlatform({
+            MAC: "APPLE LEFT_ARROW",
+            WINDOWS: "ALT LEFT_ARROW"
+        }, this.actions.moveToLineStart, "Move to start of line", true /* selectable */);
 
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
-        listener.bindKeyStringSelectable("CMD", Key.RIGHT_ARROW, this.actions.moveToLineEnd, "Move to end of line");
+        // End of line: All platforms support END. Mac = Apple+Right, Win/Lin = Alt+Right
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");        
+        listener.bindKeyForPlatform({
+            MAC: "APPLE RIGHT_ARROW",
+            WINDOWS: "ALT RIGHT_ARROW"
+        }, this.actions.moveToLineEnd, "Move to end of line", true /* selectable */);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
