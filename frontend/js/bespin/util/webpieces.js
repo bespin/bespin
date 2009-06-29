@@ -26,12 +26,14 @@ dojo.provide("bespin.util.webpieces");
 
 dojo.require("dijit._base.place");
 
-// = Utility functions for Web snippets =
-//
-// There are little widgets and components that we want to reuse
-
+/**
+ * Utility functions for Web snippets
+ * There are little widgets and components that we want to reuse
+ */
 dojo.mixin(bespin.util.webpieces, {
-    // -- Center Popup
+    /**
+     * Center Popup
+     */
     showCenterPopup: function(el, isModal) {
         if (isModal) {
             this.showOverlay();
@@ -41,7 +43,7 @@ dojo.mixin(bespin.util.webpieces, {
         // retrieve required dimensions
         var elDims = dojo.coords(el);
         var browserDims = dijit.getViewport();
-        
+
         // calculate the center of the page using the browser and element dimensions
         var y = (browserDims.h - elDims.h) / 2;
         var x = (browserDims.w - elDims.w) / 2;
@@ -59,9 +61,7 @@ dojo.mixin(bespin.util.webpieces, {
         this.hideOverlay();
     },
 
-    // -- Overlay
-    
-    showOverlay: function() { 
+    showOverlay: function() {
         dojo.style('overlay', 'display', 'block');
     },
 
@@ -69,34 +69,41 @@ dojo.mixin(bespin.util.webpieces, {
         dojo.style('overlay', 'display', 'none');
     },
 
-    // take the overlay and make sure it stretches on the entire height of the screen
+    /**
+     * Take the overlay and make sure it stretches on the entire height of the
+     * screen
+     */
     fillScreenOverlay: function() {
 	    var coords = dojo.coords(document.body);
-	    
+
 	    if (coords.h) {
             dojo.style(dojo.byId('overlay'), 'height', coords.h + "px");
         }
     },
 
-    // -- Status
+    /**
+     * Status
+     */
     showStatus: function(msg) {
         dojo.byId("status").innerHTML = msg;
         dojo.style('status', 'display', 'block');
     },
-    
-    // -- showContentOverlay displays the center screen overlay with
-    // a scrolling pane for content.
+
+    /**
+     * showContentOverlay displays the center screen overlay with a scrolling
+     * pane for content.
+     */
     showContentOverlay: function(msg, options) {
         options = options || {};
         var el = dojo.byId('centerpopup');
         var addTags = "";
         var endTags = "";
-        
+
         if (options.pre) {
             addTags = addTags + "<pre>";
             endTags = "</pre>" + endTags;
         }
-        
+
         el.innerHTML = "<div style='background-color: #fff; border: 1px solid #000; height: 100%; overflow: auto'>" + addTags + msg + endTags + "</div>";
         oldwidth = el.style.width;
         oldheight = el.style.height;
@@ -106,7 +113,7 @@ dojo.mixin(bespin.util.webpieces, {
         dojo.require("bespin.util.webpieces");
 
         bespin.util.webpieces.showCenterPopup(el);
-        
+
         var connection = dojo.connect(el, "onclick", function() {
             bespin.util.webpieces.hideCenterPopup(el);
             el.style.width = oldwidth;

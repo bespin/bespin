@@ -68,4 +68,3 @@ dojo.provide("bespin.util.navigate");
         }
     });
 })();
-

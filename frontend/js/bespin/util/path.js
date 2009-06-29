@@ -24,19 +24,20 @@
 
 dojo.provide("bespin.util.path");
 
-// = Path =
-//
-// Deal with paths that are sent into Bespin
-
+/**
+ * Deal with paths that are sent into Bespin
+ */
 dojo.mixin(bespin.util.path, {
-    // ** {{{ bespin.util.path.combine }}} **
-    //
-    // Take the given arguments and combine them with one path seperator
-    //
-    // * combine("foo", "bar") -> foo/bar
-    // * combine(" foo/", "/bar  ") -> foo/bar
+    /**
+     * Take the given arguments and combine them with one path seperator:
+     * <pre>
+     * combine("foo", "bar") -&gt; foo/bar
+     * combine(" foo/", "/bar  ") -&gt; foo/bar
+     * </pre>
+     */
     combine: function() {
-        var args = Array.prototype.slice.call(arguments); // clone to a true array
+        // clone to a true array
+        var args = Array.prototype.slice.call(arguments);
 
         var path = args.join('/');
         path = path.replace(/\/\/+/g, '/');
@@ -44,57 +45,62 @@ dojo.mixin(bespin.util.path, {
         return path;
     },
 
-    // ** {{{ bespin.util.path.directory }}} **
-    //
-    // Given a {{{path}}} return the directory
-    //
-    // * directory("/path/to/directory/file.txt") -> /path/to/directory/
-    // * directory("/path/to/directory/") -> /path/to/directory/
-    // * directory("foo.txt") -> ""
+    /**
+     * Given a <code>path</code> return the directory
+     * <li>directory("/path/to/directory/file.txt") -&gt; /path/to/directory/
+     * <li>directory("/path/to/directory/") -&gt; /path/to/directory/
+     * <li>directory("foo.txt") -&gt; ""
+     */
     directory: function(path) {
         var dirs = path.split('/');
-        if (dirs.length == 1) { // no directory so return blank
+        if (dirs.length == 1) {
+            // no directory so return blank
             return "";
-        } else if ((dirs.length == 2) && dirs[dirs.length -1] == "") { // a complete directory so return it
+        } else if ((dirs.length == 2) && dirs[dirs.length -1] == "") {
+            // a complete directory so return it
             return path;
         } else {
             return dirs.slice(0, dirs.length - 1).join('/');
         }
     },
 
-    // ** {{{ bespin.util.path.makeDirectory }}} **
-    //
-    // Given a {{{path}}} make sure that it returns as a directory
-    // (As in, ends with a '/')
-    //
-    // * makeDirectory("/path/to/directory") -> /path/to/directory/
-    // * makeDirectory("/path/to/directory/") -> /path/to/directory/
+    /**
+     * Given a <code>path</code> make sure that it returns as a directory
+     * (As in, ends with a '/')
+     * <pre>
+     * makeDirectory("/path/to/directory") -&gt; /path/to/directory/
+     * makeDirectory("/path/to/directory/") -&gt; /path/to/directory/
+     * </pre>
+     */
     makeDirectory: function(path) {
         if (!/\/$/.test(path)) path += '/';
         return path;
     },
 
-    // ** {{{ bespin.util.path.combineAsDirectory }}} **
-    //
-    // Take the given arguments and combine them with one path seperator and
-    // then make sure that you end up with a directory
-    //
-    // * combine("foo", "bar") -> foo/bar/
-    // * combine(" foo/", "/bar  ") -> foo/bar/
+    /**
+     * Take the given arguments and combine them with one path separator and
+     * then make sure that you end up with a directory
+     * <pre>
+     * combine("foo", "bar") -&gt; foo/bar/
+     * combine(" foo/", "/bar  ") -&gt; foo/bar/
+     * </pre>
+     */
     combineAsDirectory: function() {
         return this.makeDirectory(this.combine.apply(this, arguments));
     },
 
-    // ** {{{ bespin.util.path.escape }}} **
-    //
-    // This function doubles down and calls {{{combine}}} and then escapes the output
+    /**
+     * This function doubles down and calls <code>combine</code> and then
+     * escapes the output
+     */
     escape: function() {
         return escape(this.combine.apply(this, arguments));
     },
 
-    // ** {{{ bespin.util.path.fileType }}} **
-    //
-    // This function returns a file type based on the extension (foo.html -> html)
+    /**
+     * This function returns a file type based on the extension
+     * (foo.html -&gt; html)
+     */
     fileType: function(path) {
         if (!path) {
             console.error("path falsy in bespin.util.path.fileType");
