@@ -1889,7 +1889,7 @@ dojo.declare("bespin.editor.API", null, {
         if (keyCode && action) {
             var actionDescription = "User key to execute: " + action.replace("command:execute;name=", "");
             if (selectable) {
-                // register the selectable binding to (e.g. SHIFT + what you passed in)
+                // register the selectable binding too (e.g. SHIFT + what you passed in)
                 this.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
             } else {
                 this.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
