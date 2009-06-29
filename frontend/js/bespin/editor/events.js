@@ -54,27 +54,6 @@ dojo.declare("bespin.editor.Events", null, {
             if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
         });
 
-        // -- add key listeners
-        // e.g. bindkey ctrl b moveCursorLeft
-        bespin.subscribe("editor:bindkey", function(event) {
-            var modifiers = event.modifiers || '';
-            if (!event.key) return;
-
-            var keyCode = bespin.util.keys.toKeyCode(event.key);
-
-            // -- try an editor action first, else fire away at the event bus
-            var action = editor.ui.actions[event.action] || event.action;
-
-            if (keyCode && action) {
-                var actionDescription = "User key to execute: " + event.action.replace("command:execute;name=", "");
-                if (event.selectable) { // register the selectable binding to (e.g. SHIFT + what you passed in)
-                    editor.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
-                } else {
-                    editor.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
-                }
-            }
-        });
-
         // ** {{{ Event: editor:openfile }}} **
         //
         // Observe a request for a file to be opened and start the cycle:

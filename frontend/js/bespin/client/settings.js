@@ -584,44 +584,13 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Add in emacs key bindings
         bespin.subscribe("settings:set:keybindings", function(event) {
-            var value = event.value;
-
-            if (value == "emacs") {
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "b",
-                    action: "moveCursorLeft"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "f",
-                    action: "moveCursorRight"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "p",
-                    action: "moveCursorUp"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "n",
-                    action: "moveCursorDown"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "a",
-                    action: "moveToLineStart"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "e",
-                    action: "moveToLineEnd"
-                });
+            if (event.value == "emacs") {
+                editor.bindKey("moveCursorLeft", "ctrl b");
+                editor.bindKey("moveCursorRight", "ctrl f");
+                editor.bindKey("moveCursorUp", "ctrl p");
+                editor.bindKey("moveCursorDown", "ctrl n");
+                editor.bindKey("moveToLineStart", "ctrl a");
+                editor.bindKey("moveToLineEnd", "ctrl e");
             }
         });
 

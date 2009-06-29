@@ -217,7 +217,7 @@ dojo.declare("bespin.editor.Component", null, {
     //   action: "moveCursorLeft"
     // }
     bindKey: function(opts) {
-        bespin.publish("editor:bindkey", opts);
+        bespin.get('editor').bindKey(opts.action, opts.modifiers + ' ' + opts.key);
     },
 
     // ** {{{ executeCommand }}} **
@@ -234,9 +234,7 @@ dojo.declare("bespin.editor.Component", null, {
     // ** {{{ dispose }}} **
     //
     // Disposes the editor as best as possible, clearing resources, clipboard helpers, and the like.
-    dispose: function()
-    {
+    dispose: function() {
         this.editor.dispose();
     }
 });
-

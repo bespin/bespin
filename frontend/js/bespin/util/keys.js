@@ -109,7 +109,7 @@ dojo.provide("bespin.util.keys");
 // E.g. toKeyCode("k") -> 75
 bespin.util.keys.toKeyCode = function(keyAsString) {
     return bespin.util.keys.Key[keyAsString.toUpperCase()];
-}
+};
 
 // ** {{{ bespin.util.keys.fillArguments }}} **
 //
@@ -164,9 +164,19 @@ bespin.util.keys.passThroughToBrowser = function(e) {
         return true;
     } else if (e.metaKey || e.altKey || e.ctrlKey) { // Apple or Alt key
         if (e.type == "keypress") {
-            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;
+            var match = dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) {
+                return (item == e.charCode);
+            });
+            if (match) {
+                return true;
+            }
         } else {
-            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true;
+            var match = dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) {
+                return (item == e.keyCode);
+            });
+            if (match) {
+                return true;
+            }
         }
     }
 

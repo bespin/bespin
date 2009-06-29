@@ -60,17 +60,16 @@ dojo.declare("bespin.command.Store", null, {
         if (!command) {
             return;
         }
-        // -- Allow for the default [ ] takes style by expanding it to something bigger
+
+        // Allow for the default [ ] takes style by expanding it to something bigger
         if (command.takes && dojo.isArray(command.takes)) {
             command = this.normalizeTakes(command);
         }
 
-        // -- Add bindings
+        // Add bindings
         if (command.withKey) {
-            var args = bespin.util.keys.fillArguments(command.withKey);
-
-            args.action = "command:execute;name=" + command.name;
-            bespin.publish("editor:bindkey", args);
+            var action = "command:execute;name=" + command.name;
+            bespin.get('editor').bindKey(action, command.withKey);
         }
 
         this.commands[command.name] = command;
@@ -102,6 +101,8 @@ dojo.declare("bespin.command.Store", null, {
 
     /**
      * Find the commands that could work, given the value typed
+     * @param value What was typed
+     * @param root Any prefix that has been chopped off
      */
     findCompletions: function(value, root) {
         var completions = {};
@@ -114,9 +115,10 @@ dojo.declare("bespin.command.Store", null, {
             var command = this.rootCommand(value);
 
             if (command) {
-                // It's easy of there are sub-commands...
+                // It's easy if there are sub-commands...
                 if (command.subcommands) {
-                    return command.subcommands.findCompletions(value.replace(new RegExp('^' + command.name + '\\s*'), ''), command.name);
+                    var params = value.replace(new RegExp('^' + command.name + '\\s*'), '');
+                    return command.subcommands.findCompletions(params, command.name);
                 }
 
                 // Using custom completions requires us to know the prefix that

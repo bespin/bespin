@@ -1061,12 +1061,12 @@ bespin.command.store.addCommand({
     preview: 'Bind a key to an action, or show bindings',
     completeText: 'With no arguments show bindings, else give modifier(s), key, and action name to set',
     execute: function(instruction, args) {
+        var editor = bespin.get('editor');
         if (args.key && args.action) { // bind a new key binding
             if (args.modifiers == "none") args.modifiers = '';
-
-            bespin.publish("editor:bindkey", args);
+            editor.bindKey(args.action, args.modifiers + ' ' + args.key, args.selectable);
         } else { // show me the key bindings
-            var descriptions = bespin.get('editor').editorKeyListener.keyMapDescriptions;
+            var descriptions = editor.editorKeyListener.keyMapDescriptions;
             var output = "<table>";
 
             for (var keys in descriptions) {

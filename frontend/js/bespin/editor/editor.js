@@ -26,24 +26,9 @@ dojo.provide("bespin.editor.editor");
 
 dojo.require("bespin.editor.clipboard");
 
-// = Editor =
-//
-// This is the guts. The metal. The core editor has most of its classes living in here:
-//
-// * {{{bespin.editor.API}}} : The editor API itself
-// * {{{bespin.editor.UI}}} : Knowledge of the UI pieces of the editor is here, bulk of the code. paints!
-// * {{{bespin.editor.Scrollbar}}} : The custom scrollbar (to be factored out and use TH scrollbar instead)
-// * {{{bespin.editor.SelectionHelper}}} : Handle text selection
-// * {{{bespin.editor.DefaultEditorKeyListener}}} : Key listener operations
-// * {{{bespin.editor.Rect}}} : Helper to hold a rectangle
-// * {{{bespin.editor.Events}}} : Helper to hold a rectangle
-// * {{{bespin.editor.Utils}}} : Blobby utility object to do common things
-//
-// * {{{bespin.editor.Actions}}} : The actions that the editor can do (can be added too) are are in actions.js
-
-// ** {{{ bespin.editor.Scrollbar }}} **
-//
-// some state mgmt. for scrollbars; not a true component
+/**
+ * some state mgmt. for scrollbars; not a true component
+ */
 dojo.declare("bespin.editor.Scrollbar", null, {
     HORIZONTAL: "horizontal",
     VERTICAL: "vertical",
@@ -144,9 +129,9 @@ dojo.declare("bespin.editor.Scrollbar", null, {
     }
 });
 
-// ** {{{ bespin.editor.Rect }}} **
-//
-// treat as immutable (pretty please)
+/**
+ * treat as immutable (pretty please)
+ */
 dojo.declare("bespin.editor.Rect", null, {
     constructor: function(x, y, w, h) {
         this.x = x;
@@ -164,13 +149,16 @@ dojo.declare("bespin.editor.Rect", null, {
     }
 });
 
-// ** {{{ bespin.editor.SelectionHelper }}} **
+/**
+ *
+ */
 dojo.declare("bespin.editor.SelectionHelper", null, {
     constructor: function(editor) {
         this.editor = editor;
     },
 
-    // returns an object with the startCol and endCol of the selection. If the col is -1 on the endPos, the selection goes for the entire line
+    // returns an object with the startCol and endCol of the selection.
+    // If the col is -1 on the endPos, the selection goes for the entire line
     // returns undefined if the row has no selection
     getRowSelectionPositions: function(rowIndex) {
         var startCol;
@@ -187,9 +175,9 @@ dojo.declare("bespin.editor.SelectionHelper", null, {
     }
 });
 
-// ** {{{ bespin.editor.utils }}} **
-//
-// Mess with positions mainly
+/**
+ * Mess with positions mainly
+ */
 dojo.mixin(bespin.editor, { utils: {
     buildArgs: function(oldPos) {
         return { pos: bespin.editor.utils.copyPos(oldPos || bespin.get('editor').getCursorPos()) };
@@ -233,9 +221,9 @@ dojo.mixin(bespin.editor, { utils: {
     }
 }});
 
-// ** {{{ bespin.editor.DefaultEditorKeyListener }}} **
-//
-// Core key listener to decide which actions to run
+/**
+ * Core key listener to decide which actions to run
+ */
 dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     constructor: function(editor) {
         this.editor = editor;
@@ -374,9 +362,9 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     }
 });
 
-// ** {{{ bespin.editor.UI }}} **
-//
-// Holds the UI. The editor itself, the syntax highlighter, the actions, and more
+/**
+ * Holds the UI, the editor itself, the syntax highlighter, the actions, and more
+ */
 dojo.declare("bespin.editor.UI", null, {
     constructor: function(editor) {
         this.editor = editor;
@@ -490,7 +478,9 @@ dojo.declare("bespin.editor.UI", null, {
         setTimeout(dojo.hitch(this, function() { this.toggleCursor(this); }), this.toggleCursorFrequency);
     },
 
-    // col is -1 if user clicked in gutter; clicking below last line maps to last line
+    /**
+     * col is -1 if user clicked in gutter; clicking below last line maps to last line
+     */
     convertClientPointToCursorPoint: function(pos) {
         var settings = bespin.get("settings");
         var x, y;
@@ -942,11 +932,11 @@ dojo.declare("bespin.editor.UI", null, {
         dojo.attr(dojo.byId(this.editor.canvas), { width: this.getWidth(), height: this.getHeight() });
     },
 
-    // ** {{{ paint }}} **
-    //
-    // This is where the editor is painted from head to toe. The optional "fullRefresh" argument triggers a complete repaint
-    // of the editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
-
+    /**
+     * This is where the editor is painted from head to toe.
+     * The optional "fullRefresh" argument triggers a complete repaint of the
+     * editor canvas; otherwise, pitiful tricks are used to draw as little as possible.
+     */
     paint: function(ctx, fullRefresh) {
         // DECLARE VARIABLES
 
@@ -1655,7 +1645,10 @@ dojo.declare("bespin.editor.UI", null, {
         ctx.fill();
     },
 
-    // returns metadata bout the a string that represents the row; converts tab characters to spaces
+    /**
+     * returns metadata bout the a string that represents the row;
+     * converts tab characters to spaces
+     */
     getRowString: function(row) {
         return this.model.getRowMetadata(row).lineText;
     },
@@ -1664,7 +1657,9 @@ dojo.declare("bespin.editor.UI", null, {
         return this.getRowString(row).length;
     },
 
-    // returns the maximum number of display columns across all rows
+    /**
+     * returns the maximum number of display columns across all rows
+     */
     getMaxCols: function(firstRow, lastRow) {
         var cols = 0;
         for (var i = firstRow; i <= lastRow; i++) {
@@ -1692,9 +1687,10 @@ dojo.declare("bespin.editor.UI", null, {
     }
 });
 
-// ** {{{ bespin.editor.API }}} **
-//
-// The root object. This is the API that others should be able to use
+/**
+ * bespin.editor.API is the root object, the API that others should be able to
+ * use
+ */
 dojo.declare("bespin.editor.API", null, {
     constructor: function(container, opts) {
         this.opts = opts || {};
@@ -1705,8 +1701,8 @@ dojo.declare("bespin.editor.API", null, {
         this.container = dojo.byId(container);
         this.model = new bespin.editor.DocumentModel(this);
 
-        dojo.byId(container).innerHTML = '<canvas id="canvas" moz-opaque="true" tabindex="-1"></canvas>';
-        this.canvas = dojo.byId(container).firstChild;
+        this.container.innerHTML = '<canvas id="canvas" moz-opaque="true" tabindex="-1"></canvas>';
+        this.canvas = this.container.firstChild;
         while (this.canvas && this.canvas.nodeType != 1) this.canvas = this.canvas.nextSibling;
 
         this.cursorManager = new bespin.editor.CursorManager(this);
@@ -1724,14 +1720,19 @@ dojo.declare("bespin.editor.API", null, {
         dojo.connect(this.canvas, "blur",  dojo.hitch(this, function(e) { this.setFocus(false); }));
         dojo.connect(this.canvas, "focus", dojo.hitch(this, function(e) { this.setFocus(true); }));
 
-        bespin.editor.clipboard.setup(this); // setup the clipboard
+        bespin.editor.clipboard.setup(this);
 
         this.paint();
 
-        if (!this.opts.dontfocus) { this.setFocus(true); }
+        if (!this.opts.dontfocus) {
+            this.setFocus(true);
+        }
     },
 
-    // ensures that the start position is before the end position; reading directly from the selection property makes no such guarantee
+    /**
+     * ensures that the start position is before the end position; reading
+     * directly from the selection property makes no such guarantee
+     */
     getSelection: function(selection) {
         selection = (selection != undefined) ? selection : this.selection;
         if (!selection) return undefined;
@@ -1754,22 +1755,30 @@ dojo.declare("bespin.editor.API", null, {
         };
     },
 
-    // helper
+    /**
+     *
+     */
     getCursorPos: function(modelPos) {
         return this.cursorManager.getCursorPosition(modelPos);
     },
 
-    // helper
+    /**
+     *
+     */
     getModelPos: function(pos) {
         return this.cursorManager.getModelPosition(pos);
     },
 
-    // helper
+    /**
+     *
+     */
     moveCursor: function(pos) {
         this.cursorManager.moveCursor(pos);
     },
 
-    // restore the state of the editor
+    /**
+     * restore the state of the editor
+     */
     resetView: function(data) {
         this.cursorManager.moveCursor(data.cursor);
         this.setSelection(data.selection);
@@ -1788,7 +1797,9 @@ dojo.declare("bespin.editor.API", null, {
         return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
     },
 
-    // be gentle trying to get the tabstop from settings
+    /**
+     * be gentle trying to get the tabstop from settings
+     */
     getTabSize: function() {
         var settings = bespin.get("settings");
         var size = bespin.defaultTabSize; // default
@@ -1799,7 +1810,9 @@ dojo.declare("bespin.editor.API", null, {
         return size;
     },
 
-    // helper to get text
+    /**
+     * helper to get text
+     */
     getSelectionAsText: function() {
         var selectionText = '';
         var selectionObject = this.getSelection();
@@ -1824,20 +1837,63 @@ dojo.declare("bespin.editor.API", null, {
         this.editorKeyListener = newKeyListener;
     },
 
-    // this does not set focus to the editor; it indicates that focus has been set to the underlying canvas
+    /**
+     * This does not set focus to the editor; it indicates that focus has been
+     * set to the underlying canvas
+     */
     setFocus: function(focus) {
         this.focus = focus;
-        if (focus) this.canvas.focus(); // force it if you have too
+
+        // force it if you have too
+        if (focus) {
+            this.canvas.focus();
+        }
     },
 
+    /**
+     * Prevent user edits
+     */
     setReadOnly: function(readonly) {
         this.readonly = readonly;
     },
 
-    // anything that this editor creates should be gotten rid of. Useful when you will be creating and destroying
-    // editors more than once.
+    /**
+     * Anything that this editor creates should be gotten rid of.
+     * Useful when you will be creating and destroying editors more than once.
+     */
     dispose: function() {
-        bespin.editor.clipboard.uninstall(); // uninstall the clipboard
+        // TODO: Isn't bespin.editor == this?
+        bespin.editor.clipboard.uninstall();
         this.ui.dispose();
+    },
+
+    /**
+     * Add key listeners
+     * e.g. bindkey('moveCursorLeft', 'ctrl b');
+     */
+    bindKey: function(action, keySpec, selectable) {
+        var keyObj = bespin.util.keys.fillArguments(keySpec);
+        var key = keyObj.key;
+        var modifiers = keyObj.modifiers;
+
+        if (!key) {
+            // TODO: shouldn't we complain or something?
+            return;
+        }
+
+        var keyCode = bespin.util.keys.toKeyCode(key);
+
+        // -- try an editor action first, else fire away at the event bus
+        var action = this.ui.actions[action] || action;
+
+        if (keyCode && action) {
+            var actionDescription = "User key to execute: " + action.replace("command:execute;name=", "");
+            if (selectable) {
+                // register the selectable binding to (e.g. SHIFT + what you passed in)
+                this.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
+            } else {
+                this.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
+            }
+        }
     }
 });

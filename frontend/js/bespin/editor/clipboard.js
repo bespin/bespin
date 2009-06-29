@@ -43,14 +43,14 @@ dojo.mixin(bespin.editor.clipboard, {
         this.uses = newImpl;
         this.uses.install(editor);
     },
-    
+
     // ** {{{ uninstall }}} **
     //
     // Uninstalls the clipboard handler installed by install()
     uninstall: function()
     {
         if (this.uses && typeof this.uses['uninstall'] == "function") this.uses.uninstall();
-        
+
         //clear uses, because we are no longer using anything.
         this.uses = undefined;
     },
@@ -83,7 +83,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
             id: 'copynpaster',
             style: "position: absolute; z-index: -400; top: -100px; left: -100px; width: 0; height: 0; border: none;"
         }, dojo.body());
-        
+
         var copynpaster = this.copynpaster; //because we'll be needing to use it from functions below...
 
         // * Defensively stop doing copy/cut/paste magic if you are in the command line
@@ -177,10 +177,10 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         dojo.disconnect(this.cutHandle);
         dojo.disconnect(this.beforecopyHandle);
         dojo.disconnect(this.copyHandle);
-        
+
         if (this.copynpaster)
             document.body.removeChild(copynpaster);
-        
+
         this.copynpaster = undefined;
     }
 });
@@ -199,7 +199,7 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
             autocomplete: 'off',
             style: "position:absolute; z-index:999; top:-10000px; width:0; height:0; border:none;"
         }, dojo.body());
-        
+
         var copynpaster = this.copynpaster; //proxy for functions below...
 
         var copyToClipboard = function(text) {
@@ -256,10 +256,10 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
 
     uninstall: function() {
         dojo.disconnect(this.keyDown);
-        
+
         if (this.copynpaster)
             document.body.removeChild(copynpaster);
-        
+
         this.copynpaster = undefined;
     }
 });
@@ -271,17 +271,11 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
 
 dojo.declare("bespin.editor.clipboard.EditorOnly", null, {
     install: function() {
-        var copyArgs = bespin.util.keys.fillArguments("CMD C");
-        copyArgs.action = "copySelection";
-        bespin.publish("editor:bindkey", copyArgs);
+        var editor = bespin.get('editor');
 
-        var pasteArgs = bespin.util.keys.fillArguments("CMD V");
-        pasteArgs.action = "pasteFromClipboard";
-        bespin.publish("editor:bindkey", pasteArgs);
-
-        var cutArgs = bespin.util.keys.fillArguments("CMD X");
-        cutArgs.action = "cutSelection";
-        bespin.publish("editor:bindkey", cutArgs);
+        editor.bindKey("copySelection", "CMD C");
+        editor.bindKey("pasteFromClipboard", "CMD V");
+        editor.bindKey("cutSelection", "CMD X");
     }
 });
 
