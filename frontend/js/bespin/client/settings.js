@@ -69,7 +69,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'tabmode': 'off',
             'tabarrow': 'on',
             'fontsize': '10',
-            'consolefontsize': '10',
+            'consolefontsize': '11',
             'autocomplete': 'off',
             'collaborate': 'off',
             'language': 'auto',
@@ -310,37 +310,31 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
 
     _load: function() {
         var self = this;
-        
-        var checkLoaded = function() {
+
+        var postLoad = function() {
             if (!self.loaded) { // first time load
                 self.loaded = true;
                 bespin.publish("settings:loaded");
             }
         };
 
-        var loadSettings = function() {
-            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", function(file) {
-                dojo.forEach(file.content.split(/\n/), function(setting) {
-                    if (setting.match(/^\s*#/)) return; // if comments are added ignore
-                    if (setting.match(/\S+\s+\S+/)) {
-                        var pieces = setting.split(/\s+/);
-                        self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
-                    }
-                });
-                
-                checkLoaded();
-            }, checkLoaded); // unable to load the file, so kick this off and a save should kick in
+        var onLoad = function(file) {
+            // Strip \n\n from the end of the file and insert into this.settings
+            dojo.forEach(file.content.split(/\n/), function(setting) {
+                if (setting.match(/^\s*#/)) return; // if comments are added ignore
+                if (setting.match(/\S+\s+\S+/)) {
+                    var pieces = setting.split(/\s+/);
+                    self.settings[dojo.trim(pieces[0])] = dojo.trim(pieces[1]);
+                }
+            });
+
+            postLoad();
         };
 
-        // setTimeout(loadSettings, 0);
-
-        if (bespin.authenticated) {
-            loadSettings();
-        } else {
-            bespin.subscribe("authenticated", function() {
-                loadSettings();
-            });
-        }
+        bespin.fireAfter([ "authenticated" ], function() {
+            // postLoad even if we can't read the settings file
+            bespin.get('files').loadContents(bespin.userSettingsProject, "settings", onLoad, postLoad);
+        });
     }
 });
 
@@ -474,6 +468,25 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
         });
 
+        // ** {{{ Event: editor:openfile:opensuccess }}} **
+        //
+        // If a file (such as BespinSettings/config) is loaded that you want to auto
+        // syntax highlight, here is where you do it
+        // FUTURE: allow people to add in their own special things
+        (function() {
+            var specialFileMap = {
+              'BespinSettings/config': 'js'
+            };
+            bespin.subscribe("editor:openfile:opensuccess", function(event) {
+                var project = event.project || bespin.get('editSession').project;
+                var filename = event.file.name;
+                var mapName = project + "/" + filename;
+                if (specialFileMap[mapName]) {
+                    bespin.publish("settings:language", { language: specialFileMap[mapName] });
+                }
+            });
+        }());
+
         // ** {{{ Event: settings:set:language }}} **
         //
         // When the syntax setting is changed, tell the syntax system to change
@@ -575,44 +588,13 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Add in emacs key bindings
         bespin.subscribe("settings:set:keybindings", function(event) {
-            var value = event.value;
-
-            if (value == "emacs") {
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "b",
-                    action: "moveCursorLeft"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "f",
-                    action: "moveCursorRight"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "p",
-                    action: "moveCursorUp"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "n",
-                    action: "moveCursorDown"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "a",
-                    action: "moveToLineStart"
-                });
-
-                bespin.publish("editor:bindkey", {
-                    modifiers: "ctrl",
-                    key: "e",
-                    action: "moveToLineEnd"
-                });
+            if (event.value == "emacs") {
+                editor.bindKey("moveCursorLeft", "ctrl b");
+                editor.bindKey("moveCursorRight", "ctrl f");
+                editor.bindKey("moveCursorUp", "ctrl p");
+                editor.bindKey("moveCursorDown", "ctrl n");
+                editor.bindKey("moveToLineStart", "ctrl a");
+                editor.bindKey("moveToLineEnd", "ctrl e");
             }
         });
 
@@ -673,7 +655,7 @@ dojo.declare("bespin.client.settings.Events", null, {
             var project = event.project;
 
             if (project && (editSession.project != project)) {
-                bespin.publish("project:set", { project: project });
+                editSession.setProject(project);
             }
 
             // Now we know what are settings are we can decide if we need to
@@ -722,9 +704,11 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Check for auto load
         bespin.subscribe("settings:init", function() {
-            if (settings.isOff(settings.get('autoconfig'))) return;
+            if (settings.isOff(settings.get('autoconfig'))) {
+                return;
+            }
 
-            bespin.publish("editor:config:run");
+            bespin.get('files').evalFile(bespin.userSettingsProject, "config");
         });
     }
 });

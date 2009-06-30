@@ -104,7 +104,7 @@ def production():
             found_packages.add(name)
             deleted = False
             for npp in non_production_packages:
-                if name == npp:
+                if name == npp or "BespinServer-tip" in npp:
                     del lines[i]
                     deleted = True
                     break

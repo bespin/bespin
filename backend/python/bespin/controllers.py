@@ -245,7 +245,11 @@ def putfile(request, response):
     owner, project, path = _split_path(request)
     project = get_project(user, owner, project, create=True)
 
-    if path:
+    if path.endswith('/'):
+        if request.body != None and request.body != '':
+            raise BadRequest("Path ended in '/' indicating directory, but request contains ")
+        project.create_directory(path)
+    elif path:
         project.save_file(path, request.body)
     return response()
 
@@ -451,8 +455,35 @@ def filestats(request, response):
 #     fm.reset_edits(user, project, path)
 #     return response()
 
-@expose(r'^/(?P<filename>editor|dashboard)\.html', 'GET', auth=False, skip_token_check=True)
-def static_with_login(request, response):
+TH_SRC_BLOCK = """
+<script type="text/javascript" src="/js/thsrc/jstraits.js"></script>
+<script type="text/javascript" src="/js/thsrc/util.js"></script>
+<script type="text/javascript" src="/js/thsrc/traits.js"></script>
+<script type="text/javascript" src="/js/thsrc/css.js"></script>
+<script type="text/javascript" src="/js/thsrc/th.js"></script>
+<script type="text/javascript" src="/js/thsrc/components.js"></script>
+<script type="text/javascript" src="/js/thsrc/jshashtable.js"></script>
+<script type="text/javascript" src="/js/thsrc/formlayout/formLayout.js"></script>
+<script>
+// Tell Th where the base URL is so it knows where to load resources
+th.global_resources.load("/js/thsrc/");
+</script>
+"""
+
+def _replace_block(html_lines, begin, end, new_content):
+    start_marker = None
+    end_marker = None
+    for i in range(0, len(html_lines)):
+        if begin in html_lines[i]:
+            start_marker = i
+        elif end in html_lines[i]:
+            end_marker = i
+    del html_lines[start_marker:end_marker+1]
+    html_lines.insert(start_marker, new_content)
+    return html_lines
+
+@expose(r'^/editor\.html', 'GET', auth=False, skip_token_check=True)
+def editor_page(request, response):
     """Ensure that the user is logged in. Redirect them to the front
     page if they're not. If they are logged in, go ahead and serve
     up the static file."""
@@ -463,8 +494,18 @@ def static_with_login(request, response):
     else:
         response.status = "200 OK"
         response.content_type = "text/html"
-        response.body = open("%s/%s.html" % (c.static_dir, 
-                request.kwargs['filename'])).read()
+        body = open("%s/editor.html" % (c.static_dir, 
+                )).read()
+        if c.th_src:
+            bodylines = body.split("\n")
+            bodylines = _replace_block(bodylines, "<!-- begin Th -->", 
+                            "<!-- end Th -->", TH_SRC_BLOCK)
+            body = "\n".join(bodylines)
+            
+        if c.using_dojo_source:
+            body = body.replace("dojo.js.uncompressed.js", "dojo.js")
+            
+        response.body = body
     return response()
 
 @expose(r'^/project/import/(?P<project_name>[^/]+)', "POST")

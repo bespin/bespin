@@ -24,17 +24,16 @@
 
 dojo.provide("bespin.util.canvas");
 
-// = Canvas Shim =
-//
-// Make canvas work the same on the different browsers and their quirks
-
-// ** {{{ bespin.util.fixcanvas.fix }}} **
-//
-// Take the context and clean it up
-
+/**
+ * Canvas Shim
+ * <p>Make canvas work the same on the different browsers and their quirks.
+ */
 dojo.mixin(bespin.util.canvas, {
+    /**
+     * Take the context and clean it up
+     */
     fix: function(ctx) {
-        // * upgrade Firefox 3.0.x text rendering to HTML 5 standard
+        // Upgrade Firefox 3.0.x text rendering to HTML 5 standard
         if (!ctx.fillText && ctx.mozDrawText) {
             ctx.fillText = function(textToDraw, x, y, maxWidth) {
                 ctx.translate(x, y);
@@ -44,7 +43,7 @@ dojo.mixin(bespin.util.canvas, {
             };
         }
 
-        // * Setup measureText
+        // Setup measureText
         if (!ctx.measureText && ctx.mozMeasureText) {
             ctx.measureText = function(text) {
                 if (ctx.font) ctx.mozTextStyle = ctx.font;
@@ -53,7 +52,7 @@ dojo.mixin(bespin.util.canvas, {
             };
         }
 
-        // * Setup html5MeasureText
+        // Setup html5MeasureText
         if (ctx.measureText && !ctx.html5MeasureText) {
             ctx.html5MeasureText = ctx.measureText;
             ctx.measureText = function(text) {
@@ -66,7 +65,7 @@ dojo.mixin(bespin.util.canvas, {
             };
         }
 
-        // * for other browsers, no-op away
+        // For other browsers, no-op away
         if (!ctx.fillText) {
             ctx.fillText = function() {};
         }

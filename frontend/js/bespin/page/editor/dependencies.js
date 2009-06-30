@@ -27,6 +27,7 @@ dojo.provide("bespin.page.editor.dependencies");
 dojo.require("dojo.cookie");
 
 dojo.require("bespin.bespin");
+dojo.require("bespin.command");
 dojo.require("bespin.debug");
 dojo.require("bespin.events");
 
@@ -82,14 +83,19 @@ dojo.require("bespin.cmd.commands");
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");
 
-// To register commands just using bespin.cmd.commands.add place them here
+dojo.require("bespin.plugins.loader");
+dojo.require("bespin.plugins.loaderTest");
+
+dojo.require("bespin.preview");
+
+dojo.require("bespin.test");
+dojo.require("bespin.testTest");
+
 dojo.require("bespin.wizard");
 dojo.require("bespin.wizardTest");
 
 dojo.require("bespin.social");
 dojo.require("bespin.socialTest");
-
-dojo.require("bespin.cmd.editorcommands"); // now load the default editor commands
 
 /*
 dojo.require("bespin.mobwrite.core");
@@ -99,6 +105,5 @@ dojo.require("bespin.mobwrite.integrate");
 */
 
 dojo.require("bespin.client.pubsub");
-
 
 dojo.require("bespin.page.editor.init");

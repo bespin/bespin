@@ -24,22 +24,14 @@
 
 dojo.provide("bespin.util.navigate");
 
-dojo.require("bespin.client.settings");
-
-// = Navigate =
-//
-// Simple wrapper to force navigation to a project URL without all using location.href
-
-// ** {{{ bespin.util.navigate }}} **
-//
-// new up an object that will return public methods and hide private ones
-
+/**
+ * Simple wrapper to force navigation to a project URL without all using
+ * location.href
+ */
 (function() {
-
-    // ** {{{ Yup, you can be private }}} **
-    //
-    // Generic location changer
-
+    /**
+     * Generic location changer
+     */
     var go = function(url, newTab) {
         if (newTab) {
             window.open(url, "_blank");
@@ -48,19 +40,17 @@ dojo.require("bespin.client.settings");
         }
     };
 
-
-    // ** {{{ Public }}} **
-    //
-    // Simple methods to construct URLs within Bespin and go to them
-
+    /**
+     * Simple methods to construct URLs within Bespin and go to them
+     */
     dojo.mixin(bespin.util.navigate, {
         home: function(newTab) {
             go("index.html", newTab);
         },
 
         quickEdit: function(newTab) {
-    		go("editor.html#new=true", newTab);
-    	},
+            go("editor.html#new=true", newTab);
+        },
 
         editor: function(project, path, opts) {
             var url = "editor.html#";
@@ -71,11 +61,6 @@ dojo.require("bespin.client.settings");
             if (!opts) opts = {};
             if (opts.newFile) args.push("new=true");
             if (opts.content) args.push("content=" + escape(opts.content));
-
-            if (bespin.page.dashboard) {
-                var selectedPath = bespin.page.dashboard.tree.getSelectedPath(true);
-                if (selectedPath) args.push('fromDashboardPath=' + selectedPath);
-            }
 
             if (args.length > 0) url += args.join("&");
 

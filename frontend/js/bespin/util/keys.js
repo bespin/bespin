@@ -24,68 +24,69 @@
 
 dojo.provide("bespin.util.keys");
 
-// = Key Helpers =
-//
-// Helpful code to deal with key handling and processing
-// Consists of two core pieces:
-//
-// * {{{bespin.util.keys.Key}}} is a map of keys to key codes
-// * {{{bespin.util.keys.fillArguments}}} converts a string "CTRL A" to its key and modifier
-//
-// TODO: Having the keys in the same scope as the method is really bad :)
+/**
+ * Helpful code to deal with key handling and processing.
+ * Consists of two core pieces:
+ * <ul>
+ * <li>bespin.util.keys.Key: is a map of keys to key codes
+ * <li>bespin.util.keys.fillArguments: convert string, e.g. "CTRL A" to key and
+ * modifier
+ * </ul>
+ * <p>TODO: Having the keys in the same scope as the method is really bad :)
+ */
 
-// ** {{{ bespin.util.keys.Key }}} **
-//
-// Alpha keys, and special keys (ENTER, BACKSPACE) have key codes that our code needs to check.
-// This gives you a way to say Key.ENTER when matching a key code instead of "13"
-
+/**
+ * Alpha keys, and special keys (ENTER, BACKSPACE) have key codes that our code
+ * needs to check. This gives you a way to say Key.ENTER when matching a key
+ * code instead of "13"
+ */
 (function() {
     bespin.util.keys.Key = {
 
-    // -- Numbers
-      ZERO: 48,
-      ONE: 49,
-      TWO: 50,
-      THREE: 51,
-      FOUR: 52,
-      FIVE: 53,
-      SIX: 54,
-      SEVEN: 55,
-      EIGHT: 56,
-      NINE: 57,
+        // -- Numbers
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        THREE: 51,
+        FOUR: 52,
+        FIVE: 53,
+        SIX: 54,
+        SEVEN: 55,
+        EIGHT: 56,
+        NINE: 57,
 
-    // -- Alphabet
-      A: 65,
-      B: 66,
-      C: 67,
-      D: 68,
-      E: 69,
-      F: 70,
-      G: 71,
-      H: 72,
-      I: 73,
-      J: 74,
-      K: 75,
-      L: 76,
-      M: 77,
-      N: 78,
-      O: 79,
-      P: 80,
-      Q: 81,
-      R: 82,
-      S: 83,
-      T: 84,
-      U: 85,
-      V: 86,
-      W: 87,
-      X: 88,
-      Y: 89,
-      Z: 90,
+        // -- Alphabet
+        A: 65,
+        B: 66,
+        C: 67,
+        D: 68,
+        E: 69,
+        F: 70,
+        G: 71,
+        H: 72,
+        I: 73,
+        J: 74,
+        K: 75,
+        L: 76,
+        M: 77,
+        N: 78,
+        O: 79,
+        P: 80,
+        Q: 81,
+        R: 82,
+        S: 83,
+        T: 84,
+        U: 85,
+        V: 86,
+        W: 87,
+        X: 88,
+        Y: 89,
+        Z: 90,
 
-      // Special keys that dojo.keys doesn't have
-      FORWARD_SLASH: 191,
-      TILDE: 192,
-      BACK_SLASH: 220
+        // Special keys that dojo.keys doesn't have
+        FORWARD_SLASH: 191,
+        TILDE: 192,
+        BACK_SLASH: 220
     };
 
     dojo.mixin(bespin.util.keys.Key, dojo.keys); // use dojo.keys
@@ -103,70 +104,80 @@ dojo.provide("bespin.util.keys");
     }
 })();
 
+/**
+ * Given a key as a string, return the key code representation.
+ * E.g. toKeyCode("k") -&gt; 75
+ */
+bespin.util.keys.toKeyCode = function(keyAsString) {
+    return bespin.util.keys.Key[keyAsString.toUpperCase()];
+};
 
-// ** {{{ bespin.util.keys.fillArguments }}} **
-//
-// Fill out the arguments for action, key, modifiers
-//
-// {{{string}}} can be something like "CTRL S"
-// {{{args}}} is the args that you want to modify. This is common as you may already have args.action.
-
+/**
+ * Fill out the arguments for action, key, modifiers
+ * @param string Can be something like "CTRL S"
+ * @param args Is the args that you want to modify. This is common as you may
+ * already have args.action.
+ */
 bespin.util.keys.fillArguments = function(string, args) {
     var keys = string.split(' ');
     args = args || {};
 
-    var modifiers = [];
-    dojo.forEach(keys, function(key) {
-       if (key.length > 1) { // more than just an alpha/numeric
-           modifiers.push(key);
-       } else {
-           args.key = key;
-       }
-    });
+    args.key = keys.pop(); // the last item is the key
 
-    if (modifiers.length == 0) { // none if that is true
+    if (keys.length == 0) { // none if that is true
         args.modifiers = "none";
     } else {
-        args.modifiers = modifiers.join(',');
+        args.modifiers = keys.join(',');
     }
 
     return args;
 };
 
-// ** {{{ bespin.util.keys.PassThroughCharCodes }}} **
-//
-// Cache the character codes that we want to pass through to the browser
-// Should map to list below
+/**
+ * Cache the character codes that we want to pass through to the browser
+ * Should map to list below
+ */
 bespin.util.keys.PassThroughCharCodes = dojo.map(["k", "l", "n", "o", "t", "w", "+", "-", "~",
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], function(item){ return item.charCodeAt(0); });
 
-// ** {{{ bespin.util.keys.PassThroughKeyCodes }}} **
-//
-// Cache the key codes that we want to pass through to the browser
-// Should map to list above
+/**
+ * Cache the key codes that we want to pass through to the browser
+ * Should map to list above
+ */
 bespin.util.keys.PassThroughKeyCodes = (function() {
     var Key = bespin.util.keys.Key;
     return [Key.C, Key.X, Key.V, Key.K, Key.L, Key.N, Key.O, Key.T, Key.W, Key.NUMPAD_PLUS, Key.NUMPAD_MINUS, Key.TILDE,
             Key.ZERO, Key.ONE, Key.TWO, Key.THREE, Key.FOUR, Key.FIVE, Key.SIX, Key.SEVEN, Key.EIGHT, Key.NINE];
 })();
 
-// ** {{{ bespin.util.keys.passThroughToBrowser }}} **
-//
-// Given the event, return true if you want to allow the event to pass through to the browser.
-// For example, allow Apple-L to go to location, Apple-K for search. Apple-# for a tab.
-//
-// {{{e}}} Event that came into an {{{onkeydown}}} handler
-
+/**
+ * Given the event, return true if you want to allow the event to pass through
+ * to the browser.
+ * For example, allow Apple-L to go to location, Apple-K for search. Apple-# for a tab.
+ * @param e Event that came into an <code>onkeydown</code> handler
+ */
 bespin.util.keys.passThroughToBrowser = function(e) {
     var Key = bespin.util.keys.Key;
 
-    if (!e.ctrlKey) { // let normal characters through
+    if (!e.ctrlKey) {
+        // let normal characters through
         return true;
-    } else if (e.metaKey || e.altKey || e.ctrlKey) { // Apple or Alt key
+    } else if (e.metaKey || e.altKey || e.ctrlKey) {
+        // Apple or Alt key
         if (e.type == "keypress") {
-            if (dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) { return (item == e.charCode); })) return true;
+            var match = dojo.some(bespin.util.keys.PassThroughCharCodes, function(item) {
+                return (item == e.charCode);
+            });
+            if (match) {
+                return true;
+            }
         } else {
-            if (dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) { return (item == e.keyCode); })) return true;
+            var match = dojo.some(bespin.util.keys.PassThroughKeyCodes, function(item) {
+                return (item == e.keyCode);
+            });
+            if (match) {
+                return true;
+            }
         }
     }
 

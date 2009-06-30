@@ -11,18 +11,11 @@ dependencies = {
             dependencies: [
                 "bespin.page.editor.dependencies"
             ]
-        },
-        {
-            name: "../dashboard_all.js",
-            dependencies: [
-                "bespin.page.dashboard.dependencies"
-            ]
         }
     ],
     prefixes: [
         ["dijit", "../dijit"],
         ["dojox", "../dojox"],
         ["bespin", "../bespin"],
-        ["th", "../th"]
     ]
 };

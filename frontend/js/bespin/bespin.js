@@ -22,68 +22,71 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Bespin =
-//
-// This is the root of it all. The {{{ bespin }}} namespace.
-// All of the JavaScript for Bespin will be placed in this namespace later.
-//
-// {{{ bespin.versionNumber }}} is the core version of the Bespin system
-// {{{ bespin.apiVersion }}} is the version number of the API (to ensure that the
-//                          client and server are talking the same language)
-// {{{ bespin.displayVersion }}} is a function that sets innerHTML on the element given, with the Bespin version info
-//
-// {{{ bespin.publish }}} maps onto dojo.publish but lets us abstract away for the future
-// {{{ bespin.subscribe }}} maps onto dojo.subscribe but lets us abstract away for the future
-// {{{ bespin.unsubscribe }}} maps onto dojo.unsubscribe but lets us abstract away for the future
-//
-// {{{ bespin.register }}} is the way to attach components into the bespin system for others to get out
-// {{{ bespin.get }}} allows you to get registered components out
-// {{{ bespin.withComponent }}} maps onto dojo.subscribe but lets us abstract away for the future
+/**
+ * This is the root of it all: The 'bespin' namespace.
+ * <p>All of the JavaScript for Bespin is in this namespace
+ */
 
-(function () {
 dojo.provide("bespin.bespin");
 
-var lazySubscriptionCount   = 0;  // holds the count to keep a unique value for setTimeout
-var lazySubscriptionTimeout = {}; // holds the timeouts so they can be cleared later
-
+/**
+ * The main bespin namespace
+ */
 dojo.mixin(bespin, {
+
     // BEGIN VERSION BLOCK
+    /** The core version of the Bespin system */
     versionNumber: 'tip',
+    /** The version number to display to users */
     versionCodename: 'DEVELOPMENT MODE',
+    /** The version number of the API (to ensure that the client and server are talking the same language) */
     apiVersion: 'dev',
     // END VERSION BLOCK
 
+    /** Basic setting. TODO: Explain why this is here or move it */
     defaultTabSize: 4,
+
+    /** The name of the project that contains the users client side settings */
     userSettingsProject: "BespinSettings",
 
-    eventLog: {},
+    /** A list of the events that have fired at least once, for fireAfter */
+    _eventLog: {},
 
-    // == Methods for tying to the event bus
+    /** Holds the count to keep a unique value for setTimeout */
+    _lazySubscriptionCount: 0,
 
-    // ** {{{ publish }}} **
-    //
-    // Given a topic and a set of parameters, publish onto the bus
+    /** Holds the timeouts so they can be cleared later */
+    _lazySubscriptionTimeout: {},
+
+    /**
+     * Given a topic and a set of parameters, publish onto the bus.
+     * maps onto dojo.publish but lets us abstract away for the future
+     */
     publish: function(topic, args) {
         //console.log("publish", topic, args);
-        bespin.eventLog[topic] = true;
-
+        bespin._eventLog[topic] = true;
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
 
-    // ** {{{ fireAfter }}} **
-    //
-    // Given an array of topics, fires given callback as soon as all of the topics have
-    // fired at least once
-    fireAfter: function (topics, callback) {
+    /**
+     * Given an array of topics, fires given callback as soon as all of the
+     * topics have fired at least once
+     */
+    fireAfter: function(topics, callback) {
+        if (!dojo.isArray(topics)) {
+            throw new Error("fireAfter() takes an array of topics. '" + topics + "' is not an array.");
+        }
+
         var count = topics.length;
         var done  = function () {
-            if(count == 0) {
+            if (count == 0) {
                 callback();
             }
         };
-        for(var i = 0; i < topics.length; ++i) {
+
+        for (var i = 0; i < topics.length; ++i) {
             var topic = topics[i];
-            if (bespin.eventLog[topic]) {
+            if (bespin._eventLog[topic]) {
                 --count;
             } else {
                 bespin.subscribe(topic, function () {
@@ -95,43 +98,48 @@ dojo.mixin(bespin, {
         }
     },
 
-    // ** {{{ subscribe }}} **
-    //
-    // Given a topic and a function, subscribe to the event
-    // If minTimeBetweenPublishMillis is set to an integer the subscription will not
-    // be invoked more than once within this time interval
+    /**
+     * Given a topic and a function, subscribe to the event.
+     * <p>If minTimeBetweenPublishMillis is set to an integer the subscription
+     * will not be invoked more than once within this time interval.
+     * <p>Maps onto dojo.subscribe but lets us abstract away for the future
+     */
     subscribe: function(topic, callback, minTimeBetweenPublishMillis) {
         if (minTimeBetweenPublishMillis) {
             var orig = callback;
 
-            var count = lazySubscriptionCount++;
+            var count = this._lazySubscriptionCount++;
 
-            callback = function lazySubscriptionWrapper() {
-                if (lazySubscriptionTimeout[count]) {
-                    clearTimeout(lazySubscriptionTimeout[count]);
+            var self = this;
+            callback = function() { // lazySubscriptionWrapper
+                if (self._lazySubscriptionTimeout[count]) {
+                    clearTimeout(self._lazySubscriptionTimeout[count]);
                 }
 
-                lazySubscriptionTimeout[count] = setTimeout(dojo.hitch(this, function() {
-                    orig.apply(this, arguments);
-                    delete lazySubscriptionTimeout[count];
-                }), minTimeBetweenPublishMillis);
+                self._lazySubscriptionTimeout[count] = setTimeout(function() {
+                    orig.apply(self, arguments);
+                    delete self._lazySubscriptionTimeout[count];
+                }, minTimeBetweenPublishMillis);
             };
-
         }
         return dojo.subscribe("bespin:" + topic, callback);
     },
 
-    // ** {{{ unsubscribe }}} **
-    //
-    // Unsubscribe the functions from the topic
+    /**
+     * Unsubscribe the functions from the topic.
+     * <p>Maps onto dojo.unsubscribe but lets us abstract away for the future
+     */
     unsubscribe: dojo.unsubscribe,
 
-    // == Methods for registering components with the main system
+    /**
+     * Methods for registering components with the main system
+     */
     registeredComponents: {},
 
-    // ** {{{ register }}} **
-    //
-    // Given an id and an object, register it inside of Bespin
+    /**
+     * Given an id and an object, register it inside of Bespin.
+     * <p>The way to attach components into bespin for others to get them out
+     */
     register: function(id, object) {
         this.registeredComponents[id] = object;
 
@@ -140,16 +148,16 @@ dojo.mixin(bespin, {
         return object;
     },
 
-    // ** {{{ get }}} **
-    //
-    // Given an id return the component
+    /**
+     * Given an id, return the component.
+     */
     get: function(id) {
         return this.registeredComponents[id];
     },
 
-    // ** {{{ withComponent }}} **
-    //
-    // Given an id, and function to run, execute it if the component is available
+    /**
+     * Given an id, and function to run, execute it if the component is available
+     */
     withComponent: function(id, func) {
         var component = this.get(id);
         if (component) {
@@ -157,14 +165,12 @@ dojo.mixin(bespin, {
         }
     },
 
-    // ** {{{ displayVersion }}} **
-    //
-    // Given an HTML element
+    /**
+     * Set innerHTML on the element given, with the Bespin version info
+     */
     displayVersion: function(el) {
         var el = dojo.byId(el) || dojo.byId("version");
         if (!el) return;
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
     }
-
 });
-})();

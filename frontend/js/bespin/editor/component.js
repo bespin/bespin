@@ -35,12 +35,7 @@ dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.commands");
 dojo.require("bespin.cmd.editorcommands");
 
-dojo.require("th.helpers"); // -- Thunderhead... hooooo
-dojo.require("th.css");
-dojo.require("th.th");
-dojo.require("th.models");
-dojo.require("th.borders");
-dojo.require("th.components");
+dojo.require("th.compressed");
 
 // = Editor Component =
 //
@@ -88,14 +83,14 @@ dojo.declare("bespin.editor.Component", null, {
             if (typeof opts.commandline == "boolean") { // literally, true
                 commandlineElement = dojo.create("div", {
                    id: "commandlinewrapper",
-                   hidden: true,
+                   hidden: true
                 }, dojo.body());
                 commandlineElement.innerHTML = '<table style="display: none;" cellpadding="0"><tr><td id="prompt"><img id="promptimg" src="https://bespin.mozilla.com/images/icn_command.png" alt=">" ></td><td id="commandline"><input id="command" spellcheck="false"></td></tr></table>';
             } else {
                 commandlineElement = dojo.byId(opts.commandline);
             }
 
-            this.commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface(commandlineElement, bespin.cmd.editorcommands.Commands));
+            this.commandLine = bespin.register('commandLine', new bespin.cmd.commandline.Interface(commandlineElement, bespin.command.Store));
         }
 
         // Use in memory settings here instead of saving to the server which is default. Potentially use Cookie settings
@@ -222,7 +217,7 @@ dojo.declare("bespin.editor.Component", null, {
     //   action: "moveCursorLeft"
     // }
     bindKey: function(opts) {
-        bespin.publish("editor:bindkey", opts);
+        bespin.get('editor').bindKey(opts.action, opts.modifiers + ' ' + opts.key);
     },
 
     // ** {{{ executeCommand }}} **
@@ -235,13 +230,11 @@ dojo.declare("bespin.editor.Component", null, {
             // catch the command prompt errors
         }
     },
-    
+
     // ** {{{ dispose }}} **
     //
     // Disposes the editor as best as possible, clearing resources, clipboard helpers, and the like.
-    dispose: function()
-    {
+    dispose: function() {
         this.editor.dispose();
     }
 });
-

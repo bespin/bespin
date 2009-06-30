@@ -22,24 +22,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Session =
-//
-// This session module provides functionality that both stores session information
-// and handle collaboration.
-//
-// This module includes:
-//
-// * {{{ bespin.client.session.EditSession }}}: Wraps a file edit session
-// * {{{ bespin.client.session.SyncHelper }}}: Deals with syncing edits back to the server
-
+/**
+ * This session module provides functionality that both stores session
+ * information and handle collaboration.
+ */
 dojo.provide("bespin.client.session");
 
-// ** {{{ bespin.client.session.EditSession }}} **
-//
-// EditSession represents a file edit session with the Bespin back-end server. It is responsible for
-// sending changes to the server as well as receiving changes from the server and mutating the document
-// model with received changes.
-
+/**
+ * EditSession represents a file edit session with the Bespin back-end server.
+ * It is responsible for sending changes to the server as well as receiving
+ * changes from the server and mutating the document model with received
+ * changes.
+ */
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
@@ -82,5 +76,14 @@ dojo.declare("bespin.client.session.EditSession", null, {
     stopSession: function() {
         this.project = undefined;
         this.path = undefined;
+    },
+
+    getStatus: function() {
+        var file = this.path || 'a new scratch file';
+        return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
+    },
+
+    setProject: function(project) {
+        this.project = project;
     }
 });

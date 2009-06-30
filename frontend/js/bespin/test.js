@@ -26,13 +26,14 @@ dojo.provide("bespin.test");
 
 dojo.require("bespin.util.util");
 
-//** {{{ Command: test }}} **
-bespin.cmd.commands.add({
+/**
+ * Add a 'test' command'
+ */
+bespin.command.store.addCommand({
     name: 'test',
     takes: ['suite'],
     preview: 'run a test suite or suites',
     completeText: 'suite name, or \'all\' to run all tests, or press return to list tests.',
-    // ** {{{execute}}}
     execute: function(instruction, suite) {
         if (!suite) {
             if (bespin.util.isEmpty(bespin.test._knownTests)) {
@@ -334,6 +335,18 @@ dojo.declare("bespin.test.Assert", null, {
         dojo.attr(this._resultsTd, this.status.attr);
     },
     _runTest: function() {
+        if (this._suite.setupTest) {
+            try {
+                this._suite.setupTest.call(this._suite);
+            }
+            catch (e) {
+                console.error("setupTest failure when running: " + this._suiteName + "." + this._testName + "(): ", e);
+                this._addFunctionMessage(this._testName, [ e.toString() ]);
+                this._updateStatus(bespin.test.Status.fail);
+                return;
+            }
+        }
+
         console.log("Running test", this._testName);
         this._updateStatus(bespin.test.Status.exec);
         try {
@@ -346,6 +359,17 @@ dojo.declare("bespin.test.Assert", null, {
         catch (e) {
             if (e != "failFast") {
                 console.error(this._suiteName + "." + this._testName + "(): ", e);
+                this._addFunctionMessage(this._testName, [ e.toString() ]);
+                this._updateStatus(bespin.test.Status.fail);
+            }
+        }
+
+        if (this._suite.tearDownTest) {
+            try {
+                this._suite.tearDownTest.call(this._suite);
+            }
+            catch (e) {
+                console.error("tearDownTest failure when running: " + this._suiteName + "." + this._testName + "(): ", e);
                 this._addFunctionMessage(this._testName, [ e.toString() ]);
                 this._updateStatus(bespin.test.Status.fail);
             }
@@ -369,7 +393,7 @@ dojo.declare("bespin.test.Assert", null, {
         this._notesTd.innerHTML += message + "<br/>";
     },
     /**
-     * Status can't be overwritten with value with a lower ord 
+     * Status can't be overwritten with value with a lower ord
      */
     _updateStatus: function(status) {
         if (this.status.ord < status.ord) {

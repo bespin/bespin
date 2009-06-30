@@ -22,15 +22,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.cmd.dashboardcommands");
+dojo.provide("bespin.keyTest");
 
-// = Dashboard Commands =
-//
-// This array stores all of the dashboard commands.
+dojo.require("bespin.test");
 
-bespin.cmd.dashboardcommands.Commands = [
-    'help', 'files', 'set', 'project', 'projects', 'version', 'bespin',
-    'hg', 'import', 'export', 'alias', 'history', 'mkdir', 'newfile', 'rm',
-    'createproject', 'deleteproject', 'renameproject', 'status', 'jetpack',
-    'vcs'
-];
+bespin.test.addTests("key", {
+    testPie: function(test) {
+        var escapeKeyDown = document.createEvent();
+
+        // TODO: Find a better way to simulate a key-press
+        var event = document.createEvent("KeyboardEvent");
+        event.initKeyEvent("onkeypress", true, true, window, false/*ctrl*/, false/*alt*/, false/*shift*/, false/*meta*/, bespin.util.keys.Key.ESCAPE, 5);
+        var canceled = !document.dispatchEvent(event);
+
+        // TODO: Find a way to test the results of the key-press!
+    },
+
+    testUnfollow: function(test) {
+    }
+});

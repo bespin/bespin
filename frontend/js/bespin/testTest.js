@@ -120,14 +120,14 @@ bespin.test.addTests("test", {
             test.message("Delayed success");
         }), 1000);
     },
-    
+
     testCommand: function(test) {
         test.command("testoutput wibble", "wibble");
     }
 });
 
 // ** {{{Command: echo}}} **
-bespin.cmd.commands.add({
+bespin.command.store.addCommand({
     name: 'testoutput',
     takes: ['message ...'],
     preview: 'A test echo command',

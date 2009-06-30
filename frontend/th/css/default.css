@@ -1,0 +1,118 @@
+* {
+    /* this should probably be the browser's default font */
+    font: 10pt Arial, sans-serif;
+}
+
+VerticalScrollbar {
+    -th-top-image: url(/images/scroll_gutter_top.png);
+    -th-middle-image: url(/images/scroll_gutter_mid.png);
+    -th-bottom-image: url(/images/scroll_gutter_btm.png);
+}
+
+VerticalScrollbar > Button.bar {
+    -th-top-image: url(/images/scroll_thumb_top.png);
+    -th-middle-image: url(/images/scroll_thumb_mid.png);
+    -th-bottom-image: url(/images/scroll_thumb_btm.png);
+}
+
+VerticalScrollbar > Button.up {
+    background-image: url(/images/scroll_cntrl_up.png);
+}
+
+VerticalScrollbar > Button.down {
+    background-image: url(/images/scroll_cntrl_dwn.png);
+}
+
+HorizontalScrollbar {
+    -th-top-image: url(/images/h_scroll_gutter_btm.png);
+    -th-middle-image: url(/images/h_scroll_gutter_mid.png);
+    -th-bottom-image: url(/images/h_scroll_gutter_top.png);
+}
+
+HorizontalScrollbar > Button.bar {
+    -th-top-image: url(/images/h_scroll_thumb_btm.png);
+    -th-middle-image: url(/images/h_scroll_thumb_mid.png);
+    -th-bottom-image: url(/images/h_scroll_thumb_top.png);
+}
+
+HorizontalScrollbar > Button.up {
+    background-image: url(/images/h_scroll_cntrl_up.png);
+}
+
+HorizontalScrollbar > Button.down {
+    background-image: url(/images/h_scroll_cntrl_dwn.png);
+}
+
+ResizeNib {
+    -th-vertical-bar-color: rgb(10, 10, 8);
+    -th-vertical-bar-shadow-color: rgb(185, 180, 158);
+
+    -th-horizontal-bar-subtle-shadow-color: rgba(0, 0, 0, 0.1);
+    -th-horizontal-bar-shadow-color: black;
+    -th-horizontal-bar-color: rgb(183, 180, 160);
+}
+
+Label {
+    padding: 2px 5px;
+    color: black;
+}
+
+List Label:active {
+    border-top: 1px solid rgb(180, 114, 30);
+    border-bottom: 1px solid rgb(162, 97, 19);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
+}
+
+HorizontalTree {
+    -th-list-width: 160px;
+    -th-details-width: 150px;
+}
+
+Splitter.vertical {
+    height: 20px;
+}
+
+Splitter.horizontal {
+    width: 17px;
+}
+
+Button {
+    background-color: gray;
+}
+
+TextButton {
+    text-align: center;
+}
+
+HorizontalTree List {
+    background-color: inherit;
+}
+
+List {
+    background-color: white;
+}
+
+List Label:active {
+    background-color: blue;
+}
+
+ScrollPane {
+    background-color: #413F37;
+    border: 1px solid black;
+}
+
+HorizontalTree > ScrollPane {
+    overflow-y: hidden;
+}
+
+HorizontalTree ScrollPane {
+    border: 0;
+}
+
+HorizontalTree Panel {
+    background-color: blue;
+}
+
+HorizontalTree {
+    border: 1px solid black;
+}

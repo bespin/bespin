@@ -115,9 +115,6 @@ options(
           "http://mxr.mozilla.org/mozilla/source/js/narcissus/jsparse.js?raw=1"
         ]
     ),
-    th=Bunch(
-        src_url="http://hg.mozilla.org/labs/th"
-    )
 )
 
 @task
@@ -163,6 +160,11 @@ from bespin.config import c
 # uncomment the next line to turn off the restrictions
 # c.restrict_identifiers = False
 
+# if you are going to be working on the Thunderhead project code,
+# you can point at the directory where Thunderhead is located
+# and the script tags will be dynamically replaced
+# c.th_src = c.static_dir / ".." / ".." / "th" / "src"
+
 # Look in bespin.config to see more options you can set
 """)
     info("Config file created in: %s", options.server.config_file)
@@ -183,12 +185,6 @@ def start():
     if not (options.dojo.destination / "dojo").exists():
         dojo()
         
-    # automatically fetch Th if it's not there
-    th_dir = path("..") / "th"
-    if not th_dir.exists():
-        th()
-    
-    
     from bespin import config, controllers
     from paste.httpserver import serve
     
@@ -411,10 +407,10 @@ def compress_js():
     cwd = path.getcwd()
     try:
         builder_dir.chdir()
-        sh("sh build.sh action=release profileFile=%s version=%s "
-            "releaseDir=%s optimize=shrinksafe releaseName=js "
-            'scopeMap=[[\\"dojo\\",\\"bespindojo\\"],[\\"th\\",\\"bespinth\\"],[\\"dijit\\",\\"bespindijit\\"]]' 
-            % (embed_profile, options.version.number, embed_release_dir))
+        # sh("sh build.sh action=release profileFile=%s version=%s "
+        #     "releaseDir=%s optimize=shrinksafe releaseName=js "
+        #     'scopeMap=[[\\"dojo\\",\\"bespindojo\\"],[\\"dijit\\",\\"bespindijit\\"]]' 
+        #     % (embed_profile, options.version.number, embed_release_dir))
         sh("sh build.sh action=release profileFile=%s version=%s "
             "releaseDir=%s optimize=shrinksafe releaseName=js" 
             % (profile_file, options.version.number, release_dir))
@@ -430,15 +426,14 @@ def compress_js():
     editor_filename = front_end_target / "editor.html"
     _install_compressed(editor_filename, "editor_all.js")
     
-    dashboard_filename = front_end_target / "dashboard.html"
-    _install_compressed(dashboard_filename, "dashboard_all.js")
-    
     index_filename = front_end_target / "index.html"
     _install_compressed(index_filename, "index_all.js")
     
     final_util_directory = front_end_target / "js" / "util"
     final_util_directory.rmtree()
-
+    
+    # put the th file back in
+    (path("frontend") / "js" / "th.compressed.js").copy(front_end_target / "js")
         
 @task
 def prod_server():
@@ -730,29 +725,3 @@ def seeddb():
     j.add_sharing(jproject, tom, edit=False)
     j.add_sharing(jproject, ev, edit=False)
 
-@task
-def th(options):
-    """Get or update the Thunderhead project in a directory next to the bespin directory.
-    This assumes that the hg fetch plugin is on and that hg is on your path."""
-    th_dir = path("..") / "th"
-    curdir = path.getcwd()
-    try:
-        if not th_dir.exists():
-            info("Checking out Th")
-            path("..").chdir()
-            sh("hg clone %s" % (options.th.src_url))
-        else:
-            info("Updating Th")
-            th_dir.chdir()
-            sh("hg fetch")
-    finally:
-        curdir.chdir()
-        
-@task
-@needs('th')
-def fetch():
-    """Update Bespin and Th via the hg fetch command. Note that hg needs to be
-    on your path and the fetch plugin must be active."""
-    info("Updating Bespin")
-    sh('hg fetch')
-    

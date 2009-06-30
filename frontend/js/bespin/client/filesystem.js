@@ -136,6 +136,28 @@ dojo.declare("bespin.client.FileSystem", null, {
         });
     },
 
+    // Open a file amd eval it in a given scope
+    evalFile: function(project, filename, scope) {
+        var scope = scope || bespin.events.defaultScope();
+
+        if (!project || !filename) {
+            bespin.get('commandLine').addErrorOutput("Please, I need a project and filename to evaulate");
+            return;
+        }
+
+        this.loadContents(project, filename, function(file) {
+            // wow, using with. crazy.
+            with (scope) {
+                try {
+                    eval(file.content);
+                } catch (e) {
+                    var html = "There is a error trying to run " + filename + " in project " + project + ":<br>" + e;
+                    bespin.get('commandLine').addErrorOutput(html);
+                }
+            }
+        }, true);
+    },
+
     // ** {{{ FileSystem.projects(callback) }}}
     //
     // Return a JSON representation of the projects that the user has access too
