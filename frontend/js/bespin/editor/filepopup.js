@@ -157,8 +157,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         this.refreshProjects();
         
-        bespin.subscribe("project:created", dojo.hitch(this, this.refreshProjects));
-        bespin.subscribe("project:deleted", dojo.hitch(this, this.refreshProjects));
+        var hitchedRefresh = dojo.hitch(this, this.refreshProjects);
+        bespin.subscribe("project:created", hitchedRefresh);
+        bespin.subscribe("project:deleted", hitchedRefresh);
+        bespin.subscribe("project:renamed", hitchedRefresh);
         
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
