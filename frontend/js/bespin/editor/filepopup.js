@@ -155,9 +155,11 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             this.currentProject = item.name;
         }, this);
 
-        // get logged in name; if not logged in, display an error of some kind
-        bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
-
+        this.refreshProjects();
+        
+        bespin.subscribe("project:created", dojo.hitch(this, this.refreshProjects));
+        bespin.subscribe("project:deleted", dojo.hitch(this, this.refreshProjects));
+        
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
@@ -444,4 +446,5 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     }
+    
 });

@@ -330,6 +330,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             bespin.get('editSession').setProject(project);
             instruction.addOutput('Successfully created project \'' + project + '\'.');
+            bespin.publish("project:created", {project: project});
         });
 
         var onFailure = instruction.link(function(xhr) {
@@ -360,6 +361,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             instruction.addOutput('Deleted project ' + project);
             instruction.unlink();
+            bespin.publish("project:deleted", {project:project});
         });
 
         var onFailure = instruction.link(function(xhr) {
