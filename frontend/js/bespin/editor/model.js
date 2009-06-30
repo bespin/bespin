@@ -152,18 +152,13 @@ dojo.declare("bespin.editor.DocumentModel", null, {
     },
 
     // splits the passed row at the col specified, putting the right-half on a new line beneath the passed row
-    splitRow: function(modelPos, autoindent) {
+    splitRow: function(modelPos) {
         this.editor.ui.syntaxModel.invalidateCache(modelPos.row);
         this.setRowDirty(modelPos.row);
 
         var row = this.getRowArray(modelPos.row);
 
-        var newRow;
-        if (autoindent && autoindent.length > 0) {
-            newRow = autoindent;
-        } else {
-            newRow = [];
-        }
+        var newRow = [];
 
         if (modelPos.col < row.length) {
             newRow = newRow.concat(row.splice(modelPos.col));
