@@ -22,18 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = C Syntax Highlighting Implementation =
-//
-// Module for syntax highlighting C based off of the Geshi Sytax Highlighter.
-
 dojo.provide("bespin.syntax.simple.c");
 
-// ** {{{ bespin.syntax.simple.C }}} **
-//
-// Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
-// lumped into one last bucket.
-
+/**
+ * Tracks syntax highlighting data on a per-line basis.
+ * This is a quick-and-dirty implementation that supports five basic highlights:
+ * keywords, punctuation, strings, comments, and "everything else", all
+ * lumped into one last bucket.
+ */
 bespin.syntax.CConstants = {
     C_STYLE_COMMENT: "c-comment",
     LINE_COMMENT: "comment",
@@ -43,37 +39,49 @@ bespin.syntax.CConstants = {
     OTHER: "plain"
 };
 
+/**
+ * C Syntax Highlighting Implementation
+ * Module for syntax highlighting C based off of the Geshi Sytax Highlighter.
+ */
 dojo.declare("bespin.syntax.simple.C", null, {
-    keywords: 'if return while case continue default do else for switch goto null false break' + 
-'true function enum extern inline' +
-'printf cout auto char const double float int long'+
-'register short signed sizeof static string struct'+
-'typedef union unsigned void volatile wchar_t #include'.split(" "),
+    keywords: 'if return while case continue default do else for switch goto ' +
+        'null false break true function enum extern inline printf cout auto ' +
+        'char const double float int long register short signed sizeof static ' +
+        'string struct typedef union unsigned void volatile wchar_t #include'.split(" "),
 
     punctuation: '{ } / + - % * , ; ( ) ? : = " \''.split(" "),
 
     highlight: function(line, meta) {
         if (!meta) meta = {};
 
-        var K = bespin.syntax.CConstants;    // aliasing the constants for shorter reference ;-)
+        // aliasing the constants for shorter reference ;-)
+        var K = bespin.syntax.CConstants;
 
-        var regions = {};                               // contains the individual style types as keys, with array of start/stop positions as value
+        // contains the individual style types as keys, with array of start/stop/
+        // positions as value
+        var regions = {};
 
-        // current state, maintained as we parse through each character in the line; values at any time should be consistent
+        // current state, maintained as we parse through each character in the
+        // line; values at any time should be consistent
         var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
-        var currentRegion = {}; // should always have a start property for a non-blank buffer
+        // should always have a start property for a non-blank buffer
+        var currentRegion = {};
         var buffer = "";
 
-        // these properties are related to the parser state above but are special cases
-        var stringChar = "";    // the character used to start the current string
+        // these properties are related to the parser state above but are
+        // special cases
+        // the character used to start the current string
+        var stringChar = "";
         var multiline = meta.inMultilineComment;
 
         for (var i = 0; i < line.length; i++) {
             var c = line.charAt(i);
 
-            // check if we're in a comment and whether this character ends the comment
+            // check if we're in a comment and whether this character ends the
+            // comment
             if (currentStyle == K.C_STYLE_COMMENT) {
-                if (c == "/" && /\*$/.test(buffer)) { // has the c-style comment just ended?
+                // has the c-style comment just ended?
+                if (c == "/" && /\*$/.test(buffer)) {
                     currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
@@ -91,7 +99,9 @@ dojo.declare("bespin.syntax.simple.C", null, {
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
                 if (currentStyle == K.STRING) {
-                    // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
+                    // if this is not an unescaped end quote (either a single
+                    // quote or double quote to match how the string started)
+                    // then keep going
                     if ( ! (c == stringChar && !/\\$/.test(buffer))) {
                         if (buffer == "") currentRegion = { start: i };
                         buffer += c;
@@ -99,11 +109,12 @@ dojo.declare("bespin.syntax.simple.C", null, {
                     }
                 }
 
-                // if the buffer is full, add it to the regions
+                // If the buffer is full, add it to the regions
                 if (buffer != "") {
                     currentRegion.stop = i;
 
-                    if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
+                    // If this is a string, we're all set to add it; if not, figure out if its a keyword
+                    if (currentStyle != K.STRING) {
                         if (this.keywords.indexOf(buffer) != -1) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
@@ -115,15 +126,17 @@ dojo.declare("bespin.syntax.simple.C", null, {
                     currentRegion = {};
                     stringChar = "";
                     buffer = "";
-                    // i don't clear the current style here so I can check if it was a string below
+                    // I don't clear the current style here so I can check if it
+                    // was a string below
                 }
 
                 if (this.isPunctuation(c)) {
                     if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
-                        // remove the previous region in the punctuation bucket, which is a forward slash
+                        // Remove the previous region in the punctuation bucket,
+                        // which is a forward slash
                         regions[K.PUNCTUATION].pop();
 
-                        // we are in a c-style comment
+                        // We are in a c-style comment
                         multiline = true;
                         currentStyle = K.C_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
@@ -131,7 +144,8 @@ dojo.declare("bespin.syntax.simple.C", null, {
                         continue;
                     }
 
-                    // check for a line comment; this ends the parsing for the rest of the line
+                    // Check for a line comment; this ends the parsing for the
+                    // rest of the line
                     if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
                         currentRegion = { start: i - 1, stop: line.length };
                         currentStyle = K.LINE_COMMENT;
@@ -142,11 +156,13 @@ dojo.declare("bespin.syntax.simple.C", null, {
                         break;      // once we get a line comment, we're done!
                     }
 
-                    // add an ad-hoc region for just this one punctuation character
+                    // Add an ad-hoc region for just this one punctuation
+                    // character
                     this.addRegion(regions, K.PUNCTUATION, { start: i, stop: i + 1 });
                 }
 
-                // find out if the current quote is the end or the beginning of the string
+                // Find out if the current quote is the end or the beginning of
+                // the string
                 if ((c == "'" || c == '"') && (currentStyle != K.STRING)) {
                     currentStyle = K.STRING;
                     stringChar = c;
@@ -161,7 +177,7 @@ dojo.declare("bespin.syntax.simple.C", null, {
             buffer += c;
         }
 
-        // check for a trailing character inside of a string or a comment
+        // Check for a trailing character inside of a string or a comment
         if (buffer != "") {
             if (!currentStyle) currentStyle = K.OTHER;
             currentRegion.stop = line.length;
