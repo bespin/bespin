@@ -1031,6 +1031,7 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     toggleFilesearch: function() {
+        console.debug('filesearch');
         var settings = bespin.get("settings");
 
         var filesearch = bespin.get('filesearch');
