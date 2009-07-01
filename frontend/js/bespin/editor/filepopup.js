@@ -337,10 +337,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         var filepathItems = filepath.split("/");
         var lengthToParent = filepathItems.length - 1;
         
-        console.log("Comparing");
-        console.log(selectedPath);
-        console.log(filepathItems);
-        
         // we want to see if the *parent* of the file/directory
         // that has changed is visible and, if so, update that.
         for (var i = 0; i < lengthToParent; i++) {
@@ -358,9 +354,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         }
         
         var fetchPath = this.getFilePath(selectedPath.slice(0,i));
-        
-        console.log("Fetchpath: ");
-        console.log(fetchPath);
         
         var self = this;
         
