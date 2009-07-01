@@ -162,7 +162,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         bespin.subscribe("project:deleted", hitchedRefresh);
         bespin.subscribe("project:renamed", hitchedRefresh);
         bespin.subscribe("file:saved", dojo.hitch(this, function(e) {
-            this.fetchFileUpdate(e.filename, this.tree);
+            this.updatePath(e.project, e.filename);
         }));
         
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
@@ -299,6 +299,59 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         bespin.get("server").list(filepath, null, function(files) {
             tree.updateData(path[path.length - 1], self.prepareFilesForTree(files));
             tree.render();
+        });
+    },
+    
+    updatePath: function(project, filepath) {
+        var tree = this.tree;
+        
+        var selectedProject = this.projects.selected;
+        if (selectedProject) {
+            // If the currently selected project is not being displayed
+            // we don't need to update. We're only updating what is
+            // visible.
+            if (selectedProject.name != project) {
+                return;
+            }
+        } else {
+            // no project currently being displayed, so there's nothing
+            // to update
+            return;
+        }
+        
+        var selectedPath = tree.getSelectedPath();
+        var filepathItems = filepath.split("/");
+        for (var i = 0; i < selectedPath.length; i++) {
+            var item = selectedPath[i];
+            
+            // we're done checking when we've reached the end of directories
+            if (!item.contents) {
+                i--;
+                break;
+            }
+            
+            var itemname = item.name;
+            if (itemname != filepathItems[i]) {
+                return;
+            }
+        }
+        
+        var fetchPath = this.getFilePath(selectedPath.slice(0,i+1));
+        
+        var self = this;
+        
+        var listToUpdate = tree.getList(i+1);
+        
+        bespin.get("server").list(fetchPath, null, function(files) {
+            var contents = self.prepareFilesForTree(files);
+            fetchPath[fetchPath.length-1].contents = contents;
+            
+            if (listToUpdate) {
+                listToUpdate.items = contents;
+                tree.render();
+            } else {
+                tree.showChildren(null, contents);
+            }
         });
     },
 
