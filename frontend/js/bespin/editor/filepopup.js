@@ -161,9 +161,14 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         bespin.subscribe("project:created", hitchedRefresh);
         bespin.subscribe("project:deleted", hitchedRefresh);
         bespin.subscribe("project:renamed", hitchedRefresh);
-        bespin.subscribe("file:saved", dojo.hitch(this, function(e) {
-            this.updatePath(e.project, e.filename);
-        }));
+        
+        var fileUpdates = dojo.hitch(this, function(e) {
+            this.updatePath(e.project, e.path);
+        });
+        bespin.subscribe("file:saved", fileUpdates);
+        bespin.subscribe("file:removed", fileUpdates);
+        bespin.subscribe("directory:created", fileUpdates);
+        bespin.subscribe("directory:removed", fileUpdates);
         
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
@@ -305,6 +310,10 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
     updatePath: function(project, filepath) {
         var tree = this.tree;
         
+        if (filepath.substring(filepath.length-1) == "/") {
+            filepath = filepath.substring(0, filepath.length - 1);
+        }
+        
         var selectedProject = this.projects.selected;
         if (selectedProject) {
             // If the currently selected project is not being displayed
@@ -320,27 +329,42 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         }
         
         var selectedPath = tree.getSelectedPath();
+        
+        if (selectedPath === undefined) {
+            selectedPath = [];
+        }
+        
         var filepathItems = filepath.split("/");
-        for (var i = 0; i < selectedPath.length; i++) {
+        var lengthToParent = filepathItems.length - 1;
+        
+        console.log("Comparing");
+        console.log(selectedPath);
+        console.log(filepathItems);
+        
+        // we want to see if the *parent* of the file/directory
+        // that has changed is visible and, if so, update that.
+        for (var i = 0; i < lengthToParent; i++) {
+            var fpitem = filepathItems[i];
+            
             var item = selectedPath[i];
             
-            // we're done checking when we've reached the end of directories
-            if (!item.contents) {
-                i--;
+            if (item == undefined || !item.contents) {
                 break;
             }
             
-            var itemname = item.name;
-            if (itemname != filepathItems[i]) {
+            if (item.name != fpitem) {
                 return;
             }
         }
         
-        var fetchPath = this.getFilePath(selectedPath.slice(0,i+1));
+        var fetchPath = this.getFilePath(selectedPath.slice(0,i));
+        
+        console.log("Fetchpath: ");
+        console.log(fetchPath);
         
         var self = this;
         
-        var listToUpdate = tree.getList(i+1);
+        var listToUpdate = tree.getList(i);
         
         bespin.get("server").list(fetchPath, null, function(files) {
             var contents = self.prepareFilesForTree(files);

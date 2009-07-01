@@ -192,7 +192,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                     onSuccess: function() {
                     console.log("File saved: " + project + " " + file.name);
                     bespin.publish("file:saved",
-                        {project: project, filename: file.name});
+                        {project: project, path: file.name});
                     }
                 });
     },
@@ -206,7 +206,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the make works
     // * {{{onFailure}}} is the callback to fire if the make fails
     makeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.makeDirectory(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("directory:created", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        }
+        this.server.makeDirectory(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.makeDirectory(project, path, onSuccess, onFailure) }}}
@@ -218,7 +225,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("directory:removed", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        }
+        this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -230,7 +244,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeFile: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("file:removed", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        }
+        this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
