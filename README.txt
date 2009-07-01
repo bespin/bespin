@@ -40,7 +40,7 @@ you can type "deactivate".
 
 The first time around, you'll need to download Dojo and create the database::
 
-  paver dojo th create_db
+  paver dojo create_db
 
 You can start up the development server (runs on localhost:8080) by running::
 
