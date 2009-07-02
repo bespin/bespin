@@ -49,7 +49,9 @@ bespin.vcs.commands.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        var output = this.parent.getHelp(extra);
+        var output = this.parent.getHelp(extra, {
+            suffix: "For more information about Bespin's VCS support see the <a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide#VCS_Commands' target='_blank'>VCS section of the user guide</a>."
+        });
         instruction.addOutput(output);
     }
 });
