@@ -62,13 +62,6 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
     },
 
     /**
-     * We don't want the typical events in this command line
-     */
-    configureEvents: function() {
-
-    },
-
-    /**
      *
      */
     setKeyBindings: function() {
