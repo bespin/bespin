@@ -166,6 +166,12 @@ bespin.vcs.commands.addCommand({
                 + '<tr><td>Project name:</td>'
                 + '<td><input type="text" name="dest" value=""> (defaults to last part of URL path)</td></tr>'
 
+                + '<tr><td>VCS Type:</td><td><select name="vcs" id="vcs">'
+                + '<option value="">Auto-detect from URL</option>'
+                + '<option value="hg">Mercurial (hg)</option>'
+                + '<option value="svn">Subversion (svn)</option>'
+                + '</select></td></tr>'
+
                 + '<tr><td>Authentication:</td><td><select name="remoteauth" id="remoteauth">'
                 + '<option value="">None (read-only access to the remote repo)</option>'
                 + '<option value="write">Only for writing</option>'
@@ -238,7 +244,7 @@ bespin.vcs.commands.addCommand({
                 }
             }
             data = dojo.objectToQuery(data);
-            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
+            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction), { onSuccess: function() { bespin.publish("project:created", { project: project }) } });
         }));
 
         dojo.byId("kcpass").focus();
