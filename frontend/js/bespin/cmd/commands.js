@@ -330,6 +330,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             bespin.get('editSession').setProject(project);
             instruction.addOutput('Successfully created project \'' + project + '\'.');
+            bespin.publish("project:created", {project: project});
         });
 
         var onFailure = instruction.link(function(xhr) {
@@ -360,6 +361,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             instruction.addOutput('Deleted project ' + project);
             instruction.unlink();
+            bespin.publish("project:deleted", {project:project});
         });
 
         var onFailure = instruction.link(function(xhr) {
@@ -394,6 +396,8 @@ bespin.command.store.addCommand({
             onSuccess: instruction.link(function() {
                 bespin.get('editSession').setProject(newProject);
                 instruction.unlink();
+                bespin.publish("project:renamed", {oldName: currentProject,
+                                                   newName: newProject});
             }),
             onFailure: instruction.link(function(xhr) {
                 instruction.addErrorOutput('Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>");
