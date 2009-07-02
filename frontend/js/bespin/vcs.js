@@ -49,7 +49,8 @@ bespin.vcs.commands.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
     }
 });
 
@@ -528,7 +529,8 @@ bespin.vcs.hgCommands.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.hgCommands, instruction, extra);
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
     }
 });
 

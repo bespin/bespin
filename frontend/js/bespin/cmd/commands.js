@@ -24,80 +24,9 @@
 
 dojo.provide("bespin.cmd.commands");
 
-// = Commands =
-//
-// This array stores all of the default commands.
-
-// ** {{{Command: bespin.cmd.commands.toArgArray}}} **
-// Helper for when you have a command that needs to get a hold of it's params
-// as an array for processing
-bespin.cmd.commands.toArgArray = function(args) {
-    if (args == null) {
-        return [];
-    }
-    else {
-        var spliten = args.split(" ");
-        if (spliten.length == 1 && spliten[0] == "") {
-            return [];
-        }
-        else {
-            return spliten;
-        }
-    }
-};
 
 // == Start adding commands to the store ==
 //
-bespin.cmd.displayHelp = function(store, instruction, extra, morehelpoutput) {
-    var commands = [];
-    var command, name;
-
-    if (store.commands[extra]) { // caught a real command
-        command = store.commands[extra];
-        commands.push(command['description'] ? command.description : command.preview);
-    } else {
-        var showHidden = false;
-
-        var subcmdextra = "";
-        if (store.containerCommand) {
-            subcmdextra = " for " + store.containerCommand.name;
-        }
-
-        if (extra) {
-            if (extra == "hidden") { // sneaky, sneaky.
-                extra = "";
-                showHidden = true;
-            }
-            commands.push("Commands starting with '" + extra + "'.<br/>");
-        }
-
-        var tobesorted = [];
-        for (name in store.commands) {
-            tobesorted.push(name);
-        }
-
-        var sorted = tobesorted.sort();
-
-        commands.push("<table>");
-        for (var i = 0; i < sorted.length; i++) {
-            name = sorted[i];
-            command = store.commands[name];
-
-            if (!showHidden && command.hidden) continue;
-            if (extra && name.indexOf(extra) != 0) continue;
-
-            var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-
-            commands.push("<tr>");
-            commands.push('<th>' + name + '</th>');
-            commands.push('<td>' + command.preview + "</td>");
-            commands.push('<td>' + args + '</td>');
-            commands.push("</tr>");
-        }
-        commands.push("</table>");
-    }
-    instruction.addOutput(commands.join("") + (morehelpoutput || ""));
-};
 
 // ** {{{Command: help}}} **
 bespin.command.store.addCommand({
@@ -107,7 +36,18 @@ bespin.command.store.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(instruction.commandLine.store, instruction, extra);
+        var output = this.parent.getHelp(extra, {
+            prefix: "<h2>Welcome to Bespin - Code in the Cloud</h2><ul>" +
+                "<li><a href='http://labs.mozilla.com/projects/bespin' target='_blank'>Home Page</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin' target='_blank'>Wiki</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide' target='_blank'>User Guide</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/Tips' target='_blank'>Tips and Tricks</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/FAQ' target='_blank'>FAQ</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/DeveloperGuide' target='_blank'>Developers Guide</a>" +
+                "</ul>",
+            suffix: "For more information, see the <a href='https://wiki.mozilla.org/Labs/Bespin'>Bespin Wiki</a>."
+        });
+        instruction.addOutput(output);
     }
 });
 

@@ -277,6 +277,72 @@ dojo.declare("bespin.command.Store", null, {
         });
 
         return command;
+    },
+
+    /**
+     * Generate some help text for all commands in this store, optionally
+     * filtered by a <code>prefix</code>, and with a <code>helpSuffix</code>
+     * appended.
+     */
+    getHelp: function(prefix, options) {
+        var commands = [];
+        var command, name;
+
+        if (this.commands[prefix]) { // caught a real command
+            command = this.commands[prefix];
+            commands.push(command['description'] ? command.description : command.preview);
+        } else {
+            var showHidden = false;
+
+            var subcmdprefix = "";
+            if (this.containerCommand) {
+                subcmdprefix = " for " + this.containerCommand.name;
+            }
+
+            if (prefix) {
+                if (prefix == "hidden") { // sneaky, sneaky.
+                    prefix = "";
+                    showHidden = true;
+                }
+                commands.push("<h2>Commands starting with '" + prefix + "':</h2>");
+            } else {
+                commands.push("<h2>Available Commands:</h2>");
+            }
+
+            var tobesorted = [];
+            for (name in this.commands) {
+                tobesorted.push(name);
+            }
+
+            var sorted = tobesorted.sort();
+
+            commands.push("<table>");
+            for (var i = 0; i < sorted.length; i++) {
+                name = sorted[i];
+                command = this.commands[name];
+
+                if (!showHidden && command.hidden) continue;
+                if (prefix && name.indexOf(prefix) != 0) continue;
+
+                var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
+
+                commands.push("<tr>");
+                commands.push('<th>' + name + '</th>');
+                commands.push('<td>' + command.preview + "</td>");
+                commands.push('<td>' + args + '</td>');
+                commands.push("</tr>");
+            }
+            commands.push("</table>");
+        }
+
+        var output = commands.join("");
+        if (options && options.prefix) {
+            output = options.prefix + "<br/>" + output;
+        }
+        if (options && options.suffix) {
+            output = output + "<br/>" + options.suffix;
+        }
+        return output;
     }
 });
 
