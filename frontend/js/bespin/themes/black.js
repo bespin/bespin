@@ -24,7 +24,9 @@
 
 dojo.provide("bespin.themes.black");
 
-// = Black Theme =
+/**
+ * Black Theme
+ */
 bespin.themes.black = {
     backgroundStyle: "#000000",
     gutterStyle: "#d2d2d2",
@@ -82,7 +84,7 @@ bespin.themes.black = {
     // TODO:
 };
 
-// ** Black Zebra Theme **
+/** Black Zebra Theme */
 bespin.themes.blackzebra = {};
 dojo.mixin(bespin.themes.blackzebra, bespin.themes.black);
 bespin.themes.blackzebra.zebraStripeColor = '#111111';

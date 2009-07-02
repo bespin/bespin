@@ -22,10 +22,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.themes.white");  
+dojo.provide("bespin.themes.white");
 
-// = White Theme =
-
+/**
+ * White Theme
+ */
 bespin.themes.white = {
     backgroundStyle: "#FFFFFF",
     gutterStyle: "#d2d2d2",
@@ -77,12 +78,12 @@ bespin.themes.white = {
     important: "#990000",
     cssclass: "#BF9464",
     cssid: "#bdae9d"
-    
+
     // Codemirror additions
     // TODO
 };
 
 // ** White Zebra Theme **
 bespin.themes.whitezebra = {};
-dojo.mixin(bespin.themes.whitezebra, bespin.themes.white); 
+dojo.mixin(bespin.themes.whitezebra, bespin.themes.white);
 bespin.themes.whitezebra.zebraStripeColor = '#EAEAEA';

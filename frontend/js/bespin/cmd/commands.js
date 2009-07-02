@@ -24,78 +24,9 @@
 
 dojo.provide("bespin.cmd.commands");
 
-// = Commands =
-//
-// This array stores all of the default commands.
-
-// ** {{{Command: bespin.cmd.commands.toArgArray}}} **
-// Helper for when you have a command that needs to get a hold of it's params
-// as an array for processing
-bespin.cmd.commands.toArgArray = function(args) {
-    if (args == null) {
-        return [];
-    }
-    else {
-        var spliten = args.split(" ");
-        if (spliten.length == 1 && spliten[0] == "") {
-            return [];
-        }
-        else {
-            return spliten;
-        }
-    }
-};
 
 // == Start adding commands to the store ==
 //
-bespin.cmd.displayHelp = function(store, instruction, extra, morehelpoutput) {
-    var commands = [];
-    var command, name;
-
-    if (store.commands[extra]) { // caught a real command
-        command = store.commands[extra];
-        commands.push(command['description'] ? command.description : command.preview);
-    } else {
-        var showHidden = false;
-
-        var subcmdextra = "";
-        if (store.subcommandFor) subcmdextra = " for " + store.subcommandFor;
-
-        if (extra) {
-            if (extra == "hidden") { // sneaky, sneaky.
-                extra = "";
-                showHidden = true;
-            }
-            commands.push("Commands starting with '" + extra + "'.<br/>");
-        }
-
-        var tobesorted = [];
-        for (name in store.commands) {
-            tobesorted.push(name);
-        }
-
-        var sorted = tobesorted.sort();
-
-        commands.push("<table>");
-        for (var i = 0; i < sorted.length; i++) {
-            name = sorted[i];
-            command = store.commands[name];
-
-            if (!showHidden && command.hidden) continue;
-            if (extra && name.indexOf(extra) != 0) continue;
-
-            var args = (command.takes) ? ' [' + command.takes.order.join('] [') + ']' : '';
-
-            commands.push("<tr>");
-            commands.push('<th>' + name + '</th>');
-            commands.push('<td>' + command.preview + "</td>");
-            commands.push('<td>' + args + '</td>');
-            commands.push("</tr>");
-        }
-        commands.push("</table>");
-    }
-    instruction.addOutput(commands.join("") + (morehelpoutput || ""));
-};
 
 // ** {{{Command: help}}} **
 bespin.command.store.addCommand({
@@ -105,7 +36,18 @@ bespin.command.store.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(instruction.commandLine.store, instruction, extra);
+        var output = this.parent.getHelp(extra, {
+            prefix: "<h2>Welcome to Bespin - Code in the Cloud</h2><ul>" +
+                "<li><a href='http://labs.mozilla.com/projects/bespin' target='_blank'>Home Page</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin' target='_blank'>Wiki</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide' target='_blank'>User Guide</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/Tips' target='_blank'>Tips and Tricks</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/FAQ' target='_blank'>FAQ</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/DeveloperGuide' target='_blank'>Developers Guide</a>" +
+                "</ul>",
+            suffix: "For more information, see the <a href='https://wiki.mozilla.org/Labs/Bespin'>Bespin Wiki</a>."
+        });
+        instruction.addOutput(output);
     }
 });
 
@@ -214,12 +156,64 @@ bespin.command.store.addCommand({
         }
         instruction.addOutput(output);
     },
-    sendAllOptions: function(type, callback) {
-        var settings = bespin.get("settings").list();
-        var names = settings.map(function(setting) {
-            return setting.key;
+    findCompletions: function(query, callback) {
+        // Find the text that we're working on.
+        var key = query.value.substring(0, query.cursorPos);
+        var prefix = this.name; // But only because this isn't a subcommand
+        key = key.substr(prefix.length);
+        // If we've got an initial space, chop it off and add to the prefix so
+        // the cursor position calculation still works
+        if (key.charAt(0) == " ") {
+            key = key.substr(1);
+        }
+
+        var settings = bespin.get("settings");
+
+        // Check if this is an exact match
+        var val = settings.get(key);
+        if (val) {
+            query.hint = "Current value of " + key + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+            callback(query);
+            return;
+        }
+
+        // Spaces means we're past completing setting names
+        if (key.match(' ')) {
+            var val = settings.get(dojo.trim(key.substring(0, key.indexOf(' '))));
+            if (val) {
+                query.hint = "Current value of " + key + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+                callback(query);
+                return;
+            }
+            query.error = "No setting for '" + key + "'";
+            callback(query);
+            return;
+        }
+
+        // So no spaces, and no direct matches, we're looking for options
+        var list = settings.list().map(function(entry) {
+            return entry.key;
         });
-        callback(names);
+        var matches = this.parent.filterOptionsByPrefix(list, key);
+
+        if (matches.length == 1) {
+            // Single match: go for autofill and hint
+            query.autofill = "set " + matches[0];
+            val = settings.get(matches[0]);
+            query.hint = "Current value of " + matches[0] + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+        } else if (matches.length == 0) {
+            // No matches, cause an error
+            query.error = "No matching settings";
+        } else {
+            // Multiple matches, present a list
+            matches.sort(function(a, b) {
+                return a.localeCompare(b);
+            });
+            query.options = matches;
+        }
+
+        callback(query);
+        return;
     }
 });
 
@@ -330,6 +324,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             bespin.get('editSession').setProject(project);
             instruction.addOutput('Successfully created project \'' + project + '\'.');
+            bespin.publish("project:created", {project: project});
         });
 
         var onFailure = instruction.link(function(xhr) {
@@ -360,6 +355,7 @@ bespin.command.store.addCommand({
         var onSuccess = instruction.link(function() {
             instruction.addOutput('Deleted project ' + project);
             instruction.unlink();
+            bespin.publish("project:deleted", {project:project});
         });
 
         var onFailure = instruction.link(function(xhr) {
@@ -394,6 +390,8 @@ bespin.command.store.addCommand({
             onSuccess: instruction.link(function() {
                 bespin.get('editSession').setProject(newProject);
                 instruction.unlink();
+                bespin.publish("project:renamed", {oldName: currentProject,
+                                                   newName: newProject});
             }),
             onFailure: instruction.link(function(xhr) {
                 instruction.addErrorOutput('Unable to rename project from ' + currentProject + " to " + newProject + "<br><br><em>Are you sure that the " + currentProject + " project exists?</em>");

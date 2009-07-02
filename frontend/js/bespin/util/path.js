@@ -29,7 +29,7 @@ dojo.provide("bespin.util.path");
  */
 dojo.mixin(bespin.util.path, {
     /**
-     * Take the given arguments and combine them with one path seperator:
+     * Take the given arguments and combine them with one path separator:
      * <pre>
      * combine("foo", "bar") -&gt; foo/bar
      * combine(" foo/", "/bar  ") -&gt; foo/bar
@@ -103,8 +103,8 @@ dojo.mixin(bespin.util.path, {
      */
     fileType: function(path) {
         if (!path) {
-            console.error("path falsy in bespin.util.path.fileType");
-            console.trace();
+            console.error("path falsy in bespin.util.path.fileType", path);
+            // console.trace();
             return "";
         }
 

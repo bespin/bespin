@@ -852,7 +852,7 @@ dojo.declare("bespin.editor.UI", null, {
         }, this.actions.moveToLineStart, "Move to start of line", true /* selectable */);
 
         // End of line: All platforms support END. Mac = Apple+Right, Win/Lin = Alt+Right
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");        
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
         listener.bindKeyForPlatform({
             MAC: "APPLE RIGHT_ARROW",
             WINDOWS: "ALT RIGHT_ARROW"
@@ -1889,6 +1889,7 @@ dojo.declare("bespin.editor.API", null, {
      * e.g. bindkey('moveCursorLeft', 'ctrl b');
      */
     bindKey: function(action, keySpec, selectable) {
+        console.warn("Use of editor.bindKey(", action, keySpec, selectable, ") seems doomed to fail");
         var keyObj = bespin.util.keys.fillArguments(keySpec);
         var key = keyObj.key;
         var modifiers = keyObj.modifiers;
@@ -1900,11 +1901,13 @@ dojo.declare("bespin.editor.API", null, {
 
         var keyCode = bespin.util.keys.toKeyCode(key);
 
-        // -- try an editor action first, else fire away at the event bus
-        var action = this.ui.actions[action] || action;
+        // -- try an editor action first, else fire off a command
+        var actionDescription = "Execute command: '" + action + "'";
+        var action = this.ui.actions[action] || function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
 
         if (keyCode && action) {
-            var actionDescription = "User key to execute: " + action.replace("command:execute;name=", "");
             if (selectable) {
                 // register the selectable binding too (e.g. SHIFT + what you passed in)
                 this.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
@@ -1912,5 +1915,19 @@ dojo.declare("bespin.editor.API", null, {
                 this.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
             }
         }
+    },
+
+    /**
+     * Ensure that a given command is executed on each keypress
+     */
+    bindCommand: function(command, keySpec) {
+        var keyObj = bespin.util.keys.fillArguments(keySpec);
+        var keyCode = bespin.util.keys.toKeyCode(keyObj.key);
+        var action = function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
+        var actionDescription = "Execute command: '" + command + "'";
+
+        this.editorKeyListener.bindKeyString(keyObj.modifiers, keyCode, action, actionDescription);
     }
 });

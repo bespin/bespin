@@ -26,10 +26,10 @@ dojo.provide("bespin.user.utils");
 
 dojo.require("bespin.util.webpieces");
 
-// = Utility functions for the Bespin front page =
-//
-// Dealing with login on the front page of the site and beyond
-
+/**
+ * Utility functions for the Bespin front page
+ * Dealing with login on the front page of the site and beyond
+ */
 dojo.mixin(bespin.user.utils, {
     whenLoginSucceeded: function() {
         bespin.util.navigate.editor();
@@ -52,7 +52,9 @@ dojo.mixin(bespin.user.utils, {
         dojo.style('not_logged_in', 'display', 'block');
     },
 
-    // make sure that the browser can do our wicked shizzle
+    /**
+     * make sure that the browser can do our wicked shizzle
+     */
     checkBrowserAbility: function() {
         if (typeof dojo.byId('testcanvas').getContext != "function") return false; // no canvas
 
@@ -66,7 +68,8 @@ dojo.mixin(bespin.user.utils, {
     },
 
     showingBrowserCompatScreen: function() {
-       if (!this.checkBrowserAbility()) { // if you don't have the ability
+       if (!this.checkBrowserAbility()) {
+           // if you don't have the ability
             bespin.util.webpieces.showCenterPopup(dojo.byId('browser_not_compat'), true);
 
             return true;
@@ -79,8 +82,9 @@ dojo.mixin(bespin.user.utils, {
         var filter=/^([\w-+_]+(?:\.[\w-+_]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
         return filter.test(str);
     },
-    
+
     validatePassword: function(str) {
         return (str.length > 5) && (str.length < 21);
     }
 });
+

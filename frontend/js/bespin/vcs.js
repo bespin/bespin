@@ -40,6 +40,24 @@ bespin.vcs.commands = new bespin.command.Store(bespin.command.store, {
 });
 
 /**
+ * Display sub-command help
+ */
+bespin.vcs.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for vcs subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        var output = this.parent.getHelp(extra, {
+            suffix: "For more information about Bespin's VCS support see the <a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide#VCS_Commands' target='_blank'>VCS section of the user guide</a>."
+        });
+        instruction.addOutput(output);
+    }
+});
+
+
+/**
  * TODO: Is this called from anywhere? Probably not (this appears to be the only
  * instance of the string 'setProjectPassword' in an *.js file) however if
  * it is used then we've added the initial 'instruction' parameter.
@@ -365,20 +383,6 @@ bespin.vcs.getkey = {
 bespin.vcs.commands.addCommand(bespin.vcs.getkey);
 
 /**
- * Display sub-command help
- */
-bespin.vcs.commands.addCommand({
-    name: 'help',
-    takes: ['search'],
-    preview: 'show commands for vcs subcommand',
-    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
-    completeText: 'optionally, narrow down the search',
-    execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
-    }
-});
-
-/**
  * Push command.
  * Push changes to the specified destination
  */
@@ -533,7 +537,8 @@ bespin.vcs.hgCommands.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.hgCommands, instruction, extra);
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
     }
 });
 

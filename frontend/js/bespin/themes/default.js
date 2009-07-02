@@ -22,13 +22,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.themes.default");  
+dojo.provide("bespin.themes.default");
 
-// = Themes =
-//
-// The editor can be styled with Themes. This will become CSS soon, but for now is JSON
-
-// ** Coffee Theme **
+/**
+ * Coffee Theme
+ * The editor can be styled with Themes. This will become CSS soon, but for now
+ * is JSON
+ */
 bespin.themes.coffee = {
     backgroundStyle: "#2A211C",
     gutterStyle: "#4c4a41",
@@ -81,42 +81,42 @@ bespin.themes.coffee = {
     important: "#990000",
     sizes: "#990000",
     cssclass: "#BF9464",
-    cssid: "#46a8ed",  
-       
+    cssid: "#46a8ed",
+
     // Codemirror additions (TODO: better color choice)
-    
+
     atom: "#aa4444",
     variable: "#00cccc",
     variabledef: "#4422cc",
     localvariable: "#cc2277",
     property: "#66bb33",
     operator: "#88bbff",
-    error: "#FF0000", 
-    
+    error: "#FF0000",
+
     // XML and HTML
     processing: "#999999",
     entity: "#AA2222",
     text: "#00BB00",
-    
+
     // PHP
-    "compile-time-constant": "#776088", 
+    "compile-time-constant": "#776088",
     "predefined-constant": "#33CC33",
-    "reserved-language-construct": "#00FF00", 
-    "predefined-function": "#22FF22", 
+    "reserved-language-construct": "#00FF00",
+    "predefined-function": "#22FF22",
     "predefined-class": "#22FF22",
-    
+
     // Python
     literal: "#DD4411",
-    identifier: "#22FF22", 
-    func: "#2200FF",  
+    identifier: "#22FF22",
+    func: "#2200FF",
     type: "#8822FF",
     decorator: "#2222FF"
 };
 
-// ** Coffee Zebra Theme **
+/** Coffee Zebra Theme */
 bespin.themes.coffeezebra = {};
 dojo.mixin(bespin.themes.coffeezebra, bespin.themes.coffee);
 bespin.themes.coffeezebra.zebraStripeColor = '#FFFFFF';
 
-// ** Setup the default **
+/** Setup the default */
 bespin.themes['default'] = bespin.themes.coffee;
