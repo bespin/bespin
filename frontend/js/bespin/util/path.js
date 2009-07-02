@@ -103,7 +103,7 @@ dojo.mixin(bespin.util.path, {
      */
     fileType: function(path) {
         if (!path) {
-            console.error("path falsy in bespin.util.path.fileType");
+            console.error("path falsy in bespin.util.path.fileType", path);
             // console.trace();
             return "";
         }
