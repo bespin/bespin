@@ -70,9 +70,8 @@ dojo.declare("bespin.command.Store", null, {
         if (command.withKey) {
             // TODO - ensure that keyboard support is loaded earlier so we
             // don't have to muck about like this
-            bespin.fireAfter([ "component:register:editor" ], function(e) {
-                var action = "command:execute;name=" + command.name;
-                bespin.get('editor').bindKey(action, command.withKey);
+            bespin.fireAfter([ "component:register:editor" ], function() {
+                bespin.get('editor').bindCommand(command.name, command.withKey);
             });
         }
 
@@ -108,21 +107,37 @@ dojo.declare("bespin.command.Store", null, {
      * @param value What was typed
      * @param root Any prefix that has been chopped off
      */
-    findCompletions: function(value, root) {
-        var completions = {};
-
+    findCompletions: function(query, callback, root) {
         if (root) {
-            completions.root = root;
+            query.root = root;
         }
+        var value = query.value;
 
+        // TODO: A better way to detect who will sort out completion
         if (value.match(' ')) {
             var command = this.rootCommand(value);
 
             if (command) {
                 // It's easy if there are sub-commands...
                 if (command.subcommands) {
-                    var params = value.replace(new RegExp('^' + command.name + '\\s*'), '');
-                    return command.subcommands.findCompletions(params, command.name);
+                    // Create a new query to match the original
+                    var subQuery = {
+                        // TODO: so we're not going to pass in the whole thing?
+                        value: value.replace(new RegExp('^' + command.name + '\\s*'), ''),
+                        // TODO: subtract from start?
+                        cursorPos: query.cursorPos
+                    };
+
+                    // Our callback wrapper inserts the original values back
+                    // into the response to fake the reply
+                    var subCallback = function(response) {
+                        response.value = query.value;
+                        response.cursorPos = query.cursorPos;
+                        callback(response);
+                    };
+
+                    command.subcommands.findCompletions(query, subCallback, command.name);
+                    return;
                 }
 
                 // Using custom completions requires us to know the prefix that
@@ -162,26 +177,26 @@ dojo.declare("bespin.command.Store", null, {
                     });
                 }
             }
-        }
+        } else {
+            // We're completing from the commands and aliases
+            query.matches = [];
 
-        var matches = [];
+            if (value.length > 0) {
+                for (var command in this.commands) {
+                    if (command.indexOf(value) == 0) {
+                        matches.push(command);
+                    }
+                }
 
-        if (value.length > 0) {
-            for (var command in this.commands) {
-                if (command.indexOf(value) == 0) {
-                    matches.push(command);
+                for (var alias in this.aliases) {
+                    if (alias.indexOf(value) == 0) {
+                        matches.push(alias);
+                    }
                 }
             }
-
-            for (var alias in this.aliases) {
-                if (alias.indexOf(value) == 0) {
-                    matches.push(alias);
-                }
-            }
         }
 
-        completions.matches = matches;
-        return completions;
+        callback(query);
     },
 
     commandTakesArgs: function(command) {
