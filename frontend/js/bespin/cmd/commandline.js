@@ -424,37 +424,74 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     _findCompletions: function(e) {
         var query = {
             value: this.commandLine.value,
+            parts: dojo.trim(this.commandLine.value).split(/\s+/),
             cursorPos: this.commandLine.selectionStart
         };
 
+        // Unset the error status so there are no errors when deleting
+        dojo.removeClass(this.commandLine, "commandLineError");
+
+        var self = this;
         var callback = function(response) {
-            if (response.value != this.commandLine.value || response.cursorPos != this.commandLine.selectionStart) {
+            if (response.value != self.commandLine.value ||
+                response.cursorPos != self.commandLine.selectionStart) {
                 console.log("Command line changed during async operation. Ignoring.");
             }
 
-            var matches = response.matches;
+            // Only obey auto-fill if we are at the end of the line and we're
+            // not deleting text
+            if (response.autofill &&
+                response.cursorPos == self.commandLine.value.length &&
+                e.keyCode != bespin.util.keys.Key.BACKSPACE &&
+                e.keyCode != bespin.util.keys.Key.DELETE) {
+                self.commandLine.value = response.autofill;
+                self.commandLine.setSelectionRange(response.value.length, response.autofill.length);
+            }
 
-            if (matches.length == 1) {
-                var newValue = matches[0];
-                var command = this.store.commands[newValue] || this.store.commands[this.store.aliases[newValue]];
-                if (this.store.commandTakesArgs(command)) {
-                    newValue = newValue + " ";
-                }
+            // Show the hint as to what's next
+            if (response.error) {
+                self.showHint(response.error);
+            } else if (response.hint) {
+                self.showHint(response.hint);
+            } else {
+                self.hideHint();
+            }
 
-                this.commandLine.value = newValue;
-                this.commandLine.setSelectionRange(response.value.length, newValue.length);
+            // Add or remove the 'error' class to the commandLine element
+            (response.error ? dojo.addClass : dojo.removeClass)(self.commandLine, "commandLineError");
 
-                if (command.completeText) {
-                    this.showHint(command.completeText);
+            // Show alternative options
+            if (response.options) {
+                var intro = "<strong>Alternatives:</strong><br/>";
+                if (response.options.length > 10) {
+                    var more = "<br/>And " + (response.options.length - 9) + " more ...";
+                    response.options = response.options.slice(0, 9);
+                    self.showHint(intro + response.options.join('<br/>') + more);
                 } else {
-                    this.hideHint();
+                    self.showHint(intro + response.options.join('<br/>'));
                 }
-            } else if (matches.length > 1) {
-                this.showHint(matches.join(', '));
             }
         };
 
         this.store.findCompletions(query, callback);
+    },
+
+    /**
+     * If users are allowed to insert multiple consecutive spaces and tabs into
+     * the command line then working out how to select things is hard.
+     * The ability to do this gains the user nothing, so we check and trim.
+     */
+    _normalizeCommandValue: function() {
+        // Normalize the command line by removing leading spaces, and
+        // replacing other repeated whitespace with a single space char
+        var value = this.commandLine.value;
+        var cursorPos = this.commandLine.selectionStart;
+        value = value.replace(/^\s+/, "");
+        value = value.replace(/\s+/g, " ");
+        if (this.commandLine.value != value) {
+            this.commandLine.value = value;
+            this.commandLine.setSelectionRange(cursorPos - 1, cursorPos - 1);
+        }
     },
 
     /**
@@ -516,10 +553,8 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         });
 
         dojo.connect(this.commandLine, "onkeyup", this, function(e) {
-            // only real letters
-            if (e.keyCode >= "A".charCodeAt() && e.keyCode < "Z".charCodeAt()) {
-                this._findCompletions(e);
-            }
+            this._normalizeCommandValue();
+            this._findCompletions(e);
         });
 
         dojo.connect(this.commandLine, "onkeypress", this, function(e) {

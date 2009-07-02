@@ -40,7 +40,8 @@ dojo.declare("bespin.command.Store", null, {
         // If there is a parent, then this is a store for a command with subcommands
         if (parent) {
             // save the fact that we are a subcommand for this chap
-            this.subcommandFor = command.name;
+            this.containerCommand = command;
+            this.parent = parent;
 
             // implicit that it takes something
             command.takes = ['*'];
@@ -61,6 +62,11 @@ dojo.declare("bespin.command.Store", null, {
             return;
         }
 
+        command.parent = this;
+
+        // Remember the command
+        this.commands[command.name] = command;
+
         // Allow for the default [ ] takes style by expanding it to something bigger
         if (command.takes && dojo.isArray(command.takes)) {
             command = this.normalizeTakes(command);
@@ -75,10 +81,9 @@ dojo.declare("bespin.command.Store", null, {
             });
         }
 
-        this.commands[command.name] = command;
-
-        if (command['aliases']) {
-            dojo.forEach(command['aliases'], function(alias) {
+        // Cache all the aliases in a store wide list
+        if (command.aliases) {
+            dojo.forEach(command.aliases, function(alias) {
                 this.aliases[alias] = command.name;
             }, this);
         }
@@ -103,99 +108,125 @@ dojo.declare("bespin.command.Store", null, {
     */
 
     /**
+     * Commands can contain sub commands, this gets us the full name of this
+     * command. e.g. This may be a 'commit' command that is part of the 'vcs'
+     * command, so this will return "vcs commit"
+     */
+    getFullCommandName: function() {
+        var name = this.containerCommand ? this.containerCommand.name : "";
+        if (this.parent) {
+            name = this.parent.getFullCommandName() + " " + name;
+        }
+        return dojo.trim(name);
+    },
+
+    /**
+     * Returns the subset of the options input array where the string values
+     * begin with the given prefix
+     */
+    filterOptionsByPrefix: function(options, prefix) {
+        return options.filter(function(option) {
+            return option.substr(0, prefix.length) === prefix;
+        });
+    },
+
+    /**
      * Find the commands that could work, given the value typed
      * @param value What was typed
      * @param root Any prefix that has been chopped off
      */
-    findCompletions: function(query, callback, root) {
-        if (root) {
-            query.root = root;
+    findCompletions: function(query, callback) {
+        // Find the text that we're working on.
+        var value = query.value.substring(0, query.cursorPos);
+        var prefix = this.getFullCommandName();
+        if (value.substr(0, prefix.length) != prefix) {
+            console.error("findCompletions: value (", value, ") does not start with prefix (", prefix, ")");
+            return;
         }
-        var value = query.value;
-
-        // TODO: A better way to detect who will sort out completion
-        if (value.match(' ')) {
-            var command = this.rootCommand(value);
-
-            if (command) {
-                // It's easy if there are sub-commands...
-                if (command.subcommands) {
-                    // Create a new query to match the original
-                    var subQuery = {
-                        // TODO: so we're not going to pass in the whole thing?
-                        value: value.replace(new RegExp('^' + command.name + '\\s*'), ''),
-                        // TODO: subtract from start?
-                        cursorPos: query.cursorPos
-                    };
-
-                    // Our callback wrapper inserts the original values back
-                    // into the response to fake the reply
-                    var subCallback = function(response) {
-                        response.value = query.value;
-                        response.cursorPos = query.cursorPos;
-                        callback(response);
-                    };
-
-                    command.subcommands.findCompletions(query, subCallback, command.name);
-                    return;
-                }
-
-                // Using custom completions requires us to know the prefix that
-                // we are matching against. 'value' contains the command name
-                var prefix = value;
-                if (prefix.substr(0, command.name.length) === command.name) {
-                    prefix = dojo.trim(prefix.substr(command.name.length));
-                }
-
-                // We'll need to filter the possibles by the prefix
-                var filter = function(potentials, prefix) {
-                    return {
-                        matches: potentials.filter(function(potential) {
-                            return potential.substr(0, prefix.length) === prefix;
-                        })
-                    };
-                };
-
-                // MAJOR HACK - clearly this should not be hard coded
-                var type = "group";
-
-                var options = bespin.cmd.commandline.caches[type];
-
-                // If we've got some options already, use those. We need a
-                // recache strategy somehow...
-                // TODO: command is the WRONG place to store this
-                if (dojo.isArray(options)) {
-                    return filter(options, prefix);
-                }
-
-                if (options !== "outstanding" && dojo.isFunction(command.sendAllOptions)) {
-                    bespin.cmd.commandline.caches[type] = "outstanding";
-
-                    command.sendAllOptions(type, function(options) {
-                        bespin.cmd.commandline.caches[type] = options;
-                        return filter(options, prefix);
-                    });
-                }
-            }
-        } else {
-            // We're completing from the commands and aliases
-            query.matches = [];
-
-            if (value.length > 0) {
-                for (var command in this.commands) {
-                    if (command.indexOf(value) == 0) {
-                        matches.push(command);
-                    }
-                }
-
-                for (var alias in this.aliases) {
-                    if (alias.indexOf(value) == 0) {
-                        matches.push(alias);
-                    }
-                }
-            }
+        value = value.substr(prefix.length);
+        // If we've got an initial space, chop it off and add to the prefix so
+        // the cursor position calculation still works
+        if (value.charAt(0) == " ") {
+            value = value.substr(1);
         }
 
+        // No spaces means we're completing from the commands and aliases
+        if (!value.match(' ')) {
+            var matches = [];
+
+            // Only begin matching when they've typed something
+            if (value.length == 0) {
+                query.hint = "Type a command or 'help' for a list of commands";
+                callback(query);
+                return;
+            }
+
+            // Get a list of all commands and aliases. TODO: cache?
+            for (var command in this.commands) {
+                if (command.indexOf(value) == 0) {
+                    matches.push(command);
+                }
+            }
+            for (var alias in this.aliases) {
+                if (alias.indexOf(value) == 0) {
+                    matches.push(alias);
+                }
+            }
+
+            if (matches.length == 1) {
+                // Single match: go for autofill and hint
+                var newValue = matches[0];
+                var command = this.commands[newValue] || this.commands[this.aliases[newValue]];
+                if (this.commandTakesArgs(command)) {
+                    newValue = newValue + " ";
+                }
+                if (prefix === "") {
+                    query.autofill = newValue;
+                } else {
+                    query.autofill = prefix + " " + newValue;
+                }
+                query.hint = command.preview;
+            } else if (matches.length == 0) {
+                // No matches, cause an error
+                query.error = "No matches";
+            } else {
+                // Multiple matches, present a list
+                matches.sort(function(a, b) {
+                    return a.localeCompare(b);
+                });
+                query.options = matches;
+            }
+
+            callback(query);
+            return;
+        }
+
+        // Given the entire string typed for this command, find the root command by
+        // looking for the first space and finding the command for everything to
+        // there.
+        var command = this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
+        if (!command) {
+            // No matches, cause an error
+            query.error = "No matches";
+            callback(query);
+            return;
+        }
+
+        // If we've got something that does findCompletions, the delegate
+        if (command.findCompletions) {
+            command.findCompletions(query, callback);
+            return;
+        }
+
+        // If there are sub-commands, then delegate
+        if (command.subcommands) {
+            command.subcommands.findCompletions(query, callback);
+            return;
+        }
+
+        // So we have a command that doesn't have a findCompletions method
+        // we just use
+        query.hint = command.completeText;
         callback(query);
     },
 
@@ -246,15 +277,6 @@ dojo.declare("bespin.command.Store", null, {
         });
 
         return command;
-    },
-
-    /**
-     * Given the entire string typed for this command, find the root command by
-     * looking for the first space and finding the command for everything to
-     * there.
-     */
-    rootCommand: function(value) {
-        return this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
     }
 });
 

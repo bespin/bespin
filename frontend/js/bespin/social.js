@@ -180,10 +180,7 @@ bespin.social.group.commands.addCommand({
     name: 'list',
     preview: 'List the current group and group members',
     takes: ['group'],
-    params: [
-        { name:'group', type:'user', varargs:true }
-    ],
-    //completeText: 'An optional group name or leave blank to list groups',
+    // completeText: 'An optional group name or leave blank to list groups',
     description: 'List the current group and group members.',
     execute: function(instruction, group) {
         if (!group) {
@@ -212,14 +209,6 @@ bespin.social.group.commands.addCommand({
                     instruction.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
                 }
             });
-        }
-    },
-    sendAllOptions: function(type, callback) {
-        var opts = { onSuccess: callback, evalJSON: true };
-        if (type === "group") {
-            bespin.get('server').groupListAll(opts);
-        } else if (type === "user") {
-            bespin.get('server').followers(opts);
         }
     }
 });

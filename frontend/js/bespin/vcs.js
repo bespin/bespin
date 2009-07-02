@@ -40,6 +40,21 @@ bespin.vcs.commands = new bespin.command.Store(bespin.command.store, {
 });
 
 /**
+ * Display sub-command help
+ */
+bespin.vcs.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for vcs subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
+    }
+});
+
+
+/**
  * TODO: Is this called from anywhere? Probably not (this appears to be the only
  * instance of the string 'setProjectPassword' in an *.js file) however if
  * it is used then we've added the initial 'instruction' parameter.
@@ -357,20 +372,6 @@ bespin.vcs.getkey = {
 };
 
 bespin.vcs.commands.addCommand(bespin.vcs.getkey);
-
-/**
- * Display sub-command help
- */
-bespin.vcs.commands.addCommand({
-    name: 'help',
-    takes: ['search'],
-    preview: 'show commands for vcs subcommand',
-    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
-    completeText: 'optionally, narrow down the search',
-    execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
-    }
-});
 
 /**
  * Push command.

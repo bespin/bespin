@@ -59,7 +59,9 @@ bespin.cmd.displayHelp = function(store, instruction, extra, morehelpoutput) {
         var showHidden = false;
 
         var subcmdextra = "";
-        if (store.subcommandFor) subcmdextra = " for " + store.subcommandFor;
+        if (store.containerCommand) {
+            subcmdextra = " for " + store.containerCommand.name;
+        }
 
         if (extra) {
             if (extra == "hidden") { // sneaky, sneaky.
@@ -214,12 +216,64 @@ bespin.command.store.addCommand({
         }
         instruction.addOutput(output);
     },
-    sendAllOptions: function(type, callback) {
-        var settings = bespin.get("settings").list();
-        var names = settings.map(function(setting) {
-            return setting.key;
+    findCompletions: function(query, callback) {
+        // Find the text that we're working on.
+        var key = query.value.substring(0, query.cursorPos);
+        var prefix = this.name; // But only because this isn't a subcommand
+        key = key.substr(prefix.length);
+        // If we've got an initial space, chop it off and add to the prefix so
+        // the cursor position calculation still works
+        if (key.charAt(0) == " ") {
+            key = key.substr(1);
+        }
+
+        var settings = bespin.get("settings");
+
+        // Check if this is an exact match
+        var val = settings.get(key);
+        if (val) {
+            query.hint = "Current value of " + key + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+            callback(query);
+            return;
+        }
+
+        // Spaces means we're past completing setting names
+        if (key.match(' ')) {
+            var val = settings.get(dojo.trim(key.substring(0, key.indexOf(' '))));
+            if (val) {
+                query.hint = "Current value of " + key + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+                callback(query);
+                return;
+            }
+            query.error = "No setting for '" + key + "'";
+            callback(query);
+            return;
+        }
+
+        // So no spaces, and no direct matches, we're looking for options
+        var list = settings.list().map(function(entry) {
+            return entry.key;
         });
-        callback(names);
+        var matches = this.parent.filterOptionsByPrefix(list, key);
+
+        if (matches.length == 1) {
+            // Single match: go for autofill and hint
+            query.autofill = "set " + matches[0];
+            val = settings.get(matches[0]);
+            query.hint = "Current value of " + matches[0] + " is '" + val + "'. Enter a new value, or press enter to display in the console.";
+        } else if (matches.length == 0) {
+            // No matches, cause an error
+            query.error = "No matching settings";
+        } else {
+            // Multiple matches, present a list
+            matches.sort(function(a, b) {
+                return a.localeCompare(b);
+            });
+            query.options = matches;
+        }
+
+        callback(query);
+        return;
     }
 });
 
