@@ -628,7 +628,3 @@ tr#jetpack_dropdown_or td {
 #debugbar_position .error {
     color: red;
 }
-
-.commandline .commandLineError {
-    color: red;
-}
