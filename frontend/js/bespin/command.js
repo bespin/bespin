@@ -88,6 +88,17 @@ dojo.declare("bespin.command.Store", null, {
             }, this);
         }
     },
+    
+    /**
+     * Add a new command to this command store
+     */
+    removeCommand: function(command) {
+        if (!command) {
+            return;
+        }
+        
+        delete this.commands[command.name];
+    },
 
     /*
     // Do we need this?
@@ -350,5 +361,24 @@ dojo.declare("bespin.command.Store", null, {
  * Add a root command store to the main bespin namespace
  */
 dojo.mixin(bespin.command, {
-    store: new bespin.command.Store()
+    store: new bespin.command.Store(),
+    
+    executeExtensionCommand: function() {
+        var args = arguments;
+        var self = this;
+        this.load(function(execute) {
+            execute.apply(self, args);
+        });
+    }
+});
+
+
+
+bespin.subscribe("extension:loaded:bespin.command", function(ext) {
+    ext.execute = bespin.command.executeExtensionCommand;
+    bespin.command.store.addCommand(ext);
+});
+
+bespin.subscribe("extension:removed:bespin.command", function(ext) {
+    bespin.command.store.removeCommand(ext);
 });

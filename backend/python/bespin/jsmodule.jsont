@@ -1,5 +1,5 @@
 meta: {{}}
 
-moduleLoaded("{{script_name}}", function(require,exports){ {{script}}
+bespin.plugins.loader.moduleLoaded("{{script_name}}", function(require,exports){ {{script}}
 return exports;
 });
