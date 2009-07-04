@@ -37,6 +37,17 @@ dojo.declare("bespin.plugins.Extension", null, {
         // this part will actually be async
         var module = bespin.plugins.loader.modules[modname];
         
+        if (!module) {
+            bespin.plugins.loader.loadScript(modname, function(module) {
+                if (parts[1]) {
+                    callback(module[parts[1]]);
+                } else {
+                    callback(module);
+                }
+            });
+            return;
+        }
+        
         if (parts[1]) {
             callback(module[parts[1]]);
         } else {
@@ -144,7 +155,7 @@ bespin.plugins.commands.addCommand({
                 bespin.plugins.unregisterExtensionPoints(name);
                 bespin.plugins.metadata[name] = module.info;
                 bespin.plugins.registerExtensionPoints(name);
-                instruction.addOutput("Plugin loaded.");
+                instruction.addOutput("Plugin installed.");
             }, true);
     }
 });
