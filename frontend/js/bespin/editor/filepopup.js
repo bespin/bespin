@@ -137,7 +137,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
 
             var file = this.getFilePath(path, true);
-            console.log("file", file);
+            console.log("file", file, { filename:file, project:this.currentProject });
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
 
             var settings = bespin.get("settings");
