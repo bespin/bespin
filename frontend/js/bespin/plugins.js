@@ -54,6 +54,7 @@ dojo.mixin(bespin.plugins, {
     },
     
     unregisterExtensionPoints: function(pluginName) {
+        var extensionPoints = bespin.plugins.extensionPoints;
         var info = bespin.plugins.metadata[pluginName];
         if (!info) {
             return;
