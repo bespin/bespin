@@ -151,24 +151,9 @@ dojo.mixin(bespin.plugins, {
     
     _removeLink: function(node) {
         bespin.get("commandLine").executeCommand('plugin remove "' + node.getAttribute("name") + '"');
-    }
-});
-
-bespin.plugins.commands = new bespin.command.Store(bespin.command.store, {
-    name: "plugin",
-    preview: "manage Bespin plugins",
-    subcommanddefault: "help"
-});
-
-bespin.plugins.commands.addCommand({
-    name: "install",
-    takes: ["name"],
-    execute: function(instruction, name) {
-        var editSession = bespin.get('editSession');
-        var filename = editSession.path;
-        var project  = editSession.project;
-        var url = "/file/at/" + project + "/" + filename;
-        
+    },
+    
+    reload: function(url) {
         var oldmodule = bespin.plugins.loader.modules[url];
         
         bespin.plugins.loader.loadScript(url,
@@ -190,14 +175,45 @@ bespin.plugins.commands.addCommand({
                 if (module.activate) {
                     module.activate();
                 }
-                
                 bespin.get("files").saveFile("BespinSettings",
                     {
                         name: "plugins.json",
                         content: dojo.toJson(bespin.plugins.metadata)
                     });
-                instruction.addOutput("Plugin installed.");
+                
             }, true);
+    },
+    
+    reloadByName: function(pluginName) {
+        var info = bespin.plugins.metadata[pluginName];
+        if (!info || !info.location) {
+            return;
+        }
+        bespin.plugins.reload(info.location);
+    },
+    
+    _reloadLink: function(node) {
+        bespin.get("commandLine").executeCommand('plugin reload "' + node.getAttribute("name") + '"');
+    }
+});
+
+bespin.plugins.commands = new bespin.command.Store(bespin.command.store, {
+    name: "plugin",
+    preview: "manage Bespin plugins",
+    subcommanddefault: "help"
+});
+
+bespin.plugins.commands.addCommand({
+    name: "install",
+    takes: ["name"],
+    execute: function(instruction, name) {
+        var editSession = bespin.get('editSession');
+        var filename = editSession.path;
+        var project  = editSession.project;
+        var url = "/file/at/" + project + "/" + filename;
+        
+        bespin.plugins.reload(url);
+        instruction.addOutput("Plugin installed.");
     }
 });
 
@@ -208,7 +224,7 @@ bespin.plugins.commands.addCommand({
         output += '<table>';
         for (var name in bespin.plugins.metadata) {
             output += '<tr><td>' + name + 
-                '</td><td><a onclick="bespin.plugins._removeLink(this)" name="' + name + '">Remove</a></td></tr>';
+                '</td><td><a onclick="bespin.plugins._removeLink(this)" name="' + name + '">Remove</a></td><td><a onclick="bespin.plugins._reloadLink(this)" name="' + name + '">Reload</a></td></tr>';
         }
         output += "</table>";
         instruction.addOutput(output);
@@ -222,6 +238,16 @@ bespin.plugins.commands.addCommand({
         name = name.substring(1, name.length-1);
         bespin.plugins.remove(name);
         instruction.addOutput("Plugin removed");
+    }
+});
+
+bespin.plugins.commands.addCommand({
+    name: "reload",
+    takes: ['name'],
+    execute: function(instruction, name) {
+        name = name.substring(1, name.length-1);
+        bespin.plugins.reloadByName(name);
+        instruction.addOutput("Plugin reloaded");
     }
 });
 
