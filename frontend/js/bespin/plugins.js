@@ -39,6 +39,10 @@ dojo.declare("bespin.plugins.Extension", null, {
         
         if (!module) {
             bespin.plugins.loader.loadScript(modname, function(module) {
+                if (module.activate) {
+                    module.activate();
+                }
+                
                 if (parts[1]) {
                     callback(module[parts[1]]);
                 } else {
@@ -143,6 +147,9 @@ bespin.plugins.commands.addCommand({
         var filename = editSession.path;
         var project  = editSession.project;
         var url = "/file/at/" + project + "/" + filename;
+        
+        var oldmodule = bespin.plugins.loader.modules[url];
+        
         bespin.plugins.loader.loadScript(url,
             function(module) {
                 if (!module.info) {
@@ -153,8 +160,14 @@ bespin.plugins.commands.addCommand({
                     name = filename;
                 }
                 bespin.plugins.unregisterExtensionPoints(name);
+                if (oldmodule && oldmodule.deactivate) {
+                    oldmodule.deactivate();
+                }
                 bespin.plugins.metadata[name] = module.info;
                 bespin.plugins.registerExtensionPoints(name);
+                if (module.activate) {
+                    module.activate();
+                }
                 instruction.addOutput("Plugin installed.");
             }, true);
     }
