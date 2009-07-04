@@ -61,12 +61,9 @@ dojo.declare("bespin.plugins.Extension", null, {
 });
 
 dojo.mixin(bespin.plugins, {
-    metadata: {
-    },
+    metadata: {},
     
-    extensionPoints: {
-        
-    },
+    extensionPoints: {},
     
     unregisterExtensionPoints: function(pluginName) {
         var extensionPoints = bespin.plugins.extensionPoints;
@@ -123,7 +120,6 @@ dojo.mixin(bespin.plugins, {
             
             var ext = new Extension(pluginName, meta)
             extList.push(ext);
-            console.log("Publishing: " + "extension:loaded:" + name);
             bespin.publish("extension:loaded:" + name, ext);
         }
     },
@@ -131,6 +127,31 @@ dojo.mixin(bespin.plugins, {
     get: function(epName) {
         return bespin.plugins.extensionPoints[epName] || [];
     },
+    
+    remove: function(pluginName) {
+        var info = bespin.plugins.metadata[pluginName];
+        console.log("Removing " + pluginName);
+        console.dir(info);
+        if (info) {
+            var oldmodule = bespin.plugins.loader.modules[info.location];
+        } else {
+            var oldmodule = undefined;
+        }
+        bespin.plugins.unregisterExtensionPoints(pluginName);
+        if (oldmodule && oldmodule.deactivate) {
+            oldmodule.deactivate();
+        }
+        delete bespin.plugins.metadata[pluginName];
+        bespin.get("files").saveFile("BespinSettings",
+            {
+                name: "plugins.json",
+                content: dojo.toJson(bespin.plugins.metadata)
+            });
+    },
+    
+    _removeLink: function(node) {
+        bespin.get("commandLine").executeCommand('plugin remove "' + node.getAttribute("name") + '"');
+    }
 });
 
 bespin.plugins.commands = new bespin.command.Store(bespin.command.store, {
@@ -163,12 +184,54 @@ bespin.plugins.commands.addCommand({
                 if (oldmodule && oldmodule.deactivate) {
                     oldmodule.deactivate();
                 }
+                module.info.location = url;
                 bespin.plugins.metadata[name] = module.info;
                 bespin.plugins.registerExtensionPoints(name);
                 if (module.activate) {
                     module.activate();
                 }
+                
+                bespin.get("files").saveFile("BespinSettings",
+                    {
+                        name: "plugins.json",
+                        content: dojo.toJson(bespin.plugins.metadata)
+                    });
                 instruction.addOutput("Plugin installed.");
             }, true);
     }
+});
+
+bespin.plugins.commands.addCommand({
+    name: "list",
+    execute: function(instruction) {
+        var output = '<h2>Installed plugins:</h2>';
+        output += '<table>';
+        for (var name in bespin.plugins.metadata) {
+            output += '<tr><td>' + name + 
+                '</td><td><a onclick="bespin.plugins._removeLink(this)" name="' + name + '">Remove</a></td></tr>';
+        }
+        output += "</table>";
+        instruction.addOutput(output);
+    }
+});
+
+bespin.plugins.commands.addCommand({
+    name: "remove",
+    takes: ['name'],
+    execute: function(instruction, name) {
+        name = name.substring(1, name.length-1);
+        bespin.plugins.remove(name);
+        instruction.addOutput("Plugin removed");
+    }
+});
+
+dojo.addOnLoad(function() {
+    bespin.get("files").loadContents("BespinSettings", "plugins.json",
+        function(info) {
+            var data = dojo.fromJson(info.content);
+            bespin.plugins.metadata = data;
+            for (var name in data) {
+                bespin.plugins.registerExtensionPoints(name);
+            }
+    });
 });

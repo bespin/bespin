@@ -53,7 +53,6 @@ dojo.mixin(bespin.plugins.loader, {
             loadQueue[scriptName] = undefined;
             var module = moduleFactory(bespin.plugins.loader.require, {});
             modules[scriptName] = module;
-            console.log(queueitem);
             if (queueitem.callback) {
                 queueitem.callback(module);
             }
