@@ -98,10 +98,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Copy
         this.beforecopyHandle = dojo.connect(document, "beforecopy", function(e) {
-            if (!editorHasFocus() && !this.allowAction) {
-                e.preventDefault();
-                return;
-            }
+            if (!editorHasFocus() && !this.allowAction) return;
             if (stopAction(e)) return;
             e.preventDefault();
             copynpaster.focus();
@@ -125,10 +122,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Cut
         this.beforecutHandle = dojo.connect(document, "beforecut", function(e) {
-            if (!editorHasFocus() && !this.allowAction) {
-                e.preventDefault();
-                return;
-            }
+            if (!editorHasFocus() && !this.allowAction) return;
             if (stopAction(e)) return;
 
             e.preventDefault();
@@ -158,10 +152,7 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
 
         // Paste
         this.beforepasteHandle = dojo.connect(document, "beforepaste", function(e) {
-            if (!editorHasFocus() && !this.allowAction) {
-                e.preventDefault();
-                return;
-            }
+            if (!editorHasFocus() && !this.allowAction) return;
             if (stopAction(e)) return;
 
             e.preventDefault();
