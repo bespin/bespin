@@ -679,13 +679,10 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.readonly) return;
 
         var settings = bespin.get("settings");
-        var autoindent = bespin.util.leadingWhitespace(this.model.getRowArray(args.pos.row));
-        var autoindentSize = 0, tabsize = this.editor.getTabSize();;
-        //calculate equivalent number of spaces in autoindent
-        for (var i = 0; i < autoindent.length; i++) {
-            if (autoindent[i] == ' ' || autoindent[i] == '' || autoindent[i] === undefined) autoindentSize++;
-            else if (autoindent[i] == '\t') autoindentSize += tabsize;
-            else break;
+        if (settings && settings.isSettingOn('autoindent')) {
+            var autoindent = bespin.util.leadingWhitespace(this.model.getRowArray(args.pos.row));
+        } else {
+            var autoindent = [];
         }
         
         args.chunk = "\n" + autoindent.join("");
