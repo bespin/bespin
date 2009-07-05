@@ -40,7 +40,6 @@ dojo.declare("bespin.editor.UndoManager", null, {
     },
 
     maxUndoLength: 100,
-    performUndoRedo: false,
 
     canUndo: function() {
         return this.undoStack.length > 0;
@@ -51,9 +50,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
         var item = this.undoStack.pop();
 
         this.editor.cursorManager.moveCursor(item.undoOp.pos);
-        this.performUndoRedo = true;
         item.undo();
-        this.performUndoRedo = false;
         this.redoStack.push(item);
 
         if (this.syncHelper) this.syncHelper.undo();
@@ -66,9 +63,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
         var item = this.redoStack.pop();
 
         this.editor.cursorManager.moveCursor(item.redoOp.pos);
-        this.performUndoRedo = true;
         item.redo();
-        this.performUndoRedo = false;
         this.undoStack.push(item);
 
         if (this.syncHelper) this.syncHelper.redo();
@@ -77,7 +72,7 @@ dojo.declare("bespin.editor.UndoManager", null, {
     },
 
     addUndoOperation: function(item) {
-        if (item.undoOp.queued || this.performUndoRedo) return;
+        if (item.undoOp.queued) return;
 
         if (this.redoStack.length > 0) this.redoStack = [];
 
