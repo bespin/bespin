@@ -87,6 +87,32 @@ dojo.declare("bespin.command.Store", null, {
                 this.aliases[alias] = command.name;
             }, this);
         }
+
+        // TODO: It would be nice to have a class for command structures so we
+        // didn't have to monkey patch in functions like this, but that needs to
+        // wait until we know what plug-ins will look like.
+
+        /**
+         * This is like store.getFullCommandName() but for commands
+         */
+        command.getFullCommandName = function() {
+            var name = this.name;
+            if (this.parent) {
+                name = this.parent.getFullCommandName() + " " + name;
+            }
+            return dojo.trim(name);
+        };
+
+        if (!command.findCompletions) {
+            /**
+             * Like store.findCompletions() but a default that just uses
+             * command.completeText to provide a hint
+             */
+            command.findCompletions = function(query, callback) {
+                query.hint = this.completeText;
+                callback(query);
+            };
+        }
     },
 
     /*
@@ -131,105 +157,111 @@ dojo.declare("bespin.command.Store", null, {
     },
 
     /**
+     * Find a command from this store from something the user typed at a command
+     * line.
+     * <p>A null return from this method implies a value that can't be matched
+     * to a command, or completed in any way to a command.
+     * <p>Examples:<ul>
+     * <li>findCommand("") = root store
+     * <li>findCommand("s") = root store
+     * <li>findCommand("set") = set command
+     * <li>findCommand("set ") = set command
+     * <li>findCommand("set invalid params") = set command
+     * <li>findCommand("sett") = null (TODO: Returns root store now)
+     * <li>findCommand("vcs") = vcs store
+     * <li>findCommand("vcs clon") = vcs store
+     * <li>findCommand("vcs clone") = vcs clone command
+     * <li>findCommand("vcs clone repo") = vcs clone command
+     * </ul>
+     * <p>This works by delegating to child command stored when necessary
+     * having first removed any command prefixes from the matched command store.
+     * e.g. rootStore.findCommand("vcs clone repo") will delegate to the vcs
+     * command store, and ask vcsStore.findCommand("clone repo"). The answer to
+     * this last request is the clone command, because it is not a command
+     * store.
+     */
+    findCommand: function(value) {
+        var parts = dojo.trim(value).split(/\s+/);
+        var first = parts.shift();
+        var command = this.commands[first] || this.commands[this.aliases[first]];
+        if (!command) {
+            if (parts.length > 0) {
+                return null;
+            } else {
+                // TODO: We really should be doing some matching on this
+                return this;
+            }
+        }
+        if (command.subcommands) {
+            return command.subcommands.findCommand(parts.join(" "));
+        } else {
+            return command;
+        }
+    },
+
+    /**
      * Find the commands that could work, given the value typed
-     * @param value What was typed
-     * @param root Any prefix that has been chopped off
+     * @see commandLine._findCompletions(e) for how this is called
+     * @param query Values to be used in completion
+     * @param callback Function to be called with the results
      */
     findCompletions: function(query, callback) {
-        // Find the text that we're working on.
-        var value = query.value.substring(0, query.cursorPos);
-        var prefix = this.getFullCommandName();
-        if (value.substr(0, prefix.length) != prefix) {
-            console.error("findCompletions: value (", value, ") does not start with prefix (", prefix, ")");
-            return;
-        }
-        value = value.substr(prefix.length);
-        // If we've got an initial space, chop it off and add to the prefix so
-        // the cursor position calculation still works
-        if (value.charAt(0) == " ") {
-            value = value.substr(1);
-        }
-
-        // No spaces means we're completing from the commands and aliases
-        if (!value.match(' ')) {
-            var matches = [];
-
-            // Only begin matching when they've typed something
-            if (value.length == 0) {
-                query.hint = "Type a command or 'help' for a list of commands";
-                callback(query);
-                return;
-            }
-
-            // Get a list of all commands and aliases. TODO: cache?
-            for (var command in this.commands) {
-                if (command.indexOf(value) == 0) {
-                    matches.push(command);
-                }
-            }
-            for (var alias in this.aliases) {
-                if (alias.indexOf(value) == 0) {
-                    matches.push(alias);
-                }
-            }
-
-            if (matches.length == 1) {
-                // Single match: go for autofill and hint
-                var newValue = matches[0];
-                var command = this.commands[newValue] || this.commands[this.aliases[newValue]];
-                if (this.commandTakesArgs(command)) {
-                    newValue = newValue + " ";
-                }
-                if (prefix === "") {
-                    query.autofill = newValue;
-                } else {
-                    query.autofill = prefix + " " + newValue;
-                }
-                query.hint = command.preview;
-            } else if (matches.length == 0) {
-                // No matches, cause an error
-                query.error = "No matches";
-            } else {
-                // Multiple matches, present a list
-                matches.sort(function(a, b) {
-                    return a.localeCompare(b);
-                });
-                query.options = matches;
-            }
-
-            callback(query);
-            return;
-        }
-
-        // Given the entire string typed for this command, find the root command by
-        // looking for the first space and finding the command for everything to
-        // there.
-        var command = this.commands[dojo.trim(value.substring(0, value.indexOf(' ')))];
-        if (!command) {
-            // No matches, cause an error
+        // Multiple args implies that we've failed to route to a child command
+        if (query.action.length > 1) {
             query.error = "No matches";
             callback(query);
             return;
         }
 
-        // If we've got something that does findCompletions, the delegate
-        if (command.findCompletions) {
-            command.findCompletions(query, callback);
+        // Find the text that we're working on.
+        var typed = query.action[0];
+
+        // No hints for a blank command line
+        if (typed.length == 0 && this.parent == null) {
+            callback(query);
             return;
         }
 
-        // If there are sub-commands, then delegate
-        if (command.subcommands) {
-            command.subcommands.findCompletions(query, callback);
-            return;
+        // Get a list of all commands and aliases. TODO: cache?
+        var matches = [];
+        for (var command in this.commands) {
+            if (command.indexOf(typed) == 0) {
+                matches.push(command);
+            }
+        }
+        for (var alias in this.aliases) {
+            if (alias.indexOf(typed) == 0) {
+                matches.push(alias);
+            }
         }
 
-        // So we have a command that doesn't have a findCompletions method
-        // we just use
-        query.hint = command.completeText;
+        if (matches.length == 1) {
+            // Single match: go for autofill and hint
+            var newValue = matches[0];
+            var command = this.commands[newValue] || this.commands[this.aliases[newValue]];
+            if (this.commandTakesArgs(command)) {
+                newValue = newValue + " ";
+            }
+            query.autofill = query.prefix + newValue;
+            query.hint = command.preview;
+        } else if (matches.length == 0) {
+            // No matches, cause an error
+            query.error = "No matches";
+        } else {
+            // Multiple matches, present a list
+            matches.sort(function(a, b) {
+                return a.localeCompare(b);
+            });
+            query.options = matches;
+        }
+
         callback(query);
+        return;
     },
 
+    /**
+     * Does this command take arguments?
+     */
     commandTakesArgs: function(command) {
         return command.takes != undefined;
     },
@@ -351,4 +383,27 @@ dojo.declare("bespin.command.Store", null, {
  */
 dojo.mixin(bespin.command, {
     store: new bespin.command.Store()
+});
+
+//** {{{Command: help}}} **
+bespin.command.store.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands',
+    description: 'The <u>help</u> gives you access to the various commands in the Bespin system.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>If you pass in the magic <em>hidden</em> parameter, you will find subtle hidden commands.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        var output = this.parent.getHelp(extra, {
+            prefix: "<h2>Welcome to Bespin - Code in the Cloud</h2><ul>" +
+                "<li><a href='http://labs.mozilla.com/projects/bespin' target='_blank'>Home Page</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin' target='_blank'>Wiki</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide' target='_blank'>User Guide</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/Tips' target='_blank'>Tips and Tricks</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/FAQ' target='_blank'>FAQ</a>" +
+                "<li><a href='https://wiki.mozilla.org/Labs/Bespin/DeveloperGuide' target='_blank'>Developers Guide</a>" +
+                "</ul>",
+            suffix: "For more information, see the <a href='https://wiki.mozilla.org/Labs/Bespin'>Bespin Wiki</a>."
+        });
+        instruction.addOutput(output);
+    }
 });
