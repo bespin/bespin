@@ -394,7 +394,7 @@ dojo.declare("bespin.command.Store", null, {
  */
 dojo.mixin(bespin.command, {
     store: new bespin.command.Store(),
-    
+
     executeExtensionCommand: function() {
         var args = arguments;
         var self = this;
@@ -404,18 +404,26 @@ dojo.mixin(bespin.command, {
     }
 });
 
-
-
+/**
+ * Add a command to the root store on pub/sub.
+ * TODO: We're trying to remove pub/sub for actions, so we should explain this
+ */
 bespin.subscribe("extension:loaded:bespin.command", function(ext) {
     ext.execute = bespin.command.executeExtensionCommand;
     bespin.command.store.addCommand(ext);
 });
 
+/**
+ * Remove a command from the root store on pub/sub.
+ * TODO: We're trying to remove pub/sub for actions, so we should explain this
+ */
 bespin.subscribe("extension:removed:bespin.command", function(ext) {
     bespin.command.store.removeCommand(ext);
 });
 
-//** {{{Command: help}}} **
+/**
+ * 'help' command for the root store
+ */
 bespin.command.store.addCommand({
     name: 'help',
     takes: ['search'],
@@ -437,3 +445,4 @@ bespin.command.store.addCommand({
         instruction.addOutput(output);
     }
 });
+

@@ -74,9 +74,9 @@ dojo.mixin(bespin.util.webpieces, {
      * screen
      */
     fillScreenOverlay: function() {
-	    var coords = dojo.coords(document.body);
+        var coords = dojo.coords(document.body);
 
-	    if (coords.h) {
+        if (coords.h) {
             dojo.style(dojo.byId('overlay'), 'height', coords.h + "px");
         }
     },

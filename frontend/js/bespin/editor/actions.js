@@ -1085,7 +1085,7 @@ dojo.declare("bespin.editor.Actions", null, {
             startPos: bespin.editor.utils.copyPos(startPos),
             endPos: bespin.editor.utils.copyPos(endPos),
             startModelPos: this.editor.getModelPos(startPos),
-            endModelPos	: this.editor.getModelPos(endPos),
+            endModelPos: this.editor.getModelPos(endPos),
             queued: true
         };
 
@@ -1132,5 +1132,5 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-	}
+    }
 });
