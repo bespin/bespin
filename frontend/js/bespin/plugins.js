@@ -88,11 +88,12 @@ dojo.mixin(bespin.plugins, {
                 continue;
             }
             
-            for (var i = 0; i < extList.length; i++) {
-                var ext = extList[i];
+            for (var j = 0; j < extList.length; j++) {
+                var ext = extList[j];
                 if (ext._pluginName == pluginName) {
-                    extList.splice(i,1);
+                    extList.splice(j,1);
                     bespin.publish("extension:removed:" + name, ext);
+                    j--;
                 }
             }
         }
