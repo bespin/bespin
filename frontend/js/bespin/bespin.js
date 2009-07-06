@@ -177,3 +177,18 @@ dojo.mixin(bespin, {
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
     }
 });
+
+bespin.subscribe("extension:loaded:bespin.subscribe", function(ext) {
+    var subscription = bespin.subscribe(ext.topic, function(e) {
+        ext.load(function(func) {
+            func(e);
+        })
+    });
+    ext.subscription = subscription;
+});
+
+bespin.subscribe("extension:removed:bespin.subscribe", function(ext) {
+    if (ext.subscription) {
+        bespin.unsubscribe(ext.subscription);
+    }
+});

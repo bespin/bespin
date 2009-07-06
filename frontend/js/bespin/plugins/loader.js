@@ -26,7 +26,7 @@ dojo.provide("bespin.plugins.loader");
 
 dojo.mixin(bespin.plugins.loader, {
     modules: {},
-    loadQueue: [],
+    loadQueue: {},
 
     moduleLoaded: function(scriptName, moduleFactory) {
         var contents = moduleFactory.toString();
@@ -49,21 +49,26 @@ dojo.mixin(bespin.plugins.loader, {
         }
         
         if (deps.length == 0) {
-            modules[scriptName] = 
-                moduleFactory(bespin.plugins.loader.require, {});
+            var queueitem = loadQueue[scriptName];
+            loadQueue[scriptName] = undefined;
+            var module = moduleFactory(bespin.plugins.loader.require, {});
+            modules[scriptName] = module;
+            if (queueitem.callback) {
+                queueitem.callback(module);
+            }
         }
     },
 
-    loadScript: function(scriptName) {
+    loadScript: function(scriptName, callback, force) {
         var loadQueue = bespin.plugins.loader.loadQueue;
         
         // already loading?
-        if (loadQueue[scriptName]) {
+        if (loadQueue[scriptName] && !force) {
             return;
         }
         
-        loadQueue[scriptName] = {factory: null, name: scriptName};
-        loadQueue.push(scriptName);
+        loadQueue[scriptName] = {factory: null, name: scriptName,
+                                callback: callback};
         bespin.plugins.loader._addScriptTag(scriptName);
     },
     
