@@ -334,7 +334,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
         // on some platforms and keyboardlayouts (german?). This is not working for "^"
-        if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1) {
+        if ([33 /*!*/, 35 /*#*/, 64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1) {
             this.skipKeypress = false;
         } else if (this.skipKeypress) {
             if (!bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
