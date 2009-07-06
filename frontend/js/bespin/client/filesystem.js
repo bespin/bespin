@@ -185,7 +185,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     saveFile: function(project, file) {
         // Unix files should always have a trailing new-line; add if not present
         if (/\n$/.test(file.content)) file.content += "\n";
-        
+
         console.log("About to save");
         this.server.saveFile(project, file.name, file.content, file.lastOp,
                 {
@@ -212,7 +212,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 path: path
             });
             onSuccess(result);
-        }
+        };
         this.server.makeDirectory(project, path, publishOnSuccess, onFailure);
     },
 
@@ -231,7 +231,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 path: path
             });
             onSuccess(result);
-        }
+        };
         this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 
@@ -250,7 +250,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 path: path
             });
             onSuccess(result);
-        }
+        };
         this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 

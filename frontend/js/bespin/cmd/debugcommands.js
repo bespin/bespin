@@ -62,6 +62,7 @@ dojo.provide("bespin.cmd.debugcommands");
     /**
      * The 'login' command
      */
+    /*
     store.addCommand({
         name: 'login',
         // aliases: ['user'],
@@ -69,25 +70,37 @@ dojo.provide("bespin.cmd.debugcommands");
         hidden: true,
         takes: {
             order: ['username', 'password'],
-            username: {
-                "short": 'u'
-            },
-            password: {
-                "short": 'p',
-                optional: true
-            }
+            username: { "short": 'u' },
+            password: { "short": 'p', optional: true }
         },
         preview: 'login to the service',
         completeText: 'pass in your username and password',
         execute: function(instruction, args) {
             if (!args) { // short circuit if no username
-                bespin.get('commandLine').executeCommand("status");
+                instruction.commandLine.executeCommand("status");
                 return;
             }
             bespin.get('editSession').username = args.user; // TODO: normalize syncing
             bespin.get('server').login(args.user, args.pass);
         }
     });
+    */
+
+    /**
+     * The 'logout' command
+     */
+    /*
+    store.addCommand({
+        name: 'logout',
+        preview: 'log out',
+        execute: function(instruction) {
+            delete bespin.get('editSession').username;
+            bespin.get('server').logout(function() {
+                window.location.href="/";
+            });
+        }
+    });
+    */
 
     /**
      * The 'insert' command
