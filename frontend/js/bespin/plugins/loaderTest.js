@@ -44,9 +44,11 @@ bespin.test.addTests("loader", {
     
     _addScriptTag: function() {
         // no-op for testing.
+        console.log("Script tag WOULD HAVE been added if this were not a test");
     },
     
     reset: function() {
+        console.log("reset called");
         bespin.plugins.loader.modules = [];
         bespin.plugins.loader.loadQueue = [];
     },
@@ -54,13 +56,16 @@ bespin.test.addTests("loader", {
     testQueueUpAModule: function(test) {
         bespin.plugins.loader.loadScript("/js/bespin/nonModule.js");
         var lq = bespin.plugins.loader.loadQueue;
-        test.isEqual(1, lq.length);
         test.isNotUndefined(lq["/js/bespin/nonModule.js"]);
     },
     
     testModuleWithNoDeps: function(test) {
+        var lq = bespin.plugins.loader.loadQueue;
         loadCheck = {didLoad: false};
         var modName = "/js/bespin/nonModule.js";
+        
+        lq[modName] = {};
+        
         bespin.plugins.loader.moduleLoaded(modName,
             function(require, exports) {
                 loadCheck.didLoad = true;
@@ -70,6 +75,9 @@ bespin.test.addTests("loader", {
                 return exports;
             });
         test.isTrue(loadCheck.didLoad);
+        
+        test.isUndefined(lq[modName], "Module should be gone from the queue");
+        
         test.isNotUndefined(bespin.plugins.loader.modules[modName],
             "Was module object saved?");
         
@@ -115,7 +123,9 @@ bespin.test.addTests("loader", {
         test.isTrue(loadCheck.didLoad, "Main module should load");
         test.isTrue(loadCheck.otherDidLoad, "Module it depended on should load");
         
-        var mod = bespin.plugins.loader.require(modName);
+        console.dir(bespin.plugins.loader.modules);
+        var mod = bespin.plugins.loader.require("bespin/nonModule");
+        test.isNotUndefined(mod, "The main module should be requireable");
         test.isEqual(192, mod.secretValue, "secret value should have been set");
     }
 });
