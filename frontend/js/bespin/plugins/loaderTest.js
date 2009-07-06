@@ -127,5 +127,60 @@ bespin.test.addTests("loader", {
         var mod = bespin.plugins.loader.require("bespin/nonModule");
         test.isNotUndefined(mod, "The main module should be requireable");
         test.isEqual(192, mod.secretValue, "secret value should have been set");
+    },
+    
+    testModuleLoadOrderShouldNotMatter: function(test) {
+        var loader = bespin.plugins.loader;
+        var lq = loader.loadQueue;
+        var loadCheck = {};
+
+        loader.loadScript("/js/A.js");
+        
+        loader.moduleLoaded("/js/A.js",
+            function(require, exports) {
+                loadCheck.A = true;
+                var B = require("B");
+                var C = require("C");
+                
+                return exports;
+            });
+        
+        test.isUndefined(loadCheck.A, "A should not have been loaded yet");
+        test.isNotUndefined(lq["/js/B.js"], "B should be queued up");
+        test.isNotUndefined(lq["/js/C.js"], "C should be queued up");
+        
+        loader.moduleLoaded("/js/B.js",
+            function(require, exports) {
+                loadCheck.B = true;
+                var D = require("D");
+                
+                return exports;
+            });
+        
+        test.isUndefined(loadCheck.A, "A should not have been loaded");
+        test.isUndefined(loadCheck.B, "B should not have been loaded");
+        
+        // D comes in out of order
+        loader.moduleLoaded("/js/D.js",
+            function(require, exports) {
+                loadCheck.D = true;
+                return exports;
+            });
+        
+        test.isTrue(loadCheck.D, "D should *now* have been loaded");
+        test.isTrue(loadCheck.B, "B should *now* have been loaded");
+        test.isUndefined(loadCheck.A, "A should not have been loaded");
+        
+        loader.moduleLoaded("/js/C.js",
+            function(require, exports) {
+                loadCheck.C = true;
+                
+                var D = require("D");
+                
+                return exports;
+            });
+        
+        test.isTrue(loadCheck.C, "C should *now* have been loaded");
+        test.isTrue(loadCheck.A, "A should *now* have been loaded");
     }
 });
