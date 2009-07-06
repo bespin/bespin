@@ -34,7 +34,7 @@ bespin.command.store.addCommand({
     preview: 'show files',
     completeText: 'list files relative to current file, or start with /projectname',
     execute: function(instruction, givenPath) {
-        var list = this._parseArguments(givenPath);
+        var list = bespin.cmd.file._parseArguments(givenPath);
         bespin.get('server').list(list.project, list.path, function(filenames) {
             var files = "";
             for (var x = 0; x < filenames.length; x++) {
@@ -44,70 +44,10 @@ bespin.command.store.addCommand({
         });
     },
     findCompletions: function(query, callback) {
-        var givenPath = query.action.join(" ");
-        var list = this._parseArguments(givenPath);
-        var self = this;
-        bespin.get('server').list(list.project, list.path, function(files) {
-            var matches = files.filter(function(file) {
-                return file.name.substr(0, list.filter.length) === list.filter &&
-                    file.size === undefined;
-            });
-            if (matches.length == 1) {
-                // Single match: go for autofill and hint
-                // This filename generation is lazy - it slaps '/' around and
-                // then removes the dups. It's possible that we might be able
-                // to calculate where they should go, but it's not always easy
-                query.autofill = query.prefix + "/" + list.project + "/" + list.path + matches[0].name;
-                query.autofill = query.autofill.replace(/\/+/g, "/");
-                query.hint = "Press return to see files in " + query.autofill;
-            } else if (matches.length == 0) {
-                // No matches, cause an error
-                query.error = "No further directories to complete against";
-            } else {
-                // Multiple matches, present a list
-                /*
-                matches.sort(function(a, b) {
-                    return a.localeCompare(b);
-                });
-                */
-                query.options = matches.map(function(match) {
-                    return match.name;
-                });
-            }
-
-            callback(query);
+        bespin.cmd.file._findCompletionsHelper(query, callback, {
+            matchFiles: false,
+            matchDirectories: true
         });
-    },
-    _parseArguments: function(givenPath) {
-        var session = bespin.get("editSession");
-
-        // Sort out the context
-        var project = session.project;
-        var path = session.path;
-        var parts = path.split(/\//);
-        parts.pop(); // Remove the current file
-        path = parts.join("/");
-        var filter = "";
-
-        if (givenPath) {
-            // Everything past the final / is used for filtering and isn't
-            // passed to the server
-            var parts = givenPath.substr(1).split(/\//);
-            filter = parts.pop();
-            var trimmedPath = parts.join("/");
-
-            if (givenPath.charAt(0) === "/") {
-                // Pull out the leading segment into the project
-                // TODO: That's 2 split/join operations on the same data. Optimize?
-                var parts = trimmedPath.split(/\//);
-                project = parts.shift();
-                path = parts.join("/") + "/";
-            } else {
-                path = path + "/" + trimmedPath;
-            }
-        }
-
-        return { path:path, project:project, filter:filter };
     }
 });
 
@@ -172,6 +112,12 @@ bespin.command.store.addCommand({
     completeText: 'add the filename to open',
     execute: function(instruction, opts) {
         bespin.publish("editor:openfile", opts);
+    },
+    findCompletions: function(query, callback) {
+        bespin.cmd.file._findCompletionsHelper(query, callback, {
+            matchFiles: true,
+            matchDirectories: true
+        });
     }
 });
 
@@ -326,3 +272,105 @@ bespin.command.store.addCommand({
         });
     }
 });
+
+/**
+ * Utility to split out a given path as typed on the command line into a
+ * structure. The idea is to allow us to pass the project and path into a call
+ * to server.list(project, path, ...) and then filter the results based on the
+ * filter. For example:
+ * <ul>
+ * <li>/bespin/docs/e = { project:'bespin', path:'docs/', filter:'e' }
+ * <li>/bespin/docs/js/e = { project:'bespin', path:'docs/js/', filter:'e' }
+ * <li>/bespin/docs/js/e/ = { project:'bespin', path:'docs/js/e/', filter:'' }
+ * <li>/bespin/docs = { project:'bespin', path:'', filter:'docs' }
+ * <li>/bespin = { project:'/', path:'', filter:'bespin' }
+ * <li>fol = { project:'', path:'', filter:'fol' }
+ * </ul>
+ */
+bespin.cmd.file._parseArguments = function(givenPath) {
+    var session = bespin.get("editSession");
+
+    // Sort out the context
+    var project = session.project;
+    var path = session.path;
+    var parts = path.split(/\//);
+    parts.pop(); // Remove the current file
+    path = parts.join("/");
+    var filter = "";
+    var projectPath = "";
+
+    if (givenPath) {
+        if (givenPath.charAt(0) === "/") {
+            // Everything past the final / is used for filtering and isn't
+            // passed to the server, and we ignore the initial /
+            var parts = givenPath.substr(1).split(/\//);
+            filter = parts.pop();
+            // Pull out the leading segment into the project
+            project = parts.shift() || "";
+            path = parts.join("/") + "/";
+
+            // Both project and path could be "" at this point ...
+            // This filename generation is lazy - it slaps '/' around and
+            // then removes the dups. It's possible that we might be able
+            // to calculate where they should go, but it's not always easy.
+            // Same below
+            projectPath = "/" + project + "/" + path;
+            projectPath = projectPath.replace(/\/+/g, "/");
+        } else {
+            // Everything past the final / is used for filtering and isn't
+            // passed to the server
+            var parts = givenPath.split(/\//);
+            filter = parts.pop();
+            var trimmedPath = parts.join("/");
+
+            path = path + "/" + trimmedPath;
+
+            projectPath = (path == "/") ? "" : path;
+        }
+    }
+
+    return { project:project, path:path, filter:filter, projectPath:projectPath };
+};
+
+/**
+ * A helper to enable commands to implement findCompletions.
+ * <p>The parameters are like for findCompletions with the addition of an
+ * options object which work as follows:<ul>
+ * <li>options.matchDirectories should be true to include directories in the
+ * results.
+ * <li>options.matchFiles should be true to include files in the results. All
+ * uses of this function will include one (or maybe both) of the above
+ */
+bespin.cmd.file._findCompletionsHelper = function(query, callback, options) {
+    var givenPath = query.action.join(" ");
+    var list = bespin.cmd.file._parseArguments(givenPath);
+    var self = this;
+    bespin.get('server').list(list.project, list.path, function(files) {
+        var matches = files.filter(function(file) {
+            // TODO: Perhaps we should have a better way of detecting a file?
+            var isFile = (file.size !== undefined);
+            if ((options.matchDirectories && isFile) &&
+                (options.matchFiles && !isFile)) {
+                return false;
+            }
+            return file.name.substr(0, list.filter.length) === list.filter;
+        });
+        if (matches.length == 1) {
+            // Single match: go for autofill and hint
+            query.autofill = query.prefix + list.projectPath + matches[0].name;
+            query.hint = "Press return to see files in " + query.autofill;
+        } else if (matches.length == 0) {
+            // No matches, cause an error
+            query.error = "No matches";
+        } else {
+            // Multiple matches, present a list
+            // TODO: Do we need to sort these.
+            // matches.sort(function(a, b) { return a.localeCompare(b); });
+            query.options = matches.map(function(match) {
+                return match.name;
+            });
+        }
+
+        callback(query);
+    });
+};
