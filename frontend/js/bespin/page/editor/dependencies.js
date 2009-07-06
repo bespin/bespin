@@ -78,7 +78,12 @@ dojo.require("bespin.syntax.simple._base");
 dojo.require("bespin.parser.parser");
 
 dojo.require("bespin.cmd.commandline");
-dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.cmd");
+dojo.require("bespin.cmd.config");
+dojo.require("bespin.cmd.editor");
+dojo.require("bespin.cmd.file");
+dojo.require("bespin.cmd.other");
+dojo.require("bespin.cmd.project");
 
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");

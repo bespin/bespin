@@ -32,7 +32,12 @@ dojo.require("bespin.syntax.base");
 dojo.require("bespin.syntax.simple._base");
 
 dojo.require("bespin.cmd.commandline");
-dojo.require("bespin.cmd.commands");
+dojo.require("bespin.cmd.cmd");
+dojo.require("bespin.cmd.config");
+dojo.require("bespin.cmd.editor");
+dojo.require("bespin.cmd.file");
+dojo.require("bespin.cmd.other");
+dojo.require("bespin.cmd.project");
 dojo.require("bespin.cmd.editorcommands");
 
 dojo.require("th.compressed");
@@ -75,8 +80,6 @@ dojo.declare("bespin.editor.Component", null, {
         // Fancy a command line anyone?
         if (opts.commandline) {
             dojo.require("bespin.cmd.commandline");
-            dojo.require("bespin.cmd.commands");
-            dojo.require("bespin.cmd.editorcommands");
 
             var commandlineElement;
 

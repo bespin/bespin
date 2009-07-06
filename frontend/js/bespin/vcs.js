@@ -25,8 +25,6 @@
 dojo.provide("bespin.vcs");
 
 dojo.require("bespin.util.webpieces");
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.commandline");
 
 /**
  * Command store for the VCS commands
@@ -55,7 +53,6 @@ bespin.vcs.commands.addCommand({
         instruction.addOutput(output);
     }
 });
-
 
 /**
  * TODO: Is this called from anywhere? Probably not (this appears to be the only
