@@ -30,7 +30,7 @@ dojo.provide("bespin.cmd.cmd");
  */
 bespin.cmd.cmd.commands = new bespin.command.Store(bespin.command.store, {
     name: 'cmd',
-    preview: 'Various commands to manage commands!'
+    preview: 'Various commands to manage commands'
 });
 
 /**
