@@ -30,11 +30,16 @@ bespin.test.addTests("loader", {
     setup: function() {
         this.oldAddScriptTag = bespin.plugins.loader._addScriptTag;
         bespin.plugins.loader._addScriptTag = this._addScriptTag;
+        this.subscription = bespin.subscribe("bespin:loader:cycle",
+            dojo.hitch(this, function(e) {
+                this.cycleDetected = e;
+            }));
     },
     
     tearDown: function() {
         console.log("teardown was called");
         bespin.plugins.loader._addScriptTag = this._addScriptTag;
+        bespin.unsubscribe(this.subscription);
     },
     
     setupTest: function() {
@@ -51,6 +56,7 @@ bespin.test.addTests("loader", {
         console.log("reset called");
         bespin.plugins.loader.modules = [];
         bespin.plugins.loader.loadQueue = [];
+        this.cycleDetected = undefined;
     },
     
     testQueueUpAModule: function(test) {
@@ -182,5 +188,44 @@ bespin.test.addTests("loader", {
         
         test.isTrue(loadCheck.C, "C should *now* have been loaded");
         test.isTrue(loadCheck.A, "A should *now* have been loaded");
+        
+        test.isUndefined(this.cycleDetected, "cycle should not have been detected");
+    },
+    
+    testCycleDetection: function(test) {
+        var loader = bespin.plugins.loader;
+        var lq = loader.loadQueue;
+        var loadCheck = {};
+        
+        loader.loadScript("/js/A.js");
+        
+        loader.moduleLoaded("/js/A.js",
+            function(require, exports) {
+                loadCheck.A = true;
+                var B = require("B");
+                return exports;
+            });
+        
+        loader.moduleLoaded("/js/B.js",
+            function(require, exports) {
+                loadCheck.B = true;
+                
+                var C = require("C");
+                return exports;
+            });
+        
+        loader.moduleLoaded("/js/C.js",
+            function(require, exports) {
+                loadCheck.C = true;
+                var A = require("A");
+                return exports;
+            });
+        
+        test.isUndefined(loadCheck.A, "A should not be loaded");
+        test.isUndefined(loadCheck.B, "B should not be loaded");
+        test.isUndefined(loadCheck.C, "C should not be loaded");
+        
+        test.isNotUndefined(this.cycleDetected, "Cycle should have been reported");
+        test.isTrue(bespin.plugins.loader.isEmpty(bespin.plugins.loader.loadQueue));
     }
 });
