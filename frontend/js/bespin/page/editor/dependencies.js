@@ -84,6 +84,7 @@ dojo.require("bespin.cmd.editor");
 dojo.require("bespin.cmd.file");
 dojo.require("bespin.cmd.other");
 dojo.require("bespin.cmd.project");
+//dojo.require("bespin.cmd.debug");
 
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");
