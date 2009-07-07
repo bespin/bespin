@@ -22,7 +22,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.cmd.debugcommands");
+dojo.provide("bespin.cmd.debug");
 
 /**
  * A set of debug commands, that is, commands that could be useful in debugging
