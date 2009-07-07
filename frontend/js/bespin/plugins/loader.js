@@ -26,44 +26,77 @@ dojo.provide("bespin.plugins.loader");
 
 dojo.mixin(bespin.plugins.loader, {
     modules: {},
-    loadQueue: [],
+    loadQueue: {},
+    
+    isEmpty: function(obj) {
+        for (var item in obj) { return false; }
+        return true;
+    },
 
     moduleLoaded: function(scriptName, moduleFactory) {
+        var isEmpty = bespin.plugins.loader.isEmpty;
         var contents = moduleFactory.toString();
         var modules = bespin.plugins.loader.modules;
         var loadQueue = bespin.plugins.loader.loadQueue;
+        var queueitem = loadQueue[scriptName];
+        queueitem.moduleFactory = moduleFactory;
 
         //Find dependencies.
         var depRegExp = /require\s*\(('|")([\w\W]*?)('|")\)/mg;
-        var deps = [];
+        var deps = queueitem.deps = {};
         var match;
         while ((match = depRegExp.exec(contents)) != null) {
             var depScriptName = "/js/" + match[2] + ".js";
             if (modules[depScriptName] !== undefined) {
                 continue;
             }
-            deps.push(depScriptName);
+            deps[depScriptName] = true;
             if (!loadQueue[depScriptName]) {
                 bespin.plugins.loader.loadScript(depScriptName);
             }
         }
         
-        if (deps.length == 0) {
-            modules[scriptName] = 
-                moduleFactory(bespin.plugins.loader.require, {});
+        if (isEmpty(deps)) {
+            bespin.plugins.loader._loaded(scriptName, loadQueue, queueitem);
+        }
+    },
+    
+    _loaded: function(scriptName) {
+        var isEmpty = bespin.plugins.loader.isEmpty;
+        var modules = bespin.plugins.loader.modules;
+        var loadQueue = bespin.plugins.loader.loadQueue;
+        var queueitem = loadQueue[scriptName];
+
+        delete loadQueue[scriptName];
+        var module = queueitem.moduleFactory(bespin.plugins.loader.require, {});
+        modules[scriptName] = module;
+        if (queueitem.callback) {
+            queueitem.callback(module);
+        }
+        
+        // So, we've successfully loaded this module. Let's
+        // clear out dependencies.
+        for (var otherScript in loadQueue) {
+            var qi = loadQueue[otherScript];
+            if (qi.deps && qi.deps[scriptName]) {
+                delete qi.deps[scriptName];
+                if (isEmpty(qi.deps)) {
+                    bespin.plugins.loader._loaded(otherScript);
+                }
+            }
         }
     },
 
-    loadScript: function(scriptName) {
+    loadScript: function(scriptName, callback, force) {
         var loadQueue = bespin.plugins.loader.loadQueue;
         
         // already loading?
-        if (loadQueue[scriptName]) {
+        if (loadQueue[scriptName] && !force) {
             return;
         }
         
-        loadQueue[scriptName] = {factory: null, name: scriptName};
-        loadQueue.push(scriptName);
+        loadQueue[scriptName] = {factory: null, name: scriptName,
+                                callback: callback};
         bespin.plugins.loader._addScriptTag(scriptName);
     },
     

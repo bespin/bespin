@@ -24,9 +24,6 @@
 
 dojo.provide("bespin.social");
 
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.commandline");
-
 /**
  * Utility to take an string array of follower names, and publish a
  * "Following: ..." message as a command line response.

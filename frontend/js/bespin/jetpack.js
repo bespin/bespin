@@ -22,19 +22,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+dojo.provide("bespin.jetpack");
+
 /**
  * Jetpack Plugin
  * <p>The Jetpack plugin aims to make Bespin a good environment for creating and
  * hosting Jetpack extensions.
  * <p>Read more about Jetpack at: https://wiki.mozilla.org/Labs/Jetpack/API
  */
-
-dojo.provide("bespin.jetpack");
-
-dojo.require("bespin.util.webpieces");
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.commandline");
-
 bespin.jetpack.projectName = "jetpacks";
 
 /**

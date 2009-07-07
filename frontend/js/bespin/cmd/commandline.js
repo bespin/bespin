@@ -419,20 +419,62 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
     },
 
     /**
-     * Called on alpha key-presses to decide what completions are available
+     * Called on alpha key-presses to decide what completions are available.
      */
     _findCompletions: function(e) {
-        var query = {
-            value: this.commandLine.value,
-            parts: dojo.trim(this.commandLine.value).split(/\s+/),
-            cursorPos: this.commandLine.selectionStart
-        };
+        // The examples suppose that the user typed "vcs clone repo", and left
+        // the cursor after the 'p' of repo
 
-        // Unset the error status so there are no errors when deleting
+        // Calculate the values to fill out a query structure
+        var value = this.commandLine.value; // "vcs clone repo"
+        var cursorPos = this.commandLine.selectionStart; // 13
+        var preCursor = value.substring(0, cursorPos); // "vcs clone rep"
+
+        // Can we route this command?
+        var command = this.store.findCommand(value); // clone command
+        if (command == null) {
+            // TODO: maybe we could do better than this error by telling the
+            // user other options, or where in the command we failed???
+            this.showHint("No matches");
+            dojo.addClass(this.commandLine, "commandLineError");
+            return;
+        }
+
+        // There is no guarantee that the command is now valid, just that we've
+        // got something to ask what the options are from here.
+        // One of the possibilities is that this is an error, however we're
+        // going to default to no error so things don't look bad when deleting
         dojo.removeClass(this.commandLine, "commandLineError");
 
+        // TODO: Error. This makes the assumption that we're using the full
+        // name and not an alias. How to fix? We could move prefix assignment to
+        // this.store.findCommand (see above) which is the only thing really
+        // qualified to know, or we could say that the commandline should auto
+        // replace aliases for the real versions?
+        var prefix = command.getFullCommandName(); // "vcs clone"
+
+        var actionStr = preCursor.substr(prefix.length); // " rep"
+        // If we've got an initial space, chop it off and add to the prefix so
+        // the cursor position calculation still works
+        if (actionStr.charAt(0) == " ") {
+            actionStr = actionStr.substr(1); // "rep"
+            prefix += " "; // "vcs clone "
+        }
+        var action = actionStr.split(/\s+/);
+
+        var query = {
+            value: value,  // "vcs clone repo"
+            parts: dojo.trim(value).split(/\s+/), // ["vcs", "clone", "repo"]
+            cursorPos: cursorPos, // 13
+            preCursor: preCursor, // "vcs clone rep"
+            command: command, // clone command
+            prefix: prefix, // "vcs repo "
+            action: action // [ "rep" ]
+        };
+
+        // Delegate the completions to the command
         var self = this;
-        var callback = function(response) {
+        command.findCompletions(query, function(response) {
             if (response.value != self.commandLine.value ||
                 response.cursorPos != self.commandLine.selectionStart) {
                 console.log("Command line changed during async operation. Ignoring.");
@@ -471,9 +513,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
                     self.showHint(intro + response.options.join('<br/>'));
                 }
             }
-        };
-
-        this.store.findCompletions(query, callback);
+        });
     },
 
     /**
