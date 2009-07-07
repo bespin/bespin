@@ -58,23 +58,6 @@ dojo.mixin(bespin.plugins.loader, {
         
         if (isEmpty(deps)) {
             bespin.plugins.loader._loaded(scriptName, loadQueue, queueitem);
-        } else {
-            var foundDeps = false;
-            var foundReady = false;
-            for (var s in loadQueue) {
-                if (s == scriptName) {
-                    continue;
-                }
-                var qi = loadQueue[s];
-                if (qi.deps) {
-                    if (isEmpty(qi.deps)) {
-                        foundReady = true;
-                    } else {
-                        foundDeps = true;
-                    }
-                }
-            }
-            bespin.plugins.loader._cycleCheck(foundDeps, foundReady);
         }
     },
     
@@ -93,44 +76,15 @@ dojo.mixin(bespin.plugins.loader, {
         
         // So, we've successfully loaded this module. Let's
         // clear out dependencies.
-        
-        var foundDeps = false;
-        var foundReady = false;
         for (var otherScript in loadQueue) {
             var qi = loadQueue[otherScript];
-            if (qi.deps) {
-                if (qi.deps[scriptName]) {
-                    delete qi.deps[scriptName];
-                    if (isEmpty(qi.deps)) {
-                        foundReady = true;
-                        bespin.plugins.loader._loaded(otherScript);
-                    }
-                } else if (!isEmpty(qi.deps)) {
-                    foundDeps = true;
+            if (qi.deps && qi.deps[scriptName]) {
+                delete qi.deps[scriptName];
+                if (isEmpty(qi.deps)) {
+                    bespin.plugins.loader._loaded(otherScript);
                 }
             }
         }
-        bespin.plugins.loader._cycleCheck(foundDeps, foundReady);
-    },
-    
-    _cycleCheck: function(foundDeps, foundReady) {
-        console.log("foundDeps: " + foundDeps + " foundReady " + foundReady);
-        
-        if (foundDeps && !foundReady) {
-            var modules = [];
-            for (var s in bespin.plugins.loader.loadQueue) {
-                modules.push(s);
-            }
-            
-            bespin.publish("bespin:loader:cycle", {
-                modules: modules
-            });
-            
-            // there's no hope left. Just clear out the load queue
-            // and give up.
-            bespin.plugins.loader.loadQueue = {};
-        }
-        
     },
 
     loadScript: function(scriptName, callback, force) {
