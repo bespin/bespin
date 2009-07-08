@@ -1040,7 +1040,7 @@ def scriptwrapper_middleware(app):
             template = jsontemplate.FromFile(open(os.path.dirname(os.path.abspath(__file__)) + "/jsmodule.jsont"))
             start_response(result.status, result.headers.items())
             newbody = template.expand(dict(script=contents, 
-                                      script_name=req.path_info))
+                                      script_name="/getscript" + req.path_info))
             return [newbody]
         start_response(result.status, result.headers.items())
         return [result.body]

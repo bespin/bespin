@@ -53,18 +53,30 @@ bespin.test.addTests("loader", {
         bespin.plugins.loader.loadQueue = [];
     },
     
+    resolver: function(name) {
+        if (name.charAt(0) != "/") {
+            name = "/js/" + name;
+        }
+        if (!bespin.util.endsWith(name, "\\.js")) {
+            name = name + ".js";
+        }
+        name = "/getscript" + name;
+        return name;
+    },
+    
     testQueueUpAModule: function(test) {
-        bespin.plugins.loader.loadScript("/js/bespin/nonModule.js");
+        bespin.plugins.loader.loadScript("bespin/nonModule", {resolver: this.resolver});
         var lq = bespin.plugins.loader.loadQueue;
-        test.isNotUndefined(lq["/js/bespin/nonModule.js"]);
+        test.isNotUndefined(lq["/getscript/js/bespin/nonModule.js"], 
+            "Expected to find module in load queue");
     },
     
     testModuleWithNoDeps: function(test) {
         var lq = bespin.plugins.loader.loadQueue;
         loadCheck = {didLoad: false};
-        var modName = "/js/bespin/nonModule.js";
+        var modName = "/getscript/js/bespin/nonModule.js";
         
-        lq[modName] = {};
+        lq[modName] = {resolver: this.resolver};
         
         bespin.plugins.loader.moduleLoaded(modName,
             function(require, exports) {
@@ -81,7 +93,7 @@ bespin.test.addTests("loader", {
         test.isNotUndefined(bespin.plugins.loader.modules[modName],
             "Was module object saved?");
         
-        var nonModule = bespin.plugins.loader.require("bespin/nonModule");
+        var nonModule = bespin.plugins.loader.modules[modName];
         test.isEqual(27, nonModule.secretValue);
     },
     
@@ -89,11 +101,12 @@ bespin.test.addTests("loader", {
         var lq = bespin.plugins.loader.loadQueue;
         
         loadCheck = {didLoad: false, otherDidLoad: false};
-        var modName = "/js/bespin/nonModule.js";
-        var depModName = "/js/bespin/depModule.js";
+        var modName = "/getscript/js/bespin/nonModule.js";
+        var depModName = "/getscript/js/bespin/depModule.js";
         
-        bespin.plugins.loader.loadScript(modName);
-    
+        bespin.plugins.loader.loadScript("bespin/nonModule",
+                {resolver: this.resolver});
+        
         bespin.plugins.loader.moduleLoaded(modName,
             function(require, exports) {
                 var othermod = require("bespin/depModule");
@@ -110,6 +123,7 @@ bespin.test.addTests("loader", {
         test.isNotUndefined(lq[modName], "main module should be in the queue");
         test.isNotUndefined(lq[depModName], 
                 "dependent module should be in queue");
+        test.isNotUndefined(lq[depModName].resolver);
         
         bespin.plugins.loader.moduleLoaded(depModName,
             function(require, exports) {
@@ -124,7 +138,7 @@ bespin.test.addTests("loader", {
         test.isTrue(loadCheck.otherDidLoad, "Module it depended on should load");
         
         console.dir(bespin.plugins.loader.modules);
-        var mod = bespin.plugins.loader.require("bespin/nonModule");
+        var mod = bespin.plugins.loader.modules[modName];
         test.isNotUndefined(mod, "The main module should be requireable");
         test.isEqual(192, mod.secretValue, "secret value should have been set");
     },
