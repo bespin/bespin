@@ -286,6 +286,16 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         this.bindKeyString("SHIFT " + modifiers, keyCode, action);
     },
 
+    /*
+      this is taken from th.KeyHelpers
+    */ 
+    getPrintableChar: function(e) {
+        if (e.charCode > 255) return false;
+        if (e.charCode < 32) return false;
+        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 96 && e.charCode < 123)) return false;
+        return String.fromCharCode(e.charCode);
+    },
+
     onkeydown: function(e) {
         // handle keys only if editor has the focus!
         if (!this.editor.focus) return;
@@ -317,6 +327,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // stop going, but allow special strokes to get to the browser
         if (hasAction || !bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
+
     },
 
     onkeypress: function(e) {
@@ -332,9 +343,9 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         }
         // -- End of commandLine short cut
 
-        // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
-        // on some platforms and keyboardlayouts (german?). This is not working for "^"
-        if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1) {
+        var charToPrint = this.getPrintableChar(e);
+
+        if (charToPrint) {
             this.skipKeypress = false;
         } else if (this.skipKeypress) {
             if (!bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
@@ -345,8 +356,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         var actions = this.editor.ui.actions;
 
-        // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
+        if (charToPrint) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously
