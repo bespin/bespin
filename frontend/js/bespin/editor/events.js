@@ -69,15 +69,17 @@ dojo.declare("bespin.editor.Events", null, {
 
             var project  = event.project || editSession.project;
 
+            // Short circuit if we are already open at the requested file
             if (!(event.reload) && editSession.checkSameFile(project, filename)) {
                 if (event.line) {
-                    // Jump to the desired line.
                     bespin.get('commandLine').executeCommand('goto ' + event.line, true);
                 }
-                return; // short circuit
+                return;
             }
 
-            // if we're changing projects, make sure the new one is set
+            // TODO: Is is wise to change the session.project before we've
+            // broadcast the editor:openfile:openbefore event?
+            // If we're changing projects, make sure the new one is set
             if (project != editSession.project) {
                 editSession.project = project;
             }
