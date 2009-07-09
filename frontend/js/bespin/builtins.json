@@ -1,0 +1,10 @@
+{
+    "command" : {
+        "provides": [
+            ["bespin.editor.filepopup", {
+                "pointer": "bespin/editor/filepopup"
+            }]
+        ],
+        "location": "/getscript/js"
+    }
+}

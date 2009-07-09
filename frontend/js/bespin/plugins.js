@@ -68,11 +68,16 @@ dojo.declare("bespin.plugins.Extension", null, {
 dojo.mixin(bespin.plugins, {
     metadata: {},
     
+    builtins: {},
+    
     extensionPoints: {},
     
-    unregisterExtensionPoints: function(pluginName) {
+    unregisterExtensionPoints: function(pluginName, collection) {
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
         var extensionPoints = bespin.plugins.extensionPoints;
-        var info = bespin.plugins.metadata[pluginName];
+        var info = collection[pluginName];
         if (!info) {
             return;
         }
@@ -104,15 +109,36 @@ dojo.mixin(bespin.plugins, {
         }
     },
     
-    registerExtensionPoints: function(pluginName) {
+    sameFileResolver: function(name) {
+        return this.location;
+    },
+    
+    multiFileResolver: function(name) {
+        if (name.charAt(0) != "/") {
+            name = this.location + '/' + name + '.js';
+        }
+        return name;
+    },
+    
+    registerExtensionPoints: function(pluginName, collection, resolver) {
         var extensionPoints = bespin.plugins.extensionPoints;
         var Extension = bespin.plugins.Extension;
-        var info = bespin.plugins.metadata[pluginName];
+        
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
+        var info = collection[pluginName];
         var provides = info.provides;
         
         if (!provides) {
             return;
         }
+        
+        if (!resolver) {
+            resolver = bespin.plugins.sameFileResolver;
+        }
+        
+        resolver = dojo.hitch(info, resolver);
         
         for (var i = 0; i < provides.length; i++) {
             var ep = provides[i];
@@ -124,10 +150,7 @@ dojo.mixin(bespin.plugins, {
                 extList = extensionPoints[name] = [];
             }
             
-            var ext = new Extension(pluginName, function(name) {
-                    // single file case: it's always the same module
-                    return info.location;
-                }, meta)
+            var ext = new Extension(pluginName, resolver, meta)
             extList.push(ext);
             bespin.publish("extension:loaded:" + name, ext);
         }
@@ -275,5 +298,16 @@ dojo.addOnLoad(function() {
             for (var name in data) {
                 bespin.plugins.registerExtensionPoints(name);
             }
+    });
+    
+    bespin.get("server").request("GET", "/js/bespin/builtins.json", null, {
+        evalJSON: true,
+        onSuccess: function(data) {
+            bespin.plugins.builtins = data;
+            for (var name in data) {
+                bespin.plugins.registerExtensionPoints(name, 
+                    bespin.plugins.builtins, bespin.plugins.multiFileResolver);
+            }
+        }
     });
 });
