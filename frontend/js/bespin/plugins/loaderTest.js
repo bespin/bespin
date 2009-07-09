@@ -198,5 +198,56 @@ bespin.test.addTests("loader", {
         
         test.isTrue(loadCheck.C, "C should *now* have been loaded");
         test.isTrue(loadCheck.A, "A should *now* have been loaded");
+    },
+    
+    testDependenciesAreForceReloadedToo: function(test) {
+        var loader = bespin.plugins.loader;
+        var lq = loader.loadQueue;
+        var loadCheck = {};
+
+        loader.loadScript("A", {
+            resolver: this.resolver
+        });
+        
+        var Afactory = function(require, exports) {
+            loadCheck.A = true;
+            var B = require("B");
+            
+            return exports;
+        };
+        
+        loader.moduleLoaded("/getscript/js/A.js",
+            Afactory);
+        
+        test.isUndefined(loadCheck.A, "A should not have been loaded yet");
+        test.isNotUndefined(lq["/getscript/js/B.js"], "B should be queued up");
+        
+        var Bfactory = function(require, exports) {
+            loadCheck.B = true;
+            
+            return exports;
+        };
+        
+        loader.moduleLoaded("/getscript/js/B.js",
+            Bfactory);
+        
+        test.isNotUndefined(loadCheck.A, "A should be loaded");
+        test.isNotUndefined(loadCheck.B, "B should be loaded");
+        
+        delete loadCheck.A;
+        delete loadCheck.B;
+        
+        loader.loadScript("A", {
+            resolver: this.resolver,
+            force: true
+        });
+        
+        loader.moduleLoaded("/getscript/js/A.js",
+            Afactory);
+        
+        test.isUndefined(loadCheck.A, "A should not have been reloaded yet");
+        test.isNotUndefined(lq["/getscript/js/B.js"], "B should be queued up");
+        test.isUndefined(bespin.plugins.loader.modules["/getscript/js/B.js"],
+                "B should be gone from the modules because it's being reloaded");
     }
 });

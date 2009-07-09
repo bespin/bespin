@@ -37,6 +37,7 @@ dojo.mixin(bespin.plugins.loader, {
         var queueitem = loadQueue[scriptName];
         
         var resolver = queueitem.resolver;
+        var force = queueitem.force;
         queueitem.moduleFactory = moduleFactory;
 
         //Find dependencies.
@@ -47,7 +48,11 @@ dojo.mixin(bespin.plugins.loader, {
             var depScriptName = match[2];
             var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
             if (modules[adjustedName] !== undefined) {
-                continue;
+                if (force) {
+                    delete modules[adjustedName];
+                } else {
+                    continue;
+                }
             }
             deps[adjustedName] = true;
             if (!loadQueue[adjustedName]) {
@@ -109,9 +114,14 @@ dojo.mixin(bespin.plugins.loader, {
             return;
         }
         
+        if (opts.force && bespin.plugins.loader.modules[scriptName]) {
+            delete bespin.plugins.loader.modules[scriptName];
+        }
+        
         loadQueue[scriptName] = {factory: null, name: scriptName,
                                 callback: opts.callback,
-                                resolver: opts.resolver};
+                                resolver: opts.resolver,
+                                force: opts.force};
         bespin.plugins.loader._addScriptTag(scriptName);
     },
     

@@ -129,10 +129,12 @@ dojo.mixin(bespin.plugins, {
         return bespin.plugins.extensionPoints[epName] || [];
     },
     
-    remove: function(pluginName) {
-        var info = bespin.plugins.metadata[pluginName];
+    remove: function(pluginName, collection) {
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
+        var info = collection[pluginName];
         console.log("Removing " + pluginName);
-        console.dir(info);
         if (info) {
             var oldmodule = bespin.plugins.loader.modules[info.location];
         } else {
@@ -142,12 +144,15 @@ dojo.mixin(bespin.plugins, {
         if (oldmodule && oldmodule.deactivate) {
             oldmodule.deactivate();
         }
-        delete bespin.plugins.metadata[pluginName];
-        bespin.get("files").saveFile("BespinSettings",
-            {
-                name: "plugins.json",
-                content: dojo.toJson(bespin.plugins.metadata)
-            });
+        delete collection[pluginName];
+        
+        if (collection == bespin.plugins.metadata) {
+            bespin.get("files").saveFile("BespinSettings",
+                {
+                    name: "plugins.json",
+                    content: dojo.toJson(bespin.plugins.metadata)
+                });
+        }
     },
     
     _removeLink: function(node) {
