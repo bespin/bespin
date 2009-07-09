@@ -105,7 +105,6 @@ dojo.require("bespin.socialTest");
 
 dojo.require("bespin.mobwrite.core");
 dojo.require("bespin.mobwrite.diff");
-dojo.require("bespin.mobwrite.form");
 dojo.require("bespin.mobwrite.integrate");
 
 dojo.require("bespin.client.pubsub");
