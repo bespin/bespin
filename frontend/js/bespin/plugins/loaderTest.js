@@ -148,9 +148,11 @@ bespin.test.addTests("loader", {
         var lq = loader.loadQueue;
         var loadCheck = {};
 
-        loader.loadScript("/js/A.js");
+        loader.loadScript("A", {
+            resolver: this.resolver
+        });
         
-        loader.moduleLoaded("/js/A.js",
+        loader.moduleLoaded("/getscript/js/A.js",
             function(require, exports) {
                 loadCheck.A = true;
                 var B = require("B");
@@ -160,10 +162,10 @@ bespin.test.addTests("loader", {
             });
         
         test.isUndefined(loadCheck.A, "A should not have been loaded yet");
-        test.isNotUndefined(lq["/js/B.js"], "B should be queued up");
-        test.isNotUndefined(lq["/js/C.js"], "C should be queued up");
+        test.isNotUndefined(lq["/getscript/js/B.js"], "B should be queued up");
+        test.isNotUndefined(lq["/getscript/js/C.js"], "C should be queued up");
         
-        loader.moduleLoaded("/js/B.js",
+        loader.moduleLoaded("/getscript/js/B.js",
             function(require, exports) {
                 loadCheck.B = true;
                 var D = require("D");
@@ -175,7 +177,7 @@ bespin.test.addTests("loader", {
         test.isUndefined(loadCheck.B, "B should not have been loaded");
         
         // D comes in out of order
-        loader.moduleLoaded("/js/D.js",
+        loader.moduleLoaded("/getscript/js/D.js",
             function(require, exports) {
                 loadCheck.D = true;
                 return exports;
@@ -185,7 +187,7 @@ bespin.test.addTests("loader", {
         test.isTrue(loadCheck.B, "B should *now* have been loaded");
         test.isUndefined(loadCheck.A, "A should not have been loaded");
         
-        loader.moduleLoaded("/js/C.js",
+        loader.moduleLoaded("/getscript/js/C.js",
             function(require, exports) {
                 loadCheck.C = true;
                 

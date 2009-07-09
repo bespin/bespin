@@ -44,11 +44,11 @@ dojo.mixin(bespin.plugins.loader, {
         var deps = queueitem.deps = {};
         var match;
         while ((match = depRegExp.exec(contents)) != null) {
-            var depScriptName = "/js/" + match[2] + ".js";
-            if (modules[depScriptName] !== undefined) {
+            var depScriptName = match[2];
+            var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
+            if (modules[adjustedName] !== undefined) {
                 continue;
             }
-            var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
             deps[adjustedName] = true;
             if (!loadQueue[adjustedName]) {
                 bespin.plugins.loader.loadScript(depScriptName,
