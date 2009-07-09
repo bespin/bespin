@@ -247,7 +247,5 @@ bespin.test.addTests("loader", {
         
         test.isUndefined(loadCheck.A, "A should not have been reloaded yet");
         test.isNotUndefined(lq["/getscript/js/B.js"], "B should be queued up");
-        test.isUndefined(bespin.plugins.loader.modules["/getscript/js/B.js"],
-                "B should be gone from the modules because it's being reloaded");
     }
 });

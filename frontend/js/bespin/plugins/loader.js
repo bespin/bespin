@@ -47,17 +47,13 @@ dojo.mixin(bespin.plugins.loader, {
         while ((match = depRegExp.exec(contents)) != null) {
             var depScriptName = match[2];
             var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
-            if (modules[adjustedName] !== undefined) {
-                if (force) {
-                    delete modules[adjustedName];
-                } else {
-                    continue;
-                }
+            if (modules[adjustedName] !== undefined && !force) {
+                continue;
             }
             deps[adjustedName] = true;
             if (!loadQueue[adjustedName]) {
                 bespin.plugins.loader.loadScript(depScriptName,
-                    {resolver: resolver});
+                    {resolver: resolver, force: force});
             }
         }
         
@@ -112,10 +108,6 @@ dojo.mixin(bespin.plugins.loader, {
         // already loading?
         if (loadQueue[scriptName] && !opts.force) {
             return;
-        }
-        
-        if (opts.force && bespin.plugins.loader.modules[scriptName]) {
-            delete bespin.plugins.loader.modules[scriptName];
         }
         
         loadQueue[scriptName] = {factory: null, name: scriptName,
