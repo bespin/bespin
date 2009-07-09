@@ -53,7 +53,11 @@ dojo.declare("bespin.client.session.EditSession", null, {
         this.project = project;
         this.path = path;
 
-        if (typeof mobwrite !== "undefined") mobwrite.share(this); // was causing an error!
+        if (typeof mobwrite !== "undefined") {
+            mobwrite.unload_();
+            this.editor.model.insertDocument("");
+            mobwrite.share(this);
+        }
 
         if (dojo.isFunction(onSuccess)) onSuccess({
             name: path,
