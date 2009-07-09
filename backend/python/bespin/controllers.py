@@ -42,8 +42,6 @@ from bespin.framework import expose, BadRequest
 from bespin import vcs
 from bespin.database import User, get_project
 from bespin.filesystem import NotAuthorized, OverQuota, File
-from bespin.mobwrite.mobwrite_daemon import MobwriteWorker
-from bespin.mobwrite.mobwrite_daemon import Persister
 from bespin.utils import send_email_template
 from bespin import jsontemplate, filesystem, queue
 
@@ -770,17 +768,20 @@ def viewme_set(request, response):
     data = request.user.set_viewme(member, value)
     return _respond_json(response, data)
 
-class InProcessMobwriteWorker(MobwriteWorker):
+from bespin.mobwrite.mobwrite_daemon import DaemonMobWrite
+from bespin.mobwrite.mobwrite_daemon import Persister
+from bespin.mobwrite.mobwrite_daemon import maybe_cleanup
+
+class InProcessMobwriteWorker(DaemonMobWrite):
     "Talk to an in-process mobwrite"
 
     def __init__(self):
         persister = Persister()
-        MobwriteWorker.__init__(self, persister)
+        DaemonMobWrite.__init__(self, persister)
 
     def processRequest(self, question):
         "Since we are a MobWriteWorker we just call directly into mobwrite code"
-        answer = self.parseRequest(question)
-        from bespin.mobwrite.mobwrite_daemon import maybe_cleanup
+        answer = self.handleRequest(question)
         maybe_cleanup()
         return answer
 
@@ -822,6 +823,7 @@ def mobwrite(request, response):
     # TODO: select the implementation based on a runtime flag
     worker = InProcessMobwriteWorker()
     #worker = MobwriteWorkerProxy()
+
     answer = worker.processRequest(question)
 
     if mode == "text":
