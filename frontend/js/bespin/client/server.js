@@ -137,12 +137,7 @@ dojo.declare("bespin.client.Server", null, {
             if (cl) onreadystatechange = cl.link(onreadystatechange);
             xhr.onreadystatechange = onreadystatechange;
             xhr.open(method, this.SERVER_BASE_URL + url, true); // url must have leading /
-            var token = dojo.cookie("Domain-Token");
-            if (!token) {
-                token = bespin.util.randomPassword();
-                dojo.cookie("Domain-Token", token);
-            }
-            xhr.setRequestHeader("X-Domain-Token", token);
+            this.protectXhrAgainstCsrf(xhr);
             xhr.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
             if (options.headers) {
                 for (var key in options.headers) {
@@ -159,6 +154,29 @@ dojo.declare("bespin.client.Server", null, {
             xhr.send(payload);
             return xhr.responseText;
         }
+    },
+
+    /**
+     * There are 2 ways of doing CSRF protection, to get the token using
+     * getAntiCsrfToken() and setting it into the request using the correct
+     * header, or by just calling this function
+     */
+    protectXhrAgainstCsrf: function(xhr) {
+        xhr.setRequestHeader("X-Domain-Token", this.getAntiCsrfToken());
+    },
+
+    /**
+     * Provide the Anti CSRF token to anyone wanting to do XHR requests.
+     * See also, the comments against protectXhrAgainstCsrf
+     * @see protectXhrAgainstCsrf()
+     */
+    getAntiCsrfToken: function() {
+        var token = dojo.cookie("Domain-Token");
+        if (!token) {
+            token = bespin.util.randomPassword();
+            dojo.cookie("Domain-Token", token);
+        }
+        return token;
     },
 
     // ** {{{ requestDisconnected() }}}
