@@ -25,32 +25,37 @@
 dojo.provide("bespin.plugins");
 
 dojo.declare("bespin.plugins.Extension", null, {
-    constructor: function(pluginName, meta) {
+    constructor: function(pluginName, resolver, meta) {
         this._pluginName = pluginName;
+        this._resolver = resolver;
         dojo.mixin(this, meta);
     },
     
     load: function(callback) {
         var parts = this.pointer.split(":");
-        var modname = "/file/at/" + parts[0] + ".js";
+        var modname = this._resolver(parts[0]);
+        console.log("Want to load: " + modname);
         
-        // this part will actually be async
         var module = bespin.plugins.loader.modules[modname];
         
         if (!module) {
-            bespin.plugins.loader.loadScript(modname, function(module) {
-                if (module.activate) {
-                    module.activate();
-                }
+            console.log("module not defined, so loading!");
+            bespin.plugins.loader.loadScript(modname, {
+                callback: function(module) {
+                    if (module.activate) {
+                        module.activate();
+                    }
                 
-                if (parts[1]) {
-                    callback(module[parts[1]]);
-                } else {
-                    callback(module);
+                    if (parts[1]) {
+                        callback(module[parts[1]]);
+                    } else {
+                        callback(module);
+                    }
                 }
             });
             return;
         }
+                
         
         if (parts[1]) {
             callback(module[parts[1]]);
@@ -119,7 +124,10 @@ dojo.mixin(bespin.plugins, {
                 extList = extensionPoints[name] = [];
             }
             
-            var ext = new Extension(pluginName, meta)
+            var ext = new Extension(pluginName, function(name) {
+                    // single file case: it's always the same module
+                    return info.location;
+                }, meta)
             extList.push(ext);
             bespin.publish("extension:loaded:" + name, ext);
         }
@@ -159,11 +167,11 @@ dojo.mixin(bespin.plugins, {
         bespin.get("commandLine").executeCommand('plugin remove "' + node.getAttribute("name") + '"');
     },
     
-    reload: function(url) {
+    installSingleFilePlugin: function(url) {
         var oldmodule = bespin.plugins.loader.modules[url];
         
-        bespin.plugins.loader.loadScript(url,
-            function(module) {
+        bespin.plugins.loader.loadScript(url, {
+            callback: function(module) {
                 if (!module.info) {
                     instruction.addError("Plugin module does not have info!");
                 }
@@ -187,7 +195,9 @@ dojo.mixin(bespin.plugins, {
                         content: dojo.toJson(bespin.plugins.metadata)
                     });
                 
-            }, true);
+            },
+            force: true
+        });
     },
     
     reloadByName: function(pluginName) {
@@ -195,7 +205,7 @@ dojo.mixin(bespin.plugins, {
         if (!info || !info.location) {
             return;
         }
-        bespin.plugins.reload(info.location);
+        bespin.plugins.installSingleFilePlugin(info.location);
     },
     
     _reloadLink: function(node) {
@@ -216,9 +226,9 @@ bespin.plugins.commands.addCommand({
         var editSession = bespin.get('editSession');
         var filename = editSession.path;
         var project  = editSession.project;
-        var url = "/file/at/" + project + "/" + filename;
+        var url = "/getscript/file/at/" + project + "/" + filename;
         
-        bespin.plugins.reload(url);
+        bespin.plugins.installSingleFilePlugin(url);
         instruction.addOutput("Plugin installed.");
     }
 });
