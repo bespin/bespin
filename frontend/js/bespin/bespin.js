@@ -63,7 +63,10 @@ dojo.mixin(bespin, {
      * maps onto dojo.publish but lets us abstract away for the future
      */
     publish: function(topic, args) {
-        //console.log("publish", topic, args);
+        if (window.globalStorage && window.globalStorage[location.hostname].debug) {
+            console.log("Publish", topic, args);
+        }
+
         bespin._eventLog[topic] = true;
         dojo.publish("bespin:" + topic, dojo.isArray(args) ? args : [ args || {} ]);
     },
@@ -182,7 +185,7 @@ bespin.subscribe("extension:loaded:bespin.subscribe", function(ext) {
     var subscription = bespin.subscribe(ext.topic, function(e) {
         ext.load(function(func) {
             func(e);
-        })
+        });
     });
     ext.subscription = subscription;
 });

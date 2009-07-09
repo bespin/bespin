@@ -124,6 +124,10 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.hintTimeout = setTimeout(dojo.hitch(this, function() {
             this.hideHint();
         }), 4600);
+
+        if (window.globalStorage && window.globalStorage[location.hostname].debug) {
+            console.log("Hint", html);
+        }
     },
 
     /**
