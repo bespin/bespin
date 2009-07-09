@@ -94,7 +94,6 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{project}}} is the name of the project that houses the file
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
-    // * {{{dontStartSession}}} is a flag to turn off starting a session. Used in the config loading for example
     collaborateOnFile: function(project, path, onSuccess) {
         var collab = bespin.get('settings').isSettingOn('collaborate');
 
