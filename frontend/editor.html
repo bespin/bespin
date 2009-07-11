@@ -35,8 +35,10 @@
     <link type="text/css" rel="thstylesheet" href="css/filesearch_th.css">
 
     <!-- begin Th -->
-    <script type="text/javascript" src="js/th.compressed.js"></script>
+    
     <!-- for th development 
+        <script type="text/javascript" src="js/th.compressed.js"></script>
+    -->
     <script type="text/javascript" src="js/th/jstraits.js"></script>
     <script type="text/javascript" src="js/th/src/util.js"></script>
     <script type="text/javascript" src="js/th/src/traits.js"></script>
@@ -45,7 +47,7 @@
     <script type="text/javascript" src="js/th/src/components.js"></script>
     <script type="text/javascript" src="js/th/src/jshashtable.js"></script>
     <script type="text/javascript" src="js/th/src/formlayout/formLayout.js"></script>
-    -->
+    
     <script type="text/javascript">
     th.global_resources.load("/th/");
     </script>
@@ -282,13 +284,11 @@
     <div id="centerpopup" style="display:none;"></div>
     <div id="popup_insert_point"></div>
     <div id="quickopenContainer">
-        <input id="quickopen_input_first" style="z-index: -100">
-        <input id="quickopen_input_last" style="z-index: -100"><br>
-
-        <canvas id="quickopen" flowLayout="vertical" width="300" height="393">
-            <input id="quickopen_input">
-            <list id="quickopen_list" layoutData="1.0"></list>
-            <label id="quickopen_label" text="Path to file..."></label>
+        <canvas id="quickopen" flowLayout="vertical" width="300" height="402">
+            <input id="project">
+            <input id="input">
+            <list id="list" layoutData="1.0"></list>
+            <label id="label" text="Path to file..."></label>
         </canvas>
     </div>
 

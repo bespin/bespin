@@ -28,70 +28,114 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     constructor: function() {
         this.requestFinished = true;
         this.preformNewRequest = false;
-        this.openSessionFiles = [];
+        this.openSessionFiles;
+        this.projects;
+        this.currentProject;
 
-        this.scene = new th.WindowScene( {
+        var scene = this.scene = new th.WindowScene( {
             canvasOrId: document.getElementById("quickopen"),
+            createFocusManager: true,
             isVisible: false,
             isDraggable: true,
             title: "Find Files"
         });
+        
+        var bus = scene.bus;
 
-        this.focusManager = new th.FocusManager(th.global_event_bus, th.byId('quickopen_input_first'), th.byId('quickopen_input_last'));
-        this.scene.focusManager = this.focusManager;
-        this.focusManager.relateTo(this.scene);
+        var focusManager = this.focusManager = scene.focusManager;
+        
+        var input = this.input = scene.byId('input');
+        input.selectAll();
+        
+        var inputProject = this.inputProject = scene.byId('project');
 
-        this.input = this.scene.byId('quickopen_input');
-        this.input.selectAll();
+        var list = this.list = scene.byId('list');
+        list.items = [ 'Loading...'];
+        list.remove(list.renderer);
+        list.renderer = new th.HtmlLabel();
+        list.add(list.renderer);
+        list.renderer.addCss('padding', '2px 5px');
 
-        this.list = this.scene.byId('quickopen_list');
-        this.list.items = [ 'Loading...'];
-        this.list.remove(this.list.renderer);
-        this.list.renderer = new th.HtmlLabel();
-        this.list.add(this.list.renderer);
-        this.list.renderer.addCss('padding', '2px 5px');
+        this.label = scene.byId('label');
 
-        this.label = this.scene.byId('quickopen_label');
+        focusManager.subscribe(inputProject);
+        focusManager.subscribe(input);
 
-        //this.focusManager.subscribe(this.list);
-        this.focusManager.subscribe(this.input);
-        this.focusManager.focus(this.input);
-
-        this.scene.render();
-        this.scene.center();
+        scene.render();
+        scene.center();
 
         // add some key bindings
-        this.input.key.bind("", this.input.key.ARROW_UP, this.list.moveSelectionUp, this.list);
-        this.input.key.bind("", this.input.key.ARROW_DOWN, this.list.moveSelectionDown, this.list);
-        this.input.key.bind("", this.input.key.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
-        this.input.key.bind("", this.input.key.ENTER, this.openFile, this);
+        input.bindKey("", input.ARROW_UP, list.moveSelectionUp, list);
+        input.bindKey("", input.ARROW_DOWN, list.moveSelectionDown, list);
+        input.bindKey("", input.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
+        input.bindKey("", input.ENTER, this.openFile, this);
+        
+        inputProject.bindKey("", inputProject.ENTER, function() { input.focusManager.focus(input);})
+        inputProject.bindKey("", input.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
 
         // bind to some events
+        bus.bind("dblclick", list, this.openFile, this);
 
-        this.scene.bus.bind("dblclick", this.list, this.openFile, this);
-
-        this.scene.bus.bind("itemselected", this.list, function(e) {
+        bus.bind("itemselected", list, function(e) {
             this.label.text = e.item.filename;
             this.label.repaint();
         }, this);
 
-        this.input.bus.bind("text:changed", this.input, function() {
+        bus.bind("text:changed", input, function() {
+            if (!this.currentProject) return;
+            
             if (this.input.text == '') {
-                this.showFiles(this.openSessionFiles, true);
+                this.showFiles(this.openSessionFiles[this.currentProject]);
             } else {
                 // the text has changed!
                 if (this.requestFinished) {
                     this.requestFinished = false;
-                    bespin.get('server').searchFiles(bespin.get('editSession').project, this.input.text, this.displayResult);
+                    bespin.get('server').searchFiles(this.currentProject, this.input.text, this.displayResult);
                 } else {
                     this.preformNewRequest = true;
                 }
             }
         }, this);
-
+        
+        bus.bind("text:changed:newChar", inputProject, function() {
+            if (!this.inputProject.text == '') {
+                var newText = this.inputProject.text.toLowerCase();
+                // the text has changed!
+                for (var i=0; i < this.projects.length; i++) {
+                    if (this.projects[i].toLowerCase().indexOf(newText) == 0) {
+                        this.inputProject.setText(this.inputProject.text + this.projects[i].substring(newText.length), true);
+                        this.inputProject.setSelection(newText.length, this.inputProject.text.length);
+                    }
+                }
+            }
+        }, this);
+        
+        bus.bind("focus:lost", inputProject, function() {
+            var newText = this.inputProject.text.toLowerCase();
+            for (var i=0; i < this.projects.length; i++) {
+                if (this.projects[i].toLowerCase() == newText) {
+                    this.currentProject = this.projects[i];
+                    if (this.input.text == 'no such project') {
+                        this.input.setText('', true);
+                    }
+                    this.inputProject.setText(this.currentProject, true);
+                    this.showFiles(this.openSessionFiles[this.currentProject]);
+                    return;
+                }
+            }
+            // there was no such project as typed => show this the to the user!
+            this.input.setText('no such project', true);
+            this.list.items = [];
+            this.label.text = '';
+            this.scene.render();
+        }, this);
+        
+        bus.bind("focus:received", inputProject, function() { this.selectAll(); }, inputProject);
+        bus.bind("focus:received", input       , function() { this.selectAll(); }, input);
+        
         // load the current opened files at startup
         bespin.subscribe('settings:loaded', dojo.hitch(this, function() {
-            bespin.get('server').listOpen(this.displaySessions);
+            bespin.get('server').listOpen(dojo.hitch(this, this.callbackListOpen));
         }));
 
         bespin.subscribe('ui:escape', dojo.hitch(this, function() {
@@ -108,10 +152,11 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         if (!this.scene.isVisible) {
             this.focusManager.removeFocus();
         } else {
-            setTimeout(dojo.hitch(this, function() {
-                this.focusManager.focus(this.input);
-                this.input.setText('');
-            }, 10));
+            this.focusManager.focus(this.input);
+            this.inputProject.setText(bespin.get('editSession').project, true);
+            this.currentProject = bespin.get('editSession').project;
+            this.input.setText('');
+            this.loadProjects();
         }
     },
 
@@ -121,13 +166,14 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
         // save the current file and load up the new one
         bespin.publish("editor:savefile", {});
-        bespin.publish("editor:openfile", { filename: item.filename });
+        bespin.publish("editor:openfile", { project: this.currentProject,  filename: item.filename });
 
+        var currentProjectList = this.openSessionFiles[this.currentProject];
         // adds the new opened file to the top of the openSessionFiles
-        if (this.openSessionFiles.indexOf(item.filename) != -1) {
-            this.openSessionFiles.splice(this.openSessionFiles.indexOf(item.filename), 1);
+        if (currentProjectList.indexOf(item.filename) != -1) {
+             currentProjectList.splice(currentProjectList.indexOf(item.filename), 1);
         }
-        this.openSessionFiles.unshift(item.filename);
+        currentProjectList.unshift(item.filename);
 
         this.toggle();
         bespin.get('editor').setFocus(true);
@@ -184,11 +230,11 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                     break;
                 }
             }
-            items.push({text: quickopen.highlightText(name, quickopen.input.text), filename: file, lastFolder: lastFolder});
+            items.push({filename: file, lastFolder: lastFolder, name: name});
         }
 
-        // for the moment there are only 12 files displayed...
-        items = items.slice(0, 14);
+        // for the moment there are only 13 files displayed...
+        items = items.slice(0, 13);
 
         if (sortFiles) {
             items.sort(function(a, b) {
@@ -197,6 +243,10 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 return ((x < y) ? -1 : ((x > y) ? 1 : 0));
             });
         }
+
+        for (var i=0; i < items.length; i++) {
+            items[i].text = quickopen.highlightText(items[i].name, quickopen.input.text) + (items[i].lastFolder == false ? '' :  ' - ' + items[i].lastFolder);
+        } 
 
         quickopen.list.items = items;
         if (items.length != 0) {
@@ -220,19 +270,32 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.text, quickopen.displayResult);
         }
     },
+    
+    callbackListOpen: function(sessions) {
+        var temp = {};
+        for( project in sessions) {
+            temp[project] = [];
+            for (file in sessions[project]) {
+                temp[project].push(file);
+            }
+        }
+        
+        this.openSessionFiles = temp;
+        this.displaySessions(bespin.get('editSession').project)
+    },
 
-    displaySessions: function(sessions) {
-        var quickopen =  bespin.get('quickopen');
-        var currentProject = bespin.get('editSession').project;
-        var currentFile = bespin.get('editSession').path;
+    displaySessions: function(project) {
+        var editSession = bespin.get('editSession');
+        var currentFile = project == editSession.project ? editSession.path : false;
+            
         var items = new Array();
 
-        var files = sessions[currentProject];
-        for (var file in files) {
-            if (currentFile == file) {
+        var files = this.openSessionFiles[project];
+        for (var i=0; i < files.length; i++) {
+            if (currentFile == files[i]) {
                 currentFile = false;
             }
-            items.push(file);
+            items.push(files[i]);
         }
 
         if (currentFile) {
@@ -240,8 +303,22 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }
 
         if (items) {
-            quickopen.showFiles(items, true);
-            quickopen.openSessionFiles = items;
+            this.showFiles(items, true);
         }
+    },
+    
+    loadProjects: function() {
+        bespin.get("server").list(null, null, dojo.hitch(this, function(projectItems) {
+            this.projects = [];
+            for (var i=0; i < projectItems.length; i++) {
+                this.projects.push(projectItems[i].name.substring(0,projectItems[i].name.length - 1));
+            }
+            this.projects.sort(function(a, b) {
+                 var x = a.toLowerCase();
+                 var y = b.toLowerCase();
+                 return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+             });
+            
+        }));
     }
 });
