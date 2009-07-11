@@ -29,8 +29,6 @@
 
 dojo.provide("bespin.debug");
 
-dojo.require("bespin.cmd.commandline");
-
 /**
  * A simple store that currently doesn't store the history at all
  */

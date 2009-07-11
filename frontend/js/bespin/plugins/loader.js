@@ -29,6 +29,7 @@ dojo.mixin(bespin.plugins.loader, {
     loadQueue: {},
     
     moduleLoaded: function(scriptName, moduleFactory) {
+        console.log(scriptName + " is calling in");
         var isEmpty = bespin.util.isEmpty;
         var contents = moduleFactory.toString();
         var modules = bespin.plugins.loader.modules;
@@ -47,17 +48,21 @@ dojo.mixin(bespin.plugins.loader, {
         while ((match = depRegExp.exec(contents)) != null) {
             var depScriptName = match[2];
             var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
+            console.log("Script depends on " + adjustedName);
             if (modules[adjustedName] !== undefined && !force) {
+                console.log("Module already loaded, force not set");
                 continue;
             }
             deps[adjustedName] = true;
             if (!loadQueue[adjustedName]) {
+                console.log("Dependent module queued up");
                 bespin.plugins.loader.loadScript(depScriptName,
                     {resolver: resolver, force: force});
             }
         }
         
         if (isEmpty(deps)) {
+            console.log("No dependencies, initializing the module");
             bespin.plugins.loader._loaded(scriptName, loadQueue, queueitem);
         }
     },

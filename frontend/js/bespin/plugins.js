@@ -42,13 +42,16 @@ dojo.declare("bespin.plugins.Extension", null, {
             console.log("module not defined, so loading!");
             bespin.plugins.loader.loadScript(modname, {
                 callback: function(module) {
+                    console.log("Script loaded " + modname);
                     if (module.activate) {
                         module.activate();
                     }
                 
                     if (parts[1]) {
+                        console.log("Calling callback with object from module");
                         callback(module[parts[1]]);
                     } else {
+                        console.log("Calling callback with module");
                         callback(module);
                     }
                 }
@@ -58,8 +61,10 @@ dojo.declare("bespin.plugins.Extension", null, {
                 
         
         if (parts[1]) {
+            console.log("module " + modname + " loaded, calling callback with object");
             callback(module[parts[1]]);
         } else {
+            console.log("module " + modname + " loaded, calling callback with module");
             callback(module);
         }
     }
@@ -158,6 +163,15 @@ dojo.mixin(bespin.plugins, {
     
     get: function(epName) {
         return bespin.plugins.extensionPoints[epName] || [];
+    },
+    
+    loadOne: function(epName, callback) {
+        var points = bespin.plugins.extensionPoints[epName];
+        if (!points || !points[0]) {
+            return false;
+        }
+        points[0].load(callback);
+        return true;
     },
     
     remove: function(pluginName, collection) {
@@ -290,7 +304,7 @@ bespin.plugins.commands.addCommand({
     }
 });
 
-dojo.addOnLoad(function() {
+bespin.subscribe("bespin:editor:initialized", function() {
     bespin.get("files").loadContents("BespinSettings", "plugins.json",
         function(info) {
             var data = dojo.fromJson(info.content);
