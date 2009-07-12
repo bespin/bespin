@@ -527,12 +527,10 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{searchstring}}} to compare files with
     // * {{{onSuccess}}} fires after the file is closed
     searchFiles: function(project, searchkey, includeFolders, onSuccess) {
-        console.debug(includeFolders);
         var url = bespin.util.path.combine('/file/search', project+'?q='+escape(searchkey));
         if (includeFolders.length > 0) {
             url += '&i='+escape(includeFolders.join(';'));
         }
-        console.debug(url);
         var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing searchfiles for: " + project + ", searchkey: " + searchkey};
         this.request('GET', url, null, opts);
     },
