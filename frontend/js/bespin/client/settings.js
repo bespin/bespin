@@ -596,14 +596,17 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         bespin.subscribe("settings:set:debugmode", function(event) {
             editor.debugMode = settings.isOn(event.value);
-
-            if (editor.debugMode && bespin.debug) {
-                bespin.debug.loadBreakpoints(function() {
-                    editor.paint(true);
-                });
+            
+            if (editor.debugMode) {
+                bespin.plugins.loadOne("bespin.debugger",
+                    function(debug) {
+                        debug.loadBreakpoints(function() {
+                            editor.paint(true);
+                        });
+                    })
+            } else {
+                editor.paint(true);
             }
-
-            editor.paint(true);
         });
 
         // ** {{{ Event: settings:set:cursorblink }}} **

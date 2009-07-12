@@ -530,9 +530,12 @@ dojo.declare("bespin.editor.UI", null, {
 
                 var editSession = bespin.get("editSession");
                 if (p && editSession) {
-                    bespin.debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
-                    this.editor.paint(true);
-                    return;
+                    var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+                    if (debug) {
+                        debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
+                        this.editor.paint(true);
+                        return;
+                    }
                 }
             }
         }
@@ -1059,11 +1062,14 @@ dojo.declare("bespin.editor.UI", null, {
         var breakpoints = {};
 
         if (this.editor.debugMode && bespin.get("editSession")) {
-            var points = bespin.debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
-            dojo.forEach(points, function(point) {
-                breakpoints[point.lineNumber] = point;
-            });
-            delete points;
+            var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+            if (debug) {
+                var points = debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
+                dojo.forEach(points, function(point) {
+                    breakpoints[point.lineNumber] = point;
+                });
+                delete points;
+            }
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:

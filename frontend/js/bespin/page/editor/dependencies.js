@@ -28,7 +28,6 @@ dojo.require("dojo.cookie");
 
 dojo.require("bespin.bespin");
 dojo.require("bespin.command");
-dojo.require("bespin.debug");
 dojo.require("bespin.events");
 
 dojo.require("bespin.util.canvas");

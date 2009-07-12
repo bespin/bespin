@@ -54,7 +54,8 @@ dojo.declare("bespin.plugins.Extension", null, {
                         console.log("Calling callback with module");
                         callback(module);
                     }
-                }
+                },
+                resolver: this._resolver
             });
             return;
         }
@@ -66,6 +67,19 @@ dojo.declare("bespin.plugins.Extension", null, {
         } else {
             console.log("module " + modname + " loaded, calling callback with module");
             callback(module);
+        }
+    },
+    
+    getIfLoaded: function() {
+        var parts = this.pointer.split(":");
+        var modname = this._resolver(parts[0]);
+        
+        var module = bespin.plugins.loader.modules[modname];
+        
+        if (parts[1]) {
+            return module[parts[1]];
+        } else {
+            return module;
         }
     }
 });
@@ -120,7 +134,11 @@ dojo.mixin(bespin.plugins, {
     
     multiFileResolver: function(name) {
         if (name.charAt(0) != "/") {
-            name = this.location + '/' + name + '.js';
+            if (this.location.charAt(this.location.length-1) == '/') {
+                name = this.location + name + ".js";
+            } else {
+                name = this.location + '/' + name + '.js';
+            }
         }
         return name;
     },
@@ -172,6 +190,14 @@ dojo.mixin(bespin.plugins, {
         }
         points[0].load(callback);
         return true;
+    },
+    
+    getLoadedOne: function(epName) {
+        var points = bespin.plugins.extensionPoints[epName];
+        if (!points || !points[0]) {
+            return undefined;
+        }
+        return points[0].getIfLoaded();
     },
     
     remove: function(pluginName, collection) {
