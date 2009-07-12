@@ -31,6 +31,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         this.openSessionFiles;
         this.projects;
         this.currentProject;
+        this.currentProjectInclude;
 
         var scene = this.scene = new th.WindowScene( {
             canvasOrId: document.getElementById("quickopen"),
@@ -90,7 +91,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                 // the text has changed!
                 if (this.requestFinished) {
                     this.requestFinished = false;
-                    bespin.get('server').searchFiles(this.currentProject, this.input.text, this.displayResult);
+                    bespin.get('server').searchFiles(this.currentProject, this.input.text, this.currentProjectInclude, this.displayResult);
                 } else {
                     this.preformNewRequest = true;
                 }
@@ -114,11 +115,10 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             var newText = this.inputProject.text.toLowerCase();
             for (var i=0; i < this.projects.length; i++) {
                 if (this.projects[i].toLowerCase() == newText) {
-                    this.currentProject = this.projects[i];
+                    this.setProject(this.projects[i]);
                     if (this.input.text == 'no such project') {
                         this.input.setText('', true);
                     }
-                    this.inputProject.setText(this.currentProject, true);
                     this.showFiles(this.openSessionFiles[this.currentProject]);
                     return;
                 }
@@ -153,8 +153,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             this.focusManager.removeFocus();
         } else {
             this.focusManager.focus(this.input);
-            this.inputProject.setText(bespin.get('editSession').project, true);
-            this.currentProject = bespin.get('editSession').project;
+            this.setProject(bespin.get('editSession').project)
             this.input.setText('');
             this.loadProjects();
         }
@@ -267,7 +266,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             quickopen.requestFinished = false;
             quickopen.preformNewRequest = false;
             quickopen.requestText = quickopen.input.text;
-            bespin.get('server').searchFiles(bespin.get('editSession').project, quickopen.input.text, quickopen.displayResult);
+            bespin.get('server').searchFiles(quickopen.currentProject, quickopen.input.text, quickopen.currentProjectInclude, quickopen.displayResult);
         }
     },
     
@@ -320,5 +319,72 @@ dojo.declare("bespin.editor.quickopen.API", null, {
              });
             
         }));
+    },
+    
+    setProject: function(name) {
+        this.inputProject.setText(name, true);
+        this.currentProject = name;
+        this.currentProjectInclude = [];
+        
+        var settings = bespin.get('settings');
+        if (settings) {
+            var includeFolders = settings.getObject('quickopenInclude');
+            if (includeFolders) {
+                if (includeFolders[name]) {
+                    this.currentProjectInclude = includeFolders[name];
+                }
+            }
+        }
+    }
+});
+
+// ** {{{Command: project}}} **
+bespin.command.store.addCommand({
+    name: 'quickopen',
+    takes: ['task', 'project', 'path'],
+    preview: 'list, add or remove a folder from the list quickopen uses to search in for files',
+    usage: '[add|remove] [project] [path to be added or removed]',
+    execute: function(instruction, args) {
+        var settings = bespin.get('settings');
+        
+        if (!args.task) {
+            instruction.addOutput(this.preview);
+            instruction.addUsageOutput(this);
+            instruction.error = false;
+            var includes = settings.getObject('quickopenInclude');            
+            if (includes === undefined) return;
+            output = '<br/>';
+            for (projects in includes) {
+                if (includes[projects].length == 0) continue;
+                output += "<u><b>Project: " + projects + "</b></u>";
+                output += "<ul>"
+                for (var i=0; i < includes[projects].length; i++) {
+                    output += '<li>' + includes[projects][i] + "</li>";
+                }
+                output += "</ul><br/>"
+            }
+            instruction.addOutput(output);
+            return;
+        }
+        
+        if (!args.path || !args.project) {
+            instruction.addUsageOutput(this);
+            return;
+        }
+        
+        if (args.task == 'add') {
+            var includes = settings.getObject('quickopenInclude');
+            if (includes === undefined) includes = {};
+            if (includes[args.project] === undefined) includes[args.project] = [];
+            includes[args.project].push(args.path);
+            settings.setObject('quickopenInclude', includes);
+        } else if (args.task == 'remove') {
+            var includes = settings.getObject('quickopenInclude');
+            if (includes === undefined) return;
+            if (includes[args.project] === undefined) return;
+            if (includes[args.project].indexOf(args.path) == -1) return;
+            includes[args.project].splice(includes[args.project].indexOf(args.path), 1);
+            settings.setObject('quickopenInclude', includes);            
+        }
     }
 });

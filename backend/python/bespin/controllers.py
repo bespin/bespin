@@ -377,6 +377,7 @@ def file_list_all(request, response):
 def file_search(request, response):
     user = request.user
     query = request.GET.get("q", "")
+    include = request.GET.get("i", "")
     limit = request.GET.get("limit", 20)
     try:
         limit = int(limit)
@@ -385,7 +386,7 @@ def file_search(request, response):
     project_name = request.kwargs['project_name']
 
     project = get_project(user, user, project_name)
-    result = project.search_files(query, limit)
+    result = project.search_files(query, limit, include)
     return _respond_json(response, result)
 
 def _populate_stats(item, result):
