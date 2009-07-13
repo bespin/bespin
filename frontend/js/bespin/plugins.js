@@ -49,8 +49,8 @@ dojo.declare("bespin.plugins.Extension", null, {
                         module._used_by_plugins = {};
                     }
                     
-                    module._used_by_plugins[[self._pluginCollection, 
-                            self._pluginName]] = true;
+                    module._used_by_plugins[self._pluginName] = 
+                        self._pluginCollection;
                     module._resolver = self._resolver;
                     
                     if (module.activate) {
@@ -163,6 +163,8 @@ dojo.mixin(bespin.plugins, {
         if (!collection) {
             collection = bespin.plugins.metadata;
         }
+        console.log("Registering for " + pluginName);
+        console.dir(collection);
         var info = collection[pluginName];
         var provides = info.provides;
         
@@ -171,7 +173,7 @@ dojo.mixin(bespin.plugins, {
         }
         
         if (!resolver) {
-            resolver = bespin.plugins.sameFileResolver;
+            resolver = bespin.plugins.multiFileResolver;
         }
         
         resolver = dojo.hitch(info, resolver);
@@ -261,7 +263,8 @@ dojo.mixin(bespin.plugins, {
                 }
                 module.info.location = url;
                 bespin.plugins.metadata[name] = module.info;
-                bespin.plugins.registerExtensionPoints(name);
+                bespin.plugins.registerExtensionPoints(name, 
+                        bespin.plugins.metadata, bespin.plugins.sameFileResolver);
                 if (module.activate) {
                     module.activate();
                 }
@@ -290,8 +293,9 @@ dojo.mixin(bespin.plugins, {
     
     _computeModulesToReload: function(fullname, mod, toReload, pluginsToInit) {
         toReload[fullname] = true;
-        for (var plugin in mod._used_by_plugins) {
-            pluginsToInit[plugin] = true;
+        var used_by_plugins = mod._used_by_plugins
+        for (var plugin in used_by_plugins) {
+            pluginsToInit[plugin] = used_by_plugins[plugin];
         }
         
         for (var modname in mod._depended_on_by) {
@@ -405,7 +409,8 @@ bespin.subscribe("file:saved", function(e) {
     console.dir(pluginsToInit);
     
     for (var plugin in pluginsToInit) {
-        bespin.plugins.unregisterExtensionPoints(plugin[1], plugin[0]);
+        bespin.plugins.unregisterExtensionPoints(plugin, 
+                pluginsToInit[plugin]);
     }
     
     for (var modname in toReload) {
@@ -413,7 +418,7 @@ bespin.subscribe("file:saved", function(e) {
     }
     
     for (var plugin in pluginsToInit) {
-        bespin.plugins.registerExtensionPoints(plugin[1], plugin[0]);
+        bespin.plugins.registerExtensionPoints(plugin, pluginsToInit[plugin]);
     }
 
 });
