@@ -25,13 +25,15 @@
 dojo.provide("bespin.plugins");
 
 dojo.declare("bespin.plugins.Extension", null, {
-    constructor: function(pluginName, resolver, meta) {
+    constructor: function(collection, pluginName, resolver, meta) {
         this._pluginName = pluginName;
+        this._pluginCollection = collection;
         this._resolver = resolver;
         dojo.mixin(this, meta);
     },
     
     load: function(callback) {
+        var self = this;
         var parts = this.pointer.split(":");
         var modname = this._resolver(parts[0]);
         console.log("Want to load: " + modname);
@@ -43,6 +45,13 @@ dojo.declare("bespin.plugins.Extension", null, {
             bespin.plugins.loader.loadScript(modname, {
                 callback: function(module) {
                     console.log("Script loaded " + modname);
+                    if (!module._used_by_plugins) {
+                        module._used_by_plugins = {};
+                    }
+                    
+                    module._used_by_plugins[[self._pluginCollection, 
+                            self._pluginName]] = true;
+                    
                     if (module.activate) {
                         module.activate();
                     }
@@ -173,7 +182,7 @@ dojo.mixin(bespin.plugins, {
                 extList = extensionPoints[name] = [];
             }
             
-            var ext = new Extension(pluginName, resolver, meta)
+            var ext = new Extension(collection, pluginName, resolver, meta)
             extList.push(ext);
             bespin.publish("extension:loaded:" + name, ext);
         }
@@ -273,6 +282,17 @@ dojo.mixin(bespin.plugins, {
     
     _reloadLink: function(node) {
         bespin.get("commandLine").executeCommand('plugin reload "' + node.getAttribute("name") + '"');
+    },
+    
+    _computeModulesToReload: function(fullname, mod, toReload, pluginsToInit) {
+        toReload[fullname] = true;
+        for (var plugin in mod._used_by_plugins) {
+            pluginsToInit[plugin] = true;
+        }
+        for (var modname in mod._depended_on_by) {
+            var othermod = bespin.plugins.loader.modules[modname];
+            this._computeModulesToReload(modname, othermod, toReload, pluginsToInit);
+        }
     }
 });
 
@@ -350,4 +370,36 @@ bespin.subscribe("bespin:editor:initialized", function() {
             }
         }
     });
+});
+
+bespin.subscribe("file:saved", function(e) {
+    // Implement plugin reloading
+    var fullname = "/getscript/file/at/" + e.project + "/" + e.path;
+    var mod = bespin.plugins.loader.modules[fullname];
+    console.log("Saved: " + fullname);
+    console.log(mod);
+    if (!mod) {
+        return;
+    }
+    
+    var toReload = {};
+    var pluginsToInit = {};
+    bespin.plugins._computeModulesToReload(fullname, mod, toReload, 
+                                        pluginsToInit);
+    var moduleCallback = function(module) {
+        delete toReload[module._name];
+        if (bespin.util.isEmpty(toReload)) {
+            for (var plugin in pluginsToInit) {
+                bespin.plugins.unregisterExtensionPoints(plugin[1], plugin[0]);
+                bespin.plugins.registerExtensionPoints(plugin[1], plugin[0]);
+            }
+        }
+    }
+    for (var modname in toReload) {
+        bespin.plugins.loader.loadScript(modname, {
+            callback: moduleCallback,
+            reload: true
+        });
+    }
+    
 });

@@ -44,10 +44,13 @@ dojo.mixin(bespin.plugins.loader, {
         //Find dependencies.
         var depRegExp = /require\s*\(('|")([\w\W]*?)('|")\)/mg;
         var deps = queueitem.deps = {};
+        var allDependencies = queueitem.dependsOn = {};
         var match;
         while ((match = depRegExp.exec(contents)) != null) {
             var depScriptName = match[2];
             var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
+            allDependencies[adjustedName] = true;
+            
             console.log("Script depends on " + adjustedName);
             if (modules[adjustedName] !== undefined && !force) {
                 console.log("Module already loaded, force not set");
@@ -83,6 +86,14 @@ dojo.mixin(bespin.plugins.loader, {
             return bespin.plugins.loader.modules[modname];
         }, {});
         
+        module._name = scriptName;
+        module._depends_on = queueitem.dependsOn;
+        module._depended_on_by = {};
+        
+        for (var modName in module._depends_on) {
+            modules[modName]._depended_on_by[scriptName] = true;
+        }
+        
         modules[scriptName] = module;
         if (queueitem.callback) {
             queueitem.callback(module);
@@ -100,7 +111,16 @@ dojo.mixin(bespin.plugins.loader, {
             }
         }
     },
-
+    
+    // By default, the script will only be loaded if it's not already
+    // in the queue.
+    //
+    // Options:
+    // callback: function to call when the module is loaded
+    // resolver: function that will adjust the scriptName for the proper
+    //           script tag location
+    // force: set to true to reload this *and* its dependencies
+    // reload: reload just this module.
     loadScript: function(scriptName, opts) {
         opts = opts || {};
         
@@ -111,7 +131,7 @@ dojo.mixin(bespin.plugins.loader, {
         }
         
         // already loading?
-        if (loadQueue[scriptName] && !opts.force) {
+        if (loadQueue[scriptName] && !opts.force && !opts.reload) {
             return;
         }
         

@@ -141,6 +141,17 @@ bespin.test.addTests("loader", {
         var mod = bespin.plugins.loader.modules[modName];
         test.isNotUndefined(mod, "The main module should be requireable");
         test.isEqual(192, mod.secretValue, "secret value should have been set");
+        test.isEqual(modName, mod._name);
+        
+        var expectedDependencies = {};
+        expectedDependencies[depModName] = true;
+        test.isEqual(mod._depends_on, expectedDependencies);
+        
+        var depMod = bespin.plugins.loader.modules[depModName];
+        test.isEqual(depModName, depMod._name);
+        var expectedDependedOnBy = {};
+        expectedDependedOnBy[modName] = true;
+        test.isEqual(depMod._depended_on_by, expectedDependedOnBy);
     },
     
     testModuleLoadOrderShouldNotMatter: function(test) {
