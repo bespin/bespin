@@ -210,6 +210,7 @@ var _initialized = false;
  * Helper to check for duplicate breakpoints before adding this one
  */
 exports.addBreakpoint = function(newBreakpoint) {
+    console.log("Breaker 24!");
     for (var i = 0; i < this.breakpoints.length; i++) {
         var breakpoint = this.breakpoints[i];
         if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;

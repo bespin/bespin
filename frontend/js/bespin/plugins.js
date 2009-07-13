@@ -51,17 +51,20 @@ dojo.declare("bespin.plugins.Extension", null, {
                     
                     module._used_by_plugins[[self._pluginCollection, 
                             self._pluginName]] = true;
+                    module._resolver = self._resolver;
                     
                     if (module.activate) {
                         module.activate();
                     }
-                
-                    if (parts[1]) {
-                        console.log("Calling callback with object from module");
-                        callback(module[parts[1]]);
-                    } else {
-                        console.log("Calling callback with module");
-                        callback(module);
+                    
+                    if (callback) {
+                        if (parts[1]) {
+                            console.log("Calling callback with object from module");
+                            callback(module[parts[1]]);
+                        } else {
+                            console.log("Calling callback with module");
+                            callback(module);
+                        }
                     }
                 },
                 resolver: this._resolver
@@ -69,13 +72,14 @@ dojo.declare("bespin.plugins.Extension", null, {
             return;
         }
                 
-        
-        if (parts[1]) {
-            console.log("module " + modname + " loaded, calling callback with object");
-            callback(module[parts[1]]);
-        } else {
-            console.log("module " + modname + " loaded, calling callback with module");
-            callback(module);
+        if (callback) {
+            if (parts[1]) {
+                console.log("module " + modname + " loaded, calling callback with object");
+                callback(module[parts[1]]);
+            } else {
+                console.log("module " + modname + " loaded, calling callback with module");
+                callback(module);
+            }
         }
     },
     
@@ -289,6 +293,7 @@ dojo.mixin(bespin.plugins, {
         for (var plugin in mod._used_by_plugins) {
             pluginsToInit[plugin] = true;
         }
+        
         for (var modname in mod._depended_on_by) {
             var othermod = bespin.plugins.loader.modules[modname];
             this._computeModulesToReload(modname, othermod, toReload, pluginsToInit);
@@ -373,8 +378,16 @@ bespin.subscribe("bespin:editor:initialized", function() {
 });
 
 bespin.subscribe("file:saved", function(e) {
-    // Implement plugin reloading
+    var settings = bespin.get("settings");
     var fullname = "/getscript/file/at/" + e.project + "/" + e.path;
+    if (settings) {
+        var editbespin = settings.get("editbespin");
+        if (editbespin == e.project) {
+            // remove the "frontend/" from the beginning of the path
+            fullname = "/getscript/" + e.path.substring(9);
+        }
+    }
+    // Implement plugin reloading
     var mod = bespin.plugins.loader.modules[fullname];
     console.log("Saved: " + fullname);
     console.log(mod);
@@ -386,20 +399,21 @@ bespin.subscribe("file:saved", function(e) {
     var pluginsToInit = {};
     bespin.plugins._computeModulesToReload(fullname, mod, toReload, 
                                         pluginsToInit);
-    var moduleCallback = function(module) {
-        delete toReload[module._name];
-        if (bespin.util.isEmpty(toReload)) {
-            for (var plugin in pluginsToInit) {
-                bespin.plugins.unregisterExtensionPoints(plugin[1], plugin[0]);
-                bespin.plugins.registerExtensionPoints(plugin[1], plugin[0]);
-            }
-        }
-    }
-    for (var modname in toReload) {
-        bespin.plugins.loader.loadScript(modname, {
-            callback: moduleCallback,
-            reload: true
-        });
+    
+    console.log("To reload:");
+    console.dir(toReload);
+    console.dir(pluginsToInit);
+    
+    for (var plugin in pluginsToInit) {
+        bespin.plugins.unregisterExtensionPoints(plugin[1], plugin[0]);
     }
     
+    for (var modname in toReload) {
+        delete bespin.plugins.loader.modules[modname];
+    }
+    
+    for (var plugin in pluginsToInit) {
+        bespin.plugins.registerExtensionPoints(plugin[1], plugin[0]);
+    }
+
 });
