@@ -213,12 +213,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 bespin.get("commandLine").focus();
             },
             showContents: function(coords) {
-                var left = coords.l;
-                var bottom = this.piemenu.slices.off.img.height - 10;
-                var width = coords.w;
-                var height = coords.h;
+                coords.b = this.piemenu.slices.off.img.height - 10;
 
-                bespin.get("commandLine").showOutput(left, bottom, width, height);
+                bespin.get("commandLine").showOutput("output", coords);
             },
             hideContents: function() {
                 bespin.get("commandLine").hideOutput();
@@ -264,15 +261,15 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_top",
             title: "File Browser",
             key: bespin.util.keys.Key.UP_ARROW,
-            filePanel: new bespin.editor.filepopup.MainPanel(),
 
             showContents: function(coords) {
-                this.filePanel.checkInit();
-                this.filePanel.show(coords);
+                coords.b = this.piemenu.slices.off.img.height - 10;
+
+                bespin.get("commandLine").showOutput("files", coords);
             },
 
             hideContents: function() {
-                this.filePanel.hide();
+                bespin.get("commandLine").hideOutput();
             }
         },
 

@@ -43,7 +43,8 @@ members: {
 
     /**
      * Dojo automatically calls superclass constructors. So, if you don't want
-     * the constructor behavior, there's no way out.
+     * the constructor behavior, there's no way out. (Now that this is a
+     * JSTraits Class, this should be reverified).
      * Move to a separate function to allow overriding.
      */
     setup: function(commandLine, store, options) {
@@ -75,6 +76,8 @@ members: {
         }, parentElement);
 
         this.footer = dojo.byId("footer");
+        
+        this.filePanel = new bespin.editor.filepopup.MainPanel();
 
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
@@ -148,11 +151,11 @@ members: {
     /**
      * Show the output area in the given display rectangle
      */
-    showOutput: function(left, bottom, width, height) {
+    showOutput: function(panel, coords) {
         dojo.style(this.footer, {
-            left: left + "px",
-            width: (width - 10) + "px",
-            bottom: bottom + "px",
+            left: coords.l + "px",
+            width: (coords.w - 10) + "px",
+            bottom: coords.b + "px",
             display: "block"
         });
         this.focus();
@@ -161,22 +164,29 @@ members: {
 
         var piemenu = bespin.get("piemenu");
         if (piemenu && piemenu.visible()) {
-            bottom += footerHeight;
+            coords.b += footerHeight;
         }
 
         dojo.style(this.commandHint, {
-            left: left + "px",
-            bottom: bottom + "px",
-            width: width + "px"
+            left: coords.l + "px",
+            bottom: coords.b + "px",
+            width: coords.w + "px"
         });
-
-        dojo.style(this.output, {
-            left: left + "px",
-            bottom: bottom + "px",
-            width: width + "px",
-            height: height + "px",
-            display: "block"
-        });
+        
+        if (panel == "output") {
+            dojo.style(this.output, {
+                left: coords.l + "px",
+                bottom: coords.b + "px",
+                width: coords.w + "px",
+                height: coords.h + "px",
+                display: "block"
+            });
+        } else {
+            this.filePanel.checkInit();
+            this.filePanel.show(coords);
+        }
+        
+        this.currentPanel = panel;
 
         this.maxInfoHeight = height;
     },
@@ -191,12 +201,19 @@ members: {
             width: "500px"
         });
 
-        dojo.style(this.output, "display", "none");
+        if (this.currentPanel == "output") {
+            dojo.style(this.output, "display", "none");
+        } else if (this.currentPanel = "files") {
+            this.filePanel.checkInit();
+            this.filePanel.hide();
+        }
+        
         dojo.style(this.footer, {
             "left": "-10000px",
             "display": "none"
         });
         this.maxInfoHeight = null;
+        
     },
 
     /**
