@@ -29,6 +29,7 @@ dojo.mixin(bespin.plugins.loader, {
     loadQueue: {},
     
     moduleLoaded: function(scriptName, moduleFactory) {
+        console.log(scriptName + " module has arrived");
         var isEmpty = bespin.util.isEmpty;
         var contents = moduleFactory.toString();
         var modules = bespin.plugins.loader.modules;
@@ -130,6 +131,14 @@ dojo.mixin(bespin.plugins.loader, {
             return;
         }
         
+        console.log("Queued " + scriptName + " for load");
+        
+        setTimeout(function() {
+            if (loadQueue[scriptName]) {
+                console.error("Unable to load before timeout: " + scriptName);
+            }
+        }, 2000);
+        
         loadQueue[scriptName] = {factory: null, name: scriptName,
                                 callback: opts.callback,
                                 resolver: opts.resolver,
@@ -139,7 +148,8 @@ dojo.mixin(bespin.plugins.loader, {
     
     _addScriptTag: function(fullName) {
         var s = document.createElement("script");
-        s.setAttribute("src", fullName);
+        var cachebreaker = new Date().getTime();
+        s.setAttribute("src", fullName + "?" + cachebreaker);
         document.body.appendChild(s);
     }
 });

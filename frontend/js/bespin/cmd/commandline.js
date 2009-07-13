@@ -49,6 +49,8 @@ members: {
     setup: function(commandLine, store, options) {
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
+        this.idPrefix = idPrefix;
+        
         var parentElement = options.parentElement || dojo.body();
 
         this.commandLine = dojo.byId(commandLine);
@@ -84,6 +86,14 @@ members: {
         this.connectEvents();
         this.history = new exports.History(this);
         this.hideOutput();
+    },
+    
+    teardown: function() {
+        console.log("Tearing down the command line");
+        
+        // TODO: disconnect events
+        dojo.query(this.idPrefix + "output").orphan();
+        dojo.query(this.idPrefix + "hint").orphan();
     },
 
     /**

@@ -352,4 +352,11 @@ dojo.provide("bespin.page.editor.init");
         });
 
     });
+    
+    bespin.subscribe("extension:removed:bespin.commandline", function(ext) {
+        var commandline = bespin.get("commandLine");
+        if (commandline) {
+            commandline.teardown();
+        }
+    });
 })();
