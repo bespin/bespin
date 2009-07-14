@@ -540,9 +540,12 @@ dojo.declare("bespin.editor.UI", null, {
 
                 var editSession = bespin.get("editSession");
                 if (p && editSession) {
-                    bespin.debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
-                    this.editor.paint(true);
-                    return;
+                    var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+                    if (debug) {
+                        debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
+                        this.editor.paint(true);
+                        return;
+                    }
                 }
             }
         }
@@ -862,7 +865,7 @@ dojo.declare("bespin.editor.UI", null, {
         }, this.actions.moveToLineStart, "Move to start of line", true /* selectable */);
 
         // End of line: All platforms support END. Mac = Apple+Right, Win/Lin = Alt+Right
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");        
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
         listener.bindKeyForPlatform({
             MAC: "APPLE RIGHT_ARROW",
             WINDOWS: "ALT RIGHT_ARROW"
@@ -1063,11 +1066,14 @@ dojo.declare("bespin.editor.UI", null, {
         var breakpoints = {};
 
         if (this.editor.debugMode && bespin.get("editSession")) {
-            var points = bespin.debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
-            dojo.forEach(points, function(point) {
-                breakpoints[point.lineNumber] = point;
-            });
-            delete points;
+            var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+            if (debug) {
+                var points = debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
+                dojo.forEach(points, function(point) {
+                    breakpoints[point.lineNumber] = point;
+                });
+                delete points;
+            }
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
@@ -1893,6 +1899,7 @@ dojo.declare("bespin.editor.API", null, {
      * e.g. bindkey('moveCursorLeft', 'ctrl b');
      */
     bindKey: function(action, keySpec, selectable) {
+        console.warn("Use of editor.bindKey(", action, keySpec, selectable, ") seems doomed to fail");
         var keyObj = bespin.util.keys.fillArguments(keySpec);
         var key = keyObj.key;
         var modifiers = keyObj.modifiers;
@@ -1904,11 +1911,13 @@ dojo.declare("bespin.editor.API", null, {
 
         var keyCode = bespin.util.keys.toKeyCode(key);
 
-        // -- try an editor action first, else fire away at the event bus
-        var action = this.ui.actions[action] || action;
+        // -- try an editor action first, else fire off a command
+        var actionDescription = "Execute command: '" + action + "'";
+        var action = this.ui.actions[action] || function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
 
         if (keyCode && action) {
-            var actionDescription = "User key to execute: " + action.replace("command:execute;name=", "");
             if (selectable) {
                 // register the selectable binding too (e.g. SHIFT + what you passed in)
                 this.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
@@ -1916,5 +1925,30 @@ dojo.declare("bespin.editor.API", null, {
                 this.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
             }
         }
+    },
+
+    /**
+     * Ensure that a given command is executed on each keypress
+     */
+    bindCommand: function(command, keySpec) {
+        var keyObj = bespin.util.keys.fillArguments(keySpec);
+        var keyCode = bespin.util.keys.toKeyCode(keyObj.key);
+        var action = function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
+        var actionDescription = "Execute command: '" + command + "'";
+
+        this.editorKeyListener.bindKeyString(keyObj.modifiers, keyCode, action, actionDescription);
     }
 });
+
+// If the debugger is reloaded, we need to make sure the module
+// is in memory if we're in debug mode.
+bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
+    console.log("Found debugger extension");
+    var settings = bespin.get("settings");
+    if (settings.get("debugmode")) {
+        console.log("Debug mode set, loading extension");
+        ext.load();
+    }
+})

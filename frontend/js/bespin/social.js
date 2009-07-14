@@ -24,9 +24,6 @@
 
 dojo.provide("bespin.social");
 
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.commandline");
-
 /**
  * Utility to take an string array of follower names, and publish a
  * "Following: ..." message as a command line response.
@@ -52,6 +49,27 @@ bespin.social.displayArray = function(instruction, titleNone, titleSome, array) 
     instruction.addOutput(message);
 };
 
+/**
+ * Helper for when you have a command that needs to get a hold of it's params
+ * as an array for processing.
+ * TODO: I'm fairly sure there is a better way to do this knowing how command
+ * line parsing works
+ */
+bespin.social.toArgArray = function(args) {
+    if (args == null) {
+        return [];
+    }
+    else {
+        var spliten = args.split(" ");
+        if (spliten.length == 1 && spliten[0] == "") {
+            return [];
+        }
+        else {
+            return spliten;
+        }
+    }
+};
+
 // =============================================================================
 
 /**
@@ -64,7 +82,7 @@ bespin.command.store.addCommand({
     completeText: 'username(s) of person(s) to follow',
     usage: "[username] ...<br><br><em>(username optional. Will list current followed users if not provided)</em>",
     execute: function(instruction, args) {
-        var usernames = bespin.cmd.commands.toArgArray(args);
+        var usernames = bespin.social.toArgArray(args);
         if (usernames.length === 0) {
             bespin.get('server').followers({
                 onSuccess: function(data) {
@@ -113,7 +131,7 @@ bespin.command.store.addCommand({
     completeText: 'username(s) of person(s) to stop following',
     usage: "[username] ...<br><br><em>The username(s) to stop following</em>",
     execute: function(instruction, args) {
-        var usernames = bespin.cmd.commands.toArgArray(args);
+        var usernames = bespin.social.toArgArray(args);
         if (usernames.length === 0) {
             instruction.addErrorOutput('Please specify the users to cease following');
         }
@@ -169,7 +187,8 @@ bespin.social.group.commands.addCommand({
     description: 'The <u>help</u> gives you access to the various subcommands in the group command space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.social.group.commands, instruction, extra);
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
     }
 });
 
@@ -180,10 +199,7 @@ bespin.social.group.commands.addCommand({
     name: 'list',
     preview: 'List the current group and group members',
     takes: ['group'],
-    params: [
-        { name:'group', type:'user', varargs:true }
-    ],
-    //completeText: 'An optional group name or leave blank to list groups',
+    // completeText: 'An optional group name or leave blank to list groups',
     description: 'List the current group and group members.',
     execute: function(instruction, group) {
         if (!group) {
@@ -212,14 +228,6 @@ bespin.social.group.commands.addCommand({
                     instruction.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
                 }
             });
-        }
-    },
-    sendAllOptions: function(type, callback) {
-        var opts = { onSuccess: callback, evalJSON: true };
-        if (type === "group") {
-            bespin.get('server').groupListAll(opts);
-        } else if (type === "user") {
-            bespin.get('server').followers(opts);
         }
     }
 });
@@ -519,7 +527,7 @@ bespin.command.store.addCommand({
     name: 'viewme',
     preview: 'List and alter user\'s ability to see what I\'m working on',
     execute: function(instruction, args) {
-        args = bespin.cmd.commands.toArgArray(args);
+        args = bespin.social.toArgArray(args);
 
         if (args.length === 0) {
             // === List all the members with view settings on me ===

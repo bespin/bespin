@@ -12,7 +12,7 @@ img {
     width: 100%;
 }
 
-.commandline input {
+#command {
     border: 0;
     background: none;
     color: #DDDDDD;
@@ -21,8 +21,17 @@ img {
     width: 100%;
 }
 
+/* Hmm these don't seem to be working. Wonder why. */
+.commandline input::selection { color: #44A; background: #AA4; }
+.commandline input::-moz-selection { color: #44A; background: #AA4; }
+/* */
+
 .commandline .prompt {
     width: 11px;
+}
+
+#command.commandLineError {
+    color: red;
 }
 
 #promptimg {

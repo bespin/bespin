@@ -1,0 +1,30 @@
+{
+    "command" : {
+        "provides": [
+            ["bespin.commandline", {
+                "pointer": "bespin/cmd/commandline"
+            }]
+        ],
+        "location": "/getscript/js"
+    },
+    "debug": {
+        "provides": [
+            ["bespin.subscribe", {
+                "topic": "debugger:running",
+                "pointer": "debug:debuggerRunning"
+            }],
+            ["bespin.subscribe", {
+                "topic": "debugger:stopped",
+                "pointer": "debug:debuggerStopped"
+            }],
+            ["bespin.subscribe", {
+                "topic": "debugger:halted",
+                "pointer": "debug:debuggerHalted"
+            }],
+            ["bespin.debugger", {
+                "pointer": "debug"
+            }]
+        ],
+        "location": "/getscript/js/bespin/"
+    }
+}

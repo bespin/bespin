@@ -20,14 +20,13 @@
  * Contributor(s):
  *   Bespin Team (bespin@mozilla.com)
  *
- * ***** END LICENSE BLOCK ***** */ 
+ * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.page.index.init");  
+dojo.provide("bespin.page.index.init");
 
-// = Index / Home page =
-//
-// This file is the code to load up the index.html / home page
-
+/**
+ * This file is the code to load up the index.html / home page
+ */
 (function() {
     var server = bespin.register('server', new bespin.client.Server());
     var utils = bespin.user.utils;
@@ -36,14 +35,14 @@ dojo.provide("bespin.page.index.init");
     dojo.addOnLoad(function() {
         bespin.displayVersion();
         server.currentuser(utils.whenAlreadyLoggedIn, utils.whenNotAlreadyLoggedIn);
-		webpieces.fillScreenOverlay();
-		var query = dojo.queryToObject(location.search.substring(1));
-		if (query && query.pwchange) {
-		    var parts = query.pwchange.split(';');
-		    bespin.user.register._cpusername = parts[0];
-		    bespin.user.register._cpcode = parts[1];
-		    bespin.user.register.showChangePassword();
-		}
+        webpieces.fillScreenOverlay();
+        var query = dojo.queryToObject(location.search.substring(1));
+        if (query && query.pwchange) {
+            var parts = query.pwchange.split(';');
+            bespin.user.register._cpusername = parts[0];
+            bespin.user.register._cpcode = parts[1];
+            bespin.user.register.showChangePassword();
+        }
     });
 
     dojo.connect(window, "resize", function() {

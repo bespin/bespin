@@ -103,6 +103,9 @@ dojo.mixin(bespin, {
      * <p>If minTimeBetweenPublishMillis is set to an integer the subscription
      * will not be invoked more than once within this time interval.
      * <p>Maps onto dojo.subscribe but lets us abstract away for the future
+     * TODO: Is minTimeBetweenPublishMillis ever used? I'm not sure that it's
+     * that useful given our synchronous implementation, and we should perhaps
+     * replace this parameter with a scope with which to call the callback
      */
     subscribe: function(topic, callback, minTimeBetweenPublishMillis) {
         if (minTimeBetweenPublishMillis) {
@@ -172,5 +175,20 @@ dojo.mixin(bespin, {
         var el = dojo.byId(el) || dojo.byId("version");
         if (!el) return;
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
+    }
+});
+
+bespin.subscribe("extension:loaded:bespin.subscribe", function(ext) {
+    var subscription = bespin.subscribe(ext.topic, function(e) {
+        ext.load(function(func) {
+            func(e);
+        })
+    });
+    ext.subscription = subscription;
+});
+
+bespin.subscribe("extension:removed:bespin.subscribe", function(ext) {
+    if (ext.subscription) {
+        bespin.unsubscribe(ext.subscription);
     }
 });

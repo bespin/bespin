@@ -682,7 +682,7 @@ mobwrite.syncLoadAjax_ = function(url, post, callback) {
       try {
         req = new ActiveXObject('Microsoft.XMLHTTP');
       } catch(e) {
-      	req = null;
+        req = null;
       }
     }
   }

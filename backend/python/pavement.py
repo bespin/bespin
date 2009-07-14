@@ -50,6 +50,7 @@ options(
 [console_scripts]
 bespin_worker=bespin.queue:process_queue
 queue_stats=bespin.queuewatch:command
+bespin_mobwrite=bespin.mobwrite.mobwrite_daemon:main
 """
     )
 )

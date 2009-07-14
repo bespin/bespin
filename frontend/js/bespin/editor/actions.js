@@ -371,6 +371,11 @@ dojo.declare("bespin.editor.Actions", null, {
         var selection = this.editor.getSelection();
         var chunk = this.deleteSelection(args);
         args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
+
+        // Ignore whatever is currently selected; we've got our selection already
+        this.editor.setSelection(undefined);
+        this.repaint();
+
         var endPos = this.insertChunk(args);
 
         args.queued = oldqueued;
@@ -380,6 +385,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoArgs = {
             action: "deleteChunkAndInsertChunk",
             pos: bespin.editor.utils.copyPos(args.pos),
+            endPos: endPos,
             queued: args.queued,
             selection: selection,
             chunk: args.chunk,
@@ -418,6 +424,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoArgs = {
             action: "deleteChunkAndInsertChunk",
             pos: bespin.editor.utils.copyPos(args.pos),
+            endPos: bespin.editor.utils.copyPos(args.endPos),
             queued: args.queued,
             selection: args.selection,
             chunk: args.chunk,
@@ -1063,7 +1070,7 @@ dojo.declare("bespin.editor.Actions", null, {
             startPos: bespin.editor.utils.copyPos(startPos),
             endPos: bespin.editor.utils.copyPos(endPos),
             startModelPos: this.editor.getModelPos(startPos),
-            endModelPos	: this.editor.getModelPos(endPos),
+            endModelPos: this.editor.getModelPos(endPos),
             queued: true
         };
 
@@ -1110,5 +1117,5 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-	}
+    }
 });

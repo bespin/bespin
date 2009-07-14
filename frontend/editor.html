@@ -54,11 +54,13 @@
     <script type='text/javascript' src='js/dojo/AdapterRegistry.js'></script>
     <script type='text/javascript' src='js/dojo/fx/easing.js'></script>
     <script type='text/javascript' src='js/dijit/_base/place.js'></script>
-<!--
+
+    <!--
     <script type='text/javascript' src='js/jsparse/jsdefs.js'></script>
     <script type='text/javascript' src='js/jsparse/jsparse.js'></script>
     <script type='text/javascript' src='js/jsparse/fulljslint.js'></script>
--->
+    -->
+
     <script type='text/javascript' src='js/bespin/util/util.js'></script>
     <script type='text/javascript' src='js/bespin/util/canvas.js'></script>
     <script type='text/javascript' src='js/bespin/util/keys.js'></script>
@@ -71,8 +73,6 @@
 
     <script type='text/javascript' src='js/bespin/bespin.js'></script>
     <script type='text/javascript' src='js/bespin/command.js'></script>
-    <script type='text/javascript' src='js/bespin/cmd/commandline.js'></script>
-    <script type='text/javascript' src='js/bespin/debug.js'></script>
     <script type='text/javascript' src='js/bespin/events.js'></script>
 
     <script type='text/javascript' src='js/bespin/client/settings.js'></script>
@@ -103,22 +103,39 @@
     <script type='text/javascript' src='js/bespin/syntax/simple/_base.js'></script>
     <script type='text/javascript' src='js/bespin/parser/parser.js'></script>
 
-    <script type='text/javascript' src='js/bespin/cmd/commands.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/cmd.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/config.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/editor.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/file.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/other.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/project.js'></script>
+    <!--
+    <script type='text/javascript' src='js/bespin/cmd/debug.js'></script>
+    -->
 
-    <script type='text/javascript' src='js/bespin/test.js'></script>
-    <script type='text/javascript' src='js/bespin/testTest.js'></script>
-    <script type='text/javascript' src='js/bespin/plugins/loader.js'></script>
-    <script type='text/javascript' src='js/bespin/plugins/loaderTest.js'></script>
     <script type='text/javascript' src='js/bespin/preview.js'></script>
     <script type='text/javascript' src='js/bespin/wizard.js'></script>
-    <script type='text/javascript' src='js/bespin/wizardTest.js'></script>
     <script type='text/javascript' src='js/bespin/social.js'></script>
-    <script type='text/javascript' src='js/bespin/socialTest.js'></script>
     <script type='text/javascript' src='js/bespin/vcs.js'></script>
     <script type='text/javascript' src='js/bespin/jetpack.js'></script>
 
+    <script type='text/javascript' src='js/bespin/mobwrite/core.js'></script>
+    <script type='text/javascript' src='js/bespin/mobwrite/diff.js'></script>
+    <script type='text/javascript' src='js/bespin/mobwrite/form.js'></script>
+    <script type='text/javascript' src='js/bespin/mobwrite/integrate.js'></script>
+
     <script type='text/javascript' src='js/bespin/client/pubsub.js'></script>
+    <script type='text/javascript' src='js/bespin/plugins/loader.js'></script>
+    <script type="text/javascript" src="js/bespin/plugins.js"></script>
+
     <script type='text/javascript' src='js/bespin/page/editor/init.js'></script>
+
+    <script type='text/javascript' src='js/bespin/test.js'></script>
+    <script type='text/javascript' src='js/bespin/testTest.js'></script>
+    <script type='text/javascript' src='js/bespin/wizardTest.js'></script>
+    <script type='text/javascript' src='js/bespin/socialTest.js'></script>
+    <script type='text/javascript' src='js/bespin/cmd/fileTest.js'></script>
+    <script type='text/javascript' src='js/bespin/plugins/loaderTest.js'></script>
 
     <!--
     <script type='text/javascript' src='js/bespin/bootstrap_worker.js'></script>
@@ -206,7 +223,7 @@
         </div>
     </div>
     <!-- debugbar HTML should move to a plugin -->
-    
+
     <div id="target_browsers">
         <table id="target_browsers_table">
             <tr>

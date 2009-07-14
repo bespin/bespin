@@ -22,26 +22,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Syntax Highlighting =
-//
-// Module for dealing with the syntax highlighting.
-//
-// The core model talks to specific engines to do the work and then packages it up to send to the editor.
-
+/**
+ * Syntax Highlighting
+ * Module for dealing with the syntax highlighting.
+ * The core model talks to specific engines to do the work and then packages it
+ * up to send to the editor.
+ */
 dojo.provide("bespin.syntax.base");
 
-// ** {{{ bespin.syntax.Model }}} **
-//
-// Base model for tracking syntax highlighting data.
-
+/**
+ * Base model for tracking syntax highlighting data.
+ */
 dojo.declare("bespin.syntax.Model", null, {
     language: "",
 
     lineCache: [],
 
-    // ** {{{ Caching }}} **
-    //
-    // Optionally, keep a cache of the highlighted model
+    /**
+     * Optionally, keep a cache of the highlighted model
+     */
     invalidateCache: function(lineNumber) {
         delete this.lineCache[lineNumber];
     },
@@ -58,13 +57,15 @@ dojo.declare("bespin.syntax.Model", null, {
         return this.lineCache[lineNumber];
     },
 
-    // Helpers
-    //
+    /**
+     * Helpers. TO BE COMPLETED
+     * This function has to take the regions and take sub pieces and tie them
+     * into the full line.
+     * For example, imagine an HTML engine that sees <script>....</script>
+     * It will pass .... into the JavaScript engine and take those results with
+     * a base of 0 and return the real location.
+     */
     mergeSyntaxResults: function(regions) {
-        // TO BE COMPLETED
-        // This function has to take the regions and take sub pieces and tie them into the full line
-        // For example, imagine an HTML engine that sees <script>....</script>
-        // It will pass .... into the JavaScript engine and take those results with a base of 0 and return the real location
         var base = 0;
         for (var i = 0; i < regions.length; i++) {
             var region = region[i];
@@ -81,8 +82,9 @@ dojo.declare("bespin.syntax.Model", null, {
         }};
     },
 
-    // -- Main API
-    // ** {{{ getSyntaxStyles }}} **
+    /**
+     * Main API
+     */
     getSyntaxStyles: function(rows, firstLineToRender, lastLineToRender, language) {
         var syntaxResults = {};
         for (var i = firstLineToRender; i <= lastLineToRender; i++) {
@@ -92,8 +94,9 @@ dojo.declare("bespin.syntax.Model", null, {
     }
 });
 
-// ** {{{ bespin.syntax.Resolver }}} **
-// The resolver hunts down the syntax engine
+/**
+ * The resolver hunts down the syntax engine
+ */
 bespin.syntax.Resolver = (function() {
     var current, model;
 
