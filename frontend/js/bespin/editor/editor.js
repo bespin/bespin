@@ -834,8 +834,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.oldkeydown  = dojo.hitch(listener, "onkeydown");
         this.oldkeypress = dojo.hitch(listener, "onkeypress");
 
-        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : document;
-
+        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : window;
         dojo.connect(scope, "keydown", this, "oldkeydown");
         dojo.connect(scope, "keypress", this, "oldkeypress");
 
@@ -1947,7 +1946,7 @@ dojo.declare("bespin.editor.API", null, {
 bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
     console.log("Found debugger extension");
     var settings = bespin.get("settings");
-    if (settings.get("debugmode")) {
+    if (settings && settings.get("debugmode")) {
         console.log("Debug mode set, loading extension");
         ext.load();
     }

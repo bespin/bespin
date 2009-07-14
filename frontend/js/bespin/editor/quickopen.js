@@ -237,9 +237,13 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
         if (sortFiles) {
             items.sort(function(a, b) {
-                var x = a.text.toLowerCase();
-                var y = b.text.toLowerCase();
-                return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+                try {
+                    var x = a.text.toLowerCase();
+                    var y = b.text.toLowerCase();
+                    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+                } catch (e) {
+                    return 0;
+                }
             });
         }
 
