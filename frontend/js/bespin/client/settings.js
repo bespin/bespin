@@ -711,7 +711,11 @@ dojo.declare("bespin.client.settings.Events", null, {
                 return;
             }
 
-            bespin.get('files').evalFile(bespin.userSettingsProject, "config");
+            try {
+                bespin.get('files').evalFile(bespin.userSettingsProject, "config");
+            } catch (e) {
+                console.log("Error in user config: ", e);
+            }
         });
     }
 });
