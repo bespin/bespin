@@ -1148,5 +1148,26 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+    
+    showPopup: function() {
+        console.log("Showing the popup");
+        var popup = bespin.get("popup");
+        if (popup) {
+            popup.destroy();
+        }
+        bespin.plugins.loadOne("bespin.popup", function(popupmod) {
+            bespin.register("popup", new popupmod.Window());
+            popup = bespin.get("popup");
+            popup.show();
+        });
+    },
+    
+    hidePopup: function() {
+        console.log("hiding the popup");
+        var popup = bespin.get("popup");
+        if (popup) {
+            popup.destroy();
+        }
     }
 });

@@ -188,7 +188,7 @@ members: {
         
         this.currentPanel = panel;
 
-        this.maxInfoHeight = height;
+        this.maxInfoHeight = coords.h;
     },
 
     /**

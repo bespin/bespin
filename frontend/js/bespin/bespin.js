@@ -157,7 +157,7 @@ dojo.mixin(bespin, {
     get: function(id) {
         return this.registeredComponents[id];
     },
-
+    
     /**
      * Given an id, and function to run, execute it if the component is available
      */

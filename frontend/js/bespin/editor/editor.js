@@ -889,6 +889,8 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CTRL", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CTRL", Key.O, this.actions.focusFileBrowser, "Open File Browser");
+        listener.bindKeyString("CTRL", Key.P, this.actions.showPopup, "Show Popup");
+        listener.bindKeyString("SHIFT CTRL", Key.P, this.actions.hidePopup, "Hide Popup");
 
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
