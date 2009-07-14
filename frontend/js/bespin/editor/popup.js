@@ -25,7 +25,7 @@
 exports.Window = Class.define({
 members: {
     /**
-     * Construct a piemenu window
+     * Construct a popup commandline-driven window
      */
     init: function() {
         this.editor = bespin.get("editor");
@@ -87,7 +87,7 @@ members: {
 
         // Hide on Escape
         this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
-            if (self.visible()) self.hide();
+            if (this.visible) self.hide();
         }));
 
         this.connections.push(dojo.connect(window, 'resize', this, this.resize));
@@ -109,16 +109,29 @@ members: {
     },
 
     
-    show: function() {
+    show: function(panel) {
+        console.log("Request to show the popup");
         var d = this.calculatePosition();
         this.renderPopout(d);
         this.renderToolbar(d);
-        this.canvas.style.display = 'block';
-        console.log("Done showing");
+        bespin.getComponent("commandLine", function(commandline) {
+            console.log("commandline received");
+            commandline.showOutput("output", d.centerPanel);
+            this.canvas.style.display = 'block';
+            this.visible = true;
+            console.log("Done showing");
+        }, this);
+        console.log("Returning from synchronous part");
     },
     
     hide: function() {
         this.canvas.style.display = 'none';
+        dojo.style(this.closer, 'display', 'none');
+        bespin.getComponent("commandLine", function(cli) {
+            cli.hideOutput();
+        });
+        this.editor.setFocus(true);
+        this.visible = false;
     },
     
     /**
@@ -143,6 +156,15 @@ members: {
         d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
         d.offLeft = parseInt(this.canvas.width / 2);
+        
+        // calculate center panel coordinates
+        d.centerPanel = {
+            l: d.cenLeft - 5, // The LHS image has 5px of transparent
+            t: d.midTop + this.settings.canvasTop,
+            w: d.cenWidth + 10, // So does the RHS image have 5px
+            h: d.midHeight,
+            b: this.settings.bottomMargin
+        };
 
         return d;
     },

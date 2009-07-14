@@ -152,6 +152,8 @@ members: {
      * Show the output area in the given display rectangle
      */
     showOutput: function(panel, coords) {
+        console.log("command line wants to show: " + panel);
+        console.dir(coords);
         dojo.style(this.footer, {
             left: coords.l + "px",
             width: (coords.w - 10) + "px",
@@ -161,11 +163,8 @@ members: {
         this.focus();
 
         var footerHeight = dojo.style(this.footer, "height") + 2;
-
-        var piemenu = bespin.get("piemenu");
-        if (piemenu && piemenu.visible()) {
-            coords.b += footerHeight;
-        }
+        
+        coords.b += footerHeight;
 
         dojo.style(this.commandHint, {
             left: coords.l + "px",
@@ -189,6 +188,7 @@ members: {
         this.currentPanel = panel;
 
         this.maxInfoHeight = coords.h;
+        console.log("Command line done with its showing");
     },
 
     /**
@@ -671,22 +671,14 @@ members: {
                 dojo.stopEvent(e);
                 return false;
             } else { // pie menu use cases here
-                var piemenu = bespin.get("piemenu");
-                if (piemenu) {
-                    if (e.keyCode == key.ESCAPE) {
-                        // ESCAPE onkeydown fails on Moz, so we need this. Why?
-                        this.hideHint();
-                        piemenu.hide();
-
-                        dojo.stopEvent(e);
-                        return false;
-                    } else if (piemenu.keyRunsMe(e)) {
-                        this.hideHint();
-                        piemenu.show(piemenu.slices.off);
-
-                        dojo.stopEvent(e);
-                        return false;
-                    }
+                if (e.keyCode == key.ESCAPE) {
+                    // ESCAPE onkeydown fails on Moz, so we need this. Why?
+                    this.hideHint();
+                    bespin.getComponent("popup", function(popup) {
+                        popup.hide();
+                    });
+                    dojo.stopEvent(e);
+                    return false;
                 }
             }
 
@@ -697,10 +689,10 @@ members: {
         dojo.connect(this.commandLine, "onkeydown", this, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-
-                // if pie menu is available
-                var piemenu = bespin.get("piemenu");
-                if (piemenu) piemenu.hide();
+                
+                bespin.getComponent("popup", function(popup) {
+                    popup.hide();
+                });
             }
         });
 

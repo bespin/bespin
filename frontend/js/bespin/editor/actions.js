@@ -1030,19 +1030,9 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     focusCommandline: function() {
-        var commandLine = bespin.get('commandLine');
-        if (commandLine) {
-            commandLine.focus();
-        }
-
-        // Give the browser time to focus the (invisible) command line before
-        // animating it into view, so you can type while it is showing
-        setTimeout(function() {
-            var piemenu = bespin.get('piemenu');
-            if (piemenu) {
-                piemenu.show(piemenu.slices.commandLine, true);
-            }
-        }, 10);
+        bespin.getComponent("popup", function(popup) {
+            popup.show("output");
+        });
     },
 
     focusFileBrowser: function() {
@@ -1133,12 +1123,11 @@ dojo.declare("bespin.editor.Actions", null, {
         var popup = bespin.get("popup");
         if (popup) {
             popup.destroy();
+            bespin.unregister("popup");
         }
-        bespin.plugins.loadOne("bespin.popup", function(popupmod) {
-            bespin.register("popup", new popupmod.Window());
-            popup = bespin.get("popup");
+        bespin.getComponent("popup", function(popup) {
             popup.show();
-        });
+        })
     },
     
     hidePopup: function() {

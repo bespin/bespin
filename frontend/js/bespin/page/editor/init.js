@@ -248,19 +248,4 @@ dojo.provide("bespin.page.editor.init");
             }
         };
     };
-    
-    bespin.subscribe("extension:loaded:bespin.commandline", function(ext) {
-        ext.load(function(commandline) {
-            console.log("Registering command line");
-            bespin.register('commandLine', new commandline.Interface('command', bespin.command.store));
-        });
-
-    });
-    
-    bespin.subscribe("extension:removed:bespin.commandline", function(ext) {
-        var commandline = bespin.get("commandLine");
-        if (commandline) {
-            commandline.teardown();
-        }
-    });
 })();
