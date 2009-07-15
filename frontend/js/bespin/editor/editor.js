@@ -893,9 +893,7 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CMD", Key.O, this.actions.focusFileBrowser, "Open File Browser");
         listener.bindKeyString("CMD", Key.F, this.actions.toggleFilesearch, "Show find dialog");
-        listener.bindKeyString("CMD", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
-        listener.bindKeyString("CTRL", Key.P, this.actions.showPopup, "Show Popup");
-        listener.bindKeyString("SHIFT CTRL", Key.P, this.actions.hidePopup, "Hide Popup");
+        listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         // TODO: Find a way to move this into preview.js
         listener.bindKeyString("CMD", Key.B, bespin.preview.show, "Preview in Browser");
@@ -1935,7 +1933,9 @@ dojo.declare("bespin.editor.API", null, {
         var keyObj = bespin.util.keys.fillArguments(keySpec);
         var keyCode = bespin.util.keys.toKeyCode(keyObj.key);
         var action = function() {
-            bespin.get('commandLine').executeCommand(command, true);
+            bespin.getComponent("commandLine", function(cli) {
+                cli.executeCommand(command, true);
+            })
         };
         var actionDescription = "Execute command: '" + command + "'";
 

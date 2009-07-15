@@ -15,6 +15,14 @@
         ],
         "location": "/getscript/js"
     },
+    "piemenu" : {
+        "provides": [
+            ["piemenu", {
+                "pointer": "bespin/editor/piemenu"
+            }]
+        ],
+        "location": "/getscript/js"
+    },
     "debug": {
         "provides": [
             ["bespin.subscribe", {

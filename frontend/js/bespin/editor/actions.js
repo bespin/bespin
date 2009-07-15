@@ -1013,10 +1013,9 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     togglePieMenu: function() {
-        var piemenu = bespin.get('piemenu');
-        if (piemenu) {
+        bespin.getComponent('piemenu', function(piemenu) {
             piemenu.toggle();
-        }
+        });
     },
 
     toggleFilesearch: function() {
@@ -1116,25 +1115,5 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-    },
-    
-    showPopup: function() {
-        console.log("Showing the popup");
-        var popup = bespin.get("popup");
-        if (popup) {
-            popup.destroy();
-            bespin.unregister("popup");
-        }
-        bespin.getComponent("popup", function(popup) {
-            popup.show();
-        })
-    },
-    
-    hidePopup: function() {
-        console.log("hiding the popup");
-        var popup = bespin.get("popup");
-        if (popup) {
-            popup.destroy();
-        }
     }
 });

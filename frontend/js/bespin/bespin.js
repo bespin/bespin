@@ -210,6 +210,13 @@ dojo.mixin(bespin, {
                 callback.call(context, popup);
             });
         },
+        piemenu: function(callback, context) {
+            bespin.plugins.loadOne("piemenu", function(piemenumod) {
+                bespin.register("piemenu", new piemenumod.Window());
+                var piemenu = bespin.get("piemenu");
+                callback.call(context, piemenu);
+            });
+        },
         commandLine: function(callback, context) {
             bespin.plugins.loadOne("commandLine", function(commandline) {
                 bespin.register("commandLine", 
@@ -230,14 +237,19 @@ dojo.mixin(bespin, {
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
     },
     
+    _subscribeToExtension: function(key) {
+        bespin.subscribe("extension:removed:" + key, function() {
+            var item = bespin.get(key);
+            if (item && item.destroy) {
+                item.destroy();
+            }
+            bespin.unregister(key);
+        });
+    },
+    
     _initializeReloaders: function() {
-        console.log("Initialize reloaders");
         for (var key in bespin.factories) {
-            console.log("Key: ");
-            bespin.subscribe("extension:removed:" + key, function(key) {
-                console.log("Unregistering: " + key);
-                bespin.unregister(key);
-            });
+            bespin._subscribeToExtension(key);
         }
     }
 });

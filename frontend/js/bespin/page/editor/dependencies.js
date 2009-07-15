@@ -64,7 +64,6 @@ dojo.require("bespin.editor.model");
 dojo.require("bespin.editor.toolbar");
 dojo.require("bespin.editor.undo");
 dojo.require("bespin.editor.quickopen");
-dojo.require("bespin.editor.piemenu");
 dojo.require("bespin.editor.filesearch");
 dojo.require("bespin.editor.formatter");
 dojo.require("bespin.editor.codecompletion");
@@ -76,7 +75,6 @@ dojo.require("bespin.syntax.simple._base");
 
 dojo.require("bespin.parser.parser");
 
-dojo.require("bespin.cmd.commandline");
 dojo.require("bespin.cmd.cmd");
 dojo.require("bespin.cmd.config");
 dojo.require("bespin.cmd.editor");

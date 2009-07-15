@@ -48,6 +48,10 @@ members: {
      * Move to a separate function to allow overriding.
      */
     setup: function(commandLine, store, options) {
+        this.nodes = [];
+        this.connections = [];
+        this.subscriptions = [];
+        
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         this.idPrefix = idPrefix;
@@ -67,13 +71,16 @@ members: {
             id: idPrefix + "hint",
             style: "display:none; bottom: " + this.styles.bottom + "; left:" + this.styles.left + "; width:500px;"
         }, parentElement);
-        dojo.connect(this.commandHint, "onclick", this, this.hideHint);
+        this.nodes.push(idPrefix + "hint");
+        
+        this.connections.push(dojo.connect(this.commandHint, "onclick", this, this.hideHint));
 
         // Create the div for real command output
         this.output = dojo.create("div", {
             id: idPrefix + "output",
             style: "display:none;"
         }, parentElement);
+        this.nodes.push(idPrefix + "output");
 
         this.footer = dojo.byId("footer");
         
@@ -91,12 +98,18 @@ members: {
         this.hideOutput();
     },
     
-    teardown: function() {
-        console.log("Tearing down the command line");
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
         
-        // TODO: disconnect events
-        dojo.query(this.idPrefix + "output").orphan();
-        dojo.query(this.idPrefix + "hint").orphan();
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
+        });
     },
 
     /**
@@ -152,19 +165,14 @@ members: {
      * Show the output area in the given display rectangle
      */
     showOutput: function(panel, coords) {
-        console.log("command line wants to show: " + panel);
-        console.dir(coords);
+        var footerHeight = dojo.style(this.footer, "height") + 2;
         dojo.style(this.footer, {
             left: coords.l + "px",
             width: (coords.w - 10) + "px",
-            bottom: coords.b + "px",
+            bottom: (coords.b - footerHeight) + "px",
             display: "block"
         });
         this.focus();
-
-        var footerHeight = dojo.style(this.footer, "height") + 2;
-        
-        coords.b += footerHeight;
 
         dojo.style(this.commandHint, {
             left: coords.l + "px",
@@ -188,7 +196,6 @@ members: {
         this.currentPanel = panel;
 
         this.maxInfoHeight = coords.h;
-        console.log("Command line done with its showing");
     },
 
     /**
@@ -605,27 +612,27 @@ members: {
      * Handle key bindings and other events for the command line
      */
     connectEvents: function() {
-        dojo.connect(this.commandLine, "onfocus", this, function() {
+        this.connections.push(dojo.connect(this.commandLine, "onfocus", this, function() {
             bespin.publish("cmdline:focus");
             this.inCommandLine = true;
             if (this.promptimg) {
                 this.promptimg.src = 'images/icn_command_on.png';
             }
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onblur", this, function() {
+        this.connections.push(dojo.connect(this.commandLine, "onblur", this, function() {
             this.inCommandLine = false;
             if (this.promptimg) {
                 this.promptimg.src = 'images/icn_command.png';
             }
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onkeyup", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeyup", this, function(e) {
             this._normalizeCommandValue();
             this._findCompletions(e);
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onkeypress", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeypress", this, function(e) {
             var key = bespin.util.keys.Key;
 
             if (e.keyChar == 'j' && e.ctrlKey) { // send back
@@ -683,10 +690,10 @@ members: {
             }
 
             return true;
-        });
+        }));
 
         // ESCAPE onkeypress fails on Safari, so we need this.
-        dojo.connect(this.commandLine, "onkeydown", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeydown", this, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
                 
@@ -694,24 +701,24 @@ members: {
                     popup.hide();
                 });
             }
-        });
+        }));
 
         // If an open file action failed, tell the user.
         var self = this;
-        bespin.subscribe("editor:openfile:openfail", function(e) {
+        this.subscriptions.push(bespin.subscribe("editor:openfile:openfail", function(e) {
             self.showHint('Could not open file: ' + e.filename + " (maybe try &raquo; list)");
-        });
+        }));
 
         // The open file action worked, so tell the user
-        bespin.subscribe("editor:openfile:opensuccess", function(e) {
+        this.subscriptions.push(bespin.subscribe("editor:openfile:opensuccess", function(e) {
             self.showHint('Loaded file: ' + e.file.name);
-        });
+        }));
 
         // When escaped, take out the hints and output
-        bespin.subscribe("ui:escape", function() {
+        this.subscriptions.push(bespin.subscribe("ui:escape", function() {
             self.hideHint();
             self.hideOutput();
-        });
+        }));
     }
 }});
 
