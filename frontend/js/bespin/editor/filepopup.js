@@ -31,26 +31,18 @@ members: {
         
         // Old members mixed into this
         this.lastSelectedPath = null;
-        this.inited = false;
         this.firstdisplay = true;
-    },
-
-    // creates the Thunderhead file browser scene
-    checkInit: function() {
-        // if we've already executed this method, bail--only need to setup the scene once
-        if (this.inited) {
-            return;
-        }
-
-        // prevent a second execution; see above
-        this.inited = true;
+        
+        this.nodes = [];
+        this.connections = [];
+        this.subscriptions = [];
 
         // JS FTW!
         var self = this;
 
         // Joe's favorite Dojo feature in action, baby!
         this.canvas = dojo.create("canvas", {
-            id: "piefilepopupcanvas",
+            id: "filepopupcanvas",
             tabIndex: -1,
             style: {
                 position: "absolute",
@@ -58,6 +50,7 @@ members: {
                 display: "none"
             }
         }, dojo.body());
+        this.nodes.push("filepopupcanvas");
 
         // create the Thunderhead scene representing the file browser; will consist of various lists in one column on the left,
         // and a horizontal tree component on the right
@@ -161,19 +154,19 @@ members: {
         this.refreshProjects();
         
         var hitchedRefresh = dojo.hitch(this, this.refreshProjects);
-        bespin.subscribe("project:created", hitchedRefresh);
-        bespin.subscribe("project:deleted", hitchedRefresh);
-        bespin.subscribe("project:renamed", hitchedRefresh);
+        this.subscriptions.push(bespin.subscribe("project:created", hitchedRefresh));
+        this.subscriptions.push(bespin.subscribe("project:deleted", hitchedRefresh));
+        this.subscriptions.push(bespin.subscribe("project:renamed", hitchedRefresh));
         
         var fileUpdates = dojo.hitch(this, function(e) {
             this.updatePath(e.project, e.path);
         });
-        bespin.subscribe("file:saved", fileUpdates);
-        bespin.subscribe("file:removed", fileUpdates);
-        bespin.subscribe("directory:created", fileUpdates);
-        bespin.subscribe("directory:removed", fileUpdates);
+        this.subscriptions.push(bespin.subscribe("file:saved", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("file:removed", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("directory:created", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("directory:removed", fileUpdates));
         
-        dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+        this.connections.push(dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
             
@@ -220,10 +213,26 @@ members: {
                     this.scene.bus.fire("dblclick", e, this.tree);
                     break;
                 case key.ESCAPE:
-                    bespin.get('piemenu').hide();
+                    bespin.getComponent("popup", function(popup) {
+                        popup.hide();
+                    });
                     break;
            }
-       }));
+       })));
+    },
+
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
+        
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
+        });
     },
 
     show: function(coords) {

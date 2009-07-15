@@ -191,7 +191,6 @@ members: {
                 display: "block"
             });
         } else {
-            this.filePanel.checkInit();
             this.filePanel.show(coords);
         }
         
@@ -213,7 +212,6 @@ members: {
         if (this.currentPanel == "output") {
             dojo.style(this.output, "display", "none");
         } else if (this.currentPanel = "files") {
-            this.filePanel.checkInit();
             this.filePanel.hide();
         }
         
