@@ -24,6 +24,8 @@
 
 // This is a plugin
 
+var filepopup = require("bespin/editor/filepopup");
+
 /**
  * When we are completing against some type, we need a place to cache the
  * retrieved values
@@ -84,7 +86,7 @@ members: {
 
         this.footer = dojo.byId("footer");
         
-        this.filePanel = new bespin.editor.filepopup.MainPanel();
+        this.filePanel = new filepopup.FilePanel();
 
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');

@@ -1035,19 +1035,9 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     focusFileBrowser: function() {
-        var commandLine = bespin.get('commandLine');
-        if (commandLine) {
-            commandLine.focus();
-        }
-
-        // Give the browser time to focus the (invisible) command line before
-        // animating it into view, so you can type while it is showing
-        setTimeout(function() {
-            var piemenu = bespin.get('piemenu');
-            if (piemenu) {
-                piemenu.show(piemenu.slices.fileBrowser, true);
-            }
-        }, 10);
+        bespin.getComponent("popup", function(popup) {
+            popup.show("files");
+        });
     },
 
     repaint: function() {

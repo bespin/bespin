@@ -116,7 +116,7 @@ members: {
         this.renderToolbar(d);
         bespin.getComponent("commandLine", function(commandline) {
             console.log("commandline received");
-            commandline.showOutput("output", d.centerPanel);
+            commandline.showOutput(panel, d.centerPanel);
             this.canvas.style.display = 'block';
             this.visible = true;
             console.log("Done showing");

@@ -22,10 +22,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.filepopup");
-
-dojo.declare("bespin.editor.filepopup.MainPanel", null, {
-    constructor: function() {
+exports.FilePanel = Class.define({
+members: {
+    init: function() {
         // Old global definitions
         this.heightDiff = null;
         this.currentProject = null;
@@ -39,7 +38,9 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
     // creates the Thunderhead file browser scene
     checkInit: function() {
         // if we've already executed this method, bail--only need to setup the scene once
-        if (this.inited) return;
+        if (this.inited) {
+            return;
+        }
 
         // prevent a second execution; see above
         this.inited = true;
@@ -128,7 +129,9 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 return;
             }
 
-            if (path.length == 0) return;   // bad state, get out
+            if (path.length === 0) {
+                return;   // bad state, get out
+            }
 
             if (path[path.length - 1].contents) {
                 // if we're in a directory, refresh the files in the directory
@@ -173,7 +176,8 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
-            if (path == undefined) {
+            
+            if (path === undefined) {
                 var list = this.projects;
                 var listNext = this.tree.getList(0);
                 var listPre = null;
@@ -187,13 +191,17 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         
             switch (e.keyCode) {
                 case key.LEFT_ARROW:
-                    if (!listPre) break;
+                    if (!listPre) {
+                        break;
+                    }
                     listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
                     list.selected = null;
                     this.tree.repaint();
                     break;
                 case key.RIGHT_ARROW:
-                    if (!listNext) break;
+                    if (!listNext) {
+                        break;
+                    }
                     if (list.selected.lastSelected) {
                         listNext.selectItemByText(list.selected.lastSelected);
                         listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
@@ -494,4 +502,4 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     }
     
-});
+}});
