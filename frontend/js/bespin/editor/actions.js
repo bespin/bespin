@@ -1117,5 +1117,13 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+    
+    previousFile: function() {
+        bespin.get('editSession').goToPreviousFile();
+    },
+    
+    nextFile: function() {
+        bespin.get('editSession').goToNextFile();
     }
 });

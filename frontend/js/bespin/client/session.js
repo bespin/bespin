@@ -37,6 +37,33 @@ dojo.provide("bespin.client.session");
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
+        this.fileHistory = [];
+        this.fileHistoryIndex = -1;
+    },
+    
+    goToPreviousFile: function() {
+        if (this.fileHistoryIndex != 0) {
+            this.fileHistoryIndex --;
+            this.openFromHistory();
+        }
+    },
+    
+    goToNextFile: function() {
+        if (this.fileHistoryIndex != this.fileHistory.length - 1) {
+            this.fileHistoryIndex ++;
+            this.openFromHistory();
+        }
+    },
+    
+    openFromHistory: function() {
+        var historyItem = this.fileHistory[this.fileHistoryIndex];
+        bespin.publish("editor:savefile", {});
+        bespin.publish("editor:openfile", { project: historyItem.project,  filename: historyItem.filename, fromFileHistory: true });
+    },
+
+    addFileToHistory: function(newItem) {
+        this.fileHistoryIndex ++;
+        this.fileHistory.splice(this.fileHistoryIndex, this.fileHistory.length - this.fileHistoryIndex, newItem);
     },
 
     setUserinfo: function(userinfo) {

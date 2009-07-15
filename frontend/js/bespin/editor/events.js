@@ -64,6 +64,7 @@ dojo.declare("bespin.editor.Events", null, {
         // * If the file fails to load, send an openfail event
         bespin.subscribe("editor:openfile", function(event) {
             var filename = event.filename;
+            var fromFileHistory = event.fromFileHistory || false;
             var editSession = bespin.get('editSession');
             var files = bespin.get('files');
 
@@ -107,6 +108,10 @@ dojo.declare("bespin.editor.Events", null, {
                         project:project,
                         filename:filename
                     };
+
+                    if (!fromFileHistory) {
+                        bespin.get('editSession').addFileToHistory(newItem);
+                    }
 
                     // Remove newItem from down in the list and place at top
                     var cleanLastUsed = [];
