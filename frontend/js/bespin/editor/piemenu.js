@@ -492,6 +492,10 @@ members:
      * Render the pie in some opening/closing state
      */
     renderPie: function(progress) {
+        // when loaded dynamically, this appears to exercise a bug in Safari 4 (fixed in WebKit
+        // nightlies). There may be a workaround. But for now, short circuit.
+        return;
+        
         var ctx = this.ctx;
         var off = this.slices.off.img;
 
