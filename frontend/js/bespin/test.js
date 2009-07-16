@@ -421,7 +421,7 @@ dojo.declare("bespin.test.Assert", null, {
 
         if (expected == null) {
             if (actual != null) {
-                console.log("expected: null, actual non-null: " + this._toDescriptiveString(actual));
+                console.log("expected: null, actual non-null: " + dojo.toJson(actual));
                 return false;
             }
             return true;
@@ -429,7 +429,7 @@ dojo.declare("bespin.test.Assert", null, {
 
         if (typeof(expected) == "number" && isNaN(expected)) {
             if (!(typeof(actual) == "number" && isNaN(actual))) {
-                console.log("expected: NaN, actual non-NaN: " + this._toDescriptiveString(actual));
+                console.log("expected: NaN, actual non-NaN: " + dojo.toJson(actual));
                 return false;
             }
             return true;
@@ -437,7 +437,7 @@ dojo.declare("bespin.test.Assert", null, {
 
         if (actual == null) {
             if (expected != null) {
-                console.log("actual: null, expected non-null: " + this._toDescriptiveString(expected));
+                console.log("actual: null, expected non-null: " + dojo.toJson(expected));
                 return false;
             }
             return true; // we wont get here of course ...

@@ -53,6 +53,7 @@ dojo.declare("bespin.client.settings.Core", null, {
 
     loadSession: function() {
         var editSession = bespin.get('editSession');
+        
         var path    = this.fromURL.get('path') || editSession.path;
         var project = this.fromURL.get('project') || editSession.project;
 
@@ -504,9 +505,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
-                var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
-                if (fileType) {
-                    editor.language = fileType;
+                var path = bespin.get('editSession').path;
+                if (path) {
+                    var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
+                    if (fileType) {
+                        editor.language = fileType;
+                    }                                        
                 }
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
@@ -596,14 +600,17 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         bespin.subscribe("settings:set:debugmode", function(event) {
             editor.debugMode = settings.isOn(event.value);
-
-            if (editor.debugMode && bespin.debug) {
-                bespin.debug.loadBreakpoints(function() {
-                    editor.paint(true);
-                });
+            
+            if (editor.debugMode) {
+                bespin.plugins.loadOne("bespin.debugger",
+                    function(debug) {
+                        debug.loadBreakpoints(function() {
+                            editor.paint(true);
+                        });
+                    })
+            } else {
+                editor.paint(true);
             }
-
-            editor.paint(true);
         });
 
         // ** {{{ Event: settings:set:cursorblink }}} **
@@ -660,36 +667,21 @@ dojo.declare("bespin.client.settings.Events", null, {
                 bespin.wizard.show(null, "newuser", false);
             }
 
-            // if this is a new file, deal with it and setup the state
-            var newfile = settings.fromURL.get('new');
-            if (newfile) { // scratch file
-                bespin.publish("editor:newfile", {
-                   project: project,
-                   newfilename: path,
-                   content: settings.fromURL.get('content') || " "
-                });
-            }
-            else {
-                // existing file, so open it
-                if (path) {
-                    bespin.publish("editor:openfile", { filename: path });
+            // existing file, so open it
+            if (path) {
+                bespin.publish("editor:openfile", { filename: path });
+            } else {
+                var lastUsed = settings.getObject("_lastused");
+                if (!lastUsed) {
+                    bespin.publish("project:set", { project: "SampleProject" });
+                    bespin.publish("editor:openfile", { filename: "readme.txt" });
                 }
                 else {
-                    var lastUsed = settings.getObject("_lastused");
-                    if (!lastUsed) {
-                        editSession.setProject("SampleProject");
-                        bespin.publish("editor:openfile", { filename: "readme.txt" });
-                        // When we replace editor:openfile with a function call
-                        // we should do the commandLine hint here rather than
-                        // in the function call so we can show project and filename
-                    }
-                    else {
-                        // Warning: Publishing an extra filename member to
-                        // project:set and an extra project member to
-                        // editor:openfile
-                        editSession.setProject(lastUsed[0]);
-                        bespin.publish("editor:openfile", lastUsed[0]);
-                    }
+                    // Warning: Publishing an extra filename member to
+                    // project:set and an extra project member to
+                    // editor:openfile                
+                    bespin.publish("project:set", lastUsed[0]);
+                    bespin.publish("editor:openfile", lastUsed[0]);
                 }
             }
         });
@@ -719,7 +711,11 @@ dojo.declare("bespin.client.settings.Events", null, {
                 return;
             }
 
-            bespin.get('files').evalFile(bespin.userSettingsProject, "config");
+            try {
+                bespin.get('files').evalFile(bespin.userSettingsProject, "config");
+            } catch (e) {
+                console.log("Error in user config: ", e);
+            }
         });
     }
 });

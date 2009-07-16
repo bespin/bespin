@@ -24,7 +24,9 @@
 
 dojo.provide("bespin.themes.pastels");
 
-// ** Pastels Theme by Irakli Gozalishvili **
+/**
+ * Pastels Theme by Irakli Gozalishvili
+ */
 bespin.themes.pastels = {
     backgroundStyle: "#221e1e",
     gutterStyle: "#4c4a41",
@@ -76,14 +78,14 @@ bespin.themes.pastels = {
     sizes: "#d98ccb",
     cssclass: "#ea8b1a",
     cssid: "#46a8ed",
-    
+
     atom: "#ea8b1a",
     variable: "#72D5A2",
     variabledef: "#bfc330",
     localvariable: "#c4646b",
     property: "#93E1E3",
     operator: "#1abbda",
-    error: "#dc0055", 
+    error: "#dc0055",
 
     // XML and HTML
     processing: "#999999",
@@ -93,17 +95,17 @@ bespin.themes.pastels = {
     // PHP
     "compile-time-constant": "#776088",
     "predefined-class": "#22FF22",
-    "reserved-language-construct": "#00FF00", 
-    "predefined-function": "#22FF22", 
+    "reserved-language-construct": "#00FF00",
+    "predefined-function": "#22FF22",
     "predefined-class": "#22FF22",
 
     literal: "#dd6138",
-    identifier: "#63d763", 
-    func: "#bc5d8b",  
+    identifier: "#63d763",
+    func: "#bc5d8b",
     type: "#6481d9",
     decorator: "#a83e71"
 };
-    
+
 // ** Pastels Zebra Theme **
 bespin.themes.pastelszebra = {};
 dojo.mixin(bespin.themes.pastelszebra, bespin.themes.pastels);

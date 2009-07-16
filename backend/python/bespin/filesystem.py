@@ -754,7 +754,7 @@ class Project(object):
         self.metadata.cache_replace(files)
         return space_used
 
-    def search_files(self, query, limit=20):
+    def search_files(self, query, limit=20, include=""):
         """Scans the files for filenames that match the queries."""
 
         # make the query lower case so that the match boosting
@@ -767,7 +767,14 @@ class Project(object):
         files = self.metadata.search_files(search_re)
         match_list = [_SearchMatch(query, f) for f in files]
         all_results = [str(match) for match in sorted(match_list)]
-        return all_results[:limit]
+        
+        # check now if the files are within the include folder
+        # if the include folder is empty just take them all
+        if include != "":
+            includes = re.compile('|'.join(include.split(';')))
+            return [file for file in all_results if includes.match(file)][:limit]
+        else:
+            return all_results[:limit]
 
 class ProjectView(Project):
     """Provides a view of a project for a specific user. This handles

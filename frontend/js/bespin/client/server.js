@@ -403,13 +403,15 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{path}}} is the path to save to
     // * {{{contents}}} fires after the save returns
     // * {{{lastOp}}} contains the last edit operation
-    saveFile: function(project, path, contents, lastOp) {
+    saveFile: function(project, path, contents, lastOp, opts) {
         if (!project || !path) return;
+        opts = opts || {};
+        opts.log = 'Saved file "' + project + '/' + path+ '"';
 
         var url = bespin.util.path.combine('/file/at', project, (path || ''));
         if (lastOp) url += "?lastEdit=" + lastOp;
 
-        this.request('PUT', url, contents, { log: 'Saved file "' + project + '/' + path+ '"' });
+        this.request('PUT', url, contents, opts);
     },
 
     // ** {{{ loadFile(project, path, contents) }}}
@@ -526,8 +528,11 @@ dojo.declare("bespin.client.Server", null, {
     // * {{{project}}} is the project to look from
     // * {{{searchstring}}} to compare files with
     // * {{{onSuccess}}} fires after the file is closed
-    searchFiles: function(project, searchkey, onSuccess) {
+    searchFiles: function(project, searchkey, includeFolders, onSuccess) {
         var url = bespin.util.path.combine('/file/search', project+'?q='+escape(searchkey));
+        if (includeFolders.length > 0) {
+            url += '&i='+escape(includeFolders.join(';'));
+        }
         var opts = { onSuccess: onSuccess, evalJSON: true, log: "Listing searchfiles for: " + project + ", searchkey: " + searchkey};
         this.request('GET', url, null, opts);
     },

@@ -286,6 +286,16 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         this.bindKeyString("SHIFT " + modifiers, keyCode, action);
     },
 
+    /*
+      this is taken from th.KeyHelpers
+    */ 
+    getPrintableChar: function(e) {
+        if (e.charCode > 255) return false;
+        if (e.charCode < 32) return false;
+        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 96 && e.charCode < 123)) return false;
+        return String.fromCharCode(e.charCode);
+    },
+
     onkeydown: function(e) {
         // handle keys only if editor has the focus!
         if (!this.editor.focus) return;
@@ -317,6 +327,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
         // stop going, but allow special strokes to get to the browser
         if (hasAction || !bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
+
     },
 
     onkeypress: function(e) {
@@ -332,9 +343,9 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
         }
         // -- End of commandLine short cut
 
-        // If key should be skipped, BUT there are some chars like "@|{}[]\" that NEED the ALT- or CTRL-key to be accessable
-        // on some platforms and keyboardlayouts (german?). This is not working for "^"
-        if ([64 /*@*/, 91/*[*/, 92/*\*/, 93/*]*/, 94/*^*/, 123/*{*/, 124/*|*/, 125/*}*/, 126/*~*/ ].indexOf(e.charCode) != -1) {
+        var charToPrint = this.getPrintableChar(e);
+
+        if (charToPrint) {
             this.skipKeypress = false;
         } else if (this.skipKeypress) {
             if (!bespin.util.keys.passThroughToBrowser(e)) dojo.stopEvent(e);
@@ -345,8 +356,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
                      pos: bespin.editor.utils.copyPos(this.editor.cursorManager.getCursorPosition()) };
         var actions = this.editor.ui.actions;
 
-        // Only allow ascii through
-        if ((e.charCode >= 32) && (e.charCode <= 126) || e.charCode >= 160) {
+        if (charToPrint) {
             args.newchar = String.fromCharCode(e.charCode);
             actions.insertCharacter(args);
         } else { // Allow user to move with the arrow continuously
@@ -530,9 +540,12 @@ dojo.declare("bespin.editor.UI", null, {
 
                 var editSession = bespin.get("editSession");
                 if (p && editSession) {
-                    bespin.debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
-                    this.editor.paint(true);
-                    return;
+                    var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+                    if (debug) {
+                        debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
+                        this.editor.paint(true);
+                        return;
+                    }
                 }
             }
         }
@@ -821,8 +834,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.oldkeydown  = dojo.hitch(listener, "onkeydown");
         this.oldkeypress = dojo.hitch(listener, "onkeypress");
 
-        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : document;
-
+        var scope = this.editor.opts.actsAsComponent ? this.editor.canvas : window;
         dojo.connect(scope, "keydown", this, "oldkeydown");
         dojo.connect(scope, "keypress", this, "oldkeypress");
 
@@ -852,7 +864,7 @@ dojo.declare("bespin.editor.UI", null, {
         }, this.actions.moveToLineStart, "Move to start of line", true /* selectable */);
 
         // End of line: All platforms support END. Mac = Apple+Right, Win/Lin = Alt+Right
-        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");        
+        listener.bindKeyStringSelectable("", Key.END, this.actions.moveToLineEnd, "Move to end of line");
         listener.bindKeyForPlatform({
             MAC: "APPLE RIGHT_ARROW",
             WINDOWS: "ALT RIGHT_ARROW"
@@ -874,20 +886,14 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyString("", Key.ESCAPE, this.actions.escape, "Clear fields and dialogs");
 
-        // SEARCH / FIND
-        // This is at the moment done by a observe(window) within init.js
-        // listener.bindKeyString("CMD", Key.F, this.actions.findSelectInputField, "Show find dialog");
-        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find the previous match");
-        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Go on to the next match");
-
         listener.bindKeyString("CMD", Key.A, this.actions.selectAll, "Select All");
 
         // handle key to jump between editor and other windows / commandline
-        listener.bindKeyString("CTRL", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
-        listener.bindKeyString("CTRL", Key.J, this.actions.focusCommandline, "Open Command line");
-        listener.bindKeyString("CTRL", Key.O, this.actions.focusFileBrowser, "Open File Browser");
-
-        listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
+        listener.bindKeyString("CMD", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
+        listener.bindKeyString("CMD", Key.J, this.actions.focusCommandline, "Open Command line");
+        listener.bindKeyString("CMD", Key.O, this.actions.focusFileBrowser, "Open File Browser");
+        listener.bindKeyString("CMD", Key.F, this.actions.toggleFilesearch, "Show find dialog");
+        listener.bindKeyString("CMD", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         // TODO: Find a way to move this into preview.js
         listener.bindKeyString("CMD", Key.B, bespin.preview.show, "Preview in Browser");
@@ -1059,11 +1065,14 @@ dojo.declare("bespin.editor.UI", null, {
         var breakpoints = {};
 
         if (this.editor.debugMode && bespin.get("editSession")) {
-            var points = bespin.debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
-            dojo.forEach(points, function(point) {
-                breakpoints[point.lineNumber] = point;
-            });
-            delete points;
+            var debug = bespin.plugins.getLoadedOne("bespin.debugger");
+            if (debug) {
+                var points = debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
+                dojo.forEach(points, function(point) {
+                    breakpoints[point.lineNumber] = point;
+                });
+                delete points;
+            }
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:
@@ -1889,6 +1898,7 @@ dojo.declare("bespin.editor.API", null, {
      * e.g. bindkey('moveCursorLeft', 'ctrl b');
      */
     bindKey: function(action, keySpec, selectable) {
+        console.warn("Use of editor.bindKey(", action, keySpec, selectable, ") seems doomed to fail");
         var keyObj = bespin.util.keys.fillArguments(keySpec);
         var key = keyObj.key;
         var modifiers = keyObj.modifiers;
@@ -1900,11 +1910,13 @@ dojo.declare("bespin.editor.API", null, {
 
         var keyCode = bespin.util.keys.toKeyCode(key);
 
-        // -- try an editor action first, else fire away at the event bus
-        var action = this.ui.actions[action] || action;
+        // -- try an editor action first, else fire off a command
+        var actionDescription = "Execute command: '" + action + "'";
+        var action = this.ui.actions[action] || function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
 
         if (keyCode && action) {
-            var actionDescription = "User key to execute: " + action.replace("command:execute;name=", "");
             if (selectable) {
                 // register the selectable binding too (e.g. SHIFT + what you passed in)
                 this.editorKeyListener.bindKeyStringSelectable(modifiers, keyCode, action, actionDescription);
@@ -1912,5 +1924,30 @@ dojo.declare("bespin.editor.API", null, {
                 this.editorKeyListener.bindKeyString(modifiers, keyCode, action, actionDescription);
             }
         }
+    },
+
+    /**
+     * Ensure that a given command is executed on each keypress
+     */
+    bindCommand: function(command, keySpec) {
+        var keyObj = bespin.util.keys.fillArguments(keySpec);
+        var keyCode = bespin.util.keys.toKeyCode(keyObj.key);
+        var action = function() {
+            bespin.get('commandLine').executeCommand(command, true);
+        };
+        var actionDescription = "Execute command: '" + command + "'";
+
+        this.editorKeyListener.bindKeyString(keyObj.modifiers, keyCode, action, actionDescription);
     }
 });
+
+// If the debugger is reloaded, we need to make sure the module
+// is in memory if we're in debug mode.
+bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
+    console.log("Found debugger extension");
+    var settings = bespin.get("settings");
+    if (settings && settings.get("debugmode")) {
+        console.log("Debug mode set, loading extension");
+        ext.load();
+    }
+})

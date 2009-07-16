@@ -25,8 +25,6 @@
 dojo.provide("bespin.vcs");
 
 dojo.require("bespin.util.webpieces");
-dojo.require("bespin.cmd.commands");
-dojo.require("bespin.cmd.commandline");
 
 /**
  * Command store for the VCS commands
@@ -37,6 +35,23 @@ bespin.vcs.commands = new bespin.command.Store(bespin.command.store, {
     preview: 'run a version control command',
     completeText: 'subcommands: add, clone, commit, diff, getkey, help, push, remove, resolved, update',
     subcommanddefault: 'help'
+});
+
+/**
+ * Display sub-command help
+ */
+bespin.vcs.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for vcs subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        var output = this.parent.getHelp(extra, {
+            suffix: "For more information about Bespin's VCS support see the <a href='https://wiki.mozilla.org/Labs/Bespin/UserGuide#VCS_Commands' target='_blank'>VCS section of the user guide</a>."
+        });
+        instruction.addOutput(output);
+    }
 });
 
 /**
@@ -166,6 +181,12 @@ bespin.vcs.commands.addCommand({
                 + '<tr><td>Project name:</td>'
                 + '<td><input type="text" name="dest" value=""> (defaults to last part of URL path)</td></tr>'
 
+                + '<tr><td>VCS Type:</td><td><select name="vcs" id="vcs">'
+                + '<option value="">Auto-detect from URL</option>'
+                + '<option value="hg">Mercurial (hg)</option>'
+                + '<option value="svn">Subversion (svn)</option>'
+                + '</select></td></tr>'
+
                 + '<tr><td>Authentication:</td><td><select name="remoteauth" id="remoteauth">'
                 + '<option value="">None (read-only access to the remote repo)</option>'
                 + '<option value="write">Only for writing</option>'
@@ -238,7 +259,7 @@ bespin.vcs.commands.addCommand({
                 }
             }
             data = dojo.objectToQuery(data);
-            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
+            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction), { onSuccess: function() { bespin.publish("project:created", { project: project }) } });
         }));
 
         dojo.byId("kcpass").focus();
@@ -357,20 +378,6 @@ bespin.vcs.getkey = {
 };
 
 bespin.vcs.commands.addCommand(bespin.vcs.getkey);
-
-/**
- * Display sub-command help
- */
-bespin.vcs.commands.addCommand({
-    name: 'help',
-    takes: ['search'],
-    preview: 'show commands for vcs subcommand',
-    description: 'The <u>help</u> gives you access to the various commands in the vcs subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
-    completeText: 'optionally, narrow down the search',
-    execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.commands, instruction, extra);
-    }
-});
 
 /**
  * Push command.
@@ -527,7 +534,8 @@ bespin.vcs.hgCommands.addCommand({
     description: 'The <u>help</u> gives you access to the various commands in the hg subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
     completeText: 'optionally, narrow down the search',
     execute: function(instruction, extra) {
-        bespin.cmd.displayHelp(bespin.vcs.hgCommands, instruction, extra);
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
     }
 });
 

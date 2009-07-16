@@ -1,7 +1,19 @@
-#quickopen_input {
+#quickopen #input {
     font: 8pt Tahoma;
     color: black;
-    selection-color: #B5D2F3;
+    selection-color: #C4A174;
+    background-color: #CFCECC;
+    
+    border-image: url(images/quickopen/input.png) 5 6 5 20 stretch stretch;
+    border-width: 5px 6px 5px 20px;
+    
+    margin: 0px 5px 5px 5px;
+}
+
+#quickopen #project {
+    font: 8pt Tahoma;
+    color: black;
+    selection-color: #C4A174;
     background-color: #CFCECC;
     
     border-image: url(images/quickopen/input.png) 5 6 5 20 stretch stretch;
@@ -10,26 +22,26 @@
     margin: 5px;
 }
 
-#quickopen_list {
+#quickopen #list {
     border-top: 1px solid black;
     border-bottom: 1px solid;
     border-bottom-color: #8A857A;
     background-color: #D7D1C0;
 }
 
-#quickopen_list Label {
+#list Label {
     font: 9pt Tahoma;
     color: #6C6C68;
     padding-left: 5px;
 }
 
-#quickopen_list Label:active {
+#list Label:active {
     background-color: #C4A174;
     background-image: -webkit-gradient(linear, left top, left bottom, from(#C4A174), to(#C4A174));
     border-width: 0px;
 }
 
-#quickopen_label {
+#quickopen #label {
     font: 9pt Tahoma;
     color: #16100E;
     background-color: #D6D1C0;

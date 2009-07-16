@@ -132,12 +132,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
             if (path[path.length - 1].contents) {
                 // if we're in a directory, refresh the files in the directory
-                this.refreshFiles(path, this.tree);
+                this.fetchFiles(path, this.tree);
                 return;
             }
 
             var file = this.getFilePath(path, true);
-            console.log("file", file);
+            console.log("file", file, { filename:file, project:this.currentProject });
             bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
 
             var settings = bespin.get("settings");
@@ -155,9 +155,21 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             this.currentProject = item.name;
         }, this);
 
-        // get logged in name; if not logged in, display an error of some kind
-        bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
-
+        this.refreshProjects();
+        
+        var hitchedRefresh = dojo.hitch(this, this.refreshProjects);
+        bespin.subscribe("project:created", hitchedRefresh);
+        bespin.subscribe("project:deleted", hitchedRefresh);
+        bespin.subscribe("project:renamed", hitchedRefresh);
+        
+        var fileUpdates = dojo.hitch(this, function(e) {
+            this.updatePath(e.project, e.path);
+        });
+        bespin.subscribe("file:saved", fileUpdates);
+        bespin.subscribe("file:removed", fileUpdates);
+        bespin.subscribe("directory:created", fileUpdates);
+        bespin.subscribe("directory:removed", fileUpdates);
+        
         dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
@@ -277,22 +289,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         return filepath;
     },
 
-    refreshFiles: function(path, tree) {
-        var filepath = this.getFilePath(path);
-
-        var self = this;
-        bespin.get("server").list(filepath, null, function(files) {
-            var contents = path[path.length - 1].contents;
-            contents.length = 0; // really, dojo? really? could you not provide a little clear()?
-
-            dojo.forEach(self.prepareFilesForTree(files), function(file) {
-                contents.push(file);
-            });
-
-            tree.render();
-        });
-    },
-
     fetchRootFiles: function(project, tree) {
         var self = this;
         bespin.get("server").list(project, null, function(files) {
@@ -310,6 +306,71 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             tree.render();
         });
     },
+    
+    updatePath: function(project, filepath) {
+        var tree = this.tree;
+        
+        if (filepath.substring(filepath.length-1) == "/") {
+            filepath = filepath.substring(0, filepath.length - 1);
+        }
+        
+        var selectedProject = this.projects.selected;
+        if (selectedProject) {
+            // If the currently selected project is not being displayed
+            // we don't need to update. We're only updating what is
+            // visible.
+            if (selectedProject.name != project) {
+                return;
+            }
+        } else {
+            // no project currently being displayed, so there's nothing
+            // to update
+            return;
+        }
+        
+        var selectedPath = tree.getSelectedPath();
+        
+        if (selectedPath === undefined) {
+            selectedPath = [];
+        }
+        
+        var filepathItems = filepath.split("/");
+        var lengthToParent = filepathItems.length - 1;
+        
+        // we want to see if the *parent* of the file/directory
+        // that has changed is visible and, if so, update that.
+        for (var i = 0; i < lengthToParent; i++) {
+            var fpitem = filepathItems[i];
+            
+            var item = selectedPath[i];
+            
+            if (item == undefined || !item.contents) {
+                break;
+            }
+            
+            if (item.name != fpitem) {
+                return;
+            }
+        }
+        
+        var fetchPath = this.getFilePath(selectedPath.slice(0,i));
+        
+        var self = this;
+        
+        var listToUpdate = tree.getList(i);
+        
+        bespin.get("server").list(fetchPath, null, function(files) {
+            var contents = self.prepareFilesForTree(files);
+            fetchPath[fetchPath.length-1].contents = contents;
+            
+            if (listToUpdate) {
+                listToUpdate.items = contents;
+                tree.render();
+            } else {
+                tree.showChildren(null, contents);
+            }
+        });
+    },
 
     restorePath: function(newPath) {
         this.lastSelectedPath = this.lastSelectedPath || '';
@@ -317,8 +378,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         var oldPath = this.lastSelectedPath;
         this.lastSelectedPath = newPath;
         
-        console.log("New path: " + newPath + " oldPath: " + oldPath);
-
         if (newPath == oldPath && newPath != '') return;     // the path has not changed
 
         newPath = newPath.split('/');
@@ -326,14 +385,12 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         this.scene.renderAllowed = false;
         
-        console.log("level counting stuff");
 
         var sameLevel = 0;  // the value is 1 and not 0, as the first list (the project list) is not affected!
         while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel] && newPath[sameLevel] != '') {
             sameLevel ++;
         }
         
-        console.log("fake paths");
         var fakePath = new Array(newPath.length);
         for (var x = 0; x < newPath.length; x++) {
             var fakeItem = new Object();
@@ -350,7 +407,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             fakePath[x] = fakeItem;
         }
         
-        console.log("remove extra lists");
         if (newPath.length <= this.tree.scrollPanes.length) {
             this.tree.removeListsFrom(newPath.length);
         }
@@ -358,13 +414,11 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         var contentsPath = new Array(newPath.length);
         var countSetupPaths = sameLevel;
         
-        console.log("deselecting");
         // deselect lists if needed
         for (var x = newPath.length; x < this.tree.scrollPanes.length; x++) {
             delete this.tree.getList(x).selected;
         }
         
-        console.log("filling in the data");
         // get the data for the lists
         for (var x = sameLevel; x < newPath.length; x++) {
             var selected = this.tree.scrollPanes[x].view.selected;
@@ -380,8 +434,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             } else {
                 // load filelist form this.server
                 var filepath = this.getFilePath(fakePath.slice(0, x));
-                console.dir(fakePath);
-                console.log("Loading " + filepath + " fp: " + fakePath + " x: " + x);
 
                 var self = this;
                 // Closure creator to capture the value of x in index
@@ -405,7 +457,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                     var list = self.tree.getList(x);
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
-                                    console.log("list selected: " + list.selected.name);
                                     if (list.selected) {
                                         list.selected.contents = contentsPath[x];
                                     }
@@ -417,13 +468,11 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
             }
         }
         
-        console.log("ready to render");
         this.scene.renderAllowed = true;
         this.scene.render();
     },
 
     displayProjects: function(projectItems) {
-        console.log("displayProjects");
 
         for (var i = 0; i < projectItems.length; i++) {
             projectItems[i] = {
@@ -444,4 +493,5 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     }
+    
 });

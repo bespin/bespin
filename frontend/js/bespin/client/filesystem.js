@@ -186,7 +186,14 @@ dojo.declare("bespin.client.FileSystem", null, {
         // Unix files should always have a trailing new-line; add if not present
         if (/\n$/.test(file.content)) file.content += "\n";
 
-        this.server.saveFile(project, file.name, file.content, file.lastOp);
+        this.server.saveFile(project, file.name, file.content, file.lastOp,
+                {
+                    onSuccess: function() {
+                    console.log("File saved: " + project + " " + file.name);
+                    bespin.publish("file:saved",
+                        {project: project, path: file.name});
+                    }
+                });
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -198,7 +205,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the make works
     // * {{{onFailure}}} is the callback to fire if the make fails
     makeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.makeDirectory(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("directory:created", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        };
+        this.server.makeDirectory(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.makeDirectory(project, path, onSuccess, onFailure) }}}
@@ -210,7 +224,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeDirectory: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("directory:removed", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        };
+        this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}
@@ -222,7 +243,14 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{onSuccess}}} is the callback to fire if the remove works
     // * {{{onFailure}}} is the callback to fire if the remove fails
     removeFile: function(project, path, onSuccess, onFailure) {
-        this.server.removeFile(project, path, onSuccess, onFailure);
+        var publishOnSuccess = function(result) {
+            bespin.publish("file:removed", {
+                project: project,
+                path: path
+            });
+            onSuccess(result);
+        };
+        this.server.removeFile(project, path, publishOnSuccess, onFailure);
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}

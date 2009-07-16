@@ -24,18 +24,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// = Arduino Syntax Highlighting Implementation =
-//
-// Module for syntax highlighting Arduino PDE files.
-
 dojo.provide("bespin.syntax.simple.arduino");
 
-// ** {{{ bespin.syntax.simple.Arduino }}} **
-//
-// Tracks syntax highlighting data on a per-line basis. This is a quick-and-dirty implementation that
-// supports five basic highlights: keywords, punctuation, strings, comments, and "everything else", all
-// lumped into one last bucket.
-
+/**
+ * Tracks syntax highlighting data on a per-line basis.
+ * This is a quick-and-dirty implementation that supports five basic highlights:
+ * keywords, punctuation, strings, comments, and "everything else", all lumped
+ * into one last bucket.
+ */
 bespin.syntax.simple.ArduinoConstants = {
     C_STYLE_COMMENT: "c-comment",
     LINE_COMMENT: "comment",
@@ -45,31 +41,44 @@ bespin.syntax.simple.ArduinoConstants = {
     OTHER: "plain"
 };
 
+/**
+ * Module for syntax highlighting Arduino PDE files.
+ */
 dojo.declare("bespin.syntax.simple.Arduino", null, {
-    keywords: 'HIGH LOW INPUT OUTPUT SERIAL DISPLAY  DEC BIN HEX OCT BYTE PI HALF_PI  TWO_PI LSBFIRST MSBFIRST CHANGE FALLING  RISING DEFAULT  EXTERNAL INTERAL ' +
-    'boolean  byte case char class default  do double else false float for if int long new null private  protected public return short signed static switch this throw try true unsigned void while word ' +
-    'abs acos asin atan atan2 ceil constrain cos degrees exp floor log map max min radians  random randomSeed round sin sq sqrt tan ' +
-    'bitRead bitWrite bitSet bitClear bit highByte lowByte ' +
-    'analogReference  analogRead analogWrite attachInterrupt  detachInterrupt  delay delayMicroseconds digitalWrite digitalRead interrupts millis micros noInterrupts pinMode  pulseIn  shiftOut ' +
-    'Serial begin read print println  available flush ' +
-    'setup loop'.split(" "),
+    keywords: 'HIGH LOW INPUT OUTPUT SERIAL DISPLAY DEC BIN HEX OCT BYTE PI ' +
+    'HALF_PI TWO_PI LSBFIRST MSBFIRST CHANGE FALLING RISING DEFAULT EXTERNAL INTERAL ' +
+    'boolean  byte case char class default  do double else false float for if ' +
+    'int long new null private  protected public return short signed static switch ' +
+    'this throw try true unsigned void while word abs acos asin atan atan2 ceil ' +
+    'constrain cos degrees exp floor log map max min radians  random randomSeed ' +
+    'round sin sq sqrt tan bitRead bitWrite bitSet bitClear bit highByte lowByte ' +
+    'analogReference analogRead analogWrite attachInterrupt detachInterrupt delay ' +
+    'delayMicroseconds digitalWrite digitalRead interrupts millis micros ' +
+    'noInterrupts pinMode pulseIn shiftOut Serial begin read print println available ' +
+    'flush setup loop'.split(" "),
 
     punctuation: '{ } > < / + - % * . , ; ( ) ? : = " \''.split(" "),
 
-    highlight: function(line, meta) {           
+    highlight: function(line, meta) {
         if (!meta) meta = {};
 
-        var K = bespin.syntax.ArduinoConstants;    // aliasing the constants for shorter reference ;-)
+        // aliasing the constants for shorter reference ;-)
+        var K = bespin.syntax.ArduinoConstants;
 
-        var regions = {};  // contains the individual style types as keys, with array of start/stop positions as value
+        // contains the individual style types as keys, with array of start/stop
+        // positions as value
+        var regions = {};
 
-        // current state, maintained as we parse through each character in the line; values at any time should be consistent
+        // current state, maintained as we parse through each character in the
+        // line; values at any time should be consistent
         var currentStyle = (meta.inMultilineComment) ? K.C_STYLE_COMMENT : undefined;
-        var currentRegion = {}; // should always have a start property for a non-blank buffer
+        // should always have a start property for a non-blank buffer
+        var currentRegion = {};
         var buffer = "";
 
         // these properties are related to the parser state above but are special cases
-        var stringChar = "";    // the character used to start the current string
+        // the character used to start the current string
+        var stringChar = "";
         var multiline = meta.inMultilineComment;
 
         for (var i = 0; i < line.length; i++) {
@@ -77,7 +86,8 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
 
             // check if we're in a comment and whether this character ends the comment
             if (currentStyle == K.C_STYLE_COMMENT) {
-                if (c == "/" && /\*$/.test(buffer)) { // has the c-style comment just ended?
+                // has the c-style comment just ended?
+                if (c == "/" && /\*$/.test(buffer)) {
                     currentRegion.stop = i + 1;
                     this.addRegion(regions, currentStyle, currentRegion);
                     currentRegion = {};
@@ -95,8 +105,10 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
             if (this.isWhiteSpaceOrPunctuation(c)) {
                 // check if we're in a string
                 if (currentStyle == K.STRING) {
-                    // if this is not an unescaped end quote (either a single quote or double quote to match how the string started) then keep going
-                    if ( ! (c == stringChar && !/\\$/.test(buffer))) { 
+                    // if this is not an unescaped end quote (either a single
+                    // quote or double quote to match how the string started)
+                    // then keep going
+                    if (!(c == stringChar && !/\\$/.test(buffer))) {
                         if (buffer == "") currentRegion = { start: i };
                         buffer += c;
                         continue;
@@ -107,7 +119,9 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
                 if (buffer != "") {
                     currentRegion.stop = i;
 
-                    if (currentStyle != K.STRING) {   // if this is a string, we're all set to add it; if not, figure out if its a keyword
+                    // if this is a string, we're all set to add it; if not,
+                    // figure out if its a keyword
+                    if (currentStyle != K.STRING) {
                         if (this.keywords.indexOf(buffer) != -1) {
                             // the buffer contains a keyword
                             currentStyle = K.KEYWORD;
@@ -119,15 +133,17 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
                     currentRegion = {};
                     stringChar = "";
                     buffer = "";
-                    // i don't clear the current style here so I can check if it was a string below
+                    // I don't clear the current style here so I can check if it
+                    // was a string below
                 }
 
                 if (this.isPunctuation(c)) {
                     if (c == "*" && i > 0 && (line.charAt(i - 1) == "/")) {
-                        // remove the previous region in the punctuation bucket, which is a forward slash
+                        // Remove the previous region in the punctuation bucket,
+                        // which is a forward slash
                         regions[K.PUNCTUATION].pop();
 
-                        // we are in a c-style comment
+                        // We are in a c-style comment
                         multiline = true;
                         currentStyle = K.C_STYLE_COMMENT;
                         currentRegion = { start: i - 1 };
@@ -135,7 +151,8 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
                         continue;
                     }
 
-                    // check for a line comment; this ends the parsing for the rest of the line
+                    // Check for a line comment; this ends the parsing for the
+                    // rest of the line
                     if (c == '/' && i > 0 && (line.charAt(i - 1) == '/')) {
                         currentRegion = { start: i - 1, stop: line.length };
                         currentStyle = K.LINE_COMMENT;
@@ -143,7 +160,8 @@ dojo.declare("bespin.syntax.simple.Arduino", null, {
                         buffer = "";
                         currentStyle = undefined;
                         currentRegion = {};
-                        break;      // once we get a line comment, we're done!
+                        // once we get a line comment, we're done!
+                        break;
                     }
 
                     // add an ad-hoc region for just this one punctuation character
