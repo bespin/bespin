@@ -893,7 +893,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CMD", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CMD", Key.O, this.actions.focusFileBrowser, "Open File Browser");
-        listener.bindKeyString("CMD", Key.F, this.actions.toggleFilesearch, "Show find dialog");
+        listener.bindKeyString("CMD", Key.F, this.actions.cmdFilesearch, "Search in this file");
+        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Find Next");
+        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find Previous");
         listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         // TODO: Find a way to move this into preview.js

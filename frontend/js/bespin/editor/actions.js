@@ -1114,5 +1114,15 @@ dojo.declare("bespin.editor.Actions", null, {
                 popup.show("output");
             });
         });
+    },
+    
+    cmdFilesearch: function() {
+        bespin.getComponent("commandLine", function(cli) {
+            cli.setCommandText("search ");
+            bespin.getComponent("popup", function(popup) {
+                popup.show("output");
+            });
+        });
     }
+    
 });
