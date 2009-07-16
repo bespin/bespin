@@ -377,6 +377,7 @@ def file_list_all(request, response):
 def file_search(request, response):
     user = request.user
     query = request.GET.get("q", "")
+    include = request.GET.get("i", "")
     limit = request.GET.get("limit", 20)
     try:
         limit = int(limit)
@@ -385,7 +386,7 @@ def file_search(request, response):
     project_name = request.kwargs['project_name']
 
     project = get_project(user, user, project_name)
-    result = project.search_files(query, limit)
+    result = project.search_files(query, limit, include)
     return _respond_json(response, result)
 
 def _populate_stats(item, result):
@@ -1038,9 +1039,10 @@ def scriptwrapper_middleware(app):
         if process_script and result.status.startswith("200"):
             contents = result.body
             template = jsontemplate.FromFile(open(os.path.dirname(os.path.abspath(__file__)) + "/jsmodule.jsont"))
-            start_response(result.status, result.headers.items())
             newbody = template.expand(dict(script=contents, 
-                                      script_name=req.path_info))
+                                      script_name="/getscript" + req.path_info))
+            result.headers['Content-Length'] = len(newbody)
+            start_response(result.status, result.headers.items())
             return [newbody]
         start_response(result.status, result.headers.items())
         return [result.body]

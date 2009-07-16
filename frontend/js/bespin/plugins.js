@@ -25,37 +25,67 @@
 dojo.provide("bespin.plugins");
 
 dojo.declare("bespin.plugins.Extension", null, {
-    constructor: function(pluginName, meta) {
+    constructor: function(collection, pluginName, resolver, meta) {
         this._pluginName = pluginName;
+        this._pluginCollection = collection;
+        this._resolver = resolver;
         dojo.mixin(this, meta);
     },
     
     load: function(callback) {
+        var self = this;
         var parts = this.pointer.split(":");
-        var modname = "/file/at/" + parts[0] + ".js";
+        var modname = this._resolver(parts[0]);
         
-        // this part will actually be async
         var module = bespin.plugins.loader.modules[modname];
         
         if (!module) {
-            bespin.plugins.loader.loadScript(modname, function(module) {
-                if (module.activate) {
-                    module.activate();
-                }
-                
-                if (parts[1]) {
-                    callback(module[parts[1]]);
-                } else {
-                    callback(module);
-                }
+            bespin.plugins.loader.loadScript(modname, {
+                callback: function(module) {
+                    if (!module._used_by_plugins) {
+                        module._used_by_plugins = {};
+                    }
+                    
+                    module._used_by_plugins[self._pluginName] = 
+                        self._pluginCollection;
+                    module._resolver = self._resolver;
+                    
+                    if (module.activate) {
+                        module.activate();
+                    }
+                    
+                    if (callback) {
+                        if (parts[1]) {
+                            callback(module[parts[1]]);
+                        } else {
+                            callback(module);
+                        }
+                    }
+                },
+                resolver: this._resolver
             });
             return;
         }
+                
+        if (callback) {
+            if (parts[1]) {
+                callback(module[parts[1]]);
+            } else {
+                callback(module);
+            }
+        }
+    },
+    
+    getIfLoaded: function() {
+        var parts = this.pointer.split(":");
+        var modname = this._resolver(parts[0]);
+        
+        var module = bespin.plugins.loader.modules[modname];
         
         if (parts[1]) {
-            callback(module[parts[1]]);
+            return module[parts[1]];
         } else {
-            callback(module);
+            return module;
         }
     }
 });
@@ -63,11 +93,16 @@ dojo.declare("bespin.plugins.Extension", null, {
 dojo.mixin(bespin.plugins, {
     metadata: {},
     
+    builtins: {},
+    
     extensionPoints: {},
     
-    unregisterExtensionPoints: function(pluginName) {
+    unregisterExtensionPoints: function(pluginName, collection) {
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
         var extensionPoints = bespin.plugins.extensionPoints;
-        var info = bespin.plugins.metadata[pluginName];
+        var info = collection[pluginName];
         if (!info) {
             return;
         }
@@ -99,15 +134,40 @@ dojo.mixin(bespin.plugins, {
         }
     },
     
-    registerExtensionPoints: function(pluginName) {
+    sameFileResolver: function(name) {
+        return this.location;
+    },
+    
+    multiFileResolver: function(name) {
+        if (name.charAt(0) != "/") {
+            if (this.location.charAt(this.location.length-1) == '/') {
+                name = this.location + name + ".js";
+            } else {
+                name = this.location + '/' + name + '.js';
+            }
+        }
+        return name;
+    },
+    
+    registerExtensionPoints: function(pluginName, collection, resolver) {
         var extensionPoints = bespin.plugins.extensionPoints;
         var Extension = bespin.plugins.Extension;
-        var info = bespin.plugins.metadata[pluginName];
+        
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
+        var info = collection[pluginName];
         var provides = info.provides;
         
         if (!provides) {
             return;
         }
+        
+        if (!resolver) {
+            resolver = bespin.plugins.multiFileResolver;
+        }
+        
+        resolver = dojo.hitch(info, resolver);
         
         for (var i = 0; i < provides.length; i++) {
             var ep = provides[i];
@@ -119,7 +179,7 @@ dojo.mixin(bespin.plugins, {
                 extList = extensionPoints[name] = [];
             }
             
-            var ext = new Extension(pluginName, meta)
+            var ext = new Extension(collection, pluginName, resolver, meta)
             extList.push(ext);
             bespin.publish("extension:loaded:" + name, ext);
         }
@@ -129,10 +189,28 @@ dojo.mixin(bespin.plugins, {
         return bespin.plugins.extensionPoints[epName] || [];
     },
     
-    remove: function(pluginName) {
-        var info = bespin.plugins.metadata[pluginName];
-        console.log("Removing " + pluginName);
-        console.dir(info);
+    loadOne: function(epName, callback) {
+        var points = bespin.plugins.extensionPoints[epName];
+        if (!points || !points[0]) {
+            return false;
+        }
+        points[0].load(callback);
+        return true;
+    },
+    
+    getLoadedOne: function(epName) {
+        var points = bespin.plugins.extensionPoints[epName];
+        if (!points || !points[0]) {
+            return undefined;
+        }
+        return points[0].getIfLoaded();
+    },
+    
+    remove: function(pluginName, collection) {
+        if (!collection) {
+            collection = bespin.plugins.metadata;
+        }
+        var info = collection[pluginName];
         if (info) {
             var oldmodule = bespin.plugins.loader.modules[info.location];
         } else {
@@ -142,23 +220,26 @@ dojo.mixin(bespin.plugins, {
         if (oldmodule && oldmodule.deactivate) {
             oldmodule.deactivate();
         }
-        delete bespin.plugins.metadata[pluginName];
-        bespin.get("files").saveFile("BespinSettings",
-            {
-                name: "plugins.json",
-                content: dojo.toJson(bespin.plugins.metadata)
-            });
+        delete collection[pluginName];
+        
+        if (collection == bespin.plugins.metadata) {
+            bespin.get("files").saveFile("BespinSettings",
+                {
+                    name: "plugins.json",
+                    content: dojo.toJson(bespin.plugins.metadata)
+                });
+        }
     },
     
     _removeLink: function(node) {
         bespin.get("commandLine").executeCommand('plugin remove "' + node.getAttribute("name") + '"');
     },
     
-    reload: function(url) {
+    installSingleFilePlugin: function(url) {
         var oldmodule = bespin.plugins.loader.modules[url];
         
-        bespin.plugins.loader.loadScript(url,
-            function(module) {
+        bespin.plugins.loader.loadScript(url, {
+            callback: function(module) {
                 if (!module.info) {
                     instruction.addError("Plugin module does not have info!");
                 }
@@ -172,7 +253,8 @@ dojo.mixin(bespin.plugins, {
                 }
                 module.info.location = url;
                 bespin.plugins.metadata[name] = module.info;
-                bespin.plugins.registerExtensionPoints(name);
+                bespin.plugins.registerExtensionPoints(name, 
+                        bespin.plugins.metadata, bespin.plugins.sameFileResolver);
                 if (module.activate) {
                     module.activate();
                 }
@@ -182,7 +264,9 @@ dojo.mixin(bespin.plugins, {
                         content: dojo.toJson(bespin.plugins.metadata)
                     });
                 
-            }, true);
+            },
+            force: true
+        });
     },
     
     reloadByName: function(pluginName) {
@@ -190,11 +274,24 @@ dojo.mixin(bespin.plugins, {
         if (!info || !info.location) {
             return;
         }
-        bespin.plugins.reload(info.location);
+        bespin.plugins.installSingleFilePlugin(info.location);
     },
     
     _reloadLink: function(node) {
         bespin.get("commandLine").executeCommand('plugin reload "' + node.getAttribute("name") + '"');
+    },
+    
+    _computeModulesToReload: function(fullname, mod, toReload, pluginsToInit) {
+        toReload[fullname] = true;
+        var used_by_plugins = mod._used_by_plugins
+        for (var plugin in used_by_plugins) {
+            pluginsToInit[plugin] = used_by_plugins[plugin];
+        }
+        
+        for (var modname in mod._depended_on_by) {
+            var othermod = bespin.plugins.loader.modules[modname];
+            this._computeModulesToReload(modname, othermod, toReload, pluginsToInit);
+        }
     }
 });
 
@@ -211,9 +308,9 @@ bespin.plugins.commands.addCommand({
         var editSession = bespin.get('editSession');
         var filename = editSession.path;
         var project  = editSession.project;
-        var url = "/file/at/" + project + "/" + filename;
+        var url = "/getscript/file/at/" + project + "/" + filename;
         
-        bespin.plugins.reload(url);
+        bespin.plugins.installSingleFilePlugin(url);
         instruction.addOutput("Plugin installed.");
     }
 });
@@ -252,7 +349,7 @@ bespin.plugins.commands.addCommand({
     }
 });
 
-dojo.addOnLoad(function() {
+bespin.subscribe("bespin:editor:initialized", function() {
     bespin.get("files").loadContents("BespinSettings", "plugins.json",
         function(info) {
             var data = dojo.fromJson(info.content);
@@ -261,4 +358,51 @@ dojo.addOnLoad(function() {
                 bespin.plugins.registerExtensionPoints(name);
             }
     });
+    
+    bespin.get("server").request("GET", "/js/bespin/builtins.json", null, {
+        evalJSON: true,
+        onSuccess: function(data) {
+            bespin.plugins.builtins = data;
+            for (var name in data) {
+                bespin.plugins.registerExtensionPoints(name, 
+                    bespin.plugins.builtins, bespin.plugins.multiFileResolver);
+            }
+        }
+    });
+});
+
+bespin.subscribe("file:saved", function(e) {
+    var settings = bespin.get("settings");
+    var fullname = "/getscript/file/at/" + e.project + "/" + e.path;
+    if (settings) {
+        var editbespin = settings.get("editbespin");
+        if (editbespin == e.project) {
+            // remove the "frontend/" from the beginning of the path
+            fullname = "/getscript/" + e.path.substring(9);
+        }
+    }
+    // Implement plugin reloading
+    var mod = bespin.plugins.loader.modules[fullname];
+    if (!mod) {
+        return;
+    }
+    
+    var toReload = {};
+    var pluginsToInit = {};
+    bespin.plugins._computeModulesToReload(fullname, mod, toReload, 
+                                        pluginsToInit);
+    
+    for (var plugin in pluginsToInit) {
+        bespin.plugins.unregisterExtensionPoints(plugin, 
+                pluginsToInit[plugin]);
+    }
+    
+    for (var modname in toReload) {
+        delete bespin.plugins.loader.modules[modname];
+    }
+    
+    for (var plugin in pluginsToInit) {
+        bespin.plugins.registerExtensionPoints(plugin, pluginsToInit[plugin]);
+    }
+
 });

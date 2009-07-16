@@ -28,31 +28,35 @@ dojo.mixin(bespin.plugins.loader, {
     modules: {},
     loadQueue: {},
     
-    isEmpty: function(obj) {
-        for (var item in obj) { return false; }
-        return true;
-    },
-
     moduleLoaded: function(scriptName, moduleFactory) {
-        var isEmpty = bespin.plugins.loader.isEmpty;
+        var isEmpty = bespin.util.isEmpty;
         var contents = moduleFactory.toString();
         var modules = bespin.plugins.loader.modules;
         var loadQueue = bespin.plugins.loader.loadQueue;
+        
         var queueitem = loadQueue[scriptName];
+        
+        var resolver = queueitem.resolver;
+        var force = queueitem.force;
         queueitem.moduleFactory = moduleFactory;
 
         //Find dependencies.
         var depRegExp = /require\s*\(('|")([\w\W]*?)('|")\)/mg;
         var deps = queueitem.deps = {};
+        var allDependencies = queueitem.dependsOn = {};
         var match;
         while ((match = depRegExp.exec(contents)) != null) {
-            var depScriptName = "/js/" + match[2] + ".js";
-            if (modules[depScriptName] !== undefined) {
+            var depScriptName = match[2];
+            var adjustedName = resolver ? resolver(depScriptName) : depScriptName;
+            allDependencies[adjustedName] = true;
+            
+            if (modules[adjustedName] !== undefined && !force) {
                 continue;
             }
-            deps[depScriptName] = true;
-            if (!loadQueue[depScriptName]) {
-                bespin.plugins.loader.loadScript(depScriptName);
+            deps[adjustedName] = true;
+            if (!loadQueue[adjustedName]) {
+                bespin.plugins.loader.loadScript(depScriptName,
+                    {resolver: resolver, force: force});
             }
         }
         
@@ -62,13 +66,29 @@ dojo.mixin(bespin.plugins.loader, {
     },
     
     _loaded: function(scriptName) {
-        var isEmpty = bespin.plugins.loader.isEmpty;
+        var isEmpty = bespin.util.isEmpty;
         var modules = bespin.plugins.loader.modules;
         var loadQueue = bespin.plugins.loader.loadQueue;
         var queueitem = loadQueue[scriptName];
+        var resolver = queueitem.resolver;
 
         delete loadQueue[scriptName];
-        var module = queueitem.moduleFactory(bespin.plugins.loader.require, {});
+        
+        var module = queueitem.moduleFactory(function(modname) {
+            if (resolver) {
+                modname = resolver(modname);
+            }
+            return bespin.plugins.loader.modules[modname];
+        }, {});
+        
+        module._name = scriptName;
+        module._depends_on = queueitem.dependsOn;
+        module._depended_on_by = {};
+        
+        for (var modName in module._depends_on) {
+            modules[modName]._depended_on_by[scriptName] = true;
+        }
+        
         modules[scriptName] = module;
         if (queueitem.callback) {
             queueitem.callback(module);
@@ -86,28 +106,40 @@ dojo.mixin(bespin.plugins.loader, {
             }
         }
     },
-
-    loadScript: function(scriptName, callback, force) {
+    
+    // By default, the script will only be loaded if it's not already
+    // in the queue.
+    //
+    // Options:
+    // callback: function to call when the module is loaded
+    // resolver: function that will adjust the scriptName for the proper
+    //           script tag location
+    // force: set to true to reload this *and* its dependencies
+    // reload: reload just this module.
+    loadScript: function(scriptName, opts) {
+        opts = opts || {};
+        
         var loadQueue = bespin.plugins.loader.loadQueue;
         
+        if (opts.resolver) {
+            scriptName = opts.resolver(scriptName);
+        }
+        
         // already loading?
-        if (loadQueue[scriptName] && !force) {
+        if (loadQueue[scriptName] && !opts.force && !opts.reload) {
             return;
         }
         
         loadQueue[scriptName] = {factory: null, name: scriptName,
-                                callback: callback};
+                                callback: opts.callback,
+                                resolver: opts.resolver,
+                                force: opts.force};
         bespin.plugins.loader._addScriptTag(scriptName);
     },
     
     _addScriptTag: function(fullName) {
         var s = document.createElement("script");
-        s.setAttribute("src", "/getscript/" + fullName);
+        s.setAttribute("src", fullName);
         document.body.appendChild(s);
-    },
-
-    require: function(module) {
-        var scriptName = "/js/" + module + ".js";
-        return bespin.plugins.loader.modules[scriptName];
     }
 });

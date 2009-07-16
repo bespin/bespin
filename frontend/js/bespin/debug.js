@@ -27,27 +27,26 @@
  * <p>This holds the data for the Bespin debugger.
  */
 
-dojo.provide("bespin.debug");
-
-dojo.require("bespin.cmd.commandline");
+var Interface = require("cmd/commandline").Interface;
 
 /**
  * A simple store that currently doesn't store the history at all
  */
-dojo.declare("bespin.debug.SimpleHistoryStore", null, {
-    constructor: function(history) {
+exports.SimpleHistoryStore = Class.define({
+members: {
+    init: function(history) {
     },
 
     save: function(instructions) {}
-});
+}});
 
 /**
  * A specialization of bespin.cmd.commandline.Interface for the Javascript
  * based CLI
  */
-dojo.declare("bespin.debug.EvalCommandLineInterface",
-    bespin.cmd.commandline.Interface, {
-
+exports.EvalCommandLineInterface = Class.define({
+superclass: Interface,
+members: {
     setup: function(commandLine, store, options) {
         console.log("overridden setup called");
         options = options || {};
@@ -56,7 +55,7 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         this.commandLine = dojo.byId(commandLine);
         this.setKeyBindings();
         this.history = new bespin.cmd.commandline.History(this);
-        this.history.store = new bespin.debug.SimpleHistoryStore();
+        this.history.store = new exports.SimpleHistoryStore();
         this.output = dojo.byId(idPrefix + "output");
         this._resizeConnection = null;
     },
@@ -187,201 +186,200 @@ dojo.declare("bespin.debug.EvalCommandLineInterface",
         }
         this.updateOutput();
     }
-});
+}});
+
+/*
+ * Array of objects that look like this:
+ * { project: "project", path: "/path/to/file.js", lineNumber: 23 }
+ * 
+ * TODO the breakpoints should really be stored in an object outside
+ * of this module (to support multiple Bespin instances, for example)
+ */
+exports.breakpoints = [];
+
+/** any state that is sent from the target VM */
+exports.state = {};
+
+/** internal ID numbers for these breakpoints. */
+var _sequence = 1;
+
+/** has the debugbar been initialized? */
+var _initialized = false;
+
+/**
+ * Helper to check for duplicate breakpoints before adding this one
+ */
+exports.addBreakpoint = function(newBreakpoint) {
+    for (var i = 0; i < this.breakpoints.length; i++) {
+        var breakpoint = this.breakpoints[i];
+        if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;
+    }
+    newBreakpoint.id = this.sequence++;
+    exports.breakpoints.push(newBreakpoint);
+    this.saveBreakpoints();
+    bespin.publish("debugger:breakpoints:add", newBreakpoint);
+    return true;
+};
+
+/**
+ * Returns true if the two breakpoints represent the same line in the same
+ * file in the same project
+ */
+exports.breakpointsEqual = function(b1, b2) {
+    return (b1.project == b2.project && b1.path == b2.path && b1.lineNumber == b2.lineNumber);
+};
+
+/**
+ * Helper to remove a breakpoint from the breakpoints array
+ */
+exports.removeBreakpoint = function(breakpointToRemove) {
+    for (var i = 0; i < exports.breakpoints.length; i++) {
+        if (this.breakpointsEqual(exports.breakpoints[i], breakpointToRemove)) {
+            breakpointToRemove.id = exports.breakpoints[i].id;
+            exports.breakpoints.splice(i, 1);
+            this.saveBreakpoints();
+            bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
+            return;
+        }
+    }
+};
 
 /**
  *
  */
-dojo.mixin(bespin.debug, {
-    /*
-     * Array of objects that look like this:
-     * { project: "project", path: "/path/to/file.js", lineNumber: 23 }
-     */
-    breakpoints: [],
+exports.toggleBreakpoint = function(breakpoint) {
+    if (!this.addBreakpoint(breakpoint)) this.removeBreakpoint(breakpoint);
+};
 
-    /** any state that is sent from the target VM */
-    state: {},
+/**
+ * Helper to return the breakpoints that apply to the current file
+ */
+exports.getBreakpoints = function(project, path) {
+    var bps = [];   // breakpoints to return
 
-    /** internal ID numbers for these breakpoints. */
-    _sequence: 1,
+    dojo.forEach(exports.breakpoints, function(breakpoint) {
+        if (breakpoint.project == project && breakpoint.path == path) bps.push(breakpoint);
+    });
 
-    /** has the debugbar been initialized? */
-    _initialized: false,
+    return bps;
+};
 
-    /**
-     * Helper to check for duplicate breakpoints before adding this one
-     */
-    addBreakpoint: function(newBreakpoint) {
-        for (var i = 0; i < this.breakpoints.length; i++) {
-            var breakpoint = this.breakpoints[i];
-            if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;
+/**
+ *
+ */
+exports.loadBreakpoints = function(callback) {
+    bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", function(file) {
+        exports.breakpoints = dojo.fromJson(file.content);
+
+        // reset IDs, because they are not consistent between
+        // loads of Bespin.
+        this.sequence = 1;
+        for (var i = 0; i < exports.breakpoints.length; i++) {
+            exports.breakpoints[i].id = this.sequence++;
         }
-        newBreakpoint.id = this.sequence++;
-        this.breakpoints.push(newBreakpoint);
-        this.saveBreakpoints();
-        bespin.publish("debugger:breakpoints:add", newBreakpoint);
-        return true;
-    },
 
-    /**
-     * Returns true if the two breakpoints represent the same line in the same
-     * file in the same project
-     */
-    breakpointsEqual: function(b1, b2) {
-        return (b1.project == b2.project && b1.path == b2.path && b1.lineNumber == b2.lineNumber);
-    },
+        if (dojo.isFunction(callback)) callback();
+    });
+};
 
-    /**
-     * Helper to remove a breakpoint from the breakpoints array
-     */
-    removeBreakpoint: function(breakpointToRemove) {
-        for (var i = 0; i < this.breakpoints.length; i++) {
-            if (this.breakpointsEqual(this.breakpoints[i], breakpointToRemove)) {
-                breakpointToRemove.id = this.breakpoints[i].id;
-                this.breakpoints.splice(i, 1);
-                this.saveBreakpoints();
-                bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
-                return;
-            }
-        }
-    },
+/**
+ *
+ */
+exports.saveBreakpoints = function() {
+    // save breakpoints back to server asynchronously
+    bespin.get('files').saveFile(bespin.userSettingsProject, {
+        name: "breakpoints",
+        content: dojo.toJson(exports.breakpoints),
+        timestamp: new Date().getTime()
+    });
+};
 
-    /**
-     *
-     */
-    toggleBreakpoint: function(breakpoint) {
-        if (!this.addBreakpoint(breakpoint)) this.removeBreakpoint(breakpoint);
-    },
-
-    /**
-     * Helper to return the breakpoints that apply to the current file
-     */
-    getBreakpoints: function(project, path) {
-        var bps = [];   // breakpoints to return
-
-        dojo.forEach(this.breakpoints, function(breakpoint) {
-            if (breakpoint.project == project && breakpoint.path == path) bps.push(breakpoint);
-        });
-
-        return bps;
-    },
-
-    /**
-     *
-     */
-    loadBreakpoints: function(callback) {
-        bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", dojo.hitch(this, function(file) {
-            this.breakpoints = dojo.fromJson(file.content);
-
-            // reset IDs, because they are not consistent between
-            // loads of Bespin.
-            this.sequence = 1;
-            for (var i = 0; i < this.breakpoints.length; i++) {
-                this.breakpoints[i].id = this.sequence++;
-            }
-
-            if (dojo.isFunction(callback)) callback();
-        }));
-    },
-
-    /**
-     *
-     */
-    saveBreakpoints: function() {
-        // save breakpoints back to server asynchronously
-        bespin.get('files').saveFile(bespin.userSettingsProject, {
-            name: "breakpoints",
-            content: dojo.toJson(this.breakpoints),
-            timestamp: new Date().getTime()
-        });
-    },
-
-    /**
-     *
-     */
-    _initialize: function() {
-        if (bespin.debug._initialized) {
-            return;
-        }
-        dojo.connect(dojo.byId("debugbar_break"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:break", {});
-                    });
-
-        dojo.connect(dojo.byId("debugbar_continue"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:continue", {});
-                    });
-
-        dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepnext", {});
-                    });
-
-        dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepout", {});
-                    });
-
-        dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepin", {});
-                    });
-
-        bespin.debug.evalLine = new bespin.debug.EvalCommandLineInterface(
-                'debugbar_command', null, {
-                    idPrefix: "debugbar_",
-                    parentElement: dojo.byId("debugbar")
+/**
+ * This function should actually turn into an activate function
+ * that creates the debugbar itself and hooks up the listeners.
+ */
+var _initialize = function() {
+    if (_initialized) {
+        return;
+    }
+    dojo.connect(dojo.byId("debugbar_break"), "onclick",
+                null, function() {
+                    bespin.publish("debugger:break", {});
                 });
 
-        bespin.debug._initialized = true;
-    },
+    dojo.connect(dojo.byId("debugbar_continue"), "onclick",
+                null, function() {
+                    bespin.publish("debugger:continue", {});
+                });
 
-    /**
-     * Note that evalFunction should be an extension point
-     */
-    showDebugBar: function(evalFunction) {
-        bespin.debug._initialize();
+    dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
+                null, function() {
+                    bespin.publish("debugger:stepnext", {});
+                });
 
-        var evalLine = bespin.debug.evalLine;
-        evalLine.evalFunction = evalFunction;
-        dojo.style("debugbar", "display", "block");
-        bespin.page.editor.recalcLayout();
-        evalLine.resize();
+    dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
+                null, function() {
+                    bespin.publish("debugger:stepout", {});
+                });
 
-        var settings = bespin.get("settings");
-        if (settings && settings.isSettingOff("debugmode")) {
-            settings.set("debugmode", "on");
-        }
+    dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
+                null, function() {
+                    bespin.publish("debugger:stepin", {});
+                });
 
-        bespin.debug.project = bespin.get("editSession").project;
-    },
+    exports.evalLine = new exports.EvalCommandLineInterface(
+            'debugbar_command', null, {
+                idPrefix: "debugbar_",
+                parentElement: dojo.byId("debugbar")
+            });
 
-    hideDebugBar: function() {
-        var evalLine = bespin.debug.evalLine;
-        dojo.style("debugbar", "display", "none");
-        bespin.page.editor.recalcLayout();
-        evalLine.clearAll();
-        bespin.debug.project = undefined;
+    _initialized = true;
+};
+
+/**
+ * Note that evalFunction should be an extension point
+ */
+exports.showDebugBar = function(evalFunction) {
+    _initialize();
+
+    var evalLine = exports.evalLine;
+    evalLine.evalFunction = evalFunction;
+    dojo.style("debugbar", "display", "block");
+    bespin.page.editor.recalcLayout();
+    evalLine.resize();
+
+    var settings = bespin.get("settings");
+    if (settings && settings.isSettingOff("debugmode")) {
+        settings.set("debugmode", "on");
     }
-});
 
-bespin.subscribe("debugger:running", function() {
+    exports.project = bespin.get("editSession").project;
+};
+
+exports.hideDebugBar = function() {
+    var evalLine = exports.evalLine;
+    dojo.style("debugbar", "display", "none");
+    bespin.page.editor.recalcLayout();
+    evalLine.clearAll();
+    exports.project = undefined;
+};
+
+exports.debuggerRunning = function() {
     dojo.style("debugbar_status_running", "display", "inline");
     dojo.style("debugbar_status_stopped", "display", "none");
     dojo.byId("debugbar_position").innerHTML = "";
     dojo.style("debugbar_break", "display", "inline");
     dojo.style("debugbar_continue", "display", "none");
-});
+};
 
-bespin.subscribe("debugger:stopped", function() {
+exports.debuggerStopped = function() {
     dojo.style("debugbar_status_running", "display", "none");
     dojo.style("debugbar_status_stopped", "display", "inline");
     dojo.style("debugbar_break", "display", "none");
     dojo.style("debugbar_continue", "display", "inline");
-});
+};
 
-bespin.subscribe("debugger:halted", function(location) {
+exports.debuggerHalted = function(location) {
     var el = dojo.byId("debugbar_position");
     var newtext = "";
 
@@ -390,8 +388,8 @@ bespin.subscribe("debugger:halted", function(location) {
     }
 
     var linenum = location.sourceLine + 1;
-    if (bespin.debug.project) {
-        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  ' + location.scriptName + ' ' + bespin.debug.project + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
+    if (exports.project) {
+        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  ' + location.scriptName + ' ' + exports.project + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
     } else {
         var scriptloc = location.scriptName + ':' + linenum;
     }
@@ -402,4 +400,4 @@ bespin.subscribe("debugger:halted", function(location) {
     }
 
     el.innerHTML = newtext;
-});
+};

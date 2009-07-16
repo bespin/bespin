@@ -32,9 +32,12 @@
 
     <link type="text/css" rel="thstylesheet" href="css/editor_th.css">
     <link type="text/css" rel="thstylesheet" href="css/quickopen_th.css">
+    <link type="text/css" rel="thstylesheet" href="css/filesearch_th.css">
 
     <!-- begin Th -->
+    
     <script type="text/javascript" src="js/th.compressed.js"></script>
+    
     <script type="text/javascript">
     th.global_resources.load("/th/");
     </script>
@@ -70,8 +73,6 @@
 
     <script type='text/javascript' src='js/bespin/bespin.js'></script>
     <script type='text/javascript' src='js/bespin/command.js'></script>
-    <script type='text/javascript' src='js/bespin/cmd/commandline.js'></script>
-    <script type='text/javascript' src='js/bespin/debug.js'></script>
     <script type='text/javascript' src='js/bespin/events.js'></script>
 
     <script type='text/javascript' src='js/bespin/client/settings.js'></script>
@@ -91,6 +92,7 @@
     <script type='text/javascript' src='js/bespin/editor/toolbar.js'></script>
     <script type='text/javascript' src='js/bespin/editor/undo.js'></script>
     <script type='text/javascript' src='js/bespin/editor/quickopen.js'></script>
+    <script type='text/javascript' src='js/bespin/editor/filesearch.js'></script>
     <script type='text/javascript' src='js/bespin/editor/filepopup.js'></script>
     <script type='text/javascript' src='js/bespin/editor/piemenu.js'></script>
     <script type='text/javascript' src='js/bespin/editor/formatter.js'></script>
@@ -123,10 +125,10 @@
     <script type='text/javascript' src='js/bespin/mobwrite/integrate.js'></script>
 
     <script type='text/javascript' src='js/bespin/client/pubsub.js'></script>
-    <script type='text/javascript' src='js/bespin/page/editor/init.js'></script>
-
     <script type='text/javascript' src='js/bespin/plugins/loader.js'></script>
     <script type="text/javascript" src="js/bespin/plugins.js"></script>
+
+    <script type='text/javascript' src='js/bespin/page/editor/init.js'></script>
 
     <script type='text/javascript' src='js/bespin/test.js'></script>
     <script type='text/javascript' src='js/bespin/testTest.js'></script>
@@ -289,13 +291,32 @@
     <div id="centerpopup" style="display:none;"></div>
     <div id="popup_insert_point"></div>
     <div id="quickopenContainer">
-        <input id="quickopen_input_first" style="z-index: -100; display: none">
-        <input id="quickopen_input_last" style="z-index: -100; display: none"><br>
+        <canvas id="quickopen" flowLayout="vertical" width="300" height="402">
+            <input id="project">
+            <input id="input">
+            <list id="list" layoutData="1.0"></list>
+            <label id="label" text="Path to file..."></label>
+        </canvas>
+    </div>
 
-        <canvas id="quickopen" flowLayout="vertical" width="300" height="393">
-            <input id="quickopen_input">
-            <list id="quickopen_list" layoutData="1.0"></list>
-            <label id="quickopen_label" text="Path to file..."></label>
+    <div id="filesearchContainer">
+        <input id="filesearch_input_first" style="z-index: -100">
+        <input id="filesearch_input_last" style="z-index: -100"><br>
+
+        <canvas id="filesearch" flowLayout="vertical" width="500" height="167">
+            <panel grid="f:80px:g(0.0), spacer(5px), f:0px:g(1.0); f:25px:g(0.0), spacer(5px), f:25px:g(0.0), spacer(5px)" layoutData="60px">
+                <label style="text-align: right" text="Find:" cell="1,1"></label>
+                <label style="text-align: right" text="Replace:" cell="1,3"></label>
+                <input id="filesearch_find" cell="3,1">
+                <input id="filesearch_replace" cell="3,3">
+            </panel>
+            <panel flowLayout="horizontal" layoutData="1.0">
+                <textbutton id="filesearch_bu_replace_all" text="Replace All" onclick="bespin.get('filesearch').performReplaceAll();"></textbutton>
+                <textbutton id="filesearch_bu_replace" text="Replace" onclick="bespin.get('filesearch').performReplace();"></textbutton>
+                <textbutton id="filesearch_bu_replace_and_find" text="Replace & Find" onclick="bespin.get('filesearch').performReplaceAndFind();"></textbutton>
+                <textbutton id="filesearch_bu_previous" text="Previous" onclick="bespin.get('filesearch').performPrevious();"></textbutton>
+                <textbutton id="filesearch_bu_next" text="Next" onclick="bespin.get('filesearch').performNext();"></textbutton>
+            </panel>
         </canvas>
     </div>
 

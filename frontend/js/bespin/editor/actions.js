@@ -371,6 +371,11 @@ dojo.declare("bespin.editor.Actions", null, {
         var selection = this.editor.getSelection();
         var chunk = this.deleteSelection(args);
         args.pos = bespin.editor.utils.copyPos(this.editor.getCursorPos());
+
+        // Ignore whatever is currently selected; we've got our selection already
+        this.editor.setSelection(undefined);
+        this.repaint();
+
         var endPos = this.insertChunk(args);
 
         args.queued = oldqueued;
@@ -380,6 +385,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var redoArgs = {
             action: "deleteChunkAndInsertChunk",
             pos: bespin.editor.utils.copyPos(args.pos),
+            endPos: endPos,
             queued: args.queued,
             selection: selection,
             chunk: args.chunk,
@@ -418,6 +424,7 @@ dojo.declare("bespin.editor.Actions", null, {
         var undoArgs = {
             action: "deleteChunkAndInsertChunk",
             pos: bespin.editor.utils.copyPos(args.pos),
+            endPos: bespin.editor.utils.copyPos(args.endPos),
             queued: args.queued,
             selection: args.selection,
             chunk: args.chunk,
@@ -679,32 +686,14 @@ dojo.declare("bespin.editor.Actions", null, {
         if (this.editor.readonly) return;
 
         var settings = bespin.get("settings");
-        var autoindent = bespin.util.leadingWhitespace(this.model.getRowArray(args.pos.row));
-        var autoindentSize = 0, tabsize = this.editor.getTabSize();;
-        //calculate equivalent number of spaces in autoindent
-        for (var i = 0; i < autoindent.length; i++) {
-            if (autoindent[i] == ' ' || autoindent[i] == '' || autoindent[i] === undefined) autoindentSize++;
-            else if (autoindent[i] == '\t') autoindentSize += tabsize;
-            else break;
+        if (settings && settings.isSettingOn('autoindent')) {
+            var autoindent = bespin.util.leadingWhitespace(this.model.getRowArray(args.pos.row));
+        } else {
+            var autoindent = [];
         }
-
-        this.model.splitRow(this.cursorManager.getModelPosition(args.pos), autoindent);
-        this.cursorManager.moveCursor({ row: this.cursorManager.getCursorPosition().row + 1, col: autoindentSize });
-
-        // undo/redo
-        args.action = "newline";
-        var redoOperation = args;
-        var undoArgs = {
-            action: "joinLine",
-            joinDirection: "up",
-            pos: bespin.editor.utils.copyPos(this.cursorManager.getCursorPosition()),
-            queued: args.queued,
-            autounindentSize: autoindent.length
-        };
-        var undoOperation = undoArgs;
-        this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
-
-        this.repaint();
+        
+        args.chunk = "\n" + autoindent.join("");
+        this.insertChunk(args);
     },
 
     newlineBelow: function(args) {
@@ -1031,16 +1020,12 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     toggleFilesearch: function() {
+        console.debug('filesearch');
         var settings = bespin.get("settings");
 
-        if (settings && !settings.isSettingOn('searchwindow')) {
-            dojo.byId('searchquery').focus();
-            dojo.byId('searchquery').select();
-        } else {
-            var filesearch = bespin.get('filesearch');
-            if (filesearch) {
-                filesearch.window.toggle();
-            }
+        var filesearch = bespin.get('filesearch');
+        if (filesearch) {
+            filesearch.toggle();
         }
     },
 

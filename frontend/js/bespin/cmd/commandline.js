@@ -22,21 +22,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.cmd.commandline");
+// This is a plugin
 
 /**
  * When we are completing against some type, we need a place to cache the
  * retrieved values
  */
-bespin.cmd.commandline.caches = {};
+var caches = {};
 
 /**
  * bespin.cmd.commandline.Interface controls the user interface to the
  * command line. Each Interface needs an input element to control, and a store
  * of commands to delegate work to.
  */
-dojo.declare("bespin.cmd.commandline.Interface", null, {
-    constructor: function(commandLine, store, options) {
+exports.Interface = Class.define({
+members: {
+    init: function(commandLine, store, options) {
         this.setup(commandLine, store, options);
     },
 
@@ -81,7 +82,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
         this.store = store;
 
         this.connectEvents();
-        this.history = new bespin.cmd.commandline.History(this);
+        this.history = new exports.History(this);
         this.hideOutput();
     },
 
@@ -543,7 +544,7 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             return null;
         }
 
-        var instruction = new bespin.cmd.commandline.Instruction(this, typed);
+        var instruction = new exports.Instruction(this, typed);
 
         if (hidden !== true) {
             this.history.add(instruction);
@@ -693,13 +694,14 @@ dojo.declare("bespin.cmd.commandline.Interface", null, {
             self.hideOutput();
         });
     }
-});
+}});
 
 /**
  * Wrapper for something that the user typed
  */
-dojo.declare("bespin.cmd.commandline.Instruction", null, {
-    constructor: function(commandLine, typed) {
+exports.Instruction = Class.define({
+members: {
+    init: function(commandLine, typed) {
         this.typed = dojo.trim(typed);
         this.output = "";
         this.commandLine = commandLine;
@@ -933,16 +935,17 @@ dojo.declare("bespin.cmd.commandline.Instruction", null, {
 
         return [command, store.getArgs(argstr.split(' '), command)];
     }
-});
+}});
 
 /**
  * Store command line history so you can go back and forth
  */
-dojo.declare("bespin.cmd.commandline.History", null, {
-    constructor: function() {
+exports.History = Class.define({
+members: {
+    init: function() {
         this.instructions = [];
         this.pointer = 0;
-        this.store = new bespin.cmd.commandline.ServerHistoryStore(this);
+        this.store = new exports.ServerHistoryStore(this);
     },
 
     settings: {
@@ -1013,24 +1016,26 @@ dojo.declare("bespin.cmd.commandline.History", null, {
     getInstructions: function() {
         return this.instructions;
     }
-});
+}});
 
 /**
  * A simple store that keeps the commands in memory.
  */
-dojo.declare("bespin.cmd.commandline.SimpleHistoryStore", null, {
-    constructor: function(history) {
+exports.SimpleHistoryStore = Class.define({
+members: {
+    init: function(history) {
         history.seed([]);
     },
 
     save: function(instructions) {}
-});
+}});
 
 /**
  * Store the history in BespinSettings/command.history
  */
-dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
-    constructor: function(history) {
+exports.ServerHistoryStore = Class.define({
+members: {
+    init: function(history) {
         this.history = history;
         var self = this;
 
@@ -1042,7 +1047,7 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
 
                 dojo.forEach(typings, function(typing) {
                     if (typing && typing != "") {
-                        var instruction = new bespin.cmd.commandline.Instruction(null, typing);
+                        var instruction = new exports.Instruction(null, typing);
                         instructions.push(instruction);
                     }
                 });
@@ -1067,13 +1072,14 @@ dojo.declare("bespin.cmd.commandline.ServerHistoryStore", null, {
             timestamp: new Date().getTime()
         });
     }
-});
+}});
 
 /**
  * Store the history using browser globalStorage
  */
-dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
-    constructor: function(history) {
+exports.LocalHistoryStore = Class.define({
+members: {
+    init: function(history) {
         this.history = history;
         var self = this;
 
@@ -1092,4 +1098,4 @@ dojo.declare("bespin.cmd.commandline.LocalHistoryStore", null, {
             globalStorage[location.hostname].history = data;
         }
     }
-});
+}});
