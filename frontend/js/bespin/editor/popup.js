@@ -88,12 +88,12 @@ members: {
         // Hide on Escape
         this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
             console.log("Got request to close popup" + this.visible);
-            if (this.visible) self.hide();
+            if (self.visible) self.hide();
         }));
 
         this.connections.push(dojo.connect(window, 'resize', this, this.resize));
         
-        this.title = "My Popup";
+        this.title = "Command Line";
     },
     
     /**
@@ -111,18 +111,14 @@ members: {
 
     
     show: function(panel) {
-        console.log("Request to show the popup");
         var d = this.calculatePosition();
         this.renderPopout(d);
         this.renderToolbar(d);
         bespin.getComponent("commandLine", function(commandline) {
-            console.log("commandline received");
             commandline.showOutput(panel, d.centerPanel);
             this.canvas.style.display = 'block';
             this.visible = true;
-            console.log("Done showing");
         }, this);
-        console.log("Returning from synchronous part");
     },
     
     hide: function() {
