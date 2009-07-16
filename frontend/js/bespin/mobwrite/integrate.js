@@ -44,7 +44,7 @@ mobwrite.shareBespinObj.prototype.getClientText = function() {
     // Was:
     // var text = this.element.value;
     var text = this._editSession.editor.model.getDocument();
-    text = mobwrite.shareBespinObj.normalizeLinebreaks_(text);
+    //text = mobwrite.shareBespinObj.normalizeLinebreaks_(text);
     return text;
 };
 
@@ -56,8 +56,12 @@ mobwrite.shareBespinObj.prototype.setClientText = function(text) {
     // Was:
     // this.element.value = text;
     // this.fireChange(this.element);
-    text = mobwrite.shareBespinObj.unnormalizeLinebreaks_(text);
+    //text = mobwrite.shareBespinObj.unnormalizeLinebreaks_(text);
     this._editSession.editor.model.insertDocument(text);
+    // Nasty hack to allow the editor to know that something has changed.
+    // In the first instance the use is restricted to calling the loaded
+    // callback
+    this._editSession.fireUpdate();
 };
 
 /**
@@ -88,7 +92,7 @@ mobwrite.shareBespinObj.prototype.patchClientText = function(patches) {
       } else {
         console.warn('Patch failed: ' + patches[x]);
       }
-   }
+    }
   }
 };
 
@@ -152,7 +156,8 @@ mobwrite.shareBespinObj.unnormalizeLinebreaks_ = function(text) {
  */
 mobwrite.shareBespinObj.shareHandler = function(node) {
     if (node.editor && node.username && node.project && node.path) {
-        return new mobwrite.shareBespinObj(node);
+        node.shareHandler = new mobwrite.shareBespinObj(node);
+        return node.shareHandler;
     } else {
         return null;
     }
