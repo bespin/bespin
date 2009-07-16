@@ -740,6 +740,20 @@ mobwrite.computeSyncInterval_ = function() {
 
 
 /**
+ * This is probably a hack but if we're changing from one file to another
+ * then we want to start off with a
+ */
+mobwrite.resetSyncInterval = function() {
+  mobwrite.syncInterval = mobwrite.minSyncInterval;
+
+  // Keep the sync interval constrained between min and max.
+  mobwrite.syncInterval =
+      Math.max(mobwrite.minSyncInterval, mobwrite.syncInterval);
+  mobwrite.syncInterval =
+      Math.min(mobwrite.maxSyncInterval, mobwrite.syncInterval);
+};
+
+/**
  * If the Ajax call doesn't complete after a timeout period, start over.
  * @private
  */
