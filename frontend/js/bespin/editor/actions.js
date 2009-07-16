@@ -1105,5 +1105,14 @@ dojo.declare("bespin.editor.Actions", null, {
             chunk: original
         };
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
+    },
+    
+    gotoLine: function() {
+        bespin.getComponent("commandLine", function(cli) {
+            cli.setCommandText("goto ");
+            bespin.getComponent("popup", function(popup) {
+                popup.show("output");
+            });
+        });
     }
 });

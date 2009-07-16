@@ -67,6 +67,7 @@ bespin.command.store.addCommand({
                     bespin.publish("editor:moveandcenter", {
                         row: linenum
                     });
+                    bespin.publish("ui:escape", {});
                 }
             }
         }
