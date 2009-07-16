@@ -492,9 +492,6 @@ members:
      * Render the pie in some opening/closing state
      */
     renderPie: function(progress) {
-        // Short circuiting because there is a weird first-time loading
-        // issue.
-        return;
         var ctx = this.ctx;
         var off = this.slices.off.img;
 
