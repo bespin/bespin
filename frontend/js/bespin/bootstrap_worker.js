@@ -219,7 +219,7 @@ var eventCallbacks  = [];
 
 bespin = {
     subscribe: function (name, callback) {
-        console.log("Subscribe: "+name)
+        //console.log("Subscribe: "+name)
         postMessage({
             type: "subscribe",
             name: name,
@@ -235,7 +235,7 @@ bespin = {
     },
 
     publish: function (name, event) {
-        console.log("Publish: "+name)
+        //console.log("Publish: "+name)
         postMessage({
             type: "publish",
             name: name,
@@ -245,7 +245,7 @@ bespin = {
 
     // receives external event
     receive: function (info) {
-        console.log("Receive: "+info.name);
+        //console.log("Receive: "+info.name);
         eventCallbacks[info.index](info.event);
     }
 };

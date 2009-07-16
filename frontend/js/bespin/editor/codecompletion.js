@@ -90,7 +90,10 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         // We should probably just send a custom event with the candidates here.
         // Can do that once we have fancy UI
         if (candidates.length > 0) {
-            bespin.get("commandLine").showHint("Code Completions<br><br>" + candidates.join("<br>"));
+            bespin.publish("codecomplete:showsuggestion", {
+                // TODO add relation to text which is being completed
+                candidates: candidates
+            })
         }
     },
     
@@ -125,6 +128,10 @@ dojo.declare("bespin.editor.codecompletion.Suggester", null, {
         facade.initialize();
     }
     var subscription;
+    
+    bespin.subscribe("codecomplete:showsuggestion", function (e) {
+        bespin.get("commandLine").showHint("Code Completions<br><br>" + e.candidates.join("<br>"));
+    })
     
     // for now we do suggestions upon every doc change
     // could change this to be more unobtrusive
