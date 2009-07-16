@@ -94,7 +94,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{project}}} is the name of the project that houses the file
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
-    collaborateOnFile: function(project, path, onSuccess) {
+    collaborateOnFile: function(project, path, onSuccess, onFailure) {
         var collab = bespin.get('settings').isSettingOn('collaborate');
 
         if (collab && !bespin.mobwrite) {
@@ -103,9 +103,9 @@ dojo.declare("bespin.client.FileSystem", null, {
         }
 
         if (collab) {
-            bespin.get('editSession').startSession(project, path, onSuccess);
+            bespin.get('editSession').startSession(project, path, onSuccess, onFailure);
         } else {
-            this.loadContents(project, path, onSuccess);
+            this.loadContents(project, path, onSuccess, onFailure);
         }
     },
 
