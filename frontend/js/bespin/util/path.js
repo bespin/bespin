@@ -102,12 +102,6 @@ dojo.mixin(bespin.util.path, {
      * (foo.html -&gt; html)
      */
     fileType: function(path) {
-        if (!path) {
-            console.error("path falsy in bespin.util.path.fileType", path);
-            // console.trace();
-            return "";
-        }
-
         if (path.indexOf('.') >= 0) {
             var split = path.split('.');
             if (split.length > 1) {

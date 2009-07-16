@@ -461,6 +461,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
+            if (event.file.name == null) throw new Error("event.file.name falsy");
+
             var fileType = bespin.util.path.fileType(event.file.name);
             if (fileType) {
                 bespin.publish("settings:language", { language: fileType });
@@ -504,9 +506,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
-                var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
-                if (fileType) {
-                    editor.language = fileType;
+                var path = settings.fromURL.get('path');
+                if (path) {
+                    var fileType = bespin.util.path.fileType(path);
+                    if (fileType) {
+                        editor.language = fileType;
+                    }
                 }
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
