@@ -926,7 +926,6 @@ mobwrite.unshare = function(var_args) {
       } else {
         if (mobwrite.debug) {
           window.console.warn('Ignoring: ', el, ' was expecting id string or something with shareHandler');
-          console.trace();
         }
       }
     }

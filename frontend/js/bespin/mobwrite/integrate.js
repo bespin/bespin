@@ -53,7 +53,6 @@ mobwrite.shareBespinObj.prototype.getClientText = function() {
  * @param {string} text New text
  */
 mobwrite.shareBespinObj.prototype.setClientText = function(text) {
-console.log("mobwrite.shareBespinObj.prototype.setClientText", text);
     // Was:
     // this.element.value = text;
     // this.fireChange(this.element);
