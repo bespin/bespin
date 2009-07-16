@@ -97,6 +97,8 @@ members: {
         this.tree = new th.HorizontalTree({ id: "htree" });
 
         this.tree.getItemText = this.projects.getItemText;
+        
+        this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
         topPanel.add(this.tree);
 
@@ -509,6 +511,30 @@ members: {
         console.log("refreshProjects");
 
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
+    },
+    
+    getFileDetailPanel: function(item) {
+        var panel = new th.Panel();
+        var label = new th.Label({text:"Delete"});
+        panel.add(label);
+        var self = this;
+        this.scene.bus.bind("click", label, function(e) {
+            bespin.getComponent("commandLine", function(cli) {
+                var path = self.tree.getSelectedPath();
+                var file = self.getFilePath(path, true);
+                cli.setCommandText("del " + file);
+            });
+        });
+        label = new th.Label({text: "->Commandline"});
+        this.scene.bus.bind("click", label, function(e) {
+            bespin.getComponent("commandLine", function(cli) {
+                var path = self.tree.getSelectedPath();
+                var file = self.getFilePath(path, true);
+                cli.appendCommandText(" " + file);
+            });
+        });
+        panel.add(label);
+        return panel;
     }
     
 }});

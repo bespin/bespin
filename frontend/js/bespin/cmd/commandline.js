@@ -236,6 +236,14 @@ members: {
             console.debug("orphan command node:", element);
         }
     },
+    
+    setCommandText: function(newText) {
+        this.commandLine.value = newText;
+    },
+    
+    appendCommandText: function(moreText) {
+        this.commandLine.value = this.commandLine.value + moreText;
+    },
 
     /**
      * Complete the currently executing command with successful output
