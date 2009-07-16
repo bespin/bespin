@@ -47,7 +47,7 @@ MAX_VIEWS = 10000
 MEMORY = 0
 FILE = 1
 BDB = 2
-PERSISTER = 3
+PERSISTER = 0
 STORAGE_MODE = PERSISTER
 
 # Port to listen on.
@@ -588,9 +588,9 @@ class DaemonMobWrite(SocketServer.StreamRequestHandler, mobwrite_core.MobWrite):
         viewobj = None
 
     if action["echo_collaborators"]:
-      collaborators = set([view.handle for view in texts[action["filename"]].views])
-      #collaborators -= actions["handle"]
-      line = "C:" + (",".join(collaborators))
+      text = texts[action["filename"]]
+      collab_list = [view.handle + ":" + view.username for view in text.views]
+      line = "C:" + (",".join(collab_list))
       output.append(line)
 
     answer = "".join(output)
@@ -714,13 +714,13 @@ class Persister:
 
   def load(self, name):
     project, path = self.__decomposeName(name)
-    print "loading from: %s/%s" % (project.name, path)
-    return project.get_file(path)
+    mobwrite_core.LOG.debug("loading from: %s/%s" % (project.name, path))
+    return project.get_temp_file(path)
 
   def save(self, name, contents):
     project, path = self.__decomposeName(name)
-    print "saving to: %s/%s" % (project.name, path)
-    project.save_file(path, contents)
+    mobwrite_core.LOG.debug("saving to: %s/%s" % (project.name, path))
+    project.save_temp_file(path, contents)
 
   def __decomposeName(self, name):
     from bespin.database import User, get_project
