@@ -47,7 +47,7 @@ mobwrite.get_maxchars = 1000;
  * Print diagnostic messages to the browser's console.
  * @type {boolean}
  */
-mobwrite.debug = true;
+mobwrite.debug = false;
 
 
 // Debug mode requires a compatible console.
