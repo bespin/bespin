@@ -577,7 +577,10 @@ members: {
         this.width = width;
         this.height = height;
         this.columns = columns;
+        
         this.bus.bind("mousedown", this, this.onmousedown, this);
+        this.bus.bind("mousemove", this, this.onmousemove, this);
+        
         this.label = new th.Label();
     },
     paint: function(ctx) {
@@ -603,6 +606,15 @@ members: {
                 x += width;
             }
         }
+        
+        this.label.setBounds(0, y + height + 5, this.parent.bounds.w, 20);
+        this.label.addCss("visibility", "visible");
+        this.label.addCss("color", "white");
+        console.log("painting: " + this.label.text);
+
+        this.label.paint(ctx);
+        this.label.border.paint(ctx);
+
     },
     
     getAction: function(x, y) {
@@ -616,6 +628,16 @@ members: {
         var action = this.getAction(e.componentX, e.componentY);
         if (action) {
             action.action(e);
+        }
+    },
+    
+    onmousemove: function(e) {
+        var action = this.getAction(e.componentX, e.componentY);
+        var label = this.label;
+        
+        if (action && action.name != label.text) {
+            label.text = action.name;
+            this.repaint();
         }
     }
 }});
