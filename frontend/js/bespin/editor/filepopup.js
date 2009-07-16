@@ -98,6 +98,24 @@ members: {
 
         this.tree.getItemText = this.projects.getItemText;
         
+        var fileActions = [];
+        var action = {
+            name: "Paste to Command Line",
+            image: new Image(),
+            action: dojo.hitch(this, this._commandlinePasteAction)
+        }
+        action.image.src = "images/actions/paste.gif";
+        fileActions.push(action);
+        
+        action = {
+            name: "Delete",
+            image: new Image(),
+            action: dojo.hitch(this, this._deleteAction)
+        }
+        action.image.src = "images/actions/delete.gif";
+        fileActions.push(action);
+        this.fileActionPanel = new th.Panel();
+        this.fileActionPanel.add(new exports.ActionPanel(fileActions, 20, 20, 4));
         this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
         topPanel.add(this.tree);
@@ -537,6 +555,7 @@ members: {
     },
         
     getFileDetailPanel: function(item) {
+        return this.fileActionPanel;
         var panel = new th.Panel();
         var label = new th.Label({text:"Delete"});
         panel.add(label);
@@ -546,5 +565,57 @@ members: {
         panel.add(label);
         return panel;
     }
+}});
+
+exports.ActionPanel = Class.define({
+type: "ActionPanel",
+superclass: th.Component,
+members: {
+    init: function(actions, width, height, columns, parms) {
+        this._super(parms);
+        this.actions = actions;
+        this.width = width;
+        this.height = height;
+        this.columns = columns;
+        this.bus.bind("mousedown", this, this.onmousedown, this);
+        this.label = new th.Label();
+    },
+    paint: function(ctx) {
+        this._super(ctx);
+        
+        var actions = this.actions;
+        var width = this.width;
+        var height = this.height;
+        var columns = this.columns;
+        var label = this.label;
+        
+        var x = 0;
+        var y = 0;
+        var col = 0;
+        
+        for (var current = 0; current < actions.length; current++) {
+            ctx.drawImage(actions[current].image, x, y);
+            col += 1;
+            if (col == columns) {
+                x = 0;
+                y += height;
+            } else {
+                x += width;
+            }
+        }
+    },
     
+    getAction: function(x, y) {
+        var col = Math.floor(x / this.width);
+        var row = Math.floor(y / this.height);
+        var index = row * this.columns + col;
+        return this.actions[index];
+    },
+    
+    onmousedown: function(e) {
+        var action = this.getAction(e.componentX, e.componentY);
+        if (action) {
+            action.action(e);
+        }
+    }
 }});
