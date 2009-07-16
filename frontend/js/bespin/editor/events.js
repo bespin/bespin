@@ -64,10 +64,9 @@ dojo.declare("bespin.editor.Events", null, {
         // * If the file is loaded send an opensuccess event
         // * If the file fails to load, send an openfail event
         bespin.subscribe("editor:openfile", function(event) {
-            var filename = event.filename;
             var editSession = bespin.get('editSession');
-            var files = bespin.get('files');
 
+            var filename = event.filename;
             var project  = event.project || editSession.project;
 
             // Short circuit if we are already open at the requested file
@@ -78,58 +77,64 @@ dojo.declare("bespin.editor.Events", null, {
                 return;
             }
 
-            // TODO: Is is wise to change the session.project before we've
-            // broadcast the editor:openfile:openbefore event?
-            // If we're changing projects, make sure the new one is set
-            if (project != editSession.project) {
-                editSession.project = project;
-            }
-
             bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
-            files.collaborateOnFile(project, filename, function(file) {
+            if (project != editSession.project) {
+                editSession.setProject(project);
+            }
+
+            var onFailure = function() {
+                bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
+            };
+
+            var onSuccess = function(file) {
+                // TODO: We shouldn't need to to this but originally there was
+                // no onFailure, and this is how failure was communicated
                 if (!file) {
-                    bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
-                } else {
-                    bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
-                    if (event.line) {
-                        // Jump to the desired line.
-                        bespin.get('commandline').executeCommand('goto ' + event.line, true);
-                    }
-
-                    var settings = bespin.get("settings");
-
-                    // Get the array of lastused files
-                    var lastUsed = settings.getObject("_lastused");
-                    if (!lastUsed) {
-                        lastUsed = [];
-                    }
-
-                    // We want to add this to the top
-                    var newItem = {
-                        project:project,
-                        filename:filename
-                    };
-
-                    // Remove newItem from down in the list and place at top
-                    var cleanLastUsed = [];
-                    dojo.forEach(lastUsed, function(item) {
-                        if (item.project != newItem.project || item.filename != newItem.filename) {
-                            cleanLastUsed.unshift(item);
-                        }
-                    });
-                    cleanLastUsed.unshift(newItem);
-                    lastUsed = cleanLastUsed;
-
-                    // Trim to 10 members
-                    if (lastUsed.length > 10) {
-                        lastUsed = lastUsed.slice(0, 10);
-                    }
-
-                    // Maybe this should have a _ prefix: but then it does not persist??
-                    settings.setObject("_lastused", lastUsed);
+                    onFailure();
+                    return;
                 }
-            });
+
+                bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+                if (event.line) {
+                    // Jump to the desired line.
+                    bespin.get('commandline').executeCommand('goto ' + event.line, true);
+                }
+
+                var settings = bespin.get("settings");
+
+                // Get the array of lastused files
+                var lastUsed = settings.getObject("_lastused");
+                if (!lastUsed) {
+                    lastUsed = [];
+                }
+
+                // We want to add this to the top
+                var newItem = {
+                    project:project,
+                    filename:filename
+                };
+
+                // Remove newItem from down in the list and place at top
+                var cleanLastUsed = [];
+                dojo.forEach(lastUsed, function(item) {
+                    if (item.project != newItem.project || item.filename != newItem.filename) {
+                        cleanLastUsed.unshift(item);
+                    }
+                });
+                cleanLastUsed.unshift(newItem);
+                lastUsed = cleanLastUsed;
+
+                // Trim to 10 members
+                if (lastUsed.length > 10) {
+                    lastUsed = lastUsed.slice(0, 10);
+                }
+
+                // Maybe this should have a _ prefix: but then it does not persist??
+                settings.setObject("_lastused", lastUsed);
+            };
+
+            bespin.get('files').collaborateOnFile(project, filename, onSuccess, onFailure);
         });
 
         // ** {{{ Event: editor:forceopenfile }}} **
