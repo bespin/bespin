@@ -11,11 +11,11 @@ Splitter.vertical {
 }
 
 #file_browser Panel, #file_browser List {
-    background-color: rgb(61, 59, 52);
+    background-color: rgb(71, 69, 62);
 }
 
 #file_browser Label {
-    background-color: rgb(61, 59, 52);
+    background-color: rgb(71, 69, 62);
     color: white;
 }
 
@@ -25,14 +25,12 @@ Splitter.vertical {
 
 /* this selects the project list in the horizontal tree */
 #htree-list-1 Label {
-    background-color: rgb(61, 59, 52);
-    border: 0;
+    background-color: rgb(71, 69, 62);
 }
 
 #file_browser Label.evenmore, #file_browser Label.oddmore {
-    border-top: 1px solid rgb(75, 74, 67);
     border-bottom: 1px solid rgb(41, 40, 35);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#46443C), to(#323029));
     background-repeat: repeat-x;
     background-position: left top;
     padding-top: 2px;
