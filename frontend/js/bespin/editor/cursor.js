@@ -105,8 +105,8 @@ dojo.declare("bespin.editor.CursorManager", null, {
                 // if the position including the tab is PAST the editor position supplied, then stop.
                 if (new_pos > modelPos.col) {
                     // if modelPos is closer to new_pos than current_pos, we got to next character
-                    if (new_pos - modelPos.col < modelPos.col - current_pos)
-                        i++; //got to next character
+                    //if (new_pos - modelPos.col < modelPos.col - current_pos)
+                    //    i++; //got to next character
                     break;
                 }
                 current_pos = new_pos;
