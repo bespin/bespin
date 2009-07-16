@@ -714,7 +714,12 @@ mobwrite.computeSyncInterval_ = function() {
   if (mobwrite.clientChange_) {
     // Client-side activity.
     // Cut the sync interval by 40% of the min-max range.
-    mobwrite.syncInterval -= range * 0.4;
+    // mobwrite.syncInterval -= range * 0.4;
+    // Mozilla: In the short term, when the user types we want the sync interval
+    // to drop to the minimum very quickly, so things start to look responsive
+    // very quickly. It's possible that the delayed wake-up is better, but in
+    // short term, first-impressions etc.
+    mobwrite.syncInterval = mobwrite.minSyncInterval;
   }
   if (mobwrite.serverChange_) {
     // Server-side activity.
