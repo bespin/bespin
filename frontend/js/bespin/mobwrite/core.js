@@ -180,7 +180,8 @@ mobwrite.uniqueId = function() {
   var soup = 'abcdefghijklmnopqrstuvwxyz';
   var id = soup.charAt(Math.random() * soup.length);
   // Subsequent characters may include these.
-  soup += '0123456789-_:.';
+  // Mozilla: Removed ':' because we want to use it as a separator
+  soup += '0123456789-_.';
   for (var x = 1; x < 8; x++) {
     id += soup.charAt(Math.random() * soup.length);
   }
@@ -428,11 +429,11 @@ mobwrite.syncRun1_ = function() {
   }
   if (data.length == 1) {
     // No sync data.
-    if (mobwrite.debug) {
-        // We did have a check of
-        // if (mobwrite.debug && typeof console == 'object') {
-        // because the console disappears on page unload before the code does.
-        // However Google added window.console. Maybe that fixes this??
+
+    // Mozilla: We got rid of an earlier kill on debug mode when it was
+    // (incorrectly) assumed that the window was closing, so we check for
+    // console existence before we log
+    if (mobwrite.debug && typeof console == 'object') {
       window.console.info('All objects silent; null sync.');
     }
     return mobwrite.syncRun2_('\n\n');
@@ -832,7 +833,9 @@ mobwrite.unload_ = function() {
   if (!mobwrite.syncKillPid_) {
     // Turn off debug mode since the console disappears on page unload before
     // this code does.
-    mobwrite.debug = false;
+    // Mozilla: commented out. We might not be closing the window so we don't
+    // want to kill the debug. We fix later on
+    // mobwrite.debug = false;
     mobwrite.syncRun1_();
   }
   // By the time the callback runs mobwrite.syncRun2_, this page will probably
@@ -872,7 +875,7 @@ mobwrite.share = function(var_args) {
       }
       mobwrite.shared[result.file] = result;
 
-      // Startup the main task if it doesn't aleady exist.
+      // Startup the main task if it doesn't already exist.
       if (mobwrite.syncRunPid_ == null) {
         mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
         if (mobwrite.debug) {
@@ -887,7 +890,7 @@ mobwrite.share = function(var_args) {
 /**
  * Stop sharing the specified object(s).
  * Does not handle forms recursively.
- * @param {*} var_args Object(s) or ID(s) of object(s) to share
+ * @param {*} var_args Object(s) or ID(s) of object(s) to unshare
  */
 mobwrite.unshare = function(var_args) {
   for (var i = 0; i < arguments.length; i++) {
@@ -899,7 +902,31 @@ mobwrite.unshare = function(var_args) {
       if (mobwrite.shared.hasOwnProperty(el)) {
         delete mobwrite.shared[el];
         if (mobwrite.debug) {
-          window.console.info('Unshared: ' + el);
+          window.console.info('Unshared: ', el);
+        }
+      }
+    } else {
+      // Ask every registered handler if it knows what to do with this object.
+      var result = null;
+      for (var x = 0; x < mobwrite.shareHandlers.length && !result; x++) {
+        result = mobwrite.shareHandlers[x].call(mobwrite, el);
+      }
+
+      if (result && result.file) {
+        if (mobwrite.shared.hasOwnProperty(result.file)) {
+          delete mobwrite.shared[result.file];
+          if (mobwrite.debug) {
+            window.console.info('Unshared: ', el);
+          }
+        } else {
+          if (mobwrite.debug) {
+            window.console.warn('Ignoring: ', el, '. Not currently shared');
+          }
+        }
+      } else {
+        if (mobwrite.debug) {
+          window.console.warn('Ignoring: ', el, ' was expecting id string or something with shareHandler');
+          console.trace();
         }
       }
     }
