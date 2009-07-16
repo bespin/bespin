@@ -671,7 +671,7 @@ def group_remove(request, response):
 @expose(r'^/group/add/(?P<group>[^/]+)/$', 'POST')
 def group_add(request, response):
     group_name = request.kwargs['group']
-    group = request.user.get_group(group_name, raise_on_not_found=True)
+    group = request.user.get_group(group_name, create_on_not_found=True)
     users = _lookup_usernames(simplejson.loads(request.body))
     for other_user in users:
         group.add_member(other_user)
@@ -818,7 +818,7 @@ def mobwrite(request, response):
         raise BadRequest("Missing q= or p=")
     question = question[2:]
 
-    question = "H:" + str(request.user.username) + "\n" + question
+    question = "H:" + str(request.user.username) + ":" + request.remote_addr + "\n" + question
 
     # TODO: select the implementation based on a runtime flag
     worker = InProcessMobwriteWorker()
