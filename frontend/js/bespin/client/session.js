@@ -37,57 +37,154 @@ dojo.provide("bespin.client.session");
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
+        this.currentState = this.mobwriteState.stopped;
     },
 
+    /**
+     * Allow us to detect what is going on with mobwrite
+     */
+    mobwriteState: {
+        stopped: 0,
+        starting: 1,
+        running: 2
+    },
+
+    /**
+     * Set on login from editor/init.js
+     * TODO: Is this is best place for this information?
+     */
     setUserinfo: function(userinfo) {
         this.username = userinfo.username;
         this.amountUsed = userinfo.amountUsed;
         this.quota = userinfo.quota;
     },
 
+    /**
+     * Is the passed project/path what we are currently working on?
+     */
     checkSameFile: function(project, path) {
         return ((this.project == project) && (this.path == path));
     },
 
-    startSession: function(project, path, onSuccess) {
+    /**
+     * Begin editing a given project/path hooking up using mobwrite if needed
+     * TODO: There is a disconnect here because if we're not using mobwrite
+     * then the text is loaded somewhere else. We should be symmetric.
+     * Perhaps the problem is - is session just a wrapper for mobwrite or does
+     * it contain the details of the currently edited file?
+     */
+    startSession: function(project, path, onSuccess, onFailure) {
+        // Stop any existing mobwrite session
+        this.stopSession();
+
         this.project = project;
         this.path = path;
 
-        if (typeof mobwrite !== "undefined") {
-            mobwrite.unload_();
-            this.editor.model.insertDocument("");
+        if (mobwrite) {
+            this.currentState = this.mobwriteState.starting;
             mobwrite.share(this);
+
+            // Wrap up the onSuccess to clear up after itself
+            // TODO: Mobwrite could still fail to load and we would not call
+            // onFailure, so we should hook into mobwrite somewhere and push
+            // the notification to here. We will need to reset both callbacks
+            // when either of them are called
+            if (dojo.isFunction(onSuccess)) {
+                this._onSuccess = function() {
+                    onSuccess({
+                        name: path,
+                        timestamp: new Date().getTime()
+                    });
+                    this._onSuccess = null;
+                    this.currentState = this.mobwriteState.running;
+                };
+            }
+        } else {
+            onFailure({ responseText:"Mobwrite is missing" });
+        }
+    },
+
+    /**
+     * Stop mobwrite working on a file and empty the currently edited document
+     */
+    stopSession: function() {
+        // TODO: Something better if we're told to startup twice in a row
+        if (this.currentState == this.mobwriteState.starting) {
+            throw new Error("mobwrite is starting up");
         }
 
-        if (dojo.isFunction(onSuccess)) onSuccess({
-            name: path,
-            timestamp: new Date().getTime()
-        });
-    },
+        if (this.currentState == this.mobwriteState.running) {
+            if (mobwrite) {
+                mobwrite.unshare(this);
+            }
+            // TODO: Should this be set asynchronously when unshare() completes?
+            this.currentState = this.mobwriteState.stopped;
+        }
 
-    reportCollaborators: function(usernames) {
-        var contents = "";
-        dojo.forEach(usernames, function(username) {
-            contents += "<div class='collab_person'>";
-            contents += "  <div class='collab_icon'></div>";
-            contents += "  <div class='collab_name'>" + username + "</div>";
-            contents += "  <div class='collab_description'>Editing</div>";
-            contents += "</div>";
-        });
-        dojo.byId("collab_list").innerHTML = contents;
-    },
+        this.editor.model.insertDocument("");
 
-    stopSession: function() {
         this.project = undefined;
         this.path = undefined;
     },
 
+    /**
+     * Update the social bar to show the current collaborators.
+     * TODO: Remove me as a collaborator
+     */
+    reportCollaborators: function(userEntries) {
+        var collabList = dojo.byId("collab_list");
+        var self = this;
+
+        dojo.empty(collabList);
+        dojo.forEach(userEntries, function(userEntry) {
+            var parts = userEntry.split(":");
+            var username = parts[0];
+            var address = parts[1];
+            var id = parts[2];
+            parent = dojo.create("div", { className:'collab_person' }, collabList);
+
+            dojo.create("div", { className:'collab_icon' }, parent);
+            var extra = (self.username == username) ? " <small>(You)</small>" : "";
+            dojo.create("div", {
+                className: 'collab_name',
+                innerHTML: username + extra
+            }, parent);
+
+            extra = (mobwrite.syncUsername == id) ? "This window" : address;
+            dojo.create("div", {
+                className: 'collab_description',
+                innerHTML: extra
+            }, parent);
+        });
+    },
+
+    /**
+     * Get a textual report on what we are working on
+     * TODO: What happens when project == null. Should that ever happen?
+     */
     getStatus: function() {
         var file = this.path || 'a new scratch file';
         return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
     },
 
+    /**
+     * Set the current project.
+     * TODO: I think we should probably get rid of anywhere this is called
+     * because it implies being able to set the project separately from the
+     * file being edited.
+     * TODO: Plus, what's wrong with session.project = "foo"?
+     */
     setProject: function(project) {
         this.project = project;
+    },
+
+    /**
+     * Notification used by mobwrite to announce an update.
+     * Used by startSession to detect when it is safe to fire onSuccess
+     */
+    fireUpdate: function() {
+        if (this._onSuccess) {
+            this._onSuccess();
+        }
     }
 });
