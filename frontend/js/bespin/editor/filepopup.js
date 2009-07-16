@@ -523,24 +523,27 @@ members: {
             cli.setCommandText("del " + file);
             cli.focus();
         });
+        th.stopEvent(e);
+    },
+    
+    _commandlinePasteAction: function(e) {
+        var self = this;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = self.tree.getSelectedPath();
+            var file = self.getFilePath(path, true);
+            cli.appendCommandText(" " + file);
+        });
+        th.stopEvent(e);
     },
         
     getFileDetailPanel: function(item) {
         var panel = new th.Panel();
         var label = new th.Label({text:"Delete"});
         panel.add(label);
-        console.log("About to bind delete listener");
-        label.bus.bind("click", label, this._deleteAction, this);
+        label.bus.bind("mousedown", label, this._deleteAction, this);
         label = new th.Label({text: "->Commandline"});
-        this.scene.bus.bind("click", label, function(e) {
-            bespin.getComponent("commandLine", function(cli) {
-                var path = self.tree.getSelectedPath();
-                var file = self.getFilePath(path, true);
-                cli.appendCommandText(" " + file);
-            });
-        });
+        this.scene.bus.bind("mousedown", label, this._commandlinePasteAction, this);
         panel.add(label);
-        console.log("Returning new actions panel");
         return panel;
     }
     
