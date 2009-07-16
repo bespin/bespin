@@ -136,7 +136,9 @@ members: {
 
             var file = this.getFilePath(path, true);
             console.log("file", file, { filename:file, project:this.currentProject });
-            bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
+            bespin.getComponent("commandLine", function(cli) {
+                cli.executeCommand("load " + file + " " + this.currentProject);
+            }, this);
 
             var settings = bespin.get("settings");
             if (settings && settings.isSettingOn('keepfilepopuponopen')) {
@@ -513,18 +515,22 @@ members: {
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     },
     
+    _deleteAction: function(e) {
+        var self = this;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = self.tree.getSelectedPath();
+            var file = self.getFilePath(path, true);
+            cli.setCommandText("del " + file);
+            cli.focus();
+        });
+    },
+        
     getFileDetailPanel: function(item) {
         var panel = new th.Panel();
         var label = new th.Label({text:"Delete"});
         panel.add(label);
-        var self = this;
-        this.scene.bus.bind("click", label, function(e) {
-            bespin.getComponent("commandLine", function(cli) {
-                var path = self.tree.getSelectedPath();
-                var file = self.getFilePath(path, true);
-                cli.setCommandText("del " + file);
-            });
-        });
+        console.log("About to bind delete listener");
+        label.bus.bind("click", label, this._deleteAction, this);
         label = new th.Label({text: "->Commandline"});
         this.scene.bus.bind("click", label, function(e) {
             bespin.getComponent("commandLine", function(cli) {
@@ -534,6 +540,7 @@ members: {
             });
         });
         panel.add(label);
+        console.log("Returning new actions panel");
         return panel;
     }
     
