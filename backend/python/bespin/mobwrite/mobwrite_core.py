@@ -36,7 +36,9 @@ DMP.Diff_Timeout = 0.1
 MAX_CHARS = 0
 
 # Delete any view which hasn't been accessed in half an hour.
-TIMEOUT_VIEW = datetime.timedelta(minutes=30)
+# Mozilla: Keeping views for longer than necessary wastes memory, and makes the
+# Collaborators view more likely to be out of date
+TIMEOUT_VIEW = datetime.timedelta(minutes=2)
 
 # Delete any text which hasn't been accessed in a day.
 # TIMEOUT_TEXT should be longer than the length of TIMEOUT_VIEW
