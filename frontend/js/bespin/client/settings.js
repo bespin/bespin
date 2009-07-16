@@ -53,7 +53,7 @@ dojo.declare("bespin.client.settings.Core", null, {
 
     loadSession: function() {
         var editSession = bespin.get('editSession');
-        
+
         var path    = this.fromURL.get('path') || editSession.path;
         var project = this.fromURL.get('project') || editSession.project;
 
@@ -462,6 +462,8 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
+            if (event.file.name == null) throw new Error("event.file.name falsy");
+
             var fileType = bespin.util.path.fileType(event.file.name);
             if (fileType) {
                 bespin.publish("settings:language", { language: fileType });
@@ -505,12 +507,20 @@ dojo.declare("bespin.client.settings.Events", null, {
             if (language == editor.language) return; // already set to be that language
 
             if (bespin.util.include(['auto', 'on'], language)) {
-                var path = bespin.get('editSession').path;
+                // TODO: There was some code added in rev 565cac09ddc1 which
+                // prefixed this code with:
+                //   var path = bespin.get('editSession').path;
+                //   if (path) {
+                // I'm not sure that this makes sense (when we're then reading
+                // the path from the URL anyway. So I'm reverting to this ...
+                // If that code did make sense then we should re-revert and
+                // explain in comments
+                var path = settings.fromURL.get('path');
                 if (path) {
-                    var fileType = bespin.util.path.fileType(settings.fromURL.get('path'));
+                    var fileType = bespin.util.path.fileType(path);
                     if (fileType) {
                         editor.language = fileType;
-                    }                                        
+                    }
                 }
             } else if (bespin.util.include(['auto', 'on'], languageSetting) || fromCommand) {
                 editor.language = language;
@@ -600,14 +610,14 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         bespin.subscribe("settings:set:debugmode", function(event) {
             editor.debugMode = settings.isOn(event.value);
-            
+
             if (editor.debugMode) {
                 bespin.plugins.loadOne("bespin.debugger",
                     function(debug) {
                         debug.loadBreakpoints(function() {
                             editor.paint(true);
                         });
-                    })
+                    });
             } else {
                 editor.paint(true);
             }
@@ -679,7 +689,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                 else {
                     // Warning: Publishing an extra filename member to
                     // project:set and an extra project member to
-                    // editor:openfile                
+                    // editor:openfile
                     bespin.publish("project:set", lastUsed[0]);
                     bespin.publish("editor:openfile", lastUsed[0]);
                 }

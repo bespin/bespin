@@ -121,7 +121,6 @@
 
     <script type='text/javascript' src='js/bespin/mobwrite/core.js'></script>
     <script type='text/javascript' src='js/bespin/mobwrite/diff.js'></script>
-    <script type='text/javascript' src='js/bespin/mobwrite/form.js'></script>
     <script type='text/javascript' src='js/bespin/mobwrite/integrate.js'></script>
 
     <script type='text/javascript' src='js/bespin/client/pubsub.js'></script>
@@ -191,10 +190,10 @@
     </div>
     <div id="collab">
         <div id="collab_header"><div>Collaboration</div></div>
-        <div class="collab_subheader"><div>Other users editing this file:</div></div>
+        <div class="collab_subheader"><div>Users editing this file:</div></div>
         <div id="collab_list">
         </div>
-        <div class="collab_text" style="margin-top: 10px">Collaboration is a new feature.</div>
+        <div class="collab_text" style="margin-top: 10px">Collaboration is a beta feature.</div>
     </div>
     <!-- debugbar HTML should move to a plugin -->
     <div id="debugbar">
@@ -290,7 +289,7 @@
     </div>
     <div id="centerpopup" style="display:none;"></div>
     <div id="popup_insert_point"></div>
-    <div id="quickopenContainer">
+    <div id="quickopenContainer" style="display:none;">
         <canvas id="quickopen" flowLayout="vertical" width="300" height="402">
             <input id="project">
             <input id="input">
@@ -299,7 +298,7 @@
         </canvas>
     </div>
 
-    <div id="filesearchContainer">
+    <div id="filesearchContainer" style="display:none;">
         <input id="filesearch_input_first" style="z-index: -100">
         <input id="filesearch_input_last" style="z-index: -100"><br>
 

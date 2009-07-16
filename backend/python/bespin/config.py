@@ -288,7 +288,7 @@ def activate_profile():
 
     if c.log_to_stdout:
         stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        stdout_handler.setFormatter(logging.Formatter("%(relativeCreated)6d %(name)9s %(levelname)5s: %(message)s"))
         logging.getLogger().addHandler(stdout_handler)
 
 def dev_spawning_factory(spawning_config):

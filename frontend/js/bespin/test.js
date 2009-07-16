@@ -250,23 +250,44 @@ dojo.declare("bespin.test.Assert", null, {
     message: function(message) {
         this._addMessage("<strong>" + message + "</strong>");
     },
+
+    /**
+     * Type in a command and check that the response is as expected
+     * @param type The command to execute
+     * @param expect If string, then check that the command output is exactly
+     * as specified, if array then check that the command output contains all of
+     * the strings in the array
+     */
     command: function(type, expect) {
         var commandLine = bespin.get("commandLine");
         var instruction = commandLine.executeCommand(type, true);
+
+        var self = this;
+        var check = function(output) {
+            if (dojo.isArray(expect)) {
+                expect.forEach(function(expected) {
+                    if (output.indexOf(expected) == -1) {
+                        self._fail("command", [ type, expected ], output);
+                    }
+                });
+            } else {
+                if (output != expect) {
+                    self._fail("command", [ type, expect ], output);
+                }
+            }
+        };
+
         if (instruction.element) {
-            this._addMessage("Can't us command() to test commands that use setElement()");
-            this._updateStatus(bespin.test.Status.fail);
+            // IE: Do we care that is doesn't do textContent?
+            check(instruction.element.textContent);
         } else if (instruction.outstanding != 0) {
-            var self = this;
             instruction.onOutput(function() {
-                if (instruction.complete && instruction.output != expect) {
-                    self._fail("command", [ type, expect ], instruction.output);
+                if (instruction.complete) {
+                    check(instruction.output);
                 }
             });
         } else {
-            if (instruction.output != expect) {
-                this._fail("command", [ type, expect ], instruction.output);
-            }
+            check(instruction.output);
         }
     },
 
