@@ -86,6 +86,7 @@ dojo.require("bespin.cmd.project");
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");
 
+dojo.require("bespin.plugins");
 dojo.require("bespin.plugins.loader");
 dojo.require("bespin.plugins.loaderTest");
 
