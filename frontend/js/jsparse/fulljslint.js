@@ -5000,13 +5000,56 @@ JSLINT = (function () {
     itself.getFunctions = function() {
         var funcs = [];
         for (var i = 0; i < functions.length; i++) {
+            var f = functions[i];   
+            cl = [];
+            ex = [];
+            va = [];
+            un = [];
+            ou = [];
+            gl = [];
+            la = [];
+            for (k in f) {
+                if (f.hasOwnProperty(k) && k.charAt(0) !== '(') {
+                    v = f[k];
+                    switch (v) {
+                    case 'closure':
+                        cl.push(k);
+                        break;
+                    case 'exception':
+                        ex.push(k);
+                        break;
+                    case 'var':
+                        va.push(k);
+                        break;
+                    case 'unused':
+                        un.push(k);
+                        break;
+                    case 'label':
+                        la.push(k);
+                        break;
+                    case 'outer':
+                        ou.push(k);
+                        break;
+                    case true:
+                        gl.push(k);
+                        break;
+                    }
+                }
+            }
+
             funcs.push({
                 name: functions[i]['(name)'].replace(/"/g, ""), // remove quotes
                 line: functions[i]['(line)'],
                 lastline: functions[i]['(lastline)'],
                 linelength: (functions[i]['(line)'] && functions[i]['(lastline)']) 
                   ? functions[i]['(lastline)'] - functions[i]['(line)'] : undefined,
-                foldtext: "..."
+                closure: cl,
+                exception: ex,
+                vars: va,
+                unused: un,
+                label: la,
+                outer: ou,
+                global: gl
             });
         }
         return funcs;
