@@ -136,7 +136,6 @@ bespin.social.displayFollowers = function(instruction, followers) {
         // TODO: Add the users status information in here
         cell = dojo.create("td", { }, row);
         dojo.create("a", {
-            href: "#",
             innerHTML: "<small>(unfollow)</small>",
             onclick: function() {
                 instruction.commandLine.executeCommand("unfollow " + follower);
@@ -255,7 +254,6 @@ bespin.social.group.commands.addCommand({
                         // TODO: Add the users status information in here
                         cell = dojo.create("td", { }, row);
                         dojo.create("a", {
-                            href: "#",
                             innerHTML: "<small>(remove)</small>",
                             onclick: function() {
                                 instruction.commandLine.executeCommand("group remove " + group);
@@ -263,7 +261,6 @@ bespin.social.group.commands.addCommand({
                         }, cell);
                         dojo.create("span", { innerHTML:" " }, cell);
                         dojo.create("a", {
-                            href: "#",
                             innerHTML: "<small>(list)</small>",
                             onclick: function() {
                                 instruction.commandLine.executeCommand("group list " + group);
@@ -302,7 +299,6 @@ bespin.social.group.commands.addCommand({
                         // TODO: Add the users status information in here
                         cell = dojo.create("td", { }, row);
                         dojo.create("a", {
-                            href: "#",
                             innerHTML: "<small>(ungroup)</small>",
                             onclick: function() {
                                 instruction.commandLine.executeCommand("group remove " + group + " " + member);

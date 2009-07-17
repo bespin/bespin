@@ -161,6 +161,7 @@ img {
 
 #command_output tr.command_rowout th { text-align: left; }
 #command_output tr.command_rowout a { font-weight: bold; color: inherit; }
+#command_output tr.command_rowout a { text-decoration: underline; cursor: pointer; }
 
 #command_hint {
     position: absolute;
