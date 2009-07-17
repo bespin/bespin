@@ -292,7 +292,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     getPrintableChar: function(e) {
         if (e.charCode > 255) return false;
         if (e.charCode < 32) return false;
-        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 96 && e.charCode < 123)) return false;
+        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 95 && e.charCode < 123)) return false;
         return String.fromCharCode(e.charCode);
     },
 
