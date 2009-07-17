@@ -114,8 +114,15 @@ members: {
         }
         action.image.src = "images/actions/delete.gif";
         fileActions.push(action);
+        
         this.fileActionPanel = new th.Panel();
-        this.fileActionPanel.add(new exports.ActionPanel(fileActions, 20, 20, 4));
+        this.fileActionPanel.addCss("background-color", "rgb(37,34,33)");
+        var toplabel = new th.Label({text: "File Actions"});
+        toplabel.addCss("background-color", "rgb(37,34,33)");
+        toplabel.addCss("text-align", "center");
+        this.fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
+        this.fileActionPanel.add(toplabel);
+        this.fileActionPanel.add(new exports.ActionPanel(toplabel, fileActions, 20, 20, 4));
         this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
         topPanel.add(this.tree);
@@ -569,52 +576,50 @@ members: {
 
 exports.ActionPanel = Class.define({
 type: "ActionPanel",
-superclass: th.Component,
+superclass: th.Panel,
 members: {
-    init: function(actions, width, height, columns, parms) {
+    init: function(label, actions, width, height, columns, parms) {
         this._super(parms);
+        this.label = label;
         this.actions = actions;
+        
+        for (var i = 0; i < actions.length; i++) {
+            var ai = new exports.ActionIcon(actions[i], width, height);
+            this.add(ai);
+        }
+        
         this.width = width;
         this.height = height;
         this.columns = columns;
-        
-        this.bus.bind("mousedown", this, this.onmousedown, this);
-        this.bus.bind("mousemove", this, this.onmousemove, this);
-        
-        this.label = new th.Label();
     },
-    paint: function(ctx) {
-        this._super(ctx);
-        
-        var actions = this.actions;
+    
+    getPreferredSize: function() {
+        var width = this.parent.bounds.w;
+        var height = this.height * Math.ceil(this.actions.length / this.columns);
+        return {width: width, height: height};
+    },
+    
+    layout: function() {
+        var children = this.children;
         var width = this.width;
         var height = this.height;
         var columns = this.columns;
-        var label = this.label;
         
         var x = 0;
         var y = 0;
         var col = 0;
         
-        for (var current = 0; current < actions.length; current++) {
-            ctx.drawImage(actions[current].image, x, y);
+        for (var current = 0; current < children.length; current++) {
+            children[current].setBounds(x, y, width, height);
             col += 1;
             if (col == columns) {
                 x = 0;
                 y += height;
+                col = 0;
             } else {
                 x += width;
             }
         }
-        
-        this.label.setBounds(0, y + height + 5, this.parent.bounds.w, 20);
-        this.label.addCss("visibility", "visible");
-        this.label.addCss("color", "white");
-        console.log("painting: " + this.label.text);
-
-        this.label.paint(ctx);
-        this.label.border.paint(ctx);
-
     },
     
     getAction: function(x, y) {
@@ -625,6 +630,7 @@ members: {
     },
     
     onmousedown: function(e) {
+        console.log("In panel mouse down");
         var action = this.getAction(e.componentX, e.componentY);
         if (action) {
             action.action(e);
@@ -638,6 +644,41 @@ members: {
         if (action && action.name != label.text) {
             label.text = action.name;
             this.repaint();
+        }
+    }
+}});
+
+exports.ActionIcon = Class.define({
+type: "ActionIcon",
+superclass: th.Panel,
+members: {
+    init: function(action, width, height, parms) {
+        this._super(parms);
+        this.action = action;
+        this.width = width;
+        this.height = height;
+        this.bus.bind("mousedown", this, this._onmousedown, this);
+        this.bus.bind("mousemove", this, this._onmousemove, this);
+    },
+    
+    getPreferredSize: function() {
+        return {width: this.width, height: this.height};
+    },
+    
+    paint: function(ctx) {
+        this._super(ctx);
+        ctx.drawImage(this.action.image, 0, 0);
+    },
+    
+    _onmousedown: function(e) {
+        this.action.action(e);
+    },
+    
+    _onmousemove: function(e) {
+        var label = this.parent.label;
+        if (label.text != this.action.name) {
+            label.text = this.action.name;
+            label.repaint();
         }
     }
 }});
