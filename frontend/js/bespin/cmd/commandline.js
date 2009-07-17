@@ -126,9 +126,9 @@ members: {
             this.hideHint();
         }), 4600);
 
-        if (window.globalStorage && window.globalStorage[location.hostname].debug) {
-            console.log("Hint", html);
-        }
+        // if (window.globalStorage && window.globalStorage[location.hostname].debug) {
+        //     console.log("Hint", html);
+        // }
     },
 
     /**
