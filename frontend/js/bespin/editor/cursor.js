@@ -89,29 +89,22 @@ dojo.declare("bespin.editor.CursorManager", null, {
 
         // Special tab handling
         if (line.indexOf("\t") != -1) {
-            // for now, modelPos MUST BE more than the final result. So, we can loop up to it.
-            // simplest thing is to just add characters until we would exceed modelPos.
-            var current_pos = 0;
-            for (var i = 0; i < modelPos.col; i++) {
-                var new_pos = current_pos;
-                
-                // if there is a tab, find what the editor position would be if we added it.
-                if (line[i] == '\t') {
-                    new_pos = Math.floor((current_pos + tabsize) / tabsize) * 4;
-                } else {
-                    new_pos += 1;
-                }
+//          console.log( 'Model modelPos.col/pos.col begin: ', modelPos.col, pos.col );
+            var tabs = 0, nottabs = 0;
 
-                // if the position including the tab is PAST the editor position supplied, then stop.
-                if (new_pos > modelPos.col) {
-                    // if modelPos is closer to new_pos than current_pos, we got to next character
-                    if (new_pos - modelPos.col < modelPos.col - current_pos)
-                        i++; //got to next character
-                    break;
+            for (var i = 0; i < modelPos.col; i++) {
+                if (line[i] == "\t") {
+                    modelPos.col -= tabsize - 1 - ( nottabs % tabsize );
+                    tabs++;
+                    nottabs = 0;
+                } else {
+                    nottabs++;
+                    tabs = 0;
                 }
-                current_pos = new_pos;
+//              console.log( 'tabs: ' + tabs, 'nottabs: ' + nottabs, 'modelPos.col: ' + modelPos.col );
             }
-            modelPos.col = i;
+
+//          console.log( 'Model modelPos.col/pos.col end: ' + modelPos.col, pos.col );
         }
 
         return modelPos;
