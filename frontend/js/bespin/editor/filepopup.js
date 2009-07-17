@@ -246,10 +246,18 @@ members: {
                         popup.hide();
                     });
                     break;
+                case key.J:
+                    if (e.ctrlKey || e.metaKey) {
+                        bespin.getComponent("commandLine", function(cli) {
+                            cli.showPanel("output");
+                            cli.focus();
+                        });
+                    }
+                    break;
            }
        })));
     },
-
+    
     destroy: function() {
         dojo.forEach(this.subscriptions, function(sub) {
             bespin.unsubscribe(sub);
@@ -263,7 +271,7 @@ members: {
             dojo.query("#" + nodeId).orphan();
         });
     },
-
+    
     show: function(coords) {
         this.canvas.width = coords.w;
         this.canvas.height = coords.h;

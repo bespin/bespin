@@ -197,6 +197,21 @@ members: {
             width: coords.w + "px"
         });
         
+        this.showPanel(panel);
+        
+        this.maxInfoHeight = coords.h;
+    },
+    
+    showPanel: function(panel) {
+        var coords = this._savedCoords;
+        
+        if (this.currentPanel) {
+            if (this.currentPanel == panel) {
+                return;
+            }
+            this.hidePanel(panel);
+        }
+        
         if (panel == "output") {
             dojo.style(this.output, {
                 left: coords.l + "px",
@@ -226,8 +241,16 @@ members: {
         }
         
         this.currentPanel = panel;
-
-        this.maxInfoHeight = coords.h;
+    },
+    
+    hidePanel: function(panel) {
+        if (this.currentPanel == "output") {
+            dojo.style(this.output, "display", "none");
+        } else if (this.currentPanel == "files") {
+            this.filePanel.hide();
+        } else if (this.currentPanel == "reference") {
+            dojo.style(this.refNode, "display", "none");
+        }
     },
 
     /**
@@ -239,14 +262,10 @@ members: {
             bottom: "0px",
             width: "500px"
         });
-
-        if (this.currentPanel == "output") {
-            dojo.style(this.output, "display", "none");
-        } else if (this.currentPanel == "files") {
-            this.filePanel.hide();
-        } else if (this.currentPanel == "reference") {
-            dojo.style(this.refNode, "display", "none");
-        }
+        
+        this.hidePanel(this.currentPanel);
+        
+        this.currentPanel = undefined;
         
         dojo.style(this.footer, {
             "left": "-10000px",
@@ -676,10 +695,16 @@ members: {
         this.connections.push(dojo.connect(this.commandLine, "onkeypress", this, function(e) {
             var key = bespin.util.keys.Key;
 
-            if (e.keyChar == 'j' && e.ctrlKey) { // send back
-                this.commandLine.blur();
-                bespin.publish("cmdline:blur");
-
+            if (e.keyChar == 'j' && (e.ctrlKey || e.metaKey)) { // send back
+                if (this.currentPanel != "output") {
+                    this.showPanel("output");
+                }
+                dojo.stopEvent(e);
+                return false;
+            } else if (e.keyChar == 'o' && (e.ctrlKey || e.metaKey)) { // send back
+                if (this.currentPanel != "files") {
+                    this.showPanel("files");
+                }
                 dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
