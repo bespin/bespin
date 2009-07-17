@@ -320,7 +320,14 @@ members:
     /**
      * Show a specific slice, and animate the opening if needed
      */
-    show: function(slice, dontTakeFocus) {
+    show: function(slice, dontTakeFocus, x, y) {
+        if (x != undefined) {
+            console.log("SETTING LAUNCHED AT");
+            this.launchedAt = {x:x, y:y};
+        } else {
+            this.launchedAt = undefined;
+        }
+        
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
@@ -455,6 +462,10 @@ members:
      * Calculate the top left X and Y coordinates of the pie
      */
     getTopLeftXY: function(width, height) {
+        if (this.launchedAt != undefined) {
+            return {x: this.launchedAt.x - width/2, y: this.launchedAt.y - height/2};
+        }
+        
         return { x: parseInt((this.canvas.width / 2) - (width / 2)),
                  y: parseInt((this.slices.off.img.height - height) / 2) + this.canvas.height - this.slices.off.img.height };
     },
@@ -522,17 +533,6 @@ members:
 
         var d = this.calculateSlicePositions();
         this.renderPopout(d);
-        this.renderToolbar(d);
-
-        // Fill in the center section
-        var dimensions = {
-            l: d.cenLeft - 5, // The LHS image has 5px of transparent
-            t: d.midTop + this.settings.canvasTop,
-            w: d.cenWidth + 10, // So does the RHS image have 5px
-            h: d.midHeight
-        };
-
-        this.currentSlice.showContents(dimensions);
     },
 
     /**
@@ -571,7 +571,13 @@ members:
         // Height of the middle row. Assumes all top graphics are same height
         d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
-        d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
+        
+        if (this.launchedAt != undefined) {
+            d.offLeft = this.launchedAt.x - pieWidth/2;
+            d.btmTop = this.launchedAt.y - pieHeight/2 - 15;
+        } else {
+            d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
+        }
 
         return d;
     },
@@ -594,42 +600,6 @@ members:
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Don't draw the menu area for the 'off' slice
-        if (this.currentSlice != this.slices.off) {
-            // Draw top row
-            this.ctx.drawImage(this.border.top_lft, this.settings.leftMargin, this.settings.topMargin);
-            this.ctx.drawImage(this.border.top_mid, d.cenLeft, this.settings.topMargin, d.cenWidth, this.border.top_mid.height);
-            // TODO +4 eh?
-            this.ctx.drawImage(this.border.top_rt, d.rightLeft, this.settings.topMargin + 4);
-
-            // Middle row
-            this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
-            this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
-
-            // Draw the middle bit after so it doesn't get overridden
-            // The LHS and RHS both have 5px of inner transparent
-            this.ctx.fillRect(d.cenLeft - 5, d.midTop, d.cenWidth + 10, d.midHeight);
-            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
-
-            // Bottom row
-            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
-            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, d.cenWidth, this.border.btm_lftb.height);
-            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
-
-            // Bottom row (old version)
-            /*
-            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
-            var lftbWidth = d.offLeft - (this.settings.leftMargin + this.border.btm_lft.width);
-            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, lftbWidth, this.border.btm_lftb.height);
-
-            var rtbLeft = d.offLeft + this.slices.off.img.width;
-            var rtbWidth = d.rightLeft - rtbLeft;
-            this.ctx.drawImage(this.border.btm_rtb, rtbLeft, d.btmTop, rtbWidth, this.border.btm_rtb.height);
-            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
-            */
-        }
 
         // The pie
         var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;

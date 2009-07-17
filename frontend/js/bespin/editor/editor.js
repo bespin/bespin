@@ -526,7 +526,12 @@ dojo.declare("bespin.editor.UI", null, {
     mouseDownSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-
+        
+        if (e.button == 2) {
+            dojo.stopEvent(e);
+            return false;
+        }
+        
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -757,6 +762,15 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     handleScrollBars: function(e) {
+        // Right click for pie menu
+        if (e.button == 2) {
+            bespin.getComponent("piemenu", function(piemenu) {
+                piemenu.show(null, false, e.clientX, e.clientY);
+            });
+            dojo.stopEvent(e);
+            return false;
+        }
+        
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
