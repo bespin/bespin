@@ -1,8 +1,24 @@
 {
+    "popup" : {
+        "provides": [
+            ["popup", {
+                "pointer": "bespin/editor/popup"
+            }]
+        ],
+        "location": "/getscript/js"
+    },
     "command" : {
         "provides": [
-            ["bespin.commandline", {
+            ["commandLine", {
                 "pointer": "bespin/cmd/commandline"
+            }]
+        ],
+        "location": "/getscript/js"
+    },
+    "piemenu" : {
+        "provides": [
+            ["piemenu", {
+                "pointer": "bespin/editor/piemenu"
             }]
         ],
         "location": "/getscript/js"

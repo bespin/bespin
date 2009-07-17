@@ -160,7 +160,11 @@ dojo.mixin(bespin, {
     get: function(id) {
         return this.registeredComponents[id];
     },
-
+    
+    unregister: function(id) {
+        delete this.registeredComponents[id];
+    },
+    
     /**
      * Given an id, and function to run, execute it if the component is available
      */
@@ -168,6 +172,64 @@ dojo.mixin(bespin, {
         var component = this.get(id);
         if (component) {
             return func(component);
+        }
+    },
+    
+    /**
+     * Asynchronous component management.
+     * 
+     * Retrieve the component with the given ID. If the component is
+     * not yet loaded, load the component and pass it along. The
+     * callback is called with the component as the single parameter.
+     * 
+     * This function returns:
+     * * true if the component was already available and the callback
+     *   has been called
+     * * false if the component was not loaded and is being loaded
+     *   asynchronously
+     * * undefined if the component is unknown.
+     */
+    getComponent: function(id, callback, context) {
+        context = context || window;
+        var component = bespin.get(id);
+        if (!component) {
+            var factory = bespin.factories[id];
+            if (!factory) {
+                return undefined;
+            }
+            factory(callback, context);
+            return false;
+        } else {
+            callback.call(context, component);
+        }
+        return true;
+    },
+    
+    factories: {
+        popup: function(callback, context) {
+            bespin.plugins.loadOne("popup", function(popupmod) {
+                bespin.register("popup", new popupmod.Window());
+                var popup = bespin.get("popup");
+                callback.call(context, popup);
+            });
+        },
+        piemenu: function(callback, context) {
+            bespin.plugins.loadOne("piemenu", function(piemenumod) {
+                bespin.register("piemenu", new piemenumod.Window());
+                setTimeout(function() {
+                    var piemenu = bespin.get("piemenu");
+                    callback.call(context, piemenu);
+                }, 10);
+            });
+        },
+        commandLine: function(callback, context) {
+            bespin.plugins.loadOne("commandLine", function(commandline) {
+                bespin.register("commandLine", 
+                    new commandline.Interface('command', bespin.command.store)
+                );
+                var commandLine = bespin.get("commandLine");
+                callback.call(context, commandLine);
+            })
         }
     },
 
@@ -178,6 +240,22 @@ dojo.mixin(bespin, {
         var el = dojo.byId(el) || dojo.byId("version");
         if (!el) return;
         el.innerHTML = '<a href="https://wiki.mozilla.org/Labs/Bespin/ReleaseNotes" title="Read the release notes">Version <span class="versionnumber">' + this.versionNumber + '</span> "' + this.versionCodename + '"</a>';
+    },
+    
+    _subscribeToExtension: function(key) {
+        bespin.subscribe("extension:removed:" + key, function() {
+            var item = bespin.get(key);
+            if (item && item.destroy) {
+                item.destroy();
+            }
+            bespin.unregister(key);
+        });
+    },
+    
+    _initializeReloaders: function() {
+        for (var key in bespin.factories) {
+            bespin._subscribeToExtension(key);
+        }
     }
 });
 
@@ -195,3 +273,5 @@ bespin.subscribe("extension:removed:bespin.subscribe", function(ext) {
         bespin.unsubscribe(ext.subscription);
     }
 });
+
+bespin._initializeReloaders();

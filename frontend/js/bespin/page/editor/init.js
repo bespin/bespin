@@ -111,7 +111,6 @@ dojo.provide("bespin.page.editor.init");
         //bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
         bespin.register('quickopen', new bespin.editor.quickopen.API());
-        bespin.register('piemenu', new bespin.editor.piemenu.Window());
 
         // Get going when settings are loaded
         bespin.subscribe("settings:loaded", function(event) {
@@ -248,12 +247,4 @@ dojo.provide("bespin.page.editor.init");
             }
         };
     };
-    
-    bespin.subscribe("extension:loaded:bespin.commandline", function(ext) {
-        ext.load(function(commandline) {
-            console.log("Registering command line");
-            bespin.register('commandLine', new commandline.Interface('command', bespin.command.store));
-        });
-
-    });
 })();

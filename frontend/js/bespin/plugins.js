@@ -381,6 +381,7 @@ bespin.subscribe("file:saved", function(e) {
             fullname = "/getscript/" + e.path.substring(9);
         }
     }
+    
     // Implement plugin reloading
     var mod = bespin.plugins.loader.modules[fullname];
     if (!mod) {

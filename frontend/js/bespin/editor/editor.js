@@ -526,7 +526,12 @@ dojo.declare("bespin.editor.UI", null, {
     mouseDownSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-
+        
+        if (e.button == 2) {
+            dojo.stopEvent(e);
+            return false;
+        }
+        
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -757,6 +762,15 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     handleScrollBars: function(e) {
+        // Right click for pie menu
+        if (e.button == 2) {
+            bespin.getComponent("piemenu", function(piemenu) {
+                piemenu.show(null, false, e.clientX, e.clientY);
+            });
+            dojo.stopEvent(e);
+            return false;
+        }
+        
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -871,6 +885,7 @@ dojo.declare("bespin.editor.UI", null, {
         }, this.actions.moveToLineEnd, "Move to end of line", true /* selectable */);
 
         listener.bindKeyString("CTRL", Key.K, this.actions.killLine, "Kill entire line");
+        listener.bindKeyString("CMD", Key.L, this.actions.gotoLine, "Goto Line");
         listener.bindKeyString("CTRL", Key.L, this.actions.moveCursorRowToCenter, "Move cursor to center of page");
 
         listener.bindKeyStringSelectable("", Key.BACKSPACE, this.actions.backspace, "Backspace");
@@ -892,8 +907,10 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyString("CMD", Key.I, this.actions.toggleQuickopen, "Toggle Quickopen");
         listener.bindKeyString("CMD", Key.J, this.actions.focusCommandline, "Open Command line");
         listener.bindKeyString("CMD", Key.O, this.actions.focusFileBrowser, "Open File Browser");
-        listener.bindKeyString("CMD", Key.F, this.actions.toggleFilesearch, "Show find dialog");
-        listener.bindKeyString("CMD", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
+        listener.bindKeyString("CMD", Key.F, this.actions.cmdFilesearch, "Search in this file");
+        listener.bindKeyString("CMD", Key.G, this.actions.findNext, "Find Next");
+        listener.bindKeyString("SHIFT CMD", Key.G, this.actions.findPrev, "Find Previous");
+        listener.bindKeyString("CTRL", Key.M, this.actions.togglePieMenu, "Open Pie Menu");
 
         // TODO: Find a way to move this into preview.js
         listener.bindKeyString("CMD", Key.B, bespin.preview.show, "Preview in Browser");
@@ -1933,7 +1950,9 @@ dojo.declare("bespin.editor.API", null, {
         var keyObj = bespin.util.keys.fillArguments(keySpec);
         var keyCode = bespin.util.keys.toKeyCode(keyObj.key);
         var action = function() {
-            bespin.get('commandLine').executeCommand(command, true);
+            bespin.getComponent("commandLine", function(cli) {
+                cli.executeCommand(command, true);
+            })
         };
         var actionDescription = "Execute command: '" + command + "'";
 

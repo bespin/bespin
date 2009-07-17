@@ -229,7 +229,9 @@ dojo.declare("bespin.editor.Events", null, {
 
             document.title = filename + ' - editing with Bespin';
 
-            bespin.get("commandLine").showHint('Saved file: ' + file.name);
+            bespin.getComponent("commandLine", function(cli) {
+                cli.showHint('Saved file: ' + file.name);
+            });
 
             bespin.publish("editor:clean");
         });
