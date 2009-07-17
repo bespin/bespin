@@ -561,7 +561,8 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     deleteSelection: function(args) {
-        if (this.editor.readonly) return;
+        if (this.editor.readonly) 
+            return;
 
         var selection;
 

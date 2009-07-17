@@ -97,7 +97,7 @@ dojo.declare("bespin.editor.CursorManager", null, {
                 
                 // if there is a tab, find what the editor position would be if we added it.
                 if (line[i] == '\t') {
-                    new_pos = Math.floor((current_pos + tabsize) / tabsize) * 4;
+                    new_pos = Math.floor((current_pos + tabsize) / tabsize) * tabsize;
                 } else {
                     new_pos += 1;
                 }
