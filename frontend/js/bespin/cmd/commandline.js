@@ -78,14 +78,24 @@ members: {
         this.connections.push(dojo.connect(this.commandHint, "onclick", this, this.hideHint));
 
         // Create the div for real command output
+        // TODO move this into the popup
         this.output = dojo.create("div", {
             id: idPrefix + "output",
             style: "display:none;"
         }, parentElement);
         this.nodes.push(idPrefix + "output");
-
+        
+        // TOOD move this into the popup
+        // The reference pane takes a while to load so we create it here
+        this.refNode = dojo.create("iframe", {
+            style: "display:none",
+            id: "popup_refNode"
+        }, dojo.body());
+        this.nodes.push("popup_refNode");
+        
         this.footer = dojo.byId("footer");
         
+        // TODO move this into the popup
         this.filePanel = new filepopup.FilePanel();
 
         if (bespin.get('files')) this.files = bespin.get('files');
@@ -171,6 +181,7 @@ members: {
      * Show the output area in the given display rectangle
      */
     showOutput: function(panel, coords) {
+        this._savedCoords = coords;
         var footerHeight = dojo.style(this.footer, "height") + 2;
         dojo.style(this.footer, {
             left: coords.l + "px",
@@ -194,6 +205,22 @@ members: {
                 height: coords.h + "px",
                 display: "block"
             });
+        } else if (panel == "reference") {
+            var url = "https://wiki.mozilla.org/Labs/Bespin";
+            var refNode = this.refNode;
+            if (refNode.src != url) {
+                refNode.src = url;
+            }
+            dojo.style(refNode, {
+                left: coords.l + "px",
+                top: coords.t + "px",
+                width: coords.w + "px",
+                height: coords.h + "px",
+                position: "absolute",
+                borderWidth: "0",
+                zIndex: "200",
+                display: "block"
+            });
         } else {
             this.filePanel.show(coords);
         }
@@ -215,8 +242,10 @@ members: {
 
         if (this.currentPanel == "output") {
             dojo.style(this.output, "display", "none");
-        } else if (this.currentPanel = "files") {
+        } else if (this.currentPanel == "files") {
             this.filePanel.hide();
+        } else if (this.currentPanel == "reference") {
+            dojo.style(this.refNode, "display", "none");
         }
         
         dojo.style(this.footer, {

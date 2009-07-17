@@ -271,10 +271,10 @@ members:
             title: "File Browser",
             key: bespin.util.keys.Key.UP_ARROW,
 
-            showContents: function(coords) {
-            },
-
-            hideContents: function() {
+            show: function() {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("files");
+                });
             }
         },
 
@@ -285,24 +285,10 @@ members:
             id: "active_lft",
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
-            url: "https://wiki.mozilla.org/Labs/Bespin",
-            showContents: function(coords) {
-                if (this.piemenu.refNode.src != this.piemenu.slices.reference.url) {
-                    this.piemenu.refNode.src = this.piemenu.slices.reference.url;
-                }
-                dojo.style(this.piemenu.refNode, {
-                    left: coords.l + "px",
-                    top: coords.t + "px",
-                    width: coords.w + "px",
-                    height: coords.h + "px",
-                    position: "absolute",
-                    borderWidth: "0",
-                    zIndex: "200",
-                    display: "block"
+            show: function() {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("reference");
                 });
-            },
-            hideContents: function() {
-                dojo.style(this.piemenu.refNode, "display", "none");
             }
         },
 
@@ -313,14 +299,10 @@ members:
             id: "active_rt",
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
-            showContents: function(coords) {
-                /*
-                var piemenu = this.piemenu;
-
-                piemenu.ctx.fillStyle = "#bcb9ae";
-                piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
-                piemenu.ctx.fillText("Work in progress", parseInt(d.cenLeft + 10), parseInt(d.midTop + 10));
-                */
+            show: function(coords) {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("reference");
+                });
             }
         },
 

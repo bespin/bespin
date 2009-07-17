@@ -49,6 +49,7 @@ members: {
         
         this.nodes.push("popup");
         
+        
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
         // Load the close button image
