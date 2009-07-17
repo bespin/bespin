@@ -1963,10 +1963,8 @@ dojo.declare("bespin.editor.API", null, {
 // If the debugger is reloaded, we need to make sure the module
 // is in memory if we're in debug mode.
 bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
-    console.log("Found debugger extension");
     var settings = bespin.get("settings");
     if (settings && settings.get("debugmode")) {
-        console.log("Debug mode set, loading extension");
         ext.load();
     }
 });
