@@ -491,7 +491,6 @@ members: {
 
                         self.tree.replaceList(index, contents);
                         var list = self.tree.getList(index);
-                        console.log("Selecting " + index);
                         list.selectItemByText(fakePath[index].name);
                         countSetupPaths++;
 
@@ -508,6 +507,7 @@ members: {
                                     }
                                 }
                             }
+                            self.tree.showDetails();
                         }
                     };
                 })(x));

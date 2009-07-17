@@ -216,8 +216,10 @@ dojo.mixin(bespin, {
         piemenu: function(callback, context) {
             bespin.plugins.loadOne("piemenu", function(piemenumod) {
                 bespin.register("piemenu", new piemenumod.Window());
-                var piemenu = bespin.get("piemenu");
-                callback.call(context, piemenu);
+                setTimeout(function() {
+                    var piemenu = bespin.get("piemenu");
+                    callback.call(context, piemenu);
+                }, 10);
             });
         },
         commandLine: function(callback, context) {
