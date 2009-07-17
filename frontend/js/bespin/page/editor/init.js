@@ -138,6 +138,9 @@ dojo.provide("bespin.page.editor.init");
                     re.call(dojo, plugin);
                 });
             }
+            
+            // preload the command line
+            bespin.getComponent("commandLine", function() {});
 
             bespin.publish("authenticated");
         };
