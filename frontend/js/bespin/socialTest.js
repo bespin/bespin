@@ -32,6 +32,7 @@ bespin.test.addTests("social", {
         this.server = bespin.get("server");
         this.originalServerFollowers = this.server.followers;
         this.originalServerUnfollow = this.server.unfollow;
+        this.originalServerGroupListAll = this.server.groupListAll;
     },
 
     testFollow: function(test) {
@@ -43,12 +44,28 @@ bespin.test.addTests("social", {
         this.server.followers = function(opts) {
             opts.onSuccess("[ 'joe', 'fred' ]");
         };
-        test.command("follow", "Following: joe, fred");
+        test.command("follow", [ "You are following these users", "joe", "fred", "unfollow" ]);
 
         this.server.followers = function(opts) {
             opts.onFailure({ responseText:"ERR" });
         };
         test.command("follow", "Failed to retrieve followers: ERR");
+    },
+
+    testGroupHelp: function(test) {
+        test.command("group help", [ "Available Commands", "add", "help", "list", "remove" ]);
+    },
+
+    testGroupList: function(test) {
+        this.server.groupListAll = function(opts) {
+            opts.onSuccess([ 'homies' ]);
+        };
+        test.command("group list", [ "You have the following groups", "homies", "remove" ]);
+
+        this.server.groupListAll = function(opts) {
+            opts.onFailure({ responseText:"ERR" });
+        };
+        test.command("follow", "Failed to retrieve groups: ERR");
     },
 
     testUnfollow: function(test) {
@@ -61,5 +78,6 @@ bespin.test.addTests("social", {
     tearDown: function() {
         this.server.followers = this.originalServerFollowers;
         this.server.unfollow = this.originalServerUnfollow;
+        this.server.groupListAll = this.originalServerGroupListAll;
     }
 });

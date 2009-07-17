@@ -288,7 +288,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
 
     /*
       this is taken from th.KeyHelpers
-    */ 
+    */
     getPrintableChar: function(e) {
         if (e.charCode > 255) return false;
         if (e.charCode < 32) return false;
@@ -1955,4 +1955,4 @@ bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
         console.log("Debug mode set, loading extension");
         ext.load();
     }
-})
+});

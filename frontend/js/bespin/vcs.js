@@ -259,7 +259,7 @@ bespin.vcs.commands.addCommand({
                 }
             }
             data = dojo.objectToQuery(data);
-            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction), { onSuccess: function() { bespin.publish("project:created", { project: project }) } });
+            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
         }));
 
         dojo.byId("kcpass").focus();
