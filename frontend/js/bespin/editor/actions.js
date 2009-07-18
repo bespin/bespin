@@ -1013,10 +1013,9 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     togglePieMenu: function() {
-        var piemenu = bespin.get('piemenu');
-        if (piemenu) {
+        bespin.getComponent('piemenu', function(piemenu) {
             piemenu.toggle();
-        }
+        });
     },
 
     toggleFilesearch: function() {
@@ -1030,26 +1029,15 @@ dojo.declare("bespin.editor.Actions", null, {
     },
 
     focusCommandline: function() {
-        var commandLine = bespin.get('commandLine');
-        if (commandLine) {
-            commandLine.focus();
-        }
-
-        // Give the browser time to focus the (invisible) command line before
-        // animating it into view, so you can type while it is showing
-        setTimeout(function() {
-            var piemenu = bespin.get('piemenu');
-            if (piemenu) {
-                piemenu.show(piemenu.slices.commandLine, true);
-            }
-        }, 10);
+        bespin.getComponent("popup", function(popup) {
+            popup.show("output");
+        });
     },
 
     focusFileBrowser: function() {
-        var piemenu = bespin.get('piemenu');
-        if (piemenu) {
-            piemenu.show(piemenu.slices.fileBrowser, true);
-        }
+        bespin.getComponent("popup", function(popup) {
+            popup.show("files");
+        });
     },
 
     repaint: function() {
@@ -1119,11 +1107,30 @@ dojo.declare("bespin.editor.Actions", null, {
         this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
     },
     
+    gotoLine: function() {
+        bespin.getComponent("commandLine", function(cli) {
+            cli.setCommandText("goto ");
+            bespin.getComponent("popup", function(popup) {
+                popup.show("output");
+            });
+        });
+    },
+    
+    cmdFilesearch: function() {
+        bespin.getComponent("commandLine", function(cli) {
+            cli.setCommandText("search ");
+            bespin.getComponent("popup", function(popup) {
+                popup.show("output");
+            });
+        });
+    },
+
     previousFile: function() {
         bespin.get('editSession').goToPreviousFile();
     },
-    
+
     nextFile: function() {
         bespin.get('editSession').goToNextFile();
     }
+ 
 });

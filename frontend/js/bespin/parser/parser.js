@@ -43,30 +43,8 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         this._running  = false;
 
         this.currentMetaInfo;
-        this.lineMarkers = [];
+        this.messages = [];
         this.foldPoints = [];
-
-        // ** {{{ Event: parser:error }}} **
-        //
-        // Parser found an error in the source code
-        bespin.subscribe("parser:syntaxcheck", function(message) {
-            var syntaxcheck = bespin.get("settings") && bespin.get("settings").get("syntaxcheck");
-            var cursorRow = bespin.get("editor") && bespin.get("editor").getModelPos().row || -1;
-            if (syntaxcheck === "all" || syntaxcheck === message.type) {
-                //don't trigger message if it's the line we're still typing on, because that's annoying
-                if (cursorRow + 1 != message.line) {
-                    var msg = 'Syntax ' + message.type +
-                             (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
-                             ': ' + message.reason + '<p>' +
-                             (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
-                                 replace(/&/g, '&amp;').
-                                 replace(/</g, '&lt;').
-                                 replace(/>/g, '&gt;'));
-                    bespin.get("commandLine").showHint(msg);
-                }
-                self.lineMarkers.push(message);
-            }
-        });
 
         // ** {{{ Event: parser:showoutline }}} **
         //
@@ -101,11 +79,14 @@ dojo.declare("bespin.parser.CodeInfo", null, {
         // Fires when the parser engine finished a parsing run
         bespin.subscribe("parser:engine:parseDone", function(event) {
             var data = event.info;
-            //console.log("Worker Response "+dojo.toJson(data))
-            if (data.messages) for (var i = 0; i < data.messages.length; i++) {
-                bespin.publish("parser:syntaxcheck", data.messages[i]);
-            }
             self.foldPoints = data.foldPoints;
+            var syntaxmarkers = bespin.get("settings") && bespin.get("settings").get("syntaxmarkers");
+            self.messages = dojo.filter(data.messages, function(message) {
+                if (syntaxmarkers === "all") {
+                    return true;
+                }
+                return ((message.type + "s").toLowerCase() === syntaxmarkers);
+            });
             if (data.metaInfo) {
                 self.currentMetaInfo = data.metaInfo;
                 bespin.publish("parser:metainfo", {
@@ -113,6 +94,12 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                 });
             }
             self._running = false;
+            //console.log("parser:engine:parseDone %o", self.messages);
+        });
+
+        bespin.subscribe("parser:stop", function () {
+            self.messages = [];
+            self.foldPoints = [];
         });
     },
 
@@ -139,15 +126,11 @@ dojo.declare("bespin.parser.CodeInfo", null, {
                     clearTimeout(self.run_timeout);
                 }
                 self.run_timeout = setTimeout(function() {
-                    if (self._running) {
-                        self.run_timeout = setTimeout(arguments.callee, delay);
-                    } else {
-                        self.fetch();
-                    }
+                    self.fetch();
                 }, delay);
             };
             var onChange = bespin.subscribe("editor:document:changed", rerun);
-            bespin.subscribe("settings:set:syntaxcheck", rerun);
+            bespin.subscribe("settings:set:syntaxmarkers", rerun);
             bespin.subscribe("settings:set:jslint", rerun);
 
             // ** {{{ Event: parser:stop }}} **
@@ -177,10 +160,7 @@ dojo.declare("bespin.parser.CodeInfo", null, {
 
             if (type) {
                 var source = editor.model.getDocument();
-                self.lineMarkers = [];
-
                 self._running = true;
-                //console.log("Syntax-Check");
                 bespin.publish("parser:engine:parse", {
                     type: type,
                     source: source,
@@ -191,7 +171,23 @@ dojo.declare("bespin.parser.CodeInfo", null, {
     },
 
     getLineMarkers: function() {
-        return this.lineMarkers;
+        var lineMarkers = {};
+        dojo.forEach(this.messages, function(message) {
+            if (!lineMarkers[message.line]) {
+                lineMarkers[message.line] = {type: message.type, msg: ""};
+            }
+            lineMarkers[message.line].msg += '<p>Syntax ' + message.type +
+                (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
+                ': ' + message.reason + '<p>' +
+                (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
+                    replace(/&/g, '&amp;').
+                    replace(/</g, '&lt;').
+                    replace(/>/g, '&gt;'));
+            if (message.type === "Error" || (message.type === "Warning" && lineMarkers[message.line].type === "Message")) {
+                lineMarkers[message.line].type = message.type;
+            }
+        });
+        return lineMarkers;
     },
 
     getFunctions: function () {
@@ -487,12 +483,29 @@ dojo.declare("bespin.parser.JSLint", null, {
                 messages.push({
                     reason: JSLINT.errors[i].reason,
                     line: JSLINT.errors[i].line + (type === "css" ? 0 : 1),
-                    type: (i === JSLINT.errors.length - 2 && fatal) ? "error" : "warning",
+                    type: (i === JSLINT.errors.length - 2 && fatal) ? "Error" : "Warning",
                     character: JSLINT.errors[i].character,
                     evidence: JSLINT.errors[i].evidence
                 });
             }
         }
+        for (var i = 0; i < funcs.length; i++) {
+            messages.push({
+                line: funcs[i].line,
+                type: "Message",
+                character: 0,
+                reason: "<br>Function name: " + funcs[i].name + 
+                        "<br>Unused: " + funcs[i].unused.join(", ") + 
+                        "<br>Closure: " + funcs[i].closure.join(", ") + 
+                        "<br>Exception: " + funcs[i].exception.join(", ") + 
+                        "<br>Vars: " + funcs[i].vars.join(", ") + 
+                        "<br>Label: " + funcs[i].label.join(", ") + 
+                        "<br>Outer: " + funcs[i].outer.join(", ") + 
+                        "<br>Global: " + funcs[i].global.join(", "),
+                evidence: ""
+            });
+        }
+
         return {
             result: result,
             messages: messages,
@@ -604,14 +617,22 @@ bespin.register("parser", new bespin.parser.CodeInfo());
 
 bespin.fireAfter(["settings:language", "settings:set:syntaxcheck", "parser:engine:initialized"], function () {
     var settings = bespin.get("settings");
-    if (settings.isOn(settings.get("syntaxcheck"))) {
+    if (settings && settings.isOn(settings.get("syntaxcheck"))) {
         var editor = bespin.get("editor");
-        if (!editor.language) { // wait some more, editor needs to catch this first
+        if (editor.language) { 
+            bespin.publish("parser:start");
+        } else { // wait some more, editor needs to catch this first
             bespin.subscribe("settings:language", function () {
                 bespin.publish("parser:start");
             });
-        } else {
-            bespin.publish("parser:start");
         }
     }
 });
+//this really shouldn't be necessary (see above function) but it is. Parser doesn't automatically start without it
+bespin.subscribe("settings:language", function () {
+    var settings = bespin.get("settings");
+    if (settings && settings.isOn(settings.get("syntaxcheck"))) {
+        bespin.publish("parser:start");
+    }
+});
+

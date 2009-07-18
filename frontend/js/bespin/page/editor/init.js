@@ -108,10 +108,9 @@ dojo.provide("bespin.page.editor.init");
         var files = bespin.register('files', new bespin.client.FileSystem());
 
         bespin.register('actions', editor.ui.actions);
-        bespin.register('filesearch', new bespin.editor.filesearch.API());
+        //bespin.register('filesearch', new bespin.editor.filesearch.API());
         bespin.register('toolbar', new bespin.editor.Toolbar(editor, { setupDefault: true }));
         bespin.register('quickopen', new bespin.editor.quickopen.API());
-        bespin.register('piemenu', new bespin.editor.piemenu.Window());
 
         // Get going when settings are loaded
         bespin.subscribe("settings:loaded", function(event) {
@@ -139,6 +138,7 @@ dojo.provide("bespin.page.editor.init");
                     re.call(dojo, plugin);
                 });
             }
+            
 
             bespin.publish("authenticated");
         };
@@ -158,6 +158,7 @@ dojo.provide("bespin.page.editor.init");
         // -- Deal with the project label (project, filename, dirty flag)
         statusScene = new ProjectStatusScene();
         bespin.publish("bespin:editor:initialized", {});
+        
     });
 
     // The object that understands how to render the project label scene
@@ -248,12 +249,4 @@ dojo.provide("bespin.page.editor.init");
             }
         };
     };
-    
-    bespin.subscribe("extension:loaded:bespin.commandline", function(ext) {
-        ext.load(function(commandline) {
-            console.log("Registering command line");
-            bespin.register('commandLine', new commandline.Interface('command', bespin.command.store));
-        });
-
-    });
 })();

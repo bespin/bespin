@@ -367,6 +367,10 @@ bespin.subscribe("bespin:editor:initialized", function() {
                 bespin.plugins.registerExtensionPoints(name, 
                     bespin.plugins.builtins, bespin.plugins.multiFileResolver);
             }
+            
+            // preload a couple of components to make them zippier.
+            bespin.getComponent("commandLine", function() {});
+            bespin.getComponent("popup", function() {});
         }
     });
 });
@@ -381,6 +385,7 @@ bespin.subscribe("file:saved", function(e) {
             fullname = "/getscript/" + e.path.substring(9);
         }
     }
+    
     // Implement plugin reloading
     var mod = bespin.plugins.loader.modules[fullname];
     if (!mod) {

@@ -70,8 +70,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         input.bindKey("", input.ARROW_DOWN, list.moveSelectionDown, list);
         input.bindKey("", input.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
         input.bindKey("", input.ENTER, this.openFile, this);
-        
-        inputProject.bindKey("", inputProject.ENTER, function() { input.focusManager.focus(input);})
+
+        inputProject.bindKey("", inputProject.ENTER, function() { input.focusManager.focus(input);});
         inputProject.bindKey("", input.ESCAPE, function() { bespin.publish("ui:escape"); }, this);
 
         // bind to some events
@@ -153,7 +153,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             this.focusManager.removeFocus();
         } else {
             this.focusManager.focus(this.input);
-            this.setProject(bespin.get('editSession').project)
+            this.setProject(bespin.get('editSession').project);
             this.input.setText('');
             this.loadProjects();
         }
@@ -273,24 +273,24 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             bespin.get('server').searchFiles(quickopen.currentProject, quickopen.input.text, quickopen.currentProjectInclude, quickopen.displayResult);
         }
     },
-    
+
     callbackListOpen: function(sessions) {
         var temp = {};
-        for( project in sessions) {
+        for (project in sessions) {
             temp[project] = [];
             for (file in sessions[project]) {
                 temp[project].push(file);
             }
         }
-        
+
         this.openSessionFiles = temp;
-        this.displaySessions(bespin.get('editSession').project)
+        this.displaySessions(bespin.get('editSession').project);
     },
 
     displaySessions: function(project) {
         var editSession = bespin.get('editSession');
         var currentFile = project == editSession.project ? editSession.path : false;
-            
+
         var items = new Array();
 
         var files = this.openSessionFiles[project];
@@ -355,27 +355,27 @@ bespin.command.store.addCommand({
             instruction.addOutput(this.preview);
             instruction.addUsageOutput(this);
             instruction.error = false;
-            var includes = settings.getObject('quickopenInclude');            
+            var includes = settings.getObject('quickopenInclude');
             if (includes === undefined) return;
             output = '<br/>';
             for (projects in includes) {
                 if (includes[projects].length == 0) continue;
                 output += "<u><b>Project: " + projects + "</b></u>";
-                output += "<ul>"
+                output += "<ul>";
                 for (var i=0; i < includes[projects].length; i++) {
                     output += '<li>' + includes[projects][i] + "</li>";
                 }
-                output += "</ul><br/>"
+                output += "</ul><br/>";
             }
             instruction.addOutput(output);
             return;
         }
-        
+
         if (!args.path || !args.project) {
             instruction.addUsageOutput(this);
             return;
         }
-        
+
         if (args.task == 'add') {
             var includes = settings.getObject('quickopenInclude');
             if (includes === undefined) includes = {};

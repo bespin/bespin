@@ -93,8 +93,6 @@
     <script type='text/javascript' src='js/bespin/editor/undo.js'></script>
     <script type='text/javascript' src='js/bespin/editor/quickopen.js'></script>
     <script type='text/javascript' src='js/bespin/editor/filesearch.js'></script>
-    <script type='text/javascript' src='js/bespin/editor/filepopup.js'></script>
-    <script type='text/javascript' src='js/bespin/editor/piemenu.js'></script>
     <script type='text/javascript' src='js/bespin/editor/formatter.js'></script>
     <script type='text/javascript' src='js/bespin/editor/codecompletion.js'></script>
 
@@ -121,7 +119,6 @@
 
     <script type='text/javascript' src='js/bespin/mobwrite/core.js'></script>
     <script type='text/javascript' src='js/bespin/mobwrite/diff.js'></script>
-    <script type='text/javascript' src='js/bespin/mobwrite/form.js'></script>
     <script type='text/javascript' src='js/bespin/mobwrite/integrate.js'></script>
 
     <script type='text/javascript' src='js/bespin/client/pubsub.js'></script>
@@ -176,7 +173,7 @@
 
     <div id="editor"></div>
     <div id="preview" style="display: none"></div>
-    <div id="footer" class="footer">
+    <div id="footer" class="footer" style="display:none">
         <table class="commandline" cellpadding="0">
             <tr>
                 <td class="prompt"><img id="promptimg" src="images/icn_command.png" alt=">" ></td>
@@ -191,10 +188,10 @@
     </div>
     <div id="collab">
         <div id="collab_header"><div>Collaboration</div></div>
-        <div class="collab_subheader"><div>Other users editing this file:</div></div>
+        <div class="collab_subheader"><div>Users editing this file:</div></div>
         <div id="collab_list">
         </div>
-        <div class="collab_text" style="margin-top: 10px">Collaboration is a new feature.</div>
+        <div class="collab_text" style="margin-top: 10px">Collaboration is a beta feature.</div>
     </div>
     <!-- debugbar HTML should move to a plugin -->
     <div id="debugbar">
@@ -292,14 +289,14 @@
     <div id="popup_insert_point"></div>
     <div id="quickopenContainer">
         <canvas id="quickopen" flowLayout="vertical" width="300" height="402">
-            <input id="project">
-            <input id="input">
+            <input id="project" style="display:none">
+            <input id="input" style="display:none">
             <list id="list" layoutData="1.0"></list>
             <label id="label" text="Path to file..."></label>
         </canvas>
     </div>
 
-    <div id="filesearchContainer">
+    <div id="filesearchContainer" style="display:none;">
         <input id="filesearch_input_first" style="z-index: -100">
         <input id="filesearch_input_last" style="z-index: -100"><br>
 

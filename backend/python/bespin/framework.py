@@ -106,7 +106,7 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
                     log.error("request.url=%s" % request.url)
                     log.error("cookies[Domain-Token]=%s" % cookie_token)
                     log.error("headers[X-Domain-Token]=%s" % header_token)
-                    log.error("ERROR! The anti CSRF attack trip wire just went off. If you see this message and no-one is hacking you, please tell bespin-core@googlegroups.com")
+                    log.error("WARNING: The anti CSRF attack trip wire just went off. This means an unprotected request has been made. This could be a hacking attempt, or incomplete protection. The request has NOT been halted")
                     config.c.stats.incr("csrf_fail_DATE")
 
             user = request.user

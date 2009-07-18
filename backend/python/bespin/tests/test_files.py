@@ -170,28 +170,6 @@ def test_error_if_you_try_to_replace_dir_with_file():
     except FileConflict:
         pass
     
-def test_get_file_opens_the_file():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/baz", "biz")
-    contents = bigmac.get_file("foo/bar/baz")
-    assert contents == "biz"
-    
-    open_files = macgyver.files
-    print "OF: ", open_files
-    info = open_files['bigmac']['foo/bar/baz']
-    assert info['mode'] == "rw"
-    
-    bigmac.close("foo")
-    # does nothing, because we don't have that one open
-    open_files = macgyver.files
-    info = open_files['bigmac']['foo/bar/baz']
-    assert info['mode'] == "rw"
-    
-    bigmac.close("foo/bar/baz")
-    open_files = macgyver.files
-    assert open_files == {}
-
 def test_get_file_raises_exception_if_its_a_directory():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
@@ -226,7 +204,7 @@ def test_directory_shortname_computed_to_have_last_dir():
 def test_can_delete_empty_directory():
     _init_data()
     bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/")
+    bigmac.create_directory("foo/bar/")
     bigmac.delete("foo/bar/")
     location = bigmac.location / "foo/bar"
     assert not location.exists()
@@ -248,28 +226,6 @@ def test_delete_raises_file_not_found():
     flist = bigmac.list_files()
     assert flist[0].name == "foo/"
     bigmac.delete("foo/bar/")
-    
-def test_cannot_delete_file_open_by_someone_else():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/baz", "biz")
-    bigmac.get_file("foo/bar/baz")
-    
-    sebigmac = ProjectView(someone_else, macgyver, "bigmac", 
-                    macgyver.get_location() / "bigmac")
-    try:
-        sebigmac.delete("foo/bar/baz")
-        assert False, "Expected FileConflict exception for deleting open file"
-    except FileConflict:
-        pass
-        
-def test_can_delete_file_open_by_me():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/baz", "biz")
-    bigmac.get_file("foo/bar/baz")
-    bigmac.delete("foo/bar/baz")
-    assert not macgyver.files
     
 def test_successful_deletion():
     _init_data()
@@ -416,17 +372,6 @@ def test_list_top_level():
                             "SampleProject", "bigmac"]
     
     
-def test_save_file_can_create_directory():
-    _init_data()
-    bigmac = get_project(macgyver, macgyver, "bigmac", create=True)
-    bigmac.save_file("foo/bar/")
-    flist = bigmac.list_files()
-    assert len(flist) == 1
-    assert flist[0].name == "foo/"
-    flist = bigmac.list_files("foo/")
-    assert len(flist) == 1
-    assert flist[0].name == "foo/bar/"
-
 def test_filesystem_can_be_arranged_in_levels():
     config.c.fslevels = 0
     _init_data()
@@ -638,13 +583,6 @@ def test_good_file_operations_from_web():
     
     resp = app.get("/file/at/bigmac/reqs")
     assert resp.body == "Chewing gum wrapper"
-    resp = app.get("/file/listopen/")
-    assert resp.content_type == "application/json"
-    data = simplejson.loads(resp.body)
-    bigmac_data = data['bigmac']
-    assert len(bigmac_data) == 1
-    assert bigmac_data['reqs']['mode'] == "rw"
-    app.post("/file/close/bigmac/reqs")
     
     resp = app.get("/file/at/bigmac/reqs?mode=r")
     assert resp.body == "Chewing gum wrapper"
@@ -652,17 +590,6 @@ def test_good_file_operations_from_web():
     resp = app.get("/file/list/bigmac/")
     data = simplejson.loads(resp.body)
     print data
-    assert data[0]['openedBy'] == ['MacGyver']
-    
-    resp = app.get("/file/listopen/")
-    data = simplejson.loads(resp.body)
-    bigmac_data = data['bigmac']
-    assert len(bigmac_data) == 1
-    assert bigmac_data['reqs']['mode'] == "r"
-    app.post("/file/close/bigmac/reqs")
-    resp = app.get("/file/listopen/")
-    data = simplejson.loads(resp.body)
-    assert data == {}
     
     resp = app.get("/file/list/")
     data = simplejson.loads(resp.body)

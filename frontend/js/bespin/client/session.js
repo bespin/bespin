@@ -37,80 +37,201 @@ dojo.provide("bespin.client.session");
 dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
+        this.currentState = this.mobwriteState.stopped;
+            this.currentState = this.mobwriteState.stopped;
         this.fileHistory = [];
         this.fileHistoryIndex = -1;
     },
-    
+
+    /**
+     * Opens the previous file within the fileHistroyList related to the current opened file / current position within the fileHistoryList
+     * The real opening of the file is done within openFromHistry()
+     */
     goToPreviousFile: function() {
         if (this.fileHistoryIndex != 0) {
             this.fileHistoryIndex --;
             this.openFromHistory();
         }
     },
-    
+
+    /**
+     * Opens the next file within the fileHistroyList related to the current opened file / current position within the fileHistroyList
+     * The real opening of the file is done within openFromHistry()
+     */
     goToNextFile: function() {
         if (this.fileHistoryIndex != this.fileHistory.length - 1) {
             this.fileHistoryIndex ++;
             this.openFromHistory();
         }
     },
-    
+
+    /**
+     * Opens a file from the fileHistoryList.
+     * The file to be opened is set by the variable this.fileHistoryIndex, which is the index for the this.fileHistory array
+     */
     openFromHistory: function() {
         var historyItem = this.fileHistory[this.fileHistoryIndex];
         bespin.publish("editor:savefile", {});
         bespin.publish("editor:openfile", { project: historyItem.project,  filename: historyItem.filename, fromFileHistory: true });
     },
 
+    /**
+     * Adds a new file to the fileHistoryList
+     * There are two possible cases:
+     * a) the current opened file is the last one in the fileHistoryList. If so, just add the file to the end
+     * b) the current opened file is *not* at the end of the fileHistryList. In this case, we will have to 
+     *    delete the files after the current one in the list and add then the new one
+     */  
     addFileToHistory: function(newItem) {
         this.fileHistoryIndex ++;
         this.fileHistory.splice(this.fileHistoryIndex, this.fileHistory.length - this.fileHistoryIndex, newItem);
     },
 
+    /**
+     * Allow us to detect what is going on with mobwrite
+     */
+    mobwriteState: {
+        stopped: 0,
+        starting: 1,
+        running: 2
+    },
+
+    /**
+     * Set on login from editor/init.js
+     * TODO: Is this is best place for this information?
+     */
     setUserinfo: function(userinfo) {
         this.username = userinfo.username;
         this.amountUsed = userinfo.amountUsed;
         this.quota = userinfo.quota;
     },
 
+    /**
+     * Is the passed project/path what we are currently working on?
+     */
     checkSameFile: function(project, path) {
         return ((this.project == project) && (this.path == path));
     },
 
-    startSession: function(project, path, onSuccess) {
+    /**
+     * Begin editing a given project/path hooking up using mobwrite if needed
+     * TODO: There is a disconnect here because if we're not using mobwrite
+     * then the text is loaded somewhere else. We should be symmetric.
+     * Perhaps the problem is - is session just a wrapper for mobwrite or does
+     * it contain the details of the currently edited file?
+     */
+    startSession: function(project, path, onSuccess, onFailure) {
+        // Stop any existing mobwrite session
+        this.stopSession();
+
         this.project = project;
         this.path = path;
 
-        if (typeof mobwrite !== "undefined") mobwrite.share(this); // was causing an error!
+        if (mobwrite) {
+            this.currentState = this.mobwriteState.starting;
+            mobwrite.share(this);
 
-        if (dojo.isFunction(onSuccess)) onSuccess({
-            name: path,
-            timestamp: new Date().getTime()
-        });
+            // Wrap up the onSuccess to clear up after itself
+            // TODO: Mobwrite could still fail to load and we would not call
+            // onFailure, so we should hook into mobwrite somewhere and push
+            // the notification to here. We will need to reset both callbacks
+            // when either of them are called
+            if (dojo.isFunction(onSuccess)) {
+                this._onSuccess = function() {
+                    onSuccess({
+                        name: path,
+                        timestamp: new Date().getTime()
+                    });
+                    this._onSuccess = null;
+                    this.currentState = this.mobwriteState.running;
+                };
+            }
+        } else {
+            onFailure({ responseText:"Mobwrite is missing" });
+        }
     },
 
-    reportCollaborators: function(usernames) {
-        var contents = "";
-        dojo.forEach(usernames, function(username) {
-            contents += "<div class='collab_person'>";
-            contents += "  <div class='collab_icon'></div>";
-            contents += "  <div class='collab_name'>" + username + "</div>";
-            contents += "  <div class='collab_description'>Editing</div>";
-            contents += "</div>";
-        });
-        dojo.byId("collab_list").innerHTML = contents;
-    },
-
+    /**
+     * Stop mobwrite working on a file and empty the currently edited document
+     */
     stopSession: function() {
+        // TODO: Something better if we're told to startup twice in a row
+        if (this.currentState == this.mobwriteState.starting) {
+            throw new Error("mobwrite is starting up");
+        }
+
+        if (this.currentState == this.mobwriteState.running) {
+            if (mobwrite) {
+                mobwrite.unshare(this);
+            }
+            // TODO: Should this be set asynchronously when unshare() completes?
+            this.currentState = this.mobwriteState.stopped;
+        }
+
+        this.editor.model.insertDocument("");
+
         this.project = undefined;
         this.path = undefined;
     },
 
+    /**
+     * Update the social bar to show the current collaborators.
+     * TODO: Remove me as a collaborator
+     */
+    reportCollaborators: function(userEntries) {
+        var collabList = dojo.byId("collab_list");
+        var self = this;
+
+        dojo.empty(collabList);
+        dojo.forEach(userEntries, function(userEntry) {
+            var parts = userEntry.split(":");
+            var username = parts[0];
+            var address = parts[1];
+            var id = parts[2];
+            parent = dojo.create("div", { className:'collab_person' }, collabList);
+
+            dojo.create("div", { className:'collab_icon' }, parent);
+            var extra = (self.username == username) ? " <small>(You)</small>" : "";
+            dojo.create("div", {
+                className: 'collab_name',
+                innerHTML: username + extra
+            }, parent);
+
+            extra = (mobwrite.syncUsername == id) ? "This window" : address;
+            dojo.create("div", {
+                className: 'collab_description',
+                innerHTML: extra
+            }, parent);
+        });
+    },
+
+    /**
+     * Get a textual report on what we are working on
+     * TODO: What happens when project == null. Should that ever happen?
+     */
     getStatus: function() {
         var file = this.path || 'a new scratch file';
         return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
     },
 
+    /**
+     * Set the current project.
+     * TODO: I think we should probably get rid of anywhere this is called
+     * because it implies being able to set the project separately from the
+     * file being edited.
+     * TODO: Plus, what's wrong with session.project = "foo"?
+     */
     setProject: function(project) {
         this.project = project;
+    },
+
+    /**
+     * Notification used by mobwrite to announce an update.
+     * Used by startSession to detect when it is safe to fire onSuccess
+     */
+    fireUpdate: function() {
+        if (this._onSuccess) {
+            this._onSuccess();
+        }
     }
 });
