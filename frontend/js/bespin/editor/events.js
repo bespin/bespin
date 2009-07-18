@@ -333,7 +333,7 @@ dojo.declare("bespin.editor.Events", null, {
         //
         // escape key hit, so clear the find
         bespin.subscribe("ui:escape", function(event) {
-            if (editor.ui.searchString) {
+            if (editor.ui.searchString && !event.keepSearchUp) {
                 editor.ui.setSearchString(false);
                 // commented out because this bit of UI does not exist right now
                 // dojo.byId('searchresult').style.display = 'none';
