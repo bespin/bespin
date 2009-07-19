@@ -1,7 +1,7 @@
-/**
+dojo.provide("bespin.mobwrite.core");/**
  * MobWrite - Real-time Synchronization and Collaboration Service
  *
- * Copyright 2006 Neil Fraser
+ * Copyright 2006 Google Inc.
  * http://code.google.com/p/google-mobwrite/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@
  * @author fraser@google.com (Neil Fraser)
  */
 
-dojo.provide("bespin.mobwrite.core");
 
 /**
  * Singleton class containing all MobWrite code.
@@ -41,7 +40,7 @@ mobwrite.syncGateway = '/mobwrite/';
  * Max size of remote JSON-P gets.
  * @type {number}
  */
-mobwrite.get_maxchars = 200;
+mobwrite.get_maxchars = 1000;
 
 
 /**
@@ -129,15 +128,37 @@ mobwrite.maxSyncInterval = 10000;
  * This value is modified later as traffic rates are established.
  * @type {number}
  */
-mobwrite.syncInterval = 1000;
+mobwrite.syncInterval = 2000;
 
 
 /**
- * Track whether something changed client-side or server-side in each sync.
+ * Optional prefix to automatically add to all IDs.
+ * @type {string}
+ */
+mobwrite.idPrefix = '';
+
+
+/**
+ * Flag to nullify all shared elements and terminate.
+ * @type {boolean}
+ */
+mobwrite.nullifyAll = false;
+
+
+/**
+ * Track whether something changed client-side in each sync.
  * @type {boolean}
  * @private
  */
-mobwrite.syncChange_ = false;
+mobwrite.clientChange_ = false;
+
+
+/**
+ * Track whether something changed server-side in each sync.
+ * @type {boolean}
+ * @private
+ */
+mobwrite.serverChange_ = false;
 
 
 /**
@@ -159,7 +180,8 @@ mobwrite.uniqueId = function() {
   var soup = 'abcdefghijklmnopqrstuvwxyz';
   var id = soup.charAt(Math.random() * soup.length);
   // Subsequent characters may include these.
-  soup += '0123456789-_:.';
+  // Mozilla: Removed ':' because we want to use it as a separator
+  soup += '0123456789-_.';
   for (var x = 1; x < 8; x++) {
     id += soup.charAt(Math.random() * soup.length);
   }
@@ -190,7 +212,7 @@ mobwrite.shared = {};
 /**
  * Array of registered handlers for sharing types.
  * Modules add their share functions to this list.
- * @type {Array<Function>}
+ * @type {Array.<Function>}
  */
 mobwrite.shareHandlers = [];
 
@@ -204,10 +226,11 @@ mobwrite.shareObj = function(id) {
   if (id) {
     this.file = id;
     this.dmp = new diff_match_patch();
+    this.dmp.Diff_Timeout = 0.5;
     // List of unacknowledged edits sent to the server.
     this.editStack = [];
     if (mobwrite.debug) {
-      console.info('Creating shareObj: "' + id + '"');
+      window.console.info('Creating shareObj: "' + id + '"');
     }
   }
 };
@@ -272,11 +295,11 @@ mobwrite.shareObj.prototype.setClientText = function(text) {
 
 /**
  * Modify the user's plaintext by applying a series of patches against it.
- * @param {Array<patch_obj>} patches Array of Patch objects
+ * @param {Array.<patch_obj>} patches Array of Patch objects
  */
 mobwrite.shareObj.prototype.patchClientText = function(patches) {
   var oldClientText = this.getClientText();
-  result = this.dmp.patch_apply(patches, oldClientText);
+  var result = this.dmp.patch_apply(patches, oldClientText);
   // Set the new text only if there is a change to be made.
   if (oldClientText != result[0]) {
     // The following will probably destroy any cursor or selection.
@@ -312,6 +335,16 @@ mobwrite.shareObj.prototype.fireChange = function(target) {
 
 
 /**
+ * Return the command to nullify this field.  Also unshares this field.
+ * @return {string} Commands to be sent to the server.
+ */
+mobwrite.shareObj.prototype.nullify = function() {
+  mobwrite.unshare(this.file);
+  return 'N:' + encodeURI(mobwrite.idPrefix + this.file) + '\n';
+};
+
+
+/**
  * Asks the shareObj to synchronize.  Computes client-made changes since
  * previous postback.  Return '' to skip this synchronization.
  * @return {string} Commands to be sent to the server.
@@ -326,16 +359,20 @@ mobwrite.shareObj.prototype.syncText = function() {
       this.dmp.diff_cleanupSemantic(diffs);
       this.dmp.diff_cleanupEfficiency(diffs);
     }
-    this.onSentDiff(diffs);
-    this.shadowText = clientText;
-    var action = (this.mergeChanges ? 'd:' : 'D:') + this.clientVersion + ':' +
-                 this.dmp.diff_toDelta(diffs);
-    if (diffs.length != 1 || diffs[0][0] != DIFF_EQUAL) {
-      mobwrite.syncChange_ = true;
+    var changed = diffs.length != 1 || diffs[0][0] != DIFF_EQUAL;
+    if (changed) {
+      mobwrite.clientChange_ = true;
+      this.shadowText = clientText;
     }
-    // Append the action to the edit stack.
-    this.editStack.push([this.clientVersion, action]);
-    this.clientVersion++;
+    // Don't bother appending a no-change diff onto the stack if the stack
+    // already contains something.
+    if (changed || !this.editStack.length) {
+      var action = (this.mergeChanges ? 'd:' : 'D:') + this.clientVersion +
+          ':' + this.dmp.diff_toDelta(diffs);
+      this.editStack.push([this.clientVersion, action]);
+      this.clientVersion++;
+      this.onSentDiff(diffs);
+    }
   } else {
     // The last delta postback from the server to this shareObj didn't match.
     // Send a full text dump to get back in sync. This will result in any
@@ -352,7 +389,8 @@ mobwrite.shareObj.prototype.syncText = function() {
   }
 
   // Create the output starting with the file statement, followed by the edits.
-  var data = 'F:' + this.serverVersion + ':' + encodeURI(this.file) + '\n';
+  var data = 'F:' + this.serverVersion + ':' +
+      encodeURI(mobwrite.idPrefix + this.file) + '\n';
   for (var x = 0; x < this.editStack.length; x++) {
     data += this.editStack[x][1] + '\n';
   }
@@ -366,22 +404,44 @@ mobwrite.shareObj.prototype.syncText = function() {
  * @private
  */
 mobwrite.syncRun1_ = function() {
-  // Initialize syncChange_, to be checked at the end of syncRun2_.
-  mobwrite.syncChange_ = false;
+  // Initialize clientChange_, to be checked at the end of syncRun2_.
+  mobwrite.clientChange_ = false;
   var data = [];
   data[0] = 'u:' + mobwrite.syncUsername + '\n';
+  var empty = true;
   // Ask every shared object for their deltas.
-  for (x in mobwrite.shared) {
-    data.push(mobwrite.shared[x].syncText());
+  for (var x in mobwrite.shared) {
+    if (mobwrite.shared.hasOwnProperty(x)) {
+      if (mobwrite.nullifyAll) {
+        data.push(mobwrite.shared[x].nullify());
+      } else {
+        data.push(mobwrite.shared[x].syncText());
+      }
+      empty = false;
+    }
+  }
+  if (empty) {
+    // No sync objects.
+    if (mobwrite.debug) {
+      window.console.info('MobWrite task stopped.');
+    }
+    return;
   }
   if (data.length == 1) {
-    // No sync objects.
-    return;
+    // No sync data.
+
+    // Mozilla: We got rid of an earlier kill on debug mode when it was
+    // (incorrectly) assumed that the window was closing, so we check for
+    // console existence before we log
+    if (mobwrite.debug && typeof console == 'object') {
+      window.console.info('All objects silent; null sync.');
+    }
+    return mobwrite.syncRun2_('\n\n');
   }
 
   var remote = (mobwrite.syncGateway.indexOf('://') != -1);
   if (mobwrite.debug) {
-    console.info('TO server:\n' + data.join(''));
+    window.console.info('TO server:\n' + data.join(''));
   }
   // Add terminating blank line.
   data.push('\n');
@@ -454,7 +514,7 @@ mobwrite.callback = function(text) {
     // server.  Reschedule the watchdog.
     window.clearTimeout(mobwrite.syncKillPid_);
     mobwrite.syncKillPid_ =
-      window.setTimeout(mobwrite.syncKill_, mobwrite.timeoutInterval);
+        window.setTimeout(mobwrite.syncKill_, mobwrite.timeoutInterval);
   }
 };
 
@@ -464,8 +524,10 @@ mobwrite.callback = function(text) {
  * @private
  */
 mobwrite.syncRun2_ = function(text) {
+  // Initialize serverChange_, to be checked at the end of syncRun2_.
+  mobwrite.serverChange_ = false;
   if (mobwrite.debug) {
-    console.info('FROM server:\n' + text);
+    window.console.info('FROM server:\n' + text);
   }
   // Opera doesn't know how to decode char 0. (fixed in Opera 9.63)
   text = text.replace(/%00/g, '\0');
@@ -473,26 +535,27 @@ mobwrite.syncRun2_ = function(text) {
   if (text.length < 2 || text.substring(text.length - 2) != '\n\n') {
     text = '';
     if (mobwrite.error) {
-      console.info('Truncated data.  Abort.');
+      window.console.info('Truncated data.  Abort.');
     }
   }
   var lines = text.split('\n');
   var file = null;
   var clientVersion = null;
-  for (var x in lines) {
-    if (!lines[x]) {
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line) {
       // Terminate on blank line.
       break;
     }
     // Divide each line into 'N:value' pairs.
-    if (lines[x].charAt(1) != ':') {
+    if (line.charAt(1) != ':') {
       if (mobwrite.debug) {
-        console.error('Unparsable line: ' + lines[x]);
+        window.console.error('Unparsable line: ' + line);
       }
       continue;
     }
-    var name = lines[x].charAt(0);
-    var value = lines[x].substring(2);
+    var name = line.charAt(0);
+    var value = line.substring(2);
 
     // Parse out a version number for file, delta or raw.
     var version;
@@ -500,14 +563,14 @@ mobwrite.syncRun2_ = function(text) {
       var div = value.indexOf(':');
       if (!div) {
         if (mobwrite.debug) {
-          console.error('No version number: ' + lines[x]);
+          window.console.error('No version number: ' + line);
         }
         continue;
       }
       version = parseInt(value.substring(0, div), 10);
       if (isNaN(version)) {
         if (mobwrite.debug) {
-          console.error('NaN version number: ' + lines[x]);
+          window.console.error('NaN version number: ' + line);
         }
         continue;
       }
@@ -515,6 +578,18 @@ mobwrite.syncRun2_ = function(text) {
     }
     if (name == 'F' || name == 'f') {
       // FILE indicates which shared object following delta/raw applies to.
+      if (value.substring(0, mobwrite.idPrefix.length) == mobwrite.idPrefix) {
+        // Trim off the ID prefix.
+        value = value.substring(mobwrite.idPrefix.length);
+      } else {
+        // This file does not have our ID prefix.
+        file = null;
+        if (mobwrite.debug) {
+          window.console.error('File does not have "' + mobwrite.idPrefix +
+              '" prefix: ' + value);
+        }
+        continue;
+      }
       if (mobwrite.shared.hasOwnProperty(value)) {
         file = mobwrite.shared[value];
         file.deltaOk = true;
@@ -531,6 +606,9 @@ mobwrite.syncRun2_ = function(text) {
       } else {
         // This file does not map to a currently shared object.
         file = null;
+        if (mobwrite.debug) {
+          window.console.error('Unknown file: ' + value);
+        }
       }
     } else if (name == 'R' || name == 'r') {
       // The server reports it was unable to integrate the previous delta.
@@ -544,7 +622,7 @@ mobwrite.syncRun2_ = function(text) {
           file.setClientText(file.shadowText);
         }
         // Server-side activity.
-        mobwrite.syncChange_ = true;
+        mobwrite.serverChange_ = true;
       }
     } else if (name == 'D' || name == 'd') {
       // The server offers a compressed delta of changes to be applied.
@@ -553,20 +631,20 @@ mobwrite.syncRun2_ = function(text) {
           // Can't apply a delta on a mismatched shadow version.
           file.deltaOk = false;
           if (mobwrite.debug) {
-            console.error('Client version number mismatch.\n' +
+            window.console.error('Client version number mismatch.\n' +
                 'Expected: ' + file.clientVersion + ' Got: ' + clientVersion);
           }
         } else if (version > file.serverVersion) {
           // Server has a version in the future?
           file.deltaOk = false;
           if (mobwrite.debug) {
-            console.error('Server version in future.\n' +
+            window.console.error('Server version in future.\n' +
                 'Expected: ' + file.serverVersion + ' Got: ' + version);
           }
         } else if (version < file.serverVersion) {
           // We've already seen this diff.
           if (mobwrite.debug) {
-            console.warn('Server version in past.\n' +
+            window.console.warn('Server version in past.\n' +
                 'Expected: ' + file.serverVersion + ' Got: ' + version);
           }
         } else {
@@ -585,7 +663,7 @@ mobwrite.syncRun2_ = function(text) {
             // Do the next sync soon because the user will lose any changes.
             mobwrite.syncInterval = 0;
             if (mobwrite.debug) {
-              console.error('Delta mismatch.\n' + encodeURI(file.shadowText));
+              window.console.error('Delta mismatch.\n' + encodeURI(file.shadowText));
             }
           }
           if (diffs && (diffs.length != 1 || diffs[0][0] != DIFF_EQUAL)) {
@@ -604,7 +682,7 @@ mobwrite.syncRun2_ = function(text) {
               file.patchClientText(patches);
             }
             // Server-side activity.
-            mobwrite.syncChange_ = true;
+            mobwrite.serverChange_ = true;
           }
         }
       }
@@ -614,18 +692,8 @@ mobwrite.syncRun2_ = function(text) {
     }
   }
 
-  if (mobwrite.syncChange_) {
-    // Activity (client-side or server-side).  Cut the ping interval.
-    mobwrite.syncInterval /= 2;
-  } else {
-    // Let the ping interval creep up.
-    mobwrite.syncInterval += 500;
-  }
-  // Keep the syncs constrained between 1 and 10 seconds.
-  mobwrite.syncInterval =
-      Math.max(mobwrite.minSyncInterval, mobwrite.syncInterval);
-  mobwrite.syncInterval =
-      Math.min(mobwrite.maxSyncInterval, mobwrite.syncInterval);
+  mobwrite.computeSyncInterval_();
+
   // Ensure that there is only one sync task.
   window.clearTimeout(mobwrite.syncRunPid_);
   // Schedule the next sync.
@@ -634,6 +702,40 @@ mobwrite.syncRun2_ = function(text) {
   // Terminate the watchdog task, everything's ok.
   window.clearTimeout(mobwrite.syncKillPid_);
   mobwrite.syncKillPid_ = null;
+};
+
+
+/**
+ * Compute how long to wait until next synchronization.
+ * @private
+ */
+mobwrite.computeSyncInterval_ = function() {
+  var range = mobwrite.maxSyncInterval - mobwrite.minSyncInterval;
+  if (mobwrite.clientChange_) {
+    // Client-side activity.
+    // Cut the sync interval by 40% of the min-max range.
+    // mobwrite.syncInterval -= range * 0.4;
+    // Mozilla: In the short term, when the user types we want the sync interval
+    // to drop to the minimum very quickly, so things start to look responsive
+    // very quickly. It's possible that the delayed wake-up is better, but in
+    // short term, first-impressions etc.
+    mobwrite.syncInterval = mobwrite.minSyncInterval;
+  }
+  if (mobwrite.serverChange_) {
+    // Server-side activity.
+    // Cut the sync interval by 20% of the min-max range.
+    mobwrite.syncInterval -= range * 0.2;
+  }
+  if (!mobwrite.clientChange_ && !mobwrite.serverChange_) {
+    // No activity.
+    // Let the sync interval creep up by 10% of the min-max range.
+    mobwrite.syncInterval += range * 0.1;
+  }
+  // Keep the sync interval constrained between min and max.
+  mobwrite.syncInterval =
+      Math.max(mobwrite.minSyncInterval, mobwrite.syncInterval);
+  mobwrite.syncInterval =
+      Math.min(mobwrite.maxSyncInterval, mobwrite.syncInterval);
 };
 
 
@@ -649,7 +751,7 @@ mobwrite.syncKill_ = function() {
     mobwrite.syncAjaxObj_ = null;
   }
   if (mobwrite.debug) {
-    console.warn('Connection timeout.');
+    window.console.warn('Connection timeout.');
   }
   window.clearTimeout(mobwrite.syncRunPid_);
   // Initiate a new sync right now.
@@ -682,7 +784,7 @@ mobwrite.syncLoadAjax_ = function(url, post, callback) {
       try {
         req = new ActiveXObject('Microsoft.XMLHTTP');
       } catch(e) {
-        req = null;
+      	req = null;
       }
     }
   }
@@ -692,8 +794,7 @@ mobwrite.syncLoadAjax_ = function(url, post, callback) {
     req.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
 
     // CSRF protection as defined by Bespin
-    var token = bespin.get("server").token;
-    req.setRequestHeader("Domain-Token", token);
+    bespin.get("server").protectXhrAgainstCsrf(req);
 
     req.send(post);
   }
@@ -721,7 +822,7 @@ mobwrite.syncCheckAjax_ = function() {
       mobwrite.syncRun2_(text);
     } else {
       if (mobwrite.debug) {
-        console.warn('Connection error code: ' + mobwrite.syncAjaxObj_.status);
+        window.console.warn('Connection error code: ' + mobwrite.syncAjaxObj_.status);
       }
       mobwrite.syncAjaxObj_ = null;
     }
@@ -735,6 +836,11 @@ mobwrite.syncCheckAjax_ = function() {
  */
 mobwrite.unload_ = function() {
   if (!mobwrite.syncKillPid_) {
+    // Turn off debug mode since the console disappears on page unload before
+    // this code does.
+    // Mozilla: commented out. We might not be closing the window so we don't
+    // want to kill the debug. We fix later on
+    // mobwrite.debug = false;
     mobwrite.syncRun1_();
   }
   // By the time the callback runs mobwrite.syncRun2_, this page will probably
@@ -764,11 +870,75 @@ mobwrite.share = function(var_args) {
       result = mobwrite.shareHandlers[x].call(mobwrite, el);
     }
     if (result && result.file) {
+      if (result.file in mobwrite.shared) {
+        // Already exists.
+        // Don't replace, since we don't want to lose state.
+        if (mobwrite.debug) {
+          window.console.warn('Ignoring duplicate share on "' + el + '".');
+        }
+        continue;
+      }
       mobwrite.shared[result.file] = result;
 
-      // Startup the main task if it doesn't aleady exist.
+      // Startup the main task if it doesn't already exist.
       if (mobwrite.syncRunPid_ == null) {
         mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
+        if (mobwrite.debug) {
+          window.console.info('MobWrite task started.');
+        }
+      } else {
+        window.clearTimeout(mobwrite.syncRunPid_);
+        // Initiate a new sync right now.
+        mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
+        if (mobwrite.debug) {
+          window.console.info('MobWrite sync brought forward in time.');
+        }
+      }
+    }
+  }
+};
+
+
+/**
+ * Stop sharing the specified object(s).
+ * Does not handle forms recursively.
+ * @param {*} var_args Object(s) or ID(s) of object(s) to unshare
+ */
+mobwrite.unshare = function(var_args) {
+  for (var i = 0; i < arguments.length; i++) {
+    var el = arguments[i];
+    if (typeof el == 'object' && 'id' in el) {
+      el = el.id;
+    }
+    if (typeof el == 'string') {
+      if (mobwrite.shared.hasOwnProperty(el)) {
+        delete mobwrite.shared[el];
+        if (mobwrite.debug) {
+          window.console.info('Unshared: ', el);
+        }
+      }
+    } else {
+      // Ask every registered handler if it knows what to do with this object.
+      var result = null;
+      for (var x = 0; x < mobwrite.shareHandlers.length && !result; x++) {
+        result = mobwrite.shareHandlers[x].call(mobwrite, el);
+      }
+
+      if (result && result.file) {
+        if (mobwrite.shared.hasOwnProperty(result.file)) {
+          delete mobwrite.shared[result.file];
+          if (mobwrite.debug) {
+            window.console.info('Unshared: ', el);
+          }
+        } else {
+          if (mobwrite.debug) {
+            window.console.warn('Ignoring: ', el, '. Not currently shared');
+          }
+        }
+      } else {
+        if (mobwrite.debug) {
+          window.console.warn('Ignoring: ', el, ' was expecting id string or something with shareHandler');
+        }
       }
     }
   }

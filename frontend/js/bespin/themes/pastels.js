@@ -34,6 +34,7 @@ bespin.themes.pastels = {
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     lineMarkerErrorColor: "#CC4444",
     lineMarkerWarningColor: "#B8860B",
+    lineMarkerMessageColor: "green",
     zebraStripeColor: "#221e1e",
     highlightCurrentLineColor: "#342e2e",
     editorTextColor: "rgb(230, 230, 230)",

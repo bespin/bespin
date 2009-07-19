@@ -92,6 +92,18 @@ HorizontalTree Label.odd, HorizontalTree Label.oddmore {
     border-bottom: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */ 
 }
 
+Label.fileActions {
+    background-color: rgb(37, 34, 33);
+}
+
+ActionIcon {
+    background-color: rgb(37, 34, 33);
+    border-top: 1px solid rgb(46,42,41);
+    border-bottom: 1px solid rgb(39,21,28);
+    border-left: 1px solid rgb(52,49,48);
+    border-right: 1px solid rgb(28,25,24);
+}
+
 /* Project Label Area */
 
 Label.statusProject, Label.statusFile {
@@ -103,3 +115,4 @@ Label.statusSymbol {
    color: gray;
    font: 10pt Calibri, Arial, sans-serif;
 }
+

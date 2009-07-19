@@ -33,9 +33,10 @@ dojo.declare("bespin.editor.Events", null, {
     constructor: function(editor) {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             // If collaboration is turned on, we won't know the file contents
-            var content = event.file.content || "";
-            editor.model.insertDocument(content);
-            editor.cursorManager.moveCursor({ row: 0, col: 0 });
+            if (event.file.content) {
+                editor.model.insertDocument(event.file.content);
+                editor.cursorManager.moveCursor({ row: 0, col: 0 });
+            }
             editor.setFocus(true);
         });
 
@@ -63,70 +64,77 @@ dojo.declare("bespin.editor.Events", null, {
         // * If the file is loaded send an opensuccess event
         // * If the file fails to load, send an openfail event
         bespin.subscribe("editor:openfile", function(event) {
-            var filename = event.filename;
             var editSession = bespin.get('editSession');
-            var files = bespin.get('files');
 
+            var filename = event.filename;
             var project  = event.project || editSession.project;
 
+            // Short circuit if we are already open at the requested file
             if (!(event.reload) && editSession.checkSameFile(project, filename)) {
                 if (event.line) {
-                    // Jump to the desired line.
                     bespin.get('commandLine').executeCommand('goto ' + event.line, true);
                 }
-                return; // short circuit
-            }
-
-            // if we're changing projects, make sure the new one is set
-            if (project != editSession.project) {
-                editSession.project = project;
+                return;
             }
 
             bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
-            files.collaborateOnFile(project, filename, function(file) {
+            if (project != editSession.project) {
+                editSession.setProject(project);
+            }
+
+            var onFailure = function() {
+                bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
+            };
+
+            var onSuccess = function(file) {
+                // TODO: We shouldn't need to to this but originally there was
+                // no onFailure, and this is how failure was communicated
                 if (!file) {
-                    bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
-                } else {
-                    bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
-                    if (event.line) {
-                        // Jump to the desired line.
-                        bespin.get('commandline').executeCommand('goto ' + event.line, true);
-                    }
-
-                    var settings = bespin.get("settings");
-
-                    // Get the array of lastused files
-                    var lastUsed = settings.getObject("_lastused");
-                    if (!lastUsed) {
-                        lastUsed = [];
-                    }
-
-                    // We want to add this to the top
-                    var newItem = {
-                        project:project,
-                        filename:filename
-                    };
-
-                    // Remove newItem from down in the list and place at top
-                    var cleanLastUsed = [];
-                    dojo.forEach(lastUsed, function(item) {
-                        if (item.project != newItem.project || item.filename != newItem.filename) {
-                            cleanLastUsed.unshift(item);
-                        }
-                    });
-                    cleanLastUsed.unshift(newItem);
-                    lastUsed = cleanLastUsed;
-
-                    // Trim to 10 members
-                    if (lastUsed.length > 10) {
-                        lastUsed = lastUsed.slice(0, 10);
-                    }
-
-                    // Maybe this should have a _ prefix: but then it does not persist??
-                    settings.setObject("_lastused", lastUsed);
+                    onFailure();
+                    return;
                 }
-            });
+
+                bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+                if (event.line) {
+                    // Jump to the desired line.
+                    bespin.get('commandline').executeCommand('goto ' + event.line, true);
+                }
+
+                var settings = bespin.get("settings");
+
+                // Get the array of lastused files
+                var lastUsed = settings.getObject("_lastused");
+                if (!lastUsed) {
+                    lastUsed = [];
+                }
+
+                // We want to add this to the top
+                var newItem = {
+                    project:project,
+                    filename:filename
+                };
+
+                // Remove newItem from down in the list and place at top
+                var cleanLastUsed = [];
+                dojo.forEach(lastUsed, function(item) {
+                    if (item.project != newItem.project || item.filename != newItem.filename) {
+                        cleanLastUsed.unshift(item);
+                    }
+                });
+                cleanLastUsed.unshift(newItem);
+                lastUsed = cleanLastUsed;
+
+                // Trim to 10 members
+                if (lastUsed.length > 10) {
+                    lastUsed = lastUsed.slice(0, 10);
+                }
+
+                // Maybe this should have a _ prefix: but then it does not persist??
+                settings.setObject("_lastused", lastUsed);
+            };
+
+            bespin.get('files').collaborateOnFile(project, filename, onSuccess, onFailure);
         });
 
         // ** {{{ Event: editor:forceopenfile }}} **
@@ -221,7 +229,9 @@ dojo.declare("bespin.editor.Events", null, {
 
             document.title = filename + ' - editing with Bespin';
 
-            bespin.get("commandLine").showHint('Saved file: ' + file.name);
+            bespin.getComponent("commandLine", function(cli) {
+                cli.showHint('Saved file: ' + file.name);
+            });
 
             bespin.publish("editor:clean");
         });

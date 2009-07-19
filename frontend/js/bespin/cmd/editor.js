@@ -34,6 +34,7 @@ bespin.command.store.addCommand({
     completeText: 'type in a string to search',
     execute: function(instruction, str) {
         bespin.get('actions').startSearch(str, 'commandLine');
+        bespin.publish("ui:escape");
     }
 });
 
@@ -67,6 +68,7 @@ bespin.command.store.addCommand({
                     bespin.publish("editor:moveandcenter", {
                         row: linenum
                     });
+                    bespin.publish("ui:escape", {});
                 }
             }
         }

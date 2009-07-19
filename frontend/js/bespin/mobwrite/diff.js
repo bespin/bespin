@@ -1,4 +1,4 @@
-/**
+dojo.provide("bespin.mobwrite.diff");/**
  * Diff Match and Patch
  *
  * Copyright 2006 Google Inc.
@@ -22,8 +22,6 @@
  * Applies the patch onto another text, allowing for errors.
  * @author fraser@google.com (Neil Fraser)
  */
-
-dojo.provide("bespin.mobwrite.diff");
 
 /**
  * Class containing the diff, match and patch methods.
@@ -802,7 +800,7 @@ diff_match_patch.prototype.diff_cleanupSemantic = function(diffs) {
  * @param {Array.<Array.<*>>} diffs Array of diff tuples.
  */
 diff_match_patch.prototype.diff_cleanupSemanticLossless = function(diffs) {
-  // Define some regex patterns for matching boundaries. 
+  // Define some regex patterns for matching boundaries.
   var punctuation = /[^a-zA-Z0-9]/;
   var whitespace = /\s/;
   var linebreak = /[\r\n]/;
@@ -1222,6 +1220,39 @@ diff_match_patch.prototype.diff_text2 = function(diffs) {
 
 
 /**
+ * Compute the Levenshtein distance; the number of inserted, deleted or
+ * substituted characters.
+ * @param {Array.<Array.<*>>} diffs Array of diff tuples.
+ * @return {number} Number of changes.
+ */
+diff_match_patch.prototype.diff_levenshtein = function(diffs) {
+  var levenshtein = 0;
+  var insertions = 0;
+  var deletions = 0;
+  for (var x = 0; x < diffs.length; x++) {
+    var op = diffs[x][0];
+    var data = diffs[x][1];
+    switch (op) {
+      case DIFF_INSERT:
+        insertions += data.length;
+        break;
+      case DIFF_DELETE:
+        deletions += data.length;
+        break;
+      case DIFF_EQUAL:
+        // A deletion and an insertion is one substitution.
+        levenshtein += Math.max(insertions, deletions);
+        insertions = 0;
+        deletions = 0;
+        break;
+    }
+  }
+  levenshtein += Math.max(insertions, deletions);
+  return levenshtein;
+};
+
+
+/**
  * Crush the diff into an encoded string which describes the operations
  * required to transform text1 into text2.
  * E.g. =3\t-2\t+ing  -> Keep 3 chars, delete 2 chars, insert 'ing'.
@@ -1316,7 +1347,7 @@ diff_match_patch.prototype.diff_fromDelta = function(text1, delta) {
  * @param {string} text The text to search.
  * @param {string} pattern The pattern to search for.
  * @param {number} loc The location to search around.
- * @return {number?} Best match index or null.
+ * @return {number} Best match index or -1.
  */
 diff_match_patch.prototype.match_main = function(text, pattern, loc) {
   loc = Math.max(0, Math.min(loc, text.length - pattern.length));
@@ -1325,7 +1356,7 @@ diff_match_patch.prototype.match_main = function(text, pattern, loc) {
     return 0;
   } else if (text.length === 0) {
     // Nothing to match.
-    return null;
+    return -1;
   } else if (text.substring(loc, loc + pattern.length) == pattern) {
     // Perfect match at the perfect spot!  (Includes case of null pattern)
     return loc;
@@ -1342,7 +1373,7 @@ diff_match_patch.prototype.match_main = function(text, pattern, loc) {
  * @param {string} text The text to search.
  * @param {string} pattern The pattern to search for.
  * @param {number} loc The location to search around.
- * @return {number?} Best match index or null.
+ * @return {number} Best match index or -1.
  * @private
  */
 diff_match_patch.prototype.match_bitap = function(text, pattern, loc) {
@@ -1389,7 +1420,7 @@ diff_match_patch.prototype.match_bitap = function(text, pattern, loc) {
 
   // Initialise the bit arrays.
   var matchmask = 1 << (pattern.length - 1);
-  best_loc = null;
+  best_loc = -1;
 
   var bin_min, bin_mid;
   var bin_max = Math.max(loc + loc, text.length);
@@ -1624,7 +1655,12 @@ diff_match_patch.prototype.patch_make = function(a, opt_b, opt_c) {
             patches.push(patch);
             patch = new patch_obj();
             patchDiffLength = 0;
+            // Unlike Unidiff, our patch lists have a rolling context.
+            // http://code.google.com/p/google-diff-match-patch/wiki/Unidiff
+            // Update prepatch text & pos to reflect the application of the
+            // just completed patch.
             prepatch_text = postpatch_text;
+            char_count1 = char_count2;
           }
         }
         break;
@@ -1704,7 +1740,7 @@ diff_match_patch.prototype.patch_apply = function(patches, text) {
     var expected_loc = patches[x].start2 + delta;
     var text1 = this.diff_text1(patches[x].diffs);
     var start_loc = this.match_main(text, text1, expected_loc);
-    if (start_loc === null) {
+    if (start_loc == -1) {
       // No match found.  :(
       results[x] = false;
     } else {

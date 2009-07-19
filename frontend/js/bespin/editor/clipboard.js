@@ -92,8 +92,8 @@ dojo.declare("bespin.editor.clipboard.DOMEvents", null, {
         };
         var editorHasFocus = function() {
             return bespin.get('editor').focus;
-        }
-        
+        };
+
         var allowAction = false;
 
         // Copy
@@ -231,7 +231,7 @@ dojo.declare("bespin.editor.clipboard.HiddenWorld", null, {
 
         this.keyDown = dojo.connect(editor.opts.actsAsComponent ? editor.canvas : document, "keydown", function(e) {
             if (!bespin.get('editor').focus) return;
-            
+
             if ((bespin.util.isMac() && e.metaKey) || e.ctrlKey) {
                 // Copy
                 if (e.keyCode == 67 /*c*/) {

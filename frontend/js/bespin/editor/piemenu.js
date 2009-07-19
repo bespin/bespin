@@ -22,11 +22,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.piemenu");
-
-dojo.require("dojo.fx.easing");
-dojo.require("bespin.editor.filepopup");
-
 /**
  * <p>Pie Menu Handling
  *
@@ -39,17 +34,25 @@ dojo.require("bespin.editor.filepopup");
  *   (Also consider rotational and translational symmetry?)
  * </ul>
  */
-dojo.declare("bespin.editor.piemenu.Window", null, {
+exports.Window = Class.define({
+members:
+{
     /**
      * Construct a piemenu window
      */
-    constructor: function() {
+    init: function() {
+        this.nodes = [];
+        this.subscriptions = [];
+        this.connections = [];
+        
         this.editor = bespin.get("editor");
 
         // The reference pane takes a while to load so we create it here
         this.refNode = dojo.create("iframe", {
-            style: "display:none"
+            style: "display:none",
+            id: "piemenu_refNode"
         }, dojo.body());
+        this.nodes.push("piemenu_refNode");
 
         this.canvas = dojo.create("canvas", {
             id: "piemenu",
@@ -64,6 +67,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 display: "none"
             }
         }, dojo.body());
+        this.nodes.push("piemenu");
+        
+        
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
 
@@ -73,10 +79,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             slice.img = dojo.create("img", {
                 src: "/images/pie/" + slice.id + ".png",
                 alt: "pie menu border",
-                style: "position:absolute; display:none;"
+                style: "position:absolute; display:none;",
+                id: "piemenu_slice_" + slice.id
             }, dojo.body());
+            this.nodes.push("piemenu_slice_" + slice.id);
             slice.piemenu = this;
-
+            
+            var counter = 0;
+            
             // Load the toolbar images
             dojo.forEach(slice.toolbar, function(button) {
                 button.img = dojo.create("img", {
@@ -90,9 +100,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                         zIndex: 210,
                         verticalAlign: "top",
                         cursor: "pointer"
-                    }
+                    },
+                    id: "piemenu_button_" + counter
                 }, dojo.body());
-            });
+                this.nodes.push("piemenu_button" + counter);
+                counter += 1;
+            }, this);
         }
 
         // When currentSlice is null, we are not visible, there are slices
@@ -106,8 +119,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             this.border[id] = dojo.create("img", {
                 src: "/images/menu/" + id + ".png",
                 alt: "pie menu",
-                style: "position:absolute; display:none;"
+                style: "position:absolute; display:none;",
+                id: "piemenu_border_" + id,
             }, dojo.body());
+            this.nodes.push("piemenu_border_" + id);
         }, this);
 
         // Load the close button image
@@ -115,6 +130,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             src: "/images/closer.png",
             alt: "Close the dialog",
             title: "Close the dialog",
+            id: "piemenu_closer",
             style: {
                 position: "absolute",
                 display: "none",
@@ -123,18 +139,19 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             },
             onclick: dojo.hitch(this, this.hide)
         }, dojo.body());
+        this.nodes.push("piemenu_closer");
 
         var self = this;
 
         // Hide on Escape
-        bespin.subscribe("ui:escape", function(e) {
+        this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
             if (self.visible()) self.hide();
-        });
+        }));
 
-        dojo.connect(window, 'resize', this, this.resize);
+        this.connections.push(dojo.connect(window, 'resize', this, this.resize));
 
         // Show slices properly
-        dojo.connect(this.canvas, 'keydown', function(e) {
+        this.connections.push(dojo.connect(this.canvas, 'keydown', function(e) {
             if (!self.visible()) {
                 // The popup keyboard handling is done in commandline.js. Ug
                 return;
@@ -158,9 +175,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                     return;
                 }
             }
-        });
+        }));
 
-        dojo.connect(this.canvas, 'click', function(e) {
+        this.connections.push(dojo.connect(this.canvas, 'click', function(e) {
             var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
             var x = e.layerX || e.offsetX;
             var y = e.layerY || e.offsetY;
@@ -174,6 +191,20 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 var degrees = self.angle(p.x, p.y);
                 self.show(self.slice(degrees));
             }
+        }));
+    },
+    
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
+        
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
         });
     },
 
@@ -209,21 +240,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_btm",
             title: "Command Line",
             key: bespin.util.keys.Key.DOWN_ARROW,
-            preAnimate: function() {
-                bespin.get("commandLine").focus();
+            show: function() {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("output");
+                });
             },
-            showContents: function(coords) {
-                var left = coords.l;
-                var bottom = this.piemenu.slices.off.img.height - 10;
-                var width = coords.w;
-                var height = coords.h;
-
-                bespin.get("commandLine").showOutput(left, bottom, width, height);
-            },
-            hideContents: function() {
-                bespin.get("commandLine").hideOutput();
-            },
-            toolbar: [
+            tbar: [
                 {
                     icon: "images/slice_aaa.png",
                     alt: "Toggle Font Size",
@@ -238,22 +260,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                         bespin.get("commandLine").toggleHistoryTimeMode();
                     }
                 }
-                /*
-                {
-                    icon: "images/plus.png",
-                    alt: "Expand all the output areas",
-                    onclick: function() {
-                        bespin.get("commandLine").expandAllInstructions();
-                    }
-                },
-                {
-                    icon: "images/minus.png",
-                    alt: "Contract all the output areas",
-                    onclick: function() {
-                        bespin.get("commandLine").contractAllInstructions();
-                    }
-                }
-                */
             ]
         },
 
@@ -264,15 +270,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_top",
             title: "File Browser",
             key: bespin.util.keys.Key.UP_ARROW,
-            filePanel: new bespin.editor.filepopup.MainPanel(),
 
-            showContents: function(coords) {
-                this.filePanel.checkInit();
-                this.filePanel.show(coords);
-            },
-
-            hideContents: function() {
-                this.filePanel.hide();
+            show: function() {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("files");
+                });
             }
         },
 
@@ -283,24 +285,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_lft",
             title: "Reference",
             key: bespin.util.keys.Key.LEFT_ARROW,
-            url: "https://wiki.mozilla.org/Labs/Bespin",
-            showContents: function(coords) {
-                if (this.piemenu.refNode.src != this.piemenu.slices.reference.url) {
-                    this.piemenu.refNode.src = this.piemenu.slices.reference.url;
-                }
-                dojo.style(this.piemenu.refNode, {
-                    left: coords.l + "px",
-                    top: coords.t + "px",
-                    width: coords.w + "px",
-                    height: coords.h + "px",
-                    position: "absolute",
-                    borderWidth: "0",
-                    zIndex: "200",
-                    display: "block"
+            show: function() {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("reference");
                 });
-            },
-            hideContents: function() {
-                dojo.style(this.piemenu.refNode, "display", "none");
             }
         },
 
@@ -311,14 +299,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             id: "active_rt",
             title: "Context",
             key: bespin.util.keys.Key.RIGHT_ARROW,
-            showContents: function(coords) {
-                /*
-                var piemenu = this.piemenu;
-
-                piemenu.ctx.fillStyle = "#bcb9ae";
-                piemenu.ctx.font = "10pt Calibri, Arial, sans-serif";
-                piemenu.ctx.fillText("Work in progress", parseInt(d.cenLeft + 10), parseInt(d.midTop + 10));
-                */
+            show: function(coords) {
+                bespin.getComponent("popup", function(popup) {
+                    popup.show("reference");
+                });
             }
         },
 
@@ -336,7 +320,14 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Show a specific slice, and animate the opening if needed
      */
-    show: function(slice, dontTakeFocus) {
+    show: function(slice, dontTakeFocus, x, y) {
+        if (x != undefined) {
+            console.log("SETTING LAUNCHED AT");
+            this.launchedAt = {x:x, y:y};
+        } else {
+            this.launchedAt = undefined;
+        }
+        
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
@@ -346,9 +337,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // If there is already a slice showing, just show that, and don't
         // bother with any animation
         if (this.visible()) {
-            this.unrenderCurrentSlice();
             this.currentSlice = slice;
-            this.renderCurrentSlice();
+            this.hide(false);
+            this.currentSlice.show();
             return;
         }
 
@@ -369,7 +360,7 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         if (typeof duration == "undefined" || isNaN(duration)) {
             duration = this.settings.showMenuDuration;
         }
-
+        
         dojo.fadeIn({
             node: { style:{} },
             duration: duration,
@@ -390,9 +381,11 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
     /**
      * Begin a hide animation
      */
-    hide: function() {
-        this.unrenderCurrentSlice();
-
+    hide: function(giveEditorFocus) {
+        if (giveEditorFocus == undefined) {
+            giveEditorFocus = true;
+        }
+        
         if (!this.hideAnimation) {
             var duration = parseInt(bespin.get('settings').get('menuhideduration'));
 
@@ -413,7 +406,9 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
                 onEnd: function() {
                     self.canvas.style.display = 'none';
                     self.currentSlice = null;
-                    self.editor.setFocus(true);
+                    if (giveEditorFocus) {
+                        self.editor.setFocus(true);
+                    }
                 }
             });
         }
@@ -467,6 +462,10 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
      * Calculate the top left X and Y coordinates of the pie
      */
     getTopLeftXY: function(width, height) {
+        if (this.launchedAt != undefined) {
+            return {x: this.launchedAt.x - width/2, y: this.launchedAt.y - height/2};
+        }
+        
         return { x: parseInt((this.canvas.width / 2) - (width / 2)),
                  y: parseInt((this.slices.off.img.height - height) / 2) + this.canvas.height - this.slices.off.img.height };
     },
@@ -486,6 +485,12 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
      * Render the pie in some opening/closing state
      */
     renderPie: function(progress) {
+        // when loaded dynamically, this appears to exercise a bug in Safari 4 (fixed in WebKit
+        // nightlies). There may be a workaround. But for now, short circuit.
+        if (th.browser.WebKit) {
+            return;
+        }
+        
         var ctx = this.ctx;
         var off = this.slices.off.img;
 
@@ -528,17 +533,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
 
         var d = this.calculateSlicePositions();
         this.renderPopout(d);
-        this.renderToolbar(d);
-
-        // Fill in the center section
-        var dimensions = {
-            l: d.cenLeft - 5, // The LHS image has 5px of transparent
-            t: d.midTop + this.settings.canvasTop,
-            w: d.cenWidth + 10, // So does the RHS image have 5px
-            h: d.midHeight
-        };
-
-        this.currentSlice.showContents(dimensions);
     },
 
     /**
@@ -577,7 +571,13 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         // Height of the middle row. Assumes all top graphics are same height
         d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
-        d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
+        
+        if (this.launchedAt != undefined) {
+            d.offLeft = this.launchedAt.x - pieWidth/2;
+            d.btmTop = this.launchedAt.y - pieHeight/2 - 15;
+        } else {
+            d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
+        }
 
         return d;
     },
@@ -600,42 +600,6 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Don't draw the menu area for the 'off' slice
-        if (this.currentSlice != this.slices.off) {
-            // Draw top row
-            this.ctx.drawImage(this.border.top_lft, this.settings.leftMargin, this.settings.topMargin);
-            this.ctx.drawImage(this.border.top_mid, d.cenLeft, this.settings.topMargin, d.cenWidth, this.border.top_mid.height);
-            // TODO +4 eh?
-            this.ctx.drawImage(this.border.top_rt, d.rightLeft, this.settings.topMargin + 4);
-
-            // Middle row
-            this.ctx.drawImage(this.border.lft, this.settings.leftMargin, d.midTop, this.border.lft.width, d.midHeight);
-            this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.drawImage(this.border.rt, d.rightLeft, d.midTop, this.border.rt.width, d.midHeight);
-
-            // Draw the middle bit after so it doesn't get overridden
-            // The LHS and RHS both have 5px of inner transparent
-            this.ctx.fillRect(d.cenLeft - 5, d.midTop, d.cenWidth + 10, d.midHeight);
-            //this.ctx.drawImage(this.border.mid, d.cenLeft, d.midTop, d.cenWidth, d.midHeight);
-
-            // Bottom row
-            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
-            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, d.cenWidth, this.border.btm_lftb.height);
-            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
-
-            // Bottom row (old version)
-            /*
-            this.ctx.drawImage(this.border.btm_lft, this.settings.leftMargin, d.btmTop);
-            var lftbWidth = d.offLeft - (this.settings.leftMargin + this.border.btm_lft.width);
-            this.ctx.drawImage(this.border.btm_lftb, d.cenLeft, d.btmTop, lftbWidth, this.border.btm_lftb.height);
-
-            var rtbLeft = d.offLeft + this.slices.off.img.width;
-            var rtbWidth = d.rightLeft - rtbLeft;
-            this.ctx.drawImage(this.border.btm_rtb, rtbLeft, d.btmTop, rtbWidth, this.border.btm_rtb.height);
-            this.ctx.drawImage(this.border.btm_rt, d.rightLeft, d.btmTop);
-            */
-        }
 
         // The pie
         var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;
@@ -732,4 +696,4 @@ dojo.declare("bespin.editor.piemenu.Window", null, {
             return this.slices.commandLine;
         }
     }
-});
+}});

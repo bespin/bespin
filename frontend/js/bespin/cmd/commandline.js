@@ -24,6 +24,8 @@
 
 // This is a plugin
 
+var filepopup = require("bespin/editor/filepopup");
+
 /**
  * When we are completing against some type, we need a place to cache the
  * retrieved values
@@ -43,12 +45,19 @@ members: {
 
     /**
      * Dojo automatically calls superclass constructors. So, if you don't want
-     * the constructor behavior, there's no way out.
+     * the constructor behavior, there's no way out. (Now that this is a
+     * JSTraits Class, this should be reverified).
      * Move to a separate function to allow overriding.
      */
     setup: function(commandLine, store, options) {
+        this.nodes = [];
+        this.connections = [];
+        this.subscriptions = [];
+        
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
+        this.idPrefix = idPrefix;
+        
         var parentElement = options.parentElement || dojo.body();
 
         this.commandLine = dojo.byId(commandLine);
@@ -64,15 +73,30 @@ members: {
             id: idPrefix + "hint",
             style: "display:none; bottom: " + this.styles.bottom + "; left:" + this.styles.left + "; width:500px;"
         }, parentElement);
-        dojo.connect(this.commandHint, "onclick", this, this.hideHint);
+        this.nodes.push(idPrefix + "hint");
+        
+        this.connections.push(dojo.connect(this.commandHint, "onclick", this, this.hideHint));
 
         // Create the div for real command output
+        // TODO move this into the popup
         this.output = dojo.create("div", {
             id: idPrefix + "output",
             style: "display:none;"
         }, parentElement);
-
+        this.nodes.push(idPrefix + "output");
+        
+        // TOOD move this into the popup
+        // The reference pane takes a while to load so we create it here
+        this.refNode = dojo.create("iframe", {
+            style: "display:none",
+            id: "popup_refNode"
+        }, dojo.body());
+        this.nodes.push("popup_refNode");
+        
         this.footer = dojo.byId("footer");
+        
+        // TODO move this into the popup
+        this.filePanel = new filepopup.FilePanel();
 
         if (bespin.get('files')) this.files = bespin.get('files');
         if (bespin.get('settings')) this.settings = bespin.get('settings');
@@ -84,6 +108,20 @@ members: {
         this.connectEvents();
         this.history = new exports.History(this);
         this.hideOutput();
+    },
+    
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
+        
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
+        });
     },
 
     /**
@@ -125,6 +163,10 @@ members: {
         this.hintTimeout = setTimeout(dojo.hitch(this, function() {
             this.hideHint();
         }), 4600);
+
+        // if (window.globalStorage && window.globalStorage[location.hostname].debug) {
+        //     console.log("Hint", html);
+        // }
     },
 
     /**
@@ -138,37 +180,77 @@ members: {
     /**
      * Show the output area in the given display rectangle
      */
-    showOutput: function(left, bottom, width, height) {
+    showOutput: function(panel, coords) {
+        this._savedCoords = coords;
+        var footerHeight = dojo.style(this.footer, "height") + 2;
         dojo.style(this.footer, {
-            left: left + "px",
-            width: (width - 10) + "px",
-            bottom: bottom + "px",
+            left: coords.l + "px",
+            width: (coords.w - 10) + "px",
+            bottom: (coords.b - footerHeight) + "px",
             display: "block"
         });
         this.focus();
 
-        var footerHeight = dojo.style(this.footer, "height") + 2;
-
-        var piemenu = bespin.get("piemenu");
-        if (piemenu && piemenu.visible()) {
-            bottom += footerHeight;
-        }
-
         dojo.style(this.commandHint, {
-            left: left + "px",
-            bottom: bottom + "px",
-            width: width + "px"
+            left: coords.l + "px",
+            bottom: coords.b + "px",
+            width: coords.w + "px"
         });
-
-        dojo.style(this.output, {
-            left: left + "px",
-            bottom: bottom + "px",
-            width: width + "px",
-            height: height + "px",
-            display: "block"
-        });
-
-        this.maxInfoHeight = height;
+        
+        this.showPanel(panel);
+        
+        this.maxInfoHeight = coords.h;
+    },
+    
+    showPanel: function(panel) {
+        var coords = this._savedCoords;
+        
+        if (this.currentPanel) {
+            if (this.currentPanel == panel) {
+                return;
+            }
+            this.hidePanel(panel);
+        }
+        
+        if (panel == "output") {
+            dojo.style(this.output, {
+                left: coords.l + "px",
+                bottom: coords.b + "px",
+                width: coords.w + "px",
+                height: coords.h + "px",
+                display: "block"
+            });
+        } else if (panel == "reference") {
+            var url = "https://wiki.mozilla.org/Labs/Bespin";
+            var refNode = this.refNode;
+            if (refNode.src != url) {
+                refNode.src = url;
+            }
+            dojo.style(refNode, {
+                left: coords.l + "px",
+                top: coords.t + "px",
+                width: coords.w + "px",
+                height: coords.h + "px",
+                position: "absolute",
+                borderWidth: "0",
+                zIndex: "200",
+                display: "block"
+            });
+        } else {
+            this.filePanel.show(coords);
+        }
+        
+        this.currentPanel = panel;
+    },
+    
+    hidePanel: function(panel) {
+        if (this.currentPanel == "output") {
+            dojo.style(this.output, "display", "none");
+        } else if (this.currentPanel == "files") {
+            this.filePanel.hide();
+        } else if (this.currentPanel == "reference") {
+            dojo.style(this.refNode, "display", "none");
+        }
     },
 
     /**
@@ -180,13 +262,17 @@ members: {
             bottom: "0px",
             width: "500px"
         });
-
-        dojo.style(this.output, "display", "none");
+        
+        this.hidePanel(this.currentPanel);
+        
+        this.currentPanel = undefined;
+        
         dojo.style(this.footer, {
             "left": "-10000px",
             "display": "none"
         });
         this.maxInfoHeight = null;
+        
     },
 
     /**
@@ -201,6 +287,14 @@ members: {
             console.trace();
             console.debug("orphan command node:", element);
         }
+    },
+    
+    setCommandText: function(newText) {
+        this.commandLine.value = newText;
+    },
+    
+    appendCommandText: function(moreText) {
+        this.commandLine.value = this.commandLine.value + moreText;
     },
 
     /**
@@ -578,33 +672,39 @@ members: {
      * Handle key bindings and other events for the command line
      */
     connectEvents: function() {
-        dojo.connect(this.commandLine, "onfocus", this, function() {
+        this.connections.push(dojo.connect(this.commandLine, "onfocus", this, function() {
             bespin.publish("cmdline:focus");
             this.inCommandLine = true;
             if (this.promptimg) {
                 this.promptimg.src = 'images/icn_command_on.png';
             }
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onblur", this, function() {
+        this.connections.push(dojo.connect(this.commandLine, "onblur", this, function() {
             this.inCommandLine = false;
             if (this.promptimg) {
                 this.promptimg.src = 'images/icn_command.png';
             }
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onkeyup", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeyup", this, function(e) {
             this._normalizeCommandValue();
             this._findCompletions(e);
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onkeypress", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeypress", this, function(e) {
             var key = bespin.util.keys.Key;
 
-            if (e.keyChar == 'j' && e.ctrlKey) { // send back
-                this.commandLine.blur();
-                bespin.publish("cmdline:blur");
-
+            if (e.keyChar == 'j' && (e.ctrlKey || e.metaKey)) { // send back
+                if (this.currentPanel != "output") {
+                    this.showPanel("output");
+                }
+                dojo.stopEvent(e);
+                return false;
+            } else if (e.keyChar == 'o' && (e.ctrlKey || e.metaKey)) { // send back
+                if (this.currentPanel != "files") {
+                    this.showPanel("files");
+                }
                 dojo.stopEvent(e);
                 return false;
             } else if ((e.keyChar == 'n' && e.ctrlKey) || e.keyCode == key.DOWN_ARROW) {
@@ -644,55 +744,47 @@ members: {
                 dojo.stopEvent(e);
                 return false;
             } else { // pie menu use cases here
-                var piemenu = bespin.get("piemenu");
-                if (piemenu) {
-                    if (e.keyCode == key.ESCAPE) {
-                        // ESCAPE onkeydown fails on Moz, so we need this. Why?
-                        this.hideHint();
-                        piemenu.hide();
-
-                        dojo.stopEvent(e);
-                        return false;
-                    } else if (piemenu.keyRunsMe(e)) {
-                        this.hideHint();
-                        piemenu.show(piemenu.slices.off);
-
-                        dojo.stopEvent(e);
-                        return false;
-                    }
+                if (e.keyCode == key.ESCAPE) {
+                    // ESCAPE onkeydown fails on Moz, so we need this. Why?
+                    this.hideHint();
+                    bespin.getComponent("popup", function(popup) {
+                        popup.hide();
+                    });
+                    dojo.stopEvent(e);
+                    return false;
                 }
             }
 
             return true;
-        });
+        }));
 
         // ESCAPE onkeypress fails on Safari, so we need this.
-        dojo.connect(this.commandLine, "onkeydown", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeydown", this, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-
-                // if pie menu is available
-                var piemenu = bespin.get("piemenu");
-                if (piemenu) piemenu.hide();
+                
+                bespin.getComponent("popup", function(popup) {
+                    popup.hide();
+                });
             }
-        });
+        }));
 
         // If an open file action failed, tell the user.
         var self = this;
-        bespin.subscribe("editor:openfile:openfail", function(e) {
+        this.subscriptions.push(bespin.subscribe("editor:openfile:openfail", function(e) {
             self.showHint('Could not open file: ' + e.filename + " (maybe try &raquo; list)");
-        });
+        }));
 
         // The open file action worked, so tell the user
-        bespin.subscribe("editor:openfile:opensuccess", function(e) {
+        this.subscriptions.push(bespin.subscribe("editor:openfile:opensuccess", function(e) {
             self.showHint('Loaded file: ' + e.file.name);
-        });
+        }));
 
         // When escaped, take out the hints and output
-        bespin.subscribe("ui:escape", function() {
+        this.subscriptions.push(bespin.subscribe("ui:escape", function() {
             self.hideHint();
             self.hideOutput();
-        });
+        }));
     }
 }});
 

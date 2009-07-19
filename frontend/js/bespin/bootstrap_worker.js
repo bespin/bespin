@@ -23,8 +23,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 (function () {
-
-var __GLOBAL__ = this;
+var NATIVE_JSON = this.JSON ? true : false;
+var __GLOBAL__  = this;
 
 if (!__GLOBAL__.console) {
     __GLOBAL__.console = {
@@ -137,6 +137,10 @@ if (typeof importScripts == "undefined") {
         }
     };
 
+    
+}
+
+if(!NATIVE_JSON) {
     origPostMessage = postMessage;
     postMessage = function (data) {
         if(typeof data != "string") {
@@ -335,7 +339,6 @@ bespin = {
 */
 
 if (!this.JSON) {
-
     JSON = function() {
 
         function f(n) {    // Format integers to have at least two digits.

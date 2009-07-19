@@ -235,28 +235,28 @@ class File(object):
         project = self.project
         return project.location / ".." / (".%s.json" % (project.name))
 
-    def mark_opened(self, user_obj, mode):
-        """Keeps track of this file as being currently open by the
-        user with the mode provided."""
-        statusfile = self.statusfile
-        try:
-            lock = Lock(statusfile)
-            lock.lock()
-            if statusfile.exists():
-                statusinfo = statusfile.bytes()
-                statusinfo = simplejson.loads(statusinfo)
-            else:
-                statusinfo = dict()
-
-            open_files = statusinfo.setdefault("open", {})
-            file_users = open_files.setdefault(self.name, {})
-            file_users[user_obj.username] = mode
-
-            statusfile.write_bytes(simplejson.dumps(statusinfo))
-            lock.unlock()
-        except PULockError, e:
-            raise LockError("Problem tracking open status for file %s: %s" %
-                        (self.name, str(e)))
+    #def mark_opened(self, user_obj, mode):
+    #    """Keeps track of this file as being currently open by the
+    #    user with the mode provided."""
+    #    statusfile = self.statusfile
+    #    try:
+    #        lock = Lock(statusfile)
+    #        lock.lock()
+    #        if statusfile.exists():
+    #            statusinfo = statusfile.bytes()
+    #            statusinfo = simplejson.loads(statusinfo)
+    #        else:
+    #            statusinfo = dict()
+    #
+    #        open_files = statusinfo.setdefault("open", {})
+    #        file_users = open_files.setdefault(self.name, {})
+    #        file_users[user_obj.username] = mode
+    #
+    #        statusfile.write_bytes(simplejson.dumps(statusinfo))
+    #        lock.unlock()
+    #    except PULockError, e:
+    #        raise LockError("Problem tracking open status for file %s: %s" %
+    #                    (self.name, str(e)))
 
     @property
     def users(self):
@@ -341,9 +341,7 @@ def rescan_project(qi):
     s = database._get_session()
     user = database.User.find_user(message['user'])
     project = get_project(user, user, message['project'])
-    print "Got project %s from user %s" % (project.name, user.username)
     project.scan_files()
-    print "Scan done"
     retvalue = database.Message(user_id=user.id, message=simplejson.dumps(
             dict(asyncDone=True,
             jobid=qi.id, output="Rescan complete")))
@@ -793,8 +791,22 @@ class ProjectView(Project):
         marked as open after this call."""
 
         file_obj = self._check_and_get_file(path)
-        self.user.mark_opened(file_obj, mode)
-        file_obj.mark_opened(self.user, mode)
+        #self.user.mark_opened(file_obj, mode)
+        #file_obj.mark_opened(self.user, mode)
+
+        contents = str(file_obj.data)
+        return contents
+
+    def get_temp_file(self, path, mode="rw"):
+        """Like get_file() except that it uses a parallel file as its source,
+        resorting to get_file() when the parallel file does not exist."""
+
+        file_obj = File(self, "/.mobwrite" + path)
+        if not file_obj.exists():
+            file_obj = File(self, path)
+
+        #self.user.mark_opened(file_obj, mode)
+        #file_obj.mark_opened(self.user, mode)
 
         contents = str(file_obj.data)
         return contents

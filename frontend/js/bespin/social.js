@@ -24,16 +24,6 @@
 
 dojo.provide("bespin.social");
 
-/**
- * Utility to take an string array of follower names, and publish a
- * "Following: ..." message as a command line response.
- */
-bespin.social.displayFollowers = function(instruction, followers) {
-    bespin.social.displayArray(instruction,
-            "You are not following anyone",
-            "You are following these users:",
-            followers);
-};
 
 /**
  * Utility to take an string array of strings, and publish a ul list to the
@@ -84,9 +74,10 @@ bespin.command.store.addCommand({
     execute: function(instruction, args) {
         var usernames = bespin.social.toArgArray(args);
         if (usernames.length === 0) {
-            bespin.get('server').followers({
-                onSuccess: function(data) {
-                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
+            bespin.get('server').follow([], {
+                evalJSON: true,
+                onSuccess: function(followers) {
+                    bespin.social.displayFollowers(instruction, followers);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve followers: " + xhr.responseText);
@@ -95,8 +86,9 @@ bespin.command.store.addCommand({
         }
         else {
             bespin.get('server').follow(usernames, {
-                onSuccess: function(data) {
-                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
+                evalJSON: true,
+                onSuccess: function(followers) {
+                    bespin.social.displayFollowers(instruction, followers);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to add follower: " + xhr.responseText);
@@ -118,6 +110,41 @@ dojo.extend(bespin.client.Server, {
         this.request('GET', '/network/followers/', null, opts);
     }
 });
+
+/**
+ * Utility to take an string array of follower names, and publish a
+ * "Following: ..." message as a command line response.
+ */
+bespin.social.displayFollowers = function(instruction, followers) {
+    if (!followers || followers.length === 0) {
+        instruction.addOutput("You are not following anyone");
+        return;
+    }
+
+    var parent = dojo.create("div", {});
+    dojo.create("div", { innerHTML: "You are following these users:" }, parent);
+    var table = dojo.create("table", { }, parent);
+    followers.forEach(function(follower) {
+        var row = dojo.create("tr", { }, table);
+        var cell = dojo.create("td", {}, row);
+        dojo.create("img", {
+            src: "/images/collab_icn_user.png",
+            width: 16,
+            height: 16
+        }, cell);
+        dojo.create("td", { innerHTML:follower }, row);
+        // TODO: Add the users status information in here
+        cell = dojo.create("td", { }, row);
+        dojo.create("a", {
+            innerHTML: "<small>(unfollow)</small>",
+            onclick: function() {
+                instruction.commandLine.executeCommand("unfollow " + follower);
+            }
+        }, cell);
+    });
+
+    instruction.setElement(parent);
+};
 
 // =============================================================================
 
@@ -205,11 +232,43 @@ bespin.social.group.commands.addCommand({
         if (!group) {
             // List all groups
             bespin.get('server').groupListAll({
+                evalJSON: true,
                 onSuccess: function(groups) {
-                    bespin.social.displayArray(instruction,
-                            "You have no groups",
-                            "You have the following groups:",
-                            dojo.fromJson(groups));
+                    if (!groups || groups.length === 0) {
+                        instruction.addOutput("You have no groups");
+                        return;
+                    }
+
+                    var parent = dojo.create("div", {});
+                    dojo.create("div", { innerHTML: "You have the following groups:" }, parent);
+                    var table = dojo.create("table", { }, parent);
+                    groups.forEach(function(group) {
+                        var row = dojo.create("tr", { }, table);
+                        var cell = dojo.create("td", {}, row);
+                        dojo.create("img", {
+                            src: "/images/collab_icn_group.png",
+                            width: 16,
+                            height: 16
+                        }, cell);
+                        dojo.create("td", { innerHTML:group }, row);
+                        // TODO: Add the users status information in here
+                        cell = dojo.create("td", { }, row);
+                        dojo.create("a", {
+                            innerHTML: "<small>(remove)</small>",
+                            onclick: function() {
+                                instruction.commandLine.executeCommand("group remove " + group);
+                            }
+                        }, cell);
+                        dojo.create("span", { innerHTML:" " }, cell);
+                        dojo.create("a", {
+                            innerHTML: "<small>(list)</small>",
+                            onclick: function() {
+                                instruction.commandLine.executeCommand("group list " + group);
+                            }
+                        }, cell);
+                    });
+
+                    instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve groups: " + xhr.responseText);
@@ -218,11 +277,36 @@ bespin.social.group.commands.addCommand({
         } else {
             // List members in a group
             bespin.get('server').groupList(group, {
+                evalJSON: true,
                 onSuccess: function(members) {
-                    bespin.social.displayArray(instruction,
-                            group + " has no members.",
-                            "Members of " + group + ":",
-                            dojo.fromJson(members));
+                    if (!members || members.length === 0) {
+                        instruction.addOutput(group + " has no members.");
+                        return;
+                    }
+
+                    var parent = dojo.create("div", {});
+                    dojo.create("div", { innerHTML: "Members of " + group + ":" }, parent);
+                    var table = dojo.create("table", { }, parent);
+                    members.forEach(function(member) {
+                        var row = dojo.create("tr", { }, table);
+                        var cell = dojo.create("td", {}, row);
+                        dojo.create("img", {
+                            src: "/images/collab_icn_user.png",
+                            width: 16,
+                            height: 16
+                        }, cell);
+                        dojo.create("td", { innerHTML:member }, row);
+                        // TODO: Add the users status information in here
+                        cell = dojo.create("td", { }, row);
+                        dojo.create("a", {
+                            innerHTML: "<small>(ungroup)</small>",
+                            onclick: function() {
+                                instruction.commandLine.executeCommand("group remove " + group + " " + member);
+                            }
+                        }, cell);
+                    });
+
+                    instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve group members: " + xhr.responseText);
@@ -238,14 +322,15 @@ bespin.social.group.commands.addCommand({
 bespin.social.group.commands.addCommand({
     name: 'add',
     preview: 'Add members to a new or existing group',
-    takes: [ 'group', 'member' ],
+    takes: [ 'group', 'member ...' ],
     completeText: 'A group name followed by a list of members to add',
     description: 'Add members to a new or existing group',
-    execute: function(instruction, group, member) {
-        // Add to members of a group
-        bespin.get('server').groupAdd(group, member, {
+    execute: function(instruction, args) {
+        var group = args.pieces.shift();
+        var members = args.pieces;
+        bespin.get('server').groupAdd(group, members, {
             onSuccess: function(data) {
-                instruction.addOutput("Members of " + group + ": " + data);
+                instruction.addOutput("Added to group '" + group + "': " + members.join(", "));
             },
             onFailure: function(xhr) {
                 instruction.addErrorOutput("Failed to add to group members. Maybe due to: " + xhr.responseText);
@@ -260,11 +345,13 @@ bespin.social.group.commands.addCommand({
 bespin.social.group.commands.addCommand({
     name: 'remove',
     preview: 'Remove members from an existing group (and remove group if empty)',
-    takes: [ 'group', 'member' ],
+    takes: [ 'group', 'member ...' ],
     completeText: 'A group name followed by a list of members to remove',
     description: 'Remove members from an existing group (and remove group if empty)',
-    execute: function(instruction, group, member) {
-        if (member === "all") {
+    execute: function(instruction, args) {
+        var group = args.pieces.shift();
+        var members = args.pieces;
+        if (members.length === 1 && members[0] === "all") {
             bespin.get('server').groupRemoveAll(group, {
                 onSuccess: function(data) {
                     instruction.addOutput("Removed group " + group);
@@ -275,9 +362,9 @@ bespin.social.group.commands.addCommand({
             });
         } else {
             // Remove members from a group
-            bespin.get('server').groupRemove(group, member, {
+            bespin.get('server').groupRemove(group, members, {
                 onSuccess: function(data) {
-                    instruction.addOutput("Members of " + group + ": " + data);
+                    instruction.addOutput("Removed from group '" + group + "': " + members.join(", "));
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to remove to group members. Maybe due to: " + xhr.responseText);

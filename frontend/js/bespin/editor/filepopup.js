@@ -22,34 +22,27 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-dojo.provide("bespin.editor.filepopup");
-
-dojo.declare("bespin.editor.filepopup.MainPanel", null, {
-    constructor: function() {
+exports.FilePanel = Class.define({
+members: {
+    init: function() {
         // Old global definitions
         this.heightDiff = null;
         this.currentProject = null;
         
         // Old members mixed into this
         this.lastSelectedPath = null;
-        this.inited = false;
         this.firstdisplay = true;
-    },
-
-    // creates the Thunderhead file browser scene
-    checkInit: function() {
-        // if we've already executed this method, bail--only need to setup the scene once
-        if (this.inited) return;
-
-        // prevent a second execution; see above
-        this.inited = true;
+        
+        this.nodes = [];
+        this.connections = [];
+        this.subscriptions = [];
 
         // JS FTW!
         var self = this;
 
         // Joe's favorite Dojo feature in action, baby!
         this.canvas = dojo.create("canvas", {
-            id: "piefilepopupcanvas",
+            id: "filepopupcanvas",
             tabIndex: -1,
             style: {
                 position: "absolute",
@@ -57,6 +50,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 display: "none"
             }
         }, dojo.body());
+        this.nodes.push("filepopupcanvas");
 
         // create the Thunderhead scene representing the file browser; will consist of various lists in one column on the left,
         // and a horizontal tree component on the right
@@ -103,6 +97,33 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.tree = new th.HorizontalTree({ id: "htree" });
 
         this.tree.getItemText = this.projects.getItemText;
+        
+        var fileActions = [];
+        var action = {
+            name: "Paste to Command Line",
+            image: new Image(),
+            action: dojo.hitch(this, this._commandlinePasteAction)
+        }
+        action.image.src = "images/actions/paste.gif";
+        fileActions.push(action);
+        
+        action = {
+            name: "Delete",
+            image: new Image(),
+            action: dojo.hitch(this, this._deleteAction)
+        }
+        action.image.src = "images/actions/delete.gif";
+        fileActions.push(action);
+        
+        this.fileActionPanel = new th.Panel();
+        this.fileActionPanel.addCss("background-color", "rgb(37,34,33)");
+        var toplabel = new th.Label({text: "File Actions"});
+        toplabel.addCss("background-color", "rgb(37,34,33)");
+        toplabel.addCss("text-align", "center");
+        this.fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
+        this.fileActionPanel.add(toplabel);
+        this.fileActionPanel.add(new exports.ActionPanel(toplabel, fileActions, 20, 20, 4));
+        this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
         topPanel.add(this.tree);
 
@@ -128,7 +149,9 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                 return;
             }
 
-            if (path.length == 0) return;   // bad state, get out
+            if (path.length === 0) {
+                return;   // bad state, get out
+            }
 
             if (path[path.length - 1].contents) {
                 // if we're in a directory, refresh the files in the directory
@@ -138,7 +161,9 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
             var file = this.getFilePath(path, true);
             console.log("file", file, { filename:file, project:this.currentProject });
-            bespin.publish("editor:openfile", { filename:file, project:this.currentProject });
+            bespin.getComponent("commandLine", function(cli) {
+                cli.executeCommand("load " + file + " " + this.currentProject);
+            }, this);
 
             var settings = bespin.get("settings");
             if (settings && settings.isSettingOn('keepfilepopuponopen')) {
@@ -158,22 +183,23 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         this.refreshProjects();
         
         var hitchedRefresh = dojo.hitch(this, this.refreshProjects);
-        bespin.subscribe("project:created", hitchedRefresh);
-        bespin.subscribe("project:deleted", hitchedRefresh);
-        bespin.subscribe("project:renamed", hitchedRefresh);
+        this.subscriptions.push(bespin.subscribe("project:created", hitchedRefresh));
+        this.subscriptions.push(bespin.subscribe("project:deleted", hitchedRefresh));
+        this.subscriptions.push(bespin.subscribe("project:renamed", hitchedRefresh));
         
         var fileUpdates = dojo.hitch(this, function(e) {
             this.updatePath(e.project, e.path);
         });
-        bespin.subscribe("file:saved", fileUpdates);
-        bespin.subscribe("file:removed", fileUpdates);
-        bespin.subscribe("directory:created", fileUpdates);
-        bespin.subscribe("directory:removed", fileUpdates);
+        this.subscriptions.push(bespin.subscribe("file:saved", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("file:removed", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("directory:created", fileUpdates));
+        this.subscriptions.push(bespin.subscribe("directory:removed", fileUpdates));
         
-        dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
+        this.connections.push(dojo.connect(this.canvas, "keydown", dojo.hitch(this, function(e) {
             var key = bespin.util.keys.Key;
             var path = this.tree.getSelectedPath();
-            if (path == undefined) {
+            
+            if (path === undefined) {
                 var list = this.projects;
                 var listNext = this.tree.getList(0);
                 var listPre = null;
@@ -187,13 +213,17 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         
             switch (e.keyCode) {
                 case key.LEFT_ARROW:
-                    if (!listPre) break;
+                    if (!listPre) {
+                        break;
+                    }
                     listPre.selected.lastSelected = list.selected.name;  // save the selection, if the user comes back to this list
                     list.selected = null;
                     this.tree.repaint();
                     break;
                 case key.RIGHT_ARROW:
-                    if (!listNext) break;
+                    if (!listNext) {
+                        break;
+                    }
                     if (list.selected.lastSelected) {
                         listNext.selectItemByText(list.selected.lastSelected);
                         listNext.bus.fire("itemselected", { container: listNext, item: list.selected }, listNext);
@@ -212,12 +242,36 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                     this.scene.bus.fire("dblclick", e, this.tree);
                     break;
                 case key.ESCAPE:
-                    bespin.get('piemenu').hide();
+                    bespin.getComponent("popup", function(popup) {
+                        popup.hide();
+                    });
+                    break;
+                case key.J:
+                    if (e.ctrlKey || e.metaKey) {
+                        bespin.getComponent("commandLine", function(cli) {
+                            cli.showPanel("output");
+                            cli.focus();
+                        });
+                    }
                     break;
            }
-       }));
+       })));
     },
-
+    
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
+        
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
+        });
+    },
+    
     show: function(coords) {
         this.canvas.width = coords.w;
         this.canvas.height = coords.h;
@@ -445,7 +499,6 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
 
                         self.tree.replaceList(index, contents);
                         var list = self.tree.getList(index);
-                        console.log("Selecting " + index);
                         list.selectItemByText(fakePath[index].name);
                         countSetupPaths++;
 
@@ -462,6 +515,7 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
                                     }
                                 }
                             }
+                            self.tree.showDetails();
                         }
                     };
                 })(x));
@@ -492,6 +546,147 @@ dojo.declare("bespin.editor.filepopup.MainPanel", null, {
         console.log("refreshProjects");
 
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
-    }
+    },
     
-});
+    _deleteAction: function(e) {
+        var self = this;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = self.tree.getSelectedPath();
+            var file = self.getFilePath(path, true);
+            cli.setCommandText("del " + file);
+            cli.focus();
+        });
+        th.stopEvent(e);
+    },
+    
+    _commandlinePasteAction: function(e) {
+        var self = this;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = self.tree.getSelectedPath();
+            var file = self.getFilePath(path, true);
+            cli.appendCommandText(" " + file);
+        });
+        th.stopEvent(e);
+    },
+        
+    getFileDetailPanel: function(item) {
+        return this.fileActionPanel;
+        var panel = new th.Panel();
+        var label = new th.Label({text:"Delete"});
+        panel.add(label);
+        label.bus.bind("mousedown", label, this._deleteAction, this);
+        label = new th.Label({text: "->Commandline"});
+        this.scene.bus.bind("mousedown", label, this._commandlinePasteAction, this);
+        panel.add(label);
+        return panel;
+    }
+}});
+
+exports.ActionPanel = Class.define({
+type: "ActionPanel",
+superclass: th.Panel,
+members: {
+    init: function(label, actions, width, height, columns, parms) {
+        this._super(parms);
+        this.label = label;
+        this.actions = actions;
+        
+        for (var i = 0; i < actions.length; i++) {
+            var ai = new exports.ActionIcon(actions[i], width, height);
+            this.add(ai);
+        }
+        
+        this.width = width;
+        this.height = height;
+        this.columns = columns;
+    },
+    
+    getPreferredSize: function() {
+        var width = this.parent.bounds.w;
+        var height = this.height * Math.ceil(this.actions.length / this.columns);
+        return {width: width, height: height};
+    },
+    
+    layout: function() {
+        var children = this.children;
+        var width = this.width;
+        var height = this.height;
+        var columns = this.columns;
+        
+        var x = 0;
+        var y = 0;
+        var col = 0;
+        
+        for (var current = 0; current < children.length; current++) {
+            children[current].setBounds(x, y, width, height);
+            col += 1;
+            if (col == columns) {
+                x = 0;
+                y += height;
+                col = 0;
+            } else {
+                x += width;
+            }
+        }
+    },
+    
+    getAction: function(x, y) {
+        var col = Math.floor(x / this.width);
+        var row = Math.floor(y / this.height);
+        var index = row * this.columns + col;
+        return this.actions[index];
+    },
+    
+    onmousedown: function(e) {
+        console.log("In panel mouse down");
+        var action = this.getAction(e.componentX, e.componentY);
+        if (action) {
+            action.action(e);
+        }
+    },
+    
+    onmousemove: function(e) {
+        var action = this.getAction(e.componentX, e.componentY);
+        var label = this.label;
+        
+        if (action && action.name != label.text) {
+            label.text = action.name;
+            this.repaint();
+        }
+    }
+}});
+
+exports.ActionIcon = Class.define({
+type: "ActionIcon",
+superclass: th.Panel,
+members: {
+    init: function(action, width, height, parms) {
+        this._super(parms);
+        this.action = action;
+        this.width = width;
+        this.height = height;
+        this.bus.bind("mousedown", this, this._onmousedown, this);
+        this.bus.bind("mousemove", this, this._onmousemove, this);
+    },
+    
+    getPreferredSize: function() {
+        return {width: this.width, height: this.height};
+    },
+    
+    paint: function(ctx) {
+        this._super(ctx);
+        ctx.drawImage(this.action.image, 0, 0);
+    },
+    
+    _onmousedown: function(e) {
+        this.action.action(e);
+    },
+    
+    _onmousemove: function(e) {
+        var label = this.parent.label;
+        if (label.text != this.action.name) {
+            label.text = this.action.name;
+            label.repaint();
+        }
+    }
+}});

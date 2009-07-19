@@ -236,27 +236,27 @@ class User(Base):
             total += additional
         self.amount_used = total
 
-    def mark_opened(self, file_obj, mode):
-        """Keeps track of this file as being currently open by the
-        user with the mode provided."""
-        statusfile = self.statusfile
-        try:
-            lock = Lock(statusfile)
-            lock.lock()
-            if statusfile.exists():
-                statusinfo = statusfile.bytes()
-                statusinfo = simplejson.loads(statusinfo)
-            else:
-                statusinfo = dict()
-
-            open_files = statusinfo.setdefault("open", {})
-            project_files = open_files.setdefault(file_obj.project.name, {})
-            project_files[file_obj.name] = {'mode' : mode}
-            statusfile.write_bytes(simplejson.dumps(statusinfo))
-            lock.unlock()
-        except PULockError, e:
-            raise LockError("Problem tracking open status for file %s: %s" %
-                        (file_obj.name, str(e)))
+    #def mark_opened(self, file_obj, mode):
+    #    """Keeps track of this file as being currently open by the
+    #    user with the mode provided."""
+    #    statusfile = self.statusfile
+    #    try:
+    #        lock = Lock(statusfile)
+    #        lock.lock()
+    #        if statusfile.exists():
+    #            statusinfo = statusfile.bytes()
+    #            statusinfo = simplejson.loads(statusinfo)
+    #        else:
+    #            statusinfo = dict()
+    #
+    #        open_files = statusinfo.setdefault("open", {})
+    #        project_files = open_files.setdefault(file_obj.project.name, {})
+    #        project_files[file_obj.name] = {'mode' : mode}
+    #        statusfile.write_bytes(simplejson.dumps(statusinfo))
+    #        lock.unlock()
+    #    except PULockError, e:
+    #        raise LockError("Problem tracking open status for file %s: %s" %
+    #                    (file_obj.name, str(e)))
 
     def close(self, file_obj):
         """Keeps track of this file as being currently closed by the
