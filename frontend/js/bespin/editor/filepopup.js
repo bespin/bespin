@@ -117,11 +117,21 @@ members: {
         
         this.fileActionPanel = new th.Panel();
         this.fileActionPanel.addCss("background-color", "rgb(37,34,33)");
+        
         var toplabel = new th.Label({text: "File Actions"});
         toplabel.addCss("background-color", "rgb(37,34,33)");
         toplabel.addCss("text-align", "center");
         this.fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
         this.fileActionPanel.add(toplabel);
+        
+        this.fileActionPanel.bus.bind("mousemove", this.fileActionPanel, function(e) {
+            if (toplabel.text != "File Actions") {
+                toplabel.text = "File Actions";
+                toplabel.parent.render();
+                th.stopEvent(e);
+            }
+        });
+        
         this.fileActionPanel.add(new exports.ActionPanel(toplabel, fileActions, 20, 20, 4));
         this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
@@ -571,14 +581,6 @@ members: {
         
     getFileDetailPanel: function(item) {
         return this.fileActionPanel;
-        var panel = new th.Panel();
-        var label = new th.Label({text:"Delete"});
-        panel.add(label);
-        label.bus.bind("mousedown", label, this._deleteAction, this);
-        label = new th.Label({text: "->Commandline"});
-        this.scene.bus.bind("mousedown", label, this._commandlinePasteAction, this);
-        panel.add(label);
-        return panel;
     }
 }});
 
@@ -628,32 +630,8 @@ members: {
                 x += width;
             }
         }
-    },
-    
-    getAction: function(x, y) {
-        var col = Math.floor(x / this.width);
-        var row = Math.floor(y / this.height);
-        var index = row * this.columns + col;
-        return this.actions[index];
-    },
-    
-    onmousedown: function(e) {
-        console.log("In panel mouse down");
-        var action = this.getAction(e.componentX, e.componentY);
-        if (action) {
-            action.action(e);
-        }
-    },
-    
-    onmousemove: function(e) {
-        var action = this.getAction(e.componentX, e.componentY);
-        var label = this.label;
-        
-        if (action && action.name != label.text) {
-            label.text = action.name;
-            this.repaint();
-        }
     }
+    
 }});
 
 exports.ActionIcon = Class.define({
@@ -686,7 +664,9 @@ members: {
         var label = this.parent.label;
         if (label.text != this.action.name) {
             label.text = this.action.name;
-            label.repaint();
+            label.parent.layout();
+            label.parent.repaint();
+            th.stopEvent(e);
         }
     }
 }});
