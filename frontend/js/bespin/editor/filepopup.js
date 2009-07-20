@@ -133,7 +133,7 @@ members: {
         this.fileActionPanel.bus.bind("mousemove", this.fileActionPanel, function(e) {
             if (actionlabel.text != "") {
                 actionlabel.text = "";
-                actionlabel.parent.render();
+                actionlabel.getScene().render();
                 th.stopEvent(e);
             }
         });
@@ -670,7 +670,7 @@ members: {
         var label = this.parent.label;
         if (label.text != this.action.name) {
             label.text = this.action.name;
-            label.parent.render();
+            this.getScene().render();
             th.stopEvent(e);
         }
     }
