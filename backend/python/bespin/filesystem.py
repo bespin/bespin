@@ -46,6 +46,9 @@ log = logging.getLogger("bespin.model")
 # quotas are expressed in 1 megabyte increments
 QUOTA_UNITS = 1048576
 
+# A prefix for files that are not real - just mobwrite current versions
+MOBWRITE_CURRENT_PREFIX = ".mobwrite"
+
 class FSException(Exception):
     pass
 
@@ -79,6 +82,7 @@ def get_project(user, owner, project_name, create=False, clean=False):
     create is True, the project will be created if it does not
     already exist. If clean is True, the project will be deleted
     and recreated if it already exists."""
+    log.debug("get_project user=" + user.username + " owner=" + owner.username + " project=" + project_name)
 
     _check_identifiers("Project names", project_name)
 
@@ -412,6 +416,38 @@ class Project(object):
             config.c.stats.incr("files")
         file.save(contents)
         self.owner.amount_used += size_delta
+        return file
+
+    def save_temp_file(self, destpath, contents=None):
+        """Saves the contents to the file path provided, creating
+        directories as needed in between. If last_edit is not provided,
+        the file must not be opened for editing. Otherwise, the
+        last_edit parameter should include the last edit ID received by
+        the user."""
+        if "../" in destpath:
+            raise BadValue("Relative directories are not allowed")
+
+        # chop off any leading slashes
+        while destpath and destpath.startswith("/"):
+            destpath = destpath[1:]
+
+        destpath = MOBWRITE_CURRENT_PREFIX + "/" + destpath
+        file_loc = self.location / destpath
+
+        if file_loc.isdir():
+            raise FileConflict("Cannot save file at %s in project "
+                "%s, because there is already a directory with that name."
+                % (destpath, self.name))
+
+        file_dir = file_loc.dirname()
+        if not file_dir.exists():
+            file_dir.makedirs()
+
+        file = File(self, destpath)
+        if not file.exists():
+            self.metadata.cache_add(destpath)
+            config.c.stats.incr("files")
+        file.save(contents)
         return file
 
     def create_directory(self, destpath):
@@ -801,8 +837,11 @@ class ProjectView(Project):
         """Like get_file() except that it uses a parallel file as its source,
         resorting to get_file() when the parallel file does not exist."""
 
-        file_obj = File(self, "/.mobwrite" + path)
+        log.debug("get_temp_file path=%s" % (MOBWRITE_CURRENT_PREFIX + "/" + path))
+
+        file_obj = File(self, MOBWRITE_CURRENT_PREFIX + "/" + path)
         if not file_obj.exists():
+            log.debug("fallback get_temp_file path=%s" % path)
             file_obj = File(self, path)
 
         #self.user.mark_opened(file_obj, mode)
