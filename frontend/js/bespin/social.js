@@ -226,7 +226,7 @@ bespin.social.group.commands.addCommand({
     name: 'list',
     preview: 'List the current group and group members',
     takes: ['group'],
-    // completeText: 'An optional group name or leave blank to list groups',
+    completeText: 'An optional group name or leave blank to list groups',
     description: 'List the current group and group members.',
     execute: function(instruction, group) {
         if (!group) {
@@ -417,139 +417,184 @@ dojo.extend(bespin.client.Server, {
 // =============================================================================
 
 /**
- * Add a 'share' command to open up projects to other people
+ * Container for the share commands and functions
  */
-bespin.command.store.addCommand({
-    name: 'share',
-    takes:[ '{project}', '{user}|{group}|everyone', 'readonely|edit', 'loadany' ],
-    preview: 'List and alter sharing for a project',
+bespin.social.share = {
+    /**
+     * Command store for the share commands
+     * (which are subcommands of the main 'share' command)
+     */
+    commands: new bespin.command.Store(bespin.command.store, {
+        name: 'share',
+        preview: 'Manage the projects that you share to other users',
+        completeText: 'subcommands: add, remove, list, help',
+        subcommanddefault: 'help'
+    })
+};
+
+/**
+ * Display sub-command help
+ */
+bespin.social.share.commands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show subcommands for share command',
+    description: 'The <u>help</u> gives you access to the various subcommands in the share command space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
+    }
+});
+
+/**
+ * 'share list' sub-command.
+ */
+bespin.social.share.commands.addCommand({
+    name: 'list',
+    preview: 'List the current shared projects',
+    description: 'List the current shared projects.',
+    takes: ['project'],
+    completeText: 'An optional project name or leave blank to list shared projects',
     execute: function(instruction, args) {
-        args = args.pieces;
+        var self = this;
+        bespin.get('server').shareListAll({
+            evalJSON: true,
+            onSuccess: function(shares) {
+                // Filter by project name if we have one
+                if (args.project && args.project != "") {
+                    shares = shares.filter(function(share) {
+                        return share.project == project;
+                    });
+                }
 
-        if (args.length === 0) {
-            // === List all project shares ===
-            // i.e. 'share'
-            bespin.get('server').shareListAll({
+                instruction.setElement(self.createShareDisplayElement(shares));
+            },
+            onFailure: function(xhr) {
+                instruction.addErrorOutput("Failed to list project shares: " + xhr.responseText);
+            }
+        });
+    },
+
+    /**
+     * Helper function to create a tabular display of shared projects
+     */
+    createShareDisplayElement: function(shares) {
+        if (shares.length === 0) {
+            return dojo.create("div", {
+                innerHTML:"You are not sharing any projects"
+            });
+        }
+
+        var parent = dojo.create("div", { });
+        dojo.create("div", { innerHTML: "You have the following shared projects:" }, parent);
+        var table = dojo.create("table", { }, parent);
+
+        var lastProject = "";
+        shares.forEach(function(share) {
+            var row = dojo.create("tr", { }, table);
+
+            if (share.project !== lastProject) {
+                var cell = dojo.create("th", { }, row);
+                dojo.create("img", {
+                    src: "/images/collab_icn_project.png",
+                    width: 16,
+                    height: 16
+                }, cell);
+
+                dojo.create("th", { innerHTML:share.project }, row);
+            } else {
+                dojo.create("th", { }, row);
+                dojo.create("th", { }, row);
+            }
+
+            var withWhom;
+            if (share.type == "everyone") {
+                withWhom = "with everyone";
+            }
+            else if (share.type == "group") {
+                withWhom = "with the group " + share.recipient;
+            }
+            else {
+                withWhom = "with " + share.recipient;
+            }
+            cell = dojo.create("td", { innerHTML:withWhom }, row);
+
+            var edit = share.edit ? "Editable" : "Read-only";
+            cell = dojo.create("td", { innerHTML:edit }, row);
+
+            // TODO: loadany needs adding here when we add the feature in
+
+            cell = dojo.create("td", { }, row);
+            dojo.create("a", {
+                innerHTML: "<small>(unshare)</small>",
+                onclick: function() {
+                    bespin.get("commandLine").executeCommand("share remove " + share.project);
+                }
+            }, cell);
+        });
+
+        return parent;
+    }
+});
+
+/**
+ * 'share remove' sub-command.
+ */
+bespin.social.share.commands.addCommand({
+    name: 'remove',
+    preview: 'Remove a share from the current shared projects',
+    description: 'Remove a share from the current shared projects.',
+    takes: ['project', 'member'],
+    completeText: 'A project name and a optional user or group (or leave blank for all users and groups)',
+    execute: function(instruction, args) {
+        if (!args.project || args.project == "") {
+            instruction.addErrorOutput('Missing project.<br/>Syntax: share remove project [{user}|{group}|everyone]');
+        }
+
+        if (!args.member || args.member == "") {
+            bespin.get('server').shareRemoveAll(args.project, {
                 onSuccess: function(data) {
-                    var shares = dojo.fromJson(data);
-                    if (shares.length === 0) {
-                        instruction.addOutput("You are not sharing any projects");
-                    }
-                    else {
-                        var message = "You have the following shares:<ul>\n";
-                        dojo.forEach(shares, function(share) {
-                            // loadany needs adding here
-                            var edit = share.edit ? "<strong>Editable</strong>" : "Read-only";
-                            if (share.type == "everyone") {
-                                message += "<li><strong>" + share.project + "</strong> with <strong>everyone</strong>: " + edit + ".</li>\n";
-                            }
-                            else if (share.type == "group") {
-                                message += "<li><strong>" + share.project + "</strong> with the group <strong>" + share.recipient + "</strong>: " + edit + ".</li>\n";
-                            }
-                            else {
-                                message += "<li><strong>" + share.project + "</strong> with <strong>" + share.recipient + "</strong>: " + edit + ".</li>\n";
-                            }
-                        });
-                        message += "</ul>";
-                        instruction.addOutput(message);
-                    }
+                    instruction.addOutput("All sharing removed from " + args.project);
                 },
                 onFailure: function(xhr) {
-                    instruction.addErrorOutput("Failed to list project shares: " + xhr.responseText);
+                    instruction.addErrorOutput("Failed to remove sharing permissions. Maybe due to: " + xhr.responseText);
+                }
+            });
+        } else {
+            bespin.get('server').shareRemove(args.project, args.member, {
+                onSuccess: function(data) {
+                    instruction.addOutput("Removed sharing permission from " + args.member + " to " + args.project);
+                },
+                onFailure: function(xhr) {
+                    instruction.addErrorOutput("Failed to remove sharing permission. Maybe due to: " + xhr.responseText);
                 }
             });
         }
-        else if (args.length === 1) {
-            // === List sharing for a given project ===
-            // i.e. 'share {project}'
-            var project = args[0];
-            bespin.get('server').shareListProject(project, {
-                onSuccess: function(data) {
-                    instruction.addOutput("Project sharing for " + project + ": " + data);
-                },
-                onFailure: function(xhr) {
-                    instruction.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
-                }
-            });
-        }
-        else if (args.length === 2) {
-            if (args[1] == "none") {
-                // === Remove all sharing from a project ===
-                // i.e. 'share {project} none'
-                var project = args[0];
-                bespin.get('server').shareRemoveAll(project, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("All sharing removed from " + project);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to remove sharing permissions. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-            else {
-                // === List sharing for a given project and member ===
-                // i.e. 'share {project} {user}|{group}|everyone'
-                var project = args[0];
-                var member = args[1];
-                bespin.get('server').shareListProjectMember(project, member, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("Project sharing for " + project + ", " + member + ": " + data);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to list project sharing. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-        }
-        else if (args.length === 3) {
-            if (args[2] == "none") {
-                // === Remove project sharing from a given member ===
-                // i.e. 'share {project} {user}|{group}|everyone none'
-                var project = args[0];
-                var member = args[1];
-                bespin.get('server').shareRemove(project, member, {
-                    onSuccess: function(data) {
-                        instruction.addOutput("Removed sharing permission from " + member + " to " + project);
-                    },
-                    onFailure: function(xhr) {
-                        instruction.addErrorOutput("Failed to remove sharing permission. Maybe due to: " + xhr.responseText);
-                    }
-                });
-            }
-            else if (args[2] != "readonly" && args[2] != "edit") {
-                this._syntaxError(instruction, 'Valid edit options are \'none\', \'readonly\' or \'edit\'.');
-            }
-            else {
-                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit]'
-                this._shareAdd(instruction, [ args[0], args[1], [ args[2] ] ]);
-            }
-        }
-        else if (args.length === 4) {
-            if (args[3] != "loadany") {
-                this._syntaxError(instruction, 'Valid scope options are loadany or <blank>');
-            }
-            else if (args[2] != "readonly" && args[2] != "edit") {
-                this._syntaxError(instruction, 'Valid edit options are \'readonly\' or \'edit\'.');
-            }
-            else {
-                // i.e. 'share {project} {user}|{group}|everyone [readonly|edit] loadany'
-                this._shareAdd(instruction, args[0], args[1], [ args[2], args[3] ]);
-            }
-        }
-        else {
-            this._syntaxError('Too many arguments. Maximum 4 arguments to \'share\' command.');
-        }
-    },
+    }
+});
 
-    _syntaxError: function(instruction, message) {
-        instruction.addErrorOutput(message + '<br/>Syntax: share {project} ({user}|{group}|everyone) (none|readonly|edit) [loadany]');
-    },
+/**
+ * 'share add' sub-command.
+ */
+bespin.social.share.commands.addCommand({
+    name: 'add',
+    preview: 'Add a share to the current shared projects',
+    description: 'Add a share to the current shared projects.',
+    takes: ['project', 'member', 'permission'],
+    completeText: 'A project name or leave blank to list shared projects',
+    execute: function(instruction, args) {
+        if (!args.project || args.project == "") {
+            instruction.addErrorOutput('Missing project.<br/>Syntax: share add project {user}|{group}|everyone [edit]');
+        }
 
-    // === Add a member to the sharing list for a project ===
-    _shareAdd: function(instruction, project, member, options) {
-        bespin.get('server').shareAdd(project, member, options, {
+        if (!args.member || args.member == "") {
+            instruction.addErrorOutput('Missing user/group.<br/>Syntax: share add project {user}|{group}|everyone [edit]');
+        }
+
+        bespin.get('server').shareAdd(args.project, args.member, args.permission || "", {
             onSuccess: function(data) {
-                instruction.addOutput("Adding sharing permission for " + member + " to " + project);
+                instruction.addOutput("Adding sharing permission for " + args.member + " to " + args.project);
             },
             onFailure: function(xhr) {
                 instruction.addErrorOutput("Failed to add sharing permission. Maybe due to: " + xhr.responseText);
