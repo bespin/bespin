@@ -292,7 +292,7 @@ dojo.declare("bespin.editor.DefaultEditorKeyListener", null, {
     getPrintableChar: function(e) {
         if (e.charCode > 255) return false;
         if (e.charCode < 32) return false;
-        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 96 && e.charCode < 123)) return false;
+        if ((e.altKey || e.metaKey || e.ctrlKey) && (e.charCode > 95 && e.charCode < 123)) return false;
         return String.fromCharCode(e.charCode);
     },
 
@@ -601,20 +601,9 @@ dojo.declare("bespin.editor.UI", null, {
         if (down.col == -1) {
             down.col = 0;
             // clicked in gutter; show appropriate lineMarker message
-            var lineMarkers = bespin.get("parser").getLineMarkers();
-            var message;
-            for (var i = 0; i < lineMarkers.length; i++) {
-                if (lineMarkers[i].line === down.row + 1) {
-                    message = lineMarkers[i];
-                    var msg = 'Syntax ' + message.type +
-                             (isFinite(message.line) ? ' at line ' + message.line + ' character ' + (message.character + 1) : ' ') +
-                             ': ' + message.reason + '<p>' +
-                             (message.evidence && (message.evidence.length > 80 ? message.evidence.slice(0, 77) + '...' : message.evidence).
-                                 replace(/&/g, '&amp;').
-                                 replace(/</g, '&lt;').
-                                 replace(/>/g, '&gt;'));
-                    bespin.get("commandLine").showHint(msg);
-                }
+            var lineMarker = bespin.get("parser").getLineMarkers()[down.row + 1];
+            if (lineMarker) {
+                bespin.get("commandLine").showHint(lineMarker.msg);
             }
         }
         if (up.col == -1) up.col = 0;
@@ -1080,6 +1069,7 @@ dojo.declare("bespin.editor.UI", null, {
 
         // get debug metadata
         var breakpoints = {};
+        var lineMarkers = bespin.get("parser").getLineMarkers();
 
         if (this.editor.debugMode && bespin.get("editSession")) {
             var debug = bespin.plugins.getLoadedOne("bespin.debugger");
@@ -1135,16 +1125,11 @@ dojo.declare("bespin.editor.UI", null, {
         if (refreshCanvas) {
             //line markers first
             if (bespin.get("parser")) {
-                var lineMarkers = bespin.get("parser").getLineMarkers();
-                for (var i = 0; i < lineMarkers.length; i++) {
-                    if (lineMarkers[i].line >= this.firstVisibleRow && lineMarkers[i].line <= lastLineToRender + 1) {
-                        y = this.lineHeight * (lineMarkers[i].line - 1);
+                for (currentLine = this.firstVisibleRow; currentLine <= lastLineToRender; currentLine++) {
+                    if (lineMarkers[currentLine]) {
+                        y = this.lineHeight * (currentLine - 1);
                         cy = y + (this.lineHeight - this.LINE_INSETS.bottom);
-                        if (lineMarkers[i].type === "error") {
-                            ctx.fillStyle = this.editor.theme.lineMarkerErrorColor;
-                        } else {
-                            ctx.fillStyle = this.editor.theme.lineMarkerWarningColor;
-                        }
+                        ctx.fillStyle = this.editor.theme["lineMarker" + lineMarkers[currentLine].type + "Color"];
                         ctx.fillRect(0, y, this.gutterWidth, this.lineHeight);
                     }
                  }
@@ -1963,10 +1948,8 @@ dojo.declare("bespin.editor.API", null, {
 // If the debugger is reloaded, we need to make sure the module
 // is in memory if we're in debug mode.
 bespin.subscribe("extension:loaded:bespin.debugger", function(ext) {
-    console.log("Found debugger extension");
     var settings = bespin.get("settings");
     if (settings && settings.get("debugmode")) {
-        console.log("Debug mode set, loading extension");
         ext.load();
     }
 });

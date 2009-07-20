@@ -36,6 +36,7 @@ bespin.themes.coffee = {
     lineNumberFont: "10pt Monaco, Lucida Console, monospace",
     lineMarkerErrorColor: "#CC4444",
     lineMarkerWarningColor: "#B8860B",
+    lineMarkerMessageColor: "green",
     zebraStripeColor: "#2A211C",
     highlightCurrentLineColor: "#3a312b",
     editorTextFont: "10pt Monaco, Lucida Console, monospace",

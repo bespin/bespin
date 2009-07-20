@@ -138,6 +138,7 @@ dojo.provide("bespin.page.editor.init");
                     re.call(dojo, plugin);
                 });
             }
+            
 
             bespin.publish("authenticated");
         };
@@ -157,6 +158,7 @@ dojo.provide("bespin.page.editor.init");
         // -- Deal with the project label (project, filename, dirty flag)
         statusScene = new ProjectStatusScene();
         bespin.publish("bespin:editor:initialized", {});
+        
     });
 
     // The object that understands how to render the project label scene

@@ -63,7 +63,7 @@ Contributor(s):
 
 options(
     version=Bunch(
-        number="0.3.1",
+        number="0.4",
         name="Stratospheric Stratus",
         api="4"
     ),
@@ -350,7 +350,7 @@ def update_javascript_version():
             
         # ignore comment lines
         if "/**" in line:
-            continue
+            pass
         elif "versionNumber:" in line:
             lines[i] = "versionNumber: '%s',\n" % (options.version.number)
         elif 'versionCodename:' in line:

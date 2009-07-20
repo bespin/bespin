@@ -25,6 +25,7 @@
 dojo.provide("bespin.page.editor.dependencies");
 
 dojo.require("dojo.cookie");
+dojo.require("dojo.fx.easing");
 
 dojo.require("bespin.bespin");
 dojo.require("bespin.command");
@@ -86,6 +87,7 @@ dojo.require("bespin.cmd.project");
 dojo.require("bespin.test");
 dojo.require("bespin.testTest");
 
+dojo.require("bespin.plugins");
 dojo.require("bespin.plugins.loader");
 dojo.require("bespin.plugins.loaderTest");
 

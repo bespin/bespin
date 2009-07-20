@@ -76,6 +76,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'strictlines': 'on',
             'syntaxcheck': 'off',
             'syntaxengine': 'simple',
+            'syntaxmarkers': 'all',
             'preview': 'window',
             'smartmove': 'on',
             'jslint': {}
