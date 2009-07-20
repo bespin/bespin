@@ -236,7 +236,7 @@ dojo.mixin(bespin, {
             console.log("loading debugbar");
             bespin.plugins.loadOne("debugbar", function(debug) {
                 var commandLine = bespin.register("debugbar", 
-                    new debug.EvalCommandLineInterface('command', null, {
+                    new debug.EvalCommandLineInterface('debugbar_command', null, {
                         idPrefix: "debugbar_",
                         parentElement: dojo.byId("debugbar")
                     })

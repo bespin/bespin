@@ -36,6 +36,8 @@ exports.SimpleHistoryStore = Class.define({
 members: {
     init: function(history) {
     },
+    
+    type: "SimpleHistoryStore",
 
     save: function(instructions) {}
 }});
@@ -56,36 +58,11 @@ members: {
         var idPrefix = options.idPrefix || "command_";
         var parentElement = options.parentElement || dojo.body();
         this.commandLine = dojo.byId(commandLine);
-        this.setKeyBindings();
-        this.history = new commandline.History(this);
-        this.history.store = new exports.SimpleHistoryStore();
+        this.connectEvents();
+        this.history = new commandline.History(new exports.SimpleHistoryStore());
         this.output = dojo.byId(idPrefix + "output");
         this._resizeConnection = null;
         
-        this.connections.push(dojo.connect(dojo.byId("debugbar_break"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:break", {});
-                    }));
-
-        this.connections.push(dojo.connect(dojo.byId("debugbar_continue"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:continue", {});
-                    }));
-
-        this.connections.push(dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepnext", {});
-                    }));
-
-        this.connections.push(dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepout", {});
-                    }));
-
-        this.connections.push(dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
-                    null, function() {
-                        bespin.publish("debugger:stepin", {});
-                    }));
     },
     
     destroy: function() {
@@ -132,16 +109,41 @@ members: {
     /**
      *
      */
-    setKeyBindings: function() {
-        dojo.connect(this.commandLine, "onfocus", this, function() {
+    connectEvents: function() {
+        this.connections.push(dojo.connect(dojo.byId("debugbar_break"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:break", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_continue"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:continue", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepnext", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepout", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepin", {});
+                    }));
+
+        this.connections.push(dojo.connect(this.commandLine, "onfocus", this, function() {
             bespin.publish("cmdline:focus");
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onblur", this, function() {
+        this.connections.push(dojo.connect(this.commandLine, "onblur", this, function() {
             bespin.publish("cmdline:blur");
-        });
+        }));
 
-        dojo.connect(this.commandLine, "onkeypress", this, function(e) {
+        this.connections.push(dojo.connect(this.commandLine, "onkeypress", this, function(e) {
             var key = bespin.util.keys.Key;
             if (e.keyCode == key.ENTER) {
                 var typed = this.commandLine.value;
@@ -171,14 +173,16 @@ members: {
                 dojo.stopEvent(e);
                 return false;
             }
-        });
+        }));
     },
 
     /**
      *
      */
     executeCommand: function(value) {
+        console.log("Sending debug command");
         if (!this.evalFunction) {
+            console.log("No evaluator");
             return;
         }
 
@@ -186,7 +190,7 @@ members: {
 
         var self = this;
 
-        var instruction = new bespin.cmd.commandline.Instruction(null, value);
+        var instruction = new commandline.Instruction(null, value);
         this.executing = instruction;
 
         var frame = null;
@@ -206,6 +210,7 @@ members: {
      *
      */
     updateOutput: function() {
+        console.dir(this.history);
         var outputNode = this.output;
         var self = this;
         outputNode.innerHTML = "";

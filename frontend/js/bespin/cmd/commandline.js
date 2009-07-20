@@ -106,7 +106,7 @@ members: {
         this.store = store;
 
         this.connectEvents();
-        this.history = new exports.History(this);
+        this.history = new exports.History();
         this.hideOutput();
     },
     
@@ -1034,10 +1034,13 @@ members: {
  */
 exports.History = Class.define({
 members: {
-    init: function() {
+    init: function(store) {
+        if (!store) {
+            store = new exports.ServerHistoryStore(this);
+        }
         this.instructions = [];
         this.pointer = 0;
-        this.store = new exports.ServerHistoryStore(this);
+        this.store = store;
     },
 
     settings: {
