@@ -37,7 +37,7 @@
                 "topic": "debugger:halted",
                 "pointer": "debug:debuggerHalted"
             }],
-            ["bespin.debugger", {
+            ["debugbar", {
                 "pointer": "debug"
             }]
         ],

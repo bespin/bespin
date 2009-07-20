@@ -27,7 +27,7 @@
  * <p>This holds the data for the Bespin debugger.
  */
 
-var Interface = require("cmd/commandline").Interface;
+var commandline = require("cmd/commandline");
 
 /**
  * A simple store that currently doesn't store the history at all
@@ -45,20 +45,89 @@ members: {
  * based CLI
  */
 exports.EvalCommandLineInterface = Class.define({
-superclass: Interface,
+superclass: commandline.Interface,
 members: {
     setup: function(commandLine, store, options) {
-        console.log("overridden setup called");
+        this.connections = [];
+        this.subscriptions = [];
+        this.nodes = [];
+        
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         var parentElement = options.parentElement || dojo.body();
         this.commandLine = dojo.byId(commandLine);
         this.setKeyBindings();
-        this.history = new bespin.cmd.commandline.History(this);
+        this.history = new commandline.History(this);
         this.history.store = new exports.SimpleHistoryStore();
         this.output = dojo.byId(idPrefix + "output");
         this._resizeConnection = null;
+        
+        this.connections.push(dojo.connect(dojo.byId("debugbar_break"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:break", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_continue"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:continue", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepnext", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepout", {});
+                    }));
+
+        this.connections.push(dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
+                    null, function() {
+                        bespin.publish("debugger:stepin", {});
+                    }));
     },
+    
+    destroy: function() {
+        dojo.forEach(this.subscriptions, function(sub) {
+            bespin.unsubscribe(sub);
+        });
+        
+        dojo.forEach(this.connections, function(conn) {
+            dojo.disconnect(conn);
+        });
+        
+        dojo.forEach(this.nodes, function(nodeId) {
+            dojo.query("#" + nodeId).orphan();
+        });
+    },
+
+    /**
+     * Note that evalFunction should be an extension point
+     * Also, this shouldn't be on the command line. There should
+     * be a GUI component for the whole debugbar.
+     */
+    show: function(evalFunction) {
+        this.evalFunction = evalFunction;
+        dojo.style("debugbar", "display", "block");
+        bespin.page.editor.recalcLayout();
+        this.resize();
+
+        var settings = bespin.get("settings");
+        if (settings && settings.isSettingOff("debugmode")) {
+            settings.set("debugmode", "on");
+        }
+
+        exports.project = bespin.get("editSession").project;
+    },
+
+    hide: function() {
+        dojo.style("debugbar", "display", "none");
+        bespin.page.editor.recalcLayout();
+        this.clearAll();
+        exports.project = undefined;
+    },
+
 
     /**
      *
@@ -203,9 +272,6 @@ exports.state = {};
 /** internal ID numbers for these breakpoints. */
 var _sequence = 1;
 
-/** has the debugbar been initialized? */
-var _initialized = false;
-
 /**
  * Helper to check for duplicate breakpoints before adding this one
  */
@@ -292,76 +358,6 @@ exports.saveBreakpoints = function() {
         content: dojo.toJson(exports.breakpoints),
         timestamp: new Date().getTime()
     });
-};
-
-/**
- * This function should actually turn into an activate function
- * that creates the debugbar itself and hooks up the listeners.
- */
-var _initialize = function() {
-    if (_initialized) {
-        return;
-    }
-    dojo.connect(dojo.byId("debugbar_break"), "onclick",
-                null, function() {
-                    bespin.publish("debugger:break", {});
-                });
-
-    dojo.connect(dojo.byId("debugbar_continue"), "onclick",
-                null, function() {
-                    bespin.publish("debugger:continue", {});
-                });
-
-    dojo.connect(dojo.byId("debugbar_stepnext"), "onclick",
-                null, function() {
-                    bespin.publish("debugger:stepnext", {});
-                });
-
-    dojo.connect(dojo.byId("debugbar_stepout"), "onclick",
-                null, function() {
-                    bespin.publish("debugger:stepout", {});
-                });
-
-    dojo.connect(dojo.byId("debugbar_stepin"), "onclick",
-                null, function() {
-                    bespin.publish("debugger:stepin", {});
-                });
-
-    exports.evalLine = new exports.EvalCommandLineInterface(
-            'debugbar_command', null, {
-                idPrefix: "debugbar_",
-                parentElement: dojo.byId("debugbar")
-            });
-
-    _initialized = true;
-};
-
-/**
- * Note that evalFunction should be an extension point
- */
-exports.showDebugBar = function(evalFunction) {
-    _initialize();
-
-    var evalLine = exports.evalLine;
-    evalLine.evalFunction = evalFunction;
-    dojo.style("debugbar", "display", "block");
-    bespin.page.editor.recalcLayout();
-    evalLine.resize();
-
-    var settings = bespin.get("settings");
-    if (settings && settings.isSettingOff("debugmode")) {
-        settings.set("debugmode", "on");
-    }
-
-    exports.project = bespin.get("editSession").project;
-};
-
-exports.hideDebugBar = function() {
-    var evalLine = exports.evalLine;
-    dojo.style("debugbar", "display", "none");
-    bespin.page.editor.recalcLayout();
-    evalLine.clearAll();
-    exports.project = undefined;
 };
 
 exports.debuggerRunning = function() {

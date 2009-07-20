@@ -208,14 +208,16 @@ dojo.mixin(bespin, {
     factories: {
         popup: function(callback, context) {
             bespin.plugins.loadOne("popup", function(popupmod) {
-                bespin.register("popup", new popupmod.Window());
-                var popup = bespin.get("popup");
+                var popup = bespin.register("popup", new popupmod.Window());
                 callback.call(context, popup);
             });
         },
         piemenu: function(callback, context) {
             bespin.plugins.loadOne("piemenu", function(piemenumod) {
                 bespin.register("piemenu", new piemenumod.Window());
+                
+                // the pie menu doesn't animate properly in FF
+                // without restoring control to the UI temporarily
                 setTimeout(function() {
                     var piemenu = bespin.get("piemenu");
                     callback.call(context, piemenu);
@@ -224,12 +226,23 @@ dojo.mixin(bespin, {
         },
         commandLine: function(callback, context) {
             bespin.plugins.loadOne("commandLine", function(commandline) {
-                bespin.register("commandLine", 
+                var commandLine = bespin.register("commandLine", 
                     new commandline.Interface('command', bespin.command.store)
                 );
-                var commandLine = bespin.get("commandLine");
                 callback.call(context, commandLine);
-            })
+            });
+        },
+        debugbar: function(callback, context) {
+            console.log("loading debugbar");
+            bespin.plugins.loadOne("debugbar", function(debug) {
+                var commandLine = bespin.register("debugbar", 
+                    new debug.EvalCommandLineInterface('command', null, {
+                        idPrefix: "debugbar_",
+                        parentElement: dojo.byId("debugbar")
+                    })
+                );
+                callback.call(context, commandLine);
+            });
         }
     },
 
