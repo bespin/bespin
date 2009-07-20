@@ -124,15 +124,21 @@ members: {
         this.fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
         this.fileActionPanel.add(toplabel);
         
+        var actionlabel = new th.Label({text: ""});
+        actionlabel.addCss("background-color", "rgb(37,34,33)");
+        actionlabel.addCss("text-align", "center");
+        this.fileActionPanel.add(new exports.ActionPanel(actionlabel, fileActions, 20, 20, 4));
+        this.fileActionPanel.add(actionlabel);
+        
         this.fileActionPanel.bus.bind("mousemove", this.fileActionPanel, function(e) {
-            if (toplabel.text != "File Actions") {
-                toplabel.text = "File Actions";
-                toplabel.parent.render();
+            if (actionlabel.text != "") {
+                actionlabel.text = "";
+                actionlabel.parent.render();
                 th.stopEvent(e);
             }
         });
         
-        this.fileActionPanel.add(new exports.ActionPanel(toplabel, fileActions, 20, 20, 4));
+        
         this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
 
         topPanel.add(this.tree);
@@ -664,8 +670,7 @@ members: {
         var label = this.parent.label;
         if (label.text != this.action.name) {
             label.text = this.action.name;
-            label.parent.layout();
-            label.parent.repaint();
+            label.parent.render();
             th.stopEvent(e);
         }
     }
