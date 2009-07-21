@@ -652,7 +652,7 @@ dojo.declare("bespin.editor.Actions", null, {
                     var freeSpaces = this.cursorManager.getContinuousSpaceCount(args.pos.col, this.cursorManager.getNextTablevelRight(args.pos.col));
                     if (freeSpaces == tabsize) {
                         var pos = args.pos;
-                        this.editor.selection = { startPos: { row: pos.row, col: pos.col}, endPos: {row: pos.row, col: pos.col + tabsize}};
+                        this.editor.selection = { startPos: { row: pos.row, col: pos.col }, endPos: { row: pos.row, col: pos.col + tabsize } };
                         this.deleteSelection(args);
                         return;
                     }
@@ -670,13 +670,21 @@ dojo.declare("bespin.editor.Actions", null, {
 
         if (args.pos.col < this.editor.ui.getRowScreenLength(args.pos.row)) {
             var modelPos = this.cursorManager.getModelPosition(args.pos);
-            var deleted = this.model.deleteCharacters(modelPos, 1);
+            var length = 1;
+
+            // Account for automatically-closed pairs
+            if( args.paired )
+            {
+                length++;
+            }
+
+            var deleted = this.model.deleteCharacters(modelPos, length);
             this.repaint();
 
             // undo/redo
             args.action = "deleteCharacter";
             var redoOperation = args;
-            var undoArgs = { action: "insertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, newchar: deleted };
+            var undoArgs = { action: "insertCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, newchar: deleted.substr(0, 1) };
             var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
@@ -808,12 +816,54 @@ dojo.declare("bespin.editor.Actions", null, {
         } else {
             this.model.insertCharacters(this.cursorManager.getModelPosition(args.pos), args.newchar);
             this.cursorManager.moveRight(true);
+
+            var paired = false;
+
+            var settings = bespin.get('settings');
+            if (settings && settings.isSettingOn('closepairs')) {
+                // Automatically close pairs
+                switch(args.newchar) {
+                    case '(':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), ')');
+                        paired = true;
+                    break;
+
+                    case '[':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), ']');
+                        paired = true;
+                    break;
+
+                    case '{':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), '}');
+                        paired = true;
+                    break;
+
+                    case '<':
+                        // TODO: Check for HTML/XML syntax highlighting first, so you don't interfere with value comparisons
+//                      this.model.insertCharacters(this.cursorManager.getModelPosition(), '>');
+//                      paired = true;
+                    break;
+
+                    case '"':
+                        // TODO: Check for proper context, to avoid ' \"" ' situation
+//                        this.model.insertCharacters(this.cursorManager.getModelPosition(), '"');
+//                        paired = true;
+                    break;
+
+                    case "'":
+                        // TODO: Check to make sure this is a single-quotation mark, not an apostrophe
+//                      this.model.insertCharacters(this.cursorManager.getModelPosition(), "'");
+//                      paired = true;
+                    break;
+                }
+            }
+
             this.repaint();
 
             // undo/redo
             args.action = "insertCharacter";
             var redoOperation = args;
-            var undoArgs = { action: "deleteCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued };
+            var undoArgs = { action: "deleteCharacter", pos: bespin.editor.utils.copyPos(args.pos), queued: args.queued, paired: paired };
             var undoOperation = undoArgs;
             this.editor.undoManager.addUndoOperation(new bespin.editor.UndoItem(undoOperation, redoOperation));
         }
