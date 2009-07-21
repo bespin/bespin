@@ -233,7 +233,6 @@ dojo.mixin(bespin, {
             });
         },
         debugbar: function(callback, context) {
-            console.log("loading debugbar");
             bespin.plugins.loadOne("debugbar", function(debug) {
                 var commandLine = bespin.register("debugbar", 
                     new debug.EvalCommandLineInterface('debugbar_command', null, {
@@ -242,6 +241,15 @@ dojo.mixin(bespin, {
                     })
                 );
                 callback.call(context, commandLine);
+            });
+        },
+        
+        breakpoints: function(callback, context) {
+            bespin.plugins.loadOne("breakpoints", function(BreakpointManager) {
+                var breakpoints = bespin.register("breakpoints", 
+                    new BreakpointManager()
+                );
+                callback.call(context, breakpoints);
             });
         }
     },

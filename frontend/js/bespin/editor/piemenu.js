@@ -195,7 +195,7 @@ members:
 
         // stop context menu on canvas, because for some reason, WebKit's oncontextmenu doesn't
         // realize when it has been hidden.
-        dojo.connect(this.canvas, "oncontextmenu", dojo.stopEvent);
+        this.connections.push(dojo.connect(this.canvas, "oncontextmenu", dojo.stopEvent));
     },
     
     destroy: function() {
@@ -521,6 +521,7 @@ members:
         ctx.translate(xm, ym);
         ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
         ctx.translate(-xm, -ym);
+
         ctx.drawImage(off, p.x, p.y, width, height);
 
         ctx.restore();
