@@ -12,7 +12,7 @@ img {
     width: 100%;
 }
 
-#command {
+.commandline input {
     border: 0;
     background: none;
     color: #DDDDDD;

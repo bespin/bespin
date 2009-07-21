@@ -49,7 +49,7 @@ members: {
 exports.EvalCommandLineInterface = Class.define({
 superclass: commandline.Interface,
 members: {
-    setup: function(commandLine, store, options) {
+    init: function(commandLine, store, options) {
         this.connections = [];
         this.subscriptions = [];
         this.nodes = [];
