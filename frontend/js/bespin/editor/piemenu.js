@@ -192,6 +192,10 @@ members:
                 self.show(self.slice(degrees));
             }
         }));
+
+        // stop context menu on canvas, because for some reason, WebKit's oncontextmenu doesn't
+        // realize when it has been hidden.
+        dojo.connect(this.canvas, "oncontextmenu", dojo.stopEvent);
     },
     
     destroy: function() {
@@ -344,6 +348,7 @@ members:
         }
 
         this.canvas.style.display = 'block';
+
         if (!dontTakeFocus) {
             this.canvas.focus();
         }
@@ -487,9 +492,11 @@ members:
     renderPie: function(progress) {
         // when loaded dynamically, this appears to exercise a bug in Safari 4 (fixed in WebKit
         // nightlies). There may be a workaround. But for now, short circuit.
-        if (th.browser.WebKit) {
-            return;
-        }
+        // Note: unshortcircuited. If it breaks again, re-shortcircuit.
+        // behavior when it fails apparently has the entire canvas rotating, somehow.
+        //if (th.browser.WebKit) {
+        //    return;
+        //}
         
         var ctx = this.ctx;
         var off = this.slices.off.img;
