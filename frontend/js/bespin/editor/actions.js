@@ -819,40 +819,43 @@ dojo.declare("bespin.editor.Actions", null, {
 
             var paired = false;
 
-            // Automatically close pairs
-            switch( args.newchar )
-            {
-                case '(':
-                    this.model.insertCharacters(this.cursorManager.getModelPosition(), ')');
-                    paired = true;
-                break;
+            var settings = bespin.get('settings');
+            if (settings && settings.isSettingOn('closepairs')) {
+                // Automatically close pairs
+                switch(args.newchar) {
+                    case '(':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), ')');
+                        paired = true;
+                    break;
 
-                case '[':
-                    this.model.insertCharacters(this.cursorManager.getModelPosition(), ']');
-                    paired = true;
-                break;
+                    case '[':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), ']');
+                        paired = true;
+                    break;
 
-                case '{':
-                    this.model.insertCharacters(this.cursorManager.getModelPosition(), '}');
-                    paired = true;
-                break;
+                    case '{':
+                        this.model.insertCharacters(this.cursorManager.getModelPosition(), '}');
+                        paired = true;
+                    break;
 
-                case '<':
-                    // Check for HTML file first, so you don't interfere with value comparisons
-//                    this.model.insertCharacters(this.cursorManager.getModelPosition(), '>');
-//                    paired = true;
-                break;
+                    case '<':
+                        // TODO: Check for HTML/XML syntax highlighting first, so you don't interfere with value comparisons
+//                      this.model.insertCharacters(this.cursorManager.getModelPosition(), '>');
+//                      paired = true;
+                    break;
 
-                case '"':
-                    this.model.insertCharacters(this.cursorManager.getModelPosition(), '"');
-                    paired = true;
-                break;
+                    case '"':
+                        // TODO: Check for proper context, to avoid ' \"" ' situation
+//                        this.model.insertCharacters(this.cursorManager.getModelPosition(), '"');
+//                        paired = true;
+                    break;
 
-                case "'":
-                    // Check to make sure this is a quotation mark, not an apostrophe
-//                    this.model.insertCharacters(this.cursorManager.getModelPosition(), "'");
-//                    paired = true;
-                break;
+                    case "'":
+                        // TODO: Check to make sure this is a single-quotation mark, not an apostrophe
+//                      this.model.insertCharacters(this.cursorManager.getModelPosition(), "'");
+//                      paired = true;
+                    break;
+                }
             }
 
             this.repaint();

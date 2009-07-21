@@ -71,6 +71,7 @@ dojo.declare("bespin.client.settings.Core", null, {
             'fontsize': '10',
             'consolefontsize': '11',
             'autocomplete': 'off',
+            'closepairs': 'off',
             'collaborate': 'off',
             'language': 'auto',
             'strictlines': 'on',
