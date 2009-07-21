@@ -39,6 +39,9 @@
             }],
             ["debugbar", {
                 "pointer": "debug"
+            }],
+            ["breakpoints", {
+                "pointer": "debug:BreakpointManager"
             }]
         ],
         "location": "/getscript/js/bespin/"

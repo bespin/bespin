@@ -262,108 +262,104 @@ members: {
     }
 }});
 
-/*
- * Array of objects that look like this:
- * { project: "project", path: "/path/to/file.js", lineNumber: 23 }
- * 
- * TODO the breakpoints should really be stored in an object outside
- * of this module (to support multiple Bespin instances, for example)
- */
-exports.breakpoints = [];
 
-/** any state that is sent from the target VM */
-exports.state = {};
-
-/** internal ID numbers for these breakpoints. */
-var _sequence = 1;
-
-/**
- * Helper to check for duplicate breakpoints before adding this one
- */
-exports.addBreakpoint = function(newBreakpoint) {
-    for (var i = 0; i < this.breakpoints.length; i++) {
-        var breakpoint = this.breakpoints[i];
-        if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;
-    }
-    newBreakpoint.id = this.sequence++;
-    exports.breakpoints.push(newBreakpoint);
-    this.saveBreakpoints();
-    bespin.publish("debugger:breakpoints:add", newBreakpoint);
-    return true;
-};
-
-/**
- * Returns true if the two breakpoints represent the same line in the same
- * file in the same project
- */
-exports.breakpointsEqual = function(b1, b2) {
-    return (b1.project == b2.project && b1.path == b2.path && b1.lineNumber == b2.lineNumber);
-};
-
-/**
- * Helper to remove a breakpoint from the breakpoints array
- */
-exports.removeBreakpoint = function(breakpointToRemove) {
-    for (var i = 0; i < exports.breakpoints.length; i++) {
-        if (this.breakpointsEqual(exports.breakpoints[i], breakpointToRemove)) {
-            breakpointToRemove.id = exports.breakpoints[i].id;
-            exports.breakpoints.splice(i, 1);
-            this.saveBreakpoints();
-            bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
-            return;
+exports.BreakpointManager = Class.define({
+members: {
+    init: function() {
+        this.breakpoints = [];
+        this._sequence = 1;
+    },
+    
+    /**
+     * Helper to check for duplicate breakpoints before adding this one
+     */
+    addBreakpoint: function(newBreakpoint) {
+        for (var i = 0; i < this.breakpoints.length; i++) {
+            var breakpoint = this.breakpoints[i];
+            if (this.breakpointsEqual(breakpoint, newBreakpoint)) return false;
         }
-    }
-};
+        newBreakpoint.id = this.sequence++;
+        this.breakpoints.push(newBreakpoint);
+        this.saveBreakpoints();
+        bespin.publish("debugger:breakpoints:add", newBreakpoint);
+        return true;
+    },
 
-/**
- *
- */
-exports.toggleBreakpoint = function(breakpoint) {
-    if (!this.addBreakpoint(breakpoint)) this.removeBreakpoint(breakpoint);
-};
+    /**
+     * Returns true if the two breakpoints represent the same line in the same
+     * file in the same project
+     */
+    breakpointsEqual: function(b1, b2) {
+        return (b1.project == b2.project && b1.path == b2.path && b1.lineNumber == b2.lineNumber);
+    },
 
-/**
- * Helper to return the breakpoints that apply to the current file
- */
-exports.getBreakpoints = function(project, path) {
-    var bps = [];   // breakpoints to return
-
-    dojo.forEach(exports.breakpoints, function(breakpoint) {
-        if (breakpoint.project == project && breakpoint.path == path) bps.push(breakpoint);
-    });
-
-    return bps;
-};
-
-/**
- *
- */
-exports.loadBreakpoints = function(callback) {
-    bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", function(file) {
-        exports.breakpoints = dojo.fromJson(file.content);
-
-        // reset IDs, because they are not consistent between
-        // loads of Bespin.
-        this.sequence = 1;
-        for (var i = 0; i < exports.breakpoints.length; i++) {
-            exports.breakpoints[i].id = this.sequence++;
+    /**
+     * Helper to remove a breakpoint from the breakpoints array
+     */
+    removeBreakpoint: function(breakpointToRemove) {
+        for (var i = 0; i < this.breakpoints.length; i++) {
+            if (this.breakpointsEqual(this.breakpoints[i], breakpointToRemove)) {
+                breakpointToRemove.id = this.breakpoints[i].id;
+                this.breakpoints.splice(i, 1);
+                this.saveBreakpoints();
+                bespin.publish("debugger:breakpoints:remove", breakpointToRemove);
+                return;
+            }
         }
+    },
 
-        if (dojo.isFunction(callback)) callback();
-    });
-};
+    /**
+     *
+     */
+    toggleBreakpoint: function(breakpoint) {
+        if (!this.addBreakpoint(breakpoint)) this.removeBreakpoint(breakpoint);
+    },
 
-/**
- *
- */
-exports.saveBreakpoints = function() {
-    // save breakpoints back to server asynchronously
-    bespin.get('files').saveFile(bespin.userSettingsProject, {
-        name: "breakpoints",
-        content: dojo.toJson(exports.breakpoints),
-        timestamp: new Date().getTime()
-    });
-};
+    /**
+     * Helper to return the breakpoints that apply to the current file
+     */
+    getBreakpoints: function(project, path) {
+        var bps = [];   // breakpoints to return
+
+        dojo.forEach(this.breakpoints, function(breakpoint) {
+            if (breakpoint.project == project && breakpoint.path == path) bps.push(breakpoint);
+        });
+
+        return bps;
+    },
+
+    /**
+     *
+     */
+    loadBreakpoints: function(callback) {
+        var self = this;
+        bespin.get('files').loadContents(bespin.userSettingsProject, "breakpoints", function(file) {
+            self.breakpoints = dojo.fromJson(file.content);
+
+            // reset IDs, because they are not consistent between
+            // loads of Bespin.
+            this.sequence = 1;
+            for (var i = 0; i < self.breakpoints.length; i++) {
+                self.breakpoints[i].id = this.sequence++;
+            }
+
+            if (dojo.isFunction(callback)) callback();
+        });
+    },
+
+    /**
+     *
+     */
+    saveBreakpoints: function() {
+        var self = this;
+        // save breakpoints back to server asynchronously
+        bespin.get('files').saveFile(bespin.userSettingsProject, {
+            name: "breakpoints",
+            content: dojo.toJson(self.breakpoints),
+            timestamp: new Date().getTime()
+        });
+    },
+}});
 
 exports.debuggerRunning = function() {
     dojo.style("debugbar_status_running", "display", "inline");
