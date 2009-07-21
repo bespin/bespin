@@ -147,6 +147,10 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     },
 
     toggle: function() {
+        if (!this.scene.isVisible) {
+            dojo.style("quickopenContainer", "display", "block");
+        }
+        
         this.scene.toggle();
 
         if (!this.scene.isVisible) {

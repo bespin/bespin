@@ -423,7 +423,7 @@ def compress_js():
         restore_javascript_version(replaced_lines)
     
     dojo_js = embed_release_dir / "js" / "dojo/dojo.js"
-    dojo_js.copy(options.build_top / "embed.js")
+    # dojo_js.copy(options.build_top / "embed.js")
 
     front_end_target = options.build_dir / "frontend"
     

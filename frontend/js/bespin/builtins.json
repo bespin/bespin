@@ -37,8 +37,11 @@
                 "topic": "debugger:halted",
                 "pointer": "debug:debuggerHalted"
             }],
-            ["bespin.debugger", {
+            ["debugbar", {
                 "pointer": "debug"
+            }],
+            ["breakpoints", {
+                "pointer": "debug:BreakpointManager"
             }]
         ],
         "location": "/getscript/js/bespin/"

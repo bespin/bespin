@@ -539,19 +539,19 @@ dojo.declare("bespin.editor.UI", null, {
 
         if (this.editor.debugMode) {
             if (clientX < this.DEBUG_GUTTER_WIDTH) {
+                console.log("Clicked in debug gutter");
                 var point = { x: clientX, y: clientY };
                 point.y += Math.abs(this.yoffset);
                 var p = this.convertClientPointToCursorPoint(point);
 
                 var editSession = bespin.get("editSession");
                 if (p && editSession) {
-                    var debug = bespin.plugins.getLoadedOne("bespin.debugger");
-                    if (debug) {
-                        debug.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
+                    bespin.getComponent("breakpoints", function(breakpoints) {
+                        breakpoints.toggleBreakpoint({ project: editSession.project, path: editSession.path, lineNumber: p.row });
                         this.editor.paint(true);
-                        return;
-                    }
+                    }, this);
                 }
+                return;
             }
         }
 
@@ -1075,14 +1075,13 @@ dojo.declare("bespin.editor.UI", null, {
         var lineMarkers = bespin.get("parser").getLineMarkers();
 
         if (this.editor.debugMode && bespin.get("editSession")) {
-            var debug = bespin.plugins.getLoadedOne("bespin.debugger");
-            if (debug) {
-                var points = debug.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
+            bespin.getComponent("breakpoints", function(bpmanager) {
+                var points = bpmanager.getBreakpoints(bespin.get('editSession').project, bespin.get('editSession').path);
                 dojo.forEach(points, function(point) {
                     breakpoints[point.lineNumber] = point;
                 });
                 delete points;
-            }
+            });
         }
 
         // IF YOU WANT TO FORCE A COMPLETE REPAINT OF THE CANVAS ON EVERY PAINT, UNCOMMENT THE FOLLOWING LINE:

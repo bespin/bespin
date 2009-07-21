@@ -40,16 +40,6 @@ var caches = {};
 exports.Interface = Class.define({
 members: {
     init: function(commandLine, store, options) {
-        this.setup(commandLine, store, options);
-    },
-
-    /**
-     * Dojo automatically calls superclass constructors. So, if you don't want
-     * the constructor behavior, there's no way out. (Now that this is a
-     * JSTraits Class, this should be reverified).
-     * Move to a separate function to allow overriding.
-     */
-    setup: function(commandLine, store, options) {
         this.nodes = [];
         this.connections = [];
         this.subscriptions = [];
@@ -106,7 +96,7 @@ members: {
         this.store = store;
 
         this.connectEvents();
-        this.history = new exports.History(this);
+        this.history = new exports.History();
         this.hideOutput();
     },
     
@@ -1034,10 +1024,13 @@ members: {
  */
 exports.History = Class.define({
 members: {
-    init: function() {
+    init: function(store) {
+        if (!store) {
+            store = new exports.ServerHistoryStore(this);
+        }
         this.instructions = [];
         this.pointer = 0;
-        this.store = new exports.ServerHistoryStore(this);
+        this.store = store;
     },
 
     settings: {

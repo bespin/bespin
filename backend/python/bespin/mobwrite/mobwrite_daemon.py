@@ -47,7 +47,7 @@ MAX_VIEWS = 10000
 MEMORY = 0
 FILE = 1
 BDB = 2
-PERSISTER = 0
+PERSISTER = 3
 STORAGE_MODE = PERSISTER
 
 # Port to listen on.
@@ -79,7 +79,7 @@ class TextObj(mobwrite_core.TextObj):
   # .views - Views currently connected to this text.
   # .lasttime - The last time that this text was modified.
 
-  # Inerhited properties:
+  # Inherited properties:
   # .name - The unique name for this text, e.g 'proposal'.
   # .text - The text itself.
   # .changed - Has the text changed since the last time it was saved.
@@ -103,9 +103,10 @@ class TextObj(mobwrite_core.TextObj):
     mobwrite_core.TextObj.setText(self, newText)
     self.lasttime = datetime.datetime.now()
 
-  def cleanup(self):
+  def cleanup(self, force=False):
+    mobwrite_core.LOG.info("cleanup for " + self.name + " force=" + str(force))
     # General cleanup task.
-    if len(self.views) > 0:
+    if not force and len(self.views) > 0:
       return
     terminate = False
     # Lock must be acquired to prevent simultaneous deletions.
@@ -119,6 +120,7 @@ class TextObj(mobwrite_core.TextObj):
       mobwrite_core.LOG.info("Unloading text: '%s'" % self.name)
       terminate = True
 
+    mobwrite_core.LOG.info("cleanup for " + self.name + " terminate=" + str(terminate))
     if terminate:
       # Save to disk/database.
       self.save()
@@ -137,7 +139,15 @@ class TextObj(mobwrite_core.TextObj):
 
 
   def load(self):
+    mobwrite_core.LOG.info("TextObj.load() called")
     # Load the text object from non-volatile storage.
+    if STORAGE_MODE == PERSISTER:
+      contents = self.persister.load(self.name)
+      self.setText(contents)
+      self.changed = False
+    else:
+      self.persister.check_access(self.name)
+
     if STORAGE_MODE == FILE:
       # Load the text (if present) from disk.
       filename = "%s/%s.txt" % (DATA_DIR, urllib.quote(self.name, ""))
@@ -163,15 +173,17 @@ class TextObj(mobwrite_core.TextObj):
         self.setText(None)
       self.changed = False
 
-    if STORAGE_MODE == PERSISTER:
-      contents = self.persister.load(self.name);
-      self.setText(contents)
-      self.changed = False
-
   def save(self):
+    mobwrite_core.LOG.info("TextObj.save() called")
     # Save the text object to non-volatile storage.
     # Lock must be acquired by the caller to prevent simultaneous saves.
     assert self.lock.locked(), "Can't save unless locked."
+
+    if STORAGE_MODE == PERSISTER:
+      self.persister.save(self.name, self.text)
+      self.changed = False
+    else:
+      self.persister.check_access(self.name)
 
     if STORAGE_MODE == FILE:
       # Save the text to disk.
@@ -208,10 +220,6 @@ class TextObj(mobwrite_core.TextObj):
         lasttime_db[self.name] = str(int(time.time()))
       self.changed = False
 
-    if STORAGE_MODE == PERSISTER:
-      self.persister.save(self.name, self.text)
-      self.changed = False
-
 
 def fetch_textobj(name, view, persister):
   # Retrieve the named text object.  Create it if it doesn't exist.
@@ -245,7 +253,7 @@ class ViewObj(mobwrite_core.ViewObj):
   # .lock - Access control for writing to the text on this object.
   # .textobj - The shared text object being worked on.
 
-  # Inerhited properties:
+  # Inherited properties:
   # .username - The name for the user, e.g 'fraser'
   # .filename - The name for the file, e.g 'proposal'
   # .shadow - The last version of the text sent to client.
@@ -492,7 +500,7 @@ class DaemonMobWrite(SocketServer.StreamRequestHandler, mobwrite_core.MobWrite):
         textobj.lock.acquire()
         textobj.setText(None)
         textobj.lock.release()
-        viewobj.nullify();
+        viewobj.nullify()
         viewobj.lock.release()
         viewobj = None
         continue
@@ -674,7 +682,7 @@ def cleanup():
     for v in views.values():
       v.cleanup()
     for v in texts.values():
-      v.cleanup()
+      v.cleanup(force=True)
     for v in buffers.values():
       v.cleanup()
 
@@ -706,23 +714,24 @@ last_cleanup = time.time()
 def maybe_cleanup():
   global last_cleanup
   now = time.time()
-  if now > last_cleanup + 60:
+  if now > last_cleanup + 1: # 60
     cleanup()
     last_cleanup = now
+
 
 class Persister:
 
   def load(self, name):
-    project, path = self.__decomposeName(name)
+    project, path = self.check_access(name)
     mobwrite_core.LOG.debug("loading from: %s/%s" % (project.name, path))
     return project.get_temp_file(path)
 
   def save(self, name, contents):
-    project, path = self.__decomposeName(name)
+    project, path = self.check_access(name)
     mobwrite_core.LOG.debug("saving to: %s/%s" % (project.name, path))
     project.save_temp_file(path, contents)
 
-  def __decomposeName(self, name):
+  def check_access(self, name):
     from bespin.database import User, get_project
     (user_name, project_name, path) = name.split("/", 2)
 
