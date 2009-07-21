@@ -100,19 +100,35 @@ members: {
         
         var fileActions = [];
         var action = {
+            name: "Edit File",
+            image: new Image(),
+            action: function(cli, file, path) {
+                cli.setCommandText("open " + file);
+                cli.focus();
+            }
+        }
+        action.image.src = "images/actions/edit.png";
+        fileActions.push(action);
+        
+        var action = {
             name: "Paste to Command Line",
             image: new Image(),
-            action: dojo.hitch(this, this._commandlinePasteAction)
+            action: function(cli, file, path) {
+                cli.appendCommandText(" " + file);
+            }
         }
-        action.image.src = "images/actions/paste.gif";
+        action.image.src = "images/actions/pasteToCommandLine.png";
         fileActions.push(action);
         
         action = {
             name: "Delete",
             image: new Image(),
-            action: dojo.hitch(this, this._deleteAction)
+            action: function(cli, file, path) {
+                cli.setCommandText("del " + file);
+                cli.focus();
+            }
         }
-        action.image.src = "images/actions/delete.gif";
+        action.image.src = "images/actions/delete.png";
         fileActions.push(action);
         
         this.fileActionPanel = new th.Panel();
@@ -127,7 +143,7 @@ members: {
         var actionlabel = new th.Label({text: ""});
         actionlabel.addCss("background-color", "rgb(37,34,33)");
         actionlabel.addCss("text-align", "center");
-        this.fileActionPanel.add(new exports.ActionPanel(actionlabel, fileActions, 20, 20, 4));
+        this.fileActionPanel.add(new exports.ActionPanel(this, actionlabel, fileActions, 20, 20, 4));
         this.fileActionPanel.add(actionlabel);
         
         this.fileActionPanel.bus.bind("mousemove", this.fileActionPanel, function(e) {
@@ -564,27 +580,6 @@ members: {
         bespin.get("server").list(null, null, dojo.hitch(this, this.displayProjects));
     },
     
-    _deleteAction: function(e) {
-        var self = this;
-        bespin.getComponent("commandLine", function(cli) {
-            var path = self.tree.getSelectedPath();
-            var file = self.getFilePath(path, true);
-            cli.setCommandText("del " + file);
-            cli.focus();
-        });
-        th.stopEvent(e);
-    },
-    
-    _commandlinePasteAction: function(e) {
-        var self = this;
-        bespin.getComponent("commandLine", function(cli) {
-            var path = self.tree.getSelectedPath();
-            var file = self.getFilePath(path, true);
-            cli.appendCommandText(" " + file);
-        });
-        th.stopEvent(e);
-    },
-        
     getFileDetailPanel: function(item) {
         return this.fileActionPanel;
     }
@@ -594,10 +589,11 @@ exports.ActionPanel = Class.define({
 type: "ActionPanel",
 superclass: th.Panel,
 members: {
-    init: function(label, actions, width, height, columns, parms) {
+    init: function(context, label, actions, width, height, columns, parms) {
         this._super(parms);
         this.label = label;
         this.actions = actions;
+        this.context = context;
         
         for (var i = 0; i < actions.length; i++) {
             var ai = new exports.ActionIcon(actions[i], width, height);
@@ -663,7 +659,13 @@ members: {
     },
     
     _onmousedown: function(e) {
-        this.action.action(e);
+        var action = this.action.action;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = this.tree.getSelectedPath();
+            var file = this.getFilePath(path, true);
+            action(cli, file, path);
+        }, this.parent.context);
+        th.stopEvent(e);
     },
     
     _onmousemove: function(e) {
