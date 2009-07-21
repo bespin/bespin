@@ -1002,6 +1002,9 @@ dojo.declare("bespin.editor.Actions", null, {
     // Fire an escape message so various parts of the UI can choose to clear
     escape: function() {
         bespin.publish("ui:escape");
+        if (this.editor.ui.searchString) {
+            this.editor.ui.setSearchString(false);
+        }
     },
     // END SEARCH ACTIONS
 

@@ -329,17 +329,6 @@ dojo.declare("bespin.editor.Events", null, {
             editor.setFocus(true);
         });
 
-        // ** {{{ Event: escape }}} **
-        //
-        // escape key hit, so clear the find
-        bespin.subscribe("ui:escape", function(event) {
-            if (editor.ui.searchString && !event.keepSearchUp) {
-                editor.ui.setSearchString(false);
-                // commented out because this bit of UI does not exist right now
-                // dojo.byId('searchresult').style.display = 'none';
-            }
-        });
-
         // ** {{{ Event: editor:document:changed }}} **
         //
         // Track whether a file is dirty (hasn't been saved)
