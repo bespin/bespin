@@ -517,11 +517,12 @@ members:
         var xm = p.x + (width / 2);
         var ym = p.y + (height / 2);
 
+        ctx.globalAlpha = progress; // a (bug?) in WebKit nightly means that this must happen BEFORE rotation.
+
         ctx.translate(xm, ym);
         ctx.rotate(Math.PI * (0.5 + (1.5 * progress)));
         ctx.translate(-xm, -ym);
 
-        ctx.globalAlpha = progress;
         ctx.drawImage(off, p.x, p.y, width, height);
 
         ctx.restore();
