@@ -218,10 +218,10 @@ members: {
             var rowin = dojo.create("div", {
                 className: "command_rowin",
                 onclick: function(ev) {
-                    self.historyClick(instruction.typed, ev);
+                    self.commandLine.value = instruction.typed;
                 },
                 ondblclick: function(ev) {
-                    self.historyDblClick(instruction.typed, ev);
+                    self.executeCommand(instruction.typed);
                 }
             }, outputNode);
             rowin.innerHTML = "> " + instruction.typed || "";
