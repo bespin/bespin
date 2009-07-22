@@ -38,6 +38,53 @@ dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.currentState = this.mobwriteState.stopped;
+            this.currentState = this.mobwriteState.stopped;
+        this.fileHistory = [];
+        this.fileHistoryIndex = -1;
+    },
+
+    /**
+     * Opens the previous file within the fileHistroyList related to the current opened file / current position within the fileHistoryList
+     * The real opening of the file is done within openFromHistry()
+     */
+    goToPreviousFile: function() {
+        if (this.fileHistoryIndex != 0) {
+            this.fileHistoryIndex --;
+            this.openFromHistory();
+        }
+    },
+
+    /**
+     * Opens the next file within the fileHistroyList related to the current opened file / current position within the fileHistroyList
+     * The real opening of the file is done within openFromHistry()
+     */
+    goToNextFile: function() {
+        if (this.fileHistoryIndex != this.fileHistory.length - 1) {
+            this.fileHistoryIndex ++;
+            this.openFromHistory();
+        }
+    },
+
+    /**
+     * Opens a file from the fileHistoryList.
+     * The file to be opened is set by the variable this.fileHistoryIndex, which is the index for the this.fileHistory array
+     */
+    openFromHistory: function() {
+        var historyItem = this.fileHistory[this.fileHistoryIndex];
+        bespin.publish("editor:savefile", {});
+        bespin.publish("editor:openfile", { project: historyItem.project,  filename: historyItem.filename, fromFileHistory: true });
+    },
+
+    /**
+     * Adds a new file to the fileHistoryList
+     * There are two possible cases:
+     * a) the current opened file is the last one in the fileHistoryList. If so, just add the file to the end
+     * b) the current opened file is *not* at the end of the fileHistryList. In this case, we will have to 
+     *    delete the files after the current one in the list and add then the new one
+     */  
+    addFileToHistory: function(newItem) {
+        this.fileHistoryIndex ++;
+        this.fileHistory.splice(this.fileHistoryIndex, this.fileHistory.length - this.fileHistoryIndex, newItem);
     },
 
     /**
