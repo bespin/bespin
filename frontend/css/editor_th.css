@@ -96,8 +96,30 @@ Label.fileActions {
     background-color: rgb(37, 34, 33);
 }
 
+Label.fileDetailLabel {
+    background-color: rgb(37,34,33);
+    background-image: url(../images/filebrowser/file_lg.png);
+    background-repeat: no-repeat;
+    background-position: left center;
+    font: 14px Tahoma;
+    padding-left: 35px;
+    margin-bottom: 10px;
+}
+
+Label.fileActionLabel {
+    background-color: rgb(37,34,33);
+    text-align: center;
+    color: rgb(75, 74, 67);
+}
+
+ActionPanel {
+    background-color: rgb(61, 59, 52);
+    padding: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
 ActionIcon {
-    background-color: rgb(37, 34, 33);
     border-top: 1px solid rgb(46,42,41);
     border-bottom: 1px solid rgb(39,21,28);
     border-left: 1px solid rgb(52,49,48);
