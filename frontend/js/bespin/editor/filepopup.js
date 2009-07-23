@@ -320,6 +320,7 @@ members: {
             var session = bespin.get("editSession");
             var project = session.project;
             this.currentProject = project;
+            this.projects.selectItemByText(project);
             var path = session.path;
             this.restorePath(path);
         }
