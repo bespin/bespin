@@ -14,6 +14,8 @@ Splitter.vertical {
     color: white;
 }
 
+
+
 #projects_label {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
 }
@@ -44,6 +46,10 @@ HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png);
     background-repeat: repeat-x, no-repeat;
     background-position: left top, right center;
+}
+
+#project_list {
+    background-color: rgb(5, 5, 5);
 }
 
 #project_list Label {

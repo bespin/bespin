@@ -32,6 +32,8 @@ members: {
         this.subscriptions = [];
         this.connections = [];
         this.nodes = [];
+        
+        this.visible = false;
 
         this.canvas = dojo.create("canvas", {
             id: "popup",
@@ -119,6 +121,7 @@ members: {
             commandline.showOutput(panel, d.centerPanel);
             this.canvas.style.display = 'block';
             this.visible = true;
+            this.currentPanel = panel;
         }, this);
     },
     
@@ -127,13 +130,44 @@ members: {
         dojo.style(this.closer, 'display', 'none');
         bespin.getComponent("commandLine", function(cli) {
             cli.hideOutput();
+            this.currentPanel = null;
         });
         this.editor.setFocus(true);
         this.visible = false;
     },
     
     /**
-     * Calculate slice border positions
+     * Resize the popup
+     * To be called from a window.onresize event
+     */
+    resize: function() {
+        if (!this.visible) return;
+
+        // This fixes some redraw problems (due to resize events firing in
+        // unpredictable orders) however this code doesn't work on IE. There
+        // is a dojo function to use clientHeight on IE, but that's in dijit
+        // so in the sort term we hack.
+        // http://www.dojotoolkit.org/forum/dojo-core-dojo-0-9/dojo-core-support/how-get-cross-browser-window-innerheight-value
+        // http://code.google.com/p/doctype/wiki/WindowInnerHeightProperty
+        //  this.canvas.height = this.editor.canvas.height;
+        //  this.canvas.width = this.editor.canvas.width;
+        // Also the height maths is wonky because it puts the pie off the bottom
+        // of the screen, but we'll be changing the way that works shortly
+        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
+
+        this.canvas.style.display = 'block';
+        var d = this.calculatePosition();
+        this.renderPopout(d);
+        this.renderToolbar(d);
+        bespin.getComponent("commandLine", function(commandline) {
+            commandline.resize(d.centerPanel);
+        }, this);
+    },
+    
+    
+    /**
+     * Calculate border positions
      */
     calculatePosition: function() {
         var d = {};
