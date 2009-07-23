@@ -67,29 +67,14 @@ members: {
         leftColumnScrollPane.add(leftColumnContents);
         topPanel.add(leftColumnScrollPane);
 
-        // add the project label and project list
-        var projectLabel = new th.Label({ id: "projects_label", 
-                                          text: "Projects" });
-        leftColumnContents.add(projectLabel);
-        this.projects = new th.List();
+        this.projects = new th.List({id: "project_list"});
         this.projects.getItemText = function(item) { return item.name; };
         leftColumnContents.add(this.projects);
-
-        // how to layout the two
-        leftColumnContents.layout = function() {
-            var top = this.children[0];
-            var bottom = this.children[1];
-
-            var d = this.d();
-
-            top.setBounds(d.i.l, d.i.t, d.b.iw, top.getPreferredSize().height);
-            bottom.setBounds(d.i.l, top.bounds.y + top.bounds.height, d.b.iw, d.b.ih - top.bounds.height);
-        };
 
         // and a preferred size
         leftColumnContents.getPreferredSize = function() {
             var width = 200;    // todo: tie into CSS sizer thingie 
-            var height = this.children[0].getPreferredSize().height + this.children[1].getPreferredSize().height;
+            var height = this.children[0].getPreferredSize().height;
             return { width: width, height: height };
         };
 
