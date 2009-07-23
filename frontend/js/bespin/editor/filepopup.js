@@ -286,7 +286,7 @@ members: {
         // I don't know why these two lines are needed. The definitions
         // in editor_th.css don't seem to be taking effect here.
         actionlabel.addCss("background-color", "rgb(37,34,33)");
-        actionlabel.addCss("color", "rgb(105, 104, 97)");
+        actionlabel.addCss("color", "rgb(150, 150, 150)");
         fileActionPanel.add(new exports.ActionPanel(this, actionlabel, fileActions, 27, 27, 4));
         fileActionPanel.add(actionlabel);
         
@@ -636,7 +636,7 @@ members: {
                 y += height;
                 col = 0;
             } else {
-                x += width + 5;
+                x += width + 3;
             }
         }
     }

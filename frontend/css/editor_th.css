@@ -80,6 +80,10 @@ HorizontalTree Label.odd, HorizontalTree Label.oddmore {
     background-color: rgb(5, 5, 0);
 }
 
+HorizontalTree Panel {
+    background-color: rgb(5, 5, 0);
+}
+
 Label.fileActions {
     background-color: rgb(37, 34, 33);
 }
@@ -99,14 +103,13 @@ Label.fileDetailLabel {
 Label.fileActionLabel {
     background-color: rgb(37,34,33);
     text-align: center;
-    color: rgb(75, 74, 67);
 }
 
 ActionPanel {
     background-color: rgb(61, 59, 52);
     padding: 0px;
     margin-left: 20px;
-    margin-right: 20px;
+    margin-right: 15px;
 }
 
 ActionIcon {
@@ -124,3 +127,33 @@ Label.statusSymbol {
    font: 10pt Calibri, Arial, sans-serif;
 }
 
+/* Scrollbars for file browser */
+
+ScrollPane {
+    background-color: rgb(50, 50, 50);
+}
+
+VerticalScrollbar {
+    -th-top-image: url(../images/filebrowser/scroll_gutter-top.gif);
+    -th-middle-image: url(../images/filebrowser/scroll_gutter-mid.gif);
+    -th-bottom-image: url(../images/filebrowser/scroll_gutter-btm.gif);
+    background-color: rgb(50, 50, 50);
+}
+
+VerticalScrollbar > Button.bar {
+    -th-top-image: url(../images/filebrowser/scroll_thumb-top.png);
+    -th-middle-image: url(../images/filebrowser/scroll_thumb-mid.png);
+    -th-bottom-image: url(../images/filebrowser/scroll_thumb-btm.png);
+}
+
+VerticalScrollbar > Button.up {
+    background-image: url(../images/filebrowser/scroll_widget-up.gif);
+}
+
+VerticalScrollbar > Button.down {
+    background-image: url(../images/filebrowser/scroll_widget-dwn.gif);
+}
+
+ResizeNib {
+    background-color: rgb(50, 50, 50);
+}
