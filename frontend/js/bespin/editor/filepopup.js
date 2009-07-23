@@ -46,7 +46,7 @@ members: {
             tabIndex: -1,
             style: {
                 position: "absolute",
-                zIndex: 400,
+                zIndex: 100,
                 display: "none"
             }
         }, dojo.body());
@@ -67,29 +67,14 @@ members: {
         leftColumnScrollPane.add(leftColumnContents);
         topPanel.add(leftColumnScrollPane);
 
-        // add the project label and project list
-        var projectLabel = new th.Label({ id: "projects_label", 
-                                          text: "Projects" });
-        leftColumnContents.add(projectLabel);
-        this.projects = new th.List();
+        this.projects = new th.List({id: "project_list"});
         this.projects.getItemText = function(item) { return item.name; };
         leftColumnContents.add(this.projects);
-
-        // how to layout the two
-        leftColumnContents.layout = function() {
-            var top = this.children[0];
-            var bottom = this.children[1];
-
-            var d = this.d();
-
-            top.setBounds(d.i.l, d.i.t, d.b.iw, top.getPreferredSize().height);
-            bottom.setBounds(d.i.l, top.bounds.y + top.bounds.height, d.b.iw, d.b.ih - top.bounds.height);
-        };
 
         // and a preferred size
         leftColumnContents.getPreferredSize = function() {
             var width = 200;    // todo: tie into CSS sizer thingie 
-            var height = this.children[0].getPreferredSize().height + this.children[1].getPreferredSize().height;
+            var height = this.children[0].getPreferredSize().height;
             return { width: width, height: height };
         };
 
@@ -98,64 +83,7 @@ members: {
 
         this.tree.getItemText = this.projects.getItemText;
         
-        var fileActions = [];
-        var action = {
-            name: "Edit File",
-            image: new Image(),
-            action: function(cli, file, path) {
-                cli.setCommandText("open " + file);
-                cli.focus();
-            }
-        }
-        action.image.src = "images/actions/edit.png";
-        fileActions.push(action);
-        
-        var action = {
-            name: "Paste to Command Line",
-            image: new Image(),
-            action: function(cli, file, path) {
-                cli.appendCommandText(" " + file);
-            }
-        }
-        action.image.src = "images/actions/pasteToCommandLine.png";
-        fileActions.push(action);
-        
-        action = {
-            name: "Delete",
-            image: new Image(),
-            action: function(cli, file, path) {
-                cli.setCommandText("del " + file);
-                cli.focus();
-            }
-        }
-        action.image.src = "images/actions/delete.png";
-        fileActions.push(action);
-        
-        this.fileActionPanel = new th.Panel();
-        this.fileActionPanel.addCss("background-color", "rgb(37,34,33)");
-        
-        var toplabel = new th.Label({text: "File Actions"});
-        toplabel.addCss("background-color", "rgb(37,34,33)");
-        toplabel.addCss("text-align", "center");
-        this.fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
-        this.fileActionPanel.add(toplabel);
-        
-        var actionlabel = new th.Label({text: ""});
-        actionlabel.addCss("background-color", "rgb(37,34,33)");
-        actionlabel.addCss("text-align", "center");
-        this.fileActionPanel.add(new exports.ActionPanel(this, actionlabel, fileActions, 20, 20, 4));
-        this.fileActionPanel.add(actionlabel);
-        
-        this.fileActionPanel.bus.bind("mousemove", this.fileActionPanel, function(e) {
-            if (actionlabel.text != "") {
-                actionlabel.text = "";
-                actionlabel.getScene().render();
-                th.stopEvent(e);
-            }
-        });
-        
-        
-        this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
+        this.configureActions();
 
         topPanel.add(this.tree);
 
@@ -304,6 +232,76 @@ members: {
         });
     },
     
+    configureActions: function() {
+        var fileActions = [];
+        var action = {
+            name: "Edit File",
+            image: new Image(),
+            activeImage: new Image(),
+            action: function(cli, file, path) {
+                cli.setCommandText("open " + file);
+                cli.focus();
+            }
+        }
+        action.image.src = "images/actions/open.png";
+        action.activeImage.src = "images/actions/open-b.png";
+        fileActions.push(action);
+        
+        var action = {
+            name: "Paste to Command Line",
+            image: new Image(),
+            activeImage: new Image(),
+            action: function(cli, file, path) {
+                cli.appendCommandText(" " + file);
+            }
+        }
+        action.image.src = "images/actions/pasteToCommandLine.png";
+        action.activeImage.src = "images/actions/pasteToCommandLine-b.png";
+        fileActions.push(action);
+        
+        action = {
+            name: "Delete",
+            image: new Image(),
+            activeImage: new Image(),
+            action: function(cli, file, path) {
+                cli.setCommandText("del " + file);
+                cli.focus();
+            }
+        }
+        action.image.src = "images/actions/delete.png";
+        action.activeImage.src = "images/actions/delete-b.png";
+        fileActions.push(action);
+        
+        var fileActionPanel = this.fileActionPanel = new th.Panel();
+        fileActionPanel.addCss("background-color", "rgb(37,34,33)");
+        
+        var toplabel = new th.Label({text: "", className: "fileDetailLabel"});
+        toplabel.addCss("background-color", "rgb(37,34,33)");
+        fileActionPanel.toplabel = toplabel;
+        
+        fileActionPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
+        fileActionPanel.add(toplabel);
+        
+        var actionlabel = new th.Label({text: "", className: "fileActionLabel"});
+        // I don't know why these two lines are needed. The definitions
+        // in editor_th.css don't seem to be taking effect here.
+        actionlabel.addCss("background-color", "rgb(37,34,33)");
+        actionlabel.addCss("color", "rgb(150, 150, 150)");
+        fileActionPanel.add(new exports.ActionPanel(this, actionlabel, fileActions, 27, 27, 4));
+        fileActionPanel.add(actionlabel);
+        
+        fileActionPanel.bus.bind("mousemove", fileActionPanel, function(e) {
+            if (actionlabel.text != "") {
+                actionlabel.text = "";
+                actionlabel.getScene().render();
+                th.stopEvent(e);
+            }
+        });
+        
+        
+        this.tree.getDetailPanel = dojo.hitch(this, this.getFileDetailPanel);
+    },
+    
     show: function(coords) {
         this.canvas.width = coords.w;
         this.canvas.height = coords.h;
@@ -322,6 +320,7 @@ members: {
             var session = bespin.get("editSession");
             var project = session.project;
             this.currentProject = project;
+            this.projects.selectItemByText(project);
             var path = session.path;
             this.restorePath(path);
         }
@@ -547,7 +546,8 @@ members: {
                                     }
                                 }
                             }
-                            self.tree.showDetails();
+                            
+                            self.tree.showDetails(fakePath[newPath.length-1]);
                         }
                     };
                 })(x));
@@ -581,6 +581,11 @@ members: {
     },
     
     getFileDetailPanel: function(item) {
+        if (item) {
+            this.fileActionPanel.toplabel.text = item.name;
+        } else {
+            this.fileActionPanel.toplabel.text = "";
+        }
         return this.fileActionPanel;
     }
 }});
@@ -606,30 +611,33 @@ members: {
     },
     
     getPreferredSize: function() {
+        var d = this.d();
         var width = this.parent.bounds.w;
-        var height = this.height * Math.ceil(this.actions.length / this.columns);
+        var height = d.i.t + d.i.b + this.height * Math.ceil(this.actions.length / this.columns);
         return {width: width, height: height};
     },
     
     layout: function() {
+        var d = this.d();
+        
         var children = this.children;
         var width = this.width;
         var height = this.height;
         var columns = this.columns;
         
-        var x = 0;
-        var y = 0;
+        var x = d.i.l;
+        var y = d.i.t;
         var col = 0;
         
         for (var current = 0; current < children.length; current++) {
             children[current].setBounds(x, y, width, height);
             col += 1;
             if (col == columns) {
-                x = 0;
+                x = d.i.l;
                 y += height;
                 col = 0;
             } else {
-                x += width;
+                x += width + 3;
             }
         }
     }
@@ -645,8 +653,12 @@ members: {
         this.action = action;
         this.width = width;
         this.height = height;
+        
+        this.currentImage = this.action.image;
+        
         this.bus.bind("mousedown", this, this._onmousedown, this);
-        this.bus.bind("mousemove", this, this._onmousemove, this);
+        this.bus.bind("mouseover", this, this._onmouseover, this);
+        this.bus.bind("mouseout", this, this._onmouseout, this);
     },
     
     getPreferredSize: function() {
@@ -655,7 +667,7 @@ members: {
     
     paint: function(ctx) {
         this._super(ctx);
-        ctx.drawImage(this.action.image, 0, 0);
+        ctx.drawImage(this.currentImage, 0, 0);
     },
     
     _onmousedown: function(e) {
@@ -668,12 +680,23 @@ members: {
         th.stopEvent(e);
     },
     
-    _onmousemove: function(e) {
+    _onmouseover: function(e) {
         var label = this.parent.label;
-        if (label.text != this.action.name) {
-            label.text = this.action.name;
+        var action = this.action;
+        
+        if (label.text != action.name) {
+            if (action.activeImage) {
+                this.currentImage = action.activeImage;
+            }
+            
+            label.text = action.name;
             this.getScene().render();
-            th.stopEvent(e);
+        }
+    },
+    
+    _onmouseout: function(e) {
+        if (this.action.currentImage != this.action.image) {
+            this.currentImage = this.action.image;
         }
     }
 }});

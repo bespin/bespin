@@ -47,13 +47,6 @@ members:
         
         this.editor = bespin.get("editor");
 
-        // The reference pane takes a while to load so we create it here
-        this.refNode = dojo.create("iframe", {
-            style: "display:none",
-            id: "piemenu_refNode"
-        }, dojo.body());
-        this.nodes.push("piemenu_refNode");
-
         this.canvas = dojo.create("canvas", {
             id: "piemenu",
             tabIndex: -1,
@@ -84,69 +77,13 @@ members:
             }, dojo.body());
             this.nodes.push("piemenu_slice_" + slice.id);
             slice.piemenu = this;
-            
-            var counter = 0;
-            
-            // Load the toolbar images
-            dojo.forEach(slice.toolbar, function(button) {
-                button.img = dojo.create("img", {
-                    src: button.icon,
-                    alt: button.alt,
-                    title: button.alt,
-                    onclick: dojo.hitch(slice, button.onclick),
-                    style: {
-                        position: "absolute",
-                        display: "none",
-                        zIndex: 210,
-                        verticalAlign: "top",
-                        cursor: "pointer"
-                    },
-                    id: "piemenu_button_" + counter
-                }, dojo.body());
-                this.nodes.push("piemenu_button" + counter);
-                counter += 1;
-            }, this);
         }
 
         // When currentSlice is null, we are not visible, there are slices
         // for all the other states
         this.currentSlice = null;
 
-        // Load the menu border images
-        this.border = [];
-        var borderIds = [ "top_lft", "top_mid", "top_rt", "lft", "mid", "rt", "btm_lft", "btm_lftb", "btm_rt", "btm_rtb" ];
-        dojo.forEach(borderIds, function(id) {
-            this.border[id] = dojo.create("img", {
-                src: "/images/menu/" + id + ".png",
-                alt: "pie menu",
-                style: "position:absolute; display:none;",
-                id: "piemenu_border_" + id,
-            }, dojo.body());
-            this.nodes.push("piemenu_border_" + id);
-        }, this);
-
-        // Load the close button image
-        this.closer = dojo.create("img", {
-            src: "/images/closer.png",
-            alt: "Close the dialog",
-            title: "Close the dialog",
-            id: "piemenu_closer",
-            style: {
-                position: "absolute",
-                display: "none",
-                zIndex: 210,
-                cursor: "pointer"
-            },
-            onclick: dojo.hitch(this, this.hide)
-        }, dojo.body());
-        this.nodes.push("piemenu_closer");
-
         var self = this;
-
-        // Hide on Escape
-        this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
-            if (self.visible()) self.hide();
-        }));
 
         this.connections.push(dojo.connect(window, 'resize', this, this.resize));
 
@@ -170,32 +107,65 @@ members:
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
-                    self.show(slice);
-                    dojo.stopEvent(e);
+                    var d = self.calculateSlicePositions();
+                    this.currentSlice = slice;
+                    self.renderCompletePie(slice, d);
+                    setTimeout(function() {
+                        self.showSlice(slice);
+                        dojo.stopEvent(e);
+                    }, 10);
                     return;
                 }
             }
         }));
 
-        this.connections.push(dojo.connect(this.canvas, 'click', function(e) {
-            var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
+        this.connections.push(dojo.connect(this.canvas, 'click', this, function(e) {
             var x = e.layerX || e.offsetX;
             var y = e.layerY || e.offsetY;
-
-            // only do the calculation if you are clicking on the hot zone
-            var p = self.centerPoint(x, y); // change coord scheme to center based
-
-            var distanceFromCenter = Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2));
-
-            if (distanceFromCenter < pieRadius - 4) {
-                var degrees = self.angle(p.x, p.y);
-                self.show(self.slice(degrees));
+            
+            var slice = this.computeSlice(x, y);
+            
+            if (slice) {
+                self.showSlice(slice);
+            }
+        }));
+        
+        this.connections.push(dojo.connect(this.canvas, "onmousemove", this, function(e) {
+            var x = e.layerX || e.offsetX;
+            var y = e.layerY || e.offsetY;
+            
+            var slice = this.computeSlice(x, y);
+            
+            if (slice && slice != this.currentSlice) {
+                var d = this.calculateSlicePositions();
+                this.renderCompletePie(slice, d);
+                this.currentSlice = slice;
             }
         }));
 
         // stop context menu on canvas, because for some reason, WebKit's oncontextmenu doesn't
         // realize when it has been hidden.
-        this.connections.push(dojo.connect(this.canvas, "oncontextmenu", dojo.stopEvent));
+        this.connections.push(dojo.connect(this.canvas, "oncontextmenu", this, function(e) {
+            if (!this._showExecuting) {
+                console.log("Hiding from context menu.");
+                this.hide();
+            }
+            dojo.stopEvent(e);
+        }));
+    },
+    
+    computeSlice: function(x, y) {
+        var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
+
+        // only do the calculation if you are clicking on the hot zone
+        var p = this.centerPoint(x, y); // change coord scheme to center based
+
+        var distanceFromCenter = Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2));
+
+        if (distanceFromCenter < pieRadius - 4) {
+            var degrees = this.angle(p.x, p.y);
+            return this.slice(degrees);
+        }
     },
     
     destroy: function() {
@@ -248,23 +218,7 @@ members:
                 bespin.getComponent("popup", function(popup) {
                     popup.show("output");
                 });
-            },
-            tbar: [
-                {
-                    icon: "images/slice_aaa.png",
-                    alt: "Toggle Font Size",
-                    onclick: function() {
-                        bespin.get("commandLine").toggleFontSize();
-                    }
-                },
-                {
-                    icon: "images/clock_hash.png",
-                    alt: "Toggle History/Time Mode",
-                    onclick: function() {
-                        bespin.get("commandLine").toggleHistoryTimeMode();
-                    }
-                }
-            ]
+            }
         },
 
         /**
@@ -320,13 +274,19 @@ members:
             showContents: function() { }
         }
     },
+    
+    showSlice: function(slice) {
+        this.hide(false);
+        slice.show();
+    },
 
     /**
      * Show a specific slice, and animate the opening if needed
      */
     show: function(slice, dontTakeFocus, x, y) {
+        this._showExecuting = true;
+        
         if (x != undefined) {
-            console.log("SETTING LAUNCHED AT");
             this.launchedAt = {x:x, y:y};
         } else {
             this.launchedAt = undefined;
@@ -335,18 +295,8 @@ members:
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
-        // No change needed
-        if (this.currentSlice == slice) return;
-
-        // If there is already a slice showing, just show that, and don't
-        // bother with any animation
-        if (this.visible()) {
-            this.currentSlice = slice;
-            this.hide(false);
-            this.currentSlice.show();
-            return;
-        }
-
+        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
         this.canvas.style.display = 'block';
 
         if (!dontTakeFocus) {
@@ -378,7 +328,9 @@ members:
                 if (!dontTakeFocus) {
                     self.canvas.focus();
                 }
-                self.renderCurrentSlice(dontTakeFocus);
+                var d = self.calculateSlicePositions();
+                self.renderCompletePie(self.currentSlice, d);
+                self._showExecuting = false;
             }
         }).play();
     },
@@ -418,6 +370,7 @@ members:
             });
         }
         this.hideAnimation.play();
+        this.currentSlice = null;
     },
 
     /**
@@ -459,8 +412,8 @@ members:
         this.canvas.width = window.innerWidth;
 
         this.canvas.style.display = 'block';
-
-        this.renderCurrentSlice(false);
+        var d = this.calculateSlicePositions();
+        this.renderCompletePie(this.currentSlice, d);
     },
 
     /**
@@ -490,14 +443,6 @@ members:
      * Render the pie in some opening/closing state
      */
     renderPie: function(progress) {
-        // when loaded dynamically, this appears to exercise a bug in Safari 4 (fixed in WebKit
-        // nightlies). There may be a workaround. But for now, short circuit.
-        // Note: unshortcircuited. If it breaks again, re-shortcircuit.
-        // behavior when it fails apparently has the entire canvas rotating, somehow.
-        //if (th.browser.WebKit) {
-        //    return;
-        //}
-        
         var ctx = this.ctx;
         var off = this.slices.off.img;
 
@@ -529,32 +474,6 @@ members:
     },
 
     /**
-     * Animation renderer
-     */
-    renderCurrentSlice: function(dontTakeFocus) {
-        // If something else causes us to show a slice directly we need to
-        // have focus to do the arrow thing, but we need to do this at the top
-        // because slices might have other focus ideas
-        if (!dontTakeFocus) {
-            this.canvas.focus();
-        }
-
-        var d = this.calculateSlicePositions();
-        this.renderPopout(d);
-    },
-
-    /**
-     * Remove parts of the current slice that are specific to that slice like
-     * images.
-     */
-    unrenderCurrentSlice: function() {
-        if (dojo.isFunction(this.currentSlice.hideContents)) {
-            this.currentSlice.hideContents();
-        }
-        this.unrenderToolbar();
-    },
-
-    /**
      * Calculate slice border positions
      */
     calculateSlicePositions: function() {
@@ -562,12 +481,12 @@ members:
         // HACK: we use the command line because it's bigger
         // var pieHeight = this.currentSlice.img.height;
         var pieHeight = this.slices.commandLine.img.height;
-        var pieWidth = this.currentSlice.img.width;
+        var pieWidth = this.slices.commandLine.img.width;
 
         // Left hand edge of center column. Assumes all LHS graphics are same width
-        d.cenLeft = this.settings.leftMargin + this.border.lft.width;
+        d.cenLeft = this.settings.leftMargin;
         // Right hand edge of center column. Assumes all RHS graphics are same width
-        d.cenRight = this.settings.rightMargin + this.border.rt.width;
+        d.cenRight = this.settings.rightMargin;
         // Width of the center column. Assumes left and right columns graphics are same width
         d.cenWidth = this.canvas.width - d.cenLeft - d.cenRight;
         // Top of bottom row. Determined by height of pie
@@ -575,14 +494,14 @@ members:
         // Left hand edge of rightmost column. Assumes all RHS graphics are the same width
         d.rightLeft = this.canvas.width - d.cenRight;
         // Top of all middle rows. Assumes all top graphics are same height
-        d.midTop = this.settings.topMargin + this.border.top_mid.height;
+        d.midTop = this.settings.topMargin;
         // Height of the middle row. Assumes all top graphics are same height
         d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
         
         if (this.launchedAt != undefined) {
             d.offLeft = this.launchedAt.x - pieWidth/2;
-            d.btmTop = this.launchedAt.y - pieHeight/2 - 15;
+            d.btmTop = this.launchedAt.y - pieHeight/2;
         } else {
             d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
         }
@@ -591,27 +510,21 @@ members:
     },
 
     /**
-     * Render an open slice
-     * <p>How the graphics are laid out:
-     * <pre>
-     * [top_lft] [-------- top_mid --------] [top_rt]
-     * --                                          --
-     * |                                            |
-     * lft                   mid                   rt
-     * |                                            |
-     * --                                          --
-     * [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
-     * </pre>
+     * Render an active slice
      */
-    renderPopout: function(d) {
+    renderCompletePie: function(slice, d) {
         // Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // The pie
-        var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;
-        this.ctx.drawImage(this.currentSlice.img, d.offLeft, sliceTop);
+        var sliceTop = d.btmTop;
+        
+        if (!slice) {
+            slice = this.slices['off'];
+        }
+        this.ctx.drawImage(slice.img, d.offLeft, sliceTop);
     },
 
     /**

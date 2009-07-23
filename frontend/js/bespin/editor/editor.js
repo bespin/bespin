@@ -957,6 +957,9 @@ dojo.declare("bespin.editor.UI", null, {
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp, "Move a page up");
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown, "Move a page down");
 
+        listener.bindKeyString("CMD ALT", Key.LEFT_ARROW, this.actions.previousFile);
+        listener.bindKeyString("CMD ALT", Key.RIGHT_ARROW, this.actions.nextFile);
+
         // Other key bindings can be found in commands themselves.
         // For example, this:
         // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile", "Create a new file");

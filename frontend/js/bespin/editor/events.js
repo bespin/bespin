@@ -68,6 +68,7 @@ dojo.declare("bespin.editor.Events", null, {
 
             var filename = event.filename;
             var project  = event.project || editSession.project;
+            var fromFileHistory = event.fromFileHistory || false;
 
             // Short circuit if we are already open at the requested file
             if (!(event.reload) && editSession.checkSameFile(project, filename)) {
@@ -114,6 +115,10 @@ dojo.declare("bespin.editor.Events", null, {
                     project:project,
                     filename:filename
                 };
+                
+                if (!fromFileHistory) {
+                    bespin.get('editSession').addFileToHistory(newItem);
+                }
 
                 // Remove newItem from down in the list and place at top
                 var cleanLastUsed = [];
@@ -322,17 +327,6 @@ dojo.declare("bespin.editor.Events", null, {
         // If the command line is blurred, take control in the editor
         bespin.subscribe("cmdline:blur", function(event) {
             editor.setFocus(true);
-        });
-
-        // ** {{{ Event: escape }}} **
-        //
-        // escape key hit, so clear the find
-        bespin.subscribe("ui:escape", function(event) {
-            if (editor.ui.searchString) {
-                editor.ui.setSearchString(false);
-                // commented out because this bit of UI does not exist right now
-                // dojo.byId('searchresult').style.display = 'none';
-            }
         });
 
         // ** {{{ Event: editor:document:changed }}} **
