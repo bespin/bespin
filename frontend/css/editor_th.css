@@ -66,16 +66,21 @@ HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
 
 /* I need to support multiple classes per component; right now I don't, hence, this mess */
 HorizontalTree Label.evenmore, HorizontalTree Label.oddmore {
-    background-image: url(../images/dash_icn_more.png);
-    background-repeat: no-repeat;
-    background-position: right center;
+    background-image: url(../images/filebrowser/folder_sm.png), url(../images/dash_icn_more.png);
+    background-repeat: no-repeat, no-repeat;
+    background-position: left center, right center;
     padding-top: 3px;
     padding-bottom: 1px;
+    padding-left: 23px;
 }
 
 HorizontalTree Label.even, HorizontalTree Label.odd {
+    background-image: url(../images/filebrowser/file_sm.png);
+    background-repeat: no-repeat;
+    background-position: left center;
     padding-top: 3px;
     padding-bottom: 1px;
+    padding-left: 23px;
 }
 
 HorizontalTree Label.even, HorizontalTree Label.evenmore {
