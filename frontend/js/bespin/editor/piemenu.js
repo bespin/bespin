@@ -85,11 +85,6 @@ members:
 
         var self = this;
 
-        // Hide on Escape
-        this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
-            if (self.visible()) self.hide();
-        }));
-
         this.connections.push(dojo.connect(window, 'resize', this, this.resize));
 
         // Show slices properly
@@ -127,6 +122,19 @@ members:
             
             if (slice) {
                 self.show(slice);
+            }
+        }));
+        
+        this.connections.push(dojo.connect(this.canvas, "onmousemove", this, function(e) {
+            var x = e.layerX || e.offsetX;
+            var y = e.layerY || e.offsetY;
+            
+            var slice = this.computeSlice(x, y);
+            
+            if (slice && slice != this.currentSlice) {
+                var d = this.calculateSlicePositions();
+                this.renderCompletePie(slice, d);
+                this.currentSlice = slice;
             }
         }));
 
@@ -268,9 +276,6 @@ members:
         
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
-
-        // No change needed
-        if (this.currentSlice == slice) return;
 
         // If there is already a slice showing, just show that, and don't
         // bother with any animation
@@ -467,7 +472,7 @@ members:
         }
 
         var d = this.calculateSlicePositions();
-        this.renderPopout(d);
+        this.renderCompletePie(this.currentSlice, d);
     },
 
     /**
@@ -518,27 +523,17 @@ members:
     },
 
     /**
-     * Render an open slice
-     * <p>How the graphics are laid out:
-     * <pre>
-     * [top_lft] [-------- top_mid --------] [top_rt]
-     * --                                          --
-     * |                                            |
-     * lft                   mid                   rt
-     * |                                            |
-     * --                                          --
-     * [btm_lft] [btm_lftb] [puck] [btm_trb] [btm_rt]
-     * </pre>
+     * Render an active slice
      */
-    renderPopout: function(d) {
+    renderCompletePie: function(slice, d) {
         // Start again with greying everything out
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // The pie
-        var sliceTop = d.btmTop + this.slices.commandLine.img.height - this.currentSlice.img.height;
-        this.ctx.drawImage(this.currentSlice.img, d.offLeft, sliceTop);
+        var sliceTop = d.btmTop + this.slices.commandLine.img.height - slice.img.height;
+        this.ctx.drawImage(slice.img, d.offLeft, sliceTop);
     },
 
     /**
