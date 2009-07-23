@@ -39,13 +39,15 @@ HorizontalTree Label {
 }
 
 HorizontalTree Label:active {
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/filebrowser/file_sm.png);
+    background-repeat: repeat-x, no-repeat;
+    background-position: left top, left center;
 }
 
 HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png);
-    background-repeat: repeat-x, no-repeat;
-    background-position: left top, right center;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png), url(../images/filebrowser/folder_sm.png);
+    background-repeat: repeat-x, no-repeat, no-repeat;
+    background-position: left top, right center, left center;
 }
 
 #project_list {
