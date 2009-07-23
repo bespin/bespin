@@ -170,3 +170,23 @@ VerticalScrollbar > Button.down {
 ResizeNib {
     background-color: rgb(50, 50, 50);
 }
+
+HorizontalScrollbar {
+    -th-top-image: url(/images/filebrowser/scroll-h_gutter-lft.gif);
+    -th-middle-image: url(/images/filebrowser/scroll-h_gutter-mid.gif);
+    -th-bottom-image: url(/images/filebrowser/scroll-h_gutter-rt.gif);
+}
+
+HorizontalScrollbar > Button.bar {
+    -th-top-image: url(/images/filebrowser/scroll-h_thumb-lft.png);
+    -th-middle-image: url(/images/filebrowser/scroll-h_thumb-mid.png);
+    -th-bottom-image: url(/images/filebrowser/scroll-h_thumb-rt.png);
+}
+
+HorizontalScrollbar > Button.up {
+    background-image: url(/images/filebrowser/scroll-h_widget-lft.gif);
+}
+
+HorizontalScrollbar > Button.down {
+    background-image: url(/images/filebrowser/scroll-h_widget-rt.gif);
+}
