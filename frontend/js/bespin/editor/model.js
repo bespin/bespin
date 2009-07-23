@@ -384,7 +384,7 @@ dojo.declare("bespin.editor.DocumentModel", null, {
 
         //validate col to prevent endless loop
         if (col >= line.length)
-            col = line.length - 1;
+            col = Math.max(line.length - 1, 0); // what about 0 length lines?
 
         while (col > 0) {
             var letter = line[col];

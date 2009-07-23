@@ -569,8 +569,6 @@ dojo.declare("bespin.editor.Actions", null, {
         //first, check to see if we had one saved, because if we did, that is the one we want.
         if (args.selection) selection = args.selection;
         else selection = this.editor.getSelection();
-        console.debug("Deleting Selection: ")
-        console.debug(selection);
         
         selection.startPos = this.cursorManager.getModelPosition(selection.startPos);
         selection.endPos = this.cursorManager.getModelPosition(selection.endPos);
