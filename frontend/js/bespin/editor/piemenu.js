@@ -107,8 +107,13 @@ members:
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
-                    self.showSlice(slice);
-                    dojo.stopEvent(e);
+                    var d = self.calculateSlicePositions();
+                    this.currentSlice = slice;
+                    self.renderCompletePie(slice, d);
+                    setTimeout(function() {
+                        self.showSlice(slice);
+                        dojo.stopEvent(e);
+                    }, 10);
                     return;
                 }
             }
