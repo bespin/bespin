@@ -10,37 +10,27 @@ Splitter.vertical {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
 }
 
-#file_browser Panel, #file_browser List {
-    background-color: rgb(61, 59, 52);
-}
-
 #file_browser Label {
-    background-color: rgb(61, 59, 52);
     color: white;
 }
+
+
 
 #projects_label {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#32302A), to(#161613));
 }
 
-/* this selects the project list in the horizontal tree */
-#htree-list-1 Label {
-    background-color: rgb(61, 59, 52);
-    border: 0;
-}
-
 #file_browser Label.evenmore, #file_browser Label.oddmore {
-    border-top: 1px solid rgb(75, 74, 67);
-    border-bottom: 1px solid rgb(41, 40, 35);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#3D3B34), to(#393730));
-    background-repeat: repeat-x;
-    background-position: left top;
     padding-top: 2px;
     padding-bottom: 2px;
 }
 
 HorizontalTree {
-    background-color: rgb(61, 59, 52);
+    background-color: rgb(5, 5, 0);
+}
+
+HorizontalTree List {
+    background-color: rgb(5, 5, 0);
 }
 
 HorizontalTree Label {
@@ -49,8 +39,6 @@ HorizontalTree Label {
 }
 
 HorizontalTree Label:active {
-    border-top: 1px solid rgb(180, 114, 30);
-    border-bottom: 1px solid rgb(162, 97, 19);
     background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419));
 }
 
@@ -60,10 +48,20 @@ HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
     background-position: left top, right center;
 }
 
-#htree-list-1 Label.header {
-    border-bottom: black;
-    border-top: rgb(51, 50, 46);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#272621), to(#161613));
+#project_list {
+    background-color: rgb(5, 5, 5);
+}
+
+#project_list Label {
+    background-image: url(../images/filebrowser/project-bg.gif);
+    background-position: top left;
+    background-repeat: repeat-x;
+}
+
+#project_list Label:active {
+    background-image: url(../images/filebrowser/project-bg_selected.gif);
+    background-position: top left;
+    background-repeat: repeat-x;
 }
 
 /* I need to support multiple classes per component; right now I don't, hence, this mess */
@@ -81,27 +79,46 @@ HorizontalTree Label.even, HorizontalTree Label.odd {
 }
 
 HorizontalTree Label.even, HorizontalTree Label.evenmore {
-    background-color: rgb(76, 75, 65);
-    border-top: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
-    border-bottom: 1px solid rgb(76, 75, 65);  /* compensate for the selected border */
+    background-color: rgb(30, 30, 25);
 }
 
 HorizontalTree Label.odd, HorizontalTree Label.oddmore {
-    background-color: rgb(83, 80, 71);
-    border-top: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */
-    border-bottom: 1px solid rgb(83, 80, 71);  /* compensate for the selected border */ 
+    background-color: rgb(5, 5, 0);
+}
+
+HorizontalTree Panel {
+    background-color: rgb(5, 5, 0);
 }
 
 Label.fileActions {
     background-color: rgb(37, 34, 33);
 }
 
+Label.fileDetailLabel {
+    background-color: rgb(37,34,33);
+    background-image: url(../images/filebrowser/file_lg.png);
+    background-repeat: no-repeat;
+    background-position: left center;
+    font: 14px Tahoma;
+    padding-left: 35px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+Label.fileActionLabel {
+    background-color: rgb(37,34,33);
+    text-align: center;
+}
+
+ActionPanel {
+    background-color: rgb(61, 59, 52);
+    padding: 0px;
+    margin-left: 20px;
+    margin-right: 15px;
+}
+
 ActionIcon {
-    background-color: rgb(37, 34, 33);
-    border-top: 1px solid rgb(46,42,41);
-    border-bottom: 1px solid rgb(39,21,28);
-    border-left: 1px solid rgb(52,49,48);
-    border-right: 1px solid rgb(28,25,24);
 }
 
 /* Project Label Area */
@@ -116,3 +133,33 @@ Label.statusSymbol {
    font: 10pt Calibri, Arial, sans-serif;
 }
 
+/* Scrollbars for file browser */
+
+ScrollPane {
+    background-color: rgb(50, 50, 50);
+}
+
+VerticalScrollbar {
+    -th-top-image: url(../images/filebrowser/scroll_gutter-top.gif);
+    -th-middle-image: url(../images/filebrowser/scroll_gutter-mid.gif);
+    -th-bottom-image: url(../images/filebrowser/scroll_gutter-btm.gif);
+    background-color: rgb(50, 50, 50);
+}
+
+VerticalScrollbar > Button.bar {
+    -th-top-image: url(../images/filebrowser/scroll_thumb-top.png);
+    -th-middle-image: url(../images/filebrowser/scroll_thumb-mid.png);
+    -th-bottom-image: url(../images/filebrowser/scroll_thumb-btm.png);
+}
+
+VerticalScrollbar > Button.up {
+    background-image: url(../images/filebrowser/scroll_widget-up.gif);
+}
+
+VerticalScrollbar > Button.down {
+    background-image: url(../images/filebrowser/scroll_widget-dwn.gif);
+}
+
+ResizeNib {
+    background-color: rgb(50, 50, 50);
+}

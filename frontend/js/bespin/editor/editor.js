@@ -444,10 +444,11 @@ dojo.declare("bespin.editor.UI", null, {
         var source = this.editor.container;
         this.globalHandles = []; //a collection of global handles to event listeners that will need to be disposed.
 
-        dojo.connect(source, "mousemove", this, "handleScrollBars");
-        dojo.connect(source, "mouseout", this, "handleScrollBars");
-        dojo.connect(source, "click", this, "handleScrollBars");
-        dojo.connect(source, "mousedown", this, "handleScrollBars");
+        dojo.connect(source, "mousemove", this, "handleMouse");
+        dojo.connect(source, "mouseout", this, "handleMouse");
+        dojo.connect(source, "click", this, "handleMouse");
+        dojo.connect(source, "mousedown", this, "handleMouse");
+        dojo.connect(source, "oncontextmenu", dojo.stopEvent);
 
         dojo.connect(source, "mousedown", this, "mouseDownSelect");
         this.globalHandles.push(dojo.connect(window, "mousemove", this, "mouseMoveSelect"));
@@ -750,7 +751,7 @@ dojo.declare("bespin.editor.UI", null, {
         this.editor.model.insertCharacters({ row: 0, col: 0 }, e.type);
     },
 
-    handleScrollBars: function(e) {
+    handleMouse: function(e) {
         // Right click for pie menu
         if (e.button == 2) {
             bespin.getComponent("piemenu", function(piemenu) {
@@ -915,6 +916,9 @@ dojo.declare("bespin.editor.UI", null, {
 
         listener.bindKeyStringSelectable("", Key.PAGE_UP, this.actions.movePageUp, "Move a page up");
         listener.bindKeyStringSelectable("", Key.PAGE_DOWN, this.actions.movePageDown, "Move a page down");
+
+        listener.bindKeyString("CMD ALT", Key.LEFT_ARROW, this.actions.previousFile);
+        listener.bindKeyString("CMD ALT", Key.RIGHT_ARROW, this.actions.nextFile);
 
         // Other key bindings can be found in commands themselves.
         // For example, this:

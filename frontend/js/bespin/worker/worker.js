@@ -45,7 +45,17 @@ var uriDecodeSource = function(uri) {
 
 // If there is no Worker API (http://www.whatwg.org/specs/web-workers/current-work/) yet,
 // try to build one using Google Gears API
-if (typeof Worker == "undefined") {
+var noWorker = typeof Worker == "undefined" ? true : false;
+if(!noWorker) {
+    try { new Worker("test.js") }
+    catch(e) {
+        e = e + ""
+        if(e.indexOf("Worker is not enabled") != -1) {
+            noWorker = true;
+        }
+    }
+}
+if (noWorker) {
     BespinGearsInitializeGears(); // this functions initializes Gears only if we need it
     if (window.google && google.gears) {
         USE_GEARS   = true; // OK, gears is here

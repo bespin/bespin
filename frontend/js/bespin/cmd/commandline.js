@@ -192,14 +192,24 @@ members: {
         this.maxInfoHeight = coords.h;
     },
     
-    showPanel: function(panel) {
+    /*
+    * Adjust the output to the new size.
+    */
+    resize: function(coords) {
+        this._savedCoords = coords;
+        this.showPanel(this.currentPanel, true);
+    },
+    
+    showPanel: function(panel, coordChange) {
         var coords = this._savedCoords;
         
         if (this.currentPanel) {
-            if (this.currentPanel == panel) {
+            if (this.currentPanel == panel && !coordChange) {
                 return;
             }
-            this.hidePanel(panel);
+            if (this.currentPanel != panel) {
+                this.hidePanel(panel);
+            }
         }
         
         if (panel == "output") {
