@@ -107,7 +107,7 @@ members:
             for (var dir in self.slices) {
                 var slice = self.slices[dir];
                 if (e.keyCode == slice.key) {
-                    self.show(slice);
+                    self.showSlice(slice);
                     dojo.stopEvent(e);
                     return;
                 }
@@ -121,7 +121,7 @@ members:
             var slice = this.computeSlice(x, y);
             
             if (slice) {
-                self.show(slice);
+                self.showSlice(slice);
             }
         }));
         
@@ -140,7 +140,13 @@ members:
 
         // stop context menu on canvas, because for some reason, WebKit's oncontextmenu doesn't
         // realize when it has been hidden.
-        this.connections.push(dojo.connect(this.canvas, "oncontextmenu", dojo.stopEvent));
+        this.connections.push(dojo.connect(this.canvas, "oncontextmenu", this, function(e) {
+            if (!this._showExecuting) {
+                console.log("Hiding from context menu.");
+                this.hide();
+            }
+            dojo.stopEvent(e);
+        }));
     },
     
     computeSlice: function(x, y) {
@@ -263,11 +269,18 @@ members:
             showContents: function() { }
         }
     },
+    
+    showSlice: function(slice) {
+        this.hide(false);
+        slice.show();
+    },
 
     /**
      * Show a specific slice, and animate the opening if needed
      */
     show: function(slice, dontTakeFocus, x, y) {
+        this._showExecuting = true;
+        
         if (x != undefined) {
             this.launchedAt = {x:x, y:y};
         } else {
@@ -277,15 +290,8 @@ members:
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
-        // If there is already a slice showing, just show that, and don't
-        // bother with any animation
-        if (this.visible()) {
-            this.currentSlice = slice;
-            this.hide(false);
-            this.currentSlice.show();
-            return;
-        }
-
+        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
         this.canvas.style.display = 'block';
 
         if (!dontTakeFocus) {
@@ -317,7 +323,9 @@ members:
                 if (!dontTakeFocus) {
                     self.canvas.focus();
                 }
-                self.renderCurrentSlice(dontTakeFocus);
+                var d = self.calculateSlicePositions();
+                self.renderCompletePie(self.currentSlice, d);
+                self._showExecuting = false;
             }
         }).play();
     },
@@ -357,6 +365,7 @@ members:
             });
         }
         this.hideAnimation.play();
+        this.currentSlice = null;
     },
 
     /**
@@ -398,8 +407,8 @@ members:
         this.canvas.width = window.innerWidth;
 
         this.canvas.style.display = 'block';
-
-        this.renderCurrentSlice(false);
+        var d = this.calculateSlicePositions();
+        this.renderCompletePie(this.currentSlice, d);
     },
 
     /**
@@ -461,32 +470,6 @@ members:
     },
 
     /**
-     * Animation renderer
-     */
-    renderCurrentSlice: function(dontTakeFocus) {
-        // If something else causes us to show a slice directly we need to
-        // have focus to do the arrow thing, but we need to do this at the top
-        // because slices might have other focus ideas
-        if (!dontTakeFocus) {
-            this.canvas.focus();
-        }
-
-        var d = this.calculateSlicePositions();
-        this.renderCompletePie(this.currentSlice, d);
-    },
-
-    /**
-     * Remove parts of the current slice that are specific to that slice like
-     * images.
-     */
-    unrenderCurrentSlice: function() {
-        if (dojo.isFunction(this.currentSlice.hideContents)) {
-            this.currentSlice.hideContents();
-        }
-        this.unrenderToolbar();
-    },
-
-    /**
      * Calculate slice border positions
      */
     calculateSlicePositions: function() {
@@ -494,7 +477,7 @@ members:
         // HACK: we use the command line because it's bigger
         // var pieHeight = this.currentSlice.img.height;
         var pieHeight = this.slices.commandLine.img.height;
-        var pieWidth = this.currentSlice.img.width;
+        var pieWidth = this.slices.commandLine.img.width;
 
         // Left hand edge of center column. Assumes all LHS graphics are same width
         d.cenLeft = this.settings.leftMargin;
@@ -514,7 +497,7 @@ members:
         
         if (this.launchedAt != undefined) {
             d.offLeft = this.launchedAt.x - pieWidth/2;
-            d.btmTop = this.launchedAt.y - pieHeight/2 - 15;
+            d.btmTop = this.launchedAt.y - pieHeight/2;
         } else {
             d.offLeft = parseInt((this.canvas.width / 2) - (pieWidth / 2));
         }
@@ -532,7 +515,11 @@ members:
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // The pie
-        var sliceTop = d.btmTop + this.slices.commandLine.img.height - slice.img.height;
+        var sliceTop = d.btmTop;
+        
+        if (!slice) {
+            slice = this.slices['off'];
+        }
         this.ctx.drawImage(slice.img, d.offLeft, sliceTop);
     },
 
