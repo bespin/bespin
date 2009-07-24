@@ -82,12 +82,10 @@ bespin.command.store.addCommand({
                         return;
                     }
 
+                    // TODO: Rename this event
+                    bespin.publish("project:created");
+
                     var parent = bespin.social.displayFollowers(followers);
-
-                    // FIXME: make follow refresh the project list
-                    dojo.create("div", { innerHTML: "FIXME: " }, parent);
-                    // "project:created"
-
                     instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
@@ -180,6 +178,9 @@ bespin.command.store.addCommand({
                         instruction.addOutput("You are not following anyone");
                         return;
                     }
+
+                    // TODO: Rename this event
+                    bespin.publish("project:created");
 
                     var parent = bespin.social.displayFollowers(followers);
                     instruction.setElement(parent);
