@@ -699,6 +699,7 @@ mobwrite.syncRun2_ = function(text) {
   // Schedule the next sync.
   mobwrite.syncRunPid_ =
       window.setTimeout(mobwrite.syncRun1_, mobwrite.syncInterval);
+  window.console.log("settimeout for ", mobwrite.syncInterval);
   // Terminate the watchdog task, everything's ok.
   window.clearTimeout(mobwrite.syncKillPid_);
   mobwrite.syncKillPid_ = null;
@@ -715,6 +716,7 @@ mobwrite.computeSyncInterval_ = function() {
     // Client-side activity.
     // Cut the sync interval by 40% of the min-max range.
     // mobwrite.syncInterval -= range * 0.4;
+
     // Mozilla: In the short term, when the user types we want the sync interval
     // to drop to the minimum very quickly, so things start to look responsive
     // very quickly. It's possible that the delayed wake-up is better, but in
@@ -724,12 +726,20 @@ mobwrite.computeSyncInterval_ = function() {
   if (mobwrite.serverChange_) {
     // Server-side activity.
     // Cut the sync interval by 20% of the min-max range.
-    mobwrite.syncInterval -= range * 0.2;
+    // mobwrite.syncInterval -= range * 0.2;
+
+    // Mozilla: In the short term, when the user types we want the sync interval
+    // to drop to the minimum very quickly, so things start to look responsive
+    // very quickly. It's possible that the delayed wake-up is better, but in
+    // short term, first-impressions etc.
+    mobwrite.syncInterval = mobwrite.minSyncInterval;
   }
   if (!mobwrite.clientChange_ && !mobwrite.serverChange_) {
     // No activity.
     // Let the sync interval creep up by 10% of the min-max range.
-    mobwrite.syncInterval += range * 0.1;
+
+    // Mozilla: Slow down the detune to 5%
+    mobwrite.syncInterval += range * 0.05;
   }
   // Keep the sync interval constrained between min and max.
   mobwrite.syncInterval =
