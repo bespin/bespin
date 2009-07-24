@@ -78,7 +78,7 @@ def _add_base_headers(response):
     response.headers['Cache-Control'] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, private"
     response.headers['Pragma'] = "no-cache"
 
-def expose(url_pattern, method=None, auth=True, skip_token_check=False):
+def expose(url_pattern, method=None, auth=True, skip_token_check=False, profile=False):
     """Expose this function to the world, matching the given URL pattern
     and, optionally, HTTP method. By default, the user is required to
     be authenticated. If auth is False, the user is not required to be
@@ -86,50 +86,77 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False):
     def entangle(func):
         @url(url_pattern, method)
         def wrapped(environ, start_response):
-            if auth and 'REMOTE_USER' not in environ:
-                response = Response(status='401')
+
+            # reply and action are somewhat nasty but needed to allow the
+            # profiler to run code by a "action()" string. Why?
+            reply = []
+            def action():
+                if auth and 'REMOTE_USER' not in environ:
+                    response = Response(status='401')
+                    _add_base_headers(response)
+                    reply.append(response(environ, start_response))
+                    return
+
+                config.c.stats.incr("requests_DATE")
+                config.c.stats.incr("requests")
+
+                request = BespinRequest(environ)
+                response = BespinResponse(environ, start_response)
+                skip_test = environ.get("BespinTestApp")
+
+                if not skip_token_check and skip_test != "True":
+                    cookie_token = request.cookies.get("Domain-Token")
+                    header_token = environ.get("HTTP_X_DOMAIN_TOKEN")
+
+                    if cookie_token is None or header_token != cookie_token:
+                        log.error("request.url=%s" % request.url)
+                        log.error("cookies[Domain-Token]=%s" % cookie_token)
+                        log.error("headers[X-Domain-Token]=%s" % header_token)
+                        log.error("WARNING: The anti CSRF attack trip wire just went off. This means an unprotected request has been made. This could be a hacking attempt, or incomplete protection. The request has NOT been halted")
+                        config.c.stats.incr("csrf_fail_DATE")
+
+                user = request.user
                 _add_base_headers(response)
-                return response(environ, start_response)
+                try:
+                    reply.append(func(request, response))
+                    return
+                except filesystem.NotAuthorized, e:
+                    response.error("401 Not Authorized", e)
+                except filesystem.FileNotFound, e:
+                    environ['bespin.good_url_but_not_found'] = True
+                    response.error("404 Not Found", e)
+                except filesystem.FileConflict, e:
+                    response.error("409 Conflict", e)
+                except database.ConflictError, e:
+                    response.error("409 Conflict", e)
+                except filesystem.OverQuota, e:
+                    response.error("400 Bad Request", "Over quota")
+                except filesystem.FSException, e:
+                    response.error("400 Bad Request", e)
+                except filesystem.BadValue, e:
+                    response.error("400 Bad Request", e)
+                except BadRequest, e:
+                    response.error("400 Bad Request", e)
+                reply.append(response())
+                return
 
-            config.c.stats.incr("requests_DATE")
-            config.c.stats.incr("requests")
+            if profile:
+                # The output probably needs tuning for your needs
+                import cProfile, pstats, StringIO
+                prof = cProfile.Profile()
+                prof = prof.runctx("action()", globals(), locals())
+                stream = StringIO.StringIO()
+                stats = pstats.Stats(prof, stream=stream)
+                stats.sort_stats("time")  # Or cumulative
+                stats.print_stats(80)  # 80 = how many to print
+                # The rest is optional.
+                stats.print_callees()
+                stats.print_callers()
+                log.info("Profile data:\n%s", stream.getvalue())
+            else:
+                action()
 
-            request = BespinRequest(environ)
-            response = BespinResponse(environ, start_response)
-            skip_test = environ.get("BespinTestApp")
+            return reply.pop()
 
-            if not skip_token_check and skip_test != "True":
-                cookie_token = request.cookies.get("Domain-Token")
-                header_token = environ.get("HTTP_X_DOMAIN_TOKEN")
-
-                if cookie_token is None or header_token != cookie_token:
-                    log.error("request.url=%s" % request.url)
-                    log.error("cookies[Domain-Token]=%s" % cookie_token)
-                    log.error("headers[X-Domain-Token]=%s" % header_token)
-                    log.error("WARNING: The anti CSRF attack trip wire just went off. This means an unprotected request has been made. This could be a hacking attempt, or incomplete protection. The request has NOT been halted")
-                    config.c.stats.incr("csrf_fail_DATE")
-
-            user = request.user
-            _add_base_headers(response)
-            try:
-                return func(request, response)
-            except filesystem.NotAuthorized, e:
-                response.error("401 Not Authorized", e)
-            except filesystem.FileNotFound, e:
-                environ['bespin.good_url_but_not_found'] = True
-                response.error("404 Not Found", e)
-            except filesystem.FileConflict, e:
-                response.error("409 Conflict", e)
-            except database.ConflictError, e:
-                response.error("409 Conflict", e)
-            except filesystem.OverQuota, e:
-                response.error("400 Bad Request", "Over quota")
-            except filesystem.FSException, e:
-                response.error("400 Bad Request", e)
-            except filesystem.BadValue, e:
-                response.error("400 Bad Request", e)
-            except BadRequest, e:
-                response.error("400 Bad Request", e)
-            return response()
     return entangle
 
