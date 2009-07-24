@@ -77,7 +77,18 @@ bespin.command.store.addCommand({
             bespin.get('server').follow([], {
                 evalJSON: true,
                 onSuccess: function(followers) {
-                    bespin.social.displayFollowers(instruction, followers);
+                    if (!followers || followers.length === 0) {
+                        instruction.addOutput("You are not following anyone");
+                        return;
+                    }
+
+                    var parent = bespin.social.displayFollowers(followers);
+
+                    // FIXME: make follow refresh the project list
+                    dojo.create("div", { innerHTML: "FIXME: " }, parent);
+                    // "project:created"
+
+                    instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to retrieve followers: " + xhr.responseText);
@@ -88,7 +99,13 @@ bespin.command.store.addCommand({
             bespin.get('server').follow(usernames, {
                 evalJSON: true,
                 onSuccess: function(followers) {
-                    bespin.social.displayFollowers(instruction, followers);
+                    if (!followers || followers.length === 0) {
+                        instruction.addOutput("You are not following anyone");
+                        return;
+                    }
+
+                    var parent = bespin.social.displayFollowers(followers);
+                    instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to add follower: " + xhr.responseText);
@@ -115,12 +132,7 @@ dojo.extend(bespin.client.Server, {
  * Utility to take an string array of follower names, and publish a
  * "Following: ..." message as a command line response.
  */
-bespin.social.displayFollowers = function(instruction, followers) {
-    if (!followers || followers.length === 0) {
-        instruction.addOutput("You are not following anyone");
-        return;
-    }
-
+bespin.social.displayFollowers = function(followers) {
     var parent = dojo.create("div", {});
     dojo.create("div", { innerHTML: "You are following these users:" }, parent);
     var table = dojo.create("table", { }, parent);
@@ -138,12 +150,11 @@ bespin.social.displayFollowers = function(instruction, followers) {
         dojo.create("a", {
             innerHTML: "<small>(unfollow)</small>",
             onclick: function() {
-                instruction.commandLine.executeCommand("unfollow " + follower);
+                bespin.get("commandLine").executeCommand("unfollow " + follower);
             }
         }, cell);
     });
-
-    instruction.setElement(parent);
+    return parent;
 };
 
 // =============================================================================
@@ -165,7 +176,13 @@ bespin.command.store.addCommand({
         else {
             bespin.get('server').unfollow(usernames, {
                 onSuccess: function(data) {
-                    bespin.social.displayFollowers(instruction, dojo.fromJson(data));
+                    if (!followers || followers.length === 0) {
+                        instruction.addOutput("You are not following anyone");
+                        return;
+                    }
+
+                    var parent = bespin.social.displayFollowers(followers);
+                    instruction.setElement(parent);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Failed to remove follower: " + xhr.responseText);
