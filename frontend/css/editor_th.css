@@ -51,7 +51,7 @@ HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
 }
 
 #project_list {
-    background-color: rgb(5, 5, 5);
+    background-color: #2a2522;
 }
 
 #project_list Label {

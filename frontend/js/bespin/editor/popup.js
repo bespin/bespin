@@ -106,8 +106,8 @@ members: {
         // How far from the top of the window does the pie go
         canvasTop: 0,
         // How much space do we leave around the opened slices?
-        topMargin: 10,
-        bottomMargin: 200,
+        topMargin: 60,
+        bottomMargin: 100,
         leftMargin: 60,
         rightMargin: 60
     },

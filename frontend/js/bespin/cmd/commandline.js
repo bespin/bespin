@@ -172,22 +172,10 @@ members: {
      */
     showOutput: function(panel, coords) {
         this._savedCoords = coords;
-        var footerHeight = dojo.style(this.footer, "height") + 2;
-        dojo.style(this.footer, {
-            left: coords.l + "px",
-            width: (coords.w - 10) + "px",
-            bottom: (coords.b - footerHeight) + "px",
-            display: "block"
-        });
-        this.focus();
 
-        dojo.style(this.commandHint, {
-            left: coords.l + "px",
-            bottom: coords.b + "px",
-            width: coords.w + "px"
-        });
-        
         this.showPanel(panel);
+
+        this.focus();
         
         this.maxInfoHeight = coords.h;
     },
@@ -202,6 +190,20 @@ members: {
     
     showPanel: function(panel, coordChange) {
         var coords = this._savedCoords;
+        
+        var footerHeight = dojo.style(this.footer, "height") + 2;
+        dojo.style(this.footer, {
+            left: coords.l + "px",
+            width: (coords.w - 10) + "px",
+            bottom: (coords.b - footerHeight) + "px",
+            display: "block"
+        });
+
+        dojo.style(this.commandHint, {
+            left: coords.l + "px",
+            bottom: coords.b + "px",
+            width: coords.w + "px"
+        });
         
         if (this.currentPanel) {
             if (this.currentPanel == panel && !coordChange) {
