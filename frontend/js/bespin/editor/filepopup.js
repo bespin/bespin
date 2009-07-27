@@ -46,7 +46,7 @@ members: {
             tabIndex: -1,
             style: {
                 position: "absolute",
-                zIndex: 100,
+                zIndex: 250,
                 display: "none"
             }
         }, dojo.body());

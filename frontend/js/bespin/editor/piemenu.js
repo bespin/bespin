@@ -54,7 +54,7 @@ members:
             width: window.innerWidth,
             style: {
                 position: "absolute",
-                zIndex: 100,
+                zIndex: 200,
                 top: this.settings.canvasTop + "px",
                 left: "0px",
                 display: "none"
