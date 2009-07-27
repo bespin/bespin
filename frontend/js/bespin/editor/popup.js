@@ -90,7 +90,7 @@ members: {
 
         // Hide on Escape
         this.subscriptions.push(bespin.subscribe("ui:escape", function(e) {
-            console.log("Got request to close popup" + this.visible);
+            console.log("Got request to close popup: " + self.visible);
             if (self.visible) self.hide();
         }));
 
