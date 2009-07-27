@@ -821,9 +821,10 @@ def mobwrite(request, response):
 
     question = "H:" + str(request.user.username) + ":" + request.remote_addr + "\n" + question
 
-    # TODO: select the implementation based on a runtime flag
-    worker = InProcessMobwriteWorker()
-    #worker = MobwriteWorkerProxy()
+    if c.in_process_mobwrite:
+        worker = InProcessMobwriteWorker()
+    else:
+        worker = MobwriteWorkerProxy()
 
     answer = worker.processRequest(question)
 
