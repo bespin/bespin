@@ -34,7 +34,7 @@ bespin.command.store.addCommand({
     completeText: 'type in a string to search',
     execute: function(instruction, str) {
         bespin.get('actions').startSearch(str, 'commandLine');
-        bespin.getComponent("popup", function(popup) { popup.hide() });
+        bespin.getComponent("popup", function(popup) { popup.hide(); });
     }
 });
 
