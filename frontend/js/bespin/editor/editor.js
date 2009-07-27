@@ -651,11 +651,51 @@ dojo.declare("bespin.editor.UI", null, {
         } else if (detail == 2) { //double click
             var row = this.editor.model.rows[modelstart.row];
             var cursorAt = row[modelstart.col];
-            if (!cursorAt || cursorAt.charAt(0) == ' ') { // empty space
-                // For now, don't select anything, but think about copying Textmate and grabbing around it
+            
+            // the following is an ugly hack. We should have a syntax-specific set of "delimiter characters"
+            // which are treated like whitespace for findBefore and findAfter.
+            // to keep it at least a LITTLE neat, I have moved the comparator for double-click into its own function,
+            // and have left model alone.
+            var isDelimiter = function(item) {
+                var delimiters = ["=", " ", "\t", ">", "<", ".", "(", ")", "{", "}", ":"];
+                if (delimiters.indexOf(item) > -1)
+                    return true;
+                return false;
+            };
+            
+            if (!cursorAt) {
+                // nothing to see here. We must be past the end of the line.
+                // Per Gordon's suggestion, let's have double-click EOL select the line, excluding newline
+                this.editor.setSelection({
+                    startPos: this.editor.getCursorPos({row: modelstart.row, col: 0}),
+                    endPos: this.editor.getCursorPos({row: modelstart.row, col: row.length})
+                });
+            } else if (isDelimiter(cursorAt.charAt(0))) { // see above. Means empty space or =, >, <, etc. that we want to be clever with
+                var comparator = function(letter) {
+                    if (isDelimiter(letter))
+                        return false;
+                    return true;
+                };
+                
+                var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col, comparator);
+                var endPos = this.editor.model.findAfter(modelend.row, modelend.col, comparator);
+
+                this.editor.setSelection({
+                    startPos: this.editor.getCursorPos(backwards ? endPos : startPos),
+                    endPos: this.editor.getCursorPos(backwards ? startPos : endPos)
+                });
+
+                //set cursor so that it is at selection end (even if mouse wasn't there)
+                this.editor.moveCursor(this.editor.getCursorPos(backwards ? startPos : endPos));
             } else {
-                var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col);
-                var endPos = this.editor.model.findAfter(modelend.row, modelend.col);
+                var comparator = function(letter) {
+                    if (isDelimiter(letter))
+                        return true;
+                    return false;
+                };
+                
+                var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col, comparator);
+                var endPos = this.editor.model.findAfter(modelend.row, modelend.col, comparator);
 
                 this.editor.setSelection({
                     startPos: this.editor.getCursorPos(backwards ? endPos : startPos),
