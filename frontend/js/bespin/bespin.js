@@ -216,12 +216,12 @@ dojo.mixin(bespin, {
             bespin.plugins.loadOne("piemenu", function(piemenumod) {
                 bespin.register("piemenu", new piemenumod.Window());
                 
-                // the pie menu doesn't animate properly in FF
+                // the pie menu doesn't animate properly
                 // without restoring control to the UI temporarily
                 setTimeout(function() {
                     var piemenu = bespin.get("piemenu");
                     callback.call(context, piemenu);
-                }, 10);
+                }, 25);
             });
         },
         commandLine: function(callback, context) {
