@@ -321,9 +321,7 @@ members:
             duration: duration,
             easing: dojo.fx.easing.backOut,
             curve: [0.0, 1.0],
-            onAnimate: function(progress) {
-                self.renderPie(progress);                    
-            },
+            onAnimate: self.renderPie,
             onEnd: function() {
                 if (!dontTakeFocus) {
                     self.canvas.focus();
@@ -356,9 +354,7 @@ members:
                 duration: duration,
                 easing: dojo.fx.easing.backIn,
                 curve: [1.0, 0.0],
-                onAnimate: function(progress) {
-                    self.renderPie(progress);
-                },
+                onAnimate: self.renderPie,
                 onEnd: function() {
                     self.canvas.style.display = 'none';
                     self.currentSlice = null;
