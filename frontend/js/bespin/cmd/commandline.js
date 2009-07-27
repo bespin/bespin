@@ -179,7 +179,6 @@ members: {
             bottom: (coords.b - footerHeight) + "px",
             display: "block"
         });
-        this.focus();
 
         dojo.style(this.commandHint, {
             left: coords.l + "px",
@@ -188,6 +187,8 @@ members: {
         });
         
         this.showPanel(panel);
+
+        this.focus();
         
         this.maxInfoHeight = coords.h;
     },
