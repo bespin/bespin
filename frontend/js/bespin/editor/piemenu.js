@@ -44,7 +44,7 @@ members:
         this.nodes = [];
         this.subscriptions = [];
         this.connections = [];
-        
+
         this.editor = bespin.get("editor");
 
         this.canvas = dojo.create("canvas", {
@@ -61,8 +61,8 @@ members:
             }
         }, dojo.body());
         this.nodes.push("piemenu");
-        
-        
+
+
         this.ctx = this.canvas.getContext('2d');
         th.fixCanvas(this.ctx);
 
@@ -122,20 +122,20 @@ members:
         this.connections.push(dojo.connect(this.canvas, 'click', this, function(e) {
             var x = e.layerX || e.offsetX;
             var y = e.layerY || e.offsetY;
-            
+
             var slice = this.computeSlice(x, y);
-            
+
             if (slice) {
                 self.showSlice(slice);
             }
         }));
-        
+
         this.connections.push(dojo.connect(this.canvas, "onmousemove", this, function(e) {
             var x = e.layerX || e.offsetX;
             var y = e.layerY || e.offsetY;
-            
+
             var slice = this.computeSlice(x, y);
-            
+
             if (slice && slice != this.currentSlice) {
                 var d = this.calculateSlicePositions();
                 this.renderCompletePie(slice, d);
@@ -153,7 +153,7 @@ members:
             dojo.stopEvent(e);
         }));
     },
-    
+
     computeSlice: function(x, y) {
         var pieRadius = 152 / 2; // self.slices.off.img.width / 2; Take account for the padding on the image
 
@@ -167,16 +167,16 @@ members:
             return this.slice(degrees);
         }
     },
-    
+
     destroy: function() {
         dojo.forEach(this.subscriptions, function(sub) {
             bespin.unsubscribe(sub);
         });
-        
+
         dojo.forEach(this.connections, function(conn) {
             dojo.disconnect(conn);
         });
-        
+
         dojo.forEach(this.nodes, function(nodeId) {
             dojo.query("#" + nodeId).orphan();
         });
@@ -274,7 +274,7 @@ members:
             showContents: function() { }
         }
     },
-    
+
     showSlice: function(slice) {
         this.hide(false);
         slice.show();
@@ -285,13 +285,13 @@ members:
      */
     show: function(slice, dontTakeFocus, x, y) {
         this._showExecuting = true;
-        
+
         if (x != undefined) {
             this.launchedAt = {x:x, y:y};
         } else {
             this.launchedAt = undefined;
         }
-        
+
         // The default slice is the unselected slice
         if (!slice) slice = this.slices.off;
 
@@ -315,14 +315,14 @@ members:
         if (typeof duration == "undefined" || isNaN(duration)) {
             duration = this.settings.showMenuDuration;
         }
-        
-        dojo.fadeIn({
-            node: { style:{} },
+
+        // fade in the pie
+        new dojo._Animation({
             duration: duration,
             easing: dojo.fx.easing.backOut,
-            onAnimate: function(values) {
-                var progress = values.opacity;
-                self.renderPie(progress);
+            curve: [0.0, 1.0],
+            onAnimate: function(progress) {
+                self.renderPie(progress);                    
             },
             onEnd: function() {
                 if (!dontTakeFocus) {
@@ -342,7 +342,7 @@ members:
         if (giveEditorFocus == undefined) {
             giveEditorFocus = true;
         }
-        
+
         if (!this.hideAnimation) {
             var duration = parseInt(bespin.get('settings').get('menuhideduration'));
 
@@ -352,12 +352,11 @@ members:
             }
 
             var self = this;
-            this.hideAnimation = dojo.fadeIn({
-                node: { style: {} },
+            this.hideAnimation = new dojo._Animation({
                 duration: duration,
                 easing: dojo.fx.easing.backIn,
-                onAnimate: function(values) {
-                    var progress = Math.max(1 - values.opacity, 0);
+                curve: [1.0, 0.0],
+                onAnimate: function(progress) {
                     self.renderPie(progress);
                 },
                 onEnd: function() {
@@ -423,7 +422,7 @@ members:
         if (this.launchedAt != undefined) {
             return {x: this.launchedAt.x - width/2, y: this.launchedAt.y - height/2};
         }
-        
+
         return { x: parseInt((this.canvas.width / 2) - (width / 2)),
                  y: parseInt((this.slices.off.img.height - height) / 2) + this.canvas.height - this.slices.off.img.height };
     },
@@ -461,7 +460,7 @@ members:
 
         var xm = p.x + (width / 2);
         var ym = p.y + (height / 2);
-        
+
         // Safari wants this to be set first.
         ctx.globalAlpha = progress;
 
@@ -499,7 +498,7 @@ members:
         // Height of the middle row. Assumes all top graphics are same height
         d.midHeight = d.btmTop - d.midTop;
         // Left hand edge of pie. Determined by width of pie
-        
+
         if (this.launchedAt != undefined) {
             d.offLeft = this.launchedAt.x - pieWidth/2;
             d.btmTop = this.launchedAt.y - pieHeight/2;
@@ -521,7 +520,7 @@ members:
 
         // The pie
         var sliceTop = d.btmTop;
-        
+
         if (!slice) {
             slice = this.slices['off'];
         }

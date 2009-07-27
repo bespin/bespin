@@ -9,39 +9,42 @@
         dojo.require("dojo.fx.easing");
 
         function showPie() {
-            var anim = dojo.fadeIn({
-                node: {
-                    style: {}
-                },
-
+            new dojo._Animation({
                 duration: 500,
-
                 easing: dojo.fx.easing.backOut,
-
-                onAnimate: function(values) {
-                    var progress = values.opacity;
+                curve: [0.0, 1.0],
+                onAnimate: function(progress) {
                     renderPie(progress);
                 }
-            });
-            anim.play();
+            }).play();
         }
 
         function hidePie() {
-            var anim = dojo.fadeIn({
-                node: {
-                    style: {}
-                },
-
+            new dojo._Animation({
                 duration: 400,
-
                 easing: dojo.fx.easing.backIn,
-
-                onAnimate: function(values) {
-                    var progress = Math.max(1 - values.opacity, 0);
+                curve: [1.0, 0.0],
+                onAnimate: function(progress) {
                     renderPie(progress);
                 }
-            });
-            anim.play();
+            }).play();
+
+            // -- old school
+            // var anim = dojo.fadeIn({
+            //     node: {
+            //         style: {}
+            //     },
+            //
+            //     duration: 400,
+            //
+            //     easing: dojo.fx.easing.backIn,
+            //
+            //     onAnimate: function(values) {
+            //         var progress = Math.max(1 - values.opacity, 0);
+            //         renderPie(progress);
+            //     }
+            // });
+            // anim.play();
         }
 
         function renderPie(progress) {
@@ -81,7 +84,7 @@
     </style>
 </head>
 <body>
-    <img src="/images/pie/puck_off.png" alt="" id="puck_off"/>
+    <img src="/images/pie/off.png" alt="" id="puck_off"/>
     <p>
         <button onclick="showPie()">Show</button>
         <button onclick="hidePie()">Hide</button>
