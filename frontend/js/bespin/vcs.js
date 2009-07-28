@@ -621,8 +621,7 @@ bespin.vcs._performVCSCommandWithFiles = function(vcsCommand, instruction, args,
     } else if (args.varargs[0] == "-a" && options.acceptAll) {
         var command = [vcsCommand];
     } else {
-        var command = [vcsCommand];
-        command.concat(args.varargs);
+        var command = [vcsCommand].concat(args.varargs);
     }
 
     var handlerOptions = {};
