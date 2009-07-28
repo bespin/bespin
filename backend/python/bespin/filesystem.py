@@ -837,18 +837,38 @@ class ProjectView(Project):
         """Like get_file() except that it uses a parallel file as its source,
         resorting to get_file() when the parallel file does not exist."""
 
-        log.debug("get_temp_file path=%s" % (MOBWRITE_CURRENT_PREFIX + "/" + path))
+        # TODO: Should we be doing this test anywhere?
+        # if "../" in destpath:
+        #     raise BadValue("Relative directories are not allowed")
 
+        # Load from the temp file first
         file_obj = File(self, MOBWRITE_CURRENT_PREFIX + "/" + path)
-        if not file_obj.exists():
+        if file_obj.exists():
+            log.debug("get_temp_file path=%s" % (MOBWRITE_CURRENT_PREFIX + "/" + path))
+            return str(file_obj.data)
+
+        # Otherwise, go for data from the real file
+        file_obj = File(self, path)
+        if file_obj.exists():
             log.debug("fallback get_temp_file path=%s" % path)
-            file_obj = File(self, path)
+            return str(file_obj.data)
 
-        #self.user.mark_opened(file_obj, mode)
-        #file_obj.mark_opened(self.user, mode)
+        # If we still don't have something then this must be a new (temp) file
+        file_obj = File(self, MOBWRITE_CURRENT_PREFIX + "/" + path)
 
-        contents = str(file_obj.data)
-        return contents
+        if file_obj.location.isdir():
+            raise FileConflict("Cannot save file at %s in project "
+                "%s, because there is already a directory with that name."
+                % (destpath, self.name))
+
+        log.debug("New file - creating temp space")
+
+        file_dir = file_obj.location.dirname()
+        if not file_dir.exists():
+            file_dir.makedirs()
+
+        file_obj.save("")
+        return ""
 
     def delete(self, path=""):
         """Deletes a file, as long as it is not opened by another user.
