@@ -41,11 +41,7 @@ mobwrite.shareBespinObj.prototype = new mobwrite.shareObj('');
  * @return {string} Plaintext content.
  */
 mobwrite.shareBespinObj.prototype.getClientText = function() {
-    // Was:
-    // var text = this.element.value;
-    var text = this._editSession.editor.model.getDocument();
-    //text = mobwrite.shareBespinObj.normalizeLinebreaks_(text);
-    return text;
+    return this._editSession.editor.model.getDocument();
 };
 
 /**
@@ -53,11 +49,10 @@ mobwrite.shareBespinObj.prototype.getClientText = function() {
  * @param {string} text New text
  */
 mobwrite.shareBespinObj.prototype.setClientText = function(text) {
-    // Was:
-    // this.element.value = text;
-    // this.fireChange(this.element);
-    //text = mobwrite.shareBespinObj.unnormalizeLinebreaks_(text);
     this._editSession.editor.model.insertDocument(text);
+    this._editSession.editor.cursorManager.moveCursor({ row: 0, col: 0 });
+    this._editSession.editor.setFocus(true);
+
     // Nasty hack to allow the editor to know that something has changed.
     // In the first instance the use is restricted to calling the loaded
     // callback
@@ -94,57 +89,6 @@ mobwrite.shareBespinObj.prototype.patchClientText = function(patches) {
       }
     }
   }
-};
-
-/**
- * Ensure that all linebreaks are CR+LF
- * @param {string} text Text with unknown line breaks
- * @return {string} Text with normalized linebreaks
- * @private
- */
-mobwrite.shareBespinObj.normalizeLinebreaks_ = function(text) {
-  var oldtext = '';
-  if (text != '') {
-    // First, fix the first/last chars.
-    if (text.charAt(0) == '\n') {
-      text = '\r' + text;
-    }
-    if (text.charAt(text.length - 1) == '\r') {
-      text = text + '\n';
-    }
-  }
-  // Second, fix the middle chars.
-  while (oldtext != text) {
-    oldtext = text;
-    text = text.replace(/([^\r])\n/g, '$1\r\n');
-    text = text.replace(/\r([^\n])/g, '\r\n$1');
-  }
-  return text;
-};
-
-/**
- * Ensure that all linebreaks are CR+LF
- * @param {string} text Text with unknown line breaks
- * @return {string} Text with normalized linebreaks
- * @private
- */
-mobwrite.shareBespinObj.unnormalizeLinebreaks_ = function(text) {
-  var oldtext = '';
-  if (text != '') {
-    // First, fix the first/last chars.
-    if (text.charAt(0) == '\n') {
-      text = '\r' + text;
-    }
-    if (text.charAt(text.length - 1) == '\r') {
-      text = text + '\n';
-    }
-  }
-  // Second, fix the middle chars.
-  while (oldtext != text) {
-    oldtext = text;
-    text = text.replace(/\r\n/g, '\n');
-  }
-  return text;
 };
 
 /**

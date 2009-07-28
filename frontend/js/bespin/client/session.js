@@ -207,12 +207,12 @@ dojo.declare("bespin.client.session.EditSession", null, {
                         name: this.path,
                         timestamp: new Date().getTime()
                     });
-                    this._onSuccess = null;
+
                     this.currentState = this.mobwriteState.running;
+                    dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
+                    this._onSuccess = null;
                 };
             }
-
-            dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
         } else {
             if (dojo.isFunction(onFailure)) {
                 onFailure({ responseText:"Mobwrite is missing" });
@@ -245,7 +245,6 @@ dojo.declare("bespin.client.session.EditSession", null, {
 
     /**
      * Update the social bar to show the current collaborators.
-     * TODO: Remove me as a collaborator
      */
     reportCollaborators: function(userEntries) {
         var collabList = dojo.byId("collab_list");

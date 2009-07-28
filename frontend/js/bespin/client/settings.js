@@ -471,15 +471,6 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
         //
-        // Change the session settings when a new file is opened
-        bespin.subscribe("editor:openfile:opensuccess", function(event) {
-            editSession.path = event.file.name;
-
-            if (editSession.syncHelper) editSession.syncHelper.syncWithServer();
-        });
-
-        // ** {{{ Event: editor:openfile:opensuccess }}} **
-        //
         // Change the syntax highlighter when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             if (event.file.name == null) throw new Error("event.file.name falsy");

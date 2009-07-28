@@ -34,10 +34,13 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             // If collaboration is turned on, we won't know the file contents
             if (event.file.content) {
+                // If you change these 3 lines then you probably also need to
+                // change the parallel lines in mobwrite/integrate.js under
+                // mobwrite.shareBespinObj.prototype.setClientText
                 editor.model.insertDocument(event.file.content);
                 editor.cursorManager.moveCursor({ row: 0, col: 0 });
+                editor.setFocus(true);
             }
-            editor.setFocus(true);
         });
 
         // -- fire an event here and you can run any editor action
@@ -80,10 +83,6 @@ dojo.declare("bespin.editor.Events", null, {
 
             bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
 
-            if (project != editSession.project) {
-                editSession.setProject(project);
-            }
-
             var onFailure = function() {
                 bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
             };
@@ -94,6 +93,14 @@ dojo.declare("bespin.editor.Events", null, {
                 if (!file) {
                     onFailure();
                     return;
+                }
+
+                // TODO: This used to happen outside of the onSuccess which
+                // seems wrong. This work is also done by collaborateOnFile in
+                // the collaborate case. But when collaborate is off, what is
+                // setting the path???
+                if (project != editSession.project) {
+                    editSession.setProject(project);
                 }
 
                 bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
@@ -186,17 +193,20 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:newfile", function(event) {
             var project = event.project || bespin.get('editSession').project;
             var newfilename = event.newfilename || "new.txt";
-            var content = event.content || " ";
 
-            bespin.get('files').newFile(project, newfilename, function() {
-                bespin.publish("editor:openfile:opensuccess", { file: {
-                    name: newfilename,
-                    content: content,
-                    timestamp: new Date().getTime()
-                }});
+            var onSuccess = function() {
+                bespin.publish("editor:openfile:opensuccess", {
+                    file: {
+                        name: newfilename,
+                        content: event.content || " ",
+                        timestamp: new Date().getTime()
+                    }
+                });
 
                 bespin.publish("editor:dirty");
-            });
+            };
+
+            bespin.get('files').newFile(project, newfilename, onSuccess);
         });
 
         // ** {{{ Event: editor:savefile }}} **
@@ -227,10 +237,12 @@ dojo.declare("bespin.editor.Events", null, {
                 file.lastOp = editor.undoManager.syncHelper.lastOp;
             }
 
+            var commandLine = bespin.get("commandLine");
+
             var onSuccess = function() {
                 document.title = filename + ' - editing with Bespin';
 
-                bespin.get("commandLine").showHint('Saved file: ' + file.name);
+                if (commandLine) commandLine.showHint('Saved file: ' + file.name);
 
                 bespin.publish("editor:clean");
 
@@ -240,7 +252,7 @@ dojo.declare("bespin.editor.Events", null, {
             };
 
             var onFailure = function(xhr) {
-                bespin.get("commandLine").showHint('Save failed: ' + xhr.responseText);
+                if (commandLine) commandLine.showHint('Save failed: ' + xhr.responseText);
 
                 if (dojo.isFunction(event.onFailure)) {
                     event.onFailure();

@@ -43,10 +43,10 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{project}}} is the name of the project to create the file in
     // * {{{path}}} is the full path to save the file into
     // * {{{onSuccess}}} is a callback to fire if the file is created
-    newFile: function(project, path, onSuccess) {
+    newFile: function(project, path, onSuccess, onFailure) {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
-                bespin.get('editSession').startSession(project, path || "new.txt");
+                bespin.get('editSession').startSession(project, path || "new.txt", onSuccess, onFailure);
 
                 // alert the system that a path has changed
                 // bespin.publish("path:changed", {
@@ -57,6 +57,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 onSuccess();
             },
             elseFailed: function() {
+                onFailure({ responseText:'The file ' + path + ' already exists my friend.' });
                 bespin.get("commandLine").addErrorOutput('The file ' + path + ' already exists my friend.');
             }
         });
