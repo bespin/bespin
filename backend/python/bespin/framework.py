@@ -115,6 +115,7 @@ def expose(url_pattern, method=None, auth=True, skip_token_check=False, profile=
                         log.error("WARNING: The anti CSRF attack trip wire just went off. This means an unprotected request has been made. This could be a hacking attempt, or incomplete protection. The request has NOT been halted")
                         config.c.stats.incr("csrf_fail_DATE")
 
+                # Do we need to do this?
                 user = request.user
                 _add_base_headers(response)
                 try:

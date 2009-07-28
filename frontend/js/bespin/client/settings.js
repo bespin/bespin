@@ -154,8 +154,25 @@ dojo.declare("bespin.client.settings.Core", null, {
         } else {
             return this.toList();
         }
-    }
+    },
 
+    /**
+     * For every setting that has a bespin:settings:set:nameofsetting callback,
+     * init it.
+     */
+    publishValues: function() {
+        // Goes deep into internals which is naughty!
+        // In this case, going into the Dojo saved "topics" that you subscribe/publish too
+        for (var topic in dojo._topics) {
+            var settingsTopicBase = "bespin:settings:set:";
+            if (topic.indexOf(settingsTopicBase) == 0) {
+                var settingKey = topic.substring(settingsTopicBase.length);
+                bespin.publish("settings:set:" + settingKey, {
+                    value: this.get(settingKey)
+                });
+            }
+        }
+    }
 });
 
 // ** {{{ bespin.client.settings.InMemory }}} **
@@ -330,6 +347,7 @@ dojo.declare("bespin.client.settings.ServerFile", null, {
                 }
             });
 
+            self.parent.publishValues();
             postLoad();
         };
 
@@ -694,23 +712,6 @@ dojo.declare("bespin.client.settings.Events", null, {
                     // editor:openfile
                     bespin.publish("project:set", lastUsed[0]);
                     bespin.publish("editor:openfile", lastUsed[0]);
-                }
-            }
-        });
-
-        // ** {{{ Event: settings:init }}} **
-        //
-        // For every setting that has a bespin:settings:set:nameofsetting callback, init it
-        bespin.subscribe("settings:init", function(event) {
-            // Goes deep into internals which is naughty!
-            // In this case, going into the Dojo saved "topics" that you subscribe/publish too
-            for (var topic in dojo._topics) {
-                var settingsTopicBase = "bespin:settings:set:";
-                if (topic.indexOf(settingsTopicBase) == 0) {
-                    var settingKey = topic.substring(settingsTopicBase.length);
-                    bespin.publish("settings:set:" + settingKey, {
-                        value: settings.get(settingKey)
-                    });
                 }
             }
         });

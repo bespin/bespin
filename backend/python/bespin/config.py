@@ -118,6 +118,8 @@ c.login_attempts = 10
 # how long a user is locked out (in seconds)
 c.lockout_period = 600
 
+# Are we using in-process mobwrite, or telnet to port 3017
+c.in_process_mobwrite = False
 
 # if this is true, the user's UUID will be used as their
 # user directory name. If it's false, their username will
@@ -174,6 +176,7 @@ def set_profile(profile):
         c.fsroot = os.path.abspath("%s/../testfiles"
                         % os.path.dirname(__file__))
         c.async_jobs = False
+        c.in_process_mobwrite = True
         c.fslevels = 0
     elif profile == "dev":
         c.dburl = "sqlite:///devdata.db"
@@ -196,12 +199,10 @@ def set_profile(profile):
         c.default_quota = 10000
         c.log_requests_to_stdout = True
         c.log_to_stdout = True
-
+        c.in_process_mobwrite = True
         c.async_jobs = False
         c.fslevels = 0
-
         c.base_url = "http://localhost:8080/"
-
         c.email_host = None
 
 def load_config(configfile):

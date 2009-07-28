@@ -74,16 +74,7 @@ dojo.declare("bespin.editor.Toolbar", null, {
             var collab = dojo.byId(el) || dojo.byId("toolbar_collaboration");
             dojo.connect(collab, 'click', function() {
                 toolbar.showCollab = !toolbar.showCollab;
-                collab.src = "images/" + ( (toolbar.showCollab) ? "icn_collab_on.png" : (toolbar.showCollabHotCounter == 0) ? "icn_collab_off.png" : "icn_collab_watching.png" );
                 bespin.page.editor.recalcLayout();
-            });
-            dojo.connect(collab, 'mouseover', function() {
-                collab.style.cursor = "pointer";
-                collab.src = "images/icn_collab_on.png";
-            });
-            dojo.connect(collab, 'mouseout', function() {
-                collab.style.cursor = "default";
-                collab.src = "images/icn_collab_off.png";
             });
         },
 

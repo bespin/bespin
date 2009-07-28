@@ -103,10 +103,9 @@ class TextObj(mobwrite_core.TextObj):
     mobwrite_core.TextObj.setText(self, newText)
     self.lasttime = datetime.datetime.now()
 
-  def cleanup(self, force=False):
-    mobwrite_core.LOG.info("cleanup for " + self.name + " force=" + str(force))
+  def cleanup(self):
     # General cleanup task.
-    if not force and len(self.views) > 0:
+    if len(self.views) > 0:
       return
     terminate = False
     # Lock must be acquired to prevent simultaneous deletions.
@@ -120,7 +119,6 @@ class TextObj(mobwrite_core.TextObj):
       mobwrite_core.LOG.info("Unloading text: '%s'" % self.name)
       terminate = True
 
-    mobwrite_core.LOG.info("cleanup for " + self.name + " terminate=" + str(terminate))
     if terminate:
       # Save to disk/database.
       self.save()
@@ -135,11 +133,10 @@ class TextObj(mobwrite_core.TextObj):
     else:
       if self.changed:
         self.save()
-      self.lock.release()
+    self.lock.release()
 
 
   def load(self):
-    mobwrite_core.LOG.info("TextObj.load() called")
     # Load the text object from non-volatile storage.
     if STORAGE_MODE == PERSISTER:
       contents = self.persister.load(self.name)
@@ -174,7 +171,6 @@ class TextObj(mobwrite_core.TextObj):
       self.changed = False
 
   def save(self):
-    mobwrite_core.LOG.info("TextObj.save() called")
     # Save the text object to non-volatile storage.
     # Lock must be acquired by the caller to prevent simultaneous saves.
     assert self.lock.locked(), "Can't save unless locked."
@@ -347,7 +343,7 @@ class BufferObj:
       array.append("\0")
     self.data = "".join(array)
 
-    # lock_views must be acquired by the caller to prevent simultaneous
+    # lock_buffers must be acquired by the caller to prevent simultaneous
     # creations of the same view.
     assert lock_buffers.locked(), "Can't create BufferObj unless locked."
     global buffers
@@ -592,14 +588,17 @@ class DaemonMobWrite(SocketServer.StreamRequestHandler, mobwrite_core.MobWrite):
         last_username = viewobj.username
         last_filename = viewobj.filename
         # Dereference the view object so that a new one can be created.
+        # Mozilla: Is this just belt and braces - how would it be locked?
         viewobj.lock.release()
         viewobj = None
 
     if action["echo_collaborators"]:
-      text = texts[action["filename"]]
-      collab_list = [view.handle + ":" + view.username for view in text.views]
-      line = "C:" + (",".join(collab_list))
-      output.append(line)
+      name = action["filename"]
+      if name in texts:
+        text = texts[name]
+        collab_list = [view.handle + ":" + view.username for view in text.views]
+        line = "C:" + (",".join(collab_list))
+        output.append(line)
 
     answer = "".join(output)
 
@@ -682,9 +681,15 @@ def cleanup():
     for v in views.values():
       v.cleanup()
     for v in texts.values():
-      v.cleanup(force=True)
+      v.cleanup()
     for v in buffers.values():
       v.cleanup()
+
+    # Persist the remaining texts
+    for v in texts.values():
+      v.lock.acquire()
+      v.save()
+      v.lock.release()
 
     timeout = datetime.datetime.now() - mobwrite_core.TIMEOUT_TEXT
     if STORAGE_MODE == FILE:
@@ -723,12 +728,12 @@ class Persister:
 
   def load(self, name):
     project, path = self.check_access(name)
-    mobwrite_core.LOG.debug("loading from: %s/%s" % (project.name, path))
+    mobwrite_core.LOG.debug("loading temp file for: %s/%s" % (project.name, path))
     return project.get_temp_file(path)
 
   def save(self, name, contents):
     project, path = self.check_access(name)
-    mobwrite_core.LOG.debug("saving to: %s/%s" % (project.name, path))
+    mobwrite_core.LOG.debug("saving to temp file for: %s/%s" % (project.name, path))
     project.save_temp_file(path, contents)
 
   def check_access(self, name):

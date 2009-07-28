@@ -181,18 +181,20 @@ dojo.declare("bespin.client.FileSystem", null, {
     //
     // * {{{project}}} is the name of the project to save into
     // * {{{file}}} is the file object that contains the path and content to save
-    saveFile: function(project, file) {
+    saveFile: function(project, file, onSuccess, onFailure) {
         // Unix files should always have a trailing new-line; add if not present
         if (/\n$/.test(file.content)) file.content += "\n";
 
-        this.server.saveFile(project, file.name, file.content, file.lastOp,
-                {
-                    onSuccess: function() {
-                    console.log("File saved: " + project + " " + file.name);
-                    bespin.publish("file:saved",
-                        {project: project, path: file.name});
-                    }
-                });
+        this.server.saveFile(project, file.name, file.content, file.lastOp, {
+            onSuccess: function() {
+                console.log("File saved: " + project + " " + file.name);
+                bespin.publish("file:saved", { project: project, path: file.name });
+                if (dojo.isFunction(onSuccess)) {
+                    onSuccess();
+                }
+            },
+            onFailure: onFailure
+        });
     },
 
     // ** {{{ bespin.client.FileSystem.removeFile(project, path, onSuccess, onFailure) }}}

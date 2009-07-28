@@ -38,14 +38,60 @@ dojo.declare("bespin.client.session.EditSession", null, {
     constructor: function(editor) {
         this.editor = editor;
         this.currentState = this.mobwriteState.stopped;
-            this.currentState = this.mobwriteState.stopped;
+
         this.fileHistory = [];
         this.fileHistoryIndex = -1;
+
+        // Take note of in-flight collaboration status changes
+        var self = this;
+        bespin.fireAfter([ "settings:loaded" ], function() {
+            bespin.subscribe("settings:set:collaborate", function(ev) {
+                if (bespin.get("settings").isOn(ev.value) && !self.bailingOutOfCollaboration) {
+                    if (editor.dirty) {
+                        var msg = "Collaboration enabled on edited file.\n" +
+                                "To avoid losing changes, save before collaborating.\n" +
+                                "Save now?";
+                        var reply = confirm(msg);
+                        if (reply) {
+                            // User OKed the save
+                            bespin.publish("editor:savefile", {
+                                project: self.project,
+                                filename: self.path,
+                                onSuccess: function() {
+                                    self.startSession(self.project, self.path);
+                                }
+                            });
+                        } else {
+                            // Not OK to save, bail out of collaboration
+                            self.bailingOutOfCollaboration = true;
+                            bespin.get("settings").set("collaborate", "off");
+                            delete self.bailingOutOfCollaboration;
+
+                            // We have reset the collaborate setting, be the
+                            // output has not hit the screen, so we hack the
+                            // message somewhat, and show a hint later when the
+                            // display has happened. Yuck.
+                            var commandLine = bespin.get("commandLine");
+                            commandLine.addOutput("Reverting the following collaboration setting:");
+
+                            setTimeout(function() {
+                                commandLine.showHint("Collaborate is off");
+                            }, 10);
+                        }
+                    } else {
+                        self.startSession(self.project, self.path);
+                    }
+                } else {
+                    self.stopSession();
+                }
+            });
+        });
     },
 
     /**
-     * Opens the previous file within the fileHistroyList related to the current opened file / current position within the fileHistoryList
-     * The real opening of the file is done within openFromHistry()
+     * Opens the previous file within the fileHistoryList related to the
+     * current opened file / current position within the fileHistoryList
+     * The real opening of the file is done within openFromHistory()
      */
     goToPreviousFile: function() {
         if (this.fileHistoryIndex != 0) {
@@ -55,8 +101,9 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
-     * Opens the next file within the fileHistroyList related to the current opened file / current position within the fileHistroyList
-     * The real opening of the file is done within openFromHistry()
+     * Opens the next file within the fileHistoryList related to the current
+     * opened file / current position within the fileHistoryList
+     * The real opening of the file is done within openFromHistory()
      */
     goToNextFile: function() {
         if (this.fileHistoryIndex != this.fileHistory.length - 1) {
@@ -67,24 +114,34 @@ dojo.declare("bespin.client.session.EditSession", null, {
 
     /**
      * Opens a file from the fileHistoryList.
-     * The file to be opened is set by the variable this.fileHistoryIndex, which is the index for the this.fileHistory array
+     * The file to be opened is set by the variable this.fileHistoryIndex,
+     * which is the index for the this.fileHistory array
      */
     openFromHistory: function() {
         var historyItem = this.fileHistory[this.fileHistoryIndex];
+
         bespin.publish("editor:savefile", {});
-        bespin.publish("editor:openfile", { project: historyItem.project,  filename: historyItem.filename, fromFileHistory: true });
+        bespin.publish("editor:openfile", {
+            project: historyItem.project,
+            filename: historyItem.filename,
+            fromFileHistory: true
+        });
     },
 
     /**
      * Adds a new file to the fileHistoryList
-     * There are two possible cases:
-     * a) the current opened file is the last one in the fileHistoryList. If so, just add the file to the end
-     * b) the current opened file is *not* at the end of the fileHistryList. In this case, we will have to 
-     *    delete the files after the current one in the list and add then the new one
-     */  
+     * There are two possible cases:<ul>
+     * <li>a) the current opened file is the last one in the fileHistoryList.
+     *        If so, just add the file to the end
+     * <li>b) the current opened file is *not* at the end of the fileHistoryList.
+     *        In this case, we will have to delete the files after the current
+     *        one in the list and add then the new one
+     * </ul>
+     */
     addFileToHistory: function(newItem) {
-        this.fileHistoryIndex ++;
-        this.fileHistory.splice(this.fileHistoryIndex, this.fileHistory.length - this.fileHistoryIndex, newItem);
+        this.fileHistoryIndex++;
+        var end = this.fileHistory.length - this.fileHistoryIndex;
+        this.fileHistory.splice(this.fileHistoryIndex, end, newItem);
     },
 
     /**
@@ -121,11 +178,19 @@ dojo.declare("bespin.client.session.EditSession", null, {
      * it contain the details of the currently edited file?
      */
     startSession: function(project, path, onSuccess, onFailure) {
+        if (this.currentState == this.mobwriteState.starting) {
+            console.warn("Asked to start in the middle of starting. Ignoring, but you might like to look into why.");
+            return;
+        }
+
         // Stop any existing mobwrite session
         this.stopSession();
 
-        this.project = project;
-        this.path = path;
+        // Remove the current document so we can see that the sync is happening
+        this.editor.model.insertDocument("");
+
+        if (project !== undefined) this.project = project;
+        if (path !== undefined) this.path = path;
 
         if (mobwrite) {
             this.currentState = this.mobwriteState.starting;
@@ -139,26 +204,35 @@ dojo.declare("bespin.client.session.EditSession", null, {
             if (dojo.isFunction(onSuccess)) {
                 this._onSuccess = function() {
                     onSuccess({
-                        name: path,
+                        name: this.path,
                         timestamp: new Date().getTime()
                     });
                     this._onSuccess = null;
                     this.currentState = this.mobwriteState.running;
                 };
             }
+
+            dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
         } else {
-            onFailure({ responseText:"Mobwrite is missing" });
+            if (dojo.isFunction(onFailure)) {
+                onFailure({ responseText:"Mobwrite is missing" });
+            }
         }
     },
 
     /**
-     * Stop mobwrite working on a file and empty the currently edited document
+     * Stop mobwrite working on a file.
+     * <p>This leaves the editor state and mobwrite in whatever state they
+     * were in after a final sync.
      */
     stopSession: function() {
-        // TODO: Something better if we're told to startup twice in a row
+        // TODO: Something better if we're told to stop while starting?
         if (this.currentState == this.mobwriteState.starting) {
-            throw new Error("mobwrite is starting up");
+            console.error("Asked to stop in the middle of starting. I can't let you do that Dave.");
+            return;
         }
+
+        dojo.attr("toolbar_collaboration", "src", "images/icn_collab_off.png");
 
         if (this.currentState == this.mobwriteState.running) {
             if (mobwrite) {
@@ -167,11 +241,6 @@ dojo.declare("bespin.client.session.EditSession", null, {
             // TODO: Should this be set asynchronously when unshare() completes?
             this.currentState = this.mobwriteState.stopped;
         }
-
-        this.editor.model.insertDocument("");
-
-        this.project = undefined;
-        this.path = undefined;
     },
 
     /**
