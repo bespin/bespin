@@ -115,7 +115,7 @@ dojo.declare("bespin.editor.Events", null, {
                     project:project,
                     filename:filename
                 };
-                
+
                 if (!fromFileHistory) {
                     bespin.get('editSession').addFileToHistory(newItem);
                 }
@@ -208,8 +208,6 @@ dojo.declare("bespin.editor.Events", null, {
         // * Ask the file system to save the file
         // * Change the page title to have the new filename
         // * Tell the command line to show the fact that the file is saved
-        //
-        // TODO: Need to actually check saved status and know if the save worked
         bespin.subscribe("editor:savefile", function(event) {
             var project = event.project || bespin.get('editSession').project;
             var filename = event.filename || bespin.get('editSession').path; // default to what you have
@@ -229,16 +227,27 @@ dojo.declare("bespin.editor.Events", null, {
                 file.lastOp = editor.undoManager.syncHelper.lastOp;
             }
 
-            bespin.get('files').saveFile(project, file); // it will save asynchronously.
-            // TODO: Here we need to add in closure to detect errors and thus fire different success / error
+            var onSuccess = function() {
+                document.title = filename + ' - editing with Bespin';
 
-            document.title = filename + ' - editing with Bespin';
+                bespin.get("commandLine").showHint('Saved file: ' + file.name);
 
-            bespin.getComponent("commandLine", function(cli) {
-                cli.showHint('Saved file: ' + file.name);
-            });
+                bespin.publish("editor:clean");
 
-            bespin.publish("editor:clean");
+                if (dojo.isFunction(event.onSuccess)) {
+                    event.onSuccess();
+                }
+            };
+
+            var onFailure = function(xhr) {
+                bespin.get("commandLine").showHint('Save failed: ' + xhr.responseText);
+
+                if (dojo.isFunction(event.onFailure)) {
+                    event.onFailure();
+                }
+            };
+
+            bespin.get('files').saveFile(project, file, onSuccess, onFailure);
         });
 
         // ** {{{ Event: editor:moveandcenter }}} **
