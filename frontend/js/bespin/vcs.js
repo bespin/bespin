@@ -473,7 +473,7 @@ bespin.vcs.commands.addCommand({
  */
 bespin.vcs.commands.addCommand({
     name: 'update',
-    aliases: [ 'up', 'checkout', 'co' ],
+    aliases: [ 'up', 'co' ],
     preview: 'Update your working copy from the remote repository',
     execute: function(instruction) {
         var project;
@@ -563,6 +563,32 @@ bespin.vcs.hgCommands.addCommand({
                                 bespin.vcs._createStandardHandler(instruction));
     }
 });
+
+/**
+ * Command store for the Subversion commands
+ * (which are subcommands of the main 'svn' command)
+ */
+bespin.vcs.svnCommands = new bespin.command.Store(bespin.command.store, {
+    name: 'svn',
+    preview: 'run a Subversion command',
+    subcommanddefault: 'help'
+});
+
+/**
+ * Display sub-command help
+ */
+bespin.vcs.svnCommands.addCommand({
+    name: 'help',
+    takes: ['search'],
+    preview: 'show commands for svn subcommand',
+    description: 'The <u>help</u> gives you access to the various commands in the svn subcommand space.<br/><br/>You can narrow the search of a command by adding an optional search params.<br/><br/>Finally, pass in the full name of a command and you can get the full description, which you just did to see this!',
+    completeText: 'optionally, narrow down the search',
+    execute: function(instruction, extra) {
+        var output = this.parent.getHelp(extra);
+        instruction.addOutput(output);
+    }
+});
+
 
 /**
  * Generic vcs remote command handler
