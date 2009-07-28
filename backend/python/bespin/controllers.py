@@ -876,6 +876,7 @@ def vcs_command(request, response):
     project_name = request.kwargs['project_name']
     request_info = simplejson.loads(request.body)
     args = request_info['command']
+    log.debug("VCS command: %s", args)
     kcpass = request_info.get('kcpass')
     
     try:
