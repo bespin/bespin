@@ -210,6 +210,12 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         var lastSlash;
         var file;
 
+        if (files === undefined) {
+            quickopen.list.items = [];
+            quickopen.scene.render();
+            return;
+        }
+
         for (var x = 0; x < files.length; x++) {
             file = files[x];
             lastSlash = file.lastIndexOf("/");
