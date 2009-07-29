@@ -49,14 +49,7 @@ mobwrite.shareBespinObj.prototype.getClientText = function() {
  * @param {string} text New text
  */
 mobwrite.shareBespinObj.prototype.setClientText = function(text) {
-    this._editSession.editor.model.insertDocument(text);
-    this._editSession.editor.cursorManager.moveCursor({ row: 0, col: 0 });
-    this._editSession.editor.setFocus(true);
-
-    // Nasty hack to allow the editor to know that something has changed.
-    // In the first instance the use is restricted to calling the loaded
-    // callback
-    this._editSession.fireUpdate();
+    this._editSession.update(text);
 };
 
 /**
