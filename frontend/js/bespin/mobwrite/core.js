@@ -687,8 +687,7 @@ mobwrite.syncRun2_ = function(text) {
         }
       }
     } else if (name == 'C' || name == 'c') {
-      var users = value.split(",");
-      file._editSession.reportCollaborators(users);
+      file.shareNode.reportCollaborators(value.split(","));
     }
   }
 
@@ -699,10 +698,28 @@ mobwrite.syncRun2_ = function(text) {
   // Schedule the next sync.
   mobwrite.syncRunPid_ =
       window.setTimeout(mobwrite.syncRun1_, mobwrite.syncInterval);
-  window.console.log("settimeout for ", mobwrite.syncInterval);
+  if (mobwrite.debug) {
+    window.console.log("Next mobwrite sync in ", mobwrite.syncInterval);
+  }
   // Terminate the watchdog task, everything's ok.
   window.clearTimeout(mobwrite.syncKillPid_);
   mobwrite.syncKillPid_ = null;
+};
+
+
+/**
+ * Bring forward the next mobwrite sync.
+ * TODO: Call this from every editor change, but add some brains to ensure
+ * that we don't call more often than minSyncInterval. The easy thing
+ * might be to only force an early sync if syncInterval > 2 * minSyncInterval
+ * The correct thing would be to work out how long ago the last sync was
+ */
+mobwrite.syncNow = function() {
+    window.clearTimeout(mobwrite.syncRunPid_);
+    mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
+    if (mobwrite.debug) {
+      window.console.log("Forced early mobwrite sync in ", 10);
+    }
 };
 
 

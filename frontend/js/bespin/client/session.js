@@ -67,8 +67,8 @@ dojo.declare("bespin.client.session.EditSession", null, {
                             bespin.get("settings").set("collaborate", "off");
                             delete self.bailingOutOfCollaboration;
 
-                            // We have reset the collaborate setting, be the
-                            // output has not hit the screen, so we hack the
+                            // We have reset the collaborate setting, but the
+                            // output has not yet hit the screen, so we hack the
                             // message somewhat, and show a hint later when the
                             // display has happened. Yuck.
                             var commandLine = bespin.get("commandLine");
@@ -171,6 +171,58 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
+     * Mobwrite has a set of shareObjs which are designed to wrap DOM nodes.
+     * This creates a fake DOM node to be wrapped in a Mobwrite ShareObj.
+     */
+    createMobwriteShareNode: function(onFirstSync) {
+        // Create an ID
+        var username = this.username || "[none]";
+        var project = this.project;
+        var path = this.path;
+        if (path.indexOf("/") != 0) {
+            path = "/" + path;
+        }
+        var id;
+        parts = project.split("+");
+        if (parts.length == 1) {
+            // This is our project
+            id = username + "/" + project + path;
+        }
+        else {
+            // This is someone else's projects
+            id = parts[0] + "/" + parts[1] + path;
+        }
+
+        var self = this;
+        return {
+            id: id,
+            isShareNode: true,
+            reportCollaborators: function(userEntries) {
+                self.reportCollaborators(userEntries);
+            },
+            getClientText: function() {
+                return self.editor.model.getDocument();
+            },
+            /**
+             * Notification used by mobwrite to announce an update.
+             * Used by startSession to detect when it is safe to fire onSuccess
+             */
+            setClientText: function(text) {
+                self.editor.model.insertDocument(text);
+
+                // Nasty hack to allow the editor to know that something has changed.
+                // In the first instance the use is restricted to calling the loaded
+                // callback
+                if (this.onFirstSync) {
+                    this.onFirstSync();
+                }
+                this.onFirstSync = null;
+            },
+            onFirstSync: onFirstSync
+        };
+    },
+
+    /**
      * Begin editing a given project/path hooking up using mobwrite if needed
      * TODO: There is a disconnect here because if we're not using mobwrite
      * then the text is loaded somewhere else. We should be symmetric.
@@ -179,12 +231,14 @@ dojo.declare("bespin.client.session.EditSession", null, {
      */
     startSession: function(project, path, onSuccess, onFailure) {
         if (this.currentState == this.mobwriteState.starting) {
-            console.warn("Asked to start in the middle of starting. Ignoring, but you might like to look into why.");
+            console.warn("Asked to start in the middle of starting. this.shareNode=", this.shareNode);
             return;
         }
 
         // Stop any existing mobwrite session
-        this.stopSession();
+        if (this.shareNode) {
+            this.stopSession();
+        }
 
         // Remove the current document so we can see that the sync is happening
         this.editor.model.insertDocument("");
@@ -192,41 +246,40 @@ dojo.declare("bespin.client.session.EditSession", null, {
         if (project !== undefined) this.project = project;
         if (path !== undefined) this.path = path;
 
-        if (mobwrite) {
-            this.currentState = this.mobwriteState.starting;
-
-            if (this._onSuccess) {
-                console.warn("Overwriting _onSuccess");
-            }
-
-            // Wrap up the onSuccess to clear up after itself
-            // TODO: Mobwrite could still fail to load and we would not call
-            // onFailure, so we should hook into mobwrite somewhere and push
-            // the notification to here. We will need to reset both callbacks
-            // when either of them are called
-            this._onSuccess = function() {
-                if (dojo.isFunction(onSuccess)) {
-                    onSuccess({
-                        name: this.path,
-                        timestamp: new Date().getTime()
-                    });
-                }
-
-                // Voodoo needed to make the editor redraw.
-                // TODO: There must be a better way
-                this._editSession.editor.cursorManager.moveCursor({ row: 0, col: 0 });
-
-                this.currentState = this.mobwriteState.running;
-                dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
-                this._onSuccess = null;
-            };
-
-            mobwrite.share(this);
-        } else {
+        if (!mobwrite) {
             if (dojo.isFunction(onFailure)) {
                 onFailure({ responseText:"Mobwrite is missing" });
             }
+            return;
         }
+
+        this.currentState = this.mobwriteState.starting;
+
+        // Wrap up the onSuccess to clear up after itself
+        // TODO: Mobwrite could still fail to load and we would not call
+        // onFailure, so we should hook into mobwrite somewhere and push
+        // the notification to here. We will need to reset both callbacks
+        // when either of them are called
+        var self = this;
+        var onFirstSync = function() {
+            if (dojo.isFunction(onSuccess)) {
+                onSuccess({
+                    name: self.path,
+                    timestamp: new Date().getTime()
+                });
+            }
+
+            // Voodoo needed to make the editor redraw.
+            // TODO: There must be a better way
+            self.editor.cursorManager.moveCursor({ row: 0, col: 0 });
+
+            self.currentState = self.mobwriteState.running;
+            dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
+        };
+
+        this.shareNode = this.createMobwriteShareNode(onFirstSync);
+
+        mobwrite.share(this.shareNode);
     },
 
     /**
@@ -245,25 +298,12 @@ dojo.declare("bespin.client.session.EditSession", null, {
 
         if (this.currentState == this.mobwriteState.running) {
             if (mobwrite) {
-                mobwrite.unshare(this);
+                mobwrite.unshare(this.shareNode);
             }
+
             // TODO: Should this be set asynchronously when unshare() completes?
             this.currentState = this.mobwriteState.stopped;
-        }
-    },
-
-    /**
-     * Notification used by mobwrite to announce an update.
-     * Used by startSession to detect when it is safe to fire onSuccess
-     */
-    update: function() {
-        this.editor.model.insertDocument(text);
-        // Nasty hack to allow the editor to know that something has changed.
-        // In the first instance the use is restricted to calling the loaded
-        // callback
-
-        if (this._onSuccess) {
-            this._onSuccess();
+            this.shareNode = null;
         }
     },
 
