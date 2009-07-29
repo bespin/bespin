@@ -45,9 +45,10 @@ HorizontalTree Label:active {
 }
 
 HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/dash_icn_more.png), url(../images/filebrowser/folder_sm.png);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#AF6814), to(#DE8419)), url(../images/filebrowser/icn-actions.png), url(../images/filebrowser/folder_sm.png);
     background-repeat: repeat-x, no-repeat, no-repeat;
     background-position: left top, right center, left center;
+    padding-right: 31px;
 }
 
 #project_list {
@@ -68,12 +69,13 @@ HorizontalTree Label.evenmore:active, HorizontalTree Label.oddmore:active {
 
 /* I need to support multiple classes per component; right now I don't, hence, this mess */
 HorizontalTree Label.evenmore, HorizontalTree Label.oddmore {
-    background-image: url(../images/filebrowser/folder_sm.png), url(../images/dash_icn_more.png);
+    background-image: url(../images/filebrowser/folder_sm.png), url(../images/filebrowser/icn-actions.png);
     background-repeat: no-repeat, no-repeat;
     background-position: left center, right center;
     padding-top: 3px;
     padding-bottom: 1px;
     padding-left: 23px;
+    padding-right: 31px;
 }
 
 HorizontalTree Label.even, HorizontalTree Label.odd {

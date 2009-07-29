@@ -22,6 +22,81 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+exports.ActionTree = Class.define({
+    type: "HorizontalTree",
+    superclass: th.HorizontalTree,
+    members: {
+        init: function(parms) {
+            this._super(parms);
+            this.folderActionList = null;
+        },
+        
+        createList: function(items) {
+            var list = this._super(items);
+            this.getScene().bus.bind("mousedown", list, this.listclick, this);
+            return list;
+        },
+        
+        listclick: function(e) {
+            var list = e.thComponent;
+            var width = list.bounds.width;
+            
+            // The icn-action image is 31 pixels wide. The first 13 pixels are
+            // the icon that represents actions.
+            var hotLeft = width - 31;
+            var hotRight = width - 18;
+            var listX = e.componentX;
+            var item = list.getItemForPosition({ x: e.componentX, y: e.componentY });
+            
+            if (item.contents && listX >= hotLeft && listX <= hotRight) {
+                console.log("Hit!");
+                var listnum = this.getListPosition(list);
+                if (listnum !== null) {
+                    this.toggleFolderActions(listnum);
+                }
+            }
+        },
+        
+        getListPosition: function(list) {
+            var sp = this.scrollPanes;
+            for (var i = sp.length - 1; i >= 0; i--) {
+                if (sp[i].view == list) {
+                    return i;
+                }
+            }
+            return null;
+        },
+        
+        toggleFolderActions: function(listnum, noRender) {
+            var sp = this.scrollPanes;
+            
+            // First, turn off the existing action panel
+            if (this.folderActionList !== null && listnum != this.folderActionList) {
+                this.toggleFolderActions(this.folderActionList, true);
+            }
+            
+            // Close or set up the panel
+            if (sp.length > listnum+1) {
+                var topPanel = sp[listnum+1].topPanel;
+                if (topPanel.children.length) {
+                    topPanel.remove(topPanel.children[0]);
+                    this.folderActionList = null;
+                } else {
+                    topPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
+                    topPanel.addCss("height", "90px");
+                    topPanel.add([new th.Label({text: "Hi!"})]);
+                    this.folderActionList = listnum;
+                }
+                
+                if (!noRender) {
+                    this.getScene().render();
+                }
+            }
+            
+        }
+    }
+});
+
 exports.FilePanel = Class.define({
 members: {
     init: function() {
@@ -79,7 +154,7 @@ members: {
         };
 
         // the horizontal tree that will display the contents of a selected project
-        this.tree = new th.HorizontalTree({ id: "htree" });
+        this.tree = new exports.ActionTree({ id: "htree" });
 
         this.tree.getItemText = this.projects.getItemText;
         
@@ -101,7 +176,7 @@ members: {
         };
 
         this.scene.render();
-
+        
         this.scene.bus.bind("dblclick", this.tree, function(e) {
             var path = this.tree.getSelectedPath();
             if (!path) {
