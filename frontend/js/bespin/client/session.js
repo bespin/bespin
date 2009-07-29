@@ -121,11 +121,7 @@ dojo.declare("bespin.client.session.EditSession", null, {
         var historyItem = this.fileHistory[this.fileHistoryIndex];
 
         bespin.publish("editor:savefile", {});
-        bespin.publish("editor:openfile", {
-            project: historyItem.project,
-            filename: historyItem.filename,
-            fromFileHistory: true
-        });
+        this.editor.openFile(historyItem.project, historyItem.filename, { fromFileHistory: true });
     },
 
     /**

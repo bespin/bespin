@@ -37,10 +37,7 @@ bespin.command.store.addCommand({
             return;
         }
 
-        bespin.publish("editor:openfile", {
-            project: bespin.userSettingsProject,
-            filename: "config"
-        });
+        bespin.get("editor").openFile(bespin.userSettingsProject, "config");
     }
 });
 

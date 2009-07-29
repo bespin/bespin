@@ -165,8 +165,9 @@ dojo.declare("bespin.editor.quickopen.API", null, {
 
         // save the current file and load up the new one
         bespin.publish("editor:savefile", {});
-        bespin.publish("editor:openfile", { project: this.currentProject,  filename: item.filename });
-        
+        var editor = bespin.get('editor');
+        editor.openFile(this.currentProject, item.filename);
+
         // TODO: fix this, since we no longer get open session files for a project.
         // var currentProjectList = this.openSessionFiles[this.currentProject];
         // // adds the new opened file to the top of the openSessionFiles
@@ -176,7 +177,7 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         // currentProjectList.unshift(item.filename);
 
         this.toggle();
-        bespin.get('editor').setFocus(true);
+        editor.setFocus(true);
     },
 
     highlightText: function(text, highlight) {

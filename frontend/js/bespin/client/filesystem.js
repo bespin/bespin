@@ -128,10 +128,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 });
             },
             elseFailed: function() {
-                bespin.publish("editor:openfile", {
-                    project: project,
-                    filename: path
-                });
+                bespin.get("editor").openFile(project, path);
             }
         });
     },
