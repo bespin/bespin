@@ -28,6 +28,9 @@ exports.ActionTree = Class.define({
     members: {
         init: function(parms) {
             this._super(parms);
+            
+            this.filePanel = parms.filePanel;
+            
             this.folderActionList = null;
             this.pendingList = null;
         },
@@ -104,6 +107,22 @@ exports.ActionTree = Class.define({
             if (this.pendingList) {
                 this.toggleFolderActions(newItem, this.pendingList);
             }
+        },
+        
+        getFolderPath: function() {
+            if (this.folderActionList == null) {
+                return;
+            }
+            
+            var sp = this.scrollPanes;
+            
+            var path = "/" + this.filePanel.currentProject;
+            
+            for (var i = 0; i <= this.folderActionList; i++) {
+                path += "/" + sp[i].view.getSelectedItem().name;
+            }
+            
+            return path;
         }
     }
 });
@@ -165,7 +184,7 @@ members: {
         };
 
         // the horizontal tree that will display the contents of a selected project
-        this.tree = new exports.ActionTree({ id: "htree" });
+        this.tree = new exports.ActionTree({ id: "htree" , filePanel: this});
 
         this.tree.getItemText = this.projects.getItemText;
         
