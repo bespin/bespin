@@ -28,7 +28,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
     constructor: function() {
         this.requestFinished = true;
         this.preformNewRequest = false;
-        this.openSessionFiles;
         this.projects;
         this.currentProject;
         this.currentProjectInclude;
@@ -86,7 +85,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
             if (!this.currentProject) return;
             
             if (this.input.text == '') {
-                this.showFiles(this.openSessionFiles[this.currentProject]);
+                // TODO: put in recent files
+                this.showFiles([]);
             } else {
                 // the text has changed!
                 if (this.requestFinished) {
@@ -119,7 +119,8 @@ dojo.declare("bespin.editor.quickopen.API", null, {
                     if (this.input.text == 'no such project') {
                         this.input.setText('', true);
                     }
-                    this.showFiles(this.openSessionFiles[this.currentProject]);
+                    // TODO: put in recent files
+                    this.showFiles([]);
                     return;
                 }
             }
@@ -133,11 +134,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         bus.bind("focus:received", inputProject, function() { this.selectAll(); }, inputProject);
         bus.bind("focus:received", input       , function() { this.selectAll(); }, input);
         
-        // load the current opened files at startup
-        bespin.subscribe('settings:loaded', dojo.hitch(this, function() {
-            bespin.get('server').listOpen(dojo.hitch(this, this.callbackListOpen));
-        }));
-
         bespin.subscribe('ui:escape', dojo.hitch(this, function() {
             if (this.scene.isVisible) {
                 this.toggle();
@@ -170,13 +166,14 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         // save the current file and load up the new one
         bespin.publish("editor:savefile", {});
         bespin.publish("editor:openfile", { project: this.currentProject,  filename: item.filename });
-
-        var currentProjectList = this.openSessionFiles[this.currentProject];
-        // adds the new opened file to the top of the openSessionFiles
-        if (currentProjectList.indexOf(item.filename) != -1) {
-             currentProjectList.splice(currentProjectList.indexOf(item.filename), 1);
-        }
-        currentProjectList.unshift(item.filename);
+        
+        // TODO: fix this, since we no longer get open session files for a project.
+        // var currentProjectList = this.openSessionFiles[this.currentProject];
+        // // adds the new opened file to the top of the openSessionFiles
+        // if (currentProjectList.indexOf(item.filename) != -1) {
+        //      currentProjectList.splice(currentProjectList.indexOf(item.filename), 1);
+        // }
+        // currentProjectList.unshift(item.filename);
 
         this.toggle();
         bespin.get('editor').setFocus(true);
@@ -209,6 +206,12 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         var path;
         var lastSlash;
         var file;
+
+        if (files === undefined) {
+            quickopen.list.items = [];
+            quickopen.scene.render();
+            return;
+        }
 
         for (var x = 0; x < files.length; x++) {
             file = files[x];
@@ -278,42 +281,6 @@ dojo.declare("bespin.editor.quickopen.API", null, {
         }
     },
 
-    callbackListOpen: function(sessions) {
-        var temp = {};
-        for (project in sessions) {
-            temp[project] = [];
-            for (file in sessions[project]) {
-                temp[project].push(file);
-            }
-        }
-
-        this.openSessionFiles = temp;
-        this.displaySessions(bespin.get('editSession').project);
-    },
-
-    displaySessions: function(project) {
-        var editSession = bespin.get('editSession');
-        var currentFile = project == editSession.project ? editSession.path : false;
-
-        var items = new Array();
-
-        var files = this.openSessionFiles[project];
-        for (var i=0; i < files.length; i++) {
-            if (currentFile == files[i]) {
-                currentFile = false;
-            }
-            items.push(files[i]);
-        }
-
-        if (currentFile) {
-            items.push(currentFile);
-        }
-
-        if (items) {
-            this.showFiles(items, true);
-        }
-    },
-    
     loadProjects: function() {
         bespin.get("server").list(null, null, dojo.hitch(this, function(projectItems) {
             this.projects = [];
