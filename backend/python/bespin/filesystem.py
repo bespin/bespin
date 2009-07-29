@@ -46,9 +46,6 @@ log = logging.getLogger("bespin.model")
 # quotas are expressed in 1 megabyte increments
 QUOTA_UNITS = 1048576
 
-# A prefix for files that are not real - just mobwrite current versions
-MOBWRITE_CURRENT_PREFIX = ".mobwrite"
-
 class FSException(Exception):
     pass
 
@@ -431,8 +428,8 @@ class Project(object):
         while destpath and destpath.startswith("/"):
             destpath = destpath[1:]
 
-        destpath = MOBWRITE_CURRENT_PREFIX + "/" + destpath
-        file_loc = self.location / destpath
+        temp_name = get_temp_file_name(self.name, destpath)
+        file_loc = self.location.parent / temp_name
 
         if file_loc.isdir():
             raise FileConflict("Cannot save file at %s in project "
@@ -837,15 +834,14 @@ class ProjectView(Project):
         """Like get_file() except that it uses a parallel file as its source,
         resorting to get_file() when the parallel file does not exist."""
 
-        # TODO: Should we be doing this test anywhere?
-        # if "../" in destpath:
-        #     raise BadValue("Relative directories are not allowed")
+        if "../" in path:
+            raise BadValue("Relative directories are not allowed")
 
         # Load from the temp file first
-        file_obj = File(self, MOBWRITE_CURRENT_PREFIX + "/" + path)
-        if file_obj.exists():
-            log.debug("get_temp_file path=%s" % (MOBWRITE_CURRENT_PREFIX + "/" + path))
-            return str(file_obj.data)
+        file_loc = self.location / get_temp_file_name(self.name, path)
+        if file_loc.exists():
+            log.debug("get_temp_file path=%s" % file_loc.path)
+            return str(file_loc.bytes())
 
         # Otherwise, go for data from the real file
         file_obj = File(self, path)
@@ -854,20 +850,18 @@ class ProjectView(Project):
             return str(file_obj.data)
 
         # If we still don't have something then this must be a new (temp) file
-        file_obj = File(self, MOBWRITE_CURRENT_PREFIX + "/" + path)
-
-        if file_obj.location.isdir():
+        if file_loc.isdir():
             raise FileConflict("Cannot save file at %s in project "
                 "%s, because there is already a directory with that name."
                 % (destpath, self.name))
 
         log.debug("New file - creating temp space")
 
-        file_dir = file_obj.location.dirname()
+        file_dir = file_loc.dirname()
         if not file_dir.exists():
             file_dir.makedirs()
 
-        file_obj.save("")
+        file_loc.write_bytes("")
         return ""
 
     def delete(self, path=""):
@@ -894,6 +888,9 @@ class ProjectView(Project):
         file_obj.close(self.user)
         self.user.close(file_obj)
         # self.reset_edits(user, project, path)
+
+def get_temp_file_name(project, path):
+    return "." + project + "-mobwrite/" + path
 
 class ProjectMetadata(dict):
     """Provides access to Bespin-specific project information.
