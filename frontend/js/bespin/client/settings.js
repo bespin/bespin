@@ -471,9 +471,12 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
         //
-        // Change the syntax highlighter when a new file is opened
+        // Set the session path and change the syntax highlighter 
+        // when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             if (event.file.name == null) throw new Error("event.file.name falsy");
+            
+            editSession.path = event.file.name;
 
             var fileType = bespin.util.path.fileType(event.file.name);
             if (fileType) {
