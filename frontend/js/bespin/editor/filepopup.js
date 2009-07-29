@@ -29,6 +29,7 @@ exports.ActionTree = Class.define({
         init: function(parms) {
             this._super(parms);
             this.folderActionList = null;
+            this.pendingList = null;
         },
         
         createList: function(items) {
@@ -49,10 +50,9 @@ exports.ActionTree = Class.define({
             var item = list.getItemForPosition({ x: e.componentX, y: e.componentY });
             
             if (item.contents && listX >= hotLeft && listX <= hotRight) {
-                console.log("Hit!");
                 var listnum = this.getListPosition(list);
                 if (listnum !== null) {
-                    this.toggleFolderActions(listnum);
+                    this.toggleFolderActions(item, listnum);
                 }
             }
         },
@@ -67,12 +67,14 @@ exports.ActionTree = Class.define({
             return null;
         },
         
-        toggleFolderActions: function(listnum, noRender) {
+        toggleFolderActions: function(item, listnum, noRender) {
+            this.pendingList = null;
+            
             var sp = this.scrollPanes;
             
             // First, turn off the existing action panel
             if (this.folderActionList !== null && listnum != this.folderActionList) {
-                this.toggleFolderActions(this.folderActionList, true);
+                this.toggleFolderActions(null, this.folderActionList, true);
             }
             
             // Close or set up the panel
@@ -84,15 +86,24 @@ exports.ActionTree = Class.define({
                 } else {
                     topPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
                     topPanel.addCss("height", "90px");
-                    topPanel.add([new th.Label({text: "Hi!"})]);
+                    topPanel.add([new th.Label({text: item.name})]);
                     this.folderActionList = listnum;
                 }
                 
                 if (!noRender) {
                     this.getScene().render();
                 }
+            } else {
+                this.pendingList = listnum;
             }
+        },
+        
+        showChildren: function(newItem, children) {
+            this._super(newItem, children);
             
+            if (this.pendingList) {
+                this.toggleFolderActions(newItem, this.pendingList);
+            }
         }
     }
 });
