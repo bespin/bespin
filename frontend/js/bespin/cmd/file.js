@@ -106,8 +106,8 @@ bespin.command.store.addCommand({
  * 'load' command
  */
 bespin.command.store.addCommand({
-    name: 'load',
-    aliases: ['open'],
+    name: 'open',
+    aliases: ['load'],
     takes: ['path', 'line'],
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
