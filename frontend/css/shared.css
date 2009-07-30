@@ -172,7 +172,7 @@ img {
     font-family: Calibri, Arial, sans-serif;
     -webkit-user-select: text;
     -moz-user-select: text;
-    z-index: 220;
+    z-index: 260;
 }
 
 #command_output input[type=password], #command_output input[type=text], #command_output textarea {

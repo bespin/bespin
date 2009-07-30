@@ -55,7 +55,7 @@ members: {
 
         // Create the div for hints
         this.styles = {
-            bottom: "0px",
+            bottom: "100px",
             left: "31px"
         };
 
@@ -139,13 +139,6 @@ members: {
             display: 'block'
         };
 
-        // move the puppy up to the pie menu
-        var piemenu = bespin.get("piemenu");
-        if (piemenu && !piemenu.visible()) {
-            styles.bottom = this.styles.bottom;
-            styles.left = this.styles.left;
-        }
-
         dojo.attr(this.commandHint, { innerHTML: html });
         dojo.style(this.commandHint, styles);
 
@@ -198,7 +191,7 @@ members: {
             bottom: (coords.b - footerHeight) + "px",
             display: "block"
         });
-
+        
         dojo.style(this.commandHint, {
             left: coords.l + "px",
             bottom: coords.b + "px",
