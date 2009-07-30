@@ -182,7 +182,6 @@ bespin.vcs.commands.addCommand({
                 + '<td><input type="text" name="dest" value=""> (defaults to last part of URL path)</td></tr>'
 
                 + '<tr><td>VCS Type:</td><td><select name="vcs" id="vcs">'
-                + '<option value="">Auto-detect from URL</option>'
                 + '<option value="hg">Mercurial (hg)</option>'
                 + '<option value="svn">Subversion (svn)</option>'
                 + '</select></td></tr>'
@@ -194,7 +193,7 @@ bespin.vcs.commands.addCommand({
                 + '</select></td></tr>'
 
                 + '<tr id="push_row" style="display:none" class="authfields"><td>Push to URL</td>'
-                + '<td><input type="text" name="push" style="width: 85%" value="' + url + '"></td></tr>'
+                + '<td><input type="text" id="pushfield" name="push" style="width: 85%" value="' + url + '"></td></tr>'
 
                 + '<tr id="authtype_row" style="display:none" class="authfields"><td>Authentication type</td>'
                 + '<td><select name="authtype" id="authtype">'
@@ -203,7 +202,7 @@ bespin.vcs.commands.addCommand({
                 + '</select></td></tr>'
 
                 + '<tr id="username_row" style="display:none" class="authfields"><td>Username</td>'
-                + '<td><input type="text" name="username">'
+                + '<td><input type="text" name="username" id="usernamefield">'
                 + '</td></tr>'
 
                 + '<tr id="password_row" style="display:none" class="authfields userfields"><td>Password</td><td>'
@@ -219,6 +218,15 @@ bespin.vcs.commands.addCommand({
             background: "white",
             padding: "5px"
         });
+        
+        var setUserfields = function() {
+            var newval = dojo.byId("authtype").value;
+            if (newval == "ssh") {
+                dojo.query("tr.userfields").style("display", "none");
+            } else {
+                dojo.query("tr.userfields").style("display", "table-row");
+            }
+        };
 
         dojo.connect(dojo.byId("remoteauth"), "onchange", function() {
             var newval = dojo.byId("remoteauth").value;
@@ -230,16 +238,20 @@ bespin.vcs.commands.addCommand({
                     dojo.query("tr.userfields").style("display", "none");
                 }
             }
-        });
-
-        dojo.connect(dojo.byId("authtype"), "onchange", function() {
-            var newval = dojo.byId("authtype").value;
-            if (newval == "ssh") {
-                dojo.query("tr.userfields").style("display", "none");
+            if (dojo.byId("vcs").value == "svn") {
+                dojo.query("#push_row").style("display", "none");
+                var authtype = dojo.byId("authtype");
+                authtype.value = "password";
+                setUserfields();
+                dojo.style("authtype_row", "display", "none");
+                dojo.byId("usernamefield").focus();
             } else {
-                dojo.query("tr.userfields").style("display", "table-row");
+                dojo.style("authtype_row", "display", "table-row");
+                dojo.byId("pushfield").focus();
             }
         });
+
+        dojo.connect(dojo.byId("authtype"), "onchange", setUserfields);
 
         dojo.connect(dojo.byId("vcsauthcancel"), "onclick", bespin.vcs._createCancelHandler(instruction));
 
@@ -247,6 +259,9 @@ bespin.vcs.commands.addCommand({
             dojo.stopEvent(e);
             bespin.util.webpieces.hideCenterPopup(el);
             var data = dojo.formToObject("vcsauth");
+            
+            var newProjectName = data.dest;
+            
             // prune out unnecessary values
             if (data.remoteauth == "") {
                 delete data.push;
@@ -259,7 +274,11 @@ bespin.vcs.commands.addCommand({
                 }
             }
             data = dojo.objectToQuery(data);
-            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction));
+            bespin.get('server').clone(data, instruction, bespin.vcs._createStandardHandler(instruction, {
+                onSuccess: function() {
+                    bespin.publish("project:created", {project: newProjectName});
+                }
+            }));
         }));
 
         dojo.byId("kcpass").focus();
