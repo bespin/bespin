@@ -146,7 +146,7 @@ exports.ActionTree = Class.define({
             var fae = this.folderActionElements;
             if (fae.actionlabel.text != "") {
                 fae.actionlabel.text = "";
-                fae.actionlabel.getScene().render();
+                fae.actionlabel.render();
                 th.stopEvent(e);
             }
         },
@@ -190,7 +190,7 @@ exports.ActionTree = Class.define({
                 }
                 
                 if (!noRender) {
-                    this.getScene().render();
+                    sp[listnum+1].render();
                 }
             } else {
                 this.pendingList = listnum;
@@ -491,7 +491,7 @@ members: {
         fileActionPanel.bus.bind("mousemove", fileActionPanel, function(e) {
             if (actionlabel.text != "") {
                 actionlabel.text = "";
-                actionlabel.getScene().render();
+                actionlabel.render();
                 th.stopEvent(e);
             }
         });
@@ -877,7 +877,7 @@ members: {
             }
             
             label.text = action.name;
-            this.getScene().render();
+            label.render();
         }
     },
     
