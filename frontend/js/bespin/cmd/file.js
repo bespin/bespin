@@ -317,7 +317,7 @@ bespin.cmd.file._parseArguments = function(givenPath, opts) {
 
             path = path + "/" + trimmedPath;
 
-            projectPath = (path == "/") ? "" : path;
+            projectPath = "";
         }
     }
     
@@ -355,7 +355,7 @@ bespin.cmd.file._findCompletionsHelper = function(query, callback, options) {
         if (matches.length == 1) {
             // Single match: go for autofill and hint
             query.autofill = query.prefix + list.projectPath + matches[0].name;
-            query.hint = "Press return to see files in " + query.autofill;
+            query.hint = "Press return to " + query.autofill;
         } else if (matches.length == 0) {
             // No matches, cause an error
             query.error = "No matches";
