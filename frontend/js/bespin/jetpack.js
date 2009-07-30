@@ -152,7 +152,7 @@ bespin.jetpack.commands.addCommand({
                 output += dojo.map(dojo.filter(jetpacks, function(file) {
                     return bespin.util.endsWith(file.name, '\\.js');
                 }), function(c) {
-                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open " + c.name + " " + bespin.jetpack.projectName + "');\">" + c.name.replace(/\.js$/, '') + "</a>";
+                    return "<a href=\"javascript:bespin.get('commandLine').executeCommand('open /" + bespin.jetpack.projectName + "/" + c.name + "');\">" + c.name.replace(/\.js$/, '') + "</a>";
                 }).join("<br>");
             }
 

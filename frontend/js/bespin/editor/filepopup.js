@@ -300,7 +300,7 @@ members: {
             var file = this.getFilePath(path, true);
             console.log("file", file, { filename:file, project:this.currentProject });
             bespin.getComponent("commandLine", function(cli) {
-                cli.executeCommand("load " + file + " " + this.currentProject);
+                cli.executeCommand("load /" + this.currentProject + "/" + file);
             }, this);
 
             var settings = bespin.get("settings");

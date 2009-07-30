@@ -386,7 +386,7 @@ exports.debuggerHalted = function(location) {
 
     var linenum = location.sourceLine + 1;
     if (exports.project) {
-        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  ' + location.scriptName + ' ' + exports.project + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
+        var scriptloc = '<a onclick="bespin.get(\'commandLine\').executeCommand(\'open  /' + exports.project + "/" + location.scriptName + ' ' + linenum + '\', true)">' + location.scriptName + ':' + linenum + '</a>';
     } else {
         var scriptloc = location.scriptName + ':' + linenum;
     }

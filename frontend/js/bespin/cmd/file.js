@@ -34,7 +34,7 @@ bespin.command.store.addCommand({
     preview: 'show files',
     completeText: 'list files relative to current file, or start with /projectname',
     execute: function(instruction, givenPath) {
-        var list = bespin.cmd.file._parseArguments(givenPath);
+        var list = bespin.cmd.file._parseArguments(givenPath, {filter: true});
         bespin.get('server').list(list.project, list.path, function(filenames) {
             var files = "";
             for (var x = 0; x < filenames.length; x++) {
@@ -56,19 +56,20 @@ bespin.command.store.addCommand({
  */
 bespin.command.store.addCommand({
     name: 'mkdir',
-    takes: ['path', 'projectname'],
-    preview: 'create a new directory in the given project',
-    usage: '[path] [projectname]',
-    execute: function(instruction, args) {
-        if (!args.path) {
+    takes: ['path'],
+    preview: 'create a new directory, use a leading / to create a directory in a different project',
+    usage: '[path]',
+    execute: function(instruction, givenPath) {
+        if (!givenPath) {
             instruction.addUsageOutput(this);
             return;
         }
 
         var editSession = bespin.get('editSession');
-
-        var path = args.path;
-        var project = args.projectname || editSession.project;
+        
+        var info = bespin.cmd.file._parseArguments(givenPath);
+        var path = info.path;
+        var project = info.project || editSession.project;
 
         var onSuccess = instruction.link(function() {
             if (path == '') editSession.setProject(project);
@@ -107,11 +108,20 @@ bespin.command.store.addCommand({
 bespin.command.store.addCommand({
     name: 'load',
     aliases: ['open'],
-    takes: ['filename', 'project', 'line'],
+    takes: ['path', 'line'],
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(instruction, opts) {
-        bespin.publish("editor:openfile", opts);
+        var info = bespin.cmd.file._parseArguments(opts.path);
+        var path = info.path;
+        var project = info.project;
+        
+        bespin.publish("editor:openfile", {
+            project: project,
+            filename: path,
+            line: opts.line
+        });
+        
         bespin.publish("ui:escape", {});
     },
     findCompletions: function(query, callback) {
@@ -139,16 +149,16 @@ bespin.command.store.addCommand({
 bespin.command.store.addCommand({
     name: 'newfile',
     //aliases: ['new'],
-    takes: ['filename', 'project'],
+    takes: ['filename'],
     preview: 'create a new buffer for file',
-    completeText: 'optionally, name the new filename first, and then the name of the project second',
+    completeText: 'optionally, you can specify a full path including project by starting the filename with "/"',
     withKey: "CTRL SHIFT N",
-    execute: function(instruction, args) {
-        if (args.filename) {
-            args.newfilename = args.filename;
-            delete args.filename;
-        }
-        bespin.publish("editor:newfile", args || {});
+    execute: function(instruction, filename) {
+        var info = bespin.cmd.file._parseArguments(filename);
+        var path = info.path;
+        var project = info.project;
+
+        bespin.publish("editor:newfile", {project: project, newfilename: path});
     }
 });
 
@@ -158,25 +168,16 @@ bespin.command.store.addCommand({
 bespin.command.store.addCommand({
     name: 'rm',
     aliases: ['remove', 'del'],
-    takes: ['filename', 'project'],
+    takes: ['filename'],
     preview: 'remove the file',
-    completeText: 'add the filename to remove, and optionally a specific project at the end. To delete a directory end the path in a '/'',
-    execute: function(instruction, args) {
-        var project = args.project || bespin.get('editSession').project;
-        var filename = args.filename;
-
-        if (!project) {
-            instruction.addErrorOutput("'rm' only works with the project is set.");
-            return;
-        }
-
-        if (!filename) {
-            instruction.addErrorOutput("give me a filename or directory to delete");
-            return;
-        }
+    completeText: 'add the filename to remove, give a full path starting with '/' to delete from a different project. To delete a directory end the path in a '/'',
+    execute: function(instruction, filename) {
+        var info = bespin.cmd.file._parseArguments(filename);
+        var path = info.path;
+        var project = info.project;
 
         var onSuccess = instruction.link(function() {
-            if (bespin.get('editSession').checkSameFile(project, filename)) {
+            if (bespin.get('editSession').checkSameFile(project, path)) {
                 bespin.get("editor").model.clear(); // only clear if deleting the same file
             }
 
@@ -189,30 +190,13 @@ bespin.command.store.addCommand({
             instruction.unlink();
         });
 
-        bespin.get('files').removeFile(project, filename, onSuccess, onFailure);
-    }
-});
-
-/**
- * 'closefile' command
- */
-bespin.command.store.addCommand({
-    name: 'closefile',
-    takes: ['filename', 'project'],
-    preview: 'close the file (may lose edits)',
-    completeText: 'add the filename to close (defaults to this file).<br>also, optional project name.',
-    execute: function(instruction, args) {
-        var editSession = bespin.get('editSession');
-        var filename = args.filename || editSession.path;  // default to current page
-        var project  = args.project  || editSession.project;
-
-        bespin.get('files').closeFile(project, filename, function() {
-            bespin.publish("editor:closedfile", { filename: filename });
-
-            // if the current file, move on to a new one
-            if (filename == editSession.path) bespin.publish("editor:newfile");
-
-            bespin.get("commandLine").addOutput('Closed file: ' + filename);
+        bespin.get('files').removeFile(project, path, onSuccess, onFailure);
+    },
+    
+    findCompletions: function(query, callback) {
+        bespin.cmd.file._findCompletionsHelper(query, callback, {
+            matchFiles: true,
+            matchDirectories: true
         });
     }
 });
@@ -288,7 +272,9 @@ bespin.command.store.addCommand({
  * <li>fol = { project:'', path:'', filter:'fol' }
  * </ul>
  */
-bespin.cmd.file._parseArguments = function(givenPath) {
+bespin.cmd.file._parseArguments = function(givenPath, opts) {
+    opts = opts || {};
+    
     var session = bespin.get("editSession");
 
     // Sort out the context
@@ -308,7 +294,12 @@ bespin.cmd.file._parseArguments = function(givenPath) {
             filter = parts.pop();
             // Pull out the leading segment into the project
             project = parts.shift() || "";
-            path = parts.join("/") + "/";
+            
+            if (parts.length) {
+                path = parts.join("/") + "/";
+            } else {
+                path = "";
+            }
 
             // Both project and path could be "" at this point ...
             // This filename generation is lazy - it slaps '/' around and
@@ -329,6 +320,11 @@ bespin.cmd.file._parseArguments = function(givenPath) {
             projectPath = (path == "/") ? "" : path;
         }
     }
+    
+    if (!opts.filter) {
+        path = path + filter;
+        filter = undefined;
+    }
 
     return { project:project, path:path, filter:filter, projectPath:projectPath };
 };
@@ -344,7 +340,7 @@ bespin.cmd.file._parseArguments = function(givenPath) {
  */
 bespin.cmd.file._findCompletionsHelper = function(query, callback, options) {
     var givenPath = query.action.join(" ");
-    var list = bespin.cmd.file._parseArguments(givenPath);
+    var list = bespin.cmd.file._parseArguments(givenPath, {filter: true});
     var self = this;
     bespin.get('server').list(list.project, list.path, function(files) {
         var matches = files.filter(function(file) {
