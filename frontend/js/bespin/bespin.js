@@ -243,7 +243,6 @@ dojo.mixin(bespin, {
                 callback.call(context, commandLine);
             });
         },
-        
         breakpoints: function(callback, context) {
             bespin.plugins.loadOne("breakpoints", function(BreakpointManager) {
                 var breakpoints = bespin.register("breakpoints", 
