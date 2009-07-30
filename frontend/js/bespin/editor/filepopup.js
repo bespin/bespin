@@ -26,7 +26,8 @@ var images = {
     open: "images/actions/open.png",
     paste: "images/actions/pasteToCommandLine.png",
     del: "images/actions/delete.png",
-    newfile: "images/actions/newfile.png"
+    newfile: "images/actions/newfile.png",
+    mkdir: "images/actions/mkdir.png"
 };
 
 for (var imgName in images) {
@@ -63,6 +64,17 @@ exports.ActionTree = Class.define({
                 activeImage: images.newfile[1],
                 action: function(cli, file, path) {
                     cli.setCommandText("newfile " + file);
+                    cli.focus();
+                }
+            }
+            folderActions.push(action);
+
+            var action = {
+                name: "New Directory",
+                image: images.mkdir[0],
+                activeImage: images.mkdir[1],
+                action: function(cli, file, path) {
+                    cli.setCommandText("mkdir " + file);
                     cli.focus();
                 }
             }
