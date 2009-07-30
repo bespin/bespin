@@ -25,7 +25,8 @@
 var images = {
     open: "images/actions/open.png",
     paste: "images/actions/pasteToCommandLine.png",
-    del: "images/actions/delete.png"
+    del: "images/actions/delete.png",
+    newfile: "images/actions/newfile.png"
 };
 
 for (var imgName in images) {
@@ -57,6 +58,28 @@ exports.ActionTree = Class.define({
             var folderActions = [];
             
             var action = {
+                name: "New File",
+                image: images.newfile[0],
+                activeImage: images.newfile[1],
+                action: function(cli, file, path) {
+                    cli.setCommandText("newfile " + file);
+                    cli.focus();
+                }
+            }
+            folderActions.push(action);
+
+            var action = {
+                name: "Delete",
+                image: images.del[0],
+                activeImage: images.del[1],
+                action: function(cli, file, path) {
+                    cli.setCommandText("del " + file);
+                    cli.focus();
+                }
+            }
+            folderActions.push(action);
+
+            var action = {
                 name: "Paste to Command Line",
                 image: images.paste[0],
                 activeImage: images.paste[1],
@@ -64,12 +87,11 @@ exports.ActionTree = Class.define({
                     cli.appendCommandText(" " + file);
                 }
             }
-            
             folderActions.push(action);
             
             var fae = this.folderActionElements = {};
 
-            var toplabel = new th.Label({text: "", className: "fileDetailLabel"});
+            var toplabel = new th.Label({text: "", className: "folderDetailLabel"});
             toplabel.addCss("background-color", "rgb(37,34,33)");
             fae.toplabel = toplabel;
 
@@ -153,8 +175,12 @@ exports.ActionTree = Class.define({
                     topPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
                     topPanel.addCss("height", "90px");
                     topPanel.addCss("background-color", "rgb(37,34,33)");
+                    topPanel.addCss("background-image", "url(../images/filebrowser/folderaction_splitter.gif)");
+                    topPanel.addCss("background-repeat", "repeat-x");
+                    topPanel.addCss("background-position", "left bottom");
                     
                     topPanel.toplabel = fae.toplabel;
+                    fae.toplabel.text = item.name;
                     topPanel.add([fae.toplabel, fae.actionPanel, fae.actionlabel]);
                     
                     topPanel.bus.bind("mousemove", topPanel,
@@ -875,7 +901,7 @@ members: {
         var action = this.action.action;
         bespin.getComponent("commandLine", function(cli) {
             var path = this.tree.getSelectedPath();
-            var file = this.getFilePath(path, true);
+            var file = "/" + this.currentProject + "/" + this.getFilePath(path, true);
             action(cli, file, path);
         }, this.parent.context);
         th.stopEvent(e);

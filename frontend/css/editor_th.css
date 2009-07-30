@@ -99,6 +99,13 @@ HorizontalTree Panel {
     background-color: #2a2522;
 }
 
+Panel.folderActions {
+    background-image: url(../images/filebrowser/folderaction_splitter.gif);
+    background-repeat: repeat-x;
+    background-position: left bottom;
+    padding-bottom: 5px;
+}
+
 Label.fileActions {
     background-color: #2a2522;
 }
@@ -106,6 +113,18 @@ Label.fileActions {
 Label.fileDetailLabel {
     background-color: #2a2522;
     background-image: url(../images/filebrowser/file_lg.png);
+    background-repeat: no-repeat;
+    background-position: left center;
+    font: 14px Tahoma;
+    padding-left: 35px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+Label.folderDetailLabel {
+    background-color: #2a2522;
+    background-image: url(../images/filebrowser/folder_lg.png);
     background-repeat: no-repeat;
     background-position: left center;
     font: 14px Tahoma;
