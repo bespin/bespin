@@ -159,6 +159,7 @@ bespin.command.store.addCommand({
         var project = info.project;
 
         bespin.publish("editor:newfile", {project: project, newfilename: path});
+        bespin.publish("ui:escape", {});
     }
 });
 
