@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+    <title>Welcome Popup</title>
+</head>
+<body>
+    <style type="text/css">
+    #welcome {
+        border: 1px solid red;
+        background-image: url(../../../images/welcome/welcome_bg.png);
+        width: 563px;
+        height: 341px;
+    }
+    
+    #welcome ul {
+        clear: both;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        position: relative;
+        top: 38px;
+        left: 27px;
+    }
+    
+    #welcome ul li {
+        width: 127px;
+        height: 229px;
+        float: left;
+    }
+
+    #welcome_bespinin20secs {
+        background-image: url(../../../images/welcome/welcome_bespinin20secs.jpg);
+    }
+    #welcome_commandref {
+        background-image: url(../../../images/welcome/welcome_commandref.jpg);
+    }
+    #welcome_developbespin {
+        background-image: url(../../../images/welcome/welcome_developbespin.jpg);
+    }
+    #welcome_userref {
+        background-image: url(../../../images/welcome/welcome_userref.jpg);
+    }
+    
+    #welcome_bespinin20secs:hover {
+        background-image: url(../../../images/welcome/welcome_bespinin20secs_b.jpg);
+    }
+    #welcome_commandref:hover {
+        background-image: url(../../../images/welcome/welcome_commandref_b.jpg);
+    }
+    #welcome_developbespin:hover {
+        background-image: url(../../../images/welcome/welcome_developbespin_b.jpg);
+    }
+    #welcome_userref:hover {
+        background-image: url(../../../images/welcome/welcome_userref_b.jpg);
+    }
+    
+    #welcome_right {
+/*        border: 1px solid blue;*/
+        position: relative;
+        float: right;
+        top: 30px;
+        right: 34px;
+    }
+    
+    #welcome_close {
+        position: relative;
+        top: 5px;
+        border: none;
+    }
+    
+    #welcome_dont {
+        position: relative;
+        top: 2px;
+        right: 5px;
+        font-family: Calibri, "Lucida Grande", Tahoma, Arial, sans-serif;
+        font-size: 10px;
+        color: #ff9600;
+    }
+    
+    </style>
+    
+    <div id="welcome"> 
+        <div id="welcome_right">
+            <a href="#" id="welcome_dont">Don't show this again</a>
+            <a href="#" title="close"><img id="welcome_close" src="../../../images/closer.png"></a>
+        </div
+        <ul>
+            <li id="welcome_bespinin20secs">
+            <li id="welcome_commandref">
+            <li id="welcome_userref">
+            <li id="welcome_developbespin">
+        </ul>
+    </div>
+</body>
+</html>
