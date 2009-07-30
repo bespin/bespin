@@ -331,7 +331,11 @@ members: {
 
             if (path[path.length - 1].contents) {
                 // if we're in a directory, refresh the files in the directory
-                this.fetchFiles(path, this.tree);
+                // TODO this is commented out because it tends to result
+                // in extra columns getting randomly added to the tree
+                // the problem appears to be with how it's updating the tree
+                // in fetchFiles.
+                //this.fetchFiles(path, this.tree);
                 return;
             }
 
