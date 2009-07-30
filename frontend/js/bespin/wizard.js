@@ -131,3 +131,11 @@ bespin.command.store.addCommand({
         bespin.wizard.show(instruction, type, true);
     }
 });
+
+bespin.command.store.addCommand({
+    name: 'welcome',
+    preview: 'display welcome + help',
+    execute: function() {
+        bespin.get('commandLine').executeCommand("wizard newuser");
+    }
+});

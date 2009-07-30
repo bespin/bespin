@@ -41,12 +41,12 @@ img {
 
 #centerpopup {
     z-index: 300;
-    background: url("../images/background_white_50.png");
     position: absolute;
+/*    background: url("../images/background_white_50.png");
     padding: 10px;
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
-}
+*/}
 
 #overlay {
     z-index: 290;
