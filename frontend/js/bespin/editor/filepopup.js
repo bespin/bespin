@@ -22,6 +22,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+var images = {
+    open: "images/actions/open.png",
+    paste: "images/actions/pasteToCommandLine.png",
+    del: "images/actions/delete.png"
+};
+
+for (var imgName in images) {
+    var imgUrl = images[imgName];
+    var main = new Image();
+    main.src = imgUrl;
+    var active = new Image();
+    active.src = imgUrl.substring(0, imgUrl.length-4) + "-b.png";
+    
+    images[imgName] = [main, active];
+}
+
 exports.ActionTree = Class.define({
     type: "HorizontalTree",
     superclass: th.HorizontalTree,
@@ -33,6 +49,40 @@ exports.ActionTree = Class.define({
             
             this.folderActionList = null;
             this.pendingList = null;
+            
+            this.createFolderActionPanel();
+        },
+        
+        createFolderActionPanel: function() {
+            var folderActions = [];
+            
+            var action = {
+                name: "Paste to Command Line",
+                image: images.paste[0],
+                activeImage: images.paste[1],
+                action: function(cli, file, path) {
+                    cli.appendCommandText(" " + file);
+                }
+            }
+            
+            folderActions.push(action);
+            
+            var fae = this.folderActionElements = {};
+
+            var toplabel = new th.Label({text: "", className: "fileDetailLabel"});
+            toplabel.addCss("background-color", "rgb(37,34,33)");
+            fae.toplabel = toplabel;
+
+            var actionlabel = new th.Label({text: "", className: "fileActionLabel"});
+            // I don't know why these two lines are needed. The definitions
+            // in editor_th.css don't seem to be taking effect here.
+            actionlabel.addCss("background-color", "rgb(37,34,33)");
+            actionlabel.addCss("color", "rgb(150, 150, 150)");
+            fae.actionPanel = new exports.ActionPanel(exports.FolderActionIcon, this, actionlabel, 
+                                    folderActions, 27, 27, 4);
+                                    
+            fae.actionlabel = actionlabel;
+
         },
         
         createList: function(items) {
@@ -70,6 +120,15 @@ exports.ActionTree = Class.define({
             return null;
         },
         
+        clearActionLabel: function(e) {
+            var fae = this.folderActionElements;
+            if (fae.actionlabel.text != "") {
+                fae.actionlabel.text = "";
+                fae.actionlabel.getScene().render();
+                th.stopEvent(e);
+            }
+        },
+        
         toggleFolderActions: function(item, listnum, noRender) {
             this.pendingList = null;
             
@@ -83,13 +142,24 @@ exports.ActionTree = Class.define({
             // Close or set up the panel
             if (sp.length > listnum+1) {
                 var topPanel = sp[listnum+1].topPanel;
+                var fae = this.folderActionElements;
                 if (topPanel.children.length) {
-                    topPanel.remove(topPanel.children[0]);
+                    topPanel.remove(fae.toplabel);
+                    topPanel.remove(fae.actionPanel);
+                    topPanel.remove(fae.actionlabel);
+                    
                     this.folderActionList = null;
                 } else {
                     topPanel.layoutManager = new th.FlowLayout(th.VERTICAL);
                     topPanel.addCss("height", "90px");
-                    topPanel.add([new th.Label({text: item.name})]);
+                    topPanel.addCss("background-color", "rgb(37,34,33)");
+                    
+                    topPanel.toplabel = fae.toplabel;
+                    topPanel.add([fae.toplabel, fae.actionPanel, fae.actionlabel]);
+                    
+                    topPanel.bus.bind("mousemove", topPanel,
+                        this.clearActionLabel, this);
+                    
                     this.folderActionList = listnum;
                 }
                 
@@ -119,8 +189,11 @@ exports.ActionTree = Class.define({
             var path = "/" + this.filePanel.currentProject;
             
             for (var i = 0; i <= this.folderActionList; i++) {
-                path += "/" + sp[i].view.getSelectedItem().name;
+                path += "/" + sp[i].view.selected.name;
             }
+            
+            // add trailing slash, which is important for denoting directories.
+            path += "/";
             
             return path;
         }
@@ -341,40 +414,34 @@ members: {
         var fileActions = [];
         var action = {
             name: "Edit File",
-            image: new Image(),
-            activeImage: new Image(),
+            image: images.open[0],
+            activeImage: images.open[1],
             action: function(cli, file, path) {
                 cli.setCommandText("open " + file);
                 cli.focus();
             }
         }
-        action.image.src = "images/actions/open.png";
-        action.activeImage.src = "images/actions/open-b.png";
         fileActions.push(action);
         
         var action = {
             name: "Paste to Command Line",
-            image: new Image(),
-            activeImage: new Image(),
+            image: images.paste[0],
+            activeImage: images.paste[1],
             action: function(cli, file, path) {
                 cli.appendCommandText(" " + file);
             }
         }
-        action.image.src = "images/actions/pasteToCommandLine.png";
-        action.activeImage.src = "images/actions/pasteToCommandLine-b.png";
         fileActions.push(action);
         
         action = {
             name: "Delete",
-            image: new Image(),
-            activeImage: new Image(),
+            image: images.del[0],
+            activeImage: images.del[1],
             action: function(cli, file, path) {
                 cli.setCommandText("del " + file);
                 cli.focus();
             }
         }
-        action.image.src = "images/actions/delete.png";
-        action.activeImage.src = "images/actions/delete-b.png";
         fileActions.push(action);
         
         var fileActionPanel = this.fileActionPanel = new th.Panel();
@@ -392,7 +459,7 @@ members: {
         // in editor_th.css don't seem to be taking effect here.
         actionlabel.addCss("background-color", "rgb(37,34,33)");
         actionlabel.addCss("color", "rgb(150, 150, 150)");
-        fileActionPanel.add(new exports.ActionPanel(this, actionlabel, fileActions, 27, 27, 4));
+        fileActionPanel.add(new exports.ActionPanel(exports.FileActionIcon, this, actionlabel, fileActions, 27, 27, 4));
         fileActionPanel.add(actionlabel);
         
         fileActionPanel.bus.bind("mousemove", fileActionPanel, function(e) {
@@ -699,14 +766,14 @@ exports.ActionPanel = Class.define({
 type: "ActionPanel",
 superclass: th.Panel,
 members: {
-    init: function(context, label, actions, width, height, columns, parms) {
+    init: function(IconType, context, label, actions, width, height, columns, parms) {
         this._super(parms);
         this.label = label;
         this.actions = actions;
         this.context = context;
         
         for (var i = 0; i < actions.length; i++) {
-            var ai = new exports.ActionIcon(actions[i], width, height);
+            var ai = new IconType(actions[i], width, height);
             this.add(ai);
         }
         
@@ -749,7 +816,7 @@ members: {
     
 }});
 
-exports.ActionIcon = Class.define({
+exports.BaseActionIcon = Class.define({
 type: "ActionIcon",
 superclass: th.Panel,
 members: {
@@ -761,7 +828,6 @@ members: {
         
         this.currentImage = this.action.image;
         
-        this.bus.bind("mousedown", this, this._onmousedown, this);
         this.bus.bind("mouseover", this, this._onmouseover, this);
         this.bus.bind("mouseout", this, this._onmouseout, this);
     },
@@ -773,16 +839,6 @@ members: {
     paint: function(ctx) {
         this._super(ctx);
         ctx.drawImage(this.currentImage, 0, 0);
-    },
-    
-    _onmousedown: function(e) {
-        var action = this.action.action;
-        bespin.getComponent("commandLine", function(cli) {
-            var path = this.tree.getSelectedPath();
-            var file = this.getFilePath(path, true);
-            action(cli, file, path);
-        }, this.parent.context);
-        th.stopEvent(e);
     },
     
     _onmouseover: function(e) {
@@ -805,3 +861,42 @@ members: {
         }
     }
 }});
+
+exports.FileActionIcon = Class.define({
+type: "ActionIcon",
+superclass: exports.BaseActionIcon,
+members: {
+    init: function(action, width, height, parms) {
+        this._super(action, width, height, parms);
+        this.bus.bind("mousedown", this, this._onmousedown, this);
+    },
+    
+    _onmousedown: function(e) {
+        var action = this.action.action;
+        bespin.getComponent("commandLine", function(cli) {
+            var path = this.tree.getSelectedPath();
+            var file = this.getFilePath(path, true);
+            action(cli, file, path);
+        }, this.parent.context);
+        th.stopEvent(e);
+    }
+}});
+
+exports.FolderActionIcon = Class.define({
+type: "ActionIcon",
+superclass: exports.BaseActionIcon,
+members: {
+    init: function(action, width, height, parms) {
+        this._super(action, width, height, parms);
+        this.bus.bind("mousedown", this, this._onmousedown, this);
+    },
+    
+    _onmousedown: function(e) {
+        var action = this.action.action;
+        bespin.getComponent("commandLine", function(cli) {
+            action(cli, this.getFolderPath(), null);
+        }, this.parent.context);
+        th.stopEvent(e);
+    }
+}});
+
