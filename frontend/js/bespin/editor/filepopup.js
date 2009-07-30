@@ -890,6 +890,7 @@ members: {
             
             label.text = action.name;
             label.render();
+            this.parent.render();
         }
     },
     
