@@ -11,4 +11,4 @@ virtualenv
 http://httplib2.googlecode.com/files/httplib2-0.4.0.tar.gz
 http://pypi.python.org/packages/source/p/path.py/path-2.2.zip#md5=941660081788282887f652510d80e64e
 PyCrypto
-uvc>0.2.1
+uvc>=0.3

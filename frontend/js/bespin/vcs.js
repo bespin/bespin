@@ -287,32 +287,50 @@ bespin.vcs.commands.addCommand({
 
 /**
  * Commit command.
- * Commit the specified files or all outstanding changes
+ * Commit all outstanding changes
  */
 bespin.vcs.commands.addCommand({
     name: 'commit',
     takes: ['message'],
     aliases: [ 'ci' ],
-    preview: 'Commit to the repository',
+    preview: 'Commit to the local (in-bespin) repository',
     execute: function(instruction, message) {
+        var doCommit = function(message) {
+            var project;
+
+            bespin.withComponent('editSession', function(editSession) {
+                project = editSession.project;
+            });
+
+            if (!project) {
+                instruction.addErrorOutput("You need to pass in a project");
+                return;
+            }
+            bespin.get('server').vcs(project,
+                                    { command: [ 'commit', '-m', message ] },
+                                    instruction,
+                                    bespin.vcs._createStandardHandler(instruction));
+        }
+        
         if (!message) {
-            instruction.addErrorOutput("You must enter a log message");
-            return;
+            var messageForm = dojo.create("form", {onsubmit: 
+                function() {
+                    doCommit(messagefield.value);
+                    instruction.unlink();
+                    instruction.commandLine.focus();
+                }});
+            dojo.create("div", {}, messageForm).innerHTML = "Commit message:<br>";
+            var messagefield = dojo.create("textarea", {rows: 5, cols: 65},
+                messageForm);
+            dojo.create("div", {}, messageForm).innerHTML = "<br>";
+            dojo.create("input", {type: "submit"}, messageForm);
+            
+            instruction.setElement(messageForm);
+            
+            setTimeout(function() { messagefield.focus() }, 10);
+        } else {
+            doCommit(message);
         }
-        var project;
-
-        bespin.withComponent('editSession', function(editSession) {
-            project = editSession.project;
-        });
-
-        if (!project) {
-            instruction.addErrorOutput("You need to pass in a project");
-            return;
-        }
-        bespin.get('server').vcs(project,
-                                { command: [ 'commit', '-m', message ] },
-                                instruction,
-                                bespin.vcs._createStandardHandler(instruction));
     }
 });
 
