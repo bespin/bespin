@@ -165,14 +165,59 @@ img {
 
 #command_hint {
     position: absolute;
-    padding: 20px 40px 10px 30px;
     color: #999;
-    background-repeat: no-repeat;
-    background-image: url("../images/info_popup.png");
     font-family: Calibri, Arial, sans-serif;
     -webkit-user-select: text;
     -moz-user-select: text;
     z-index: 260;
+}
+
+#command_hint td {
+    padding: 0;
+}
+
+#command_hint-topleftcorner, #command_hint-leftstretch, #command_hint-toprightcorner, #command_hint-rightstretch {
+    width: 14px;
+    min-width: 14px;
+}
+
+#command_hint-topleftcorner {
+    background-image: url(../images/info-topleft.png);
+    background-repeat: no-repeat;
+}
+
+#command_hint-toprightcorner {
+    background-image: url(../images/info-topright.png);
+    background-repeat: no-repeat;
+}
+
+#command_hint-leftstretch {
+    background-image: url(../images/info-leftstretch.png);
+    background-repeat: repeat-y;
+}
+
+#command_hint-rightstretch {
+    background-image: url(../images/info-rightstretch.png);
+    background-repeat: repeat-y;
+}
+
+#command_hint-topstretch {
+    background-image: url(../images/info-topstretch.png);
+    background-repeat: repeat-x;
+}
+
+td#command_hint-content {
+    background-image: url(../images/info-bg.png);
+    padding: 6px;
+    color: #666;
+}
+
+#command_hint-topstretch, #command_hint-content {
+    width: 100%;
+}
+
+#command_hint .command_hint-top {
+    height: 13px;
 }
 
 #command_output input[type=password], #command_output input[type=text], #command_output textarea {

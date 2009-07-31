@@ -43,11 +43,11 @@ members: {
         this.nodes = [];
         this.connections = [];
         this.subscriptions = [];
-        
+
         options = options || {};
         var idPrefix = options.idPrefix || "command_";
         this.idPrefix = idPrefix;
-        
+
         var parentElement = options.parentElement || dojo.body();
 
         this.commandLine = dojo.byId(commandLine);
@@ -59,22 +59,25 @@ members: {
             left: "31px"
         };
 
-        this.commandHint = dojo.create("div", {
+        this.commandHint = dojo.create("table", {
             id: idPrefix + "hint",
+            cellspacing: 0,
             style: "display:none; bottom: " + this.styles.bottom + "; left:" + this.styles.left + "; width:500px;"
         }, parentElement);
         this.nodes.push(idPrefix + "hint");
-        
+
+        dojo.attr(this.commandHint, { innerHTML: '<tr class="command_hint-top"><td id="command_hint-topleftcorner"></td><td id="command_hint-topstretch"></td><td id="command_hint-toprightcorner"></td></tr><tr class="command_hint-main"><td id="command_hint-leftstretch"></td><td id="command_hint-content"></td><td id="command_hint-rightstretch"></td></tr>' });
+
         this.connections.push(dojo.connect(this.commandHint, "onclick", this, this.hideHint));
 
         // Create the div for real command output
         // TODO move this into the popup
         this.output = dojo.create("div", {
             id: idPrefix + "output",
-            style: "display:none;"
+            style: "display:none"
         }, parentElement);
         this.nodes.push(idPrefix + "output");
-        
+
         // TOOD move this into the popup
         // The reference pane takes a while to load so we create it here
         this.refNode = dojo.create("iframe", {
@@ -82,9 +85,9 @@ members: {
             id: "popup_refNode"
         }, dojo.body());
         this.nodes.push("popup_refNode");
-        
+
         this.footer = dojo.byId("footer");
-        
+
         // TODO move this into the popup
         this.filePanel = new filepopup.FilePanel();
 
@@ -99,16 +102,16 @@ members: {
         this.history = new exports.History();
         this.hideOutput();
     },
-    
+
     destroy: function() {
         dojo.forEach(this.subscriptions, function(sub) {
             bespin.unsubscribe(sub);
         });
-        
+
         dojo.forEach(this.connections, function(conn) {
             dojo.disconnect(conn);
         });
-        
+
         dojo.forEach(this.nodes, function(nodeId) {
             dojo.query("#" + nodeId).orphan();
         });
@@ -139,7 +142,7 @@ members: {
             display: 'block'
         };
 
-        dojo.attr(this.commandHint, { innerHTML: html });
+        dojo.attr("command_hint-content", { innerHTML: html });
         dojo.style(this.commandHint, styles);
 
         if (this.hintTimeout) clearTimeout(this.hintTimeout);
@@ -169,10 +172,10 @@ members: {
         this.showPanel(panel);
 
         this.focus();
-        
+
         this.maxInfoHeight = coords.h;
     },
-    
+
     /*
     * Adjust the output to the new size.
     */
@@ -180,10 +183,10 @@ members: {
         this._savedCoords = coords;
         this.showPanel(this.currentPanel, true);
     },
-    
+
     showPanel: function(panel, coordChange) {
         var coords = this._savedCoords;
-        
+
         var footerHeight = dojo.style(this.footer, "height") + 2;
         dojo.style(this.footer, {
             left: coords.l + "px",
@@ -191,13 +194,13 @@ members: {
             bottom: (coords.b - footerHeight) + "px",
             display: "block"
         });
-        
+
         dojo.style(this.commandHint, {
             left: coords.l + "px",
             bottom: coords.b + "px",
             width: coords.w + "px"
         });
-        
+
         if (this.currentPanel) {
             if (this.currentPanel == panel && !coordChange) {
                 return;
@@ -206,7 +209,7 @@ members: {
                 this.hidePanel(panel);
             }
         }
-        
+
         if (panel == "output") {
             dojo.style(this.output, {
                 left: coords.l + "px",
@@ -234,10 +237,10 @@ members: {
         } else {
             this.filePanel.show(coords);
         }
-        
+
         this.currentPanel = panel;
     },
-    
+
     hidePanel: function(panel) {
         if (this.currentPanel == "output") {
             dojo.style(this.output, "display", "none");
@@ -257,17 +260,17 @@ members: {
             bottom: "0px",
             width: "500px"
         });
-        
+
         this.hidePanel(this.currentPanel);
-        
+
         this.currentPanel = undefined;
-        
+
         dojo.style(this.footer, {
             "left": "-10000px",
             "display": "none"
         });
         this.maxInfoHeight = null;
-        
+
     },
 
     /**
@@ -283,11 +286,11 @@ members: {
             console.debug("orphan command node:", element);
         }
     },
-    
+
     setCommandText: function(newText) {
         this.commandLine.value = newText;
     },
-    
+
     appendCommandText: function(moreText) {
         this.commandLine.value = this.commandLine.value + moreText;
     },
@@ -757,7 +760,7 @@ members: {
         this.connections.push(dojo.connect(this.commandLine, "onkeydown", this, function(e) {
             if (e.keyCode == bespin.util.keys.Key.ESCAPE) {
                 this.hideHint();
-                
+
                 bespin.getComponent("popup", function(popup) {
                     popup.hide();
                 });
