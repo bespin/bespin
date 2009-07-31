@@ -1668,7 +1668,7 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     /**
-     * returns metadata bout the a string that represents the row;
+     * returns metadata about the string that represents the row;
      * converts tab characters to spaces
      */
     getRowString: function(row) {
@@ -1701,8 +1701,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.editor.paint(true);
     },
-    dispose: function()
-    {
+
+    dispose: function() {
         for (var i = 0; i < this.globalHandles.length; i++) {
             dojo.disconnect(this.globalHandles[i]);
         }
@@ -1762,7 +1762,7 @@ dojo.declare("bespin.editor.API", null, {
         var startPos = selection.startPos;
         var endPos = selection.endPos;
 
-        // ensure that the start position is always before than the end position
+        // ensure that the start position is always before the end position
         if ((endPos.row < startPos.row) || ((endPos.row == startPos.row) && (endPos.col < startPos.col))) {
             var foo = startPos;
             startPos = endPos;
@@ -1816,7 +1816,14 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     getCurrentView: function() {
-        return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
+        return {
+            cursor: this.getCursorPos(),
+            offset: {
+                x: this.ui.xoffset,
+                y: this.ui.yoffset
+            },
+            selection: this.selection
+        };
     },
 
     /**
