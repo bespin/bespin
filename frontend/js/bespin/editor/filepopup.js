@@ -685,7 +685,7 @@ members: {
         this.scene.renderAllowed = false;
         
 
-        var sameLevel = 0;  // the value is 1 and not 0, as the first list (the project list) is not affected!
+        var sameLevel = 0;
         while (sameLevel < Math.min(newPath.length, oldPath.length) && newPath[sameLevel] == oldPath[sameLevel] && newPath[sameLevel] != '') {
             sameLevel ++;
         }
@@ -748,11 +748,11 @@ members: {
                         countSetupPaths++;
 
                         if (countSetupPaths == newPath.length) {
-                            for (var x = 0; x < newPath.length - 1; x++) {
+                            for (var x = 1; x < newPath.length - 1; x++) {
                                 // when the path is not restored from the root,
                                 // then there are contents without contents!
                                 if (contentsPath[x]) {
-                                    var list = self.tree.getList(x);
+                                    var list = self.tree.getList(x-1);
                                     // todo: I added the if () to fix an error,
                                     // not sure if it was a symptom of something larger
                                     if (list.selected) {
