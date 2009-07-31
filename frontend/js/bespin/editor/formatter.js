@@ -116,7 +116,10 @@ bespin.command.store.addCommand({
 dojo.declare("bespin.editor.formatter.API", null, {
 
     setLanguage: function(language) {
-        switch (language.toLowerCase()) {
+        if (dojo.isString(language)) {
+          language = language.toLowerCase();
+        }
+        switch (language) {
             case 'css':
             case 'javascript':
             case 'js':
