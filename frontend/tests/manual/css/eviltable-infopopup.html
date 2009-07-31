@@ -1,0 +1,75 @@
+<html>
+<head><title>Old School Table Info Popup</title></head>
+<body>
+<style type="text/css">
+#infopopup {
+    padding: 0;
+    margin: 0;
+/*    border: 1px solid red;*/
+}
+
+#infopopup td {
+/*    border: 1px solid blue;*/
+}
+
+#infopopup-topleftcorner, #infopopup-leftstretch, #infopopup-toprightcorner, #infopopup-rightstretch {
+    width: 14px;
+    min-width: 14px;
+}
+
+#infopopup-topleftcorner {
+    background-image: url(info-topleft.png);
+    background-repeat: no-repeat;
+}
+
+#infopopup-toprightcorner {
+    background-image: url(info-topright.png);
+    background-repeat: no-repeat;
+}
+
+#infopopup-leftstretch {
+    background-image: url(info-leftstretch.png);
+    background-repeat: repeat-y;
+}
+
+#infopopup-rightstretch {
+    background-image: url(info-rightstretch.png);
+    background-repeat: repeat-y;
+}
+
+#infopopup-topstretch {
+    background-image: url(info-topstretch.png);
+    background-repeat: repeat-x;    
+}
+
+#infopopup-content {
+    background-image: url(info-bg.png);
+    padding: 6px;
+    color: #666;
+}
+
+#infopopup-topstretch, #infopopup-content {
+    width: 100%;
+}
+
+#infopopup .infopopup-top {
+    height: 13px;
+}
+</style>
+
+<table id="infopopup" cellspacing="0" cellpadding="0">
+    <tr class="infopopup-top">
+        <td id="infopopup-topleftcorner"></td>
+        <td id="infopopup-topstretch"></td>
+        <td id="infopopup-toprightcorner"></td>
+    </tr>
+    <tr class="infopopup-main">
+        <td id="infopopup-leftstretch"></td>
+        <td id="infopopup-content">here is some main content</td>
+        <td id="infopopup-rightstretch"></td>
+    </tr>
+</table>
+    
+<input type="button" value="more" onclick="document.getElementById('infopopup-content').innerHTML = 'aposijd aposjd poasj dpoajs dpoajs dpoajs dpoaj spdoj aspodj aposjd paosjd poasjd poasj dpoa sjdpoas jdpoa sjdpoas djpoas djo';">
+</body>
+</html>

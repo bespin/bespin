@@ -1,0 +1,62 @@
+<html>
+<head>
+    <title>Infopopup Test</title>
+</head>
+
+<body>
+<script src="cb.js"></script>
+<style type="text/css">
+/* Top border and right corner */
+.bt {
+    background:url(info_popup.png) no-repeat 100% 0;
+    margin:0 0 0 /* TL X */ 15px;
+    height: 1px;
+}
+
+/* Top left corner */
+.bt div {
+    height: 1px;
+    width:/* TL X */ 15px;
+    position:relative;
+    left: /* TL X */ -15px;
+    background:url(info_popup.png) no-repeat 0 0;
+}
+
+/* Bottom border and right corner */
+/*.bb {
+    background:url(info_popup.png) no-repeat 100% 100%;
+    margin: 0 0 0 15px;
+    height: 0px;
+}
+*/
+/* Bottom left corner */
+/*.bb div {
+    height: 0;
+    width: 15px;
+    position:relative;
+    left: -15px;
+    background:url(info_popup.png) no-repeat 0 100%;
+}
+*/
+/* Left border */
+.i1 {
+    padding:0 0 0 15px; //LBpx;
+    background:url(info_popup.png) repeat-y 0 0;
+}
+
+/* Right border */
+.i2 {
+ padding:0 15px 0 0;
+ background:url(info_popup.png) repeat-y 100% 0;
+}
+
+</style>
+
+<div class="infopopup">
+Main popup content to be shown yah
+<br>
+Main popup content to be shown yah
+</div>
+
+</body>
+</html>
