@@ -149,6 +149,7 @@ bespin.command.store.addCommand({
             delete args.filename;
         }
         bespin.publish("editor:newfile", args || {});
+        bespin.publish("ui:escape", {});
     }
 });
 
