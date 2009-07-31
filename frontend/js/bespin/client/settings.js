@@ -697,14 +697,12 @@ dojo.declare("bespin.client.settings.Events", null, {
             } else {
                 var lastUsed = settings.getObject("_lastused");
                 if (!lastUsed) {
-                    bespin.publish("project:set", { project: "SampleProject" });
                     editor.openFile("SampleProject", "readme.txt");
                 }
                 else {
                     // Warning: Publishing an extra filename member to
                     // project:set and an extra project member to
                     // editor:openfile
-                    bespin.publish("project:set", lastUsed[0]);
                     editor.openFile(lastUsed[0].project, lastUsed[0].filename, lastUsed[0]);
                 }
             }
