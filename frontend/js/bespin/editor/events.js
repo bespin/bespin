@@ -34,9 +34,6 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             // If collaboration is turned on, we won't know the file contents
             if (event.file.content) {
-                // If you change these 3 lines then you probably also need to
-                // change the parallel lines in mobwrite/integrate.js under
-                // mobwrite.shareBespinObj.prototype.setClientText
                 editor.model.insertDocument(event.file.content);
                 editor.cursorManager.moveCursor({ row: 0, col: 0 });
                 editor.setFocus(true);
