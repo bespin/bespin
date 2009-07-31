@@ -350,7 +350,10 @@ mobwrite.shareObj.prototype.nullify = function() {
  * @return {string} Commands to be sent to the server.
  */
 mobwrite.shareObj.prototype.syncText = function() {
-  var clientText = this.getClientText();
+  // Mozilla: We're a bit touchy about allowing getClientText() to return data
+  // when it has not been synchronized even for the first time, because the
+  // answer is clearly wrong, so we throw unless the allowUnsynced param is true
+  var clientText = this.getClientText(!this.deltaOk);
   if (this.deltaOk) {
     // The last delta postback from the server to this shareObj was successful.
     // Send a compressed delta.
@@ -429,11 +432,7 @@ mobwrite.syncRun1_ = function() {
   }
   if (data.length == 1) {
     // No sync data.
-
-    // Mozilla: We got rid of an earlier kill on debug mode when it was
-    // (incorrectly) assumed that the window was closing, so we check for
-    // console existence before we log
-    if (mobwrite.debug && typeof console == 'object') {
+    if (mobwrite.debug) {
       window.console.info('All objects silent; null sync.');
     }
     return mobwrite.syncRun2_('\n\n');
@@ -683,11 +682,26 @@ mobwrite.syncRun2_ = function(text) {
             }
             // Server-side activity.
             mobwrite.serverChange_ = true;
+          } else {
+            // Mozilla: We want to know when have been put in sync so we can
+            // fire onSuccess, and so on so even if there are no changes ...
+            if (file.syncWithoutChange) {
+              file.syncWithoutChange();
+            }
           }
         }
       }
     } else if (name == 'C' || name == 'c') {
-      file.shareNode.reportCollaborators(value.split(","));
+      // Mozilla: report on our collaborators
+      if (file) {
+        if (file.reportCollaborators) {
+          file.reportCollaborators(value.split(","));
+        }
+      } else {
+        if (mobwrite.debug) {
+          window.console.warn("Ignoring collaborators because file == null");
+        }
+      }
     }
   }
 
@@ -715,11 +729,11 @@ mobwrite.syncRun2_ = function(text) {
  * The correct thing would be to work out how long ago the last sync was
  */
 mobwrite.syncNow = function() {
-    window.clearTimeout(mobwrite.syncRunPid_);
-    mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
-    if (mobwrite.debug) {
-      window.console.log("Forced early mobwrite sync in ", 10);
-    }
+  window.clearTimeout(mobwrite.syncRunPid_);
+  mobwrite.syncRunPid_ = window.setTimeout(mobwrite.syncRun1_, 10);
+  if (mobwrite.debug) {
+    window.console.log("Forced early mobwrite sync in ", 10);
+  }
 };
 
 
@@ -844,9 +858,23 @@ mobwrite.syncCheckAjax_ = function() {
   if (mobwrite.syncAjaxObj_.readyState == 4) {
     // Only if "OK"
     if (mobwrite.syncAjaxObj_.status == 200) {
-      var text = mobwrite.syncAjaxObj_.responseText;
-      mobwrite.syncAjaxObj_ = null;
-      mobwrite.syncRun2_(text);
+      try {
+        var text = mobwrite.syncAjaxObj_.responseText;
+        mobwrite.syncAjaxObj_ = null;
+        mobwrite.syncRun2_(text);
+      }
+      catch (ex) {
+        console.group("Error calling mobwrite.syncRun2_(..." + text.length + " chars')");
+        console.log(mobwrite);
+        console.error(ex);
+        console.trace();
+        console.groupEnd();
+
+        // Mozilla: This is probably overkill, but for now we're taking an error
+        // to be an indication that we should not attempt any further sync.
+        window.clearTimeout(mobwrite.syncRunPid_);
+        window.clearTimeout(mobwrite.syncKillPid_);
+      }
     } else {
       if (mobwrite.debug) {
         window.console.warn('Connection error code: ' + mobwrite.syncAjaxObj_.status);
@@ -865,9 +893,7 @@ mobwrite.unload_ = function() {
   if (!mobwrite.syncKillPid_) {
     // Turn off debug mode since the console disappears on page unload before
     // this code does.
-    // Mozilla: commented out. We might not be closing the window so we don't
-    // want to kill the debug. We fix later on
-    // mobwrite.debug = false;
+    mobwrite.debug = false;
     mobwrite.syncRun1_();
   }
   // By the time the callback runs mobwrite.syncRun2_, this page will probably
