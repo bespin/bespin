@@ -112,6 +112,7 @@ bespin.command.store.addCommand({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(instruction, opts) {
+        bespin.publish("editor:openfile", opts);
         var info = bespin.cmd.file._parseArguments(opts.path);
         var path = info.path;
         var project = info.project;
@@ -122,6 +123,7 @@ bespin.command.store.addCommand({
             line: opts.line
         });
         
+        bespin.get("editor").openFile(project, filename, { line: opts.line });
         bespin.publish("ui:escape", {});
     },
     findCompletions: function(query, callback) {

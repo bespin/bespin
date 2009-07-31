@@ -87,10 +87,7 @@ bespin.jetpack.commands.addCommand({
             templateOptions,
             {
                 onSuccess: function(xhr) {
-                    bespin.publish("editor:openfile", {
-                        project: project,
-                        filename: filename
-                    });
+                    bespin.get("editor").openFile(project, filename);
                 },
                 onFailure: function(xhr) {
                     instruction.addErrorOutput("Unable to create " + filename + ": " + xhr.responseText);
@@ -180,10 +177,7 @@ bespin.jetpack.commands.addCommand({
 
         bespin.get('files').whenFileExists(bespin.jetpack.projectName, path, {
             execute: function() {
-                bespin.publish("editor:openfile", {
-                    project: bespin.jetpack.projectName,
-                    filename: path
-                });
+                bespin.get("editor").openFile(bespin.jetpack.projectName, path);
             },
             elseFailed: function() {
                 bespin.get("commandLine").addErrorOutput("No feature called " + feature + ".<br><br><em>Run 'jetpack list' to see what is available.</em>");

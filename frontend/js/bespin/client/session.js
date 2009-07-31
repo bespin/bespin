@@ -121,11 +121,7 @@ dojo.declare("bespin.client.session.EditSession", null, {
         var historyItem = this.fileHistory[this.fileHistoryIndex];
 
         bespin.publish("editor:savefile", {});
-        bespin.publish("editor:openfile", {
-            project: historyItem.project,
-            filename: historyItem.filename,
-            fromFileHistory: true
-        });
+        this.editor.openFile(historyItem.project, historyItem.filename, { fromFileHistory: true });
     },
 
     /**
@@ -171,58 +167,6 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
-     * Mobwrite has a set of shareObjs which are designed to wrap DOM nodes.
-     * This creates a fake DOM node to be wrapped in a Mobwrite ShareObj.
-     */
-    createMobwriteShareNode: function(onFirstSync) {
-        // Create an ID
-        var username = this.username || "[none]";
-        var project = this.project;
-        var path = this.path;
-        if (path.indexOf("/") != 0) {
-            path = "/" + path;
-        }
-        var id;
-        parts = project.split("+");
-        if (parts.length == 1) {
-            // This is our project
-            id = username + "/" + project + path;
-        }
-        else {
-            // This is someone else's projects
-            id = parts[0] + "/" + parts[1] + path;
-        }
-
-        var self = this;
-        return {
-            id: id,
-            isShareNode: true,
-            reportCollaborators: function(userEntries) {
-                self.reportCollaborators(userEntries);
-            },
-            getClientText: function() {
-                return self.editor.model.getDocument();
-            },
-            /**
-             * Notification used by mobwrite to announce an update.
-             * Used by startSession to detect when it is safe to fire onSuccess
-             */
-            setClientText: function(text) {
-                self.editor.model.insertDocument(text);
-
-                // Nasty hack to allow the editor to know that something has changed.
-                // In the first instance the use is restricted to calling the loaded
-                // callback
-                if (this.onFirstSync) {
-                    this.onFirstSync();
-                }
-                this.onFirstSync = null;
-            },
-            onFirstSync: onFirstSync
-        };
-    },
-
-    /**
      * Begin editing a given project/path hooking up using mobwrite if needed
      * TODO: There is a disconnect here because if we're not using mobwrite
      * then the text is loaded somewhere else. We should be symmetric.
@@ -245,13 +189,6 @@ dojo.declare("bespin.client.session.EditSession", null, {
 
         if (project !== undefined) this.project = project;
         if (path !== undefined) this.path = path;
-
-        if (!mobwrite) {
-            if (dojo.isFunction(onFailure)) {
-                onFailure({ responseText:"Mobwrite is missing" });
-            }
-            return;
-        }
 
         this.currentState = this.mobwriteState.starting;
 
@@ -277,8 +214,7 @@ dojo.declare("bespin.client.session.EditSession", null, {
             dojo.attr("toolbar_collaboration", "src", "images/icn_collab_on.png");
         };
 
-        this.shareNode = this.createMobwriteShareNode(onFirstSync);
-
+        this.shareNode = new bespin.client.session.ShareNode(this, onFirstSync);
         mobwrite.share(this.shareNode);
     },
 
@@ -308,7 +244,73 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
+     * Get a textual report on what we are working on
+     * TODO: What happens when project == null. Should that ever happen?
+     */
+    getStatus: function() {
+        var file = this.path || 'a new scratch file';
+        return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
+    },
+
+    /**
+     * Set the current project.
+     * TODO: I think we should probably get rid of anywhere this is called
+     * because it implies being able to set the project separately from the
+     * file being edited.
+     * TODO: Plus, what's wrong with session.project = "foo"?
+     */
+    setProject: function(project) {
+        this.project = project;
+    }
+});
+
+/**
+ * Mobwrite has a set of shareObjs which are designed to wrap DOM nodes.
+ * This creates a fake DOM node to be wrapped in a Mobwrite ShareObj.
+ * @param onFirstSync a function to call when the first sync has happened
+ * This allows us to support onSuccess. onFirstSync should NOT be null or
+ * some of the logic below might break.
+ */
+dojo.declare("bespin.client.session.ShareNode", null, {
+    constructor: function(session, onFirstSync) {
+        this.session = session;
+        this.editor = session.editor;
+        this.onFirstSync = onFirstSync;
+        this.username = session.username || "[none]";
+
+        // Create an ID
+        var project = session.project;
+        var path = session.path;
+        if (path.indexOf("/") != 0) {
+            path = "/" + path;
+        }
+        parts = project.split("+");
+        if (parts.length == 1) {
+            // This is our project
+            this.id = this.username + "/" + project + path;
+        }
+        else {
+            // This is someone else's projects
+            this.id = parts[0] + "/" + parts[1] + path;
+        }
+    },
+
+    /**
+     * When mobwrite/integrate.js/shareObj is assigned to us it lets us know
+     * so that we can share the dmp object.
+     */
+    setShareObj: function(shareObj) {
+        this.shareObj = shareObj;
+    },
+
+    /**
+     * A way for integrate.js to recognize us
+     */
+    isShareNode: true,
+
+    /**
      * Update the social bar to show the current collaborators.
+     * Called by mobwrite/core.js to update the display of collaborators
      */
     reportCollaborators: function(userEntries) {
         var collabList = dojo.byId("collab_list");
@@ -338,22 +340,265 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
-     * Get a textual report on what we are working on
-     * TODO: What happens when project == null. Should that ever happen?
+     * What is the contents of the editor?
      */
-    getStatus: function() {
-        var file = this.path || 'a new scratch file';
-        return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
+    getClientText: function(allowUnsynced) {
+        if (!allowUnsynced && this.onFirstSync) {
+            console.trace();
+            throw new Error("Attempt to getClientText() before onFirstSync() called.");
+        }
+        return this.editor.model.getDocument();
     },
 
     /**
-     * Set the current project.
-     * TODO: I think we should probably get rid of anywhere this is called
-     * because it implies being able to set the project separately from the
-     * file being edited.
-     * TODO: Plus, what's wrong with session.project = "foo"?
+     * Called by mobwrite when it (correctly) assumes that we start blank and
+     * that there are therefore no changes to make, however we need call
+     * things like onSuccess.
      */
-    setProject: function(project) {
-        this.project = project;
+    syncWithoutChange: function() {
+        this.checkFirstSyncDone();
+    },
+
+    /**
+     * Notification used by mobwrite to announce an update.
+     * Used by startSession to detect when it is safe to fire onSuccess
+     */
+    setClientText: function(text) {
+        //var cursor = this.captureCursor();
+        this.editor.model.insertDocument(text);
+        //this.restoreCursor(cursor);
+
+        this.checkFirstSyncDone();
+    },
+
+    /**
+     * Called by mobwrite to apply patches
+     */
+    patchClientText: function(patches) {
+        // Set some constants which tweak the matching behavior.
+        // Tweak the relative importance (0.0 = accuracy, 1.0 = proximity)
+        this.shareObj.dmp.Match_Balance = 0.5;
+        // At what point is no match declared (0.0 = perfection, 1.0 = very loose)
+        this.shareObj.dmp.Match_Threshold = 0.6;
+
+        var oldClientText = this.getClientText(true);
+        var result = this.shareObj.dmp.patch_apply(patches, oldClientText);
+        // Set the new text only if there is a change to be made.
+        if (oldClientText != result[0]) {
+            // setClientText looks after restoring the cursor position
+            this.setClientText(result[0]);
+        } else {
+            this.checkFirstSyncDone();
+        }
+
+        for (var x = 0; x < result[1].length; x++) {
+            if (result[1][x]) {
+                console.info('Patch OK.');
+            } else {
+                console.warn('Patch failed: ' + patches[x]);
+            }
+        }
+    },
+
+    /**
+     * Nasty hack to allow the editor to know that something has changed.
+     * In the first instance the use is restricted to calling the loaded
+     * callback
+     */
+    checkFirstSyncDone: function() {
+        if (this.onFirstSync) {
+            this.onFirstSync();
+            delete this.onFirstSync;
+        }
+    },
+
+    /**
+     * Record information regarding the current cursor.
+     * @return {Object?} Context information of the cursor.
+     * @private
+     */
+    captureCursor: function() {
+        var ui = this.editor.ui;
+        var padLength = this.shareObj.dmp.Match_MaxBits / 2;    // Normally 16.
+        var text = this.editor.model.getDocument();
+
+        var selection = this.editor.getSelection();
+        var cursor = this.editor.getCursorPos();
+
+        var start = selection ? selection.startPos : cursor;
+        var selectionStart = this.convertRowColToOffset(start);
+
+// TODO: These just check that we've log the logic right
+// We should have some unit tests and delete these
+var test = this.convertOffsetToRowCol(selectionStart);
+if (test.row != start.row || test.col != start.col) {
+    console.error("start", start, "test", test, "selectionStart", selectionStart);
+}
+
+        var end = selection ? selection.endPos : cursor;
+        var selectionEnd = this.convertRowColToOffset(end);
+
+var test = this.convertOffsetToRowCol(selectionEnd);
+if (test.row != end.row || test.col != end.col) {
+    console.error("end", end, "test", test, "selectionEnd", selectionEnd);
+}
+
+        var cursor = {
+            startPrefix: text.substring(selectionStart - padLength, selectionStart),
+            startSuffix: text.substring(selectionStart, selectionStart + padLength),
+            startPercent: text.length == 0 ? 0 : selectionStart / text.length,
+            collapsed: (selectionStart == selectionEnd),
+
+            // HTMLElement.scrollTop = editor.ui.yoffset
+            // HTMLElement.scrollHeight = editor.ui.yscrollbar.extent
+            // cursor.scroll[Top|Left] are decimals from 0 - 1
+            scrollTop: ui.yoffset / ui.yscrollbar.extent,
+
+            // HTMLElement.scrollLeft = editor.ui.xoffset
+            // HTMLElement.scrollWidth = editor.ui.xscrollbar.extent
+            scrollLeft: ui.xoffset / ui.xscrollbar.extent
+        };
+
+        if (!cursor.collapsed) {
+            cursor.endPrefix = text.substring(selectionEnd - padLength, selectionEnd);
+            cursor.endSuffix = text.substring(selectionEnd, selectionEnd + padLength);
+            cursor.endPercent = selectionEnd / text.length;
+        }
+
+        console.log("captureCursor", cursor);
+        return cursor;
+    },
+
+    /**
+     * Attempt to restore the cursor's location.
+     * @param {Object} cursor Context information of the cursor.
+     * @private
+     */
+    restoreCursor: function(cursor) {
+        // TODO: There are 2 ways to optimize this if we need to.
+        // The first is to do simple checks like checking the current line is
+        // the same before and after insert, and then skipping the whole thing
+        // (We perhaps need to do something to avoid duplicate matches like
+        // ignoring blank lines or matching 3 lines or similar)
+        // OR we could make the restore use row/col positioning rather than
+        // offset from start. The latter could be lots of work
+
+        var dmp = this.shareObj.dmp;
+        // Set some constants which tweak the matching behavior.
+        // Tweak the relative importance (0.0 = accuracy, 1.0 = proximity)
+        dmp.Match_Balance = 0.4;
+        // At what point is no match declared (0.0 = perfection, 1.0 = very loose)
+        dmp.Match_Threshold = 0.9;
+
+        var padLength = dmp.Match_MaxBits / 2; // Normally 16.
+        var newText = this.editor.model.getDocument();
+
+        // Find the start of the selection in the new text.
+        var pattern1 = cursor.startPrefix + cursor.startSuffix;
+
+        var cursorStartPoint = cursor.startPercent * newText.length - padLength;
+        cursorStartPoint = Math.min(newText.length, cursorStartPoint);
+        cursorStartPoint = Math.round(Math.max(0, cursorStartPoint));
+        cursorStartPoint = dmp.match_main(newText, pattern1, cursorStartPoint);
+
+        if (cursorStartPoint !== null) {
+            var pattern2 = newText.substring(cursorStartPoint, cursorStartPoint + pattern1.length);
+            //alert(pattern1 + '\nvs\n' + pattern2);
+            // Run a diff to get a framework of equivalent indices.
+            var diff = dmp.diff_main(pattern1, pattern2, false);
+            cursorStartPoint += dmp.diff_xIndex(diff, cursor.startPrefix.length);
+        }
+
+        var cursorEndPoint = null;
+        if (!cursor.collapsed) {
+            // Find the end of the selection in the new text.
+            pattern1 = cursor.endPrefix + cursor.endSuffix;
+
+            cursorEndPoint = cursor.endPercent * newText.length - padLength;
+            cursorEndPoint = Math.min(newText.length, cursorEndPoint);
+            cursorEndPoint = Math.round(Math.max(0, cursorEndPoint));
+            cursorEndPoint = dmp.match_main(newText, pattern1, cursorEndPoint);
+
+            if (cursorEndPoint !== null) {
+                var pattern2 = newText.substring(cursorEndPoint, cursorEndPoint + pattern1.length);
+                //alert(pattern1 + '\nvs\n' + pattern2);
+                // Run a diff to get a framework of equivalent indices.
+                var diff = dmp.diff_main(pattern1, pattern2, false);
+                cursorEndPoint += dmp.diff_xIndex(diff, cursor.endPrefix.length);
+            }
+        }
+
+        // Deal with loose ends
+        if (cursorStartPoint === null && cursorEndPoint !== null) {
+            // Lost the start point of the selection, but we have the end point.
+            // Collapse to end point.
+            cursorStartPoint = cursorEndPoint;
+        } else if (cursorStartPoint === null && cursorEndPoint === null) {
+            // Lost both start and end points.
+            // Jump to the approximate percentage point of start.
+            cursorStartPoint = Math.round(cursor.startPercent * newText.length);
+        }
+        if (cursorEndPoint == null) {
+            // End not known, collapse to start.
+            cursorEndPoint = cursorStartPoint;
+        }
+
+        // Cursor position
+        var startPos = this.convertOffsetToRowCol(cursorStartPoint);
+        this.editor.moveCursor(startPos);
+
+        // Selection: null means no selection
+        var selectionPos = null;
+        if (cursorEndPoint != cursorStartPoint) {
+            selectionPos = {
+                startPos: startPos,
+                endPos: this.convertOffsetToRowCol(cursorEndPoint)
+            };
+        }
+        this.editor.setSelection(selectionPos);
+
+        // Scroll bars
+        var ui = this.editor.ui;
+        ui.yscrollbar.setValue(-(cursor.scrollTop * ui.yscrollbar.extent));
+        ui.xscrollbar.setValue(-(cursor.scrollLeft * ui.xscrollbar.extent));
+    },
+
+    /**
+     * Convert a row/col cursor position into an offset from file start
+     */
+    convertRowColToOffset: function(pos) {
+        var offset = 0;
+        var rows = this.editor.model.rows;
+        for (var i = 0; i < pos.row; i++) {
+            offset += rows[i].length + 1; // +1 for LF
+        }
+        offset += pos.col;
+        return offset;
+    },
+
+    /**
+     * Convert an offset from file start into a row/col cursor position
+     */
+    convertOffsetToRowCol: function(offset) {
+        var pos = { row: 0, col: 0 };
+        var rows = this.editor.model.rows;
+        while (true) {
+            var len = rows[pos.row].length;
+            if (offset <= len) {
+                pos.col = offset;
+                break;
+            }
+
+            offset -= len + 1;
+            pos.row += 1;
+
+            if (pos.row >= rows.length) {
+                console.warn("convertOffsetToRowCol(", offset, ") has run out of editor characters.");
+                pos.row -= 1;
+                pos.col = rows[pos.row].length;
+                break;
+            }
+        }
+        return pos;
     }
 });
