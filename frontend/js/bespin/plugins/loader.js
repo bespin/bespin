@@ -150,6 +150,6 @@ dojo.mixin(bespin.plugins.loader, {
         var s = document.createElement("script");
         var cachebreaker = new Date().getTime();
         s.setAttribute("src", fullName + "?" + cachebreaker);
-        document.body.appendChild(s);
+        document.getElementsByTagName("head")[0].appendChild(s);
     }
 });
