@@ -570,9 +570,6 @@ dojo.declare("bespin.editor.Actions", null, {
         if (args.selection) selection = args.selection;
         else selection = this.editor.getSelection();
         
-        selection.startPos = this.cursorManager.getModelPosition(selection.startPos);
-        selection.endPos = this.cursorManager.getModelPosition(selection.endPos);
-
         var chunk = this.model.getChunk(selection);
         this.model.deleteChunk(selection);
 
