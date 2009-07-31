@@ -167,6 +167,26 @@ dojo.declare("bespin.client.session.EditSession", null, {
     },
 
     /**
+     * Set the current project.
+     * TODO: I think we should probably get rid of anywhere this is called
+     * because it implies being able to set the project separately from the
+     * file being edited.
+     */
+    setProject: function(project) {
+        this.project = project;
+    },
+
+    /**
+     * Set the current project and path.
+     * This method should be used in preference to editSession.setProject(x) or
+     * simply editSession.project = x;
+     */
+    setProjectPath: function(project, path) {
+        this.project = project;
+        this.parh = path;
+    },
+
+    /**
      * Begin editing a given project/path hooking up using mobwrite if needed
      * TODO: There is a disconnect here because if we're not using mobwrite
      * then the text is loaded somewhere else. We should be symmetric.
@@ -250,17 +270,6 @@ dojo.declare("bespin.client.session.EditSession", null, {
     getStatus: function() {
         var file = this.path || 'a new scratch file';
         return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
-    },
-
-    /**
-     * Set the current project.
-     * TODO: I think we should probably get rid of anywhere this is called
-     * because it implies being able to set the project separately from the
-     * file being edited.
-     * TODO: Plus, what's wrong with session.project = "foo"?
-     */
-    setProject: function(project) {
-        this.project = project;
     }
 });
 
