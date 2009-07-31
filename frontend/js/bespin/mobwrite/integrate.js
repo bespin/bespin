@@ -1,8 +1,6 @@
 
 dojo.provide("bespin.mobwrite.integrate");
 
-// BESPIN
-
 /**
  * Constructor of shared object representing a text field.
  * @param {Node} shareNode A Bespin shared node
@@ -10,19 +8,20 @@ dojo.provide("bespin.mobwrite.integrate");
  */
 mobwrite.shareBespinObj = function(shareNode) {
     this.shareNode = shareNode;
+    this.shareNode.setShareObj(this);
     // Call our prototype's constructor.
     mobwrite.shareObj.apply(this, [ shareNode.id ]);
 };
 
-// The textarea shared object's parent is a shareObj.
+// The bespin shared object's parent is a mobwrite shareObj.
 mobwrite.shareBespinObj.prototype = new mobwrite.shareObj('');
 
 /**
  * Retrieve the user's text.
  * @return {string} Plaintext content.
  */
-mobwrite.shareBespinObj.prototype.getClientText = function() {
-    return this.shareNode.getClientText();
+mobwrite.shareBespinObj.prototype.getClientText = function(allowUnsynced) {
+    return this.shareNode.getClientText(allowUnsynced);
 };
 
 /**
@@ -30,6 +29,7 @@ mobwrite.shareBespinObj.prototype.getClientText = function() {
  * @param {string} text New text
  */
 mobwrite.shareBespinObj.prototype.setClientText = function(text) {
+    console.log('shareBespinObj.setClientText(... ' + text.length + ' chars)');
     this.shareNode.setClientText(text);
 };
 
@@ -38,35 +38,27 @@ mobwrite.shareBespinObj.prototype.setClientText = function(text) {
  * @param {Array<patch_obj>} patches Array of Patch objects
  */
 mobwrite.shareBespinObj.prototype.patchClientText = function(patches) {
-    // Set some constants which tweak the matching behavior.
-    // Tweak the relative importance (0.0 = accuracy, 1.0 = proximity)
-    this.dmp.Match_Balance = 0.5;
-    // At what point is no match declared (0.0 = perfection, 1.0 = very loose)
-    this.dmp.Match_Threshold = 0.6;
+    this.shareNode.patchClientText(patches);
+};
 
-    var oldClientText = this.getClientText();
-    var result = this.dmp.patch_apply(patches, oldClientText);
-    // Set the new text only if there is a change to be made.
-    if (oldClientText != result[0]) {
-        // Good place to capture the cursor position
-        this.setClientText(result[0]);
-        // Good place to restore the cursor position
-    }
-    if (mobwrite.debug) {
-        for (var x = 0; x < result[1].length; x++) {
-            if (result[1][x]) {
-                console.info('Patch OK.');
-            } else {
-                console.warn('Patch failed: ' + patches[x]);
-            }
-        }
-    }
+/**
+ * We've done a sync and didn't need to make any changes, but bespin might
+ * want to call onSuccess
+ */
+mobwrite.shareBespinObj.prototype.syncWithoutChange = function() {
+    this.shareNode.syncWithoutChange();
+};
+
+/**
+ * Display an updated list of collaborators
+ */
+mobwrite.shareBespinObj.prototype.reportCollaborators = function(userEntries) {
+    this.shareNode.reportCollaborators(userEntries);
 };
 
 /**
  * Handler to accept text fields as elements that can be shared.
- * If the element is a textarea, text or password input, create a new
- * sharing object.
+ * If the element is a bespin share node, create a new sharing object.
  * @param {*} node Object or ID of object to share
  * @return {Object?} A sharing object or null.
  */

@@ -471,11 +471,11 @@ dojo.declare("bespin.client.settings.Events", null, {
 
         // ** {{{ Event: editor:openfile:opensuccess }}} **
         //
-        // Set the session path and change the syntax highlighter 
+        // Set the session path and change the syntax highlighter
         // when a new file is opened
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             if (event.file.name == null) throw new Error("event.file.name falsy");
-            
+
             editSession.path = event.file.name;
 
             var fileType = bespin.util.path.fileType(event.file.name);
@@ -693,19 +693,17 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // existing file, so open it
             if (path) {
-                bespin.publish("editor:openfile", { filename: path });
+                editor.openFile(null, path);
             } else {
                 var lastUsed = settings.getObject("_lastused");
                 if (!lastUsed) {
-                    bespin.publish("project:set", { project: "SampleProject" });
-                    bespin.publish("editor:openfile", { filename: "readme.txt" });
+                    editor.openFile("SampleProject", "readme.txt");
                 }
                 else {
                     // Warning: Publishing an extra filename member to
                     // project:set and an extra project member to
                     // editor:openfile
-                    bespin.publish("project:set", lastUsed[0]);
-                    bespin.publish("editor:openfile", lastUsed[0]);
+                    editor.openFile(lastUsed[0].project, lastUsed[0].filename, lastUsed[0]);
                 }
             }
         });

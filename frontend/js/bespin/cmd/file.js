@@ -66,7 +66,7 @@ bespin.command.store.addCommand({
         }
 
         var editSession = bespin.get('editSession');
-        
+
         var info = bespin.cmd.file._parseArguments(givenPath);
         var path = info.path;
         var project = info.project || editSession.project;
@@ -112,16 +112,9 @@ bespin.command.store.addCommand({
     preview: 'load up the contents of the file',
     completeText: 'add the filename to open',
     execute: function(instruction, opts) {
+        bespin.publish("editor:openfile", opts);
         var info = bespin.cmd.file._parseArguments(opts.path);
-        var path = info.path;
-        var project = info.project;
-        
-        bespin.publish("editor:openfile", {
-            project: project,
-            filename: path,
-            line: opts.line
-        });
-        
+        bespin.get("editor").openFile(info.project, info.path, { line: opts.line });
         bespin.publish("ui:escape", {});
     },
     findCompletions: function(query, callback) {
@@ -193,7 +186,7 @@ bespin.command.store.addCommand({
 
         bespin.get('files').removeFile(project, path, onSuccess, onFailure);
     },
-    
+
     findCompletions: function(query, callback) {
         bespin.cmd.file._findCompletionsHelper(query, callback, {
             matchFiles: true,
@@ -275,7 +268,7 @@ bespin.command.store.addCommand({
  */
 bespin.cmd.file._parseArguments = function(givenPath, opts) {
     opts = opts || {};
-    
+
     var session = bespin.get("editSession");
 
     // Sort out the context
@@ -295,7 +288,7 @@ bespin.cmd.file._parseArguments = function(givenPath, opts) {
             filter = parts.pop();
             // Pull out the leading segment into the project
             project = parts.shift() || "";
-            
+
             if (parts.length) {
                 path = parts.join("/") + "/";
             } else {
@@ -321,7 +314,7 @@ bespin.cmd.file._parseArguments = function(givenPath, opts) {
             projectPath = "";
         }
     }
-    
+
     if (!opts.filter) {
         path = path + filter;
         filter = undefined;

@@ -44,20 +44,29 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{path}}} is the full path to save the file into
     // * {{{onSuccess}}} is a callback to fire if the file is created
     newFile: function(project, path, onSuccess, onFailure) {
+        var self = this;
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
-                bespin.get('editSession').startSession(project, path || "new.txt", onSuccess, onFailure);
+                if (self.isCollaborationOn()) {
+                    bespin.get('editSession').startSession(project, path || "new.txt", onSuccess, onFailure);
+                } else {
+                    // alert the system that a path has changed
+                    bespin.publish("path:changed", {
+                        project: project,
+                        path: path
+                    });
 
-                // alert the system that a path has changed
-                // bespin.publish("path:changed", {
-                //     project: project,
-                //     path: path
-                // });
-
-                onSuccess();
+                    onSuccess({
+                        name: path,
+                        content: "",
+                        timestamp: new Date().getTime()
+                    });
+                }
             },
             elseFailed: function() {
-                onFailure({ responseText:'The file ' + path + ' already exists my friend.' });
+                if (dojo.isFunction(onFailure)) {
+                    onFailure({ responseText:'The file ' + path + ' already exists my friend.' });
+                }
                 bespin.get("commandLine").addErrorOutput('The file ' + path + ' already exists my friend.');
             }
         });
@@ -86,6 +95,20 @@ dojo.declare("bespin.client.FileSystem", null, {
         }, onFailure);
     },
 
+    /**
+     * Should we attempt to use collaboration features?
+     */
+    isCollaborationOn: function() {
+        var collab = bespin.get('settings').isSettingOn('collaborate');
+
+        if (collab && !bespin.mobwrite) {
+            console.log("Missing bespin.mobwrite: Forcing 'collaborate' to off in filesystem.js:collaborateOnFile");
+            collab = false;
+        }
+
+        return collab;
+    },
+
     // ** {{{ bespin.client.FileSystem.collaborateOnFile(project, path, callback) }}}
     //
     // Load the file in the given project so we can begin editing it.
@@ -96,14 +119,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     // * {{{path}}} is the full path to load the file into
     // * {{{onSuccess}}} is a callback to fire if the file is loaded
     collaborateOnFile: function(project, path, onSuccess, onFailure) {
-        var collab = bespin.get('settings').isSettingOn('collaborate');
-
-        if (collab && !bespin.mobwrite) {
-            console.log("Missing bespin.mobwrite: Forcing 'collaborate' to off in filesystem.js:collaborateOnFile");
-            collab = false;
-        }
-
-        if (collab) {
+        if (this.isCollaborationOn()) {
             bespin.get('editSession').startSession(project, path, onSuccess, onFailure);
         } else {
             this.loadContents(project, path, onSuccess, onFailure);
@@ -128,10 +144,7 @@ dojo.declare("bespin.client.FileSystem", null, {
                 });
             },
             elseFailed: function() {
-                bespin.publish("editor:openfile", {
-                    project: project,
-                    filename: path
-                });
+                bespin.get("editor").openFile(project, path);
             }
         });
     },

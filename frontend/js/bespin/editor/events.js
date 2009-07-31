@@ -34,9 +34,6 @@ dojo.declare("bespin.editor.Events", null, {
         bespin.subscribe("editor:openfile:opensuccess", function(event) {
             // If collaboration is turned on, we won't know the file contents
             if (event.file.content) {
-                // If you change these 3 lines then you probably also need to
-                // change the parallel lines in mobwrite/integrate.js under
-                // mobwrite.shareBespinObj.prototype.setClientText
                 editor.model.insertDocument(event.file.content);
                 editor.cursorManager.moveCursor({ row: 0, col: 0 });
                 editor.setFocus(true);
@@ -56,97 +53,6 @@ dojo.declare("bespin.editor.Events", null, {
             var action = event.action;
             var code   = event.code;
             if (action && dojo.isFunction(code)) editor.ui.actions[action] = code;
-        });
-
-        // ** {{{ Event: editor:openfile }}} **
-        //
-        // Observe a request for a file to be opened and start the cycle:
-        //
-        // * Send event that you are opening up something (openbefore)
-        // * Ask the file system to load a file (collaborateOnFile)
-        // * If the file is loaded send an opensuccess event
-        // * If the file fails to load, send an openfail event
-        bespin.subscribe("editor:openfile", function(event) {
-            var editSession = bespin.get('editSession');
-
-            var filename = event.filename;
-            var project  = event.project || editSession.project;
-            var fromFileHistory = event.fromFileHistory || false;
-
-            // Short circuit if we are already open at the requested file
-            if (!(event.reload) && editSession.checkSameFile(project, filename)) {
-                if (event.line) {
-                    bespin.get('commandLine').executeCommand('goto ' + event.line, true);
-                }
-                return;
-            }
-
-            bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
-
-            var onFailure = function() {
-                bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
-            };
-
-            var onSuccess = function(file) {
-                // TODO: We shouldn't need to to this but originally there was
-                // no onFailure, and this is how failure was communicated
-                if (!file) {
-                    onFailure();
-                    return;
-                }
-
-                // TODO: This used to happen outside of the onSuccess which
-                // seems wrong. This work is also done by collaborateOnFile in
-                // the collaborate case. But when collaborate is off, what is
-                // setting the path???
-                if (project != editSession.project) {
-                    editSession.setProject(project);
-                }
-
-                bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
-                if (event.line) {
-                    // Jump to the desired line.
-                    bespin.get('commandline').executeCommand('goto ' + event.line, true);
-                }
-
-                var settings = bespin.get("settings");
-
-                // Get the array of lastused files
-                var lastUsed = settings.getObject("_lastused");
-                if (!lastUsed) {
-                    lastUsed = [];
-                }
-
-                // We want to add this to the top
-                var newItem = {
-                    project:project,
-                    filename:filename
-                };
-
-                if (!fromFileHistory) {
-                    bespin.get('editSession').addFileToHistory(newItem);
-                }
-
-                // Remove newItem from down in the list and place at top
-                var cleanLastUsed = [];
-                dojo.forEach(lastUsed, function(item) {
-                    if (item.project != newItem.project || item.filename != newItem.filename) {
-                        cleanLastUsed.unshift(item);
-                    }
-                });
-                cleanLastUsed.unshift(newItem);
-                lastUsed = cleanLastUsed;
-
-                // Trim to 10 members
-                if (lastUsed.length > 10) {
-                    lastUsed = lastUsed.slice(0, 10);
-                }
-
-                // Maybe this should have a _ prefix: but then it does not persist??
-                settings.setObject("_lastused", lastUsed);
-            };
-
-            bespin.get('files').collaborateOnFile(project, filename, onSuccess, onFailure);
         });
 
         // ** {{{ Event: editor:forceopenfile }}} **
@@ -178,13 +84,9 @@ dojo.declare("bespin.editor.Events", null, {
         //
         // Reload the current file from the server.
         bespin.subscribe("editor:reload", function(event) {
-            var editSession = bespin.get('editSession');
+            var session = bespin.get('editSession');
 
-            bespin.publish("editor:openfile", {
-                reload: true,
-                project: editSession.project,
-                filename: editSession.path
-            });
+            editor.openFile(session.project, session.filename, { reload:true });
         });
 
         // ** {{{ Event: editor:newfile }}} **
@@ -333,7 +235,7 @@ dojo.declare("bespin.editor.Events", null, {
         // editor:openfile will check and see that the current file is the same
         // as the file from the urlbar
         bespin.subscribe("url:changed", function(event) {
-            bespin.publish("editor:openfile", { filename: event.now.get('path') });
+            editor.openFile(null, event.now.get('path'));
         });
 
         // ** {{{ Event: cmdline:focus }}} **

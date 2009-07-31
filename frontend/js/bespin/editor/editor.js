@@ -518,12 +518,12 @@ dojo.declare("bespin.editor.UI", null, {
     mouseDownSelect: function(e) {
         // only select if the editor has the focus!
         if (!this.editor.focus) return;
-        
+
         if (e.button == 2) {
             dojo.stopEvent(e);
             return false;
         }
-        
+
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -791,7 +791,7 @@ dojo.declare("bespin.editor.UI", null, {
             dojo.stopEvent(e);
             return false;
         }
-        
+
         var clientY = e.clientY - this.getTopOffset();
         var clientX = e.clientX - this.getLeftOffset();
 
@@ -1708,7 +1708,7 @@ dojo.declare("bespin.editor.UI", null, {
     },
 
     /**
-     * returns metadata bout the a string that represents the row;
+     * returns metadata about the string that represents the row;
      * converts tab characters to spaces
      */
     getRowString: function(row) {
@@ -1741,8 +1741,8 @@ dojo.declare("bespin.editor.UI", null, {
 
         this.editor.paint(true);
     },
-    dispose: function()
-    {
+
+    dispose: function() {
         for (var i = 0; i < this.globalHandles.length; i++) {
             dojo.disconnect(this.globalHandles[i]);
         }
@@ -1802,7 +1802,7 @@ dojo.declare("bespin.editor.API", null, {
         var startPos = selection.startPos;
         var endPos = selection.endPos;
 
-        // ensure that the start position is always before than the end position
+        // ensure that the start position is always before the end position
         if ((endPos.row < startPos.row) || ((endPos.row == startPos.row) && (endPos.col < startPos.col))) {
             var foo = startPos;
             startPos = endPos;
@@ -1856,7 +1856,14 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     getCurrentView: function() {
-        return { cursor: this.getCursorPos(), offset: { x: this.ui.xoffset, y: this.ui.yoffset }, selection: this.selection };
+        return {
+            cursor: this.getCursorPos(),
+            offset: {
+                x: this.ui.xoffset,
+                y: this.ui.yoffset
+            },
+            selection: this.selection
+        };
     },
 
     /**
@@ -1971,11 +1978,111 @@ dojo.declare("bespin.editor.API", null, {
         var action = function() {
             bespin.getComponent("commandLine", function(cli) {
                 cli.executeCommand(command, true);
-            })
+            });
         };
         var actionDescription = "Execute command: '" + command + "'";
 
         this.editorKeyListener.bindKeyString(keyObj.modifiers, keyCode, action, actionDescription);
+    },
+
+    /**
+     * Observe a request for a file to be opened and start the cycle.
+     * <ul>
+     * <li>Send event that you are opening up something (openbefore)
+     * <li>Ask the file system to load a file (collaborateOnFile)
+     * <li>If the file is loaded send an opensuccess event
+     * <li>If the file fails to load, send an openfail event
+     * </ul>
+     * @param project The project that contains the file to open. null implies
+     * the current project
+     * @param filename The path to a file inside the given project
+     * @param options Object that determines how the file is opened. Values
+     * should be under one of the following keys:<ul>
+     * <li>fromFileHistory: If a file is opened from the file history then it
+     * will not be added to the history.
+     * TODO: Surely it should be the job of the history mechanism to avoid
+     * duplicates, and potentially promote recently opened files to the top of
+     * the list however they were opened?
+     * <li>reload: Normally a request to open the current file will be ignored
+     * unless 'reload=true' is specified in the options
+     * <li>line: The line number to place the cursor at
+     * </ul>
+     */
+    openFile: function(project, filename, options) {
+        var options = options || {};
+        var editSession = bespin.get('editSession');
+
+        var project = project || editSession.project;
+        var fromFileHistory = options.fromFileHistory || false;
+
+        // Short circuit if we are already open at the requested file
+        if (!(options.reload) && editSession.checkSameFile(project, filename)) {
+            if (options.line) {
+                bespin.get('commandLine').executeCommand('goto ' + options.line, true);
+            }
+            return;
+        }
+
+        bespin.publish("editor:openfile:openbefore", { project: project, filename: filename });
+
+        var onFailure = function() {
+            bespin.publish("editor:openfile:openfail", { project: project, filename: filename });
+        };
+
+        var onSuccess = function(file) {
+            // TODO: We shouldn't need to to this but originally there was
+            // no onFailure, and this is how failure was communicated
+            if (!file) {
+                onFailure();
+                return;
+            }
+
+            bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+            editSession.setProjectPath(project, filename);
+
+            if (options.line) {
+                // Jump to the desired line.
+                bespin.get('commandline').executeCommand('goto ' + options.line, true);
+            }
+
+            var settings = bespin.get("settings");
+
+            // Get the array of lastused files
+            var lastUsed = settings.getObject("_lastused");
+            if (!lastUsed) {
+                lastUsed = [];
+            }
+
+            // We want to add this to the top
+            var newItem = {
+                project:project,
+                filename:filename
+            };
+
+            if (!fromFileHistory) {
+                editSession.addFileToHistory(newItem);
+            }
+
+            // Remove newItem from down in the list and place at top
+            var cleanLastUsed = [];
+            dojo.forEach(lastUsed, function(item) {
+                if (item.project != newItem.project || item.filename != newItem.filename) {
+                    cleanLastUsed.unshift(item);
+                }
+            });
+            cleanLastUsed.unshift(newItem);
+            lastUsed = cleanLastUsed;
+
+            // Trim to 10 members
+            if (lastUsed.length > 10) {
+                lastUsed = lastUsed.slice(0, 10);
+            }
+
+            // Maybe this should have a _ prefix: but then it does not persist??
+            settings.setObject("_lastused", lastUsed);
+        };
+
+        bespin.get('files').collaborateOnFile(project, filename, onSuccess, onFailure);
     }
 });
 
