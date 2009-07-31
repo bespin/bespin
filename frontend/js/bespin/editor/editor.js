@@ -1997,15 +1997,9 @@ dojo.declare("bespin.editor.API", null, {
                 return;
             }
 
-            // TODO: This used to happen outside of the onSuccess which
-            // seems wrong. This work is also done by collaborateOnFile in
-            // the collaborate case. But when collaborate is off, what is
-            // setting the path???
-            if (project != editSession.project) {
-                editSession.setProject(project);
-            }
-
             bespin.publish("editor:openfile:opensuccess", { project: project, file: file });
+            editSession.setProjectPath(project, filename);
+
             if (options.line) {
                 // Jump to the desired line.
                 bespin.get('commandline').executeCommand('goto ' + options.line, true);
