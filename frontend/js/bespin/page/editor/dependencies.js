@@ -27,3 +27,4 @@ dojo.provide("bespin.page.editor.dependencies");
 dojo.require("bespin.editor.dependencies");
 
 dojo.require("bespin.page.editor.init");
+dojo.require("bespin.vcs");
