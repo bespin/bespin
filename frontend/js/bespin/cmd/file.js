@@ -280,7 +280,7 @@ bespin.cmd.file._parseArguments = function(givenPath, opts) {
 
     // Sort out the context
     var project = session.project;
-    var path = session.path;
+    var path = session.path || "";
     var parts = path.split(/\//);
     parts.pop(); // Remove the current file
     path = parts.join("/");

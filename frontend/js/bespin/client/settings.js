@@ -698,7 +698,7 @@ dojo.declare("bespin.client.settings.Events", null, {
                 var lastUsed = settings.getObject("_lastused");
                 if (!lastUsed) {
                     bespin.publish("project:set", { project: "SampleProject" });
-                    bespin.publish("editor:openfile", { filename: "readme.txt" });
+                    bespin.publish("editor:openfile", { project: "SampleProject", filename: "readme.txt" });
                 }
                 else {
                     // Warning: Publishing an extra filename member to
