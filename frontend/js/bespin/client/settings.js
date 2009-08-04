@@ -678,9 +678,6 @@ dojo.declare("bespin.client.settings.Events", null, {
         //
         // If we are opening up a new file
         bespin.subscribe("settings:init", function(event) {
-            var path    = event.path;
-            var project = event.project;
-
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
             if (!settings.isSettingOn("hidewelcomescreen") && bespin.wizard) {
@@ -688,8 +685,8 @@ dojo.declare("bespin.client.settings.Events", null, {
             }
 
             // existing file, so open it
-            if (path) {
-                editor.openFile(project, path);
+            if (event.path) {
+                editor.openFile(event.project, event.path);
             } else {
                 var lastUsed = settings.getObject("_lastused");
                 if (!lastUsed) {
