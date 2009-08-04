@@ -82,9 +82,6 @@ bespin.command.store.addCommand({
                         return;
                     }
 
-                    // TODO: Rename this event
-                    bespin.publish("project:created");
-
                     var parent = bespin.social.displayFollowers(followers);
                     instruction.setElement(parent);
                 },
@@ -101,6 +98,9 @@ bespin.command.store.addCommand({
                         instruction.addOutput("You are not following anyone");
                         return;
                     }
+
+                    // TODO: Rename this event
+                    bespin.publish("project:created");
 
                     var parent = bespin.social.displayFollowers(followers);
                     instruction.setElement(parent);
@@ -173,7 +173,8 @@ bespin.command.store.addCommand({
         }
         else {
             bespin.get('server').unfollow(usernames, {
-                onSuccess: function(data) {
+                evalJSON: true,
+                onSuccess: function(followers) {
                     if (!followers || followers.length === 0) {
                         instruction.addOutput("You are not following anyone");
                         return;
