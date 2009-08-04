@@ -681,10 +681,6 @@ dojo.declare("bespin.client.settings.Events", null, {
             var path    = event.path;
             var project = event.project;
 
-            if (project && (editSession.project != project)) {
-                editSession.setProject(project);
-            }
-
             // Now we know what are settings are we can decide if we need to
             // open the new user wizard
             if (!settings.isSettingOn("hidewelcomescreen") && bespin.wizard) {
@@ -693,7 +689,7 @@ dojo.declare("bespin.client.settings.Events", null, {
 
             // existing file, so open it
             if (path) {
-                editor.openFile(null, path);
+                editor.openFile(project, path);
             } else {
                 var lastUsed = settings.getObject("_lastused");
                 if (!lastUsed) {
