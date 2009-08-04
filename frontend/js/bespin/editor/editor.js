@@ -642,7 +642,7 @@ dojo.declare("bespin.editor.UI", null, {
         } else if (detail == 2) { //double click
             var row = this.editor.model.rows[modelstart.row];
             var cursorAt = row[modelstart.col];
-            
+
             // the following is an ugly hack. We should have a syntax-specific set of "delimiter characters"
             // which are treated like whitespace for findBefore and findAfter.
             // to keep it at least a LITTLE neat, I have moved the comparator for double-click into its own function,
@@ -653,7 +653,7 @@ dojo.declare("bespin.editor.UI", null, {
                     return true;
                 return false;
             };
-            
+
             if (!cursorAt) {
                 // nothing to see here. We must be past the end of the line.
                 // Per Gordon's suggestion, let's have double-click EOL select the line, excluding newline
@@ -667,7 +667,7 @@ dojo.declare("bespin.editor.UI", null, {
                         return false;
                     return true;
                 };
-                
+
                 var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col, comparator);
                 var endPos = this.editor.model.findAfter(modelend.row, modelend.col, comparator);
 
@@ -684,7 +684,7 @@ dojo.declare("bespin.editor.UI", null, {
                         return true;
                     return false;
                 };
-                
+
                 var startPos = this.editor.model.findBefore(modelstart.row, modelstart.col, comparator);
                 var endPos = this.editor.model.findAfter(modelend.row, modelend.col, comparator);
 
@@ -953,7 +953,9 @@ dojo.declare("bespin.editor.UI", null, {
 
         // Other key bindings can be found in commands themselves.
         // For example, this:
-        // listener.bindKeyString("CTRL SHIFT", Key.N, "editor:newfile", "Create a new file");
+        // Refactor warning: Below used to have an action - publish to "editor:newfile",
+        // cahnged to this.editor.newfile but might not work as assumed.
+        // listener.bindKeyString("CTRL SHIFT", Key.N, this.editor.newfile, "Create a new file");
         // has been moved to the 'newfile' command withKey
         // Also, the clipboard.js handles C, V, and X
     },
@@ -1986,6 +1988,28 @@ dojo.declare("bespin.editor.API", null, {
     },
 
     /**
+     * Observe a request for a new file to be created
+     */
+    newFile: function(project, path, content) {
+        project = project || bespin.get('editSession').project;
+        path = path || "new.txt";
+
+        var onSuccess = function() {
+            bespin.publish("editor:openfile:opensuccess", {
+                file: {
+                    name: path,
+                    content: content || "",
+                    timestamp: new Date().getTime()
+                }
+            });
+
+            bespin.publish("editor:dirty");
+        };
+
+        bespin.get('files').newFile(project, path, onSuccess);
+    },
+
+    /**
      * Observe a request for a file to be opened and start the cycle.
      * <ul>
      * <li>Send event that you are opening up something (openbefore)
@@ -2013,10 +2037,11 @@ dojo.declare("bespin.editor.API", null, {
         var editSession = bespin.get('editSession');
 
         var project = project || editSession.project;
+        var filename = filename || editSession.path;
         var fromFileHistory = options.fromFileHistory || false;
 
         // Short circuit if we are already open at the requested file
-        if (!(options.reload) && editSession.checkSameFile(project, filename)) {
+        if (!options.reload && editSession.checkSameFile(project, filename)) {
             if (options.line) {
                 bespin.get('commandLine').executeCommand('goto ' + options.line, true);
             }

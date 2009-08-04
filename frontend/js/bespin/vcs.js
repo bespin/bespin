@@ -218,7 +218,7 @@ bespin.vcs.commands.addCommand({
             background: "white",
             padding: "5px"
         });
-        
+
         var setUserfields = function() {
             var newval = dojo.byId("authtype").value;
             if (newval == "ssh") {
@@ -259,9 +259,9 @@ bespin.vcs.commands.addCommand({
             dojo.stopEvent(e);
             bespin.util.webpieces.hideCenterPopup(el);
             var data = dojo.formToObject("vcsauth");
-            
+
             var newProjectName = data.dest;
-            
+
             // prune out unnecessary values
             if (data.remoteauth == "") {
                 delete data.push;
@@ -311,9 +311,9 @@ bespin.vcs.commands.addCommand({
                                     instruction,
                                     bespin.vcs._createStandardHandler(instruction));
         }
-        
+
         if (!message) {
-            var messageForm = dojo.create("form", {onsubmit: 
+            var messageForm = dojo.create("form", {onsubmit:
                 function() {
                     doCommit(messagefield.value);
                     instruction.unlink();
@@ -324,9 +324,9 @@ bespin.vcs.commands.addCommand({
                 messageForm);
             dojo.create("div", {}, messageForm).innerHTML = "<br>";
             dojo.create("input", {type: "submit"}, messageForm);
-            
+
             instruction.setElement(messageForm);
-            
+
             setTimeout(function() { messagefield.focus() }, 10);
         } else {
             doCommit(message);
@@ -364,7 +364,8 @@ bespin.vcs.commands.addCommand({
             {
                 acceptAll: true,
                 onSuccess: function() {
-                    bespin.publish("editor:reload", {});
+                    // null means leave the same
+                    editor.openFile(null, null, { reload:true });
                 }
             });
     }

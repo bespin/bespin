@@ -80,37 +80,6 @@ dojo.declare("bespin.editor.Events", null, {
             bespin.get('files').forceOpenFile(project, filename, content);
         });
 
-        // ** {{{ Event: editor:reload }}} **
-        //
-        // Reload the current file from the server.
-        bespin.subscribe("editor:reload", function(event) {
-            var session = bespin.get('editSession');
-
-            editor.openFile(session.project, session.filename, { reload:true });
-        });
-
-        // ** {{{ Event: editor:newfile }}} **
-        //
-        // Observe a request for a new file to be created
-        bespin.subscribe("editor:newfile", function(event) {
-            var project = event.project || bespin.get('editSession').project;
-            var newfilename = event.newfilename || "new.txt";
-
-            var onSuccess = function() {
-                bespin.publish("editor:openfile:opensuccess", {
-                    file: {
-                        name: newfilename,
-                        content: event.content || " ",
-                        timestamp: new Date().getTime()
-                    }
-                });
-
-                bespin.publish("editor:dirty");
-            };
-
-            bespin.get('files').newFile(project, newfilename, onSuccess);
-        });
-
         // ** {{{ Event: editor:savefile }}} **
         //
         // Observe a request for a file to be saved and start the cycle:

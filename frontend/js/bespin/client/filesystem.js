@@ -136,12 +136,7 @@ dojo.declare("bespin.client.FileSystem", null, {
     forceOpenFile: function(project, path, content) {
         this.whenFileDoesNotExist(project, path, {
             execute: function() {
-                if (!content) content = "";
-                bespin.publish("editor:newfile", {
-                    project: project,
-                    newfilename: path,
-                    content: content
-                });
+                bespin.get("editor").newFile(project, path, content || "");
             },
             elseFailed: function() {
                 bespin.get("editor").openFile(project, path);

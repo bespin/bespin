@@ -96,14 +96,12 @@ bespin.command.store.addCommand({
     completeText: 'add the filename to save as, or use the current file',
     withKey: "CMD S",
     execute: function(instruction, filename) {
-        bespin.publish("editor:savefile", {
-            filename: filename
-        });
+        bespin.publish("editor:savefile", { filename: filename });
     }
 });
 
 /**
- * 'load' command
+ * 'open' command
  */
 bespin.command.store.addCommand({
     name: 'open',
@@ -148,10 +146,8 @@ bespin.command.store.addCommand({
     withKey: "CTRL SHIFT N",
     execute: function(instruction, filename) {
         var info = bespin.cmd.file._parseArguments(filename);
-        var path = info.path;
-        var project = info.project;
 
-        bespin.publish("editor:newfile", {project: project, newfilename: path});
+        bespin.get("editor").newFile(info.project, info.path);
         bespin.publish("ui:escape", {});
     }
 });
