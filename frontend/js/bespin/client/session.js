@@ -270,6 +270,14 @@ dojo.declare("bespin.client.session.EditSession", null, {
     getStatus: function() {
         var file = this.path || 'a new scratch file';
         return 'Hey ' + this.username + ', you are editing ' + file + ' in project ' + this.project;
+    },
+
+    /**
+     * If true is passed in, turn off the collab_off "off mode" of the sidebar, and turn on the collab_on mode, else do the opposite
+     */
+    setCollaborateSidebar: function(on) {
+        dojo.style("collab_off", "display", on ? "none" : "block");
+        dojo.style("collab_on",  "display", on ? "block" : "none");
     }
 });
 

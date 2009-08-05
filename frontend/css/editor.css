@@ -264,6 +264,10 @@ body {
     background-repeat: repeat-y;
 }
 
+#collab a {
+    color: #eee;
+}
+
 #collab_header {
     background-image: url("../images/collab_hdr_bg.gif");
     height: 32px;
@@ -277,13 +281,13 @@ body {
     padding: 5px 0 0 9px;
 }
 
-.collab_subheader {
+#collab_on .collab_subheader {
     background-image: url("../images/collab_categorybar_bg.gif");
     margin-left: 10px;
     height: 23px;
 }
 
-.collab_subheader div {
+#collab_on .collab_subheader div {
     font-family: Calibri, Arial, sans-serif;
     font-size: 10pt;
     color: #dad4ba;
@@ -291,6 +295,7 @@ body {
 }
 
 .collab_text {
+    margin-top: 10px;
     margin-left: 10px;
     font-family: Calibri, Arial, sans-serif;
     font-size: 10pt;

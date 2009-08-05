@@ -548,6 +548,7 @@ dojo.declare("bespin.client.settings.Events", null, {
         // Turn on the collaboration system if set to be on
         bespin.subscribe("settings:set:collaborate", function(event) {
             editSession.collaborate = settings.isOn(event.value);
+            editSession.setCollaborateSidebar(settings.isOn(event.value));
         });
 
         // ** {{{ Event: settings:set:fontsize }}} **
